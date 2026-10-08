@@ -202,18 +202,24 @@ export function watchPickDrag(el: HTMLElement, on: { drag: (from: string, to: st
     from = over = line
     dragged = false
   })
+  /** Disarms the press; answers whether it had dragged, after calling `drop`. */
+  const end = () => {
+    const had = from !== undefined && dragged
+    from = over = undefined
+    if (had) on.drop()
+    return had
+  }
   el.addEventListener('pointermove', (e) => {
+    if (from && !(e.buttons & 1)) return void end()
     const line = from && (e.target as Element).closest<HTMLElement>('[data-pick]')?.dataset.pick
     if (!line || line === over || lineOf(line).key !== lineOf(from!).key) return
     over = line
     dragged = true
     on.drag(from!, line)
   })
+  window.addEventListener('pointercancel', end)
   window.addEventListener('pointerup', () => {
-    if (!from) return
-    from = over = undefined
-    if (!dragged) return
-    on.drop()
+    if (!end()) return
     // The click that ends a drag is the drag's, whichever line it lands on.
     const swallow = (e: Event) => e.stopPropagation()
     window.addEventListener('click', swallow, { capture: true, once: true })
