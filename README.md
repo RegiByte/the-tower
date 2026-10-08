@@ -59,6 +59,9 @@ Talk to your workers: "show me the page you built", "hire a worker for the flaky
 what the tower makes possible: showing, hiring, checking on workers, review threads, collections, the shelf and
 renderers of your own.
 
+To customize it (your own renderer, a copy of one that ships, shelf pages, scripts over the API, your own kinds of
+files), read [docs/extending.md](docs/extending.md): every extension point, its contract, and what isn't one.
+
 ## Config
 
 `~/.tower/config.json` (`TOWER_CONFIG` points elsewhere; its directory is the system root, where logs and sockets

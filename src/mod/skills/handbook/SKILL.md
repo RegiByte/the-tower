@@ -1,7 +1,7 @@
 ---
 name: handbook
 allowed-tools: Bash(tower *)
-description: The handbook of the tower, the user's HQ for their Claude Code sessions, where this session is one of the workers. Workers are named by callsigns (HOLMES-42, ODIN-07), which are not SendMessage names. Use before ListAgents or SendMessage, and when the user mentions a callsign (a name like ODIN-07 or HOLMES-42), a worker, a floor or "the tower", or asks you to reach out to, message, ask or coordinate with another agent or session. Also for review threads and notes, hiring a worker or a reviewer, crews and sending workers home, kept items and collections, the floor's shelf (putting a page on it), the tower's config and checking an edit to it, worktree rules, and the tower's API.
+description: The handbook of the tower, the user's HQ for their Claude Code sessions, where this session is one of the workers. Workers are named by callsigns (HOLMES-42, ODIN-07), which are not SendMessage names. Use before ListAgents or SendMessage, and when the user mentions a callsign (a name like ODIN-07 or HOLMES-42), a worker, a floor or "the tower", or asks you to reach out to, message, ask or coordinate with another agent or session. Also for review threads and notes, hiring a worker or a reviewer, crews and sending workers home, kept items and collections, the floor's shelf (putting a page on it), the tower's config and checking an edit to it, worktree rules, the tower's API, and customizing the tower or building a renderer of one's own.
 ---
 
 # The tower
@@ -92,5 +92,7 @@ When `tower whoami` names a worktree, the tower cut you a copy of each of the fl
 - Don't create or remove worktrees unless the user asks: the tower cuts and tidies them.
 
 ## The API
+
+When you're asked to customize the tower, build a renderer or a shelf page, or script it, read `docs/extending.md` in the tower's checkout first (`realpath $(which tower)` is `<checkout>/src/mod/bin/tower`): its extension points, the recipe for copying a renderer, and what not to touch.
 
 You hold every verb of the tower's API, as the user does: starting, prompting, resuming and killing workers included. `tower api` lists each verb and read with what it does, and `tower api <name>` prints one's JSON Schema (all of them: `GET <address>/schema`). `tower whoami` names the tower's address, where the user's page is served too (`http://127.0.0.1:<port>`, the `port` in the tower's config); each verb is a `POST <address>/<verb>` with the header `origin: <address>`. Use them when the task calls for it or the user asks, and say what you did. Most tasks need none.

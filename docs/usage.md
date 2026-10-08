@@ -69,6 +69,6 @@ entries, then `tower config check`. See [config.md](config.md).
 
 ## Your own renderer
 
-The tower page and Tower 3D are two renderers of the same board. Declare your own in the config and it's served at
-`/r/<name>/`, with the whole API through `/tower.js`. A worker can build one for you: "make a renderer that shows
-every floor as a kanban board".
+The tower page and Tower 3D are two renderers of the same board. Write your own, or copy one of them out of the
+checkout and change it: [extending.md](extending.md) has the recipe, and every other way to extend the tower. A worker
+can build one for you: "make a renderer that shows every floor as a kanban board".
