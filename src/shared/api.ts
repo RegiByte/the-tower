@@ -191,7 +191,7 @@ export const VERBS = {
             ),
             logs: z.array(z.object({ id, bytes: z.int().nonnegative() })),
           })
-          .describe("The floor's `tidy` as the board listed it: refused when anything in it no longer qualifies."),
+          .describe("The floor's `tidy` as the board listed it, or any part of it: refused when anything in it no longer qualifies."),
       })
       .describe(
         "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago: each gzipped in place as `<id>.jsonl.gz`, read the same as before.",

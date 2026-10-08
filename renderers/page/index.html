@@ -595,7 +595,11 @@ const threadsHtml = (f) => {
 /** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
 const tidyHtml = (f) => `<div class="worktrees">
     <div class="drafts-head">${esc(tidyLine(f.tidy))}<button data-tidy="${f.id}" title="do all of it, as listed">tidy</button></div>
-    ${tidyRows(f, Date.now()).map((r) => `<div class="wt" title="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span></div>`).join('')}</div>`
+    ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}</div>`
+
+/** One thing Tidy would do, with a button that does only it. */
+const tidyRowHtml = (r) => `<div class="wt" title="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>
+    <button class="ic" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" title="${esc(`only this: ${r.does}`)}">⌫</button></div>`
 
 
 const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
@@ -2071,6 +2075,8 @@ document.addEventListener('click', (e) => {
   if (draftAct === 'reload' || draftAct === 'keep') return settleConflict(draftAct === 'reload')
   const wtCall = e.target.closest('[data-wt-call]')
   if (wtCall) return told(tower.run(JSON.parse(wtCall.dataset.wtCall)))
+  const tidyCall = e.target.closest('[data-tidy-call]')
+  if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(tower.run(JSON.parse(tidyCall.dataset.tidyCall))).then((r) => r && toast(tidiedLine(r)))
   const tidy = e.target.closest('[data-tidy]')
   if (tidy) return told(tower.run(floorOf(tidy.dataset.tidy).calls.tidy)).then((r) => r && toast(tidiedLine(r)))
   const picked = e.target.closest('[data-pick]')?.dataset.pick

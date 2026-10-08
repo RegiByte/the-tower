@@ -97,28 +97,35 @@ export const tidyLine = ({ worktrees, branches, threads, prune, logs }: TidyPlan
 
 export const KILL_COST = 'resumable, but its next turn reads the whole conversation again, uncached'
 
-/** Each thing a floor's Tidy would do, as a row: what it is and what happens to it. */
-export type TidyRow = { what: string; does: string; title: string }
+/**
+ * Each thing a floor's Tidy would do, as a row: what it is, what happens to it, and the call that does only that, the
+ * floor's plan cut down to this row (`POST /tidy` applies any part of the plan as listed).
+ */
+export type TidyRow = { what: string; does: string; title: string; call: Call<'tidy'> }
+
+const NOTHING: TidyPlan = { worktrees: [], branches: [], threads: [], prune: [], logs: [] }
 
 export const tidyRows = (f: Floor, now: number): TidyRow[] => {
   const card = (id: string) => f.cards.find((c) => c.id === id)!
+  const only = (part: Partial<TidyPlan>): Call<'tidy'> => ['tidy', { project: f.id, plan: { ...NOTHING, ...part } }]
   return [
     ...f.tidy.prune.map((p): TidyRow => {
       const c = card(p.id)
+      const call = only({ prune: [p] })
       if (p.t === 'kill')
-        return { what: c.callsign, does: `kill · landed, ${c.waiting || c.waitsOn ? 'answer unread, ' : ''}${STATUS_NAME[c.status]} ${span(now - p.since)}`, title: `${c.callsign}, hired by ${c.hiredBy!.callsign}: its work has landed and it has sat ${STATUS_NAME[c.status]} for ${span(now - p.since)}. Killed, ${KILL_COST}` }
+        return { what: c.callsign, does: `kill · landed, ${c.waiting || c.waitsOn ? 'answer unread, ' : ''}${STATUS_NAME[c.status]} ${span(now - p.since)}`, title: `${c.callsign}, hired by ${c.hiredBy!.callsign}: its work has landed and it has sat ${STATUS_NAME[c.status]} for ${span(now - p.since)}. Killed, ${KILL_COST}`, call }
       const r = c.resources.find((r) => r.pid === p.pid)!
-      return { what: `${p.pid} ${commandName(r.command)}`, does: `reap · ${c.callsign}`, title: `${r.command}\nleft running by ${c.callsign}, ${STATUS_NAME[c.status]}${r.orphan ? '; orphaned' : ''}` }
+      return { what: `${p.pid} ${commandName(r.command)}`, does: `reap · ${c.callsign}`, title: `${r.command}\nleft running by ${c.callsign}, ${STATUS_NAME[c.status]}${r.orphan ? '; orphaned' : ''}`, call }
     }),
-    ...f.tidy.worktrees.map((name) => ({ what: `⎇ ${name}`, does: 'remove worktree', title: 'nothing would be lost: clean, and its branch is pushed or absorbed' })),
-    ...f.tidy.branches.map((name) => ({ what: `⎇ ${name}`, does: 'delete merged branch', title: 'absorbed into its base' })),
-    ...f.tidy.threads.map((checkout) => ({ what: `◇ ${checkout}`, does: 'file landed thread', title: `its work has landed: filed as ${checkout}@<time>.md` })),
-    ...(f.tidy.logs.length ? [oldLogsRow(f.tidy.logs)] : []),
+    ...f.tidy.worktrees.map((name) => ({ what: `⎇ ${name}`, does: 'remove worktree', title: 'nothing would be lost: clean, and its branch is pushed or absorbed', call: only({ worktrees: [name] }) })),
+    ...f.tidy.branches.map((name) => ({ what: `⎇ ${name}`, does: 'delete merged branch', title: 'absorbed into its base', call: only({ branches: [name] }) })),
+    ...f.tidy.threads.map((checkout) => ({ what: `◇ ${checkout}`, does: 'file landed thread', title: `its work has landed: filed as ${checkout}@<time>.md`, call: only({ threads: [checkout] }) })),
+    ...(f.tidy.logs.length ? [{ ...oldLogsRow(f.tidy.logs), call: only({ logs: f.tidy.logs }) }] : []),
   ]
 }
 
 /** The logs Tidy would archive, in one row: a floor can hold hundreds. */
-const oldLogsRow = (logs: TidyPlan['logs']): TidyRow => {
+const oldLogsRow = (logs: TidyPlan['logs']): Omit<TidyRow, 'call'> => {
   const n = `${logs.length} old ${logs.length === 1 ? 'log' : 'logs'}`
   return {
     what: `▤ ${n}`,

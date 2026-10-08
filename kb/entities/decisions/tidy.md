@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tidy: one list of what can go, computed, applied as shown",
-  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose, and the logs of workers ended more than retention.days ago (log-retention): hires quiet between turns (a finished turn even with its answer unread), no running worker reporting to them, their worktree's work landed. A worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
+  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose, and the logs of workers ended more than retention.days ago (log-retention): hires quiet between turns (a finished turn even with its answer unread), no running worker reporting to them, their worktree's work landed. A worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
@@ -77,9 +77,12 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, or whose kill fails, is left alive
   and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done.
 - Time alone makes a worker stuck, so the tower republishes the board every minute; an unchanged board is not sent.
+- Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows) gives each row the call that
+  applies only it, the floor's plan cut down to that one item (one worker, one process, one worktree, one branch, one
+  thread; the old logs together, as their one row). Applied and refused by the same checks as the whole.
 - Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/cards.ts#tidyLine), "Tidy: 4 leftovers, 2 finished
   hires"; [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)). The tower page folds it into a tray under the floor
-  that unfolds the list with the press. Tower 3D lists it in the floor panel and on the Running board
+  that unfolds the list with the press, and each row has its own ⌫, confirmed before it runs. Tower 3D lists it in the floor panel and on the Running board
   ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)): its head is the floor's `tidy` act (E
   the list at the console, held Z applies it), finished hires are rows, and what Tidy ends is edged in amber.
 
@@ -98,6 +101,9 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   Unneeded once only hires are offered.
 - *The stuck threshold in config*: a constant first; a setting once someone wants another number.
 - *Shells from the terms daemon*: the user starts them by hand; Tidy never lists them.
+- *Per-item verbs only* (`worktree/remove`, `branch/delete`, `reap/process`, `kill`): no verb files a landed thread or
+  archives a log on its own, and each checks its own conditions, not the ones Tidy listed by. A row's call is Tidy's own, so a row does
+  exactly what the whole would do to it.
 - *Tidying on a timer*: whoever ended a worker must be a fact in a log, and the tower writes no logs. Designed when
   wanted.
 
