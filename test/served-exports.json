@@ -413,6 +413,7 @@
     "/prefs.js": [
       "GENERIC_FACES",
       "PREFS_DEFAULT",
+      "PREF_CHOICES",
       "TERM_SIZES",
       "faceFamily",
       "reducedMotion"

@@ -31,6 +31,9 @@ export type Prefs = {
 
 export const PREFS_DEFAULT: Prefs = { scheme: '', ui: '', display: '', mono: '', termSize: 13, motion: '', contrast: '' }
 
+/** The values each choice may take. tower.js keeps a record to them as it takes one in, from storage, a frame or `set`. */
+export const PREF_CHOICES = { scheme: ['', 'light', 'dark'], motion: ['', 'reduce', 'full'], contrast: ['', 'more'] }
+
 /** The range of `termSize` a viewer may pick, in px. */
 export const TERM_SIZES = { min: 9, max: 24 }
 

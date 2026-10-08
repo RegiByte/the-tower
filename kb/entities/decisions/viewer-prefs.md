@@ -52,7 +52,9 @@ with no work of its own ([[renderer-is-disposable]]).
   `mono`, `termSize`, `motion` (`''`, `reduce`, `full`), `contrast` (`''`, `more`). An empty field follows the
   default: the system's scheme, motion and contrast, the shipped face.
 - *`tower.prefs`* ([`tower.js`](ref:hub/src/tower/tower.js)): `get()`, `set(patch)`, `on(fn)` and `attributes()`.
-  At the tower's origin it is kept in localStorage `tower.prefs` and synced across tabs by the `storage` event;
+  Whoever writes it (storage, a framed page, `set`), the record is taken in normalized: each choice one of
+  `PREF_CHOICES`, each face a name, the size a whole number within `TERM_SIZES`, anything else the default; and
+  `attributes()` escapes every value it writes. At the tower's origin it is kept in localStorage `tower.prefs` and synced across tabs by the `storage` event;
   a viewer's earlier `tower.scheme` carries over as the record's scheme. Framed, `set` sends
   `{t: 'tower', verb: 'prefs', prefs}` and the framing page keeps it and answers with `{t: 'prefs', prefs}`, as the
   scheme went before. `tower.js` applies it on the root: `data-scheme`, `data-motion` and `data-contrast`, and each
@@ -68,12 +70,14 @@ with no work of its own ([[renderer-is-disposable]]).
 - *The popover from data*: [`PREF_SECTIONS`](ref:hub/src/shared/settings.ts#PREF_SECTIONS) describes each setting by
   kind (a segmented choice, a face, a size), [`prefSections`](ref:hub/src/shared/settings.ts#prefSections) draws
   Theme, Type and Accessibility, and [`wirePrefs`](ref:hub/src/shared/settings.ts#wirePrefs) wires every one: a
-  next setting is a descriptor, with no renderer to touch. Each face field is drawn in its own face.
+  next setting is a descriptor, with no renderer to touch. Each face field is drawn in its own face. A field left by
+  pressing another control of the popover changes as that press ends, together with the control's choice, so the
+  popover isn't redrawn under the pointer.
 - *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts), `/terminal.js`): a terminal draws in the root's
   `--mono` at `termSize` while its viewer drives it, so a bigger font gives the session fewer columns and rows (the
   PTY has one size); a watched one fits the PTY at a size up to `termSize`
   ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in the face itself as xterm measures them
-  ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)). On a change, each renderer loads the face, sets it on its open
+  ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)), each row in whole device pixels as xterm draws it. On a change, each renderer loads the face, sets it on its open
   terminals, and fits them again: a driving one resizes the PTY. The tower page's session and shells and Tower 3D's
   desk and kiosk terminals do.
 - *Motion and contrast* in `/design.css`: [`reduced`](ref:hub/src/shared/design.ts#reduced) writes a rule for

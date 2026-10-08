@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { API_VERSION } from '../shared/api.ts'
 import { type } from '../shared/design.ts'
-import { GENERIC_FACES, PREFS_DEFAULT } from '../shared/prefs.ts'
+import { GENERIC_FACES, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES } from '../shared/prefs.ts'
 
 const SHARED = path.join(import.meta.dirname, '..', 'shared')
 
@@ -42,7 +42,7 @@ export function bundled(url: string) {
  * faces: the script names each constant and it is filled in here, from api.ts, prefs.ts and design.ts.
  */
 export function towerClient() {
-  const filled: Record<string, unknown> = { API_VERSION, PREFS_DEFAULT, GENERIC_FACES, FACES: type }
+  const filled: Record<string, unknown> = { API_VERSION, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, GENERIC_FACES, FACES: type }
   return Object.entries(filled).reduce((script, [name, value]) => {
     const declaration = new RegExp(`^(\\s*const \\w+ = )${name}$`, 'm')
     if (!declaration.test(script)) throw new Error(`tower.js no longer declares a constant as "${name}"`)

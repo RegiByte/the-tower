@@ -71,6 +71,8 @@
    * faces each stack ends in, from src/shared/design.ts.
    */
   const PREFS_DEFAULT = PREFS_DEFAULT
+  const PREF_CHOICES = PREF_CHOICES
+  const TERM_SIZES = TERM_SIZES
   const GENERIC_FACES = GENERIC_FACES
   const FACES = FACES
   const versionOf = (text) => {
@@ -184,7 +186,7 @@
       },
       ui: () => {},
       setPrefs: (patch) => {
-        const next = { ...prefs, ...patch }
+        const next = normalized({ ...prefs, ...patch })
         try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)) } catch {}
         applyPrefs(next)
       },
@@ -271,20 +273,33 @@
   let prefs = PREFS_DEFAULT
   const scheme = () => prefs.scheme || (darkSystem.matches ? 'dark' : 'light')
   const announceScheme = () => schemeWatchers.forEach((fn) => fn(scheme()))
+  /**
+   * A record as the page takes it in, whoever wrote it (storage, a framed page, `set`): each choice one of its values,
+   * each face a name, the terminal's size a whole number in its range; anything else is the default.
+   */
+  const normalized = (raw) => {
+    const pick = (key, ok) => (ok(raw?.[key]) ? raw[key] : PREFS_DEFAULT[key])
+    const size = Math.round(Number(raw?.termSize))
+    return {
+      ...Object.fromEntries(Object.entries(PREF_CHOICES).map(([key, values]) => [key, pick(key, (v) => values.includes(v))])),
+      ...Object.fromEntries(FACE_KEYS.map((face) => [face, pick(face, (v) => typeof v === 'string').trim()])),
+      termSize: Number.isFinite(size) ? Math.min(TERM_SIZES.max, Math.max(TERM_SIZES.min, size)) : PREFS_DEFAULT.termSize,
+    }
+  }
   const applyPrefs = (next) => {
     const was = scheme()
-    prefs = { ...PREFS_DEFAULT, ...next }
+    prefs = normalized(next)
     root.dataset.scheme = prefs.scheme
     for (const face of FACE_KEYS) prefs[face] ? root.style.setProperty(`--${face}`, stack(prefs, face)) : root.style.removeProperty(`--${face}`)
     for (const key of ['motion', 'contrast']) prefs[key] ? (root.dataset[key] = prefs[key]) : delete root.dataset[key]
     prefsWatchers.forEach((fn) => fn(prefs))
     if (scheme() !== was) announceScheme()
   }
-  const escAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+  const escAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   const attributes = () => {
     const faces = FACE_KEYS.filter((face) => prefs[face]).map((face) => `--${face}: ${stack(prefs, face)};`).join(' ')
-    const data = ['motion', 'contrast'].filter((key) => prefs[key]).map((key) => ` data-${key}="${prefs[key]}"`).join('')
-    return `data-scheme="${scheme()}"${data}${faces ? ` style="${escAttr(faces)}"` : ''}`
+    const data = ['motion', 'contrast'].filter((key) => prefs[key]).map((key) => ` data-${key}="${escAttr(prefs[key])}"`).join('')
+    return `data-scheme="${escAttr(scheme())}"${data}${faces ? ` style="${escAttr(faces)}"` : ''}`
   }
   darkSystem.addEventListener('change', () => prefs.scheme || announceScheme())
   const PREFS_KEY = 'tower.prefs'

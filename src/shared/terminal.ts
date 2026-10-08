@@ -38,9 +38,15 @@ export function cellOf(family: string): Cell {
   return { width: width / 32 / 100, height: height / 100 }
 }
 
-/** The largest whole size, at most `font.size` and at least `MIN_SIZE`, at which `cols`×`rows` cells of its face fit in `box`. */
+/**
+ * The largest whole size, at most `font.size` and at least `MIN_SIZE`, at which `cols`×`rows` cells of its face fit in
+ * `box`. xterm draws a row in whole device pixels, a cell's width as measured.
+ */
 export function fitSize(box: Box, cols: number, rows: number, font: TermFont): number {
   const cell = cellOf(font.family)
-  const fits = Math.min((box.clientWidth - 4) / (cols * cell.width), (box.clientHeight - 4) / (rows * cell.height))
-  return Math.max(MIN_SIZE, Math.min(font.size, Math.floor(fits)))
+  const rowHeight = (size: number) => Math.ceil(cell.height * size * devicePixelRatio) / devicePixelRatio
+  const fits = (size: number) => cols * cell.width * size <= box.clientWidth - 4 && rows * rowHeight(size) <= box.clientHeight - 4
+  let size = font.size
+  while (size > MIN_SIZE && !fits(size)) size--
+  return size
 }

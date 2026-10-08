@@ -176,15 +176,30 @@ const prefValue = (el: HTMLElement): Partial<Prefs> => {
   return { [key]: input.value.trim() }
 }
 
-/** Every setting `prefSections` draws in `el`: a choice on click, a field on change (Enter, or leaving it). */
+/**
+ * Every setting `prefSections` draws in `el`: a choice on click, a field on change (Enter, or leaving it). A field
+ * left by pressing on another control in `el` changes as that press ends, with the control's own choice: setting it at
+ * once would redraw the popover under the pointer, and the press would land on nothing.
+ */
 export function wirePrefs(el: HTMLElement, set: (patch: Partial<Prefs>) => void) {
+  let pressing = false
+  let held: Partial<Prefs> = {}
+  const release = () => {
+    const patch = held
+    held = {}
+    if (Object.keys(patch).length) set(patch)
+  }
+  el.addEventListener('pointerdown', () => (pressing = true))
+  el.ownerDocument.addEventListener('pointerup', () => pressing && ((pressing = false), setTimeout(release)))
   el.addEventListener('click', (e) => {
     const control = (e.target as Element).closest<HTMLElement>('[data-pref][data-pref-value]')
-    if (control) set(prefValue(control))
+    if (control) (held = { ...held, ...prefValue(control) }), release()
   })
   el.addEventListener('change', (e) => {
     const control = (e.target as Element).closest<HTMLElement>('input[data-pref]')
-    if (control) set(prefValue(control))
+    if (!control) return
+    held = { ...held, ...prefValue(control) }
+    if (!pressing) release()
   })
 }
 
