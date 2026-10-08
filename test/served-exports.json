@@ -379,7 +379,19 @@
     "/termkeys.js": [
       "NATURAL_KEYS",
       "naturalKey",
+      "terminalKeymap",
       "terminalKeys"
+    ],
+    "/keymap.js": [
+      "COMMANDS",
+      "DEFAULT_KEYS",
+      "chordLabel",
+      "commandOf",
+      "keymapOf",
+      "keymapSheetHtml",
+      "keysLabel",
+      "keysProblems",
+      "keyshortcuts"
     ],
     "/settings.js": [
       "ALERTS_MEANS",

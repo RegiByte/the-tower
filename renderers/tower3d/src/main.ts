@@ -11,7 +11,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import type { SchemeChoice } from '../../../src/shared/shelf-page.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -36,6 +36,7 @@ import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookHeadHtml, logbookHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml } from './ui.ts'
+import { commandOf } from '../../../src/shared/keymap.ts'
 import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
@@ -743,7 +744,7 @@ function mountDeskScreen(c: Card) {
   mountTerm($('desk-screen'), {
     path: past ? `screen/${past.id}` : `terminal/${id}`, id: past?.id ?? id, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, onError: (err) => toast(err.message),
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
-    shortcut: moveKey,
+    ...terminalKeys,
     onEnd: () => s.panel?.kind === 'desk' && s.panel.id === id && unfocus(),
   })
 }
@@ -779,7 +780,7 @@ function focusShell(id: string) {
   mountTerm($('desk-screen'), {
     path: `shell/${id}`, id, sendKeys: tower.shellKeys, resizeVerb: 'shell/resize', scrollback: SHELL_SCROLLBACK, onError: (err) => toast(err.message),
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
-    shortcut: moveKey,
+    ...terminalKeys,
     onEnd: () => s.panel?.kind === 'shell' && s.panel.id === id && unfocus(),
   })
 }
@@ -1021,12 +1022,22 @@ settingsEl.addEventListener('click', (e) => {
 })
 tower.onScheme(() => drawSettings())
 
-/** A move key, from anywhere: walking, at a desk, in its terminal. Returns whether `e` was one. */
-function moveKey(e: KeyboardEvent) {
-  const m = e.type === 'keydown' && s.board ? moveOfKey(e) : undefined
-  if (!m) return false
+const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'next', 'next-waiting': 'waiting' }
+
+/** The keymap's commands the building shares with every renderer, from anywhere: walking, at a desk, in its terminal. */
+function runCommand(id: string, e: KeyboardEvent) {
+  if (MOVE_OF[id]) return (e.repeat || goMove(MOVE_OF[id]), true)
+  if (id === 'leave-terminal') return ((document.activeElement as HTMLElement | null)?.blur(), true)
+  return false
+}
+
+const terminalKeys = { keys: () => s.board!.keys, run: runCommand }
+
+/** A keydown outside a terminal that runs a shared command. Returns whether it ran one. */
+function commandKey(e: KeyboardEvent) {
+  const id = s.board && commandOf(s.board.keys, e, typing() ? 'field' : 'page')
+  if (!id || !runCommand(id, e)) return false
   e.preventDefault()
-  if (!e.repeat) goMove(m)
   return true
 }
 
@@ -1514,7 +1525,7 @@ function onKey(code: string, repeat: boolean) {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || moveKey(e)) return
+  if (e.defaultPrevented || commandKey(e)) return
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
   if (e.code === 'Escape' && s.panel?.kind === 'desk' && s.replay?.id === s.panel.id) return replay(s.panel.id, undefined)
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
@@ -1907,7 +1918,7 @@ function openLogbook(c: Card) {
 function showLogbookScreen(c: Card, session: string) {
   mountTerm($('logbook-screen'), {
     path: `screen/${session}`, id: session, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, onError: (err) => toast(err.message),
-    onMode: () => {}, shortcut: moveKey, onEnd: () => {},
+    onMode: () => {}, ...terminalKeys, onEnd: () => {},
   })
   $('logbook-stamp').innerHTML = stampHtml(c.lineage.find((l) => l.id === session)!.startedAt, false)
 }

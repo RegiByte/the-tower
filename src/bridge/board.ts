@@ -1,4 +1,5 @@
-import { MAIN_CHECKOUT, inProject, projectCollections, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import type { Keys } from '../shared/keymap.ts'
+import { MAIN_CHECKOUT, inProject, projectCollections, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
 import { reviewedIn, REVIEWS, threadId, unseenBy, type ReviewThread } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
@@ -243,6 +244,8 @@ export type Board = {
   user: { name: string }
   /** The config file's path: the system root, where the logs and collections are, is its directory. */
   config: string
+  /** Every command's chords by id, the config's `keys` over the keymap's defaults (`/keymap.js`). */
+  keys: Keys
   floors: Floor[]
   /** Who waits on you, in the order to go to them. */
   waiting: Wait[]
@@ -594,6 +597,7 @@ export const board = (
   const reading = latestRateLimits(sessions.map((s) => s.facts))
   return {
     user: { name: userName(config) },
+    keys: configuredKeys(config),
     config: paths.config,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, ...project }]) => {
       const read = projectReads(projectDirs(project), repos)

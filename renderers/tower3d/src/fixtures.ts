@@ -5,6 +5,7 @@ import { CALLSIGNS, callsigns } from '../../../src/shared/callsign.ts'
 import { tagOf } from '../../../src/shared/tags.ts'
 import { threadCheckoutOf } from '../../../src/shared/cards.ts'
 import { DRAFTS } from '../../../src/shared/drafts.ts'
+import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
 import { cardOffers, conversationOffers, floorOffers, isLive, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
@@ -187,6 +188,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
   const board: Board = {
     user: { name: 'user' },
     config: '/system/config.json',
+    keys: DEFAULT_KEYS,
     floors: built.map((f) => {
       const cards = seated.filter((c) => c.project === f.id)
       const present = cards.filter(kept)

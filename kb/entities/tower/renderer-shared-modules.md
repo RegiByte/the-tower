@@ -5,11 +5,11 @@
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes and Reviews panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "web-tower",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys"]
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS"]
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/settings.js`, `/tips.js`, `/markdown.js`, and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/settings.js`, `/tips.js`, `/markdown.js`, and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
 with esbuild on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
@@ -40,10 +40,15 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   prompt, Enter in a shell), Ctrl+⌫ `^W`, ⌘⌫ `^U`, ⌘⌦ `^K`, ⌘← / ⌘→ `^A` / `^E`, the readline keys Claude's
   prompt and a shell both read. ⌥⌫ is xterm's own ESC DEL, already a word delete in both. Every xterm a renderer
   mounts (the tower page's session and shells, Tower 3D's desk and kiosks) takes
-  [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) as its key handler, the renderer's shortcuts first.
+  [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) as its key handler: each natural key is a
+  command of the keymap, so the config can rebind it, and any other command a terminal reaches goes to the renderer
+  first. [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) stays for renderers on the default keys.
+- `keymap.ts`: every command a renderer runs from the keyboard, as data ([`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS)),
+  matched against `board.keys` (the config's `keys` over the defaults), with the words for chords, the `?` sheet and
+  `aria-keyshortcuts` ([[keymap]]).
 
 The bridge's board imports `cards.ts` and `reviews.ts`, and so does the `tower` command; `drafts.ts`, `items.ts`, `panels.ts`,
-`brief.ts`, `icons.ts`, `settings.ts`, `tips.ts`, `markdown.ts` and `termkeys.ts` are served and imported only by renderers. A module here holds no renderer's state: each renderer keeps its
+`brief.ts`, `icons.ts`, `settings.ts`, `tips.ts`, `markdown.ts` and `termkeys.ts` are served and imported only by renderers; `keymap.ts` is also read by the config's check and the board. A module here holds no renderer's state: each renderer keeps its
 own and hands it in. `panels.ts` keeps only a cache of highlighted files, by their diff's hash.
 
 Their exports are part of the renderer API's contract ([[renderer-api-contract]]): a renderer kept apart from the

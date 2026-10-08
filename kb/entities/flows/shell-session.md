@@ -28,8 +28,8 @@ sequenceDiagram
 
 - A shell starts from a directory's shell button in a floor, or from the dock's `+`, which lists every place a shell
   can start ([`shellPlaces`](ref:hub/src/shared/cards.ts#shellPlaces)), the floor in view first.
-- Keys go through the shared [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys), as in every browser
-  terminal: the Mac editing keys (⌘⌫, ⌘←, Shift+Enter, …) become the readline keys a shell reads
+- Keys go through the shared [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap), as in every browser
+  terminal ([[keymap]]): ⌥Esc leaves the shell, and the Mac editing keys (⌘⌫, ⌘←, Shift+Enter, …) become the readline keys a shell reads
   ([[renderer-shared-modules]]).
 - Collapsing a tab only closes the stream; the shell keeps running.
 - Two viewers of one shell fight over its size: the last to fit wins.

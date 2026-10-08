@@ -7,7 +7,8 @@ import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } f
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
@@ -277,6 +278,7 @@ export function detailsHtml(board: Board, c: Card) {
 }
 
 const MOVE_TITLE: Record<Move, string> = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
+const MOVE_COMMAND: Record<Move, string> = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
 /** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
 export function movesHtml(board: Board, c: Card, heed: Heed) {
@@ -286,7 +288,7 @@ export function movesHtml(board: Board, c: Card, heed: Heed) {
   return dismiss + (['prev', 'next', 'waiting'] as const).map((m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
-    return `<button class="move ${m}" data-move="${m}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${esc(card.callsign)}</span></button>`
+    return `<button class="move ${m}" data-move="${m}" title="${MOVE_TITLE[m]}${keysLabel(board.keys, MOVE_COMMAND[m]) && ` (${keysLabel(board.keys, MOVE_COMMAND[m])})`}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ''}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${esc(card.callsign)}</span></button>`
   }).join('')
 }
 

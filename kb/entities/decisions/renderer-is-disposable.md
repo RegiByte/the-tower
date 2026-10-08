@@ -42,8 +42,8 @@ rebuilt, or lost, with the next.
   ([[changes-view]]).
 - Rules a next renderer would need in words live in [`src/shared/cards.ts`](ref:hub/src/shared/cards.ts),
   served as `/cards.js`: two copies of it had drifted (the next-waiting order, status words). The order a
-  renderer steps through workers in and the keys that step (`dutyOrder`, `neighbours`, `MOVE_KEYS`) live there
-  too, so the tower page and Tower 3D move alike; the icons both draw are `/icons.js`
+  renderer steps through workers in (`dutyOrder`, `neighbours`) lives there too, and the keys that step are
+  commands of the shared keymap (`/keymap.js`, [[keymap]]), so the tower page and Tower 3D move alike; the icons both draw are `/icons.js`
   ([`src/shared/icons.ts`](ref:hub/src/shared/icons.ts)), and the panels, the brief and the terminal keys are
   shared the same way ([[renderer-shared-modules]]).
 

@@ -238,7 +238,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
-| `/termkeys.js` | the editing keys every browser terminal sends |
+| `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
+| `/keymap.js` | every keyboard command as data with its default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults); chord labels, `aria-keyshortcuts` and the `?` sheet |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, safe in any element), `documentHtml` for a file in a frame without scripts, and `safeHref` |

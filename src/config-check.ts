@@ -9,6 +9,7 @@ import path from 'node:path'
 import { defaultRenderer, renderersOf } from './renderers.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
 import { callsignsOf, CONFIG_KEYS, ConfigError, configuredUser, editorArgv, projectCollections, PROJECT_KEYS, towerPort, type Config, type EditorAction, type Project, type Renderer } from './shared/model.ts'
+import { keysProblems } from './shared/keymap.ts'
 import { readConfig } from './system.ts'
 
 export type ConfigProblem = { level: 'fail' | 'warn'; key: string; problem: string }
@@ -138,6 +139,7 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...counts('brief', config.brief, ['pairs']),
     ...counts('retention', config.retention, ['days']),
     ...directories('plugins', config.plugins, 'absolute plugin directories'),
+    ...(config.keys === undefined ? [] : keysProblems(config.keys).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...projects.flatMap(([id, project]) => projectProblems(config, id, project, renderers)),
   ]
 }

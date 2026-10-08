@@ -166,7 +166,9 @@ body.collapsed .rail { display: flex; flex-direction: column; align-items: cente
 .rail .lamp { width: 11px; height: 11px; cursor: pointer; }
 .rail .lamp.sel { outline: 2px solid var(--ink); outline-offset: 3px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline; color: var(--muted); font-size: 13px; }
-.keys > span:nth-child(odd) { white-space: nowrap; color: var(--faint); font-size: 12px; }
+.keys.legend > span:nth-child(odd), .keys > .chords { white-space: nowrap; color: var(--faint); font-size: 12px; }
+.keys > h3 { grid-column: 1 / -1; margin: 10px 0 0; color: var(--ink); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.keys > h3:first-child { margin-top: 0; }
 dialog h2.legend-head { margin-top: 20px; }
 .keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
@@ -362,7 +364,7 @@ button.held { opacity: .45; cursor: not-allowed; }
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><span class="host" id="host"></span>
     <button class="head-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
-    <button class="help" data-keys aria-label="shortcuts" data-tip="shortcuts and what the statuses mean (?)">?</button><button class="side-toggle" data-side aria-label="hide the sidebar" data-tip="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
+    <button class="help" id="keys-open" data-keys aria-label="shortcuts">?</button><button class="side-toggle" id="side-hide" data-side aria-label="hide the sidebar">« <small></small></button></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
@@ -423,14 +425,15 @@ button.held { opacity: .45; cursor: not-allowed; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
 import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
-import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
+import { terminalKeymap } from '/termkeys.js'
+import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
 import { alertsSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
@@ -470,7 +473,7 @@ let boardError
 /** When the tower stopped answering, while it doesn't: the page's times stand still there, as its board does. */
 let lostAt
 const pageNow = () => lostAt ?? Date.now()
-let board = { user: { name: 'user' }, floors: [], waiting: [], rateLimits: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
+let board = { user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], rateLimits: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
 /** The web page of each project directory's origin remote. */
 let origins = {}
 let selected
@@ -778,7 +781,7 @@ function skylineHtml() {
   const working = cards().filter((c) => c.status === 'working').length
   const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
   return `<div class="stars"></div><div class="orb" id="orb"></div>
-    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting ? `press N or ${MOVE_KEYS.waiting.label} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
+    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting && board.keys['next-waiting'].length ? `press ${board.keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
       <div class="clock" id="clock"></div></div>
     <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
 }
@@ -842,6 +845,12 @@ function detailsHtml(c) {
 
 const MOVE_TITLE = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
 
+/** The keymap's command for each move (src/shared/keymap.ts). */
+const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
+
+/** What a control does with the chords of the command it shares, when it has any: `hide the sidebar (⌘B)`. */
+const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabel(board.keys, id)})` : what)
+
 /** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
 function movesHtml(c) {
   const to = neighbours(board, c.id, heed)
@@ -850,7 +859,7 @@ function movesHtml(c) {
   const move = (m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
-    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
+    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" title="${withKeys(MOVE_TITLE[m], MOVE_COMMAND[m])}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND[m])}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ""}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
   }
   const moves = dismiss + ['prev', 'next', 'waiting'].map(move).join('')
   return moves && `<span class="moves">${moves}</span>`
@@ -862,10 +871,20 @@ let paneChoice
 const paneOf = (c) =>
   (paneChoice?.startsWith('shown:') && !shownOn(c, paneChoice) ? undefined : paneChoice) ?? (can(c, 'drive') || !can(c, 'brief') ? 'screen' : 'brief')
 
-/** A pane's tab, as the ARIA tabs pattern has it: only the selected one is in the Tab order, arrows move along the row. */
 const PANE_PANEL = { screen: 'c-screen', brief: 'brief', changes: 'changes', reviews: 'reviews' }
+
+/** The keymap's command for each pane of the selected worker. */
+const PANE_COMMAND = { 'pane-terminal': 'screen', 'pane-brief': 'brief', 'pane-changes': 'changes', 'pane-reviews': 'reviews' }
+
+/** A pane tab's chords as `aria-keyshortcuts`, for the panes the keymap names. */
+const paneKeys = (pane) => {
+  const id = Object.keys(PANE_COMMAND).find((c) => PANE_COMMAND[c] === pane)
+  return id && board.keys[id].length ? ` aria-keyshortcuts="${keyshortcuts(board.keys, id)}"` : ''
+}
+
+/** A pane's tab, as the ARIA tabs pattern has it: only the selected one is in the Tab order, arrows move along the row. */
 const paneTabAttrs = (id, on) =>
-  `role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${id.startsWith('shown:') ? 'shown' : PANE_PANEL[id]}" data-pane="${esc(id)}"`
+  `role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${id.startsWith('shown:') ? 'shown' : PANE_PANEL[id]}"${paneKeys(id)} data-pane="${esc(id)}"`
 
 const paneTabsHtml = (c, pane) => {
   const shown = visibleShown(c)
@@ -1252,6 +1271,7 @@ function render() {
   const host = lostAt ? 'unknown' : hostState(board)
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
+  paintKeys()
   paintLimits()
   keepingFocus($('floors'), () => redrawHeld($('floors'), floorsTopDown().map(floorHtml).join('')))
   drawSideView()
@@ -1271,12 +1291,21 @@ function render() {
 
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
-  `<button class="side-toggle" data-side aria-label="show the sidebar" title="show the sidebar (⌘B)">»</button>
+  `<button class="side-toggle" data-side aria-label="show the sidebar" title="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">»</button>
   ${waiting ? `<span class="count ${loudest(waitsOnYou())}" title="waiting on you">${waiting}</span>` : ''}
   ${dutyOrder(board).map((c) => {
     const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
     return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" title="${title}"></a>`
   }).join('')}`
+
+/** The header's buttons name the chords of the commands they share, as the config binds them. */
+function paintKeys() {
+  $('keys-open').dataset.tip = withKeys('shortcuts and what the statuses mean', 'help')
+  $('keys-open').setAttribute('aria-keyshortcuts', keyshortcuts(board.keys, 'help'))
+  $('side-hide').dataset.tip = withKeys('hide the sidebar', 'sidebar')
+  $('side-hide').setAttribute('aria-keyshortcuts', keyshortcuts(board.keys, 'sidebar'))
+  $('side-hide').querySelector('small').textContent = keysLabel(board.keys, 'sidebar')
+}
 
 function toggleSide() {
   document.body.classList.toggle('collapsed')
@@ -1486,7 +1515,9 @@ const fitFont = (cols, rows) => {
   return Math.max(6, Math.min(DRIVE_FONT, Math.floor(Math.min((clientWidth - 4) / (cols * CELL_WIDTH), (clientHeight - 4) / (rows * CELL_HEIGHT)))))
 }
 
-function showMode(text = isOwner() ? `in control · ${term.cols}×${term.rows}` : 'watching · type to take control') {
+const leaveHint = () => (keysLabel(board.keys, 'leave-terminal') ? ` · ${keysLabel(board.keys, 'leave-terminal')} leaves` : '')
+
+function showMode(text = isOwner() ? `in control · ${term.cols}×${term.rows}` : `watching · type to take control${leaveHint()}`) {
   $('c-mode').className = isOwner() ? 'owner' : ''
   $('c-mode').textContent = text
 }
@@ -1524,8 +1555,8 @@ function openTerminal({ cols, rows, data, exited, terminals }) {
   term.loadAddon(fit)
   term.open($('c-screen'))
   term.write(data)
-  if (exited) return showMode('past session · read-only')
-  term.attachCustomKeyEventHandler(terminalKeys(shortcut, typed))
+  if (exited) return (term.attachCustomKeyEventHandler(terminalKeymap(() => board.keys, run, () => {})), showMode(`past session · read-only${leaveHint()}`))
+  term.attachCustomKeyEventHandler(terminalKeymap(() => board.keys, run, typed))
   term.onData(typed)
   if (terminals === 0) claim()
   else showMode()
@@ -1910,9 +1941,9 @@ $('draft-text').addEventListener('input', () => {
   draftHeadHtml()
 })
 $('draft-text').addEventListener('keydown', (e) => {
-  if (!e.metaKey && !e.ctrlKey) return
-  if (e.key === 's') (e.preventDefault(), saveNow())
-  if (e.key === 'Enter') (e.preventDefault(), sendDraft())
+  const id = commandOf(board.keys, e, 'field')
+  if (id === 'save-draft') (e.preventDefault(), saveNow())
+  if (id === 'submit') (e.preventDefault(), sendDraft())
 })
 
 /** The board shows the open draft as it is now: deleted elsewhere closes it, a change elsewhere replaces or conflicts. */
@@ -2129,7 +2160,7 @@ function mountShell({ data, cols, rows }) {
   term.open($('s-screen'))
   term.write(data)
   const typed = (d) => document.activeElement === term.textarea && sendShellKeys(id, d)
-  term.attachCustomKeyEventHandler(terminalKeys(shortcut, typed))
+  term.attachCustomKeyEventHandler(terminalKeymap(() => board.keys, run, typed))
   term.onData(typed)
   Object.assign(shell, { term, fit, size: { cols, rows } })
   fitShell()
@@ -2207,7 +2238,7 @@ $('spawn').addEventListener('click', (e) => {
   if (close) $('spawn').close(close)
 })
 $('spawn').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('spawn').querySelector('[data-close=start]').click()
+  if (commandOf(board.keys, e, 'field') === 'submit') $('spawn').querySelector('[data-close=start]').click()
 })
 
 $('spawn').addEventListener('close', async () => {
@@ -2420,10 +2451,10 @@ $('bar-line').addEventListener('keydown', (e) => {
 })
 
 $('screen').addEventListener('keydown', (e) => {
-  const submit = (e.metaKey || e.ctrlKey) && e.key === 'Enter'
-  if (e.target.matches('[data-note-text]') && submit) return (e.preventDefault(), addWritten())
-  if (e.target.matches('[data-pick-text]') && submit) return (e.preventDefault(), addPicked())
-  if (e.target.matches('[data-pick-text]') && e.key === 'Escape') return (e.preventDefault(), dropPick(), drawChanges())
+  const id = commandOf(board.keys, e, 'field')
+  if (e.target.matches('[data-note-text]') && id === 'submit') return (e.preventDefault(), addWritten())
+  if (e.target.matches('[data-pick-text]') && id === 'submit') return (e.preventDefault(), addPicked())
+  if (e.target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
 })
 
 /**
@@ -2446,43 +2477,53 @@ tower.onScheme(applyScheme)
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open
 
-/** Every shortcut of this page in one place, the move keys as the header names them. */
-const KEYS = [
-  [`<kbd>${MOVE_KEYS.prev.label}</kbd> <kbd>${MOVE_KEYS.next.label}</kbd>`, "previous or next worker on duty, in the sidebar's order: the top floor first, each floor's crews in order. Works in a terminal too"],
-  [`<kbd>${MOVE_KEYS.waiting.label}</kbd> · <kbd>N</kbd>`, 'next worker waiting on you: a question first, then whoever has waited longest. N outside a terminal or a field'],
-  ['<kbd>⌘B</kbd>', 'hide or show the sidebar'],
-  ['<kbd>Esc</kbd>', 'back to the skyline, outside a terminal or a field'],
-  ['<kbd>?</kbd>', 'this sheet, outside a terminal or a field'],
-  ...NATURAL_KEYS.map((k) => [`<kbd>${k.label}</kbd>`, k.does]),
-  ['<kbd>⌘S</kbd>', 'save the open draft'],
-  ['<kbd>⌘⏎</kbd>', 'start a session: from the open draft, or in the new session dialog'],
-]
-
 function showKeys() {
-  $('keys-list').innerHTML = KEYS.map(([keys, what]) => `<span>${keys}</span><span>${what}</span>`).join('')
+  $('keys-list').innerHTML = keymapSheetHtml(board.keys)
   $('keys-legend').innerHTML = statusLegendHtml()
   $('keys').showModal()
   $('keys').scrollTop = 0
 }
 
-/** Keys that work everywhere, the terminal included. Returns whether `e` was one. */
-function shortcut(e) {
-  if (e.type !== 'keydown') return false
-  const plain = !e.metaKey && !e.ctrlKey && !e.altKey
-  const move = moveOfKey(e)
-  if (move) e.repeat || go(move)
-  else if (e.metaKey && e.key === 'b') toggleSide()
-  else if (plain && e.key === 'n' && !isTyping()) go('waiting')
-  else if (plain && e.key === '?' && !isTyping()) showKeys()
-  else if (plain && e.key === 'Escape' && (selected || shelfOpen || draftOpen || archiveOpen) && !isTyping()) goHome()
-  else return false
-  e.preventDefault()
+/** The control focus was on before it went into a terminal, where leaving the terminal brings it back. */
+let beforeTerminal
+document.addEventListener('focusin', (e) => {
+  if (!e.target.closest('.xterm')) beforeTerminal = e.target
+})
+
+/** Focus leaves the terminal for the control it came from, the selected pane's tab, or the page itself. */
+function leaveTerminal() {
+  const tab = $('bar-line').querySelector('[role=tab][aria-selected=true]')
+  const to = [beforeTerminal, tab].find((el) => el?.isConnected && el.checkVisibility() && !el.closest('[inert]'))
+  if (to) to.focus()
+  else document.activeElement.blur()
+}
+
+/** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
+function toPane(pane) {
+  if (!selected || !$('bar-line').querySelector(`[data-pane=${pane}]`)) return false
+  showPane(pane)
+  if (pane === 'screen') term?.focus()
+  else $('bar-line').querySelector(`[data-pane=${pane}]`).focus()
   return true
 }
 
-/** The terminal's own key handler already ran `shortcut` on keys typed into it. */
+/** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. */
+function run(id, e) {
+  if (PANE_COMMAND[id]) return toPane(PANE_COMMAND[id])
+  const move = Object.keys(MOVE_COMMAND).find((m) => MOVE_COMMAND[m] === id)
+  if (move) return (e.repeat || go(move), true)
+  if (id === 'sidebar') return (toggleSide(), true)
+  if (id === 'help') return (showKeys(), true)
+  if (id === 'leave-terminal') return (leaveTerminal(), true)
+  if (id === 'home' && (selected || shelfOpen || draftOpen || archiveOpen)) return (goHome(), true)
+  return false
+}
+
+/** A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. */
 document.addEventListener('keydown', (e) => {
-  if (!e.defaultPrevented) shortcut(e)
+  if (e.defaultPrevented) return
+  const id = commandOf(board.keys, e, isTyping() ? 'field' : 'page')
+  if (id && run(id, e)) e.preventDefault()
 })
 
 /** xterm measures its cells when it opens: the terminal face must be loaded by then. */

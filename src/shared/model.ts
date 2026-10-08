@@ -1,4 +1,5 @@
 import { CALLSIGN_NAME, CALLSIGNS, callsigns } from './callsign.ts'
+import { keymapOf, keysProblems, type Keys } from './keymap.ts'
 
 /** A unit of work spanning one or more repositories. Sessions start in `hub`; `repos` are granted file access only (`additionalDirectories`). */
 export type Project = {
@@ -190,6 +191,14 @@ export const editorArgv = (config: Config, action: EditorAction, values: Record<
   )
 }
 
+/** Every command's chords, the config's `keys` over the keymap's defaults. Keys that can't be bound so are a config error. */
+export const configuredKeys = (config: Config): Keys => {
+  const overrides = config.keys ?? {}
+  const failed = keysProblems(overrides).find((p) => p.level === 'fail')
+  if (failed) throw new ConfigError(`keys${failed.at} in the config: ${failed.problem}`)
+  return keymapOf(overrides)
+}
+
 /** The names workers are called by: the config's `callsigns`, or `CALLSIGNS` when it names none. A list that can't name workers is a config error. */
 export const configuredCallsigns = (config: Config): readonly string[] => {
   const names = config.callsigns ?? CALLSIGNS
@@ -253,6 +262,8 @@ export type Config = {
   renderers?: Record<string, RendererConfig>
   /** The renderer `/` opens, `page` unless set. */
   renderer?: string
+  /** Chords that replace the keymap's defaults, by command id (`src/shared/keymap.ts`); null unbinds a command. */
+  keys?: Record<string, string | string[] | null>
 }
 
 /** Every key of `T`, from a list the typecheck holds to it: a key of `T` missing from the list, or one `T` lacks, fails it. */
@@ -262,7 +273,7 @@ const keysOf =
     keys as readonly string[]
 
 /** The keys the tower reads at the config's top level. */
-export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port'])
+export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'keys'])
 
 /** The keys the tower reads in a project. */
 export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins'])

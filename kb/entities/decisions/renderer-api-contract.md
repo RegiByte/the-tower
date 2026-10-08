@@ -73,7 +73,7 @@ what went wrong.
 
 - **The served modules are part of the contract** (2026-10-08). They are how the core hands its capabilities to
   renderers: [`MODULES`](ref:hub/src/tower/served.ts#MODULES) (`/cards.js`, `/panels.js`, `/drafts.js`, `/icons.js`,
-  `/design.js`, `/reviews.js`, `/brief.js`, `/termkeys.js`, `/settings.js`, `/tips.js`, `/markdown.js`), `/design.css` (its custom properties and classes) and
+  `/design.js`, `/reviews.js`, `/brief.js`, `/termkeys.js`, `/keymap.js`, `/settings.js`, `/tips.js`, `/markdown.js`), `/design.css` (its custom properties and classes) and
   `/tower.js` (the members of `window.tower`). A renderer copied out of the checkout imports them by URL, so they are
   versioned with the API: removing or renaming a name is a major, with a CHANGELOG line saying what to use instead;
   adding one is a minor. A name on its way out stays, marked `@deprecated` with what replaces it, until a major. Changes are announced, not frozen; the core makes a best effort to avoid majors. The

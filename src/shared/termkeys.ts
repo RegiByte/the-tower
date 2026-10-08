@@ -5,20 +5,24 @@
  * tower serves this module as `/termkeys.js`.
  */
 
+import { chordLabel, commandOf, COMMANDS, type Keys } from './keymap.ts'
+
 /** The parts of a keydown a natural key depends on. */
 export type TermKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>
 
 type Chord = 'Shift' | 'Ctrl' | 'Meta'
 
-/** Each natural key: the key and the only modifier held, the bytes it sends, and how renderers name it. */
-export const NATURAL_KEYS: { key: string; chord: Chord; bytes: string; label: string; does: string }[] = [
-  { key: 'Enter', chord: 'Shift', bytes: '\n', label: '⇧⏎', does: "a new line in a worker's prompt (Enter in a shell)" },
-  { key: 'Backspace', chord: 'Ctrl', bytes: '\x17', label: '⌃⌫', does: 'delete the word before the cursor, as ⌥⌫ does' },
-  { key: 'Backspace', chord: 'Meta', bytes: '\x15', label: '⌘⌫', does: 'delete to the start of the line' },
-  { key: 'Delete', chord: 'Meta', bytes: '\x0b', label: '⌘⌦', does: 'delete to the end of the line' },
-  { key: 'ArrowLeft', chord: 'Meta', bytes: '\x01', label: '⌘←', does: 'go to the start of the line' },
-  { key: 'ArrowRight', chord: 'Meta', bytes: '\x05', label: '⌘→', does: 'go to the end of the line' },
-]
+/** The bytes each natural key's command (`/keymap.js`) sends. */
+const BYTES: Record<string, string> = {
+  newline: '\n', 'delete-word': '\x17', 'delete-to-start': '\x15', 'delete-to-end': '\x0b', 'line-start': '\x01', 'line-end': '\x05',
+}
+
+/** Each natural key at its default chord: its command, the key and the only modifier held, the bytes it sends, and how renderers name it. */
+export const NATURAL_KEYS: { id: string; key: string; chord: Chord; bytes: string; label: string; does: string }[] = Object.entries(BYTES).map(([id, bytes]) => {
+  const command = COMMANDS.find((c) => c.id === id)!
+  const [chord, key] = command.chords[0].split('+') as [Chord, string]
+  return { id, key, chord, bytes, label: chordLabel(command.chords[0]), does: command.does }
+})
 
 const chordOf = (e: TermKey): string =>
   [e.shiftKey && 'Shift', e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.metaKey && 'Meta'].filter(Boolean).join('+')
@@ -30,8 +34,27 @@ export const naturalKey = (e: TermKey): string | undefined => {
 }
 
 /**
- * A terminal's key handler (xterm's `attachCustomKeyEventHandler`): the renderer's `shortcut` first, then the natural
- * keys, sent through `send` on keydown and kept from xterm and the browser; every other key goes to xterm.
+ * A terminal's key handler (xterm's `attachCustomKeyEventHandler`) driven by the keymap: a key that runs a command with
+ * focus in a terminal (`commandOf`, over the `keys` the board holds now) runs it on keydown and is kept from xterm and
+ * the browser. A natural key's command sends its bytes through `send`; any other goes to `run`, which returns whether
+ * it did something, and the key goes on to xterm when it did not. Every other key goes to xterm.
+ */
+export const terminalKeymap =
+  (keys: () => Keys, run: (id: string, e: KeyboardEvent) => boolean, send: (bytes: string) => void) =>
+  (e: KeyboardEvent): boolean => {
+    const id = commandOf(keys(), e, 'terminal')
+    if (!id) return true
+    if (e.type !== 'keydown') return false
+    if (Object.hasOwn(BYTES, id)) send(BYTES[id])
+    else if (!run(id, e)) return true
+    e.preventDefault()
+    return false
+  }
+
+/**
+ * A terminal's key handler at the default natural keys (xterm's `attachCustomKeyEventHandler`): the renderer's
+ * `shortcut` first, then the natural keys, sent through `send` on keydown and kept from xterm and the browser; every
+ * other key goes to xterm. `terminalKeymap` follows the config's keys.
  */
 export const terminalKeys =
   (shortcut: (e: KeyboardEvent) => boolean, send: (bytes: string) => void) =>

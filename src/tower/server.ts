@@ -33,6 +33,7 @@
  *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
  *   GET  /reviews.js    the review threads' format (src/shared/reviews.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
+ *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?} | /resume {id, conversation} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project

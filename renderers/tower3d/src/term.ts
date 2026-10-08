@@ -1,7 +1,8 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { terminalTheme, type } from '../../../src/shared/design.ts'
-import { terminalKeys } from '../../../src/shared/termkeys.ts'
+import { terminalKeymap } from '../../../src/shared/termkeys.ts'
+import type { Keys } from '../../../src/shared/keymap.ts'
 import { tower, type StreamMsg } from './api.ts'
 import { watchStream } from './fixtures.ts'
 
@@ -25,8 +26,10 @@ type Target = {
   onEnd: (msg: StreamMsg) => void
   onMode: (text: string, owner: boolean) => void
   onError: (err: Error) => void
-  /** A key the renderer answers from inside the terminal too: true keeps it from the PTY. */
-  shortcut: (e: KeyboardEvent) => boolean
+  /** The board's keys now (`board.keys`). */
+  keys: () => Keys
+  /** Runs a keymap command from inside the terminal: true keeps its key from the PTY. */
+  run: (id: string, e: KeyboardEvent) => boolean
 }
 
 type Mounted = { term?: Terminal; fit?: FitAddon; claimed?: { cols: number; rows: number }; claim?: () => void; unwatch: () => void }
@@ -82,8 +85,8 @@ export function mountTerm(host: HTMLElement, t: Target) {
       term.loadAddon(state.fit)
       term.open(host)
       term.write(msg.data)
-      if ('exited' in msg && msg.exited) return t.onMode('past session · read-only', false)
-      term.attachCustomKeyEventHandler(terminalKeys(t.shortcut, typed))
+      if ('exited' in msg && msg.exited) return (term.attachCustomKeyEventHandler(terminalKeymap(t.keys, t.run, () => {})), t.onMode('past session · read-only', false))
+      term.attachCustomKeyEventHandler(terminalKeymap(t.keys, t.run, typed))
       term.onData(typed)
       if ('terminals' in msg && msg.terminals > 0) showMode()
       else claim()

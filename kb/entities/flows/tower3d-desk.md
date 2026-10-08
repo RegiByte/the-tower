@@ -6,7 +6,7 @@
   "in": "web-tower",
   "reviewed": "2026-10-08",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/tower/tower.js#keySender", "hub/renderers/page/index.html#pageRequests", "hub/src/tower/server.ts#muxWatch", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#terminalStream", "hub/src/tower/server.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/renderers/page/index.html#pageRequests", "hub/src/tower/server.ts#muxWatch", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#terminalStream", "hub/src/tower/server.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
 }
 ---
 ```mermaid
@@ -71,7 +71,8 @@ sequenceDiagram
 - **Keys in order.** [`keySender`](ref:hub/src/tower/tower.js#keySender) sends each chunk xterm produces as its
   own `keys` request, the next only after the last answered: Claude reads text and Enter in one write as a paste.
   The Mac editing keys (Shift+Enter a newline, ⌘⌫, ⌘←, …) are sent as readline keys by
-  [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) ([[renderer-shared-modules]]). The host logs `i` before writing to the PTY
+  [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) ([[renderer-shared-modules]]), at the chords
+  `board.keys` binds; the moves and ⌥Esc, which leaves the terminal, run from inside it too ([[keymap]]). The host logs `i` before writing to the PTY
   ([`handle`](ref:hub/src/host/main.ts#handle)).
 - **The panel's tabs.** Logbook (its sessions over the lineage brief, [[logbook]]), Changes (the worker's diff:
   [[changes-view]]), Reviews on a floor keeping threads ([[review-threads]]) and each thing the worker showed lie

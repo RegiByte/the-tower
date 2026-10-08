@@ -51,6 +51,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `brief.pairs` | How many of a conversation's last turns a worker's brief shows, each a prompt with Claude's latest answer to it. A project's own wins. | 2 |
 | `port` | The loopback port the tower serves on, `http://127.0.0.1:<port>`: the user's page and the API. A whole number from 1 to 65535. The tower reads it when it starts: after a change, `tower down`, then `tower up`. | 4317 |
 | `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place). | never |
+| `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
 
 ## Projects
 
@@ -110,3 +111,53 @@ A guard against a chain of hires running away by accident; `tower review` is nev
 |---|---|---|
 | `hiring.depth` | How many hires deep a hired worker may stand; a worker started any other way stands at 0. | 2 |
 | `hiring.live` | How many of one worker's hires may run at once. | 3 |
+
+## Keys
+
+The keys every renderer answers are commands with default chords, kept in `src/shared/keymap.ts` and listed on the
+`?` sheet. `keys` replaces a command's chords by its id: a chord, a list of chords, or `null` to unbind it. Commands
+it doesn't name keep their defaults. Renderers follow a change as soon as it is saved.
+
+```json
+"keys": {
+  "next-waiting": ["Alt+J", "Alt+K"],
+  "sidebar": "Ctrl+B",
+  "help": null
+}
+```
+
+A chord is any of the modifiers `Alt` (⌥), `Ctrl` (⌃), `Meta` (⌘) and `Shift`, each once, joined by `+`, then one key:
+
+- a letter or digit, `J` or `1`: the key itself, whatever ⌥ makes it type on a Mac;
+- a `KeyboardEvent.code`: `ArrowUp`, `Escape`, `Enter`, `Tab`, `Space`, `Backspace`, `Delete`, `Home`, `End`,
+  `PageUp`, `PageDown`, `Slash`, `Comma`, `Period`, `F1`…`F12`, and the other punctuation keys by name;
+- any other single character, `?`: matched by the character typed, Shift ignored. It can't take `Alt`, which changes
+  the character on a Mac: name the key, `Alt+Slash`.
+
+Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is its command's scope:
+
+| Scope | Fires |
+|---|---|
+| global | anywhere, but a chord without `Alt`, `Ctrl` or `Meta` only outside a terminal or a text field, where it would type |
+| terminal | with focus in a terminal |
+| field | in a text field: the open draft, a note box, the new session dialog |
+
+| Command | Scope | Default |
+|---|---|---|
+| `prev-worker`, `next-worker` | global | `Alt+ArrowUp`, `Alt+ArrowDown` |
+| `next-waiting` | global | `Alt+J`, `N` |
+| `home` (back to the skyline) | global | `Escape` |
+| `sidebar` | global | `Meta+B` |
+| `help` (the `?` sheet) | global | `?` |
+| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Alt+1` … `Alt+4` |
+| `leave-terminal` | terminal | `Alt+Escape` |
+| `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight` |
+| `save-draft` | field | `Meta+S`, `Ctrl+S` |
+| `submit` | field | `Meta+Enter`, `Ctrl+Enter` |
+| `cancel-pick` (drop the lines picked for a note) | field | `Escape` |
+
+`tower config check` fails a value that is no chord, at `keys.<id>` or `keys.<id>[n]`, and a chord bound to two
+commands that can fire in the same place (a global chord with a modifier reaches terminals and fields too), at the
+override, naming the other command: rebind that one too, or set it to `null`. An id no command has is a warning, and
+ignored. A global chord with a modifier is kept from the terminal: `Ctrl` chords there are Claude's and the shell's
+own keys, and the browser keeps some `Meta` chords (⌘W, ⌘T, ⌘Q) for itself.
