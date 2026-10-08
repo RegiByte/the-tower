@@ -9,6 +9,7 @@
   "reviewed": "2026-10-08",
   "refs": [
     "hub/src/host/main.ts#appendFact",
+    "hub/src/shared/log-file.ts#endsLine",
     "hub/src/shared/protocol.ts#ToHost",
     "hub/src/shared/protocol.ts#HOST_PROTOCOL",
     "hub/src/bridge/facts.ts#LET_GO",
@@ -40,8 +41,11 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   format is unchanged. Old logs don't have it, and a bridge that predates it skips it as an unknown hook.
 - The host takes a control message `fact {id, fact}`, for `tower.*` facts only
   ([`appendFact`](ref:hub/src/host/main.ts#appendFact)). For a running session it is appended like a hook. Any other
-  session's plain log gets it with `appendFileSync`, at seconds since the header's `startedAt`, unless the log is
-  archived, unknown, or still flushing its exit. A stranded id never runs again (a resume is a new session), so
+  session's plain log gets it with `appendFileSync`, at seconds since the header's `startedAt` (the first line, read
+  by [`firstLine`](ref:hub/src/shared/log-file.ts#firstLine), shared with the bridge's reader and importing no
+  bridge code), on a line of its own even when a host that died left the last line unfinished
+  ([`endsLine`](ref:hub/src/shared/log-file.ts#endsLine)). It refuses a log that is archived, unknown, or still
+  flushing its exit. A stranded id never runs again (a resume is a new session), so
   nothing else writes that file. `HOST_PROTOCOL` is 2, and `POST /let-go` refuses with `unavailable` and the
   restart to do while the running host is older.
 - The bridge folds it as `letGoAt` without counting it as Claude heard from. The card carries `letGoAt`, is off duty

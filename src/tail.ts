@@ -2,6 +2,7 @@ import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, wat
 import { constants, gunzipSync } from 'node:zlib'
 import { nextState, readsOutput, type SessionState } from './bridge/status.ts'
 import type { LogEvent, SessionHeader, SessionLog } from './shared/model.ts'
+import { firstLine } from './shared/log-file.ts'
 import { sessionLogPath, type SystemPaths } from './shared/paths.ts'
 
 const READ_CHUNK = 64 * 1024
@@ -151,23 +152,8 @@ const readFrom = (logPath: string, offset: number): Buffer => {
 /** The log's header and the byte offset where its events start; `undefined` while the host hasn't written a whole line. */
 export const readHeader = (logPath: string): { header: SessionHeader; offset: number } | undefined => {
   if (isArchived(logPath)) return archivedHeader(logPath)
-  const fd = openSync(logPath, 'r')
-  try {
-    const chunks: Buffer[] = []
-    const buf = Buffer.alloc(READ_CHUNK)
-    for (let position = 0, n = readSync(fd, buf, 0, READ_CHUNK, 0); n > 0; n = readSync(fd, buf, 0, READ_CHUNK, position)) {
-      const end = buf.subarray(0, n).indexOf(0x0a)
-      chunks.push(Buffer.from(buf.subarray(0, end === -1 ? n : end)))
-      position += n
-      if (end !== -1) {
-        const line = Buffer.concat(chunks)
-        return { header: JSON.parse(line.toString('utf8')), offset: line.length + 1 }
-      }
-    }
-    return undefined
-  } finally {
-    closeSync(fd)
-  }
+  const line = firstLine(logPath)
+  return line && { header: JSON.parse(line.toString('utf8')), offset: line.length + 1 }
 }
 
 /** Inflates the archive's first bytes, twice as many each time, until they hold the header's whole line. */
