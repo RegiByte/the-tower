@@ -37,7 +37,7 @@ import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
-import { resumeName } from './bridge/chains.ts'
+import { heldBy, resumeName, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import type { Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
@@ -160,8 +160,10 @@ const main = async (): Promise<void> => {
       if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
       const sessions = readSessions()
       const source = sessions.find((s) => s.header.id === id)!
-      const heir = newSessionId()
       const config = readConfigFile()
+      const holder = heldBy(conversation.id, sessions, await liveIds(paths))
+      if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation.id}": attach to it`)
+      const heir = newSessionId()
       const project = config.projects[log.header.project]
       const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
       print(await request(resumeRequest(log.header, conversation.id, heir, resumeName(source, conversation.id, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project))))

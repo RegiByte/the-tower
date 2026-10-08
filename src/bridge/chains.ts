@@ -41,6 +41,19 @@ export const continuations = (sessions: Session[]): Map<Session, Session> =>
     return before ? [[s, before] as const] : []
   }))
 
+const argOf = (argv: string[], flag: string) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined)
+
+/** The conversation a session is in: its latest, or, before Claude reports one, the one its argv resumes. */
+const inConversation = (session: Session): string | undefined =>
+  session.facts.conversations.at(-1)?.id ?? argOf(session.header.argv, '--resume')
+
+/** The name the session's Claude runs under (`resumeName`), from its first moment. */
+export const runsAs = (session: Session): string | undefined => argOf(session.header.argv, '--name')
+
+/** The running session already in `conversation`: a second Claude resuming it would write the same transcript. */
+export const heldBy = (conversation: string, sessions: Session[], running: Set<string>): Session | undefined =>
+  sessions.find((s) => running.has(s.header.id) && inConversation(s) === conversation)
+
 /** The sessions one worker ran as, oldest first, ending with this one. */
 export const lineage = (session: Session, before: (s: Session) => Session | undefined): Session[] => {
   const earlier = before(session)

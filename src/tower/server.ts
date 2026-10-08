@@ -55,7 +55,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import { resumeName } from '../bridge/chains.ts'
+import { heldBy, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
@@ -91,6 +91,8 @@ import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
 
 const PUBLISH_DEBOUNCE_MS = 150
+/** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
+const TRACK_TIMEOUT_MS = 5000
 /** Time alone moves the board: a worker goes quiet long enough to look stuck. */
 const CLOCK_PUBLISH_MS = 60_000
 
@@ -566,13 +568,27 @@ const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
   return gone ? apiError('lost', `The worktree ${gone} is gone: recut "${name}" from its floor, then try again`) : undefined
 }
 
-/** A resume continues one of the conversations Claude saved in the source session, in the directory it ran in. */
-const resume = (id: string, conversation: string) =>
+/**
+ * A resume continues one of the conversations Claude saved in the source session, in the directory it ran in, unless a
+ * running session is already in it. Resumes run one at a time, each until the system holds the session it started, so
+ * the next one reads it.
+ */
+let resuming: Promise<unknown> = Promise.resolve()
+const resume = (id: string, conversation: string): Promise<Answer> => {
+  const run = resuming.then(() => resumeOnce(id, conversation))
+  resuming = run.catch(() => undefined)
+  return run
+}
+
+const resumeOnce = (id: string, conversation: string) =>
   withSession(id, async () => {
     const source = system.session(id)!
     const held = source.facts.conversations.find((c) => c.id === conversation)
     if (!held) return apiError('not_found', `Session "${id}" holds no conversation "${conversation}"`)
     if (!held.saved) return apiError('refused', `Claude hasn't saved conversation "${conversation}" yet`)
+    await system.refreshLive()
+    const holder = heldBy(conversation, system.sessions(), system.live()?.ids ?? new Set())
+    if (holder) return apiError('refused', `${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": go to it`)
     const config = readConfig()
     const project = config.projects[source.header.project]
     if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
@@ -580,7 +596,9 @@ const resume = (id: string, conversation: string) =>
     if (lost) return lost
     const heir = newSessionId()
     const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
-    return host(resumeRequest(source.header, conversation, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
+    const answer = await host(resumeRequest(source.header, conversation, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
+    if (answer.t === 'spawned') await system.tracked(heir, TRACK_TIMEOUT_MS)
+    return answer
   })
 
 const withProject = (projectId: string, act: (project: Project, config: Config) => Answer | Promise<Answer>) => {

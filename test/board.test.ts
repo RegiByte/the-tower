@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
 import { board, unresumableAt } from '../src/bridge/board.ts'
-import { resumeName } from '../src/bridge/chains.ts'
+import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf } from '../src/shared/cards.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
@@ -104,6 +104,16 @@ test('a resumed session links to the session whose conversation it continues', (
   assert.equal(resumedConversation.resumedBy, undefined)
   assert.equal(resumedCard.model, 'claude-haiku-4-5-20251001')
   assert.equal(resumedCard.effort, undefined)
+})
+
+test('a conversation is held by the running session in it, from the moment its resume starts', () => {
+  const [source, resumed] = [fixture('resume-source'), fixture('resumed')]
+  const conversation = factsOf(source).conversations[0].id
+  const sessionsOf = (logs: SessionLog[]) => logs.map((log) => ({ header: log.header, facts: factsOf(log) }))
+  const id = resumed.header.id
+  assert.equal(heldBy(conversation, sessionsOf([source, resumed]), new Set([id]))?.header.id, id)
+  assert.equal(heldBy(conversation, sessionsOf([source, { ...resumed, events: [] }]), new Set([id]))?.header.id, id, 'before Claude reports it, by its --resume')
+  assert.equal(heldBy(conversation, sessionsOf([source, resumed]), new Set()), undefined, 'nobody runs it')
 })
 
 test('a done session waits on you until someone types to it; moving the mouse over it is not typing', () => {

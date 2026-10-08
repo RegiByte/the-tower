@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-08",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
 }
 ---
 ```mermaid
@@ -20,7 +20,7 @@ sequenceDiagram
   O->>T: GET /conversations/<id>
   T->>F: briefOf(session): every saved conversation of its worker's sessions, latest prompt and answer, last turns
   O->>T: resume {id, conversation}
-  T->>T: refuse unless the session saved that conversation, and as lost if its worktree is gone
+  T->>T: refuse unless the session saved that conversation and no running session is in it, and as lost if its worktree is gone
   T->>H: spawn {new id, same project, same cwd, args: --name <worker's callsign> --resume <conversation>}
   H->>C: new PTY
   H->>R: new sessions/<id>.jsonl
@@ -31,6 +31,13 @@ sequenceDiagram
 
 - **A session is a worker; a conversation is Claude's.** A session holds one or more [[conversation]]s, a
   new one after each `/clear`. Only a saved one (it got a prompt, or was itself resumed) can be resumed.
+- **One Claude per conversation.** A resume is refused while a running session is already in the conversation
+  ([`heldBy`](ref:hub/src/bridge/chains.ts#heldBy)): its latest conversation, or, before Claude reports one, the one
+  its header's argv resumes, so a resume holds its conversation from the moment the host starts it. The refusal names
+  the holder by the name its Claude runs under ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)). The tower runs
+  resumes one at a time ([`resume`](ref:hub/src/tower/server.ts#resume)), each until the system holds the session it
+  started, so two requests at once start one session; `tower resume` refuses the same way. Resuming a conversation
+  a running session has left (by `/clear`) still forks.
 - **Same directory.** Claude files conversations by directory, so the resume runs in the source's `cwd`
   under the same project ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)). In a [[worktree]] the
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read

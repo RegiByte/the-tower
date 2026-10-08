@@ -97,6 +97,8 @@ export type System = {
   repos: () => Map<string, RepoRead>
   /** Ask the host again now, after a request that changed what it runs. */
   refreshLive: () => Promise<void>
+  /** Resolves once the system holds the session the host just started, or after `ms`. */
+  tracked: (id: string, ms: number) => Promise<void>
   /** Look at the machine's processes again now, after ending some. */
   refreshRunning: () => Promise<void>
   /** Ask the terms daemon again now, after a request that changed its shells. */
@@ -126,6 +128,7 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   let peers: Peer[] = []
   let shells: Shell[] | undefined
   let repos = new Map<string, RepoRead>()
+  const awaited = new Map<string, () => void>()
 
   /**
    * Folds the log so far, from its checkpoint on, then keeps folding what the host appends while the session runs. A
@@ -140,6 +143,7 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     const measure = () => logs.set(id, { archived: isArchived(logPath), bytes: statSync(logPath).size })
     sessions.set(id, session)
     measure()
+    awaited.get(id)?.()
     if (session.facts.state.status === 'exited' || isArchived(logPath)) return
     const step = factsAfter(session.header.startedAt)
     const stop = tailLog(logPath, offset, factEvents(session.facts.state), (event) => {
@@ -281,6 +285,14 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     shells: () => shells,
     repos: () => repos,
     refreshLive,
+    tracked: (id, ms) =>
+      sessions.has(id)
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            const done = () => (awaited.delete(id), clearTimeout(timer), resolve())
+            const timer = setTimeout(done, ms)
+            awaited.set(id, done)
+          }),
     refreshRunning,
     refreshShells,
     refreshRepos,
