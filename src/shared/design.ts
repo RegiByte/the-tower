@@ -168,10 +168,13 @@ export const type = {
 
 export const shape = { radius: '4px' }
 
+/** Overpass draws `·` with almost no advance, so it eats the space after it: the next face in the stack draws it. */
+const OVERPASS_RANGE = 'U+0000-00B6, U+00B8-10FFFF'
+
 /** Latin subsets of the @fontsource packages, served at `/fonts/<file>`. All three faces are SIL OFL. */
-export const fonts = [
-  { family: 'Overpass', weight: 800, pkg: 'overpass', file: 'overpass-latin-800-normal.woff2' },
-  { family: 'Overpass', weight: 900, pkg: 'overpass', file: 'overpass-latin-900-normal.woff2' },
+export const fonts: { family: string; weight: number; pkg: string; file: string; range?: string }[] = [
+  { family: 'Overpass', weight: 800, pkg: 'overpass', file: 'overpass-latin-800-normal.woff2', range: OVERPASS_RANGE },
+  { family: 'Overpass', weight: 900, pkg: 'overpass', file: 'overpass-latin-900-normal.woff2', range: OVERPASS_RANGE },
   { family: 'Atkinson Hyperlegible', weight: 400, pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-400-normal.woff2' },
   { family: 'Atkinson Hyperlegible', weight: 700, pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-700-normal.woff2' },
   { family: 'JetBrains Mono', weight: 400, pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-400-normal.woff2' },
@@ -362,8 +365,8 @@ const COMPONENTS = `
  */
 export function designCss(): string {
   const faces = fonts.map(
-    ({ family, weight, file }) =>
-      `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: normal; font-display: block; src: url(fonts/${file}) format('woff2'); }`,
+    ({ family, weight, file, range }) =>
+      `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: normal; font-display: block; src: url(fonts/${file}) format('woff2');${range ? ` unicode-range: ${range};` : ''} }`,
   )
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
   const shared = { ...type, ...shape, termFg: ANSI.foreground, ...mixes }

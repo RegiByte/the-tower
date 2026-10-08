@@ -8,7 +8,7 @@
 import type { CardShown, LineageSession } from '../bridge/board.ts'
 import type { SessionRef } from '../bridge/chains.ts'
 import type { Brief, BriefSession } from '../bridge/turns.ts'
-import { esc } from './cards.ts'
+import { esc, plural } from './cards.ts'
 
 /** One session's part of a brief: its place in the worker's lineage (`n` of `of`, from 1) and its conversations, in order. */
 export type BriefPart = { session: BriefSession; n: number; of: number; threads: Brief[] }
@@ -66,8 +66,6 @@ const conversationsHtml = (part: BriefPart, parts: BriefPart[], said: BriefView[
   part.threads.map((t, i) => `<section class="brief-conv">
     <h4>conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}</h4>
     ${turnsHtml(t, said, promptBy(t.id))}</section>`).reverse().join('')
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function briefHtml({ briefs, said, promptBy, open }: BriefView) {
   const parts = briefParts(briefs)

@@ -43,7 +43,7 @@ import type { RepoChanges } from '../changes.ts'
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import type { Call } from './api.ts'
-import { esc } from './cards.ts'
+import { esc, noun, plural } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightLines } from './highlight.ts'
@@ -277,7 +277,7 @@ function fileHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
 
 function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   if (f.binary) return '<p class="none">binary file</p>'
-  if (!f.hunks) return `<p class="none">${f.added + f.removed} lines changed: too many to show</p>`
+  if (!f.hunks) return `<p class="none">${plural(f.added + f.removed, 'line')} changed: too many to show</p>`
   if (!f.hunks.length) return `<p class="none">${f.change === 'renamed' ? 'renamed, same content' : 'mode changed'}</p>`
   const key = fileKey(repo, f)
   const range = v.pick?.key === key ? pickRange(v.pick) : undefined
@@ -336,7 +336,7 @@ export function reviewsHtml(v: ThreadView) {
   const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
   return `<div class="reviews-panel"><div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<span class="tag" data-copy="${esc(v.tag)}" title="copy its tag">${esc(v.tag)}</span>` : ''}${
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
-      <span><b>${v.thread.messages.length}</b> notes${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${sendHtml(v)}</div>` +
+      <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${sendHtml(v)}</div>` +
     (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
     `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" title="not an answer">×</button></div>` : ''}
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
@@ -476,7 +476,7 @@ function measureColumns(places: Place[], series: StatsProject[], scopes: ScopeSt
 const branchNote = (repos: { dir: string; branch?: string }[]) => {
   const branches = [...new Set(repos.flatMap((r) => (r.branch ? [r.branch] : [])))]
   const unset = repos.length - repos.filter((r) => r.branch).length
-  return [branches.length === 1 ? `on ${esc(branches[0])}` : `${branches.length} branches`, ...(unset ? [`${unset} repos without origin/HEAD`] : [])].join(' · ')
+  return [branches.length === 1 ? `on ${esc(branches[0])}` : `${branches.length} branches`, ...(unset ? [`${plural(unset, 'repo')} without origin/HEAD`] : [])].join(' · ')
 }
 
 const tileHtml = (label: string, value: string, note = '') => `<div class="tile"><b>${value}</b><span>${esc(label)}</span>${note ? `<small>${note}</small>` : ''}</div>`
@@ -509,13 +509,13 @@ export function statsHtml(v: StatsView) {
   const prompts = (origin: string) => sum.prompts[origin] ?? 0
   const tiles = [
     tileHtml('spent', usd(sum.spend), sum.turns ? `${usd(sum.spend / sum.turns)} a turn` : ''),
-    tileHtml('agent-hours', hours(sum.agentHours), `${sum.turns} turns · ${hours(sum.busyHours)} with anyone working`),
+    tileHtml('agent-hours', hours(sum.agentHours), `${plural(sum.turns, 'turn')} · ${hours(sum.busyHours)} with anyone working`),
     tileHtml('working at once', sum.atOnce ? sum.atOnce.toFixed(1) : '–', `on average while anyone works · peak ${shown.peak.turns}`),
     tileHtml('waiting on you', sum.waits.n ? duration(sum.waits.p50) : '–', sum.waits.n ? `median of ${sum.waits.n} · p90 ${duration(sum.waits.p90)}` : 'no answered waits'),
-    tileHtml('sessions worked', `${sum.worked}`, `${sum.sessions} started · ${sum.resumes} resumes`),
-    tileHtml('prompts from you', `${prompts('composer') + prompts('bridge')}`, `${prompts('peer')} from workers · ${sum.subagents} subagents`),
-    tileHtml('asked permission', `${sum.asks}`, `${sum.failures} tool failures`),
-    tileHtml('commits landed', `${sum.git.commits}`, `${sum.git.merges} merges · ${branchNote(sum.git.repos)}`),
+    tileHtml('sessions worked', `${sum.worked}`, `${sum.sessions} started · ${plural(sum.resumes, 'resume')}`),
+    tileHtml('prompts from you', `${prompts('composer') + prompts('bridge')}`, `${prompts('peer')} from workers · ${plural(sum.subagents, 'subagent')}`),
+    tileHtml('asked permission', `${sum.asks}`, `${plural(sum.failures, 'tool failure')}`),
+    tileHtml('commits landed', `${sum.git.commits}`, `${plural(sum.git.merges, 'merge')} · ${branchNote(sum.git.repos)}`),
     tileHtml('lines changed', `<span class="add">+${count(sum.git.added)}</span> <span class="del">−${count(sum.git.removed)}</span>`, 'on the default branches'),
     ...(budget ? [tileHtml('left this week', budget.usdLeft === undefined ? '–' : `≈ ${usd(budget.usdLeft)}`,
       `${budget.percentUsed}% used${budget.usdPerPercent === undefined ? '' : ` · ${usd(budget.usdPerPercent)} per 1%`}`)] : []),
@@ -526,7 +526,7 @@ export function statsHtml(v: StatsView) {
     barsHtml(`Spend ${per}`, series, measureColumns(places, series, parts, (s) => s.series.spend, usd), usdAxis, every),
     barsHtml(`Agent-hours ${per}`, series, measureColumns(places, series, parts, (s) => s.series.agentHours, hours), hoursAxis, every),
     barsHtml(`Commits landed ${per}`, all ? [{ id: STATS_ALL, label: 'every floor' }] : series,
-      totalColumns(places, shown.series.commits, series, parts, (s) => s.series.commits, (v) => `${v} commits`), (v) => `${Math.round(v)}`, every),
+      totalColumns(places, shown.series.commits, series, parts, (s) => s.series.commits, (v) => plural(v, 'commit')), (v) => `${Math.round(v)}`, every),
     churnHtml(`Lines ${per}`, places, shown, series, parts, every),
     ...(hourly ? [] : [barsHtml('Spend by hour of day', series, measureColumns(hoursOfDay, series, parts, (s) => s.byHour.spend, usd), usdAxis, 6)]),
   ].join('')
@@ -718,7 +718,7 @@ export const panelsCss = `
 .stats-panel .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; margin: 4px 0 10px; }
 .stats-panel .tile { display: flex; flex-direction: column; padding: 8px 10px; border-radius: var(--radius); background: var(--panel-2); }
 .stats-panel .tile b { font: 700 18px/1.2 var(--ui); font-variant-numeric: tabular-nums; }
-.stats-panel .tile span { color: var(--muted); font-size: 12px; }
+.stats-panel .tile > span { color: var(--muted); font-size: 12px; }
 .stats-panel .tile small { color: var(--faint); font-size: 11px; }
 .stats-panel .charts, .stats-panel .tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 0 28px; align-items: start; }
 .stats-panel .chart { margin: 14px 0 6px; }

@@ -83,9 +83,10 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const live = isLive(f.status)
   const waiting = f.waiting ?? false
   const startedAt = now - (f.ago ?? 30) * MIN
-  const resumedBy = f.resumedBy === undefined ? undefined : { id: f.resumedBy, callsign: callsign(f.resumedBy) }
+  const linkOf = (to: string) => ({ id: to, callsign: callsign(to), startedAt })
+  const resumedBy = f.resumedBy === undefined ? undefined : linkOf(f.resumedBy)
   const conversations = f.prompt === undefined ? [] : [{
-    id: `${id}-conversation`, startedAt, prompt: f.prompt, answer: f.answer, resumes: f.resumes === undefined ? undefined : { id: f.resumes, callsign: callsign(f.resumes) }, resumedBy,
+    id: `${id}-conversation`, startedAt, prompt: f.prompt, answer: f.answer, resumes: f.resumes === undefined ? undefined : linkOf(f.resumes), resumedBy,
     ...conversationOffers(id, `${id}-conversation`, live, !f.unresumable, resumedBy),
   }]
   const stranded = f.status === 'lost' || f.hostStopped === true
@@ -551,7 +552,7 @@ export const readArchive = (board: Board, project: string): Promise<Card[]> =>
 /** A fixture worker's saved conversations: one per session it ran as, each resuming the one before, the latest first. */
 function fixtureBriefs(c: Card): Brief[] {
   const conversation = c.conversations[0]
-  const of = (i: number) => c.lineage[i] && { id: c.lineage[i].id, callsign: c.callsign }
+  const of = (i: number) => c.lineage[i] && { ...c.lineage[i], callsign: c.callsign }
   return c.lineage.map((session, i) => {
     const last = i === c.lineage.length - 1
     const prompt = last ? (conversation?.prompt ?? '') : `Session ${i + 1}: pick up where the last one stopped`

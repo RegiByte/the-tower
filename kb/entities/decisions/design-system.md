@@ -19,7 +19,8 @@ renderers grows as components are added.
 
 **How.** Direction *Wayfinding* warmed with paper tones: paper and ink chrome, floors as signs with the
 project as a transit-line band, Overpass for signage, Atkinson Hyperlegible for text, JetBrains Mono for
-terminals, and a terminal that is a block of the ink colour.
+terminals, and a terminal that is a block of the ink colour. Overpass's faces leave out `·`, which it
+draws with almost no advance, so the next face in the stack draws it.
 - [`design.ts`](ref:hub/src/shared/design.ts) holds every token as plain data, plus the xterm theme, the faces
   and the sky through the day ([`skyAt`](ref:hub/src/shared/design.ts#skyAt)). It imports nothing, so it runs
   in Node, in the browser and in Tower 3D's bundle.

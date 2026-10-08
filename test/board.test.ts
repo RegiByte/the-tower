@@ -98,9 +98,9 @@ test('a resumed session links to the session whose conversation it continues', (
     return conversations[0]
   })
   assert.equal(sourceConversation.id, resumedConversation.id)
-  assert.deepEqual(sourceConversation.resumedBy, { id: resumed.header.id, callsign: resumedCard.callsign })
+  assert.deepEqual(sourceConversation.resumedBy, { id: resumed.header.id, callsign: resumedCard.callsign, startedAt: resumed.header.startedAt })
   assert.equal(sourceConversation.resumes, undefined)
-  assert.deepEqual(resumedConversation.resumes, { id: source.header.id, callsign: sourceCard.callsign })
+  assert.deepEqual(resumedConversation.resumes, { id: source.header.id, callsign: sourceCard.callsign, startedAt: source.header.startedAt })
   assert.equal(resumedConversation.resumedBy, undefined)
   assert.equal(resumedCard.model, 'claude-haiku-4-5-20251001')
   assert.equal(resumedCard.effort, undefined)

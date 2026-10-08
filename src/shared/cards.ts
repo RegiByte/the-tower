@@ -37,7 +37,7 @@ export const ON_DUTY_MEANS = 'counted over the workers on duty: running, or stop
 
 /** A legend of the counts by status, as two cells a row (a chip, then its meaning) for a grid of two columns. */
 export const statusLegendHtml = () =>
-  `<span class="chip">${WAITING_NAME}</span><span>${esc(WAITING_MEANS)}</span>` +
+  `<span class="chip quiet"><span class="lamp"></span>${WAITING_NAME}</span><span>${esc(WAITING_MEANS)}</span>` +
   (['needs', 'ready', 'working', 'quiet', 'broken'] as Attention[])
     .map((a) => `<span class="chip ${a}"><span class="lamp"></span>${ATTENTION_NAME[a]}</span><span>${esc(ATTENTION_MEANS[a])}</span>`).join('')
 
@@ -59,8 +59,9 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
   gone: "can't be resumed: its worktree's folder is gone",
 }
 
+/** A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says. */
 export const statusName = (c: Card) =>
-  c.stranded ? (c.unresumable ? `stopped, ${UNRESUMABLE_NAME[c.unresumable]}` : 'stopped, resumable') : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.stranded ? `${c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
@@ -79,6 +80,12 @@ export const leftoversOf = (f: Floor) =>
 
 /** A command line with its program by name alone: `/opt/x/bin/node server.js` → `node server.js`. */
 export const commandName = (command: string) => command.replace(/^\S*\//, '')
+
+/** A word for a count of `n` of it, plural but for one: `note`, `notes`. */
+export const noun = (n: number, word: string) => (n === 1 ? word : `${word}s`)
+
+/** A count with its word: `1 note`, `3 notes`. */
+export const plural = (n: number, word: string) => `${n} ${noun(n, word)}`
 
 const counted = (n: number, one: string, many: string) => (n ? [`${n} ${n === 1 ? one : many}`] : [])
 
@@ -498,7 +505,7 @@ export const weekElapsed = (r: RateLimit, now: number) =>
 /** A limit's pace in words: `61% of the week gone, 34 points under pace`. */
 export const paceLine = (percentUsed: number, elapsed: number) => {
   const gap = Math.round(elapsed - percentUsed)
-  return `${Math.round(elapsed)}% of the week gone, ${gap >= 0 ? `${gap} points under pace` : `${-gap} points over pace`}`
+  return `${Math.round(elapsed)}% of the week gone, ${gap >= 0 ? `${plural(gap, 'point')} under pace` : `${plural(-gap, 'point')} over pace`}`
 }
 
 /** What a worker showed, named: its own title, else the file's name or the page's host. */
@@ -547,7 +554,7 @@ export const liveHires = (cards: Card[], c: Card) => cards.filter((h) => h.live 
 /** Why a worker may not hire now under its floor's `hiring`, as a sentence; `undefined` when it may. A review is never refused. */
 export const hireRefusal = (cards: Card[], f: Floor, c: Card): string | undefined => {
   const depth = hireDepth(cards, c)
-  if (depth + 1 > f.hiring.depth) return `${c.callsign} stands ${depth} hire${depth === 1 ? '' : 's'} deep, and ${f.name} lets hires stand at most ${f.hiring.depth} deep`
+  if (depth + 1 > f.hiring.depth) return `${c.callsign} stands ${plural(depth, 'hire')} deep, and ${f.name} lets hires stand at most ${f.hiring.depth} deep`
   const live = liveHires(cards, c)
   if (live.length >= f.hiring.live) return `${c.callsign}'s hires ${live.map((h) => h.callsign).join(', ')} still run, and ${f.name} lets a worker run ${f.hiring.live} at once`
   return undefined

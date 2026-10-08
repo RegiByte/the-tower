@@ -403,7 +403,7 @@ dialog .actions small { margin-right: auto; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
@@ -596,7 +596,7 @@ const worktreesHtml = (f) => `<div class="worktrees">
 /** A floor's review threads, each named by its checkout beside its tag. */
 const threadsHtml = (f) => {
   const rows = f.threads.map((t) => {
-    const meta = [t.tag, `${t.messages} note${t.messages === 1 ? '' : 's'}`, t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
+    const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
     return `<div class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" title="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></div>`
   })
   return `<div class="drafts"><div class="drafts-head">Review threads</div>${rows.join('')}</div>`
@@ -650,9 +650,9 @@ function traysHtml(f) {
   const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" title="${title}">${label}</button>`
   const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
-    drafts && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
-    trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
-    threads && tray('threads', `${glyph('◇')} <b>${threads}</b> thread${threads === 1 ? '' : 's'}`, esc(reviewsOf(f)?.description ?? 'review threads, one per checkout')),
+    drafts && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
+    trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
+    threads && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
     past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" title="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
     tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
@@ -746,7 +746,7 @@ function barHtml(c) {
   const orphan = c.resources.some((r) => r.orphan)
   const ctx = c.context
   repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck ? ` title="${STUCK_TITLE}"` : ''}><span class="lamp"></span>${statusName(c)} · <span data-since="${c.enteredAt}"></span></span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck ? ` title="${STUCK_TITLE}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
     <span class="where" title="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" title="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}
@@ -786,12 +786,15 @@ function leftHtml(c) {
     <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
 }
 
+/** The session a worker's conversation came from: its own earlier one when the callsign carried over. */
+const resumesRow = (c, ref) =>
+  !ref ? ['resumes', ''] : ref.callsign === c.callsign ? ['continues', `its session of ${when(ref.startedAt)}`] : ['resumes', `${ref.callsign}, session of ${when(ref.startedAt)}`]
+
 function detailsHtml(c) {
-  const conv = current(c)
   const rows = [
     ['now', gistLine(c)],
     ...detailsOf(c),
-    ['resumes', conv?.resumes?.callsign ?? ''],
+    resumesRow(c, current(c)?.resumes),
     ['started', when(c.startedAt)],
     ['terminal', term && selected === c.id ? `${term.cols}×${term.rows} · ${isOwner() ? 'sized to this view, you type' : 'watching'}` : ''],
   ].filter(([, value]) => value)
@@ -1010,7 +1013,7 @@ const threadOf = (c) => (review?.project === c.project && review.checkout === th
 /** What the worker hasn't seen of its checkout's thread, else how many notes it holds. */
 const reviewsTally = (c) => {
   const notes = floorOf(c.project).threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
-  return c.unseen ? `<small class="unseen" title="${c.unseen} notes ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
+  return c.unseen ? `<small class="unseen" title="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
 }
 
 async function addNote(c, fields) {
@@ -1663,6 +1666,10 @@ async function showUrl(url) {
   $('shelf-url')?.addEventListener('load', sendScheme)
 }
 
+/** A kept item by its tag, as every renderer calls it; any other file by its name. */
+const shelfFileName = (project, entry, file) =>
+  'item' in entry ? floorOf(project).collections.flatMap((c) => c.items).find((i) => i.id === file).tag : base(file).replace(/\.md$/, '')
+
 async function showCollection(entry, file) {
   const opened = shelfOpen
   const files = await told(tower.get(shelfPath(opened.project, opened.n)))
@@ -1670,7 +1677,7 @@ async function showCollection(entry, file) {
   if (shelfOpen !== opened) return
   if (!files.length) return ($('shelf-body').innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
   opened.files = files
-  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</div>`).join('')}</div>
+  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(shelfFileName(opened.project, entry, f))}</div>`).join('')}</div>
     <iframe id="shelf-doc" sandbox="allow-same-origin"></iframe>`
   showDoc(files.includes(file) ? file : files[0])
 }
@@ -1738,12 +1745,12 @@ function drawArchive() {
   if (!archives.has(f.id)) readArchive(f.id)
   const archive = archives.get(f.id).cards
   if (!archive) {
-    $('archive-count').textContent = `${pastCount(f)} workers`
+    $('archive-count').textContent = plural(pastCount(f), 'worker')
     return void ($('archive-list').innerHTML = archiveDrawn = '<div class="empty">reading the archive…</div>')
   }
   const past = pastOf(f, archive)
   const shown = past.filter((c) => matchesWords(c, archiveOpen.words))
-  $('archive-count').textContent = shown.length === past.length ? `${past.length} workers` : `${shown.length} of ${past.length}`
+  $('archive-count').textContent = shown.length === past.length ? plural(past.length, 'worker') : `${shown.length} of ${past.length}`
   const html = shown.map(pastHtml).join('') || '<div class="empty">no past worker matches</div>'
   if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
 }
@@ -2282,6 +2289,7 @@ function showKeys() {
   $('keys-list').innerHTML = KEYS.map(([keys, what]) => `<span>${keys}</span><span>${what}</span>`).join('')
   $('keys-legend').innerHTML = statusLegendHtml()
   $('keys').showModal()
+  $('keys').scrollTop = 0
 }
 
 /** Keys that work everywhere, the terminal included. Returns whether `e` was one. */

@@ -77,12 +77,15 @@ const latest = (session: Session, conversation: Conversation, sessions: Session[
 /** A session by id, with the callsign of the worker it ran as. */
 export type SessionRef = { id: string; callsign: string }
 
+/** A session a conversation came from or went on to, with when it started. */
+export type SessionLink = SessionRef & { startedAt: number }
+
 /** The callsign of the worker each session ran as, over the sessions' `continuations`. */
 export const namer = (continued: Map<Session, Session>, callsign: (id: string) => string) => (session: Session) =>
   workerName(lineage(session, (s) => continued.get(s)), callsign)
 
 /** A saved conversation as a session holds it, linked to the sessions it came from and went on to. */
-export type Thread = Conversation & { resumes?: SessionRef; resumedBy?: SessionRef }
+export type Thread = Conversation & { resumes?: SessionLink; resumedBy?: SessionLink }
 
 /** `nameOf`: a session's worker's callsign (`namer`). */
 export const threads = (session: Session, sessions: Session[], nameOf: (s: Session) => string): Thread[] =>
@@ -91,6 +94,6 @@ export const threads = (session: Session, sessions: Session[], nameOf: (s: Sessi
     .map((c) => {
       const source = resumes(session, c, sessions)
       const resumer = resumedBy(session, c, sessions)
-      const refOf = (s: Session): SessionRef => ({ id: s.header.id, callsign: nameOf(s) })
+      const refOf = (s: Session): SessionLink => ({ id: s.header.id, callsign: nameOf(s), startedAt: s.header.startedAt })
       return { ...c, ...latest(session, c, sessions), resumes: source && refOf(source), resumedBy: resumer && refOf(resumer) }
     })

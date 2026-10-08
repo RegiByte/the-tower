@@ -54,7 +54,7 @@ sequenceDiagram
 - **The chain is derived.** [`resumes`](ref:hub/src/bridge/chains.ts#resumes) links a resumed conversation
   to the nearest earlier session that saved it; [`resumedBy`](ref:hub/src/bridge/chains.ts#resumedBy) to the
   nearest later one that resumed it. A conversation resumed twice from one session forks; each link is to the
-  nearest session in time, and names it with its worker's callsign (`{id, callsign}`, a `SessionRef`) on the board
+  nearest session in time, and names it with its worker's callsign and start (`{id, callsign, startedAt}`, a [`SessionLink`](ref:hub/src/bridge/chains.ts#SessionLink)) on the board
   and in the brief, so no reader looks the session up.
 - **What carries over.** A resumed session that has no prompt or answer yet shows its source's. A worker's brief
   holds the conversations of every session it ran as, the earlier ones folded ([[brief-turns]]), and `card.lineage`
