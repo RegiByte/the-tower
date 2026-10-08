@@ -1361,8 +1361,12 @@ function paintKeys() {
   $('side-hide').querySelector('small').textContent = keysLabel(board.keys, 'sidebar')
 }
 
-/** Under this width the sidebar is a rail, and the sidebar key opens it over the main pane until a worker is picked. */
+/** Under this width the sidebar is a rail, and the sidebar key opens it over the main pane until something opens there. */
 const narrow = matchMedia('(max-width: 900px)')
+
+function closeDrawer() {
+  document.body.classList.remove('drawer')
+}
 
 function toggleSide() {
   if (narrow.matches) return document.body.classList.toggle('drawer')
@@ -1624,7 +1628,7 @@ function closeTerminal() {
 
 /** The selected session is kept in the URL hash, so a reload reopens it. */
 function select(id) {
-  document.body.classList.remove('drawer')
+  closeDrawer()
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -1647,6 +1651,7 @@ function select(id) {
 }
 
 function goHome() {
+  closeDrawer()
   followChanges(undefined)
   leaveItem()
   leaveShelf()
@@ -1679,6 +1684,7 @@ const shelfHash = ({ project, n, file }) => `#shelf/${project}/${n}${file ? '/' 
 
 
 function openShelf(project, n, file) {
+  closeDrawer()
   const f = board.floors.find((f) => f.id === project)
   const entry = f?.shelf?.[n]
   if (!entry) return goHome()
@@ -1854,6 +1860,7 @@ function followLink(e) {
 let archiveOpen
 
 function openArchive(project) {
+  closeDrawer()
   const f = floorOf(project)
   if (!f) return goHome()
   followChanges(undefined)
@@ -1936,6 +1943,7 @@ function draftHeadHtml() {
 
 /** A new draft, or an existing one once its text has arrived: the textarea stays read-only until then. */
 async function openDraft(project, id) {
+  closeDrawer()
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -2085,6 +2093,7 @@ const itemOf = ({ project, collection, id }) => {
 }
 
 function openItem(project, collection, id) {
+  closeDrawer()
   if (!itemOf({ project, collection, id }).item) return toast('That item is gone')
   followChanges(undefined)
   leaveItem()

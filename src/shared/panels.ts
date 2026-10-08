@@ -714,7 +714,7 @@ export const panelsCss = `
 .changes-panel .file > header .n { font: var(--fs-s) var(--mono); white-space: nowrap; }
 .changes-panel .file.viewed > header .path { color: var(--muted); }
 .changes-panel .viewed-box { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); font-size: var(--fs-s); background: none; }
-.changes-panel .viewed-box .box { width: 12px; height: 12px; border: 1.5px solid var(--muted); border-radius: var(--radius-s); font: 700 var(--fs-xs)/10px var(--ui); text-align: center; }
+.changes-panel .viewed-box .box { display: grid; place-items: center; width: 1.1em; height: 1.1em; border: 1.5px solid var(--muted); border-radius: var(--radius-s); font: 700 var(--fs-xs)/1 var(--ui); }
 .changes-panel .viewed-box[aria-checked="true"] .box { background: var(--ink); border-color: var(--ink); color: var(--panel); }
 .changes-panel .file .body { overflow-x: auto; border-top: 1px solid var(--line); }
 .changes-panel .file .body .none { padding: var(--sp-xs) var(--sp-l); }
