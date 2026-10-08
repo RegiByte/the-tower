@@ -50,7 +50,7 @@ with no work of its own ([[renderer-is-disposable]]).
 **How.**
 - *The record* ([`prefs.ts`](ref:hub/src/shared/prefs.ts), served as `/prefs.js`): `scheme`, `ui`, `display`,
   `mono`, `termSize`, `motion` (`''`, `reduce`, `full`), `contrast` (`''`, `more`), `scale` (the text size in percent
-  of the browser's: 90, 100, 125 or 150, 100 by default; API 1.17). An empty field follows the
+  of the browser's: 90, 100, 125 or 150, 100 by default; API 1.18). An empty field follows the
   default: the system's scheme, motion and contrast, the shipped face.
 - *`tower.prefs`* ([`tower.js`](ref:hub/src/tower/tower.js)): `get()`, `set(patch)`, `on(fn)` and `attributes()`.
   Whoever writes it (storage, a framed page, `set`), the record is taken in normalized: each choice one of

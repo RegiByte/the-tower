@@ -61,9 +61,9 @@ export function toaster(stack: HTMLElement) {
 
 /** The stack's look, from the design's tokens: the renderer's own button style draws an action. */
 export const toastsCss = `
-.toasts { position: fixed; left: 50%; bottom: 20px; translate: -50% 0; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 6px;
+.toasts { position: fixed; left: 50%; bottom: 20px; translate: -50% 0; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: var(--sp-s);
   width: max-content; max-width: 90vw; pointer-events: none; }
-.toasts .toast { display: flex; align-items: center; gap: 12px; max-width: 100%; padding: 9px 14px; background: var(--panel); color: var(--ink);
+.toasts .toast { display: flex; align-items: center; gap: var(--sp-l); max-width: 100%; padding: var(--sp-m) var(--sp-xl); background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: var(--radius); box-shadow: var(--shadow); pointer-events: auto; }
 .toasts .toast button { flex: none; }
 `
