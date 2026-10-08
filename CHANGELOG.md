@@ -12,6 +12,42 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.1.0
+
+A polish pass on the tower page, from five audits of it: what it looks like, what it lets you do, the keyboard and
+screen readers, its settings, and the brief.
+
+- Markdown is drawn through one served module, `/markdown.js`, safe for Claude's words: raw HTML in an answer shows as
+  its text (Claude's `<details>` and `<br>` included), links go only to http(s), mailto or relative paths, images come
+  only from the tower, and a remote image becomes a link. Shelf and shown files keep their HTML inside script-less
+  frames, and the shelf no longer follows a `javascript:` link.
+- Resume refuses a conversation a running session already holds, and the tower runs resumes one at a time; `tower
+  resume` goes through it while it runs. A double press on Resume or Review starts one.
+- Tidy one thing at a time: every Tidy row has its own ⌫, asked first. Tidy all is a button and asks first; worktree
+  remove, forget and branch delete ask, and say what they did. Kill's confirm says what killing costs.
+- When the tower stops answering, every renderer says so, holds what it can't run, and reconnects when it is back; the
+  tower page dims the board, stops its clocks and reads the host as unknown. A read that fails offers Read again. A
+  verb the host or the terms daemon can't run is drawn disabled, with the reason.
+- The tower page by keyboard and screen reader: workers are links (`#<id>`, Back works), the panes are tabs with the
+  arrow keys, the terminal leaves the Tab order under another pane, waits and toasts are announced, and every icon
+  button has a name.
+- Every colour pair the renderers draw reaches WCAG AA in both schemes, with the hues kept; `npm run tool:contrast`
+  measures them.
+- The tooltip waits for the pointer to rest and fades in and out; keyboard focus shows it at once, reduced motion
+  without the fade.
+- Words: plurals, a resume of the same worker names its earlier session, and a stranded worker reads "lost" or
+  "stopped" in the colour it shows. The tower page keeps its view state in `tower.store`, where a sibling renderer
+  reads it.
+- API 1.4: a `tidyRows` row carries `call`, the call that tidies only it; `POST /tidy` takes any part of the plan.
+- API 1.5: `/markdown.js`: `markdownHtml` for Claude's and workers' words, `documentHtml` for a file framed without
+  scripts, `safeHref`, `imagePath`.
+- API 1.6: `keepingFocus` in `/panels.js`; `waitsBeganLine` and `WAIT_SAID` in `/cards.js`.
+- API 1.7: contrast tokens: text and on-colours per scheme, `deco`, `lineStrong`. `onAttention` is deprecated, kept
+  until a major.
+- API 1.8: `plural`, `noun`, `resumesRow` and `tagOf` in `/cards.js`; a resume link on the board carries `startedAt`.
+- API 1.9: the board error `disconnected` with `boardErrorTitle`, `whyNot` and the host state `unknown` in
+  `/cards.js`; `failedHtml` in `/panels.js`.
+
 ## v1.0.4
 
 - [docs/extending.md](docs/extending.md): every way to extend the tower, each with its contract, and what isn't one.
