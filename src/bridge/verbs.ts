@@ -39,9 +39,12 @@ const AT_COMPOSER: ReadonlySet<Status> = new Set(['idle', 'working', 'watching',
 /** The session's PTY is running: its screen is live and it takes keys. */
 export const isLive = (status: Status) => LIVE.has(status)
 
-/** A conversation goes on in whoever resumed it, else it can be resumed once its session is no longer running. */
-const conversationVerbs = (live: boolean, resumedBy: SessionRef | undefined): ConversationVerb[] =>
-  resumedBy ? ['goto'] : live ? [] : ['resume']
+/**
+ * A conversation goes on in whoever resumed it, else it can be resumed once its session is no longer running, where
+ * it ran (`resumable`: its cwd is still one of its floor's folders).
+ */
+const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): ConversationVerb[] =>
+  resumedBy ? ['goto'] : live || !resumable ? [] : ['resume']
 
 /**
  * The work a reviewer would review: the worker's checkout and callsign, on a floor whose dirs are all git repos. None
@@ -49,13 +52,13 @@ const conversationVerbs = (live: boolean, resumedBy: SessionRef | undefined): Co
  */
 export type ReviewTarget = { project: string; checkout: string; callsign: string }
 
-const cardVerbs = (status: Status, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined): CardVerb[] => {
+const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
     ...(live ? ['drive' as const] : []),
     ...(AT_COMPOSER.has(status) ? ['submit' as const] : []),
-    ...(latest ? conversationVerbs(live, latest.resumedBy) : []),
+    ...(latest ? conversationVerbs(live, resumable, latest.resumedBy) : []),
     ...(conversations.length > 0 ? ['brief' as const] : []),
     ...(conversations.length > 0 && review ? ['review' as const] : []),
     ...(leftovers > 0 ? ['reap' as const] : []),
@@ -91,19 +94,20 @@ type Offers<V extends string, C> = { verbs: V[]; calls: C }
 const callsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): C =>
   Object.fromEntries(verbs.flatMap((v) => (requests[v] ? [[v, requests[v]()]] : []))) as C
 
-export const conversationOffers = (session: string, conversation: string, live: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
-  const verbs = conversationVerbs(live, resumedBy)
+export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
+  const verbs = conversationVerbs(live, resumable, resumedBy)
   return { verbs, calls: callsOf(verbs, { resume: (): Call<'resume'> => ['resume', { id: session, conversation }] }) }
 }
 
 export const cardOffers = (
   id: string,
   status: Status,
+  resumable: boolean,
   conversations: { id: string; resumedBy?: SessionRef }[],
   leftovers: number,
   review: ReviewTarget | undefined,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, conversations, leftovers, review)
+  const verbs = cardVerbs(status, resumable, conversations, leftovers, review)
   return {
     verbs,
     calls: callsOf(verbs, {

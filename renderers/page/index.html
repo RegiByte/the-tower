@@ -110,6 +110,7 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .gone-home:hover { color: var(--ink); }
 .sess.gone:hover, .sess.gone.sel { opacity: 1; }
 .sess .act button { padding: 1px 9px; font-size: 12px; }
+.unresumable { color: var(--faint); font-size: 12px; white-space: nowrap; }
 .empty { color: var(--faint); font-style: italic; font-size: 12px; padding: 2px 8px; }
 .trays { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 2px 0; }
 .tray { padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; border-color: transparent; white-space: nowrap; }
@@ -388,7 +389,7 @@ dialog .actions small { margin-right: auto; }
 <script src="/marked.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk } from '/cards.js'
+import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
@@ -483,7 +484,7 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
     ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ resume</button></div>` : ''}
+    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ resume</button></div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
@@ -516,6 +517,9 @@ function toggleCrewFold(id) {
   render()
 }
 
+/** Why a past worker can't be resumed, quietly: it is history, not an alarm. */
+const unresumableHtml = (c) => `<span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
+
 const resumeHtml = (c, conv) => can(conv, 'resume')
   ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" title="resume this conversation">↻</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
@@ -528,7 +532,7 @@ const pastConversationHtml = (c, conv) =>
 /** A past worker and the conversations it held, oldest first. */
 const pastHtml = (c) =>
   `<div class="past ${c.attention} ${c.id === selected ? 'sel' : ''}" data-id="${c.id}">
-    <div class="head" title="${statusName(c)}"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="when">${when(c.startedAt)}</span></div>
+    <div class="head" title="${statusName(c)}"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="when">${c.unresumable ? `${unresumableHtml(c)} · ` : ''}${when(c.startedAt)}</span></div>
     ${c.conversations.map((conv) => pastConversationHtml(c, conv)).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
   </div>`
 

@@ -73,17 +73,24 @@ export const checkoutOf = (project: Project, cwd: string): string => worktreeNam
 export const checkoutDirs = (project: Pick<Project, 'hub' | 'repos'>, checkout: string): string[] =>
   checkout === MAIN_CHECKOUT ? projectDirs(project) : projectDirs(project).map((dir) => worktreePath(dir, checkout))
 
+/** The project's dirs, or the same worktree of each of them when `cwd` is a worktree of one. */
+const checkoutDirsAt = (project: Project, cwd: string): string[] => {
+  const name = worktreeName(project, cwd)
+  return name === undefined ? projectDirs(project) : projectDirs(project).map((dir) => worktreePath(dir, name))
+}
+
+/** Whether a session can work in `cwd`: a directory of the project, or a worktree of one (`sessionDirs`). */
+export const inProject = (project: Project, cwd: string): boolean => checkoutDirsAt(project, cwd).includes(cwd)
+
 /**
  * The directories a session in `cwd` works in, its own first: the project's dirs, or the same worktree of each of them.
  * A session in a worktree never reaches the main checkouts, which belong to other workers.
  */
 export const sessionDirs = (project: Project, cwd: string): string[] => {
-  const name = worktreeName(project, cwd)
-  const dirs = name === undefined ? projectDirs(project) : projectDirs(project).map((dir) => worktreePath(dir, name))
-  if (!dirs.includes(cwd)) {
+  if (!inProject(project, cwd)) {
     throw new Error(`"${cwd}" is neither a directory of project "${project.name}" (${projectDirs(project).join(', ')}) nor a worktree of one (<dir>/${WORKTREES_DIR}/<name>)`)
   }
-  return [cwd, ...dirs.filter((dir) => dir !== cwd)]
+  return [cwd, ...checkoutDirsAt(project, cwd).filter((dir) => dir !== cwd)]
 }
 
 /**

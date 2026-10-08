@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
+  "refs": ["hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) was decided inside each renderer:
@@ -31,7 +31,9 @@ a fixed order, the first being the thing's primary verb.
   ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)): `reap`, always, its call
   `['reap/process', { id, pid }]`, which the tower refuses for a pid that isn't one of that session's leftovers.
 - Each conversation ([`conversationVerbs`](ref:hub/src/bridge/verbs.ts#conversationVerbs)): `goto` once
-  another session resumed it, else `resume` once its session is no longer live ([[resume]]).
+  another session resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
+  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt): its `cwd` is no longer a dir of its floor, or a
+  worktree whose folder is gone), the same for the card's own `resume` ([[resume]]).
 - Each floor ([`floorVerbs`](ref:hub/src/bridge/verbs.ts#floorVerbs)): `spawn` while the host is up, `cut` while
   it is and every dir is a git repo with an origin (its call `['spawn', { project, cut: {} }]`), `shell` while the
   terms daemon is up, `editor` always, `tidy` while the floor's Tidy lists anything, its call carrying the list ([[tidy]]). Spawn, shell

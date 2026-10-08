@@ -43,7 +43,7 @@ import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, base, crewOf, crewTree, GIST_MARK, gistLine, hireRefusal, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, type SpawnForm } from './shared/cards.ts'
+import { ago, base, crewOf, crewTree, GIST_MARK, gistLine, hireRefusal, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -207,6 +207,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     `${card.callsign}, session ${card.id}, on ${floorTitle(floor)}`,
     `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, card.peer ? `message as "${card.peer}"` : 'not reachable: its Claude is not running', modelName(card.model)].filter(Boolean).join('  ·  ')}`,
     `  in ${card.cwd}`,
+    ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
     ...(card.reviews ? [`  reviews ${card.reviews}'s work`] : []),
     ...(card.hiredBy ? [`  hired by ${card.hiredBy.callsign}`] : []),
     ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${statusName(h)})`).join(', ')}`] : []),

@@ -22,6 +22,9 @@ const CONFIG: Config = {
 
 const hostWith = (...ids: string[]): HostLive => ({ ids: new Set(ids), protocol: HOST_PROTOCOL })
 
+/** A recorded session moved to its project's hub in `CONFIG`, where it can be resumed. */
+const homed = (log: SessionLog, cwd = CONFIG.projects[log.header.project].hub): SessionLog => ({ ...log, header: { ...log.header, cwd } })
+
 const cardsOf = (logs: SessionLog[], host = hostWith()) =>
   board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host, [], [], [], [], [], new Map(), new Map(), PATHS, 0).floors.flatMap((f) => f.cards)
 
@@ -172,7 +175,7 @@ test('sessions that never held a conversation resume nothing', () => {
 })
 
 test('verbs: a live session is driven and killed, takes a prompt at its composer, and is briefed once Claude saved its conversation', () => {
-  const log = fixture('interrupts')
+  const log = homed(fixture('interrupts'))
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
   assert.deepEqual(at(5, id).verbs, ['drive', 'kill'])
@@ -188,18 +191,36 @@ test('verbs: a stopped session resumes its conversation; once resumed, it leads 
   assert.deepEqual(sourceCard.verbs, ['goto', 'brief'])
   assert.deepEqual(sourceCard.conversations.map((c) => c.verbs), [['goto']])
   assert.deepEqual(resumedCard.verbs, ['resume', 'brief'])
-  assert.deepEqual(cardsOf([fixture('clear')])[0].conversations.map((c) => c.verbs), [['resume'], ['resume']])
+  assert.deepEqual(cardsOf([homed(fixture('clear'))])[0].conversations.map((c) => c.verbs), [['resume'], ['resume']])
 })
 
 test('verbs: what a session left running makes it reapable', () => {
-  const log = fixture('tool-turn')
+  const log = homed(fixture('tool-turn'))
   const leftover = { pid: 4242, session: log.header.id, command: 'npm run dev', ports: [3000], orphan: true }
   const [card] = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [leftover], [], [], [], [], new Map(), new Map(), PATHS, 0).floors[0].cards
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
+test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty', () => {
+  const log = homed(fixture('tool-turn'))
+  const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
+  const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+  const cardAt = (session: SessionLog, repos: Map<string, RepoRead>) =>
+    board(CONFIG, [{ header: session.header, facts: factsOf(session) }], hostWith(), [], [], [], [], [], repos, new Map(), PATHS, 0).floors[0].cards[0]
+  const inTree = homed(log, tree.path)
+  const said = (c: { unresumable?: string; verbs: string[]; conversations: { verbs: string[] }[] }) => [c.unresumable, c.verbs.includes('resume'), c.conversations.map((conv) => conv.verbs)]
+  assert.deepEqual(said(cardAt(log, new Map())), [undefined, true, [['resume']]])
+  assert.deepEqual(said(cardAt(homed(log, '/moved/hub'), new Map())), ['outside', false, [[]]])
+  assert.deepEqual(said(cardAt(inTree, new Map())), [undefined, true, [['resume']]])
+  assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: true }]))), [undefined, true, [['resume']]])
+  assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), ['gone', false, [[]]])
+  assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
+  const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
+  assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
+})
+
 test('calls: each verb that is a request comes ready, a resume naming the conversation it continues', () => {
-  const log = fixture('clear')
+  const log = homed(fixture('clear'))
   const card = cardsOf([log])[0]
   const [first, latest] = card.conversations.map((c) => c.id)
   assert.deepEqual(card.calls, { resume: ['resume', { id: log.header.id, conversation: latest }] })

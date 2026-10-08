@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-08",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
 }
 ---
 ```mermaid
@@ -36,6 +36,13 @@ sequenceDiagram
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read
   from git then ([`briefFor`](ref:hub/src/worktrees.ts#briefFor)). If any of its folders is gone, the resume is
   refused as `lost` until the worktree is recut. A fork resumes in the same `cwd`, so it shares its parent's worktree.
+- **Whether it can be resumed is on the board, before the click.** A worker not running whose `cwd` is no longer a
+  dir of its floor or a worktree of one (`inProject`: the hub moved, or the project left the config) is
+  `unresumable: 'outside'`; one whose worktree git no longer lists with its folder (removed by Tidy, deleted, or
+  lost) is `'gone'` ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), from the config and git's reads,
+  nothing until the floor's git is read once). Such a card and its conversations offer no `resume`, a stranded one is
+  not on duty, and every renderer and `tower agent` say why in a word or two
+  ([`UNRESUMABLE_NAME`](ref:hub/src/shared/cards.ts#UNRESUMABLE_NAME)). A recut worktree makes it resumable again.
 - **The chain is derived.** [`resumes`](ref:hub/src/bridge/chains.ts#resumes) links a resumed conversation
   to the nearest earlier session that saved it; [`resumedBy`](ref:hub/src/bridge/chains.ts#resumedBy) to the
   nearest later one that resumed it. A conversation resumed twice from one session forks; each link is to the

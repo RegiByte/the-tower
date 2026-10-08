@@ -1,4 +1,4 @@
-import type { Attention, Board, Card, Floor, TidyPlan, Wait } from '../bridge/board.ts'
+import type { Attention, Board, Card, Floor, TidyPlan, Unresumable, Wait } from '../bridge/board.ts'
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
 import type { FloorWorktree, WorktreeState } from '../bridge/worktrees.ts'
@@ -25,8 +25,17 @@ export const lampOf = (c: Card) => (c.status === 'watching' ? `${c.attention} wa
 /** What a stuck worker's status says on hover. */
 export const STUCK_TITLE = 'working with no word from Claude for 20 minutes: a hung tool, or a long build'
 
+/** Why a past worker can't be resumed, in a word or two: history, said quietly. */
+export const UNRESUMABLE_NAME: Record<Unresumable, string> = { outside: 'outside the floor', gone: 'folder gone' }
+
+/** The same, on hover. */
+export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
+  outside: "can't be resumed: its folder is no longer one of its floor's directories",
+  gone: "can't be resumed: its worktree's folder is gone",
+}
+
 export const statusName = (c: Card) =>
-  c.stranded ? 'stopped, resumable' : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.stranded ? (c.unresumable ? `stopped, ${UNRESUMABLE_NAME[c.unresumable]}` : 'stopped, resumable') : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
@@ -498,6 +507,7 @@ export const detailsOf = (c: Card): [string, string][] =>
     ['cost', c.costUsd != null ? `$${c.costUsd.toFixed(2)}` : ''],
     ['subagents', c.subagents ? String(c.subagents) : ''],
     ['folder', c.cwd],
+    ['resume', c.unresumable ? UNRESUMABLE_TITLE[c.unresumable] : ''],
     ['worktree', c.worktree ? `${c.worktree.name} ${branchLine(c)}` : ''],
     ['conversations', c.conversations.length > 1 ? String(c.conversations.length) : ''],
     ['left running', c.resources.map((r) => `${r.pid}${r.ports.map((p) => ` :${p}`).join('')}${r.orphan ? ' orphan' : ''} · ${commandName(r.command)}`).join('\n')],

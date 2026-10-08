@@ -80,6 +80,8 @@ can keep full history and send less. What breaks is the renderers, which derive 
   archive; `tower hire` reads them for the hire depth, which walks `hiredBy` to sessions the board may leave out.
 - Measured on the real data on 2026-10-07: 418 KB and 219 cards before, 98 KB and 29 cards after (79 KB of it cards),
   191 archived. `tool:frames`: identical on every fixture board (no fixture card started before the fixture's day).
+- A past worker that can't be resumed where it ran says why in both past lists (`unresumable`, [[resume]]), in place
+  of its ↻.
 - What the present no longer shows: the tower page's skyline lights the board's cards only, and a crew lists its
   members gone home only while the board carries them.
 

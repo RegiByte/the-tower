@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } f
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, RINGS, RING_MARK, RING_NAME, heededWaits, type Heed, type Ring, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, type Move } from './cards.ts'
+import { BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, RINGS, RING_MARK, RING_NAME, heededWaits, type Heed, type Ring, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
@@ -431,6 +431,7 @@ const worktreesHtml = (f: Floor) => [
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
 const pastHtml = (board: Board, c: Card) =>
   `<div class="past"><span class="call">${esc(c.callsign)}</span> · ${new Date(c.startedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+    ${c.unresumable ? `· <span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>` : ''}
     <button data-logbook="${esc(c.id)}" title="its logbook and last screen">logbook</button>
     ${c.conversations.map((conv) => `<div class="conv"><span>${esc(plain(conv.answer ?? conv.prompt ?? conv.id))}</span>${
       can(conv, 'goto') ? `<button data-desk="${esc(conv.resumedBy!.id)}">→ ${esc(conv.resumedBy!.callsign)}</button>`

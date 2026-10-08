@@ -52,7 +52,8 @@ or one event at a time as it is tailed:
 - [`board`](ref:hub/src/bridge/board.ts#board): the whole system as one view for renderers: projects as
   floors of cards (status, `live`, waiting, attention (`watching` is `quiet`), `callsign`, `shown` and `turns` across the sessions the worker ran as
   ([`lineage`](ref:hub/src/bridge/chains.ts#lineage)), `continuedBy` and each conversation's `resumes`/`resumedBy` as `{id, callsign}`, `peer`, `onDuty`, `seat` ([[workstations]]), `hiredBy` ([[hiring-limits]]), `reportsTo` ([[crews]]),
-  `checkout`, `reviews` and `unseen` ([[reviewer]], [[review-threads]]), facts, conversation excerpts and
+  `checkout`, `reviews` and `unseen` ([[reviewer]], [[review-threads]]), `unresumable` (why a past worker can't be
+  resumed where it ran, [[resume]]), facts, conversation excerpts and
   the verbs each card, conversation and floor offers, see [[board-verbs]]), who waits on you in the order to go
   to them as waits ([`waitingOrder`](ref:hub/src/bridge/board.ts#waitingOrder): `{id, key: id@since, reason, since,
   detail}`, a screen first, then a question, a failure, an answer, each reason by the longest wait; [[waiting-on-you]],

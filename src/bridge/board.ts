@@ -1,4 +1,4 @@
-import { MAIN_CHECKOUT, projectCollections, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, inProject, projectCollections, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
 import { reviewedIn, REVIEWS, threadId, unseenBy, type ReviewThread } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
@@ -66,6 +66,12 @@ export type CardPage = { path: string; at: number; shown: boolean }
 
 /** A message the worker sent another Claude session, with the callsign of the worker that received it. */
 export type CardSent = Delivery & { callsign?: string }
+
+/**
+ * Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the
+ * floor's dirs moved, or it left the config), or it is a worktree whose folder is gone (`gone`: removed, or deleted).
+ */
+export type Unresumable = 'outside' | 'gone'
 
 export type Card = {
   id: string
@@ -144,11 +150,13 @@ export type Card = {
   sent: CardSent[]
   /** Ended by the host stopping or dying, while nobody meant it to end. */
   stranded: boolean
+  /** Not running, and none of its conversations can be resumed where it ran: why. */
+  unresumable?: Unresumable
   /** The conversations Claude saved, in order: the last is the one a resume continues. */
   conversations: CardConversation[]
   /** The session that carries this worker on, holding its callsign and showings from then on. */
   continuedBy?: SessionRef
-  /** Running, or stopped by the host or lost while its latest conversation waits to be resumed. */
+  /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be. */
   onDuty: boolean
   /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
   seat?: Seat
@@ -283,6 +291,17 @@ const shownBy = (worker: Session[]): CardShown[] =>
     .flatMap(({ header, facts }) => facts.shown.map((s) => ({ ...s, at: header.startedAt + s.at * 1000, session: header.id })))
     .filter((s, i, all) => !all.slice(i + 1).some((later) => later.target === s.target))
 
+/**
+ * Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees (`reads`,
+ * `undefined` until every dir of it was read once). A project dir is taken to exist; a worktree, while git lists it with
+ * its folder.
+ */
+export const unresumableAt = (project: Project | undefined, cwd: string, reads: RepoRead[] | undefined): Unresumable | undefined => {
+  if (project === undefined || !inProject(project, cwd)) return 'outside'
+  if (worktreeName(project, cwd) === undefined || reads === undefined) return undefined
+  return treeAt(reads, cwd)?.present ? undefined : 'gone'
+}
+
 const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[]): Card['worktree'] => {
   const name = project && worktreeName(project, cwd)
   const tree = treeAt(reads, cwd)
@@ -297,6 +316,7 @@ const card = (
   running: Resource[],
   peers: Peer[],
   worktree: Card['worktree'],
+  unresumableHere: Unresumable | undefined,
   threadOf: (checkout: string) => ReviewThread | undefined,
   forkable: boolean,
   hirers: Map<string, HiredBy>,
@@ -317,6 +337,7 @@ const card = (
   const stranded = state.status === 'lost' || facts.hostStopped === true
   const waiting = waitsOnSomeone(state, facts.typedAt)
   const live = isLive(state.status)
+  const unresumable = live ? undefined : unresumableHere
   const conversations = threads(session, sessions, nameOf).map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
     id,
     startedAt: header.startedAt + at * 1000,
@@ -325,7 +346,7 @@ const card = (
     answer: excerpt(answer),
     resumes,
     resumedBy,
-    ...conversationOffers(header.id, id, live, resumedBy),
+    ...conversationOffers(header.id, id, live, !unresumable, resumedBy),
   }))
   const shown = shownBy(worker)
   const heardAt = facts.heardAt === undefined ? undefined : header.startedAt + facts.heardAt * 1000
@@ -376,10 +397,11 @@ const card = (
       .map(([at, path]) => ({ path, at, shown: shown.some((s) => s.target === path) })),
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     stranded,
+    unresumable,
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    onDuty: live || (stranded && conversations.length > 0 && !conversations.at(-1)!.resumedBy),
-    ...cardOffers(header.id, state.status, conversations, resources.length, forkable && !reviews ? { project: header.project, checkout, callsign } : undefined),
+    onDuty: live || (stranded && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy),
+    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews ? { project: header.project, checkout, callsign } : undefined),
   }
 }
 
@@ -515,6 +537,10 @@ export const allCards = (
   const delivered = deliveries(sessions)
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
   const callsignOf = (id: string) => nameOf(byId.get(id)!)
+  const unresumableOf = ({ project, cwd }: Session['header']) => {
+    const p = config.projects[project]
+    return unresumableAt(p, cwd, p && projectReads(projectDirs(p), repos))
+  }
   return withSeats(withCrews(sessions.map((s) =>
     card(
       s,
@@ -524,6 +550,7 @@ export const allCards = (
       running,
       peers,
       cardWorktree(config.projects[s.header.project], s.header.cwd, reads),
+      unresumableOf(s.header),
       threadAt(s.header.project),
       forkable(s.header.project),
       hirers,

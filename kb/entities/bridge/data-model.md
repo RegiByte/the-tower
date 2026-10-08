@@ -5,7 +5,7 @@
   "summary": "The shared types and pure builders: projects and config, the session header and log events, the host and terms protocols, and spawn/resume requests.",
   "in": "bridge",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
+  "refs": ["hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
 }
 ---
 `src/shared`. Every client builds host requests with [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest)
@@ -24,7 +24,8 @@ directories its sessions load, the same way; spawn and resume requests pass each
 [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs) says which directories a session in `cwd` works in, its
 own first: a project dir gives the project's dirs; `<dir>/.worktrees/<name>` gives that [[worktree]] of every project
 dir, never the main checkouts; anything else throws. The host, terms and the tower's `open` accept a `cwd` only
-through it ([[tower-cuts-worktrees]]). `WorktreesConfig` (`branchPrefix`, `links`, `cutByDefault`) sits at the top level and per
+through it ([[tower-cuts-worktrees]]). [`inProject`](ref:hub/src/shared/model.ts#inProject) is the same test as a
+predicate, which the board asks of every past worker's `cwd` before it offers a resume ([[resume]]). `WorktreesConfig` (`branchPrefix`, `links`, `cutByDefault`) sits at the top level and per
 project; [`worktreesConfig`](ref:hub/src/shared/model.ts#worktreesConfig) merges them per key, the project's winning,
 `tower/` as the default prefix, cutting by default. `HiringConfig` (`depth`, `live`) merges the same way through
 [`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig), 2 and 3 by default ([[hiring-limits]]), and `BriefConfig`

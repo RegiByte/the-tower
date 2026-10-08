@@ -62,6 +62,8 @@ type Facts = {
   landed?: boolean
   /** How many sessions it ran as, this one the last: each earlier one started a day before the next. */
   sessions?: number
+  /** Why it can't be resumed where it ran. */
+  unresumable?: Card['unresumable']
 }
 
 const idOf = (project: string, n: number) => `20261004-${String(90000 + n * 7).padStart(6, '0')}-${project.slice(0, 4).padEnd(4, 'x')}`
@@ -84,7 +86,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const resumedBy = f.resumedBy === undefined ? undefined : { id: f.resumedBy, callsign: callsign(f.resumedBy) }
   const conversations = f.prompt === undefined ? [] : [{
     id: `${id}-conversation`, startedAt, prompt: f.prompt, answer: f.answer, resumes: f.resumes === undefined ? undefined : { id: f.resumes, callsign: callsign(f.resumes) }, resumedBy,
-    ...conversationOffers(id, `${id}-conversation`, live, resumedBy),
+    ...conversationOffers(id, `${id}-conversation`, live, !f.unresumable, resumedBy),
   }]
   const stranded = f.status === 'lost' || f.hostStopped === true
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
@@ -97,9 +99,9 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)) } }),
     attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
-    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, conversations,
-    onDuty: live || (stranded && conversations.length > 0 && !f.resumedBy),
-    ...cardOffers(id, f.status, conversations, resources.length, undefined),
+    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, unresumable: f.unresumable, conversations,
+    onDuty: live || (stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy),
+    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined),
   }
 }
 
