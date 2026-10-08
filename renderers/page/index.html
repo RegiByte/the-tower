@@ -528,7 +528,7 @@ const byStart = (a, b) => a.startedAt - b.startedAt
 
 const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
@@ -797,7 +797,7 @@ function barHtml(c) {
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
     <span class="where" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
     <span class="stats">
-      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}
+      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
       ${claudeFlagHtml(c) ?? ''}
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
@@ -1323,7 +1323,7 @@ function render() {
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
   `<button class="side-toggle" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">»</button>
-  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" data-tip="waiting on you">${waiting}</span>` : ''}
+  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrder(board).map((c) => {
     const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
     return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
@@ -2249,7 +2249,7 @@ $('grip').addEventListener('pointerdown', (e) => {
 $('grip').addEventListener('focus', () => markGrip($('shell-pane').offsetHeight))
 $('grip').addEventListener('keydown', (e) => {
   const step = { ArrowUp: SHELLS_STEP_PX, ArrowDown: -SHELLS_STEP_PX }[e.key]
-  if (!step) return
+  if (!step || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
   e.preventDefault()
   e.stopPropagation()
   resizeShells($('shell-pane').offsetHeight + step)

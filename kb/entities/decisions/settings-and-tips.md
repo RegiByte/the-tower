@@ -78,8 +78,8 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   3D's HUD and panels say what a control does with `data-tip`, and a control with no visible name (an icon, ✕, ↗)
   carries an `aria-label`; a tip that repeats a visible name has none. `title` stays where no tip can show or it is
   not a tooltip: an `<iframe>`'s title (its accessible name) and a markdown link's title (`markdown.ts`), drawn also
-  into framed documents that run no `watchTips`. The tower page's review threads and shelf files are buttons, and the
-  dock's grip is a focusable `separator` that ↑ and ↓ resize.
+  into framed documents that run no `watchTips`. The tower page's review threads and shelf files, and a review note's
+  anchor (to its lines in Changes), are buttons, and the dock's grip is a focusable `separator` that ↑ and ↓ resize.
 - *Words* in `/cards.js`: [`ATTENTION_MEANS`](ref:hub/src/shared/cards.ts#ATTENTION_MEANS) says what puts a worker in
   each attention (from `attentionOf` and the statuses), `WAITING_MEANS` what the waiting count counts, and
   `ON_DUTY_MEANS` that counts are over workers on duty. The counts' tooltips and the `?` sheet's legend

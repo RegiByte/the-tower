@@ -387,8 +387,8 @@ function quoteHtml(path: string, quote: Quote) {
 function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
   const state = v.changes && anchorState(a, v.changes)
   const dir = v.files.dirs.find((d) => repoName(d) === a.repo)
-  return `<div class="anchor ${state ?? ''}"><div class="where" data-anchor="${n}|${i}" data-tip="show these lines in Changes"><code>${esc(anchorWhere(a))}</code>${
-    state && ANCHOR_STATE[state] ? `<span class="state">${ANCHOR_STATE[state]}</span>` : ''}${dir ? fileButtonsHtml(`${dir}/${a.path}`, a.from) : ''}</div>${a.quote ? quoteHtml(a.path, a.quote) : ''}</div>`
+  return `<div class="anchor ${state ?? ''}"><div class="where"><button class="go" data-anchor="${n}|${i}" data-tip="show these lines in Changes"><code>${esc(anchorWhere(a))}</code>${
+    state && ANCHOR_STATE[state] ? `<span class="state">${ANCHOR_STATE[state]}</span>` : ''}</button>${dir ? fileButtonsHtml(`${dir}/${a.path}`, a.from) : ''}</div>${a.quote ? quoteHtml(a.path, a.quote) : ''}</div>`
 }
 
 const noteHtml = (v: ThreadView, m: Message, fresh: boolean) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''}" data-note="${m.n}">
@@ -761,8 +761,9 @@ export const panelsCss = `
 .reviews-panel .note > header button { margin-left: auto; padding: 0 8px; font-size: 11px; font-weight: 400; background: none; }
 .reviews-panel .note .body { font-size: 14px; line-height: 1.5; }
 .reviews-panel .anchor { margin: 6px 0; border: 1px solid var(--line); border-radius: var(--radius); }
-.reviews-panel .anchor .where { display: flex; align-items: center; gap: 8px; padding: 3px 8px; background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; }
-.reviews-panel .anchor .where:hover code { text-decoration: underline; }
+.reviews-panel .anchor .where { display: flex; align-items: center; gap: 8px; padding: 3px 8px; background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; }
+.reviews-panel .anchor .where .go { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: left; }
+.reviews-panel .anchor .where .go:hover code { text-decoration: underline; }
 .reviews-panel .anchor .state { padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--panel); background: var(--muted); }
 .reviews-panel .anchor.changed { border-color: var(--needs); } .reviews-panel .anchor.changed .state { background: var(--needs); color: var(--on-needs); }
 .reviews-panel .anchor pre { display: grid; grid-template-columns: minmax(100%, max-content); margin: 0; padding: 6px 0; overflow-x: auto; font: 12px/1.55 var(--mono); font-variant-ligatures: none; }

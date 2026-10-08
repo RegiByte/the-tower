@@ -325,11 +325,11 @@ const keepsReviews = (f: Floor) => f.collections.some((col) => col.id === REVIEW
 
 /** A thread read away from any desk: nobody works in its checkout now. */
 export const statsHeadHtml = () =>
-  `<span class="call">Stats</span><span class="meta">every floor, from the logs</span><span class="acts"><button data-act="close">✕</button></span>`
+  `<span class="call">Stats</span><span class="meta">every floor, from the logs</span><span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
 
 export const threadHeadHtml = (f: Floor, checkout: string) =>
   `${swatch(f.color ?? NO_BAND)}<span class="call">Thread</span><span class="meta">${esc(f.name)} · ${esc(checkout)} · nobody works there now</span>
-    <span class="acts"><button data-act="close">✕</button></span>`
+    <span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
 
 /**
  * A showing in the desk panel: a file framed from the tower, sandboxed; a web page framed at its address; markdown
@@ -355,7 +355,7 @@ export const askHtml = (c: Card) =>
 export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolean) {
   return `${swatch(floor?.color ?? NO_BAND)}<span class="call">Shell</span>
     <span class="meta" data-tip="${esc(sh.activity)}">${esc(floor?.name ?? sh.project)}/${esc(base(sh.cwd))} · ${esc(sh.activity)}</span>
-    <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button><button data-act="close">✕</button></span>`
+    <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button><button data-act="close" aria-label="close">✕</button></span>`
 }
 
 /** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`) and how they read its words. */
@@ -387,7 +387,7 @@ export const stampHtml = (startedAt: number, back: boolean) =>
 /** A worker with no desk in the reader: its callsign, where and when it worked. */
 export const logbookHeadHtml = (c: Card, f: Floor | undefined) =>
   `${swatch(f?.color ?? NO_BAND)}<span class="call">${esc(c.callsign)}</span><span class="meta">logbook · ${esc(f?.name ?? c.project)} · ${c.lineage.length} session${c.lineage.length === 1 ? '' : 's'} · ${esc(statusName(c))}</span>
-    <span class="acts"><button data-act="close">✕</button></span>`
+    <span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
 
 /** A pulled drawer beside the world: its day's workers, each a folder whose logbook opens in the reader. */
 export const drawerSideHtml = (f: Floor, d: Drawer) =>
@@ -557,7 +557,7 @@ export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
   const where = shelfSource(entry)
   const acts = [
     framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
-    `<button data-act="close">✕</button>`,
+    `<button data-act="close" aria-label="close">✕</button>`,
   ].filter(Boolean).join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(entry.label)}</span>
     <span class="meta" data-tip="${esc(where)}">${esc(f.name)} · ${esc(where)}</span><span class="acts">${acts}</span>`
@@ -569,7 +569,7 @@ export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, 
     onDuty && `<button data-act="desk" data-tip="to its desk, on this showing's tab">at ${esc(worker.callsign)}'s desk</button>`,
     sh.kind === 'file' && fileButtonsHtml(sh.target),
     sh.kind !== 'link' && `<button data-out="${esc(shownHref(sh))}" aria-label="open in a browser tab" data-tip="open in a browser tab">↗</button>`,
-    `<button data-act="close">✕</button>`,
+    `<button data-act="close" aria-label="close">✕</button>`,
   ].filter(Boolean).join('')
   const meta = `${worker.callsign} showed ${sh.target} · ${ago(wallNow() - sh.at)} ago`
   return `${swatch(color)}<span class="call">${esc(shownTitle(sh))}</span>
