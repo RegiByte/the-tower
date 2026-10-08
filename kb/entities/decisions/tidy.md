@@ -82,7 +82,7 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   thread; the old logs together, as their one row). Applied and refused by the same checks as the whole.
 - Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/cards.ts#tidyLine), "Tidy: 4 leftovers, 2 finished
   hires"; [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)). The tower page folds it into a tray under the floor
-  that unfolds the list with the press, and each row has its own ⌫, confirmed before it runs. Tower 3D draws the same rows in its
+  that unfolds the list with the press; its Tidy all button and each row's own ⌫ are confirmed before they run, the whole list named in the first. Tower 3D draws the same rows in its
   floor panel without a per-row act: it would put the row's call on a button there and run it after its own "sure?"
   arming, and give the Running board a per-row act beside its held Z. Tower 3D lists it in the floor panel and on the Running board
   ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)): its head is the floor's `tidy` act (E

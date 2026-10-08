@@ -74,6 +74,8 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .drafts-head { display: flex; align-items: center; padding: 0 2px 0 8px; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .drafts-head button { margin-left: auto; background: none; border: none; padding: 0 6px; color: var(--faint); font-size: 15px; font-weight: 400; }
 .drafts-head button:hover { color: var(--ink); }
+.drafts-head button.tidy-all { height: 20px; padding: 0 7px; font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); }
+.drafts-head button.tidy-all:hover { border-color: var(--faint); }
 .drafts-about { padding: 2px 8px 4px; color: var(--faint); font-size: 11px; line-height: 1.35; }
 .draft { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; padding: 3px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .draft::before { content: "✎"; color: var(--faint); }
@@ -401,7 +403,7 @@ dialog .actions small { margin-right: auto; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, KILL_COST, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
@@ -559,8 +561,16 @@ const dirHtml = (f, dir, hub) =>
     ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
 
+/** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
+const WORKTREE_ASK = {
+  remove: (name) => `Remove the worktree ${name} in every repo?\n\nIts branch is deleted where it is absorbed into its base; refused when work would be lost.`,
+  prune: (name) => `Forget the lost worktree ${name}?\n\nIts branch is deleted where it is absorbed into its base.`,
+  delete: (name) => `Delete the kept branch ${name} in every repo where it is absorbed into its base?`,
+}
+const WORKTREE_DONE = { recut: 'recut', prune: 'forgot', remove: 'removed', delete: 'deleted' }
+
 /** A verb on a worktree or kept branch, its call on the button. */
-const wtVerbHtml = (thing, verb) => `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}" data-wt-verb="${verb}">${WORKTREE_VERB_NAME[verb]}</button>`
+const wtVerbHtml = (thing, verb) => `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}">${WORKTREE_VERB_NAME[verb]}</button>`
 
 const worktreeHtml = (f, w) => {
   const risk = worktreeRisk(w)
@@ -594,7 +604,7 @@ const threadsHtml = (f) => {
 
 /** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
 const tidyHtml = (f) => `<div class="worktrees">
-    <div class="drafts-head">${esc(tidyLine(f.tidy))}<button data-tidy="${f.id}" title="do all of it, as listed">tidy</button></div>
+    <div class="drafts-head">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" title="do all of it, as listed">Tidy all</button></div>
     ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}</div>`
 
 /** One thing Tidy would do, with a button that does only it. */
@@ -2037,8 +2047,22 @@ $('spawn').addEventListener('close', async () => {
   selectArriving(reply.id)
 })
 
-async function resume(call) {
-  const reply = await tower.run(call).catch((err) => toast(err.message))
+/** What is being asked, while it is in flight: a second press waits for the first's reply. */
+const inFlight = new Set()
+async function pressOnce(key, button, request) {
+  if (inFlight.has(key)) return
+  inFlight.add(key)
+  button.disabled = true
+  try {
+    return await request()
+  } finally {
+    inFlight.delete(key)
+    button.disabled = false
+  }
+}
+
+async function resume(button, call) {
+  const reply = await pressOnce(JSON.stringify(call), button, () => tower.run(call)).catch((err) => toast(err.message))
   if (reply?.t === 'spawned') selectArriving(reply.id)
 }
 
@@ -2069,11 +2093,19 @@ document.addEventListener('click', (e) => {
   if (draftAct === 'delete') return deleteDraft()
   if (draftAct === 'reload' || draftAct === 'keep') return settleConflict(draftAct === 'reload')
   const wtCall = e.target.closest('[data-wt-call]')
-  if (wtCall) return told(tower.run(JSON.parse(wtCall.dataset.wtCall)))
+  if (wtCall) {
+    const { wtVerb: verb, wtName: name } = wtCall.dataset
+    if (WORKTREE_ASK[verb] && !confirm(WORKTREE_ASK[verb](name))) return
+    return told(tower.run(JSON.parse(wtCall.dataset.wtCall))).then((r) => r && toast(`${WORKTREE_DONE[verb]} ${name}`))
+  }
   const tidyCall = e.target.closest('[data-tidy-call]')
   if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(tower.run(JSON.parse(tidyCall.dataset.tidyCall))).then((r) => r && toast(tidiedLine(r)))
   const tidy = e.target.closest('[data-tidy]')
-  if (tidy) return told(tower.run(floorOf(tidy.dataset.tidy).calls.tidy)).then((r) => r && toast(tidiedLine(r)))
+  if (tidy) {
+    const f = floorOf(tidy.dataset.tidy)
+    const rows = tidyRows(f, Date.now()).map((r) => `${r.what}: ${r.does}`).join('\n')
+    return confirm(`${tidyLine(f.tidy)}\n\n${rows}\n\nDo all of it?`) && told(tower.run(f.calls.tidy)).then((r) => r && toast(tidiedLine(r)))
+  }
   const picked = e.target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)
   if (e.target.closest('[data-pick-add]')) return addPicked()
@@ -2090,7 +2122,7 @@ document.addEventListener('click', (e) => {
   const thread = e.target.closest('[data-thread]')?.dataset.thread
   if (thread) return openThread(...thread.split('|'))
   const resumeButton = e.target.closest('[data-resume]')
-  if (resumeButton) return resume(JSON.parse(resumeButton.dataset.resume))
+  if (resumeButton) return resume(resumeButton, JSON.parse(resumeButton.dataset.resume))
   if (e.target.closest('[data-side]')) return toggleSide()
   const sideTo = e.target.closest('[data-side-view]')?.dataset.sideView
   if (sideTo) return showSideView(sideTo)
@@ -2146,10 +2178,10 @@ document.addEventListener('click', (e) => {
   }
   const act = e.target.closest('[data-act]')?.dataset.act
   if (act === 'send-home') return sendHome(findCard(selected))
-  if (act === 'kill') return confirm(`Kill ${callsign(selected)}?`) && tower.run(findCard(selected).calls.kill).catch((err) => toast(err.message))
+  if (act === 'kill') return confirm(`Kill ${callsign(selected)}?\n\nIt stays ${KILL_COST}.`) && tower.run(findCard(selected).calls.kill).catch((err) => toast(err.message))
   if (act === 'review') {
     const author = findCard(selected)
-    return tower.run(author.calls.review).then((r) => toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`)).catch((err) => toast(err.message))
+    return pressOnce(`review ${author.id}`, e.target.closest('[data-act]'), () => tower.run(author.calls.review)).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`)).catch((err) => toast(err.message))
   }
   if (act === 'home') return goHome()
   if (act === 'drive') {
