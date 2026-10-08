@@ -495,7 +495,7 @@ export function statsHtml(v: StatsView) {
   if (!v.stats) return `<div class="stats-panel">${head}<p class="none">reading the stats…</p></div>`
   const st = v.stats
   const all = v.scope === STATS_ALL
-  const unlisted = Object.keys(st.projects).filter((id) => !v.projects.some((p) => p.id === id)).map((id) => ({ id, label: id, color: 'var(--faint)' }))
+  const unlisted = Object.keys(st.projects).filter((id) => !v.projects.some((p) => p.id === id)).map((id) => ({ id, label: id, color: 'var(--deco)' }))
   const series = all ? [...v.projects, ...unlisted] : v.projects.filter((p) => p.id === v.scope)
   const scopeOf = (id: string) => (id === STATS_ALL ? st.all : st.projects[id] ?? EMPTY_SCOPE(st.buckets.length))
   const parts = series.map((s) => scopeOf(s.id))
@@ -649,9 +649,9 @@ export const panelsCss = `
 .changes-panel .file .body { overflow-x: auto; border-top: 1px solid var(--line); }
 .changes-panel .file .body .none { padding: 4px 10px; }
 .changes-panel .file table { border-collapse: collapse; width: 100%; font: 12px/1.55 var(--mono); font-variant-ligatures: none; }
-.changes-panel .file td .m { display: inline-block; width: 2ch; color: var(--faint); user-select: none; }
+.changes-panel .file td .m { display: inline-block; width: 2ch; color: var(--muted); user-select: none; }
 .changes-panel .file td { padding: 0 8px; white-space: pre; vertical-align: top; }
-.changes-panel .file td.ln { width: 1%; min-width: 3ch; text-align: right; color: var(--faint); user-select: none; }
+.changes-panel .file td.ln { width: 1%; min-width: 3ch; text-align: right; color: var(--muted); user-select: none; }
 .changes-panel .file tr.hunk td { padding: 3px 8px; color: var(--muted); background: color-mix(in oklab, var(--accent) 10%, var(--panel)); }
 .changes-panel .file tr.plus td { background: var(--added-wash); } .changes-panel .file tr.minus td { background: var(--removed-wash); }
 .changes-panel .file tr.plus td.ln { background: var(--added-gutter); } .changes-panel .file tr.minus td.ln { background: var(--removed-gutter); }
@@ -665,7 +665,8 @@ export const panelsCss = `
 .changes-panel .note-box { margin: 6px 10px 10px; padding: 8px 10px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); font: 13px/1.4 var(--ui); }
 .changes-panel .note-box .where, .reviews-panel .composer .re-chip { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; color: var(--muted); font-size: 12px; }
 .changes-panel .note-box textarea, .reviews-panel .composer textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: 6px 8px;
-  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: 13px/1.45 var(--ui); }
+  border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: 13px/1.45 var(--ui); }
+.changes-panel .note-box textarea::placeholder, .reviews-panel .composer textarea::placeholder { color: var(--faint); }
 .changes-panel .note-box .actions, .reviews-panel .composer .actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .changes-panel .note-box .actions .hint { margin-left: auto; color: var(--faint); font-size: 11px; }
 .reviews-panel .reviews-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 12px 0 8px; color: var(--muted); font-size: 13px; background: var(--panel); }
@@ -673,7 +674,7 @@ export const panelsCss = `
 .reviews-panel .reviews-head .tag { font: 11px var(--mono); padding: 1px 6px; border-radius: 999px; background: var(--panel-2); color: var(--muted); cursor: copy; }
 .reviews-panel .reviews-head .send { margin-left: auto; display: flex; gap: 4px; }
 .reviews-panel .reviews-head .send b { color: inherit; }
-.reviews-panel .reviews-head .send select { max-width: 200px; font: 12px var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); }
+.reviews-panel .reviews-head .send select { max-width: 200px; font: 12px var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 .reviews-panel .note { max-width: 980px; margin: 0 0 10px; padding: 8px 12px 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius); }
 .reviews-panel .note.mine { border-left-color: var(--accent); }
 .reviews-panel .note.new { border-color: var(--needs); border-left-color: var(--needs); }
@@ -690,7 +691,7 @@ export const panelsCss = `
 .reviews-panel .anchor .state { padding: 0 6px; border-radius: 999px; font-size: 11px; color: var(--panel); background: var(--muted); }
 .reviews-panel .anchor.changed { border-color: var(--needs); } .reviews-panel .anchor.changed .state { background: var(--needs); color: var(--on-needs); }
 .reviews-panel .anchor pre { display: grid; grid-template-columns: minmax(100%, max-content); margin: 0; padding: 6px 0; overflow-x: auto; font: 12px/1.55 var(--mono); font-variant-ligatures: none; }
-.reviews-panel .anchor pre .row { min-height: 1lh; padding: 0 10px; } .reviews-panel .anchor pre .m { display: inline-block; width: 2ch; color: var(--faint); user-select: none; }
+.reviews-panel .anchor pre .row { min-height: 1lh; padding: 0 10px; } .reviews-panel .anchor pre .m { display: inline-block; width: 2ch; color: var(--muted); user-select: none; }
 .reviews-panel .anchor pre .plus { background: var(--added-wash); } .reviews-panel .anchor pre .minus { background: var(--removed-wash); }
 .reviews-panel .anchor pre .plus .m, .reviews-panel .anchor pre .minus .m { color: var(--ink); }
 :is(.changes-panel, .reviews-panel) :is(.hljs-keyword, .hljs-selector-tag, .hljs-name, .hljs-doctag) { color: var(--syn-keyword); }

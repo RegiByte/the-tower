@@ -3,10 +3,15 @@
  * (variables and fonts) and as the module `/design.js`; Tower 3D bundles it.
  *
  * Paper and ink for chrome; colour is attention. Each scheme fills the same roles: `ink` is text, `enamel` the dark
- * surfaces (terminals, buildings) in both. The five attention colours are named after the board's
- * `Attention`, so `palettes[scheme][card.attention]` is a card's colour. `added` and `removed` mark a diff's lines:
- * as text and marks on paper, and as a `wash` behind an added or removed line's code, a deeper `gutter` behind its
- * numbers. The `syn*` colours mark code's syntax, each readable on paper and on both washes.
+ * surfaces (terminals, buildings) in both. Text comes in three tiers, `ink`, `muted` and `faint`, each at least 4.5:1
+ * on wall, panel and panel-2; `deco` is faint's tone for what is never read (carets, dividers, a missing project
+ * colour). `line` divides; `lineStrong` edges a form field, 3:1 on panel; `pEdgeMix` is how much of a project's colour
+ * (the rest ink) marks its focus ring and selected edge, 3:1 on panel-2. The five attention colours are named after the
+ * board's `Attention`, so `palettes[scheme][card.attention]` is a card's colour, as a fill; its `<attention>Text` is the
+ * same hue readable as text on paper, and its `on<Attention>` the text set on it. `added` and `removed` mark a diff's
+ * lines: as text and marks on paper, and as a `wash` behind an added or removed line's code, a deeper `gutter` behind
+ * its numbers. The `syn*` colours mark code's syntax, each readable on paper and on both washes. `npm run
+ * tool:contrast` measures every pair the renderers draw.
  */
 export const palettes = {
   light: {
@@ -15,19 +20,31 @@ export const palettes = {
     panel2: '#dfd7bf',
     sunk: '#d3c9ae',
     line: '#c4b89c',
+    lineStrong: '#817966',
+    pEdgeMix: '50%',
     ink: '#28322f',
-    muted: '#5f5a4b',
-    faint: '#91886f',
-    accent: '#35708a',
+    muted: '#4c483c',
+    faint: '#615b49',
+    deco: '#91886f',
+    accent: '#2f647c',
     enamel: '#28322f',
     enamel2: '#36423e',
-    needs: '#e0453f',
+    needs: '#d4413b',
     ready: '#5aa872',
     working: '#e0921a',
     quiet: '#99a197',
     broken: '#7a3530',
-    added: '#4c8a4c',
-    removed: '#b8493f',
+    needsText: '#a9302d',
+    readyText: '#356845',
+    workingText: '#82530a',
+    brokenText: '#7a3530',
+    onNeeds: '#ffffff',
+    onReady: '#28322f',
+    onWorking: '#28322f',
+    onQuiet: '#28322f',
+    onBroken: '#ffffff',
+    added: '#386938',
+    removed: '#a03e35',
     addedWash: '#d2e6bf',
     removedWash: '#f3d2c6',
     addedGutter: '#b9d8a2',
@@ -41,6 +58,8 @@ export const palettes = {
     synAttr: '#255d70',
     synRegexp: '#912a50',
     shadow: '0 1px 0 #0000000d, 0 6px 16px -10px #28322f66',
+    shadowPop: '0 20px 50px -20px #1d262988',
+    backdrop: '#1f262866',
   },
   dark: {
     wall: '#1b2321',
@@ -48,9 +67,12 @@ export const palettes = {
     panel2: '#2b3632',
     sunk: '#19201e',
     line: '#36423e',
+    lineStrong: '#767e7b',
+    pEdgeMix: '100%',
     ink: '#ebe3cd',
-    muted: '#a8a08a',
-    faint: '#746f61',
+    muted: '#beb6a0',
+    faint: '#a19b8a',
+    deco: '#746f61',
     accent: '#86b9cc',
     enamel: '#131917',
     enamel2: '#28322f',
@@ -58,12 +80,21 @@ export const palettes = {
     ready: '#6fbf8a',
     working: '#e9a13a',
     quiet: '#8e9891',
-    broken: '#c2625a',
+    broken: '#b65c54',
+    needsText: '#f47672',
+    readyText: '#6fbf8a',
+    workingText: '#e9a13a',
+    brokenText: '#d48880',
+    onNeeds: '#131917',
+    onReady: '#131917',
+    onWorking: '#131917',
+    onQuiet: '#131917',
+    onBroken: '#ffffff',
     added: '#80b77c',
-    removed: '#e07a70',
-    addedWash: '#2a4430',
+    removed: '#e28076',
+    addedWash: '#29432f',
     removedWash: '#4a2e2c',
-    addedGutter: '#36593d',
+    addedGutter: '#304f36',
     removedGutter: '#663a36',
     synKeyword: '#dba8e8',
     synString: '#acd58f',
@@ -74,12 +105,14 @@ export const palettes = {
     synAttr: '#8fc3d6',
     synRegexp: '#f39ab2',
     shadow: '0 1px 0 #00000033, 0 6px 16px -10px #000000aa',
+    shadowPop: '0 20px 50px -20px #000000cc',
+    backdrop: '#0000008c',
   },
 }
 
 export type Scheme = keyof typeof palettes
 
-/** Text set on an attention colour: white on the deep ones, enamel on the light ones, in both schemes. */
+/** Text set on an attention colour in the light scheme, as a word. @deprecated read `palettes[scheme].on<Attention>`. */
 export const onAttention = { needs: 'white', ready: 'enamel', working: 'enamel', quiet: 'enamel', broken: 'white' } as const
 
 /**
@@ -228,14 +261,14 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
 
 /**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
- * `quiet`, `broken`) sets `--c` and the text colour on it, `--on`; a lamp, pill, chip and meter read them. A floor sign takes
- * its project colour as `--p`. A meter's `s` is a tick on its track. Only a needs lamp blinks, and a `watching` one breathes;
- * with reduced motion, every animation runs once.
+ * `quiet`, `broken`) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
+ * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
+ * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion, every animation runs once.
  */
 const COMPONENTS = `
-${`:root { ${Object.entries(onAttention).map(([a, on]) => `--on-${a}: ${on === 'white' ? '#fff' : 'var(--enamel)'};`).join(' ')} }`}
-.needs { --c: var(--needs); --on: var(--on-needs); } .ready { --c: var(--ready); --on: var(--on-ready); } .working { --c: var(--working); --on: var(--on-working); }
-.quiet { --c: var(--quiet); --on: var(--on-quiet); } .broken { --c: var(--broken); --on: var(--on-broken); }
+.needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
+.working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
+.quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
 .lamp { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); }
 .needs .lamp, .lamp.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: .25; } }
@@ -254,14 +287,14 @@ ${`:root { ${Object.entries(onAttention).map(([a, on]) => `--on-${a}: ${on === '
 .meter { position: relative; height: 6px; border-radius: 999px; background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
-.sign { --pp: var(--p, var(--faint)); display: flex; align-items: center; gap: 9px; padding: 6px 6px 6px 13px; border-radius: var(--radius);
+.sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: 9px; padding: 6px 6px 6px 13px; border-radius: var(--radius);
   background: color-mix(in oklab, var(--pp) var(--p-plate-mix), var(--panel)); border: 1px solid color-mix(in oklab, var(--pp) var(--p-plate-edge-mix), var(--panel));
   color: color-mix(in oklab, var(--pp) var(--p-plate-text-mix), var(--ink)); box-shadow: inset 5px 0 0 var(--pp); }
 .sign .num { display: grid; place-items: center; min-width: 26px; height: 22px; padding: 0 4px; border-radius: 3px; background: var(--pp);
   color: var(--enamel); font: 900 14px/1 var(--display); font-variant-numeric: tabular-nums; }
 .sign .name { font: 800 14px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
-.spawn-form { --pp: var(--p, var(--accent)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1000px, calc(100vw - 32px));
+.spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1000px, calc(100vw - 32px));
   height: min(680px, calc(100vh - 48px)); color: var(--ink); font: 14px/1.45 var(--ui); }
 .spawn-form header { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
@@ -276,19 +309,19 @@ ${`:root { ${Object.entries(onAttention).map(([a, on]) => `--on-${a}: ${on === '
 .spawn-form .lbl { display: flex; align-items: baseline; gap: 8px; color: var(--muted); font: 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; }
 .spawn-form .lbl i { font: italic 500 11px/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
 .spawn-form input:not([type=radio]), .spawn-form select, .spawn-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 7px 9px; min-width: 0; }
-.spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pp); outline-offset: -1px; }
-.spawn-form input[type=radio]:focus-visible { outline: 2px solid var(--pp); outline-offset: 2px; border-radius: 50%; }
+  border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 7px 9px; min-width: 0; }
+.spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pe); outline-offset: -1px; }
+.spawn-form input[type=radio]:focus-visible { outline: 2px solid var(--pe); outline-offset: 2px; border-radius: 50%; }
 .spawn-form ::placeholder { color: var(--faint); font-style: italic; }
 .spawn-form textarea { flex: 1; resize: none; font: 14px/1.55 var(--ui); padding: 12px 14px; }
-.spawn-form input:invalid { border-color: var(--broken); }
+.spawn-form input:invalid { border-color: var(--broken-text); }
 .spawn-form .where { display: grid; gap: 6px; }
 .spawn-form .choice { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; row-gap: 2px; align-items: baseline; padding: 9px 12px;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
-.spawn-form .choice:hover { border-color: var(--faint); }
+.spawn-form .choice:hover { border-color: var(--deco); }
 .spawn-form .choice small { grid-column: 2 / -1; color: var(--muted); font-size: 12px; }
 .spawn-form .choice .aside { color: var(--faint); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.spawn-form .choice:has(:checked) { border-color: var(--pp); background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); box-shadow: inset 4px 0 0 var(--pp); }
+.spawn-form .choice:has(:checked) { border-color: var(--pe); background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); box-shadow: inset 4px 0 0 var(--pp); }
 .spawn-form .choice:has(:disabled) { opacity: .55; cursor: default; }
 .spawn-form .choice:has(:disabled) .aside { text-transform: none; letter-spacing: 0; font-weight: 500; }
 .spawn-form input[type=radio] { accent-color: var(--pp); margin: 0; translate: 0 2px; }
@@ -302,14 +335,14 @@ ${`:root { ${Object.entries(onAttention).map(([a, on]) => `--on-${a}: ${on === '
 .spawn-form .pick:has(:checked) { background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); }
 .spawn-form .pick span { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .pick .st { margin-left: auto; }
-.spawn-form .pick .st.at-risk { color: var(--needs); }
-.spawn-form .pick .st.live { color: var(--working); }
+.spawn-form .pick .st.at-risk { color: var(--needs-text); }
+.spawn-form .pick .st.live { color: var(--working-text); }
 .spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: -6px; padding-left: 14px; border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
 .spawn-form:has([name=where][value=new]:checked) .if-new, .spawn-form:has([name=where][value=worktree]:checked) .if-worktree,
   .spawn-form:has([name=where][value=main]:checked) .if-main { display: grid; }
 .spawn-form footer { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--sunk) 40%, var(--panel)); }
 .spawn-form .summary { display: flex; flex-wrap: wrap; gap: 2px 0; margin: 0 auto 0 0; color: var(--muted); font-size: 12px; min-width: 0; }
-.spawn-form .summary span + span::before { content: '·'; margin: 0 7px; color: var(--faint); }
+.spawn-form .summary span + span::before { content: '·'; margin: 0 7px; color: var(--deco); }
 .spawn-form .summary b { color: var(--ink); }
 .spawn-form footer button { flex: none; }
 .spawn-form footer kbd { margin-left: 8px; padding: 0; min-width: 0; background: none; color: inherit; opacity: .6; font: 600 12px/1 var(--ui); }

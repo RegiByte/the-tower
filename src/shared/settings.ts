@@ -80,14 +80,14 @@ export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>S
 /** The popover's look, under `.settings-pop` (the popover element) and `.settings` (its content). */
 export const settingsCss = `
 .settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(300px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto;
-  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: 0 20px 50px -20px #1d262988; }
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
 .settings { font: 13px/1.45 var(--ui); }
 .settings h2 { margin: 0; padding: 13px 14px 9px; font: 800 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
 .settings section { display: grid; gap: 8px; padding: 10px 14px 13px; border-top: 1px solid var(--line); }
 .settings h3 { display: flex; align-items: baseline; gap: 8px; margin: 0; font: 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .settings h3 small { font: 400 11px/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
 .settings .now { margin: 0; color: var(--muted); font-size: 12px; }
-.settings .now b { color: var(--ink); } .settings .now.denied b { color: var(--broken); }
+.settings .now b { color: var(--ink); } .settings .now.denied b { color: var(--broken-text); }
 .settings .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .settings .row button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-size: 12px; }
 .settings .seg { display: flex; gap: 2px; padding: 2px; border-radius: var(--radius); background: var(--sunk); }

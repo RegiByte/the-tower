@@ -28,7 +28,8 @@
     "tool:tour": "tsx scripts/tour.ts",
     "spike:pty": "tsx spikes/pty/passthrough.ts",
     "typecheck": "tsc -p . && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "tool:contrast": "tsx scripts/contrast.ts"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",

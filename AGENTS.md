@@ -64,6 +64,7 @@ shells (PTY) ◀──────▶ terms ◀──terms.sock──▶ rendere
   - Tower 3D through its door (`window.tower3d`, `renderers/tower3d/src/door.ts`) at `/r/tower3d/`; `?board=busy&seed=1&stepped&at=2026-10-04T15:00` gives the same frames on every load, any day. `tower3d.locate(target)` says where a thing stands, to teleport within reach before `aimAt`.
   - `npm run tool:frames -- record before`, change the code, `record after`, `compare before after`: every stage's state and scene PNG on the fixture boards, byte for byte (usage and limits in `scripts/frames.ts`, the walk in `scripts/frames.scenario.js`). Run it around any Tower 3D refactor (expect identical) and any visual change (look at the PNGs it lists).
 - Agent tools are npm scripts named `tool:<name>`, documented in their script's header.
+- `npm run tool:contrast` measures every colour pair the renderers draw from the tokens against WCAG AA, in both schemes; run it after any change to `design.ts`'s palettes or a new use of a token as text.
 - No fallbacks or defensive checks for unspecified cases.
 - The renderer API's version (`API_VERSION`, `src/shared/api.ts`) is `major.minor`: an addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a change that breaks a renderer is a major and says why in the changelog (decision `renderer-api-contract`).
 - A release is a tag `vX.Y.Z` cut by hand with an entry in `CHANGELOG.md`, flagged **host restart**, **API major** or **config** where it asks one of them; `tower update` moves a checkout to the newest (decision `releases`).

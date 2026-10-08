@@ -1,4 +1,4 @@
-import { onAttention, palettes } from '../../../src/shared/design.ts'
+import { palettes } from '../../../src/shared/design.ts'
 import { base, findCard, gistLine, modelName, pairLine } from '../../../src/shared/cards.ts'
 import type { Board, Card } from './api.ts'
 
@@ -13,7 +13,7 @@ export const WORLD = palettes.light
 /** A card's attention colour in the world. Panels colour by the `attention` class instead, in the viewer's scheme. */
 export const statusColor = (c: Card) => WORLD[c.attention]
 /** Text on a card's attention colour in the world. */
-export const onStatusColor = (c: Card) => (onAttention[c.attention] === 'white' ? '#fff' : WORLD.enamel)
+export const onStatusColor = (c: Card) => WORLD[`on${c.attention[0].toUpperCase()}${c.attention.slice(1)}` as `on${Capitalize<Card['attention']>}`]
 
 /** A gallery's picture by its worker and target, with the worker's card while the board carries it. */
 export const pictureOf = (board: Board, id: string, target: string) => {

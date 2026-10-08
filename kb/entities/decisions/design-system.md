@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other: a warm toy world under
@@ -48,7 +48,7 @@ terminals, and a terminal that is a block of the ink colour.
   [`WORLD`](ref:hub/renderers/tower3d/src/cards.ts#WORLD) = `palettes.light`, painted once: the world has its
   own light (the sky by the clock), and a lamp's colour means one thing whatever the panels show. Canvas text
   waits for the faces ([`loadFaces`](ref:hub/renderers/tower3d/src/toon.ts#loadFaces)). Text on an attention
-  colour is data too (`onAttention`), read by the CSS and the canvas alike; a rendered markdown document's
+  colour is a token too (`onNeeds`, `onReady`… per scheme, `--on-needs` in CSS), read by the CSS and the canvas alike; a rendered markdown document's
   style is [`documentCss`](ref:hub/src/shared/design.ts#documentCss), shared by both renderers' readers.
 - Project tones are mixed from the config colour in CSS (`color-mix` in oklab with ink or panel), never stored.
   A floor sign is a plate tinted by its project (a wash of the colour on panel, edged in it, the name in it
@@ -64,6 +64,19 @@ terminals, and a terminal that is a block of the ink colour.
   read as mud. Code's syntax has eight `syn*` colours per scheme (keyword, string, number, comment, title, type,
   attribute, regexp), each chosen to keep 4.5:1 on panel and on both washes (comments in light 4.6:1 at worst), ink
   staying the default; [[shared-panels]] maps highlight.js classes onto them.
+- **Contrast** (2026-10-08). Every pair the renderers draw reaches WCAG AA in both schemes: 4.5:1 for text, 3:1 for a
+  form field's edge and a focus ring. `faint`, a text tier that measured 2.1 to 2.8:1, was two roles: it is now text
+  at 4.5:1 or more on wall, panel and panel-2, with `muted` darkened (light) or brightened (dark) to about 7:1 on panel
+  so the three tiers stay apart (light 10.2 / 7.1 / 5.2), and `deco`, faint's old tone, for what is never read (carets,
+  dividers, a missing project colour). The five attention colours stay fills; each has a text tone of the same hue
+  (`needsText`, `readyText`, `workingText`, `brokenText`, the fill itself where it already passes, set as `--c-text` by
+  the attention classes) and a per-scheme text on it (`on*`: dark `needs` takes enamel, white measured 3.36). The fills
+  moved only where text on them failed: light `needs` 4% darker, dark `broken` 4.5%. `accent`, `added` and `removed`
+  darkened in light, their uses being text. `lineStrong` edges form fields at 3:1 (`line` divides, 1.4:1). A project's
+  focus ring and selected edge mix the colour with ink by the scheme's `pEdgeMix` (light 50%, dark the colour itself),
+  since config colours are picked for dark. Shifts are toward black (light) or white (dark) in oklab, which keeps each
+  hue. Every pair is data in [`contrast.ts`](ref:hub/scripts/contrast.ts): `npm run tool:contrast` measures them
+  all and fails on one under AA, so a token change is re-measured before it lands.
 
 **Alternatives considered.** Paper & Ink alone (charming beside the 3D, noisy in dense lists, reads as
 agent-office); Plant Floor, after Satisfactory (handsome but the most generic); a Sims skin (EA trade dress);
