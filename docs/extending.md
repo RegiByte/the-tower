@@ -65,7 +65,7 @@ Start from a page that includes `/tower.js`:
 <!doctype html>
 <link rel="stylesheet" href="/design.css">
 <ul id="floors"></ul>
-<script src="/tower.js?v=1.2"></script>
+<script src="/tower.js?v=1.3"></script>
 <script type="module">
 import { statusName } from '/cards.js'
 tower.subscribe((board) => {
@@ -81,7 +81,7 @@ The board is the whole system as one value, sent again whenever it changes: its 
 those verbs as ready requests: `tower.run(card.calls.resume)`. `/tower.js` documents its every member in its header
 (`curl http://127.0.0.1:4317/tower.js | head -60`).
 
-**Pin the version you wrote against.** `/tower.js?v=1.2` refuses to load into a tower of another major or an older
+**Pin the version you wrote against.** `/tower.js?v=1.3` refuses to load into a tower of another major or an older
 minor: `window.tower` is never defined and the console says which versions met, in place of a page drawing a board
 it misreads. A page that names no version
 moves with the tower: right for the renderers in the checkout, wrong for yours. `tower.version` is the tower's full
@@ -166,7 +166,9 @@ the board and drive the API:
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
 `tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. The same page
-runs on its own at `/run/<project>/<n>`, at the tower's origin.
+runs on its own at `/run/<project>/<n>`, at the tower's origin. The colour scheme follows the framing page:
+`tower.scheme()` and `tower.onScheme` read it, and `tower.chooseScheme(choice)` asks the framing page to change it, for
+every page of the viewer's.
 
 Relaying is the framing renderer's work, over the protocol in `src/shared/shelf-page.ts`. The tower page relays;
 Tower 3D relays nothing to the pages it frames. A renderer of yours frames shelf pages with the API by relaying the
@@ -226,10 +228,16 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends |
+| `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications |
+| `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
+
+A renderer that draws the Stats panel or the settings popover installs the shared tooltip once, `watchTips(document)`
+from `/tips.js`: the Stats bars show their readouts through it, and the popover stays hidden until it is placed.
 
 They are part of the API's contract. Removing or renaming an export, a `tower` member, a token or a class is a
 major, with a line in `CHANGELOG.md` saying what to use instead; adding one is a minor. They change, versioned and
-announced, but are not frozen. `test/served-exports.json` lists every name they serve today, and `npm test` holds the
+announced, but are not frozen. A name on its way out stays, marked `@deprecated` in its source with what replaces it
+(`RING_MARK` and `RING_NAME` in `/cards.js`), until a major removes it. `test/served-exports.json` lists every name they serve today, and `npm test` holds the
 tower to it.
 
 The tower also serves the libraries its own page uses (`/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/marked.js`) at
