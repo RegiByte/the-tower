@@ -436,7 +436,7 @@ const BUILDING_MIN_WINDOWS = 16
 const callsign = (id) => findCard(id).callsign
 const when = (ms) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 const $ = (id) => document.getElementById(id)
-/** A viewer's own conveniences, kept in this browser; storage can be unavailable, and then nothing is kept. */
+/** The one value a framed shelf page keeps for itself (`tower.remember`); storage can be unavailable, and then nothing is kept. */
 function remembered(key) {
   try { return localStorage.getItem(key) } catch { return null }
 }
@@ -450,12 +450,12 @@ let board = { user: { name: 'user' }, floors: [], waiting: [], rateLimits: [], h
 /** The web page of each project directory's origin remote. */
 let origins = {}
 let selected
-/** The sections a viewer unfolded under a floor's workers, by `<section>:<project>`, kept in this browser. */
-const unfolded = new Set(JSON.parse(remembered('tower.unfolded') ?? '[]'))
+/** The sections a viewer unfolded under a floor's workers, by `<section>:<project>`, kept in `tower.store`. */
+const unfolded = new Set((await tower.store.get('floors.unfolded')) ?? [])
 
 function toggleSection(key) {
   if (!unfolded.delete(key)) unfolded.add(key)
-  remember('tower.unfolded', JSON.stringify([...unfolded]))
+  tower.store.set('floors.unfolded', [...unfolded])
   render()
 }
 
@@ -849,13 +849,13 @@ const shownOn = (c, pane) => visibleShown(c).find((s) => shownPane(s) === pane)
 const shownKey = (s) => `${s.session}|${s.target}|${s.at}`
 const shownHref = (s) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
 
-/** The showings this viewer closed, kept in this browser. */
-const unshown = new Set(JSON.parse(remembered('tower.unshown') ?? '[]'))
+/** The showings this viewer closed, by `session|target|at`, kept in `tower.store`. */
+const unshown = new Set((await tower.store.get('shown.closed')) ?? [])
 const visibleShown = (c) => c.shown.filter((s) => !unshown.has(shownKey(s)))
 
 function unshow(key) {
   unshown.add(key)
-  remember('tower.unshown', JSON.stringify([...unshown].slice(-200)))
+  tower.store.set('shown.closed', [...unshown].slice(-200))
   render()
 }
 
@@ -1122,12 +1122,12 @@ function showBrief(c, threads) {
 }
 
 /**
- * The sidebar shows the floors or the stats, kept in this browser. The stats open on the floor in view (the selected
+ * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
  * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
  * every minute while shown.
  */
-let sideView = remembered('tower.sideView') ?? 'floors'
-const statsView = { stats: undefined, at: undefined, range: remembered('tower.statsRange') ?? 'week', all: false, reading: 0 }
+let sideView = (await tower.store.get('side.view')) ?? 'floors'
+const statsView = { stats: undefined, at: undefined, range: (await tower.store.get('stats.range')) ?? 'week', all: false, reading: 0 }
 const STATS_POLL_MS = 60_000
 let statsPoll
 
@@ -1154,7 +1154,7 @@ async function readStats() {
 
 function showSideView(view) {
   sideView = view
-  remember('tower.sideView', view)
+  tower.store.set('side.view', view)
   clearInterval(statsPoll)
   if (view === 'stats') (readStats(), (statsPoll = setInterval(readStats, STATS_POLL_MS)))
   drawSideView()
@@ -1223,9 +1223,9 @@ const railHtml = (waiting) =>
 
 function toggleSide() {
   document.body.classList.toggle('collapsed')
-  remember('tower.side', document.body.classList.contains('collapsed') ? 'collapsed' : 'open')
+  tower.store.set('side.collapsed', document.body.classList.contains('collapsed'))
 }
-document.body.classList.toggle('collapsed', remembered('tower.side') === 'collapsed')
+document.body.classList.toggle('collapsed', (await tower.store.get('side.collapsed')) === true)
 
 function tick() {
   if (!selected && !shelfOpen) paintSky()
@@ -2150,7 +2150,7 @@ document.addEventListener('click', (e) => {
   const scope = e.target.closest('[data-stats-scope]')?.dataset.statsScope
   if (scope) return ((statsView.all = scope === STATS_ALL), drawSideView())
   const range = e.target.closest('[data-stats-range]')?.dataset.statsRange
-  if (range) return (Object.assign(statsView, { range, stats: undefined }), remember('tower.statsRange', range), drawSideView(), readStats())
+  if (range) return (Object.assign(statsView, { range, stats: undefined }), tower.store.set('stats.range', range), drawSideView(), readStats())
   if (e.target.closest('[data-stats-read]')) return readStats()
   if (e.target.closest('[data-keys]')) return showKeys()
   const move = e.target.closest('[data-move]')?.dataset.move

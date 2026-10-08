@@ -16,7 +16,8 @@
  *                                when the host needs a restart, never restart it
  *   tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]
  *                                start a session (in the project's hub by default), print its id
- *   tower resume <id>            start a session that continues <id>'s conversation, print its id
+ *   tower resume <id>            start a session that continues <id>'s conversation, print its id; through the
+ *                                tower's resume queue while it runs, else straight to the host
  *   tower submit <id> <text...>  type a prompt and submit it
  *   tower kill <id>
  *   tower live                   ids of running sessions
@@ -43,7 +44,7 @@ import type { Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
-import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
+import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
 import { newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
 import { briefFor } from './worktrees.ts'
@@ -107,6 +108,32 @@ const print = (reply: FromHost) => {
   if (reply.t === 'live') console.log(reply.ids.join('\n'))
 }
 
+/**
+ * A resume asked of the tower, which runs resumes one at a time and refuses a conversation a running session holds;
+ * undefined when no tower answers.
+ */
+const resumeThroughTower = async (id: string, conversation: string): Promise<FromHost | undefined> => {
+  const tower = towerUrl(readConfig(paths.config))
+  const res = await fetch(`${tower}/resume`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify({ id, conversation }) }).catch((err) => {
+    if (err.cause?.code === 'ECONNREFUSED') return undefined
+    throw err
+  })
+  return res && res.json()
+}
+
+const resumeAtHost = async (log: SessionLog, conversation: string): Promise<FromHost> => {
+  const id = log.header.id
+  const sessions = readSessions()
+  const source = sessions.find((s) => s.header.id === id)!
+  const config = readConfigFile()
+  const holder = heldBy(conversation, sessions, await liveIds(paths))
+  if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": attach to it`)
+  const heir = newSessionId()
+  const project = config.projects[log.header.project]
+  const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
+  return request(resumeRequest(log.header, conversation, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
+}
+
 const [command, id, ...rest] = process.argv.slice(2)
 
 const main = async (): Promise<void> => {
@@ -158,15 +185,7 @@ const main = async (): Promise<void> => {
       const log = readSessionLog(id)
       const conversation = latestSaved(conversationsOf(log))
       if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
-      const sessions = readSessions()
-      const source = sessions.find((s) => s.header.id === id)!
-      const config = readConfigFile()
-      const holder = heldBy(conversation.id, sessions, await liveIds(paths))
-      if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation.id}": attach to it`)
-      const heir = newSessionId()
-      const project = config.projects[log.header.project]
-      const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
-      print(await request(resumeRequest(log.header, conversation.id, heir, resumeName(source, conversation.id, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project))))
+      print((await resumeThroughTower(log.header.id, conversation.id)) ?? (await resumeAtHost(log, conversation.id)))
       break
     }
     case 'submit':

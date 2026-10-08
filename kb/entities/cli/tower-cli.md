@@ -14,6 +14,7 @@
     { "to": "system-root", "verb": "writes", "carries": "host.pid, terms.pid and tower.pid on tower up; removes them on tower down; config.json once, on tower init, when none exists" },
     { "to": "system-root", "verb": "reads", "carries": "every session log from its checkpoint on for ls and resume, a whole log for screen and resume's conversation; tails one for attach (ps and reap read the process table only)" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, the checkpoints of the logs ls and resume fold" },
+    { "to": "tower-server", "verb": "calls", "carries": "tower resume: POST /resume while it runs, so the resume joins the tower's queue" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower update: stops it, moves the checkout to the newest release, starts it again" },
     { "to": "log-reductions", "verb": "uses", "carries": "foldLog, withLiveness, screenAt, snapshot, conversationsOf" }
   ]
@@ -24,7 +25,8 @@ handed to the tower's directory (`src/directory.ts`, [[agent-directory]]), which
 tower mod puts the command on every session's PATH; `npm link` puts it on the user's (`bin` in `package.json`).
 
 Unlike the tower it does not use [[live-system]]: each command reads the logs it needs and exits. `ls` and
-`resume` fold every log from its checkpoint on, as the tower does ([[fold-checkpoints]]).
+`resume` fold every log from its checkpoint on, as the tower does ([[fold-checkpoints]]); `resume` asks the
+running tower first and folds only when none answers ([[resume]]).
 `tower submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`.
 `tower attach` puts the terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `tower down`
 stops the daemons `tower up` started ([[bring-up]]); both take daemons by name. `tower init` writes a first config

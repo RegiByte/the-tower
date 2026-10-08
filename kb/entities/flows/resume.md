@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-08",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/cli.ts#resumeThroughTower", "hub/src/cli.ts#resumeAtHost", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
 }
 ---
 ```mermaid
@@ -36,7 +36,7 @@ sequenceDiagram
   its header's argv resumes, so a resume holds its conversation from the moment the host starts it. The refusal names
   the holder by the name its Claude runs under ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)). The tower runs
   resumes one at a time ([`resume`](ref:hub/src/tower/server.ts#resume)), each until the system holds the session it
-  started, so two requests at once start one session. `tower resume` asks the host directly, outside that queue: it refuses a conversation any session already started is in, but a CLI resume and a tower resume of the same conversation in the same instant can both start. Resuming a conversation
+  started, so two requests at once start one session. `tower resume` asks the same queue through `POST /resume` while the tower runs ([`resumeThroughTower`](ref:hub/src/cli.ts#resumeThroughTower)); with no tower up it asks the host directly ([`resumeAtHost`](ref:hub/src/cli.ts#resumeAtHost)), refusing a conversation any session already started is in. Resuming a conversation
   a running session has left (by `/clear`) still forks.
 - **Same directory.** Claude files conversations by directory, so the resume runs in the source's `cwd`
   under the same project ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)). In a [[worktree]] the
