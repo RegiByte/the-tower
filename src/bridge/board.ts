@@ -1,4 +1,4 @@
-import { MAIN_CHECKOUT, inProject, projectCollections, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, inProject, projectCollections, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
 import { reviewedIn, REVIEWS, threadId, unseenBy, type ReviewThread } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
@@ -150,7 +150,7 @@ export type Card = {
   sent: CardSent[]
   /** Ended by the host stopping or dying, while nobody meant it to end. */
   stranded: boolean
-  /** Not running, and none of its conversations can be resumed where it ran: why. */
+  /** Not running, holding a conversation nobody resumed, which can't be resumed where it ran: why. */
   unresumable?: Unresumable
   /** The conversations Claude saved, in order: the last is the one a resume continues. */
   conversations: CardConversation[]
@@ -294,12 +294,12 @@ const shownBy = (worker: Session[]): CardShown[] =>
 /**
  * Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees (`reads`,
  * `undefined` until every dir of it was read once). A project dir is taken to exist; a worktree, while git lists it with
- * its folder.
+ * its folder in every repo of the project, as a resume needs them all.
  */
 export const unresumableAt = (project: Project | undefined, cwd: string, reads: RepoRead[] | undefined): Unresumable | undefined => {
   if (project === undefined || !inProject(project, cwd)) return 'outside'
   if (worktreeName(project, cwd) === undefined || reads === undefined) return undefined
-  return treeAt(reads, cwd)?.present ? undefined : 'gone'
+  return sessionDirs(project, cwd).every((dir) => treeAt(reads, dir)?.present) ? undefined : 'gone'
 }
 
 const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[]): Card['worktree'] => {
@@ -337,8 +337,9 @@ const card = (
   const stranded = state.status === 'lost' || facts.hostStopped === true
   const waiting = waitsOnSomeone(state, facts.typedAt)
   const live = isLive(state.status)
-  const unresumable = live ? undefined : unresumableHere
-  const conversations = threads(session, sessions, nameOf).map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
+  const held = threads(session, sessions, nameOf)
+  const unresumable = !live && held.some((t) => !t.resumedBy) ? unresumableHere : undefined
+  const conversations = held.map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
     id,
     startedAt: header.startedAt + at * 1000,
     prompt: excerpt(prompt),

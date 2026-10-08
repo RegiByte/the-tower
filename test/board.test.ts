@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board } from '../src/bridge/board.ts'
+import { board, unresumableAt } from '../src/bridge/board.ts'
 import { resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf } from '../src/shared/cards.ts'
@@ -217,6 +217,17 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
   const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
   assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
+  const spanning = { name: 'tower', hub: '/hub', repos: ['/lib'] }
+  const both = (libPresent: boolean) =>
+    new Map<string, RepoRead>([
+      ['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present: true }], kept: [] }],
+      ['/lib', { dir: '/lib', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, path: '/lib/.worktrees/odin-42', present: libPresent }], kept: [] }],
+    ])
+  const readsOf = (repos: Map<string, RepoRead>) => [...repos.values()]
+  assert.deepEqual([unresumableAt(spanning, tree.path, readsOf(both(true))), unresumableAt(spanning, tree.path, readsOf(both(false)))], [undefined, 'gone'])
+  const [source, resumed] = [fixture('resume-source'), fixture('resumed')].map((l) => homed(l, '/moved/hub'))
+  const moved = cardsOf([source, resumed])
+  assert.deepEqual([source, resumed].map((l) => moved.find((c) => c.id === l.header.id)!.unresumable), [undefined, 'outside'])
 })
 
 test('calls: each verb that is a request comes ready, a resume naming the conversation it continues', () => {
