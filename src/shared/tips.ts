@@ -2,9 +2,9 @@
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
  * the top layer: on keyboard focus at once, on hover once the pointer rests on the element (at once while a tip shows or
  * has just hidden), beside the element and inside the viewport, until the pointer or the focus leaves it, Esc, a press,
- * a scroll or a redraw that removes it. It fades in and out, without motion under `prefers-reduced-motion`. A renderer
- * calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by the element that opened it the same way. The tower
- * serves this module as `/tips.js`.
+ * a scroll or a redraw that removes it. It fades in and out, at once under `prefers-reduced-motion`. A renderer
+ * calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
+ * the element that opened it the same way. The tower serves this module as `/tips.js`.
  */
 
 export type Box = { left: number; top: number; width: number; height: number }
@@ -46,20 +46,19 @@ export function placeOnOpen(el: HTMLElement, anchor: () => Element) {
 }
 
 /**
- * The tip's look, from the design's tokens: ink paper in either scheme. It fades in drifting away from its element
- * (`data-side`, where it stands), and back out: `display` and `overlay` transition discretely, so a hidden tip stays in
- * the top layer until its fade ends. A placed popover hides until it is placed.
+ * The tip's look, from the design's tokens: ink paper in either scheme. It fades in growing slightly, and back out:
+ * `display` and `overlay` transition discretely, so a hidden tip stays in the top layer until its fade ends (in browsers
+ * without `overlay`, it leaves the top layer as it starts fading). A placed popover hides until it is placed.
  */
 export const tipsCss = `
 .tower-tip { position: fixed; inset: auto; margin: 0; max-width: min(320px, calc(100vw - 16px)); padding: 6px 9px; border: 0; border-radius: var(--radius);
   background: var(--ink); color: var(--panel); box-shadow: 0 0 0 1px color-mix(in oklab, var(--panel) 30%, transparent), var(--shadow); font: 12px/1.45 var(--ui); font-weight: 400; letter-spacing: 0; text-transform: none;
   white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; overflow: visible;
-  --tip-from: 0 -3px; opacity: 0; translate: var(--tip-from);
-  transition: opacity 120ms ease-out, translate 120ms ease-out, display 120ms allow-discrete, overlay 120ms allow-discrete; }
-.tower-tip[data-side=above] { --tip-from: 0 3px; }
-.tower-tip:popover-open { opacity: 1; translate: 0 0; }
-@starting-style { .tower-tip:popover-open { opacity: 0; translate: var(--tip-from); } }
-@media (prefers-reduced-motion: reduce) { .tower-tip { transition: none; --tip-from: 0 0; } }
+  opacity: 0; scale: 0.97;
+  transition: opacity 120ms ease-out, scale 120ms ease-out, display 120ms allow-discrete, overlay 120ms allow-discrete; }
+.tower-tip:popover-open { opacity: 1; scale: 1; }
+@starting-style { .tower-tip:popover-open { opacity: 0; scale: 0.97; } }
+@media (prefers-reduced-motion: reduce) { .tower-tip { transition: none; scale: 1; } }
 .tower-tip:not([data-placed]), [popover][data-placeable]:not([data-placed]) { visibility: hidden; }
 `
 
@@ -84,7 +83,6 @@ export function watchTips(doc: Document) {
     tip.textContent = el.dataset.tip ?? ''
     if (!tip.matches(':popover-open')) tip.showPopover()
     placeBeside(tip, el)
-    tip.dataset.side = tip.getBoundingClientRect().top < el.getBoundingClientRect().top ? 'above' : 'below'
     el.setAttribute('aria-describedby', tip.id)
   }
   const showSoon = (el: HTMLElement) => {

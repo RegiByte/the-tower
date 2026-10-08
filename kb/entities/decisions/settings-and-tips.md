@@ -63,10 +63,11 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   `data-tip`'s text, lines kept, at once on keyboard focus (`:focus-visible`) and on hover after the pointer rests
   350 ms (at once while a tip shows or within 300 ms of one hiding, so running along a row of controls doesn't wait at
   each), until the pointer or the focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets
-  `aria-describedby` while shown. [`tipsCss`](ref:hub/src/shared/tips.ts#tipsCss) fades it in and out over 120 ms with
-  a 3 px drift away from its element: `@starting-style` gives the entry, and `display` and `overlay` transition with
-  `allow-discrete` so a hidden popover stays drawn in the top layer while it fades; `prefers-reduced-motion: reduce`
-  drops the transition.
+  `aria-describedby` while shown. [`tipsCss`](ref:hub/src/shared/tips.ts#tipsCss) fades it in and out over 120 ms,
+  growing from 97%: `@starting-style` gives the entry, and `display` and `overlay` transition with `allow-discrete` so
+  a hidden popover stays drawn in the top layer while it fades; `prefers-reduced-motion: reduce` drops the transition.
+  Safari and Firefox don't know `overlay` yet: there a hiding tip leaves the top layer as its fade starts, so over an
+  open popover or modal it fades beneath it, for 120 ms.
   [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) stands it below its element, above when only above has room,
   inside the viewport; [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands the settings popover by its
   button the same way. Ink on panel in either scheme, edged in a wash of panel so it parts from dark surfaces (Tower
@@ -87,6 +88,8 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
 - *Keeping `title`s, worded better*: shown after a long delay, never on focus, styled by the OS.
 - *Showing a tip at once on hover*: the first version did; tips flashed as the pointer crossed the head on its way
   elsewhere. A rest delay with a warm window after a hide is how native toolbars behave.
+- *A slide away from the element*: which side a tip stands on is known only once it is shown and measured, after
+  `@starting-style` has fixed where the entry starts; a scale needs no side.
 - *A fade in JavaScript (waiting for `transitionend` before `hidePopover`)*: a second timer and state; the discrete
   transitions of `display` and `overlay` let the stylesheet hold the popover open through its fade.
 - *A tooltip in CSS alone* (`:hover::after`, as the Stats bars had): clipped by a scrolling parent, no keyboard focus,
