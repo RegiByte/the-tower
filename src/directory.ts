@@ -585,7 +585,7 @@ switch (verb) {
     if (!flag) throw new CliError('Usage: tower let-go <CALLSIGN>')
     const card = await cardNamed(await readBoard(), flag)
     const call = card.calls['let-go']
-    if (!call) throw new CliError(`${card.callsign} is not stranded (${statusName(card)}): only a worker the host stopped or lost, waiting to be resumed, is let go`)
+    if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker the host stopped or lost, on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
     break
