@@ -28,6 +28,10 @@ deleted. A prompt typed into the dialog that closes without starting, or whose s
 opened on. A session the page
 starts opens once the board carries its card: the host answers before the tower has read the new log.
 
+*Reflow* (2026-10-08). The page holds at 200% zoom and at the largest Text size: under 900 px the sidebar is the rail
+and the sidebar key (or ») opens it over the main pane until a worker is picked; the worker bar wraps rather than
+clipping its callsign ([[design-system]]).
+
 *Keyboard and screen readers* (2026-10-08). The page is the tower's accessible renderer: Tower 3D's pointer-lock walk
 can't be. Every worker is a link to `#<id>`: a card's callsign, a lit or past window of the skyline, a lamp of the
 collapsed rail and a past worker's callsign in the archive. The page opens what the hash names at load and again on

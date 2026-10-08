@@ -734,10 +734,10 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm): string {
 /** A choice of where, with what picking it means; `aside`: a hint at its right, as "default". */
 const choiceHtml = (where: Where, title: string, what: string, { checked = false, disabled = false, aside = '' } = {}) =>
   `<label class="choice"><input type="radio" name="where" value="${where}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}>
-    <b>${title}</b>${aside && `<span class="aside">${aside}</span>`}<small>${what}</small></label>`
+    <b>${title}</b>${aside && `<span class="aside eyebrow">${aside}</span>`}<small>${what}</small></label>`
 
 /** A field's label: its name, and when the tower or Claude fills it in if left empty, says so. */
-const labelHtml = (name: string, optional = false) => `<span class="lbl">${name}${optional ? '<i>optional</i>' : ''}</span>`
+const labelHtml = (name: string, optional = false) => `<span class="lbl eyebrow">${name}${optional ? '<i>optional</i>' : ''}</span>`
 
 const optionsHtml = (values: string[], none: string) => [`<option value="">${esc(none)}</option>`, ...values.map((v) => `<option>${esc(v)}</option>`)].join('')
 

@@ -434,12 +434,12 @@ const problemPage = (title: string, detail: string, fix: string): string => `<!d
 <title>The Tower: ${esc(title)}</title>
 <link rel="stylesheet" href="/design.css">
 <style>
-body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--wall); color: var(--ink); font: 15px/1.5 var(--ui); }
-main { max-width: 640px; margin: 16px; padding: 24px 28px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken); border-radius: var(--radius); }
-h1 { margin: 0 0 12px; font: 800 22px/1.2 var(--display); }
-pre { margin: 12px 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 var(--mono); background: var(--panel-2); border-radius: var(--radius); }
-code { font: 13px var(--mono); overflow-wrap: anywhere; }
-p { margin: 12px 0 0; color: var(--muted); }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--wall); color: var(--ink); font: var(--fs-xl)/1.5 var(--ui); }
+main { max-width: 640px; margin: var(--sp-xl); padding: var(--sp-2xl) var(--sp-3xl); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken); border-radius: var(--radius); }
+h1 { margin: 0 0 var(--sp-l); font: 800 var(--fs-2xl)/1.2 var(--display); }
+pre { margin: var(--sp-l) 0; padding: var(--sp-l); white-space: pre-wrap; overflow-wrap: anywhere; font: var(--fs-m)/1.5 var(--mono); background: var(--panel-2); border-radius: var(--radius); }
+code { font: var(--fs-m) var(--mono); overflow-wrap: anywhere; }
+p { margin: var(--sp-l) 0 0; color: var(--muted); }
 </style>
 </head>
 <body>

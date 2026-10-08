@@ -92,13 +92,13 @@ export const markdownCss = `.md { overflow-wrap: anywhere; }
 .md hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0; }
 .md blockquote { padding: 0 1em; border-left: 3px solid var(--line); color: var(--muted); }
 .md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
-.md th, .md td { border: 1px solid var(--line); padding: 3px 9px; text-align: left; } .md th { background: var(--sunk); }
-.md code { font: .88em var(--mono); background: var(--sunk); padding: .1em .35em; border-radius: 4px; overflow-wrap: anywhere; }
+.md th, .md td { border: 1px solid var(--line); padding: var(--sp-xs) var(--sp-m); text-align: left; } .md th { background: var(--sunk); }
+.md code { font: .88em var(--mono); background: var(--sunk); padding: .1em .35em; border-radius: var(--radius); overflow-wrap: anywhere; }
 .md figure.code { position: relative; margin-inline: 0; }
-.md figure.code pre { margin: 0; padding: 9px 12px; padding-right: 52px; overflow-x: auto; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
-  font: 12.5px/1.5 var(--mono); font-variant-ligatures: none; }
+.md figure.code pre { margin: 0; padding: var(--sp-m) var(--sp-l); padding-right: 52px; overflow-x: auto; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+  font: var(--fs-m)/1.5 var(--mono); font-variant-ligatures: none; }
 .md figure.code pre code { background: none; padding: 0; font: inherit; overflow-wrap: normal; }
-.md figure.code > button { position: absolute; top: 5px; right: 5px; padding: 1px 7px; font: 600 11px/1.5 var(--ui); color: var(--muted); background: var(--panel-2);
-  border: 1px solid var(--line); border-radius: 4px; cursor: pointer; opacity: .6; }
+.md figure.code > button { position: absolute; top: 5px; right: 5px; padding: 1px var(--sp-m); font: 700 var(--fs-xs)/1.5 var(--ui); color: var(--muted); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; opacity: .6; }
 .md figure.code:hover > button, .md figure.code > button:focus-visible { opacity: 1; }
 ${highlightCss('.md')}`

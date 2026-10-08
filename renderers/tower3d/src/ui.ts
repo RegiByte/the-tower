@@ -227,7 +227,7 @@ export function elevatorHtml(p: Plan, here: number, riding: boolean) {
     return `<button class="lift-row${l.index === here ? ' here' : ''}" style="--p:${tint(l)}" data-ride="${l.index}" ${riding ? 'disabled' : ''}>
       <span class="num">${levelKey(l)}</span><span class="name">${esc(l.name)}</span>${waits.length ? `<span class="chip ${loudest(waits)} some"><span class="lamp"></span><b>${waits.length}</b></span>` : ''}</button>`
   }).join('')
-  return `<h3>Elevator${riding ? ' · riding' : ''}</h3>${rows}`
+  return `<h3 class="eyebrow">Elevator${riding ? ' · riding' : ''}</h3>${rows}`
 }
 
 /** The keys that ride to a level from inside the car: its index, R for the roof. */
@@ -468,14 +468,14 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     past && `<button class="tray" data-archive data-tip="past workers and their conversations">▤ <b>${past}</b> archived ›</button>`,
   ].filter(Boolean).join('')
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
-    <div class="section">Dirs</div>${dirs}
-    ${shelf && `<div class="section">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
-    <div class="section">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
+    <div class="section eyebrow">Dirs</div>${dirs}
+    ${shelf && `<div class="section eyebrow">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
+    <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
     ${can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''}
-    ${running && `<div class="section">Running</div>${running}`}
-    ${can(f, 'tidy') ? `<div class="section">${esc(tidyLine(f.tidy))}</div>${tidyListHtml(f)}<button class="wide" data-tidy data-tip="do all of it, as listed">tidy</button>` : ''}
+    ${running && `<div class="section eyebrow">Running</div>${running}`}
+    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyListHtml(f)}<button class="wide" data-tidy data-tip="do all of it, as listed">tidy</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${worktreesOpen && trees ? `<div class="section">Worktrees</div>${worktreesHtml(f)}` : ''}`
+    ${worktreesOpen && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f)}` : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */

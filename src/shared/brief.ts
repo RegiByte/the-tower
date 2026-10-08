@@ -128,7 +128,7 @@ const refName = (ref: SessionRef, parts: BriefPart[]) => {
 /** A session's conversations in order, each with its last turns, oldest first. */
 const conversationsHtml = (part: BriefPart, parts: BriefPart[], promptBy: BriefView['promptBy'], d: Drawing) =>
   part.threads.map((t, i) => `<section class="brief-conv">
-    <h4>conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}</h4>
+    <h4 class="eyebrow">conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}</h4>
     ${t.turns.length ? t.turns.map((turn, j) => turnHtml(t, turn, j === t.turns.length - 1 ? promptBy(t.id) : undefined, d)).join('') : '<p class="none">nothing asked yet</p>'}</section>`).join('')
 
 const markdownBar = (markdown: BriefMarkdown) =>
@@ -142,44 +142,44 @@ export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), 
   const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working }
   const label = (p: BriefPart) => esc(sessionLabel(p.n, p.of, p.session.startedAt))
   return `<div class="brief-view">${markdownBar(markdown)}
-    ${earlier.length ? '<h3>earlier sessions</h3>' : ''}
+    ${earlier.length ? '<h3 class="eyebrow">earlier sessions</h3>' : ''}
     ${earlier.toReversed().map((p) => `<details class="brief-session" data-brief-session="${esc(p.session.id)}"${open.has(p.session.id) ? ' open' : ''}>
-      <summary>${label(p)} · ${plural(p.threads.length, 'conversation')}</summary>${conversationsHtml(p, parts, () => undefined, d)}</details>`).join('')}
+      <summary class="eyebrow">${label(p)} · ${plural(p.threads.length, 'conversation')}</summary>${conversationsHtml(p, parts, () => undefined, d)}</details>`).join('')}
     ${earlier.length ? `<h3 class="brief-session-head">${label(current)} · this session</h3>` : ''}
     ${conversationsHtml(current, parts, promptBy, d)}</div>`
 }
 
 /** Scoped under `.brief-view`; reads the design's tokens from `/design.css`, and `markdownCss` sets the words. */
-export const briefCss = `.brief-view { display: flex; flex-direction: column; gap: 4px; font: 14px/1.55 var(--ui); color: var(--ink); }
-.brief-view .brief-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: flex-end; padding: 6px 0; background: var(--panel); }
-.brief-view .seg { display: flex; gap: 2px; padding: 2px; border-radius: var(--radius); background: var(--sunk); }
-.brief-view .seg button { padding: 2px 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 700 12px/1.4 var(--ui); cursor: pointer; }
+export const briefCss = `.brief-view { display: flex; flex-direction: column; gap: var(--sp-xs); font: var(--fs-l)/1.55 var(--ui); color: var(--ink); }
+.brief-view .brief-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: flex-end; padding: var(--sp-s) 0; background: var(--panel); }
+.brief-view .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
+.brief-view .seg button { padding: var(--sp-2xs) var(--sp-l); border: 0; border-radius: var(--radius); background: none; color: var(--muted); font: 700 var(--fs-s)/1.4 var(--ui); cursor: pointer; }
 .brief-view .seg button:hover { color: var(--ink); } .brief-view .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
-.brief-view h3 { margin: .6em 0 .2em; font: 800 12px/1.4 var(--display); letter-spacing: .08em; color: var(--faint); text-transform: uppercase; }
+.brief-view h3 { margin: .6em 0 .2em; line-height: 1.4; }
 .brief-view .brief-session-head { margin-top: 1.4em; padding-top: 1em; border-top: 1px solid var(--line); }
-.brief-view h4 { margin: 1.2em 0 .5em; font: 800 12px/1.4 var(--display); letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
+.brief-view h4 { margin: 1.2em 0 .5em; line-height: 1.4; }
 .brief-view .brief-conv + .brief-conv { margin-top: 1em; border-top: 1px solid var(--line); }
 .brief-view .none { margin: .4em 0; color: var(--faint); font-style: italic; }
-.brief-view .turn { display: grid; gap: 8px; margin-bottom: 14px; }
-.brief-view .bubble { min-width: 0; padding: 8px 14px 10px; border-radius: 12px; border: 1px solid var(--line); }
+.brief-view .turn { display: grid; gap: var(--sp-m); margin-bottom: var(--sp-xl); }
+.brief-view .bubble { min-width: 0; padding: var(--sp-m) var(--sp-xl) var(--sp-l); border-radius: 12px; border: 1px solid var(--line); }
 .brief-view .bubble.you { justify-self: end; max-width: min(82%, 760px); background: color-mix(in oklab, var(--accent) 12%, var(--panel)); border-color: color-mix(in oklab, var(--accent) 40%, var(--panel)); border-bottom-right-radius: 3px; }
 .brief-view .bubble.claude { justify-self: stretch; background: var(--panel-2); border-bottom-left-radius: 3px; }
 .brief-view .bubble.working, .brief-view .bubble.none { justify-self: start; }
-.brief-view .bubble > header { display: flex; align-items: center; gap: 8px; min-height: 20px; margin-bottom: 4px; font: 700 11px/1.3 var(--ui); letter-spacing: .06em; color: var(--muted); }
+.brief-view .bubble > header { display: flex; align-items: center; gap: var(--sp-m); min-height: 20px; margin-bottom: var(--sp-xs); font: 700 var(--fs-xs)/1.3 var(--ui); letter-spacing: .06em; color: var(--muted); }
 .brief-view .bubble.working > header, .brief-view .bubble.none > header { margin: 0; }
-.brief-view .bubble.working .lamp { margin: 0 2px 0 4px; vertical-align: -1px; }
-.brief-view .bubble > header .acts { margin-left: auto; display: flex; gap: 4px; opacity: .55; }
+.brief-view .bubble.working .lamp { margin: 0 var(--sp-2xs) 0 var(--sp-xs); vertical-align: -1px; }
+.brief-view .bubble > header .acts { margin-left: auto; display: flex; gap: var(--sp-xs); opacity: .55; }
 .brief-view .bubble:hover > header .acts, .brief-view .bubble > header .acts:focus-within { opacity: 1; }
-.brief-view .bubble > header button { padding: 0 7px; font: 600 11px/1.6 var(--ui); letter-spacing: 0; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.brief-view .bubble > header button { padding: 0 var(--sp-m); font: 700 var(--fs-xs)/1.6 var(--ui); letter-spacing: 0; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .brief-view .bubble > header button:hover { color: var(--ink); }
-.brief-view .raw { white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.55 var(--mono); font-variant-ligatures: none; }
+.brief-view .raw { white-space: pre-wrap; overflow-wrap: anywhere; font: var(--fs-m)/1.55 var(--mono); font-variant-ligatures: none; }
 .brief-view .long > :is(.md, .raw) { max-height: 18em; overflow: hidden; mask-image: linear-gradient(#000 65%, transparent); }
 .brief-view .long:has(.more input:checked) > :is(.md, .raw) { max-height: none; mask-image: none; }
-.brief-view .more { display: inline-block; margin-top: 4px; font: 700 12px/1.4 var(--ui); color: var(--accent); cursor: pointer; }
+.brief-view .more { display: inline-block; margin-top: var(--sp-xs); font: 700 var(--fs-s)/1.4 var(--ui); color: var(--accent); cursor: pointer; }
 .brief-view .bubble.you :is(.md a, .more) { color: var(--ink); text-decoration: underline; }
 .brief-view .more input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.brief-view .more:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.brief-view .more:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
 .brief-view .more .hide, .brief-view .more:has(input:checked) .show { display: none; } .brief-view .more:has(input:checked) .hide { display: inline; }
-.brief-view .brief-session { margin: .3em 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 12px; }
-.brief-view .brief-session[open] { padding-bottom: 6px; }
-.brief-view .brief-session > summary { cursor: pointer; padding: 8px 0; font: 800 12px/1.4 var(--display); letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }`
+.brief-view .brief-session { margin: .3em 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 var(--sp-l); }
+.brief-view .brief-session[open] { padding-bottom: var(--sp-s); }
+.brief-view .brief-session > summary { cursor: pointer; padding: var(--sp-m) 0; line-height: 1.4; }`

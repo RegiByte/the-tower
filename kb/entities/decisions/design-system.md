@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other: a warm toy world under
@@ -80,10 +80,38 @@ draws with almost no advance, so the next face in the stack draws it.
   since config colours are picked for dark. Shifts are toward black (light) or white (dark) in oklab, which keeps each
   hue. Every pair is data in [`contrast.ts`](ref:hub/scripts/contrast.ts): `npm run tool:contrast` measures them
   all and fails on one under AA, so a token change is re-measured before it lands.
+- **Type, space and corners** (2026-10-08). Text came in eleven px sizes, the small uppercase label in six variants
+  and two faces, spacing in some twenty values, and Overpass was nudged onto its line by hand (`padding-top` of 1 to
+  3 px in eight rules); the browser's text size did nothing. Now:
+  - *A type scale in rem* ([`size`](ref:hub/src/shared/design.ts#size), `--fs-xs` to `--fs-3xl`: 11, 12, 13, 14, 16,
+    20 and 26 px at the browser's default). Every text size of the page, the shared modules and Tower 3D's HTML panels
+    is a step; the root's font size is the browser's times the viewer's Text size (`--scale`, [[viewer-prefs]]), so
+    both reach every panel. Terminals keep their own size (the Terminal pref) and Tower 3D's canvas its own, as art.
+    Sizes moved to the nearest step: 10 px text (kbd, a draft's meta, a move's chord, a worktree's state) is 11, the
+    floor; the brand and the bar's callsign 20 (were 19 and 18); glyph buttons 16 (were 15).
+  - *A spacing scale in px* ([`space`](ref:hub/src/shared/design.ts#space), `--sp-2xs` to `--sp-3xl`: 2, 4, 6, 8,
+    12, 16, 24, 32): text grows with the viewer's size, the space around it stays. Each padding, margin and gap went
+    to its nearest step, a tie to the multiple of 4 and else up (10 is 12, 14 is 16), so the page is a little airier.
+    Hairlines (1 px) and layout lengths (34 px and up) are not spacing and stay.
+  - *One label*, `.eyebrow` (Overpass 800 at `--fs-xs`, .08em, uppercase, `muted`): the settings' sections, the spawn
+    form's labels, trays, the side views, the keys sheet's groups, chart captions, a repo's name in Changes, the
+    brief's sections and Tower 3D's panel sections.
+  - *Overpass's line*: its own ascent and descent (88% and 38%) leave capitals 0.1 em above the middle of a line. Its
+    `@font-face` overrides them (98% and 28%, the same total, so ascent less descent is the cap height) and every hand
+    nudge is gone. Tower 3D's canvas text draws on the alphabetic line and didn't move (`tool:frames` identical).
+  - *Corners* `radius`, `radiusS` (2 px, small marks) and `radiusPill`; *italics are real faces* (Atkinson 400 and 700
+    italic, JetBrains Mono 400 italic) where the browser slanted the roman, and weights are the shipped 400 and 700.
+  - *Reflow* (the tower page): the sidebar is `20rem` (at most 38% of the width) and under 900 px a rail, opened over
+    the main pane by the sidebar key or its » until a worker is picked; when space is short the whole sidebar scrolls,
+    its header with it. The worker bar wraps: the callsign and pill keep their row, the actions move below.
 
 **Alternatives considered.** Paper & Ink alone (charming beside the 3D, noisy in dense lists, reads as
 agent-office); Plant Floor, after Satisfactory (handsome but the most generic); a Sims skin (EA trade dress);
 keeping the old dark theme warmer (doesn't fix generic). Following the clock for the scheme: the UI would change under you mid-session.
+Spacing in rem: the whole page would grow with the Text size like a zoom, and a fixed-width sidebar would hold less;
+zoom already does that. Steps named by their px value (`--sp-8`): clear to read, but they lie the day the scale
+changes. Shrinking Overpass with `size-adjust`: centres it but changes every sign's size; `text-box: trim-both`
+isn't in every browser the tower runs in.
 Tower 3D's world following the scheme too: every canvas label would repaint on a toggle, and a sign in the
 building would change with the viewer's OS appearance. Fonts committed as woff2 files: rejected for the
 `@fontsource` packages, which pin versions and carry the OFL licences with no binaries in git.

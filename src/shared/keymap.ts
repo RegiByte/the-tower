@@ -232,6 +232,6 @@ export const keymapSheetHtml = (keys: Keys): string =>
       const rows = COMMANDS.filter((c) => c.group === group && keys[c.id]?.length)
         .map((c) => `<span class="chords">${keys[c.id].map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join(' ')}</span><span>${esc(c.does)} <small>· ${esc(whereOf(c, keys[c.id]))}</small></span>`)
         .join('')
-      return rows && `<h3>${esc(group)}</h3>${rows}`
+      return rows && `<h3 class="eyebrow">${esc(group)}</h3>${rows}`
     })
     .join('')

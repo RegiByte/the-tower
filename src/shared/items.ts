@@ -91,7 +91,7 @@ export const collectionTrayHtml = (
   now: number,
   actions = '',
 ) =>
-  `<div class="kept-tray"><div class="kept-head">${esc(c.label)}${actions}</div>` +
+  `<div class="kept-tray"><div class="kept-head eyebrow">${esc(c.label)}${actions}</div>` +
   (c.description ? `<div class="kept-about">${esc(c.description)}</div>` : '') +
   (newestFirst(c.items).map((item) => itemRowHtml(project, c.id, item, title(item), item.id === open, now)).join('') || '<div class="kept-empty">none kept</div>') +
   '</div>'
@@ -102,19 +102,19 @@ export const deleteAsk = (c: Pick<FloorCollection, 'label'>, item: FloorItem, ti
 
 /** The rows' and trays' look, from the design's tokens. */
 export const itemsCss = `
-.kept-tray { padding: 8px 2px 0; }
-.kept-head { display: flex; align-items: center; gap: 2px; padding: 0 2px 0 8px; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.kept-tray { padding: var(--sp-m) var(--sp-2xs) 0; }
+.kept-head { display: flex; align-items: center; gap: var(--sp-2xs); padding: 0 var(--sp-2xs) 0 var(--sp-m); }
 .kept-head > :first-child { margin-left: auto; }
-.kept-head button { background: none; border: none; padding: 0 6px; color: var(--faint); font-size: 15px; font-weight: 400; }
+.kept-head button { background: none; border: none; padding: 0 var(--sp-s); color: var(--faint); font: 400 var(--fs-xl) var(--ui); }
 .kept-head button:hover { color: var(--ink); }
-.kept-about { padding: 2px 8px 4px; color: var(--faint); font-size: 11px; line-height: 1.35; }
-.kept-empty { color: var(--faint); font-style: italic; font-size: 12px; padding: 2px 8px; }
-.kept-row { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr); padding: 3px 8px; border: none; border-radius: var(--radius); background: none;
-  font: inherit; font-size: 12px; font-weight: 400; text-align: left; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.kept-about { padding: var(--sp-2xs) var(--sp-m) var(--sp-xs); color: var(--faint); font-size: var(--fs-xs); line-height: 1.35; }
+.kept-empty { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }
+.kept-row { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr); padding: var(--sp-xs) var(--sp-m); border: none; border-radius: var(--radius); background: none;
+  font: inherit; font-size: var(--fs-s); font-weight: 400; text-align: left; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .kept-row .t { overflow: hidden; text-overflow: ellipsis; }
-.kept-row .meta { overflow: hidden; text-overflow: ellipsis; color: var(--faint); font: 10px/1.4 var(--mono); letter-spacing: .02em; }
+.kept-row .meta { overflow: hidden; text-overflow: ellipsis; color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); letter-spacing: .02em; }
 .kept-row:hover, .kept-row.sel { background: var(--panel-2); color: var(--ink); }
 .kept-row.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
 .kept-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.item-text { margin: 0; white-space: pre-wrap; font: 13px/1.5 var(--mono); }
+.item-text { margin: 0; white-space: pre-wrap; font: var(--fs-m)/1.5 var(--mono); }
 `

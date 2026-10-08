@@ -116,7 +116,7 @@ The tower page is one file, `renderers/page/index.html`, and imports everything 
 
    ```css
    .brand h1 { color: #e0115f; }
-   .mine-badge { font: 700 11px/1 var(--mono); padding: 3px 6px; border-radius: var(--radius); background: #e0115f; color: white; }
+   .mine-badge { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-xs) var(--sp-s); border-radius: var(--radius); background: #e0115f; color: white; }
    ```
 
    ```js
@@ -145,7 +145,9 @@ perl -0pi -e 's#</head>#<link rel="stylesheet" href="mine.css">\n</head>#; s#</b
 The layering advice that makes this work:
 
 - **Override, don't edit.** Restyle through your own stylesheet, after the copy's: the design's tokens
-  (`--ink`, `--panel`, `--accent`, `--radius`…) are custom properties you can redefine.
+  (`--ink`, `--panel`, `--accent`, `--radius`…) are custom properties you can redefine. Size text with the type
+  scale (`--fs-xs` to `--fs-3xl`, in rem, so it follows the viewer's text size) and space it with the spacing scale
+  (`--sp-2xs` to `--sp-3xl`); a small uppercase label is the `.eyebrow` class.
 - **Touch what the copy leaves alone.** The copy redraws parts of the page as the board moves. Your module can add
   elements, listen to `tower.subscribe`, or call the API, but a value the copy sets (the page's title, a list it
   redraws) is overwritten on its next draw. A change there belongs in the copy itself: keep it small, and keep it as a
@@ -213,9 +215,10 @@ included, so the files you mark viewed in one renderer are viewed in the next. `
 keep one value for the page alone.
 
 **The viewer's appearance** is `tower.prefs`: the scheme, the text, heading and code faces (any face installed on the
-viewer's computer, by name), the terminal's font size, motion and contrast (`src/shared/prefs.ts`). `tower.js` keeps
+viewer's computer, by name), the terminal's font size, motion, contrast and text size (`src/shared/prefs.ts`). `tower.js` keeps
 it in the viewer's browser, shared by every tab and every page of theirs, and puts it on your page's root before it
-paints: `data-scheme`, `data-motion`, `data-contrast` and the `--ui`, `--display` and `--mono` stacks. A page that
+paints: `data-scheme`, `data-motion`, `data-contrast`, the `--ui`, `--display` and `--mono` stacks, and `--scale`, the
+root's font size as a factor of the browser's, which every rem size follows. A page that
 links `/design.css` and draws with its variables follows it with no code. Read it with `tower.prefs.get()`, hear
 changes with `tower.prefs.on(fn)`, change it with `tower.prefs.set({ mono: 'Fira Code' })`. A document you draw in a
 frame without scripts takes it as `<html ${tower.prefs.attributes()}>`. A terminal draws in it through
@@ -243,8 +246,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | URL | What it holds |
 |---|---|
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) |
-| `/design.css` | the design's tokens as custom properties, both colour schemes, the faces, a few classes (`.needs`, `.pill`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states |
-| `/design.js` | the design module: palettes, type, the terminal's theme, the sky by hour, a document's stylesheet |
+| `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states |
+| `/design.js` | the design module: palettes, type, the type and spacing scales (`size`, `space`), the terminal's theme, the sky by hour, a document's stylesheet |
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
 | `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`) |
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |

@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A viewer's appearance is one record, kept per browser",
-  "summary": "Scheme, the text, heading and code faces (any installed face, by name), the terminal's size, motion and contrast are one record, tower.prefs, that tower.js keeps in the viewer's browser, puts on every page's root before it paints, syncs across tabs and relays to framed pages; the settings popover draws it from data, and terminals draw in its face and size, measured in place.",
+  "summary": "Scheme, the text, heading and code faces (any installed face, by name), the terminal's size, motion, contrast and text size are one record, tower.prefs, that tower.js keeps in the viewer's browser, puts on every page's root before it paints, syncs across tabs and relays to framed pages; the settings popover draws it from data, and terminals draw in its face and size, measured in place.",
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -49,7 +49,8 @@ with no work of its own ([[renderer-is-disposable]]).
 
 **How.**
 - *The record* ([`prefs.ts`](ref:hub/src/shared/prefs.ts), served as `/prefs.js`): `scheme`, `ui`, `display`,
-  `mono`, `termSize`, `motion` (`''`, `reduce`, `full`), `contrast` (`''`, `more`). An empty field follows the
+  `mono`, `termSize`, `motion` (`''`, `reduce`, `full`), `contrast` (`''`, `more`), `scale` (the text size in percent
+  of the browser's: 90, 100, 125 or 150, 100 by default; API 1.14). An empty field follows the
   default: the system's scheme, motion and contrast, the shipped face.
 - *`tower.prefs`* ([`tower.js`](ref:hub/src/tower/tower.js)): `get()`, `set(patch)`, `on(fn)` and `attributes()`.
   Whoever writes it (storage, a framed page, `set`), the record is taken in normalized: each choice one of
@@ -58,7 +59,9 @@ with no work of its own ([[renderer-is-disposable]]).
   a viewer's earlier `tower.scheme` carries over as the record's scheme. Framed, `set` sends
   `{t: 'tower', verb: 'prefs', prefs}` and the framing page keeps it and answers with `{t: 'prefs', prefs}`, as the
   scheme went before. `tower.js` applies it on the root: `data-scheme`, `data-motion` and `data-contrast`, and each
-  picked face at the head of its stack (`--ui`, `--display`, `--mono`), ending in the shipped faces. Both renderers
+  picked face at the head of its stack (`--ui`, `--display`, `--mono`), ending in the shipped faces, and the text size
+  as `--scale`, a factor `/design.css` multiplies the root's font size by, so every size of the type scale follows it
+  ([[design-system]]); terminals keep `termSize`. Both renderers
   load `tower.js` in their head, so the root is set before the first paint. `attributes()` writes the same as html
   for a document drawn in a frame without scripts (a brief, a shown markdown file). The defaults, the generic family
   names and the shipped stacks are filled into the script from `prefs.ts` and `design.ts` as it is served
@@ -104,7 +107,8 @@ with no work of its own ([[renderer-is-disposable]]).
 - *Keeping the PTY's columns and scaling a bigger font* for the driver: blurry, and a terminal whose text and cells
   disagree. The honest cost is said in the setting's tip and the terminal's mode line (`cols×rows`).
 - *An accent colour*: the user decided none for now; the attention colours carry meaning.
-- *A text-size scale*: the px sizes move to rem in a later batch, which a scale field will then drive.
+- *Text size as a free number or a slider*: four steps cover the need, and every step is a layout checked to hold;
+  past 150% the browser's zoom does the rest.
 
 **Impact.** API 1.13: `tower.prefs`, `/prefs.js`, `/terminal.js`, `PREF_SECTIONS`, `prefSections`, `wirePrefs`,
 `faceInstalled` in `/settings.js`, `reduced` in `/design.js`, the `prefs` message and verb. Every page that links
