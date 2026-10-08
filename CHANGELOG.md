@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.0.3
+
+**host restart** (optional): the host no longer adds its own `--settings`. Until it restarts, the one it adds comes
+first and the client's, which now carries everything, replaces it, so nothing waits on the restart.
+
+- Every worker runs Claude's fullscreen TUI, whatever your own `tui` setting, so the mouse wheel in the tower scrolls
+  Claude's transcript instead of walking your prompt history. Claude takes one `--settings`, the last, so the tower
+  composes it whole: the project's other repos and the fullscreen TUI.
+- A worker's tab row no longer spills past its header at any width: shown tabs' titles narrow first, then the move
+  keys and any shown tabs that don't fit wrap onto a line of their own, and the selected tab keeps its controls
+  (tower page and Tower 3D's desk).
+- A worker whose worktree is gone no longer offers Review, live or not, and `tower review` says which reason stops it.
+- `POST /spawn` without a `cwd` starts in the floor's hub, the call the floor itself offers. A malformed spawn names
+  the field that is wrong, where it said "Invalid input". API 1.2: spawn without `cwd`, `card.worktree.gone`, and
+  spawn's exclusions (`cwd` or `cut`, `base` or `from`) in `/schema`.
+
 ## v1.0.2
 
 Claude Code 2.1.295 is tested: the board and `tower doctor` no longer flag it. Every scenario of the fixture set
