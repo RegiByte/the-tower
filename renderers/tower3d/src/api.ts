@@ -4,7 +4,7 @@ import type { Stats, StatsQuery } from '../../../src/bridge/stats.ts'
 import type { Status } from '../../../src/bridge/status.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from '../../../src/shared/api.ts'
 import type { Renderer } from '../../../src/shared/model.ts'
-import type { Reads, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
+import type { Reads, SchemeChoice, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
 import type { ShellStream } from '../../../src/shared/terms.ts'
 import type { Scheme } from '../../../src/shared/design.ts'
 
@@ -43,6 +43,8 @@ export type Tower = {
   ui<V extends TowerVerb['verb']>(verb: V, fields?: Omit<Extract<TowerVerb, { verb: V }>, 'verb'>): void
   scheme(): Scheme
   onScheme(fn: (scheme: Scheme) => void): () => void
+  schemeChoice(): SchemeChoice
+  chooseScheme(choice: SchemeChoice): void
 }
 
 declare global {

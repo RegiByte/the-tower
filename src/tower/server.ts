@@ -114,6 +114,8 @@ const MODULES: Record<string, string> = {
   '/panels.js': path.join(import.meta.dirname, '..', 'shared', 'panels.ts'),
   '/brief.js': path.join(import.meta.dirname, '..', 'shared', 'brief.ts'),
   '/termkeys.js': path.join(import.meta.dirname, '..', 'shared', 'termkeys.ts'),
+  '/settings.js': path.join(import.meta.dirname, '..', 'shared', 'settings.ts'),
+  '/tips.js': path.join(import.meta.dirname, '..', 'shared', 'tips.ts'),
 }
 
 /** `/tower.js` speaks the API version this tower serves: the script names `API_VERSION` and is filled in from api.ts. */

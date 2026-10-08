@@ -32,6 +32,8 @@
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
  *   tower.scheme() / tower.onScheme((scheme) => …)   the viewer's colour scheme, 'light' or 'dark'; returns unsubscribe
+ *   tower.schemeChoice() / tower.chooseScheme(c)    the viewer's choice behind it: '' to follow the system, 'light' or 'dark';
+ *                                                   choosing keeps it for every page of theirs, through the tower when framed
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
@@ -147,6 +149,10 @@
         return () => watchers.delete(key) && mux && call('mux/unwatch', { mux, key }).catch(() => {})
       },
       ui: () => {},
+      chooseScheme: (choice) => {
+        try { localStorage.setItem('tower.scheme', choice) } catch {}
+        chooseScheme(choice)
+      },
       remember: (value) => {
         try { localStorage.setItem(`tower-page:${location.pathname}`, JSON.stringify(value)) } catch {}
       },
@@ -203,6 +209,7 @@
         return () => (watchers.delete(id), send({ t: 'unwatch', id }))
       },
       ui: (verb, fields) => send({ t: 'tower', verb, ...fields }),
+      chooseScheme: (scheme) => send({ t: 'tower', verb: 'scheme', scheme }),
       remember: (value) => send({ t: 'remember', value }),
       recall: () => request({ t: 'recall' }),
       store: {
@@ -226,6 +233,7 @@
     announceScheme()
   }
   darkSystem.addEventListener('change', () => document.documentElement.dataset.scheme || announceScheme())
+  const schemeChoice = () => document.documentElement.dataset.scheme ?? ''
   if (framed) addEventListener('message', (e) => e.source === window.parent && e.data.t === 'scheme' && chooseScheme(e.data.scheme))
   else {
     try { chooseScheme(localStorage.getItem('tower.scheme') ?? '') } catch {}
@@ -285,6 +293,8 @@
     recall: api.recall,
     store: api.store,
     scheme,
+    schemeChoice,
+    chooseScheme: api.chooseScheme,
     onScheme(fn) {
       schemeWatchers.add(fn)
       return () => schemeWatchers.delete(fn)

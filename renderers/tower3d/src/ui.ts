@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } f
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, RINGS, RING_MARK, RING_NAME, heededWaits, type Heed, type Ring, HOST_OUTDATED, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
@@ -45,16 +45,15 @@ const fillOf = (pct: number) => (pct > 85 ? 'var(--needs)' : pct > 60 ? 'var(--w
 const limitName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', '7d').replaceAll('_', ' ')
 
 /** The strip at the bottom-left: where you are, who works and the rate limits, each piece only while it says something. */
-export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, ring }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; ring: Ring }) {
+export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[] }) {
   const duty = cardsOf(board).filter((c) => c.onDuty)
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
-  const host = !board.hostUp ? '<span class="broken" title="host down"><span class="lamp"></span>host down</span>'
-    : board.hostOutdated ? `<span class="broken" title="${HOST_OUTDATED}"><span class="lamp"></span>host outdated</span>`
-    : '<span class="lamp quiet" title="host up"></span>'
+  const state = hostState(board)
+  const host = `<span class="hud-host ${HOST_ATTENTION[state]}" data-tip="${esc(HOST_MEANS[state])}"><span class="lamp"></span>${state === 'up' ? '' : HOST_NAME[state]}</span>`
   const tune = `<button class="hud-music${music ? ' on' : ''}" data-music title="music ${music ? 'on' : 'off'} (B)">${music ? '♪' : '♪̸'}</button>`
-  const bell = `<button class="hud-music${ring === 'off' ? '' : ' on'}" data-ring title="waits ${RING_NAME[ring]}: click for ${RING_NAME[RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]]}">${RING_MARK[ring]}</button>`
+  const gear = `<button class="hud-music hud-settings" popovertarget="settings" aria-label="settings" data-tip="settings: sound and theme">${ICON.settings}</button>`
   const tally = (['ready', 'working', 'quiet', 'broken'] as const).filter((a) => count(a))
-    .map((a) => `<span class="${a}" title="${count(a)} ${a}"><span class="lamp"></span><b>${count(a)}</b></span>`)
+    .map((a) => `<span class="${a}" data-tip="${esc(`${count(a)} ${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b></span>`)
   const shells = board.shells.length ? [`<span title="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
   const crew = [...tally, ...shells]
   const now = wallNow()
@@ -70,7 +69,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
       <span class="meter" style="--fill:${fillOf(r.percentUsed)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
   })
   const asOf = stale ? [`<small title="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`] : []
-  return `<span class="chip hud-group">${host}${tune}${bell}</span>${sign(levelKey(here), here.name, tint(here))}
+  return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
     ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next title="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
     ${limits.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf].join('')}</span>` : ''}

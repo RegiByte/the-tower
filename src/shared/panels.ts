@@ -37,7 +37,7 @@
  *   data-stats-scope="<id>"    show a scope's tab: a project's id, or `STATS_ALL`
  *   data-stats-range="<r>"     read the stats again over another range (`statsQuery`)
  *   data-stats-read            read the stats again
- *   data-tip="<text>"          a bar's readout, shown on hover by the stylesheet alone
+ *   data-tip="<text>"          a bar's readout, shown by the renderer's tooltip (`watchTips`, src/shared/tips.ts)
  */
 import type { RepoChanges } from '../changes.ts'
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
@@ -417,10 +417,9 @@ const seriesColor = (s: StatsProject) => `color-mix(in oklab, ${s.color ?? 'var(
 function barsHtml(title: string, series: StatsProject[], columns: Column[], axis: (v: number) => string, every: number) {
   const max = niceMax(Math.max(0, ...columns.map((c) => c.values.reduce((a, v) => a + v, 0))))
   const grid = [1, 0.5, 0].map((f) => `<div class="rule" style="bottom:${f * 100}%"><span>${f ? axis(max * f) : ''}</span></div>`).join('')
-  const edge = (i: number) => (i < columns.length / 3 ? 'start' : i >= (columns.length * 2) / 3 ? 'end' : '')
   const cols = columns.map((c, i) => {
     const segments = c.values.map((v, k) => (v > 0 ? `<i style="height:${(v / max) * 100}%;background:${seriesColor(series[k])}"></i>` : '')).join('')
-    return `<div class="column ${edge(i)}" data-tip="${esc(c.tip)}"><div class="stack">${segments}</div><span class="tick">${i % every === 0 ? esc(c.label) : ''}</span></div>`
+    return `<div class="column" data-tip="${esc(c.tip)}"><div class="stack">${segments}</div><span class="tick">${i % every === 0 ? esc(c.label) : ''}</span></div>`
   })
   const legend = series.length > 1 ? `<div class="legend">${series.map((s) => `<span><i style="background:${seriesColor(s)}"></i>${esc(s.label)}</span>`).join('')}</div>` : ''
   return `<figure class="chart"><figcaption>${esc(title)}</figcaption>${legend}<div class="plot">${grid}<div class="columns">${cols.join('')}</div></div></figure>`
@@ -441,12 +440,11 @@ function churnHtml(title: string, places: Place[], total: ScopeStats, series: St
   const max = niceMax(Math.max(0, ...added, ...removed))
   const churn = (a: number, r: number) => `+${count(a)} −${count(r)}`
   const grid = [[100, `+${count(max)}`], [50, '0'], [0, `−${count(max)}`]].map(([at, label]) => `<div class="rule" style="bottom:${at}%"><span>${label}</span></div>`).join('')
-  const edge = (i: number) => (i < places.length / 3 ? 'start' : i >= (places.length * 2) / 3 ? 'end' : '')
   const cols = places.map(({ label, title: when }, i) => {
     const rows = series.length > 1 ? parts.flatMap((s, k) => (s.series.added[i] + s.series.removed[i] ? [`${series[k].label} ${churn(s.series.added[i], s.series.removed[i])}`] : [])) : []
     const tip = [when, `${churn(added[i], removed[i])} lines`, ...rows].join('\n')
     const bar = (v: number, color: string) => (v > 0 ? `<i style="height:${(v / max) * 100}%;background:${color}"></i>` : '')
-    return `<div class="column ${edge(i)}" data-tip="${esc(tip)}"><div class="up">${bar(added[i], ADDED)}</div><div class="down">${bar(removed[i], REMOVED)}</div>
+    return `<div class="column" data-tip="${esc(tip)}"><div class="up">${bar(added[i], ADDED)}</div><div class="down">${bar(removed[i], REMOVED)}</div>
       <span class="tick">${i % every === 0 ? esc(label) : ''}</span></div>`
   })
   const legend = `<div class="legend"><span><i style="background:${ADDED}"></i>added</span><span><i style="background:${REMOVED}"></i>removed</span></div>`
@@ -721,9 +719,6 @@ export const panelsCss = `
 .stats-panel .churn .up i, .stats-panel .churn .down i { display: block; flex: none; min-height: 1px; }
 .stats-panel .add { color: var(--added); } .stats-panel .del { color: var(--removed); }
 .stats-panel .tick { position: absolute; top: calc(100% + 3px); font: 10px var(--mono); color: var(--faint); white-space: nowrap; }
-.stats-panel .column[data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 2;
-  padding: 5px 8px; border-radius: var(--radius); background: var(--ink); color: var(--panel); font: 12px/1.45 var(--ui); white-space: pre; pointer-events: none; }
-.stats-panel .column.start:hover::after { left: 0; transform: none; } .stats-panel .column.end:hover::after { left: auto; right: 0; transform: none; }
 .stats-panel .spreads { width: 100%; margin: 10px 0 0; border-collapse: collapse; font-size: 11.5px; }
 .stats-panel .spreads th, .stats-panel .spreads td { padding: 4px 3px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats-panel .spreads th { color: var(--muted); font-weight: 400; } .stats-panel .spreads tr > th:first-child { text-align: left; color: var(--ink); }

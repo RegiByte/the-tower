@@ -53,6 +53,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: 2px 
 .hud-limits.stale > span { opacity: .5; }
 .hud-music { padding: 0; border: 0; background: none; font-size: 13px; line-height: 1; color: var(--faint); }
 .hud-music.on { color: var(--ink); }
+.hud-settings { display: grid; place-items: center; color: var(--muted); } .hud-settings:hover { color: var(--ink); }
+.hud-settings svg { width: 13px; height: 13px; }
+.hud-host.working, .hud-host.broken { color: color-mix(in oklab, var(--c) 65%, var(--ink)); }
+#paused .paused-settings { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 2px 9px; font-size: 12px; vertical-align: 1px; }
+#paused .paused-settings svg { width: 12px; height: 12px; }
 #hud .hud-shown { background: var(--accent); color: var(--panel); }
 #hud .hud-share { color: var(--needs); box-shadow: inset 0 0 0 1px var(--needs), 0 1px 3px #0005; }
 #watch { position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
@@ -267,6 +272,7 @@ button.wide { width: 100%; }
   <div id="hud-notes"></div>
   <div id="hud"></div>
 </div>
+<div id="settings" class="settings-pop" popover></div>
 <div id="desk" class="glass hidden">
   <div class="desk-head" id="desk-head"></div>
   <div id="desk-ask" class="hidden"></div>
@@ -291,7 +297,7 @@ button.wide { width: 100%; }
 <div id="paused" class="hidden">
   <div class="card glass">
     <h2>The Tower</h2>
-    <p>click to walk</p>
+    <p>click to walk <button class="paused-settings" popovertarget="settings" data-tip="settings: sound and theme"></button></p>
     <div id="renderers" class="renderers"></div>
     <div class="keys">
       <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>walk · <kbd>⇧</kbd> run · mouse to look</span>

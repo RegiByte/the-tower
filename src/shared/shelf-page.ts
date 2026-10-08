@@ -75,6 +75,8 @@ export type TowerVerb =
   | { verb: 'select'; id: string }
   | { verb: 'home' }
   | { verb: 'shelf'; project: string; n: number }
+  /** The viewer's colour scheme choice, kept by the tower page for every page of theirs and sent back as `scheme`. */
+  | { verb: 'scheme'; scheme: SchemeChoice }
 
 /** The shelf entry a page was opened from: the `n`th entry of `project`'s shelf. */
 export type ShelfSelf = { project: string; n: number }

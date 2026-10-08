@@ -16,6 +16,31 @@ export const STATUS_NAME: Record<Status, string> = {
   booting: 'booting', blocked: 'blocked', idle: 'idle', working: 'working', needs_input: 'needs you', watching: 'watching', done: 'done', failed: 'failed', exited: 'exited', lost: 'lost',
 }
 
+/** A worker's attention in a word, as a count of workers or a legend names it. */
+export const ATTENTION_NAME: Record<Attention, string> = { needs: 'needs you', ready: 'ready', working: 'working', quiet: 'quiet', broken: 'broken' }
+
+/** What puts a worker in each attention (`attentionOf`, src/bridge/board.ts), for a count's tooltip and a legend. */
+export const ATTENTION_MEANS: Record<Attention, string> = {
+  needs: "held by one of Claude's screens (workspace trust, sign-in) or asking permission for a tool: it goes on only once you answer",
+  ready: 'its turn ended with an answer nobody has read: nothing it started can wake it, and nobody has typed to it since. Typing to it reads it. An answer for the worker that hired it reads ready too, and waits on that worker',
+  working: 'booting, or in a turn: thinking, running tools or compacting',
+  quiet: 'nothing for you: at its prompt, its answer read, watching (a background task or a /loop it started will wake it, and its lamp breathes), exited, or stopped with the host and resumable',
+  broken: 'its last turn failed (an API error or a refusal), or it was lost: the host no longer runs it and it never logged an exit',
+}
+
+/** The count of waits on the board that are yours, by `heededWaits`. */
+export const WAITING_NAME = 'waiting on you'
+export const WAITING_MEANS = 'workers whose next step is yours: a screen or a question to answer, or an answer or a failure nobody has typed to since. An answer for the worker that hired it waits on that worker, and a wait you dismissed is out of the count. N goes to the next one'
+
+/** Counts of workers by attention are over the workers on duty (`Card.onDuty`). */
+export const ON_DUTY_MEANS = 'counted over the workers on duty: running, or stopped and resumable'
+
+/** A legend of the counts by status, as two cells a row (a chip, then its meaning) for a grid of two columns. */
+export const statusLegendHtml = () =>
+  `<span class="chip">${WAITING_NAME}</span><span>${esc(WAITING_MEANS)}</span>` +
+  (['needs', 'ready', 'working', 'quiet', 'broken'] as Attention[])
+    .map((a) => `<span class="chip ${a}"><span class="lamp"></span>${ATTENTION_NAME[a]}</span><span>${esc(ATTENTION_MEANS[a])}</span>`).join('')
+
 /**
  * The classes a worker's lamp, pill or row takes: its attention, and `watching` while something it started can wake it,
  * a quiet lamp that breathes.
@@ -277,7 +302,9 @@ export type Ring = 'once' | 'remind' | 'off'
 export const RINGS: Ring[] = ['once', 'remind', 'off']
 export const RING_KEY = 'waits.ring'
 export const REMIND_MS = 30_000
+/** @deprecated The settings popover names each ring: `RING_LABEL` and `RING_MEANS` of /settings.js. */
 export const RING_NAME: Record<Ring, string> = { once: 'ring once', remind: 'remind every 30s', off: 'silent' }
+/** @deprecated Rings are set in the settings popover, behind the shared `ICON.settings`: `soundSection` of /settings.js. */
 export const RING_MARK: Record<Ring, string> = { once: '🔔', remind: '🔔↻', off: '🔕' }
 
 export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worker waits again'
@@ -352,6 +379,18 @@ const WEEK = 7 * DAY
 /** A rate-limit reading refreshes only while some session runs a turn: past this age it may have moved. */
 /** Why the board says `hostOutdated`, and what ends it. */
 export const HOST_OUTDATED = 'the running host is older than the tower: it updates when restarted (tower down, then tower up), which ends every session and shell'
+
+/** The host as the board reads it: answering, answering with older code than the tower's, or not answering. */
+export type HostState = 'up' | 'outdated' | 'down'
+export const hostState = (b: Pick<Board, 'hostUp' | 'hostOutdated'>): HostState => (!b.hostUp ? 'down' : b.hostOutdated ? 'outdated' : 'up')
+/** How loudly the host's state asks for you, in the attention colours: an outdated host wants a restart some time, a host down now. */
+export const HOST_ATTENTION: Record<HostState, Attention> = { up: 'quiet', outdated: 'working', down: 'broken' }
+export const HOST_NAME: Record<HostState, string> = { up: 'host up', outdated: 'host outdated', down: 'host down' }
+export const HOST_MEANS: Record<HostState, string> = {
+  up: "host up: the process that holds every session's terminal answers",
+  outdated: `host outdated: ${HOST_OUTDATED}`,
+  down: "host down: nothing holds the sessions' terminals. Running sessions read lost (each stays resumable), and nothing can start, resume or take keys until it runs again: tower up",
+}
 
 export { CLAUDE_UNTESTED }
 

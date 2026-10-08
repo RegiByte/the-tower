@@ -5,9 +5,13 @@ import { HELD, byKind, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, t
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import { changesOf, markViewed, onReviews, readChanges, threadOf, threadRead, type ChangesRead } from './reviews.ts'
 import { briefCss, openFolds, sessionWhen } from '../../../src/shared/brief.ts'
+import { settingsCss, settingsHtml, soundSection, themeSection } from '../../../src/shared/settings.ts'
+import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
+import { ICON } from '../../../src/shared/icons.ts'
+import type { SchemeChoice } from '../../../src/shared/shelf-page.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RINGS, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, threadCheckoutOf, workerIn } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, threadCheckoutOf, workerIn } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -53,7 +57,8 @@ import { boardFace, buildWorld, paintDirectory, setDoors, setLimits, setShellTit
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + settingsCss }))
+watchTips(document)
 
 const directory = boardFace(640, 480)
 const statsBoard = boardFace(640, 400)
@@ -347,8 +352,9 @@ function toggleMusic() {
 
 let hudKey = ''
 function renderHud() {
-  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, s.heed), ring: s.ring })
+  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, s.heed) })
   if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
+  drawSettings()
   const notes = claudeUntestedHtml(s.board!) ?? ''
   if (notes !== $('hud-notes').innerHTML) $('hud-notes').innerHTML = notes
 }
@@ -978,11 +984,36 @@ function dismissWait(key: string) {
   renderPanel()
 }
 
-function cycleRing() {
-  s.ring = RINGS[(RINGS.indexOf(s.ring) + 1) % RINGS.length]
+function chooseRing(ring: Ring) {
+  s.ring = ring
   if (FIXTURE === undefined) tower.store.set(RING_KEY, s.ring)
-  renderHud()
+  drawSettings()
 }
+
+/**
+ * The settings popover: how waits ring and the scheme. Notifications are the tower page's, so it offers none. It
+ * stands by the button that opened it, in the HUD or on the pause card.
+ */
+let settingsDrawn = ''
+let settingsBy: Element = $('hud')
+const settingsEl = $('settings')
+const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
+function paintSettings() {
+  const html = settingsHtml([soundSection(s.ring), themeSection(tower.schemeChoice())])
+  if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
+}
+placeOnOpen(settingsEl, () => settingsBy)
+document.querySelector('.paused-settings')!.innerHTML = `${ICON.settings}Settings`
+settingsEl.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && paintSettings())
+document.addEventListener('click', (e) => (settingsBy = (e.target as Element).closest('[popovertarget="settings"]') ?? settingsBy), true)
+settingsEl.addEventListener('click', (e) => {
+  const el = (e.target as Element).closest<HTMLElement>('[data-ring-choice], [data-sound-play], [data-scheme-choice]')
+  if (!el) return
+  if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice as Ring)
+  if (el.dataset.soundPlay) return ring(el.dataset.soundPlay as Sound)
+  tower.chooseScheme(el.dataset.schemeChoice as SchemeChoice)
+})
+tower.onScheme(() => drawSettings())
 
 /** A move key, from anywhere: walking, at a desk, in its terminal. Returns whether `e` was one. */
 function moveKey(e: KeyboardEvent) {
@@ -1438,7 +1469,7 @@ canvas.addEventListener('wheel', (e) => {
   s.hold = undefined
 }, { passive: true })
 $('paused').addEventListener('click', (e) => {
-  if ((e.target as Element).closest('a')) return
+  if ((e.target as Element).closest('a, [popovertarget]')) return
   if (s.view === 'overview') leaveOverview()
   lock()
 })
@@ -1509,7 +1540,6 @@ $('hud').addEventListener('click', (e) => {
   const el = e.target as HTMLElement
   if (el.closest('[data-next]')) nextWaiting()
   if (el.closest('[data-music]')) toggleMusic()
-  if (el.closest('[data-ring]')) cycleRing()
   if (el.closest('[data-stop-share]')) endShare()
   if (el.closest('[data-shown]')) lookAtNew()
 })

@@ -26,12 +26,16 @@ a { color: var(--accent); }
 kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; background: var(--ink); color: var(--panel); }
 
 .side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: 8px; padding: 16px 12px 10px 16px; white-space: nowrap; }
+.brand { display: flex; align-items: center; gap: 4px; padding: 16px 12px 10px 16px; white-space: nowrap; }
 .brand h1 { margin: 0; font: 900 19px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
-.brand .host { margin-left: auto; display: flex; }
-.scheme { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; font-size: 15px; }
-.scheme:hover { color: var(--ink); }
-.bell { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; }
+.brand .host { margin: 0 2px 0 auto; display: flex; }
+.host-state { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 6px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--c); }
+.host-state.quiet { padding: 1px 2px; font-weight: 400; color: var(--faint); }
+.host-state.working, .host-state.broken { background: var(--c); color: var(--on); }
+.host-state.working .lamp, .host-state.broken .lamp { background: var(--on); }
+.head-btn { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; background: none; border: none; color: var(--faint); }
+.head-btn svg { width: 15px; height: 15px; }
+.head-btn:hover, .head-btn:has(+ :popover-open) { color: var(--ink); }
 .side-notes { margin-top: -4px; padding: 0 16px 10px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .side-notes:empty { display: none; }
 .side-notes .untested { white-space: normal; }
@@ -159,6 +163,8 @@ body.collapsed .rail { display: flex; flex-direction: column; align-items: cente
 .rail .lamp.sel { outline: 2px solid var(--ink); outline-offset: 3px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline; color: var(--muted); font-size: 13px; }
 .keys > span:nth-child(odd) { white-space: nowrap; color: var(--faint); font-size: 12px; }
+dialog h2.legend-head { margin-top: 20px; }
+.keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
 
 .main { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; padding: 10px 10px 0; }
@@ -334,8 +340,9 @@ dialog .actions small { margin-right: auto; }
 </head>
 <body>
 <aside class="side">
-  <div class="brand"><h1 id="home" title="the skyline">The Tower</h1><span class="host" id="host"></span><button class="bell" id="bell"></button><button class="bell" id="ring"></button><button class="scheme" id="scheme"></button>
-    <button class="help" data-keys title="shortcuts (?)">?</button><button class="side-toggle" data-side title="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
+  <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><span class="host" id="host"></span>
+    <button class="head-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
+    <button class="help" data-keys aria-label="shortcuts" data-tip="shortcuts and what the statuses mean (?)">?</button><button class="side-toggle" data-side aria-label="hide the sidebar" data-tip="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
@@ -382,6 +389,8 @@ dialog .actions small { margin-right: auto; }
   <form method="dialog">
     <h2>Shortcuts</h2>
     <div class="keys" id="keys-list"></div>
+    <h2 class="legend-head">Statuses</h2>
+    <div class="keys legend" id="keys-legend"></div>
     <div class="actions"><small>hover a button for what it does</small><button value="">Close</button></div>
   </form>
 </dialog>
@@ -393,15 +402,18 @@ dialog .actions small { margin-right: auto; }
 <script src="/marked.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
 import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
+import { alertsSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
+import { placeOnOpen, watchTips } from '/tips.js'
 import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss }))
+watchTips(document)
 
 const onDuty = (c) => c.onDuty
 /** The card's gist as HTML: a tool's name in bold, said words after their mark. */
@@ -1157,12 +1169,12 @@ function render() {
   const count = (a) => duty.filter((c) => c.attention === a).length
   const waiting = heededWaits(board, heed).length
   document.title = waiting ? `(${waiting}) The Tower` : 'The Tower'
-  $('tally').innerHTML = `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" title="N jumps to the next one"><span class="lamp"></span><b>${waiting}</b> waiting on you</span>` +
-    [['ready', 'ready'], ['working', 'working'], ['quiet', 'quiet'], ['broken', 'broken']]
-      .map(([a, label]) => `<span class="chip ${a}"><span class="lamp"></span><b>${count(a)}</b> ${label}</span>`).join('')
-  const host = board.hostOutdated ? `<span title="${HOST_OUTDATED}">host outdated</span>` : board.hostUp ? undefined : 'host down'
-  $('host').innerHTML = `<span class="lamp ${host ? 'broken' : 'quiet'}" title="${host ? '' : 'host up'}"></span>`
-  $('notes').innerHTML = [host, claudeUntestedHtml(board)].filter(Boolean).join(' · ')
+  $('tally').innerHTML = `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
+    ['ready', 'working', 'quiet', 'broken']
+      .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join('')
+  const host = hostState(board)
+  $('host').innerHTML = `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`
+  $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
   paintLimits()
   redrawHeld($('floors'), floorsTopDown().map(floorHtml).join(''))
   drawSideView()
@@ -1175,7 +1187,7 @@ function render() {
   if (!selected) $('sky').innerHTML = skylineHtml()
   paintSky()
   renderDock()
-  bell()
+  drawSettings()
   tick()
 }
 
@@ -1267,10 +1279,10 @@ function dismissWait(key) {
   render()
 }
 
-function cycleRing() {
-  ring = RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]
+function chooseRing(next) {
+  ring = next
   tower.store.set(RING_KEY, ring)
-  bell()
+  drawSettings()
 }
 
 /** Every showing the page has seen: a new one opens its tab on the selected session, and alerts when you aren't looking at it. */
@@ -1302,13 +1314,28 @@ function showAlert(c, w) {
   return n
 }
 
-function bell() {
-  const state = Notification.permission
-  $('bell').textContent = state === 'granted' ? '🔔' : state === 'denied' ? '🔕' : '🔔?'
-  $('bell').title = state === 'granted' ? 'alerts on: a notification whenever a session starts waiting on you' : state === 'denied' ? 'alerts blocked in this browser' : 'turn on alerts'
-  $('ring').textContent = RING_MARK[ring]
-  $('ring').title = `waits ${RING_NAME[ring]}: click for ${RING_NAME[RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]]}`
+/** The settings popover, drawn again whenever what it shows may have changed: only while open. */
+let settingsDrawn
+const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
+function paintSettings() {
+  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), themeSection(tower.schemeChoice())])
+  if (html === settingsDrawn) return
+  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-scheme-choice], #settings [data-sound-play]')
+  const again = focused && [...focused.attributes].find((a) => a.name.startsWith('data-') && a.name !== 'data-tip')
+  $('settings').innerHTML = settingsDrawn = html
+  if (again) $('settings').querySelector(`[${again.name}="${CSS.escape(again.value)}"]`)?.focus()
 }
+$('settings-open').innerHTML = ICON.settings
+placeOnOpen($('settings'), () => $('settings-open'))
+$('settings').addEventListener('beforetoggle', (e) => e.newState === 'open' && paintSettings())
+$('settings').addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-alerts-ask], [data-ring-choice], [data-sound-play], [data-scheme-choice]')
+  if (!el) return
+  if (el.matches('[data-alerts-ask]')) return (await Notification.requestPermission(), drawSettings())
+  if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice)
+  if (el.dataset.soundPlay) return playSound(SOUNDS[el.dataset.soundPlay])
+  tower.chooseScheme(el.dataset.schemeChoice)
+})
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. */
 function moveTo(id) {
@@ -1572,6 +1599,7 @@ const towerVerbs = {
   select: ({ id }) => select(id),
   home: () => goHome(),
   shelf: ({ project, n }) => openShelf(project, n),
+  scheme: ({ scheme }) => tower.chooseScheme(scheme),
 }
 
 addEventListener('message', async (e) => {
@@ -2149,27 +2177,14 @@ $('screen').addEventListener('keydown', (e) => {
   if (e.target.matches('[data-pick-text]') && submit) return (e.preventDefault(), addPicked())
   if (e.target.matches('[data-pick-text]') && e.key === 'Escape') return (e.preventDefault(), dropPick(), drawChanges())
 })
-$('bell').onclick = async () => (await Notification.requestPermission(), bell())
-$('ring').onclick = cycleRing
 
 /**
- * The viewer's scheme choice, kept in this browser: `auto` follows the system's appearance. The stylesheet reads it
- * from the root's `data-scheme`; terminals, the framed documents and the open shelf page are told again whenever it changes.
+ * The viewer's scheme, kept by tower.js in this browser for every page of theirs, on the root's `data-scheme` that the
+ * stylesheet reads; terminals, the framed documents and the open shelf page are told again whenever it changes.
  */
-const SCHEMES = ['auto', 'light', 'dark']
-const SCHEME_ICON = { auto: '◐', light: '☀', dark: '☾' }
-const SCHEME_TITLE = { auto: 'colours follow your system: click for light', light: 'light: click for dark', dark: 'dark: click to follow your system' }
-const darkSystem = matchMedia('(prefers-color-scheme: dark)')
-const chosenScheme = () => document.documentElement.dataset.scheme || 'auto'
-const scheme = () => (chosenScheme() === 'auto' ? (darkSystem.matches ? 'dark' : 'light') : chosenScheme())
-
-function showScheme() {
-  $('scheme').textContent = SCHEME_ICON[chosenScheme()]
-  $('scheme').title = SCHEME_TITLE[chosenScheme()]
-}
+const scheme = tower.scheme
 
 function applyScheme() {
-  showScheme()
   for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
   briefKey = undefined
   shownDrawn = undefined
@@ -2178,14 +2193,7 @@ function applyScheme() {
   render()
 }
 
-$('scheme').onclick = () => {
-  const next = SCHEMES[(SCHEMES.indexOf(chosenScheme()) + 1) % SCHEMES.length]
-  document.documentElement.dataset.scheme = next === 'auto' ? '' : next
-  remember('tower.scheme', next === 'auto' ? '' : next)
-  applyScheme()
-}
-darkSystem.addEventListener('change', applyScheme)
-showScheme()
+tower.onScheme(applyScheme)
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open
 
@@ -2203,6 +2211,7 @@ const KEYS = [
 
 function showKeys() {
   $('keys-list').innerHTML = KEYS.map(([keys, what]) => `<span>${keys}</span><span>${what}</span>`).join('')
+  $('keys-legend').innerHTML = statusLegendHtml()
   $('keys').showModal()
 }
 
