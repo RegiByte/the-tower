@@ -19,6 +19,7 @@
     "hub/src/shared/cards.ts#statusTitle",
     "hub/src/shared/cards.ts#gistOf",
     "hub/src/cli.ts",
+    "hub/src/host/main.ts",
     "hub/test/board.test.ts",
     "hub/test/fixtures/stop-without-tasks.jsonl"
   ]
@@ -72,5 +73,8 @@ break.
   session may still run; a card field leaves those as the host says.
 
 **Impact.** A bad line costs its own session's facts from that line on, said on its card; the tower, every other
-session and `tower ls` carry on, and a restart meets the same break in the same place. A line that isn't JSON at
-all still throws in the filter's parse: the host writes whole lines, so none has been seen.
+session and `tower ls` carry on, and a restart meets the same break in the same place. It covers events that parse
+and can't be folded, not lines that don't parse: a log has one writer, the host that spawned its session, which
+creates it (`wx`) and never reopens it, so a write cut short by a crash is the log's last bytes, an incomplete line
+every reader leaves unread. A complete line that isn't JSON would need a second writer, and still throws in the
+filter's parse.
