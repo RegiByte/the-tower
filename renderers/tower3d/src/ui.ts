@@ -302,7 +302,7 @@ export const shownTab = (s: Shown): DeskTab => `shown:${s.target}`
 const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean) => {
   const from = shownFrom(c.lineage, s)
   return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" title="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
-    `${fresh ? '<span class="fresh"></span>' : ''}<span class="shown-name">${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
+    `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
     `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" title="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileButtonsHtml(s.target) : ''}</button>`
 }
 

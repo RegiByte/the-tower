@@ -177,23 +177,22 @@ button.wide { width: 100%; }
 #desk-ask { display: flex; align-items: center; gap: 8px; margin: 8px 12px 0; padding: 8px 12px; border-radius: var(--radius); font-size: 14px;
   background: color-mix(in oklab, var(--needs) 11%, var(--panel)); border: 1px solid var(--needs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #desk-ask b { color: var(--needs); }
-.desk-bar { display: flex; align-items: center; gap: 6px; padding: 6px 12px; }
-.desk-tabs { flex: none; display: flex; gap: 4px; max-width: 50%; overflow-x: auto; }
-.desk-bar .activity { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; padding: 1px 8px; background: none; border-color: transparent;
+.desk-bar { gap: 6px; padding: 6px 12px; }
+.desk-tabs { gap: 4px; }
+.desk-bar .activity { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; padding: 1px 8px; background: none; border-color: transparent;
   color: var(--muted); font: 12px/1.6 var(--mono); }
 .desk-bar .activity:empty { display: none; }
 .desk-bar .activity:hover { border-color: var(--line); }
 .desk-bar .activity b { color: var(--ink); font-family: var(--ui); }
 .desk-bar .activity .said { color: var(--faint); }
-.moves { flex: none; display: flex; gap: 6px; }
+.moves { gap: 6px; }
 .move { display: flex; align-items: center; gap: 6px; padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; }
 .move .call { font-size: 11px; color: var(--ink); padding-top: 1px; }
 .move small { font: 10px var(--mono); color: var(--faint); }
 .move.waiting { border-color: var(--needs); }
 .move.dismiss { color: var(--needs); border-color: var(--needs); }
-.desk-tabs button { flex: none; }
-.desk-tabs .shown-tab { gap: 6px; max-width: 220px; }
-.shown-tab .fresh { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.desk-tabs .shown-tab { gap: 6px; }
+.shown-tab .fresh { display: inline-block; margin-right: 6px; vertical-align: middle; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .shown-tab .out { flex: none; padding-left: 4px; opacity: .75; }
 .shown-tab .out:hover { opacity: 1; }
 .desk-tabs:empty { display: none; }
@@ -272,7 +271,7 @@ button.wide { width: 100%; }
 <div id="desk" class="glass hidden">
   <div class="desk-head" id="desk-head"></div>
   <div id="desk-ask" class="hidden"></div>
-  <div class="desk-bar"><span class="desk-tabs" id="desk-tabs"></span><button class="activity" id="desk-activity" popovertarget="desk-details"></button>
+  <div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="desk-tabs"></span><button class="activity" id="desk-activity" popovertarget="desk-details"></button>
     <span class="desk-mode" id="desk-mode"></span><span class="moves" id="desk-moves"></span></div>
   <div id="desk-details" popover></div>
   <div id="desk-body"><div id="desk-screen"></div><div id="desk-stamp" class="stamp hidden"></div><div id="desk-brief" class="hidden"></div><div id="desk-changes" class="hidden"></div><div id="desk-reviews" class="hidden"></div><div id="desk-shown" class="hidden"></div></div>

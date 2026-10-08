@@ -179,9 +179,10 @@ dialog#keys { width: min(620px, 92vw); }
 #c-mode { position: absolute; top: 8px; right: 12px; z-index: 1; padding: 2px 9px; border-radius: 999px; background: var(--panel); color: var(--muted); font-size: 12px;
   box-shadow: var(--shadow); pointer-events: none; }
 #c-mode:empty, #c-mode.owner, .main.on-brief #c-mode, .main.on-shown #c-mode, .main.on-changes #c-mode, .main.on-reviews #c-mode { display: none; }
-#bar-line { display: flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+#bar-line { gap: 6px; margin-top: 7px; color: var(--muted); font-size: 13px; white-space: nowrap; }
 .move.dismiss { color: var(--needs); border-color: var(--needs); }
-#bar-line .activity { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; padding: 1px 8px; margin-left: 6px; background: none; border-color: transparent;
+#bar-line .tab-set, #bar-line .moves { gap: 6px; }
+#bar-line .activity { overflow: hidden; text-overflow: ellipsis; text-align: left; padding: 1px 8px; margin-left: 6px; background: none; border-color: transparent;
   color: var(--muted); font: 12px/1.6 var(--mono); }
 #bar-line .activity:hover { border-color: var(--line); }
 #bar-line .activity .tool b { font-family: var(--ui); }
@@ -218,7 +219,6 @@ dialog#keys { width: min(620px, 92vw); }
 .shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
 .shown iframe.doc { background: var(--panel); }
 .shown img, .shown video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
-.pane-tab.shown-tab { max-width: 220px; }
 .pane-tab .unshow, .pane-tab .out { margin-left: 6px; color: var(--faint); text-decoration: none; }
 .pane-tab .unshow:hover, .pane-tab .out:hover { color: var(--ink); }
 .pane-tab small { margin-left: 4px; color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -349,7 +349,7 @@ dialog .actions small { margin-right: auto; }
 <section class="main home" id="main">
   <div class="bar">
     <div class="bar-top"><div id="bar-info"></div><div id="bar-actions"></div></div>
-    <div id="bar-line"></div>
+    <div class="tab-row" id="bar-line"></div>
   </div>
   <div id="bar-details" popover></div>
   <div id="bar-left" popover></div>
@@ -783,7 +783,8 @@ function movesHtml(c) {
     if (!card || card.id === c.id) return ''
     return `<button class="move ${m} ${card.attention}" data-move="${m}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
   }
-  return dismiss + ['prev', 'next', 'waiting'].map(move).join('')
+  const moves = dismiss + ['prev', 'next', 'waiting'].map(move).join('')
+  return moves && `<span class="moves">${moves}</span>`
 }
 
 /** The selected session's view in the main pane, as the viewer picked it since selecting the session. */
@@ -794,11 +795,11 @@ const paneOf = (c) =>
 
 const paneTabsHtml = (c, pane) => {
   const shown = visibleShown(c)
-  return `<button class="pane-tab ${pane === 'screen' ? 'on' : ''}" data-pane="screen">Terminal</button>` +
+  return `<span class="tab-set"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" data-pane="screen">Terminal</button>` +
     (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" data-pane="brief" title="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
     `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" data-pane="changes" title="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
     (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" data-pane="reviews" title="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
-    shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('')
+    shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('') + '</span>'
 }
 
 /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. */
