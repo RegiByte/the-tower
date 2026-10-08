@@ -20,8 +20,8 @@ covers were checked by hand: long prompts through `submit`, the peer registry, r
 
 - The "claude <version> untested" notice has a line of its own, under the sidebar's head on the tower page and above
   the HUD strip in Tower 3D. Beside the title it pushed the help and collapse buttons out of the sidebar, and in the
-  HUD it squeezed the floor sign. "host outdated" and "host down" share that line; the bell's first-open label reads
-  "🔔?", where "🔔 alerts?" alone overflowed the head.
+  HUD it squeezed the floor sign. On the tower page "host outdated" and "host down" share that line, and the bell's
+  first-open label reads "🔔?", where "🔔 alerts?" alone overflowed the head.
 - The selected shown tab keeps ↗, its Finder and editor buttons and ×: only its title truncates. A long title used
   to clip the controls first. Tower 3D's desk tabs had the same problem and have the same fix.
 
