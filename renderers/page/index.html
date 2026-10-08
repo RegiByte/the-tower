@@ -218,7 +218,7 @@ dialog#keys { width: min(620px, 92vw); }
 .shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
 .shown iframe.doc { background: var(--panel); }
 .shown img, .shown video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
-.pane-tab.shown-tab { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pane-tab.shown-tab { max-width: 220px; }
 .pane-tab .unshow, .pane-tab .out { margin-left: 6px; color: var(--faint); text-decoration: none; }
 .pane-tab .unshow:hover, .pane-tab .out:hover { color: var(--ink); }
 .pane-tab small { margin-left: 4px; color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -805,7 +805,7 @@ const paneTabsHtml = (c, pane) => {
 const shownTabHtml = (c, s, on) => {
   const from = shownFrom(c.lineage, s)
   return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" data-pane="${esc(shownPane(s))}" title="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
-  `${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}${from ? `<small>${from.mark}</small>` : ''}` +
+  `<span class="shown-name">${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
   (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" title="open in a browser tab">↗</span>` : '') +
   (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
   `<span class="unshow" data-unshow="${esc(shownKey(s))}" title="close: it comes back if shown again">×</span></button>`

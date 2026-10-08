@@ -578,8 +578,15 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
   again.setSelectionRange(...caret!)
 }
 
-/** The panels' look, under `.changes-panel`, `.reviews-panel` and `.stats-panel`: the renderer places and sizes the element they're painted in. */
+/**
+ * The panels' look, under `.changes-panel`, `.reviews-panel` and `.stats-panel`: the renderer places and sizes the element
+ * they're painted in. Also a `.shown-tab`'s, where only its `.shown-name` gives way to the tab's width.
+ */
 export const panelsCss = `
+.shown-tab { display: inline-flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; }
+.shown-tab.on { flex-shrink: .2; min-width: 9em; }
+.shown-tab > * { flex: none; }
+.shown-tab > .shown-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .file-acts { display: inline-flex; gap: 2px; flex: none; }
 .file-act { width: 22px; height: 20px; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); color: var(--faint); cursor: pointer; }
 .file-act svg { width: 12px; height: 12px; }
