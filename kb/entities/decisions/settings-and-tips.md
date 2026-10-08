@@ -60,7 +60,7 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `/tips.js`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
   puts one element in the top layer (a manual popover, so it shows above an open popover or a modal) and shows any
   `data-tip`'s text at once on hover and on keyboard focus (`:focus-visible`), lines kept, until the pointer or the
-  focus leaves, Esc, a press or a scroll; it sets `aria-describedby` while shown.
+  focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets `aria-describedby` while shown.
   [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) stands it below its element, above when only above has room,
   inside the viewport; [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands the settings popover by its
   button the same way. Ink on panel in either scheme, edged in a wash of panel so it parts from dark surfaces (Tower

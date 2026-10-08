@@ -1,7 +1,7 @@
 /**
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
  * the top layer: at once on hover and on keyboard focus, beside the element and inside the viewport, until the pointer
- * or the focus leaves it, Esc, a press or a scroll. A renderer calls `watchTips(document)` once; what it draws later
+ * or the focus leaves it, Esc, a press, a scroll or a redraw that removes it. A renderer calls `watchTips(document)` once; what it draws later
  * needs only the attribute. `placeBeside` stands any popover by the element that opened it the same way. The tower
  * serves this module as `/tips.js`.
  */
