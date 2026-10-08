@@ -201,7 +201,7 @@ test('verbs: what a session left running makes it reapable', () => {
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
-test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty', () => {
+test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty; a review forks its checkout only while it is there', () => {
   const log = homed(fixture('tool-turn'))
   const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
   const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
@@ -215,6 +215,8 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: true }]))), [undefined, true, [['resume']]])
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), ['gone', false, [[]]])
   assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
+  const reviewable = (session: SessionLog, repos: Map<string, RepoRead>) => cardAt(session, repos).verbs.includes('review')
+  assert.deepEqual([reviewable(log, reads([])), reviewable(inTree, reads([{ ...tree, present: true }])), reviewable(inTree, reads([{ ...tree, present: false }])), reviewable(inTree, reads([]))], [true, true, false, false])
   const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
   assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
   const spanning = { name: 'tower', hub: '/hub', repos: ['/lib'] }

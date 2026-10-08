@@ -48,7 +48,7 @@ const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: Session
 
 /**
  * The work a reviewer would review: the worker's checkout and callsign, on a floor whose dirs are all git repos. None
- * for a worker that is itself a reviewer.
+ * for a worker that is itself a reviewer, or whose checkout is gone (`checkoutGone`): a fork needs it there.
  */
 export type ReviewTarget = { project: string; checkout: string; callsign: string }
 

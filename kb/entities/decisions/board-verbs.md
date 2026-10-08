@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
+  "refs": ["hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) was decided inside each renderer:
@@ -24,7 +24,7 @@ a fixed order, the first being the thing's primary verb.
 - A card is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive)) while its PTY runs. Its verbs
   ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)): `drive` and `kill` while live; its latest
   conversation's `resume` or `goto`; `submit` while at Claude's composer (idle, working, done or failed:
-  not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]); `reap` while it has
+  not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout is there and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone is [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
   [[leftover]]s, live or not; `send-home` on a worker in a crew while any of it runs, its call a list of kills, the
   deepest first ([[crews]]).
 - Each of a card's `resources`, a process it left running
@@ -34,7 +34,8 @@ a fixed order, the first being the thing's primary verb.
   another session resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
   ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt): its `cwd` is no longer a dir of its floor, or a
   worktree whose folder is gone), the same for the card's own `resume` ([[resume]]).
-- Each floor ([`floorVerbs`](ref:hub/src/bridge/verbs.ts#floorVerbs)): `spawn` while the host is up, `cut` while
+- Each floor ([`floorVerbs`](ref:hub/src/bridge/verbs.ts#floorVerbs)): `spawn` while the host is up (its call
+  `['spawn', { project }]`, which starts in the hub's main checkout unless a `cwd` is added), `cut` while
   it is and every dir is a git repo with an origin (its call `['spawn', { project, cut: {} }]`), `shell` while the
   terms daemon is up, `editor` always, `tidy` while the floor's Tidy lists anything, its call carrying the list ([[tidy]]). Spawn, shell
   and editor apply to every dir of the floor and to its worktrees.

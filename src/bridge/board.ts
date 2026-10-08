@@ -292,14 +292,17 @@ const shownBy = (worker: Session[]): CardShown[] =>
     .filter((s, i, all) => !all.slice(i + 1).some((later) => later.target === s.target))
 
 /**
- * Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees (`reads`,
- * `undefined` until every dir of it was read once). A project dir is taken to exist; a worktree, while git lists it with
- * its folder in every repo of the project, as a resume needs them all.
+ * Whether the worktree `cwd` is in is gone, by what git reads of the floor's worktrees (`reads`, `undefined` until every
+ * dir of it was read once, when nothing is gone yet). A project dir is taken to exist; a worktree, while git lists it
+ * with its folder in every repo of the project, as a resume or a fork needs them all.
  */
+export const checkoutGone = (project: Project, cwd: string, reads: RepoRead[] | undefined): boolean =>
+  worktreeName(project, cwd) !== undefined && reads !== undefined && !sessionDirs(project, cwd).every((dir) => treeAt(reads, dir)?.present)
+
+/** Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees. */
 export const unresumableAt = (project: Project | undefined, cwd: string, reads: RepoRead[] | undefined): Unresumable | undefined => {
   if (project === undefined || !inProject(project, cwd)) return 'outside'
-  if (worktreeName(project, cwd) === undefined || reads === undefined) return undefined
-  return sessionDirs(project, cwd).every((dir) => treeAt(reads, dir)?.present) ? undefined : 'gone'
+  return checkoutGone(project, cwd, reads) ? 'gone' : undefined
 }
 
 const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[]): Card['worktree'] => {
@@ -402,7 +405,7 @@ const card = (
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
     onDuty: live || (stranded && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy),
-    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews ? { project: header.project, checkout, callsign } : undefined),
+    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && unresumableHere !== 'gone' ? { project: header.project, checkout, callsign } : undefined),
   }
 }
 

@@ -57,7 +57,7 @@ and how its findings reach the author.
   a fork with none is [[absorbed]], `removable` once its reviewer stops, and Tidy deletes its branch. A reviewer that
   committed a failing test leaves its fork `at-risk` until the user decides.
 - *The verb.* Each card offers `review` ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers)) once it has a
-  conversation, when every dir of its floor is a git repo, unless it is itself a reviewer. Its call is
+  conversation, when every dir of its floor is a git repo and its checkout is there (a fork needs it), unless it is itself a reviewer. Its call is
   `['spawn', {project, cut: {from: checkout}, prompt: '/tower:review <CALLSIGN>'}]`. The tower page shows a
   Review button in the worker's header; Tower 3D binds it to Y on a worker. Workers run it as
   `tower review <CALLSIGN> [tell]`.

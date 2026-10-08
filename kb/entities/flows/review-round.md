@@ -34,8 +34,8 @@ sequenceDiagram
 ```
 
 - **Who starts it.** Any worker with `tower review <CALLSIGN>`, or the user from the card's `review` verb. The
-  card offers `review` only when the worker has a conversation, is no reviewer itself and every dir of its floor
-  is a git repo ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers)). The card's own call is a `spawn` with
+  card offers `review` only when the worker has a conversation, is no reviewer itself, its checkout is there and
+  every dir of its floor is a git repo ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers)). The card's own call is a `spawn` with
   `cut.from` and no `tell`: the reviewer's notes then wait on the thread for the user, who sends them from the
   Reviews panel. `tower review ... tell` swaps the prompt for one that makes the reviewer send them itself. The
   tower command finds the author on the board, else in the floors' archives
@@ -60,5 +60,5 @@ sequenceDiagram
   `tower note on <checkout> re n<k>`: "fixed" is a reply, there are no statuses. See [[reviewer]]. The reviewer
   reports to its author, so sending the author home sends it too ([[crews]]); once the checkout's work lands,
   [[tidy]] files the thread as `<checkout>@<YYYY-MM-DD-HHMM>.md` and the checkout starts a fresh one.
-- **Failure.** `tower review` fails when the card offers no review, when the tower is down, or when the worker
+- **Failure.** `tower review` fails when the card offers no review, saying which of those is missing, when the tower is down, or when the worker
   was not started by the tower (no `TOWER_SESSION_ID` or `TOWER_HOOKS_SOCKET`).

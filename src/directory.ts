@@ -109,6 +109,16 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
   ]
 }
 
+/** Why a card offers no `review`, by what the card shows. */
+const noReviewReason = (card: Card) =>
+  !card.conversations.length
+    ? 'it has no conversation yet'
+    : card.reviews
+      ? `it is a reviewer itself, of ${card.reviews}'s work`
+      : card.unresumable === 'gone'
+        ? `its checkout ${card.checkout} is gone, so there is nothing to fork`
+        : "a dir of its floor isn't a git repo, or its checkout is gone"
+
 const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${card.hiredBy!.callsign}`)
 
 /** The floor's crews: each worker under the one it reports to, those that went home among them. */
@@ -531,7 +541,7 @@ switch (verb) {
     if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const author = await cardNamed(board, flag)
-    if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: it has no conversation yet, is a reviewer itself, or a dir of its floor isn't a git repo`)
+    if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`)
     const tell = rest[0] === 'tell'
     const [verbName, body] = author.calls.review
     const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell) })
