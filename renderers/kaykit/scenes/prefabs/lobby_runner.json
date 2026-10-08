@@ -1,0 +1,7 @@
+{
+ "title": "lobby runner",
+ "note": "A runner rug, origin at its centre, long along x: one striped rug 2.25 m long and 2.9 m wide, which the office stretches along x and turns to run from the entrance to the elevator.",
+ "items": [
+  { "model": "furniture/rug_rectangle_stripes_B", "at": [0, 0, 0], "scale": [1, 0.4, 1.93] }
+ ]
+}

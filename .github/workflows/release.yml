@@ -1,0 +1,21 @@
+# A release is a tag vX.Y.Z pushed by hand (CHANGELOG.md has its entry). This checks the tagged tree builds and passes
+# on the platform the tower runs on.
+name: release
+on:
+  push:
+    tags: ['v*.*.*']
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run tower3d
+      - name: CHANGELOG.md has an entry for the tag
+        run: grep -q "^## ${GITHUB_REF_NAME}$" CHANGELOG.md

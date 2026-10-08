@@ -1,0 +1,13 @@
+{
+ "title": "control room watch",
+ "note": "Where you sit and watch a control room's video wall, origin at the middle of the room's front glass, the wall toward -z: a couch on a rug facing it, a side table with a lamp at each end.",
+ "items": [
+  { "model": "furniture/rug_oval_A", "at": [0, 0, -1.55], "scale": [1.5, 0.5, 1.4] },
+  { "model": "furniture/couch_pillows", "at": [0, 0, -1.2], "turn": 180 },
+  { "model": "furniture/table_small", "at": [-1.65, 0, -1.25], "scale": 0.75 },
+  { "model": "furniture/lamp_table", "at": [-1.65, 0.56, -1.25], "scale": 0.55 },
+  { "model": "furniture/table_small", "at": [1.65, 0, -1.25], "scale": 0.75 },
+  { "model": "furniture/lamp_table", "at": [1.65, 0.56, -1.25], "scale": 0.55 },
+  { "model": "furniture/book_set", "at": [1.62, 0.655, -1.05], "turn": 15, "scale": 0.5 }
+ ]
+}

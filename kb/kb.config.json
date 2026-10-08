@@ -1,0 +1,15 @@
+{
+  "repos": {
+    "hub": { "github": "RegiByte/the-tower", "branch": "main" }
+  },
+  "types": [
+    {
+      "id": "library",
+      "label": "Libraries",
+      "parents": ["system"],
+      "evidence": true,
+      "shape": "subroutine",
+      "fields": {}
+    }
+  ]
+}

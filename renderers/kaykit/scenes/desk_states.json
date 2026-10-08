@@ -1,0 +1,22 @@
+{
+ "title": "desk states",
+ "note": "The desk dressed by its worker's state, side by side: each desk is a prefab composed over one workstation.",
+ "sky": "#d8d2c4",
+ "items": [
+  { "scene": "prefabs/desk_idle.json", "at": [-4.8, 0, 0] },
+  { "scene": "prefabs/desk_working.json", "at": [-1.6, 0, 0] },
+  { "scene": "prefabs/desk_needs.json", "at": [1.6, 0, 0] },
+  { "scene": "prefabs/desk_done.json", "at": [4.8, 0, 0] }
+ ],
+ "boxes": [{ "size": [14, 0.05, 6], "at": [0, -0.05, 0], "color": "#6b6355" }],
+ "labels": [
+  { "text": "idle", "at": [-4.8, 2.0, -0.6], "height": 0.22 },
+  { "text": "working", "at": [-1.6, 2.0, -0.6], "height": 0.22 },
+  { "text": "needs", "at": [1.6, 2.0, -0.6], "height": 0.22 },
+  { "text": "done", "at": [4.8, 2.0, -0.6], "height": 0.22 }
+ ],
+ "cameras": {
+  "front": { "pos": [0, 3.4, 6.4], "look": [0, 0.8, 0], "fov": 50 },
+  "close": { "pos": [0.2, 1.7, 2.6], "look": [-1.6, 0.9, -0.2], "fov": 45 }
+ }
+}

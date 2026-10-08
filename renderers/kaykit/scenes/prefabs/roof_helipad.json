@@ -1,0 +1,9 @@
+{
+ "title": "roof helipad",
+ "note": "A landing pad on the roof, origin at its centre, with two crates of cargo waiting by it.",
+ "items": [
+  { "model": "space/landingpad_large", "at": [0, 0, 0], "scale": 1.5 },
+  { "model": "space/cargo_B_packed", "at": [2.45, 0, 1.2], "turn": 20, "scale": 1.2 },
+  { "model": "space/cargo_A_packed", "at": [2.5, 0, 0.45], "turn": -10, "scale": 1.2 }
+ ]
+}

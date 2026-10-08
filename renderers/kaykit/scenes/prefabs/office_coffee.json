@@ -1,0 +1,22 @@
+{
+ "title": "office coffee point",
+ "note": "A kitchenette for the office floor, origin at the back-left corner of its counter run, the counters' backs on z = 0 facing +z: counters slimmed to a kitchenette's depth, the ice-cream machine as an espresso machine, a fridge, jars and mugs, a café table with two stools.",
+ "items": [
+  { "model": "restaurant/kitchencounter_straight_B_backsplash", "at": [0.75, 0, 0.35], "scale": [1, 1, 0.45] },
+  { "model": "restaurant/kitchencounter_sink_backsplash", "at": [2.25, 0, 0.35], "scale": [1, 1, 0.45] },
+  { "model": "restaurant/kitchencounter_straight_B_backsplash", "at": [3.75, 0, 0.35], "scale": [1, 1, 0.45] },
+  { "model": "restaurant/fridge_A", "at": [5.0, 0, 0.4], "scale": [0.62, 1, 0.48] },
+  { "model": "restaurant/icecream_machine", "at": [0.6, 0.75, 0.32], "scale": 0.42 },
+  { "model": "restaurant/jar_A_large", "at": [3.25, 0.75, 0.2], "scale": 1.6 },
+  { "model": "restaurant/jar_B_medium", "at": [3.5, 0.75, 0.22], "scale": 1.6 },
+  { "model": "restaurant/jar_C_small", "at": [3.72, 0.75, 0.2], "scale": 1.6 },
+  { "model": "furniture/mug_A", "at": [4.2, 0.75, 0.45], "turn": 40, "scale": 0.45 },
+  { "model": "furniture/mug_B", "at": [4.4, 0.75, 0.38], "turn": 200, "scale": 0.45 },
+  { "model": "furniture/cup", "at": [1.15, 0.75, 0.45], "scale": 0.45 },
+  { "model": "restaurant/table_round_A_small", "at": [2.4, 0, 2.1], "scale": 0.85 },
+  { "model": "restaurant/chair_stool", "at": [1.65, 0, 2.3], "scale": 1.15 },
+  { "model": "restaurant/chair_stool", "at": [3.15, 0, 1.9], "scale": 1.15 },
+  { "model": "furniture/mug_B", "at": [2.5, 0.64, 2.05], "turn": 120, "scale": 0.45 },
+  { "scene": "planter.json", "at": [6.0, 0, 0.45] }
+ ]
+}

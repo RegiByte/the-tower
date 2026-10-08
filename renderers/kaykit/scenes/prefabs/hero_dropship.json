@@ -1,0 +1,8 @@
+{
+ "title": "hero: dropship",
+ "note": "A model dropship landed on its pad, origin at the pad's centre: the floor's hero, its lights in the floor's colour.",
+ "items": [
+  {"model": "space/landingpad_large", "at": [0, 0, 0], "scale": 1.25},
+  {"model": "space/dropship", "at": [0, 0.625, 0], "turn": 20, "scale": 1.21}
+ ]
+}

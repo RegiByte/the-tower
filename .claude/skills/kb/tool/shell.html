@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+:root{--bg:#fbfbfa;--panel:#fff;--side:#f3f3f1;--ink:#1d1d1b;--mute:#6b6b66;--line:#e2e2de;--accent:#2656c9;--warn:#a15c00;--warn-bg:#fff4e0;--chip:#ecece8;--code:#f1f1ee}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--panel:#1d1d1c;--side:#1a1a19;--ink:#e8e8e3;--mute:#9a9a93;--line:#33332f;--accent:#8fb0ff;--warn:#ffb54d;--warn-bg:#2e2412;--chip:#2a2a27;--code:#252523}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
+nav{background:var(--side);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+nav .brand{font-weight:700;font-size:17px;display:block;color:var(--ink);margin-bottom:12px}
+nav input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px}
+nav h4{margin:18px 0 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+nav a{display:flex;justify-content:space-between;padding:3px 8px;border-radius:5px;color:var(--ink);font-size:14px}
+nav a:hover{background:var(--chip);text-decoration:none}nav a.on{background:var(--chip);font-weight:600}
+nav a small{color:var(--mute)}nav a.warn{color:var(--warn)}
+nav details{margin:1px 0}nav summary{list-style:none;display:flex;align-items:center;cursor:pointer;border-radius:5px}
+nav summary::-webkit-details-marker{display:none}
+nav summary::before{content:"\25B8";width:14px;flex:none;color:var(--mute);font-size:11px}nav details[open]>summary::before{content:"\25BE"}
+nav summary>a,nav summary>span{flex:1;padding-left:2px}nav summary>span{padding:3px 8px 3px 2px;font-size:14px}
+nav .t1{margin-left:14px}nav a.t2{display:block;margin-left:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}nav a.used::after{content:" \2197";color:var(--mute);font-size:12px}
+nav footer{margin-top:22px;font-size:12px;color:var(--mute)}
+main{padding:32px 40px 80px;max-width:980px;width:100%;margin:0 auto}
+.crumbs{font-size:13px;color:var(--mute);margin-bottom:6px}.crumbs a{color:var(--mute)}
+h1{font-size:28px;line-height:1.25;margin:0 0 6px}
+h2{font-size:18px;margin:34px 0 10px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+h3{font-size:16px;margin:24px 0 8px}
+.chip{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--mute);vertical-align:middle;margin-right:6px;font-weight:500}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.lead{font-size:17px;color:var(--mute);margin:8px 0 6px}
+.meta{font-size:13px;color:var(--mute)}
+.alert{border:1px solid var(--warn);background:var(--warn-bg);border-radius:8px;padding:10px 14px;margin:16px 0;font-size:14px}
+.alert b{color:var(--warn)}.alert ul{margin:4px 0 0;padding-left:18px}
+.body{margin-top:18px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px;display:block;overflow-x:auto}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);font-weight:600}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:13px}
+pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto}pre code{padding:0;background:none}
+.diagram{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;text-align:center}
+.diagram svg{max-width:100%;height:auto}.diagram pre{background:none;padding:0;margin:0}
+ul.refs{list-style:none;padding:0}ul.refs li{padding:2px 0;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.muted{color:var(--mute)}
+@media (max-width:760px){.app{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:20px 16px 60px}}
+</style>
+</head>
+<body>
+<div class="app"><nav id="nav"></nav><main id="main"></main></div>
+<script type="application/json" id="kb-data">{{DATA}}</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@16.3.0/lib/marked.umd.js"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.esm.min.mjs";
+import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.3/dist/mermaid-layout-elk.esm.min.mjs";
+
+const KB = JSON.parse(document.getElementById("kb-data").textContent);
+const E = KB.entities;
+const TYPES = Object.fromEntries(KB.types.map((t) => [t.id, t]));
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+// The page renders committed, trusted KB content: bodies go to innerHTML unsanitized, and mermaid needs
+// "loose" for the click-to-navigate links on map nodes.
+mermaid.registerLayoutLoaders(elkLayouts);
+mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: dark ? "dark" : "neutral", layout: "elk" });
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const link = (id) => `<a href="#/e/${id}">${esc(E[id].name)}</a>`;
+const md = (s) => marked.parse(s ?? "");
+const byName = (a, b) => E[a].name.localeCompare(E[b].name);
+const suspectIds = Object.keys(E).filter((id) => E[id].suspect.length).sort(byName);
+
+function fieldValue(e, f) {
+  const v = e.fields[f.name];
+  if (v === undefined) return "";
+  if (f.kind === "id") return link(v);
+  if (f.kind === "ids") return v.map(link).join(", ");
+  return esc(v);
+}
+
+function table(ids, { showType = false, showParent = false, extra = null } = {}) {
+  if (!ids.length) return `<p class="muted">Nothing here yet.</p>`;
+  const types = [...new Set(ids.map((id) => E[id].type))];
+  const fields = types.length === 1 ? TYPES[types[0]].fields.filter((f) => f.kind !== "ids") : [];
+  const head = ["Name", showType && "Type", showParent && "In", ...fields.map((f) => f.name), extra?.head, "Summary"].filter(Boolean);
+  const rows = ids.map((id) => {
+    const e = E[id];
+    const flags = e.inverse.map((i) => `<span class="chip">${esc(i.label)} ${link(i.from)}</span>`).join("")
+      + (e.suspect.length ? `<span class="chip warn">suspect</span>` : "");
+    return [`${link(id)} ${flags}`, showType && esc(e.type), showParent && (e.in ? link(e.in) : ""),
+      ...fields.map((f) => fieldValue(e, f)), extra ? extra.cell(id) : false, esc(e.summary)].filter((c) => c !== false);
+  });
+  return `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${
+    rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function ancestors(id) {
+  const chain = [];
+  for (let cur = E[id].in; cur; cur = E[cur].in) chain.unshift(cur);
+  return chain;
+}
+
+function entityPage(id) {
+  const e = E[id];
+  const type = TYPES[e.type];
+  const badges = [
+    ...type.fields.filter((f) => f.kind === "enum").map((f) => e.fields[f.name] && `<span class="chip">${esc(e.fields[f.name])}</span>`),
+    ...e.inverse.map((i) => `<span class="chip">${esc(i.label)} ${link(i.from)}</span>`),
+  ].filter(Boolean).join("");
+  const otherFields = type.fields.filter((f) => f.kind !== "enum" && e.fields[f.name] !== undefined)
+    .map((f) => `${esc(f.name)}: ${fieldValue(e, f)}`);
+  const alert = e.suspect.length ? `<div class="alert"><b>Code changed since this was reviewed.</b> Read with care; the claims below may be out of date.<ul>${
+    e.suspect.map((s) => `<li><code>${esc(s.ref)}</code>: ${s.commits.slice(0, 3).map((c) => `<a href="${c.url}" target="_blank">${esc(c.hash)}</a> ${esc(c.date)} ${esc(c.subject)}`).join("; ")}${s.commits.length > 3 ? ` (+${s.commits.length - 3} more)` : ""}</li>`).join("")}</ul></div>` : "";
+
+  const sections = [];
+  if (e.diagram) sections.push(`<h2>Map</h2><div class="diagram"><pre class="mermaid">${esc(e.diagram)}</pre></div>`);
+  if (e.out.length || e.inc.length) {
+    const rows = [...e.out.map((l) => [esc(e.name), esc(l.verb), link(l.to), esc(l.carries)]),
+      ...e.inc.map((l) => [link(l.from), esc(l.verb), esc(e.name), esc(l.carries)])];
+    sections.push(`<h2>Connections</h2><table><thead><tr><th>From</th><th>Verb</th><th>To</th><th>Carries</th></tr></thead><tbody>${
+      rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+  }
+  for (const t of KB.types) {
+    const ids = e.children.filter((c) => E[c].type === t.id);
+    if (ids.length) sections.push(`<h2>${esc(t.label)}</h2>${table(ids)}`);
+  }
+  if (e.flows.length) sections.push(`<h2>Flows</h2>${table(e.flows)}`);
+  if (e.refs.length) sections.push(`<h2>Evidence</h2><ul class="refs">${
+    e.refs.map((r) => `<li><a href="${r.url}" target="_blank">${esc(r.text)}</a>${r.checked ? "" : ` <span class="muted">(unchecked)</span>`}</li>`).join("")}</ul>`);
+  if (e.mentionedBy.length) sections.push(`<h2>Mentioned by</h2>${table([...e.mentionedBy].sort(byName), { showType: true })}`);
+
+  return `<div class="crumbs">${ancestors(id).map(link).join(" / ")}</div>
+    <h1>${esc(e.name)}</h1>
+    <div><span class="chip">${esc(e.type)}</span>${badges}</div>
+    <p class="lead">${esc(e.summary)}</p>
+    <div class="meta">Reviewed ${esc(e.reviewed)}${otherFields.length ? " · " + otherFields.join(" · ") : ""}</div>
+    ${alert}<div class="body">${md(e.body)}</div>${sections.join("")}`;
+}
+
+function typePage(typeId) {
+  const t = TYPES[typeId];
+  const ids = Object.keys(E).filter((id) => E[id].type === typeId).sort(byName);
+  const dateField = t.fields.find((f) => f.kind === "date");
+  const known = (id) => { const v = E[id].fields[dateField.name]; return v && v !== "unknown" ? v : ""; };
+  if (dateField) ids.sort((a, b) => known(b).localeCompare(known(a)));
+  return `<h1>${esc(t.label)}</h1><p class="lead">${ids.length} ${ids.length === 1 ? "entry" : "entries"}</p>${table(ids, { showParent: true })}`;
+}
+
+const treeNodes = () => [
+  ...KB.tree.systems.map((s) => ({ scope: s.id, label: E[s.id].name, href: `#/e/${s.id}`, ...s })),
+  { scope: "shared", label: "Shared", href: null, touches: {}, ...KB.tree.shared },
+];
+const groupHref = (scope, type) => `#/g/${scope}/${type}`;
+
+function touchesCell(node, id) {
+  const touches = node.touches[id];
+  const parts = [...new Set(touches.filter((t) => !t.flow).map((t) => t.to === id ? `${link(t.from)} ${esc(t.verb)}` : `${esc(t.verb)} ${link(t.to)}`))];
+  const flows = [...new Set(touches.filter((t) => t.flow).map((t) => link(t.flow)))];
+  return [...parts, flows.length && `in ${flows.join(", ")}`].filter(Boolean).join("<br>");
+}
+
+function groupPage(scope, typeId) {
+  const node = treeNodes().find((n) => n.scope === scope);
+  const g = node?.groups.find((x) => x.type === typeId);
+  if (!g) return null;
+  const label = TYPES[typeId].label;
+  const crumbs = node.href ? [...ancestors(scope), scope].map(link).join(" / ") : link(KB.project);
+  const lead = node.href ? "" : `<p class="lead">Entities that belong to no system.</p>`;
+  const used = g.uses.length ? `${g.ids.length ? `<h2>From outside ${esc(node.label)}</h2>` : ""}
+    <p class="muted">These live outside ${esc(node.label)}; its parts read, write or call them, or its flows pass through them.</p>
+    ${table(g.uses, { showParent: true, extra: { head: `How ${node.label} touches it`, cell: (id) => touchesCell(node, id) } })}` : "";
+  return `<div class="crumbs">${crumbs}</div><h1>${esc(node.label)} · ${esc(label)}</h1>${lead}
+    ${g.ids.length ? table(g.ids) : ""}${used}`;
+}
+
+let treeClick = null;
+
+const groupOf = (scope, type) => treeNodes().find((n) => n.scope === scope)?.groups.find((g) => g.type === type);
+
+// The one tree path to open: the group the reader clicked through, while it still holds the current entity;
+// otherwise the group where the entity lives.
+function treePath(current) {
+  const [, kind, ...rest] = current.split("/");
+  if (kind === "g") return { scope: rest[0], type: rest[1] };
+  const id = kind === "e" ? decodeURIComponent(rest.join("/")) : null;
+  if (!E[id]) return null;
+  if (KB.tree.systems.some((s) => s.id === id)) return { scope: id, type: null };
+  const clicked = treeClick && groupOf(treeClick.scope, treeClick.type);
+  if (clicked && [...clicked.ids, ...clicked.uses].includes(id)) return treeClick;
+  const home = treeNodes().find((n) => n.groups.some((g) => g.ids.includes(id)));
+  return home ? { scope: home.scope, type: E[id].type } : null;
+}
+
+function treeHtml(current) {
+  const path = treePath(current);
+  const item = (href, label, cls, scope, type) => `<a href="${href}" title="${label}" data-scope="${scope}"${type ? ` data-type="${type}"` : ""} class="${[cls, href === current ? "on" : ""].join(" ")}">${label}</a>`;
+  return treeNodes().map((n) => {
+    const open = path?.scope === n.scope;
+    const head = n.href ? item(n.href, esc(n.label), "", n.scope) : `<span>${esc(n.label)}</span>`;
+    const groups = n.groups.map((g) => {
+      const entry = (cls) => (id) => item(`#/e/${id}`, esc(E[id].name), cls, n.scope, g.type);
+      const entries = [...g.ids.map(entry("t2")), ...g.uses.map(entry("t2 used"))];
+      const gOpen = open && path.type === g.type;
+      return `<details class="t1"${gOpen ? " open" : ""}><summary>${item(groupHref(n.scope, g.type), esc(TYPES[g.type].label), "", n.scope, g.type)}<small class="muted">${g.ids.length + g.uses.length}</small></summary>${entries.join("")}</details>`;
+    }).join("");
+    return `<details${open ? " open" : ""}><summary>${head}</summary>${groups}</details>`;
+  }).join("");
+}
+
+function reviewPage() {
+  return `<h1>Needs review</h1><p class="lead">Code referenced by these entries changed after they were last reviewed.</p>${table(suspectIds, { showType: true, showParent: true })}`;
+}
+
+function searchPage(q) {
+  const needle = q.toLowerCase();
+  const score = (id) => {
+    const e = E[id];
+    if (e.name.toLowerCase().includes(needle) || id.includes(needle)) return 3;
+    if (e.summary.toLowerCase().includes(needle)) return 2;
+    return e.body.toLowerCase().includes(needle) ? 1 : 0;
+  };
+  const ids = Object.keys(E).map((id) => [id, score(id)]).filter(([, s]) => s > 0)
+    .sort((a, b) => b[1] - a[1] || byName(a[0], b[0])).map(([id]) => id);
+  return `<h1>Search</h1><p class="lead">${ids.length} result${ids.length === 1 ? "" : "s"} for “${esc(q)}”</p>${table(ids, { showType: true, showParent: true })}`;
+}
+
+function nav(current) {
+  const a = (href, label, extra = "", cls = "") => `<a href="${href}" class="${[cls, href === current ? "on" : ""].join(" ")}">${label}${extra}</a>`;
+  const counts = KB.types.filter((t) => t.id !== "project")
+    .map((t) => [t, Object.values(E).filter((e) => e.type === t.id).length]).filter(([, n]) => n);
+  const q = current.startsWith("#/s/") ? decodeURIComponent(current.slice(4)) : "";
+  document.getElementById("nav").innerHTML = `
+    <a class="brand" href="#/e/${KB.project}">${esc(KB.title)}</a>
+    <input id="q" type="search" placeholder="Search" value="${esc(q)}">
+    ${KB.views.length ? `<h4>Pages</h4>${KB.views.map((v) => a(`#/v/${v.id}`, esc(v.title))).join("")}` : ""}
+    <h4>Systems</h4>${treeHtml(current)}
+    <h4>Browse</h4>${counts.map(([t, n]) => a(`#/t/${t.id}`, esc(t.label), `<small>${n}</small>`)).join("")}
+    ${suspectIds.length ? a("#/review", "Needs review", `<small>${suspectIds.length}</small>`, "warn") : ""}
+    <footer>Generated ${esc(KB.generated)}</footer>`;
+  const input = document.getElementById("q");
+  input.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") location.hash = input.value.trim() ? `#/s/${encodeURIComponent(input.value.trim())}` : `#/e/${KB.project}`;
+  });
+}
+
+async function route() {
+  const hash = location.hash || `#/e/${KB.project}`;
+  const [, kind, ...rest] = hash.split("/");
+  const arg = decodeURIComponent(rest.join("/"));
+  const view = KB.views.find((v) => v.id === arg);
+  const group = kind === "g" ? groupPage(...rest.map(decodeURIComponent)) : null;
+  const html =
+    kind === "e" && E[arg] ? entityPage(arg)
+    : kind === "t" && TYPES[arg] ? typePage(arg)
+    : kind === "v" && view ? `<h1>${esc(view.title)}</h1><div class="body">${md(view.body)}</div>`
+    : group ? group
+    : kind === "s" ? searchPage(arg)
+    : kind === "review" ? reviewPage()
+    : `<h1>Not found</h1><p><a href="#/e/${KB.project}">Back to ${esc(KB.title)}</a></p>`;
+  nav(hash);
+  const main = document.getElementById("main");
+  main.innerHTML = html;
+  main.querySelectorAll("a[href^='http']").forEach((el) => { el.target = "_blank"; el.rel = "noopener"; });
+  main.querySelectorAll("pre > code.language-mermaid").forEach((code) => {
+    const div = document.createElement("div");
+    div.className = "diagram";
+    div.innerHTML = `<pre class="mermaid">${esc(code.textContent)}</pre>`;
+    code.parentElement.replaceWith(div);
+  });
+  window.scrollTo(0, 0);
+  await mermaid.run({ querySelector: "main pre.mermaid" });
+}
+
+document.getElementById("nav").addEventListener("click", (ev) => {
+  const a = ev.target.closest("a[data-scope]");
+  treeClick = a ? { scope: a.dataset.scope, type: a.dataset.type ?? null } : null;
+});
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

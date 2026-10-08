@@ -1,0 +1,195 @@
+{
+ "title": "meeting room",
+ "note": "A 9 \u00d7 6 m meeting room, origin at its back-left corner, open on its left (it stands against the glass facade): Restaurant walls with open windows toward the floor, a doorway at the front-right, pillars where its walls meet, a long table for six, a framed screen on the back wall.",
+ "items": [
+  {
+   "model": "restaurant/wall",
+   "at": [
+    1.5,
+    0,
+    0
+   ]
+  },
+  {
+   "model": "restaurant/wall",
+   "at": [
+    4.5,
+    0,
+    0
+   ]
+  },
+  {
+   "model": "restaurant/wall",
+   "at": [
+    7.5,
+    0,
+    0
+   ]
+  },
+  {
+   "model": "restaurant/wall_window_open",
+   "at": [
+    1.5,
+    0,
+    6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "restaurant/wall_window_open",
+   "at": [
+    4.5,
+    0,
+    6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "restaurant/wall_doorway",
+   "at": [
+    7.5,
+    0,
+    6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "restaurant/wall_window_open",
+   "at": [
+    9,
+    0,
+    1.5
+   ],
+   "turn": 270
+  },
+  {
+   "model": "restaurant/wall_window_open",
+   "at": [
+    9,
+    0,
+    4.5
+   ],
+   "turn": 270
+  },
+  {
+   "model": "restaurant/pillar_A",
+   "at": [
+    9,
+    0,
+    0
+   ]
+  },
+  {
+   "model": "restaurant/pillar_A",
+   "at": [
+    9,
+    0,
+    6
+   ]
+  },
+  {
+   "model": "furniture/table_medium_long",
+   "at": [
+    4.5,
+    0,
+    3
+   ],
+   "turn": 90
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    3.35,
+    0,
+    2.2
+   ],
+   "turn": 90
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    3.35,
+    0,
+    3
+   ],
+   "turn": 90
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    3.35,
+    0,
+    3.8
+   ],
+   "turn": 90
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    5.65,
+    0,
+    2.2
+   ],
+   "turn": 270
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    5.65,
+    0,
+    3
+   ],
+   "turn": 270
+  },
+  {
+   "model": "furniture/chair_C",
+   "at": [
+    5.65,
+    0,
+    3.8
+   ],
+   "turn": 270
+  },
+  {
+   "model": "furniture/pictureframe_large_B",
+   "at": [
+    4.5,
+    1.7,
+    0.2
+   ]
+  },
+  {
+   "model": "furniture/lamp_standing",
+   "at": [
+    1,
+    0,
+    0.9
+   ]
+  },
+  {
+   "model": "city/bush",
+   "at": [
+    7.9,
+    0,
+    0.9
+   ],
+   "scale": 3
+  }
+ ],
+ "boxes": [
+  {
+   "size": [
+    1.29,
+    0.7,
+    0.01
+   ],
+   "at": [
+    4.5,
+    1.35,
+    0.34
+   ],
+   "color": "#2b6f87",
+   "glow": true
+  }
+ ]
+}

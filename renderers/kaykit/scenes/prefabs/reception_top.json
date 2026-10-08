@@ -1,0 +1,12 @@
+{
+ "title": "reception counter",
+ "note": "What stands on and behind the lobby's reception counter, origin at the counter's centre on the floor, its front toward +z: a desk lamp, a pencil cup, a book set, a cactus and a mug on the 1.16 m top, an office chair behind.",
+ "items": [
+  { "model": "furniture/lamp_desk", "at": [-1.6, 1.16, -0.1], "turn": 200, "scale": 0.6 },
+  { "model": "furniture/cup_pencils", "at": [-1.1, 1.16, 0.15], "scale": 0.5 },
+  { "model": "furniture/book_set", "at": [1.35, 1.255, -0.05], "turn": 180, "scale": 0.55 },
+  { "model": "furniture/cactus_medium_A", "at": [1.9, 1.16, 0.1], "scale": 0.6 },
+  { "model": "furniture/mug_B", "at": [-0.6, 1.16, -0.2], "turn": 120, "scale": 0.45 },
+  { "model": "furniture/chair_desk_A", "at": [0.4, 0, -1.2], "turn": 10 }
+ ]
+}

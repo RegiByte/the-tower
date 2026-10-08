@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KayKit Playground</title>
+<link rel="stylesheet" href="/design.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--enamel); color: var(--ink); font: 13px/1.45 var(--ui); -webkit-font-smoothing: antialiased; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#panel { position: fixed; top: 14px; left: 14px; bottom: 14px; width: 330px; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); scrollbar-width: thin; }
+h1 { margin: 0; font: 900 17px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+h3 { margin: 6px 0 0; font: 800 11px/1 var(--display); text-transform: uppercase; letter-spacing: .1em; color: var(--faint); }
+button, select, input { font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 3px 8px; }
+button { cursor: pointer; font-weight: 700; font-size: 12px; }
+button:hover { border-color: var(--faint); }
+button:disabled, select:disabled { opacity: .45; cursor: default; }
+input[type=search] { width: 100%; }
+input[type=color] { width: 28px; height: 24px; padding: 1px; }
+.meta { color: var(--muted); font-size: 12px; }
+.row { display: flex; gap: 6px; align-items: center; }
+.row select { flex: 1; min-width: 0; }
+.hits { display: flex; flex-wrap: wrap; gap: 3px; max-height: 190px; overflow-y: auto; }
+.hits button { font: 11px/1.3 var(--mono); padding: 1px 6px; }
+.hits button.absent { opacity: .45; }
+.theme { display: grid; gap: 4px; }
+.pack { display: grid; grid-template-columns: 74px 1fr auto auto auto auto auto; gap: 4px; align-items: center; padding-left: 7px; box-shadow: inset 3px 0 0 var(--p); }
+.pack b { font: 800 11px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+.pack select { min-width: 0; }
+.pack button { padding: 2px 6px; }
+.facts { display: grid; gap: 3px; font-size: 12px; }
+.facts b { font: 700 12px/1.3 var(--mono); }
+.swatches { display: flex; gap: 3px; }
+.swatches span { width: 18px; height: 18px; border-radius: 3px; border: 1px solid var(--line); }
+#keys { position: fixed; right: 14px; bottom: 14px; padding: 6px 10px; color: var(--muted); font-size: 11px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+kbd { display: inline-grid; place-items: center; min-width: 1.6em; padding: 1px 3px; border-radius: 3px; font: 700 10px/1 var(--mono); background: var(--ink); color: var(--panel); }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="panel"><h1>KayKit playground</h1><div class="meta">loading the collection…</div></div>
+<div id="keys">drag pan · right-drag turn · wheel zoom · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> slide · <kbd>Q</kbd><kbd>E</kbd> down, up · <kbd>⇧</kbd> fast · click a model</div>
+<script src="out/kaykit.js"></script>
+</body>
+</html>

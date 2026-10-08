@@ -1,0 +1,17 @@
+{
+ "title": "collections wall",
+ "note": "A wall of cabinets with a shelf above each, one per collection, facing -Z from its origin at the left cabinet: items as books, jars and a cactus.",
+ "items": [
+  { "model": "furniture/cabinet_medium", "at": [0, 0, 0], "turn": 180 },
+  { "model": "furniture/shelf_B_large_decorated", "at": [0, 1.7, 0.05], "turn": 180 },
+  { "model": "furniture/cabinet_medium", "at": [1.6, 0, 0], "turn": 180 },
+  { "model": "furniture/shelf_B_large_decorated", "at": [1.6, 1.7, 0.05], "turn": 180 },
+  { "model": "furniture/cabinet_medium", "at": [3.2, 0, 0], "turn": 180 },
+  { "model": "furniture/shelf_B_large_decorated", "at": [3.2, 1.7, 0.05], "turn": 180 },
+  { "model": "furniture/book_set", "at": [0, 0.94, -0.2], "turn": 180 },
+  { "model": "restaurant/jar_A_large", "at": [1.45, 0.75, -0.2] },
+  { "model": "restaurant/jar_C_medium", "at": [1.75, 0.75, -0.2] },
+  { "model": "furniture/cactus_small_B", "at": [3.2, 0.75, -0.2] }
+ ],
+ "labels": [{ "text": "COLLECTIONS", "at": [1.6, 2.55, -0.1], "turn": 180, "height": 0.26 }]
+}

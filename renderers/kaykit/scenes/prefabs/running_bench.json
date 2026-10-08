@@ -1,0 +1,10 @@
+{
+ "title": "running bench",
+ "note": "A couch to sit and watch what the floor left running, origin at the couch's foot, facing +z: the couch, a side table with a mug, a planter at one end.",
+ "items": [
+  { "model": "furniture/couch", "at": [0, 0, 0] },
+  { "model": "furniture/table_small", "at": [1.55, 0, 0.05], "scale": 0.75 },
+  { "model": "furniture/mug_A", "at": [1.5, 0.5625, 0.1], "turn": 60, "scale": 0.45 },
+  { "scene": "planter.json", "at": [-1.65, 0, -0.1] }
+ ]
+}

@@ -1,0 +1,7 @@
+node_modules
+spikes/**/out/
+.DS_Store
+src/mod/.claude-plugin/types/
+src/mod/tsconfig.json
+renderers/*/out/
+__pycache__/

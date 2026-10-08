@@ -1,0 +1,5 @@
+{
+  "name": "tower",
+  "version": "0.1.0",
+  "description": "Forwards Claude Code events to the tower's host"
+}

@@ -1,0 +1,83 @@
+import { latestSaved, type Conversation } from './conversation.ts'
+import type { Session } from './facts.ts'
+
+const byStart = (a: Session, b: Session) => a.header.startedAt - b.header.startedAt
+
+const holds = (session: Session, id: string) => session.facts.conversations.some((c) => c.saved && c.id === id)
+
+/**
+ * A conversation can be resumed again and again, by a chain of sessions or twice from the same one: the link
+ * is to the nearest session in time on either side.
+ */
+export const resumes = (session: Session, conversation: Conversation, sessions: Session[]): Session | undefined =>
+  conversation.resumed
+    ? sessions.filter((s) => s.header.startedAt < session.header.startedAt && holds(s, conversation.id)).sort(byStart).at(-1)
+    : undefined
+
+export const resumedBy = (session: Session, conversation: Conversation, sessions: Session[]): Session | undefined =>
+  conversation.saved
+    ? sessions
+        .filter((s) => s.header.startedAt > session.header.startedAt && s.facts.conversations.some((c) => c.resumed && c.id === conversation.id))
+        .sort(byStart)[0]
+    : undefined
+
+/**
+ * The session this one continues as the same worker: the one whose latest saved conversation it resumed as its
+ * first. Resuming any earlier conversation of a session forks a new worker.
+ */
+export const continues = (session: Session, sessions: Session[]): Session | undefined => {
+  const first = session.facts.conversations[0]
+  const source = first && resumes(session, first, sessions)
+  return source && carriesOn(source, first.id) ? source : undefined
+}
+
+/** Resuming this conversation of `source` carries its worker on: it is the latest one Claude saved there. */
+export const carriesOn = (source: Session, conversation: string) => latestSaved(source.facts.conversations)?.id === conversation
+
+/** Each session that continues another, to the one it continues. */
+export const continuations = (sessions: Session[]): Map<Session, Session> =>
+  new Map(sessions.flatMap((s) => {
+    const before = continues(s, sessions)
+    return before ? [[s, before] as const] : []
+  }))
+
+/** The sessions one worker ran as, oldest first, ending with this one. */
+export const lineage = (session: Session, before: (s: Session) => Session | undefined): Session[] => {
+  const earlier = before(session)
+  return earlier ? [...lineage(earlier, before), session] : [session]
+}
+
+/** A worker keeps its callsign across the sessions it continues: the name of the first. `callsign`: a session id's (`callsignsOf`). */
+export const workerName = (worker: Session[], callsign: (id: string) => string) => callsign(worker[0].header.id)
+
+/** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
+export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>
+  carriesOn(source, conversation) ? workerName(lineage(source, (s) => continues(s, sessions)), callsign) : callsign(id)
+
+/** The conversation's latest prompt and answer: what a resumed session hasn't had yet comes from the session it resumed. */
+const latest = (session: Session, conversation: Conversation, sessions: Session[]): Pick<Conversation, 'prompt' | 'answer'> => {
+  const source = conversation.prompt && conversation.answer ? undefined : resumes(session, conversation, sessions)
+  const earlier = source && latest(source, source.facts.conversations.findLast((c) => c.id === conversation.id)!, sessions)
+  return { prompt: conversation.prompt ?? earlier?.prompt, answer: conversation.answer ?? earlier?.answer }
+}
+
+/** A session by id, with the callsign of the worker it ran as. */
+export type SessionRef = { id: string; callsign: string }
+
+/** The callsign of the worker each session ran as, over the sessions' `continuations`. */
+export const namer = (continued: Map<Session, Session>, callsign: (id: string) => string) => (session: Session) =>
+  workerName(lineage(session, (s) => continued.get(s)), callsign)
+
+/** A saved conversation as a session holds it, linked to the sessions it came from and went on to. */
+export type Thread = Conversation & { resumes?: SessionRef; resumedBy?: SessionRef }
+
+/** `nameOf`: a session's worker's callsign (`namer`). */
+export const threads = (session: Session, sessions: Session[], nameOf: (s: Session) => string): Thread[] =>
+  session.facts.conversations
+    .filter((c) => c.saved)
+    .map((c) => {
+      const source = resumes(session, c, sessions)
+      const resumer = resumedBy(session, c, sessions)
+      const refOf = (s: Session): SessionRef => ({ id: s.header.id, callsign: nameOf(s) })
+      return { ...c, ...latest(session, c, sessions), resumes: source && refOf(source), resumedBy: resumer && refOf(resumer) }
+    })

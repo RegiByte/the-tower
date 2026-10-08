@@ -1,0 +1,12 @@
+{
+ "title": "workstation",
+ "note": "A desk, its chair pulled up at +Z where the worker sits, a monitor facing the chair, keyboard and mouse. The desk top is at y 0.75. Its screen is left to the dressing that places it, which colours it.",
+ "items": [
+  { "model": "furniture/desk", "at": [0, 0, 0] },
+  { "model": "furniture/chair_desk_A", "at": [0.1, 0, 0.85], "turn": 180 },
+  { "model": "furniture/monitor", "at": [-0.15, 0.75, -0.3] },
+  { "model": "furniture/keyboard", "at": [-0.15, 0.75, 0.1] },
+  { "model": "furniture/mousepad_A", "at": [0.45, 0.75, 0.12] },
+  { "model": "furniture/mouse", "at": [0.45, 0.765, 0.12] }
+ ]
+}

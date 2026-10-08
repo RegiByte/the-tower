@@ -1,0 +1,12 @@
+{
+ "title": "desk: working",
+ "note": "A worker on a turn: lamp on, a mug, pencils, an amber screen.",
+ "items": [
+  { "scene": "workstation.json", "at": [0, 0, 0] },
+  { "model": "furniture/lamp_desk", "at": [0.85, 0.75, -0.25], "turn": -30 },
+  { "model": "furniture/mug_A", "at": [1.0, 0.75, 0.3], "turn": 40 },
+  { "model": "furniture/cup_pencils", "at": [-0.85, 0.75, -0.3] }
+ ],
+ "boxes": [{ "size": [0.86, 0.5, 0.01], "at": [-0.15, 0.98, -0.155], "color": "#e89a1a", "glow": true }],
+ "lamps": [{ "at": [0.75, 1.5, -0.1], "intensity": 1.5, "distance": 3 }]
+}

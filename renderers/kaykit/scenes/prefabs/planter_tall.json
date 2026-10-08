@@ -1,0 +1,8 @@
+{
+ "title": "tall planter",
+ "note": "A lobby-sized plant: a larger planter box with a City Builder tree at indoor-tree size, origin at the box's base centre.",
+ "items": [
+  { "model": "restaurant/crate", "at": [0, 0, 0], "scale": [0.6, 0.8, 0.6] },
+  { "model": "city/tree_C", "at": [0, 0.46, 0], "turn": 35, "scale": 1.9 }
+ ]
+}

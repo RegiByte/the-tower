@@ -1,0 +1,888 @@
+{
+ "title": "floor overview",
+ "note": "One Tower floor on the 3 m grid, 30 \u00d7 21 m: the elevator core at the back, eight desks dressed by state in the open office, a meeting room back-left, a kitchen back-right, a lounge front-right, the collections wall and a server corner of lockers front-left. Restaurant's green swapped to the project colour; Prototype in its dark atlas.",
+ "sky": "#c9d3df",
+ "theme": {
+  "atlas": {
+   "prototype": "alt_B"
+  },
+  "swaps": {
+   "restaurant": [
+    {
+     "from": "#1f9e7a",
+     "to": "#2b6f87",
+     "tol": 18
+    }
+   ]
+  }
+ },
+ "items": [
+  {
+   "model": "furniture/rug_rectangle_B",
+   "at": [
+    -8.7,
+    0,
+    -1.6
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_working.json",
+   "at": [
+    -8.7,
+    0,
+    -1.2
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_stripes_B",
+   "at": [
+    -2.9,
+    0,
+    -1.6
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_working.json",
+   "at": [
+    -2.9,
+    0,
+    -1.2
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_B",
+   "at": [
+    2.9,
+    0,
+    -1.6
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_needs.json",
+   "at": [
+    2.9,
+    0,
+    -1.2
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_stripes_B",
+   "at": [
+    8.7,
+    0,
+    -1.6
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_idle.json",
+   "at": [
+    8.7,
+    0,
+    -1.2
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_B",
+   "at": [
+    -8.7,
+    0,
+    3.2
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_done.json",
+   "at": [
+    -8.7,
+    0,
+    3.6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_stripes_B",
+   "at": [
+    -2.9,
+    0,
+    3.2
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_working.json",
+   "at": [
+    -2.9,
+    0,
+    3.6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_B",
+   "at": [
+    2.9,
+    0,
+    3.2
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_idle.json",
+   "at": [
+    2.9,
+    0,
+    3.6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "furniture/rug_rectangle_stripes_B",
+   "at": [
+    8.7,
+    0,
+    3.2
+   ],
+   "scale": [
+    1.1,
+    1,
+    1.3
+   ]
+  },
+  {
+   "scene": "prefabs/desk_working.json",
+   "at": [
+    8.7,
+    0,
+    3.6
+   ],
+   "turn": 180
+  },
+  {
+   "model": "city/bush",
+   "at": [
+    -11.6,
+    0,
+    1.2
+   ],
+   "scale": 3
+  },
+  {
+   "model": "city/bush",
+   "at": [
+    0,
+    0,
+    1.2
+   ],
+   "scale": 3
+  },
+  {
+   "model": "city/bush",
+   "at": [
+    11.6,
+    0,
+    1.2
+   ],
+   "scale": 3
+  },
+  {
+   "scene": "prefabs/meeting_room.json",
+   "at": [
+    -15,
+    0,
+    -10.5
+   ]
+  },
+  {
+   "scene": "prefabs/kitchen.json",
+   "at": [
+    6,
+    0,
+    -10.5
+   ]
+  },
+  {
+   "scene": "prefabs/lounge.json",
+   "at": [
+    9.5,
+    0,
+    7
+   ]
+  },
+  {
+   "scene": "prefabs/collections_wall.json",
+   "at": [
+    -11,
+    0,
+    9.9
+   ]
+  },
+  {
+   "model": "prototype/Locker_Decorated",
+   "at": [
+    -14.4,
+    0,
+    2.0
+   ],
+   "turn": 90
+  },
+  {
+   "model": "prototype/Locker_Decorated",
+   "at": [
+    -14.4,
+    0,
+    2.8
+   ],
+   "turn": 90
+  },
+  {
+   "model": "prototype/Locker_Decorated",
+   "at": [
+    -14.4,
+    0,
+    3.6
+   ],
+   "turn": 90
+  },
+  {
+   "model": "prototype/Locker_Decorated",
+   "at": [
+    -14.4,
+    0,
+    4.4
+   ],
+   "turn": 90
+  },
+  {
+   "model": "space/cargo_A_stacked",
+   "at": [
+    -14.1,
+    0,
+    6.4
+   ]
+  }
+ ],
+ "boxes": [
+  {
+   "size": [
+    30,
+    0.1,
+    21
+   ],
+   "at": [
+    0,
+    -0.1,
+    0
+   ],
+   "color": "#5d574c"
+  },
+  {
+   "size": [
+    4.4,
+    3.6,
+    4
+   ],
+   "at": [
+    0,
+    0,
+    -8.5
+   ],
+   "color": "#8b8471"
+  },
+  {
+   "size": [
+    2,
+    2.3,
+    0.05
+   ],
+   "at": [
+    0,
+    0,
+    -6.49
+   ],
+   "color": "#b9b2a0"
+  },
+  {
+   "size": [
+    30,
+    0.25,
+    0.25
+   ],
+   "at": [
+    0,
+    3.35,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.25,
+    0.25,
+    21
+   ],
+   "at": [
+    -15,
+    3.35,
+    0
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.25,
+    0.25,
+    21
+   ],
+   "at": [
+    15,
+    3.35,
+    0
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -12,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -9,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -6,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -3,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    0,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    3,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    6,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    9,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    12,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    -7.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    -4.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    -1.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    1.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    4.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    7.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    -15,
+    0,
+    10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    -10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    -7.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    -4.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    -1.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    1.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    4.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    7.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    0.12,
+    3.6,
+    0.12
+   ],
+   "at": [
+    15,
+    0,
+    10.5
+   ],
+   "color": "#2b3a3f"
+  },
+  {
+   "size": [
+    30,
+    3.6,
+    0.04
+   ],
+   "at": [
+    0,
+    0,
+    -10.5
+   ],
+   "color": "#9cc4ff",
+   "opacity": 0.25
+  },
+  {
+   "size": [
+    0.04,
+    3.6,
+    21
+   ],
+   "at": [
+    -15,
+    0,
+    0
+   ],
+   "color": "#9cc4ff",
+   "opacity": 0.25
+  },
+  {
+   "size": [
+    0.04,
+    3.6,
+    21
+   ],
+   "at": [
+    15,
+    0,
+    0
+   ],
+   "color": "#9cc4ff",
+   "opacity": 0.25
+  },
+  {
+   "size": [
+    3,
+    0.02,
+    2.4
+   ],
+   "at": [
+    0,
+    0,
+    -5.2
+   ],
+   "color": "#2b6f87"
+  }
+ ],
+ "labels": [
+  {
+   "text": "1  ALPHA",
+   "at": [
+    0,
+    2.6,
+    -6.46
+   ],
+   "height": 0.38
+  }
+ ],
+ "lamps": [
+  {
+   "at": [
+    -8,
+    2.9,
+    0
+   ],
+   "intensity": 5,
+   "distance": 10
+  },
+  {
+   "at": [
+    3,
+    2.9,
+    0
+   ],
+   "intensity": 5,
+   "distance": 10
+  },
+  {
+   "at": [
+    9,
+    2.9,
+    -7
+   ],
+   "intensity": 5,
+   "distance": 10
+  },
+  {
+   "at": [
+    -10,
+    2.9,
+    -7
+   ],
+   "intensity": 5,
+   "distance": 10
+  },
+  {
+   "at": [
+    9,
+    2.9,
+    7
+   ],
+   "intensity": 5,
+   "distance": 10
+  }
+ ],
+ "cameras": {
+  "overview": {
+   "pos": [
+    -4,
+    17,
+    23
+   ],
+   "look": [
+    0,
+    0,
+    0
+   ],
+   "fov": 50
+  },
+  "elevator": {
+   "pos": [
+    0,
+    1.6,
+    -5.7
+   ],
+   "look": [
+    0,
+    1.2,
+    4
+   ],
+   "fov": 70
+  },
+  "kitchen": {
+   "pos": [
+    4,
+    1.7,
+    -3
+   ],
+   "look": [
+    8.5,
+    0.9,
+    -8.5
+   ],
+   "fov": 60
+  },
+  "top": {
+   "view": "top"
+  }
+ }
+}

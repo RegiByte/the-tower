@@ -1,0 +1,54 @@
+{
+  "name": "tower",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tower": "src/mod/bin/tower"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "npm ci && tsx scripts/setup.ts",
+    "host": "tsx src/host/main.ts",
+    "tower": "tsx src/tower/server.ts",
+    "terms": "tsx src/terms/main.ts",
+    "tower3d": "tsx scripts/tower3d-kit.ts && esbuild tower3d=renderers/tower3d/src/main.ts lab=renderers/tower3d/src/lab.ts index=renderers/tower3d/index.html lab=renderers/tower3d/lab.html --loader:.html=copy --bundle --format=iife --minify --sourcemap --target=es2023 --loader:.glb=binary --loader:.webm=binary --loader:.kaykit=binary --outdir=renderers/tower3d/out",
+    "tower3d:watch": "tsx scripts/tower3d-kit.ts && esbuild tower3d=renderers/tower3d/src/main.ts lab=renderers/tower3d/src/lab.ts index=renderers/tower3d/index.html lab=renderers/tower3d/lab.html --loader:.html=copy --bundle --format=iife --minify --sourcemap --target=es2023 --loader:.glb=binary --loader:.webm=binary --loader:.kaykit=binary --outdir=renderers/tower3d/out --watch",
+    "tower3d:models": "sh renderers/tower3d/models/build.sh",
+    "kaykit": "tsx scripts/kaykit.ts bundle",
+    "up": "tsx src/cli.ts up",
+    "down": "tsx src/cli.ts down",
+    "doctor": "tsx src/cli.ts doctor",
+    "sandbox": "tsx scripts/sandbox.ts",
+    "drive": "tsx scripts/drive.ts",
+    "tool:frames": "tsx scripts/frames.ts",
+    "tool:kaykit": "tsx scripts/kaykit.ts",
+    "tool:tour": "tsx scripts/tour.ts",
+    "spike:pty": "tsx spikes/pty/passthrough.ts",
+    "typecheck": "tsc -p . && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/overpass": "^5.3.0",
+    "@lydell/node-pty": "^1.2.0-beta.15",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-serialize": "^0.14.0",
+    "@xterm/headless": "^6.0.0",
+    "@xterm/xterm": "^6.0.0",
+    "highlight.js": "^11.12.0",
+    "marked": "^16.4.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/three": "^0.186.0",
+    "esbuild": "^0.28.2",
+    "three": "^0.186.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

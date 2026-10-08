@@ -1,0 +1,9 @@
+{
+ "title": "roof pumpkins",
+ "note": "October on the roof: a jack-o'-lantern and two small pumpkins, origin at the big one's foot, its face toward +z.",
+ "items": [
+  { "model": "halloween/pumpkin_orange_jackolantern", "at": [0, 0, 0], "scale": 0.65 },
+  { "model": "halloween/pumpkin_yellow_small", "at": [0.6, 0, 0.25], "turn": 40 },
+  { "model": "halloween/pumpkin_orange_small", "at": [-0.55, 0, 0.3], "turn": -30, "scale": 0.8 }
+ ]
+}

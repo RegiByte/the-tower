@@ -1,0 +1,98 @@
+{
+  "description": "Forwards session, turn and tool events to the host's hooks socket: Claude's mod events through register.js, and its classic hook events through curl (a failed post exits non-zero, which Claude reports without blocking the session)",
+  "modules": [
+    "./register.js"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ]
+  }
+}

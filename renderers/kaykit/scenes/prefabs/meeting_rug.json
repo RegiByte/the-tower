@@ -1,0 +1,7 @@
+{
+ "title": "meeting rug",
+ "note": "An oval rug under the office's meeting table and its chairs, origin at its centre.",
+ "items": [
+  { "model": "furniture/rug_oval_B", "at": [0, 0, 0], "scale": [1.7, 0.5, 2.3] }
+ ]
+}

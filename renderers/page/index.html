@@ -1,0 +1,2272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tower</title>
+<link rel="stylesheet" href="/xterm.css">
+<link rel="stylesheet" href="/design.css">
+<script>
+try { document.documentElement.dataset.scheme = localStorage.getItem('tower.scheme') ?? '' } catch {}
+</script>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overscroll-behavior: none; }
+body { display: grid; grid-template-columns: 320px 1fr; background: var(--wall); color: var(--ink); font: 14px/1.45 var(--ui);
+  -webkit-font-smoothing: antialiased; overflow: hidden; }
+button { font: inherit; font-weight: 700; font-size: 13px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 4px 11px; cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
+button:hover { border-color: var(--faint); }
+button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+button.danger:hover { border-color: var(--broken); color: var(--broken); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+a { color: var(--accent); }
+.display { font-family: var(--display); font-weight: 800; }
+@keyframes beacon { 0%, 60%, 100% { opacity: .2; } 70%, 85% { opacity: 1; } }
+kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; background: var(--ink); color: var(--panel); }
+
+.side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 8px; padding: 16px 12px 10px 16px; white-space: nowrap; }
+.brand h1 { margin: 0; font: 900 19px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+.brand .host { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.scheme { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; font-size: 15px; }
+.scheme:hover { color: var(--ink); }
+.bell { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; }
+.tally { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 12px; }
+.limits { display: grid; gap: 8px; padding: 2px 16px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.limits .row { display: flex; gap: 6px; align-items: baseline; margin-bottom: 4px; }
+.limits .row b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.limits .row small { margin-left: auto; color: var(--faint); font-size: 12px; }
+.limits .asof { color: var(--faint); }
+.limits:has(.asof.stale) > div { opacity: .5; }
+.limits .asof.stale { color: var(--ink); }
+.side-views { display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid var(--line); }
+.side-views button { padding: 4px 10px 6px; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font: 800 11px/1 var(--display);
+  letter-spacing: .06em; text-transform: uppercase; }
+.side-views button.on { color: var(--ink); border-bottom-color: var(--ink); }
+.stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 12px 16px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.side.on-stats .stats-side { display: block; } .side.on-stats .floors { display: none; }
+.floors { flex: 1; overflow-y: auto; padding: 10px 10px 16px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 14px;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.floor { --pt: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p, var(--faint)) var(--p-wash-mix), var(--panel)); }
+.sign button { margin-left: auto; width: 26px; height: 24px; padding: 0; display: grid; place-items: center; font-size: 15px; }
+.dirs { padding: 6px 2px 0; }
+.dir { display: flex; align-items: center; gap: 4px; padding: 1px 6px; font-size: 12px; color: var(--muted); border-radius: var(--radius); }
+.dir:hover { background: var(--panel-2); }
+.dir .dname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir a, .dir button { display: grid; place-items: center; width: 24px; height: 22px; padding: 0; background: none; border: 1px solid transparent; color: var(--faint); }
+.dir svg { width: 13px; height: 13px; }
+.dir:hover a, .dir:hover button { color: var(--muted); }
+.dir a:hover, .dir button:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.shelf { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 6px 0; }
+.shelf button, .shelf a { padding: 2px 9px; font-size: 11px; font-weight: 700; border-radius: 999px; background: var(--pw); color: var(--pt); border: 1px solid transparent;
+  text-decoration: none; line-height: 1.45; }
+.shelf button:hover, .shelf a:hover { border-color: color-mix(in oklab, var(--pt) 40%, transparent); }
+.shelf button.sel { background: var(--pt); color: var(--panel); }
+.drafts { padding: 8px 2px 0; }
+.drafts-head { display: flex; align-items: center; padding: 0 2px 0 8px; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.drafts-head button { margin-left: auto; background: none; border: none; padding: 0 6px; color: var(--faint); font-size: 15px; font-weight: 400; }
+.drafts-head button:hover { color: var(--ink); }
+.drafts-about { padding: 2px 8px 4px; color: var(--faint); font-size: 11px; line-height: 1.35; }
+.draft { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 6px; padding: 3px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.draft::before { content: "✎"; color: var(--faint); }
+.draft .t { overflow: hidden; text-overflow: ellipsis; }
+.draft .meta { grid-column: 2; overflow: hidden; text-overflow: ellipsis; color: var(--faint); font: 10px/1.4 var(--mono); letter-spacing: .02em; }
+.draft:hover, .draft.sel { background: var(--panel-2); color: var(--ink); }
+.draft.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
+.draft.thread::before { content: "◇"; }
+.worktrees { padding: 8px 2px 0; }
+.wt { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); }
+.wt:hover { background: var(--panel-2); }
+.wt .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wt .n b { color: var(--ink); font-weight: 700; }
+.wt .st { flex: none; font-size: 10px; letter-spacing: .04em; color: var(--faint); }
+.wt.at-risk .st, .wt.lost .st { color: var(--needs); }
+.wt button { flex: none; padding: 0 7px; height: 20px; font-size: 11px; }
+.wt .ic { width: 22px; display: grid; place-items: center; padding: 0; background: none; border-color: transparent; color: var(--faint); }
+.wt .ic svg { width: 12px; height: 12px; }
+.wt .ic:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.sess .branch { color: var(--faint); font: 11px/1.4 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sessions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 2px 0; }
+.sess { position: relative; padding: 7px 10px 8px 10px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line);
+  border-left: 4px solid var(--c); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
+.sess:hover { box-shadow: var(--shadow); }
+.sess.sel { outline: 2px solid var(--ink); outline-offset: 1px; }
+.sess.waits { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
+.sess .top { display: flex; align-items: center; gap: 8px; }
+.sess .call { font: 800 13px/1 var(--display); letter-spacing: .04em; padding-top: 2px; white-space: nowrap; }
+.sess .st { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sess.needs .st { color: var(--needs); }
+.sess.broken .st { color: var(--broken); }
+.sess.working .st { color: color-mix(in oklab, var(--working) 65%, var(--ink)); }
+.sess.ready .st { color: color-mix(in oklab, var(--ready) 55%, var(--ink)); }
+.sess .st.stuck, .pill.stuck { color: var(--needs); }
+.sess .line { margin-top: 4px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+.tool { color: var(--ink); } .tool b { font-weight: 700; }
+.sess .act { margin-top: 6px; }
+.crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-left: 10px; padding-left: 8px; border-left: 2px solid var(--line); }
+.sess.gone { opacity: .55; }
+.gone-home { justify-self: start; padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
+.gone-home:hover { color: var(--ink); }
+.sess.gone:hover, .sess.gone.sel { opacity: 1; }
+.sess .act button { padding: 1px 9px; font-size: 12px; }
+.empty { color: var(--faint); font-style: italic; font-size: 12px; padding: 2px 8px; }
+.trays { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 2px 0; }
+.tray { padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; border-color: transparent; white-space: nowrap; }
+.tray b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tray i { font-style: normal; font-weight: 700; color: var(--needs); }
+.tray:hover { border-color: var(--line); color: var(--ink); }
+.tray.on { background: var(--panel-2); border-color: var(--line); color: var(--ink); }
+.archive { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: 2px; }
+.archive-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.main:not(.archived) .archive-view, .main.archived .bar, .main.archived .screen { display: none; }
+.archive-view .archive { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.archive-view .past { padding: 6px 10px; font-size: 13px; }
+.archive-view .past .call { font-size: 13px; }
+#archive-filter { flex: 1; min-width: 120px; max-width: 420px; padding: 4px 10px; font: 13px var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); }
+#archive-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.past { overflow: hidden; padding: 4px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); cursor: pointer; }
+.past:hover, .past.sel { background: var(--panel-2); color: var(--ink); }
+.past .head { display: flex; align-items: center; gap: 7px; }
+.past .call { font: 800 12px/1 var(--display); letter-spacing: .04em; padding-top: 2px; color: var(--ink); }
+.past .when { color: var(--faint); white-space: nowrap; }
+.past .head .when { margin-left: auto; }
+.past .conv { display: flex; align-items: center; gap: 6px; padding-left: 16px; }
+.past .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.past button { padding: 0 7px; font-size: 12px; }
+.said { color: var(--faint); }
+.side-toggle, .help { background: none; border: none; padding: 0 4px; color: var(--faint); font-size: 15px; font-weight: 400; white-space: nowrap; }
+.side-toggle small { font: 10px var(--mono); }
+.side-toggle:hover, .help:hover { color: var(--ink); }
+.help { font-weight: 700; }
+.rail { display: none; }
+.side-foot { display: flex; align-items: center; gap: 6px; margin-top: auto; padding: 6px 10px 6px 16px; border-top: 1px solid var(--line); color: var(--faint); font-size: 11px; }
+.side-renderers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0 10px 8px 16px; color: var(--faint); font-size: 11px; }
+.side-renderers b { color: var(--ink); }
+.side-renderers a { color: var(--muted); text-decoration: none; }
+.side-renderers a:hover { color: var(--ink); }
+.side-foot code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px var(--mono); direction: rtl; text-align: left; }
+body.collapsed { grid-template-columns: 44px 1fr; }
+body.collapsed .side > :not(.rail) { display: none; }
+body.collapsed .rail { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 0; overflow-y: auto; scrollbar-width: none; }
+.rail .count { display: grid; place-items: center; min-width: 20px; height: 20px; border-radius: 999px; background: var(--c); color: var(--on); font-weight: 700; font-size: 11px; }
+.rail .lamp { width: 11px; height: 11px; cursor: pointer; }
+.rail .lamp.sel { outline: 2px solid var(--ink); outline-offset: 3px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: baseline; color: var(--muted); font-size: 13px; }
+.keys > span:nth-child(odd) { white-space: nowrap; color: var(--faint); font-size: 12px; }
+dialog#keys { width: min(620px, 92vw); }
+
+.main { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; padding: 10px 10px 0; }
+.bar { flex: none; padding: 9px 14px 8px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.bar-top { display: flex; align-items: center; gap: 12px; }
+#bar-info { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; color: var(--muted); font-size: 12px; }
+#bar-info .call { flex: none; font: 800 18px/1 var(--display); letter-spacing: .04em; color: var(--ink); padding-top: 3px; }
+#bar-info .pill { flex: none; }
+#bar-info .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#bar-info .stats { flex: none; margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.untested { color: var(--muted); font-size: 12px; text-decoration: underline dotted; cursor: help; white-space: nowrap; }
+#bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
+#bar-info .meter { width: 56px; --fill: var(--working); }
+#bar-info .ports { color: var(--ink); cursor: pointer; font-family: var(--mono); font-size: 11px; padding: 1px 6px; border: 0; border-radius: var(--radius); background: var(--panel-2); }
+#bar-info .ports.orphan { color: #fff; background: var(--broken); }
+#bar-actions { flex: none; display: flex; gap: 6px; }
+#bar-actions .info { padding: 4px 9px; color: var(--muted); font-weight: 400; }
+#c-mode { position: absolute; top: 8px; right: 12px; z-index: 1; padding: 2px 9px; border-radius: 999px; background: var(--panel); color: var(--muted); font-size: 12px;
+  box-shadow: var(--shadow); pointer-events: none; }
+#c-mode:empty, #c-mode.owner, .main.on-brief #c-mode, .main.on-shown #c-mode, .main.on-changes #c-mode, .main.on-reviews #c-mode { display: none; }
+#bar-line { display: flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.move.dismiss { color: var(--needs); border-color: var(--needs); }
+#bar-line .activity { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; padding: 1px 8px; margin-left: 6px; background: none; border-color: transparent;
+  color: var(--muted); font: 12px/1.6 var(--mono); }
+#bar-line .activity:hover { border-color: var(--line); }
+#bar-line .activity .tool b { font-family: var(--ui); }
+.move { flex: none; display: flex; align-items: center; gap: 6px; padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; }
+.move .call { font: 800 11px/1 var(--display); letter-spacing: .04em; color: var(--ink); padding-top: 1px; }
+.move small { font: 10px var(--mono); color: var(--faint); }
+.move.waiting { border-color: var(--c); }
+#bar-details, #bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: 12px 16px 14px; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 20px 50px -20px #1d262988; }
+#bar-details h3, #bar-left h3 { margin: 0 0 10px; font: 800 14px/1 var(--display); letter-spacing: .04em; }
+#bar-left .proc { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+#bar-left .proc code { font-family: var(--mono); }
+#bar-left .proc .on { color: var(--muted); font-family: var(--mono); }
+#bar-left .proc .on.orphan { color: var(--broken); }
+#bar-left .proc .cmd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); color: var(--muted); }
+#bar-left .all { display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--line); }
+#bar-details dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 14px; margin: 0; font-size: 12px; }
+#bar-details dt { color: var(--faint); }
+#bar-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); }
+.pane-tab { padding: 0 8px; font-size: 12px; color: var(--muted); background: none; }
+.pane-tab.on { color: var(--ink); border-color: var(--ink); }
+.ask { display: none; align-items: center; gap: 10px; flex: none; padding: 8px 10px 8px 14px; border-radius: var(--radius); font-size: 14px;
+  background: color-mix(in oklab, var(--needs) 11%, var(--panel)); border: 1px solid var(--needs); }
+.main.asking:not(.home):not(.shelf):not(.drafting):not(.archived) .ask { display: flex; }
+.ask .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ask .what b { color: var(--needs); }
+.ask .call { font: 800 14px/1 var(--display); letter-spacing: .04em; }
+.ask button { margin-left: auto; flex: none; }
+.brief { display: none; position: absolute; inset: 0; z-index: 1; }
+.main.on-brief .brief { display: flex; }
+.brief iframe { flex: 1; min-width: 0; border: 0; background: var(--panel); }
+.shown { display: none; position: absolute; inset: 0; z-index: 1; }
+.main.on-shown .shown { display: flex; }
+.shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
+.shown iframe.doc { background: var(--panel); }
+.shown img, .shown video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
+.pane-tab.shown-tab { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pane-tab .unshow, .pane-tab .out { margin-left: 6px; color: var(--faint); text-decoration: none; }
+.pane-tab .unshow:hover, .pane-tab .out:hover { color: var(--ink); }
+.pane-tab small { margin-left: 4px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.pane-tab small.unseen { color: var(--needs); font-weight: 700; }
+.changes { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 16px 48px; background: var(--panel); color: var(--ink); }
+.main.on-changes .changes { display: block; }
+.reviews { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 16px 48px; background: var(--panel); color: var(--ink); }
+.main.on-reviews .reviews { display: block; }
+.screen { position: relative; flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; background: var(--enamel); border-radius: var(--radius); }
+.screen .term { width: 100%; height: 100%; }
+.screen .xterm-viewport { overflow-y: hidden !important; }
+.screen .xterm-scrollable-element > .scrollbar { display: none; }
+.main.home .bar, .main.home .screen { display: none; }
+.main:not(.home) .sky { display: none; }
+
+.shelf-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.main:not(.shelf) .shelf-view, .main.shelf .bar, .main.shelf .screen { display: none; }
+.shelf-head { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); white-space: nowrap; }
+.shelf-head .label { font: 800 16px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; padding-top: 3px;
+  color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
+.shelf-head .dim { color: var(--faint); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+.shelf-head .tag { flex: none; padding: 2px 7px; border: none; border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: 12px/1.3 var(--mono); cursor: copy; }
+.shelf-head .actions { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.shelf-body { flex: 1; min-height: 0; display: flex; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
+.shelf-body iframe { flex: 1; min-width: 0; border: 0; }
+.shelf-body iframe.page { background: #fff; }
+.shelf-files { flex: none; width: 260px; overflow-y: auto; padding: 8px 0; border-right: 1px solid var(--line); background: var(--panel-2); font-size: 13px;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.shelf-files div { padding: 4px 14px; color: var(--muted); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shelf-files div:hover { color: var(--ink); }
+.shelf-files div.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
+.draft-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.main:not(.drafting) .draft-view, .main.drafting .bar, .main.drafting .screen { display: none; }
+.draft-note { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: var(--radius); background: color-mix(in oklab, var(--needs) 11%, var(--panel));
+  border: 1px solid var(--needs); }
+.draft-note:empty { display: none; }
+#draft-head a { color: inherit; }
+.draft-note span { margin-right: auto; }
+.draft-view textarea { flex: 1; min-height: 0; resize: none; padding: 14px 18px; font: 14px/1.55 var(--mono); font-variant-ligatures: none; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.draft-view textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.targets { display: grid; gap: 6px; max-height: 60vh; overflow-y: auto; }
+.targets button { display: flex; align-items: center; gap: 8px; padding: 7px 10px; text-align: left; font-weight: 400; border-left: 4px solid var(--p, var(--faint)); }
+.targets .call { font: 800 13px/1 var(--display); letter-spacing: .04em; padding-top: 2px; }
+.targets .where { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.targets .line { flex: 1; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shelf-empty { margin: auto; text-align: center; color: var(--muted); }
+
+.dock { position: relative; flex: none; margin: 0 -10px; background: var(--panel); border-top: 1px solid var(--line); }
+.shell-pane { display: none; height: var(--shell-h, 38vh); padding: 8px 12px; margin: 0 10px 10px; background: var(--enamel); border-radius: var(--radius);
+  box-shadow: inset 0 3px 0 var(--p, var(--faint)); }
+.main.shell-open .shell-pane { display: block; }
+.shell-pane .term { width: 100%; height: 100%; }
+.grip { display: none; position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; z-index: 2; }
+.main.shell-open .grip { display: block; }
+.tabs { display: flex; align-items: center; gap: 6px; padding: 6px 10px; overflow-x: auto; scrollbar-width: none; font-size: 12px; color: var(--faint); }
+.tab { display: flex; align-items: center; gap: 7px; flex: none; padding: 3px 4px 3px 10px; font-weight: 400; font-size: 12px; background: var(--panel); color: var(--muted); }
+.tab::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--p, var(--faint)); }
+.tab.open { border-color: var(--ink); color: var(--ink); }
+.tab .what { color: var(--ink); font-weight: 700; max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab .x { padding: 0 5px; border-radius: 3px; color: var(--faint); }
+.tab .x:hover { color: #fff; background: var(--broken); }
+
+.sky { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-mid) 60%, var(--sky-horizon)); }
+.stars { position: absolute; inset: 0; pointer-events: none; opacity: var(--stars);
+  background-image: radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 72% 9%, #fffc, transparent),
+    radial-gradient(1px 1px at 38% 32%, #fffa, transparent), radial-gradient(1.5px 1.5px at 88% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 14%, #fff9, transparent), radial-gradient(1px 1px at 23% 41%, #fff8, transparent),
+    radial-gradient(1px 1px at 64% 37%, #fff9, transparent), radial-gradient(1px 1px at 6% 52%, #fff8, transparent); }
+.orb { position: absolute; width: 54px; height: 54px; border-radius: 50%; left: var(--orb-x); top: var(--orb-y); transform: translate(-50%, -50%); }
+.orb.moon { background: #eef0f6; box-shadow: 0 0 40px 6px #e9eefb33, inset -12px -6px 0 #cfd5e3; }
+.orb.sun { background: #fff6dc; box-shadow: 0 0 60px 18px #ffe9a866; }
+.hello { position: relative; align-self: flex-start; margin: 28px 0 0 28px; padding: 16px 26px 14px; background: var(--panel); border-radius: var(--radius);
+  box-shadow: var(--shadow); }
+.hello .big { font: 900 26px/1.1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
+.hello .big b { color: color-mix(in oklab, var(--c) 80%, var(--ink)); }
+.hello .sub { color: var(--muted); margin-top: 6px; }
+.hello .clock { color: var(--faint); font-size: 12px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: 34px; padding: 0 24px; flex-wrap: wrap; }
+.building { display: flex; flex-direction: column; align-items: center; }
+.building .sign { margin-bottom: 8px; padding: 5px 10px 5px 12px; gap: 7px; background: var(--enamel); border-color: var(--enamel); color: #fff;
+  box-shadow: inset 5px 0 0 var(--pp), var(--shadow); }
+.building .sign .num { min-width: 22px; height: 19px; font-size: 12px; }
+.building .sign .name { font-size: 12px; }
+.building .mast { width: 2px; height: 22px; background: var(--ink); position: relative; }
+.building .mast.alarm::after { content: ""; position: absolute; left: -4px; top: -8px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--c); box-shadow: 0 0 14px var(--c); animation: beacon 1.6s infinite; }
+.building .body { display: flex; flex-wrap: wrap-reverse; gap: 8px; width: 196px; padding: 14px 13px; background: var(--enamel);
+  border-top: 6px solid var(--p, var(--faint)); border-radius: 3px 3px 0 0; }
+.w { width: 36px; height: 24px; border-radius: 2px; background: var(--enamel-2); }
+.w.lit { background: var(--c); cursor: pointer; }
+.w.lit.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
+.w.past { background: color-mix(in oklab, var(--c) 30%, var(--enamel-2)); cursor: pointer; }
+.w.past:hover, .w.lit:hover { outline: 2px solid var(--panel); }
+.street { height: 26px; background: var(--enamel); border-top: 3px solid var(--enamel-2); }
+
+dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: min(760px, 92vw);
+  box-shadow: 0 20px 50px -20px #1d262988; }
+dialog::backdrop { background: #1f262866; }
+dialog.spawn { padding: 0; width: fit-content; max-width: none; max-height: none; }
+dialog h2 { margin: 0 0 12px; font: 800 16px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+dialog .actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 16px; color: var(--faint); font-size: 12px; }
+dialog .actions small { margin-right: auto; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ink);
+  color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; display: none; max-width: 90vw; }
+.board-error { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken);
+  color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; max-width: min(720px, 90vw); }
+.board-error b { display: block; margin-bottom: 2px; }
+.board-error:empty { display: none; }
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><h1 id="home" title="the skyline">The Tower</h1><span class="host" id="host"></span><button class="bell" id="bell"></button><button class="bell" id="ring"></button><button class="scheme" id="scheme"></button>
+    <button class="help" data-keys title="shortcuts (?)">?</button><button class="side-toggle" data-side title="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
+  <div class="tally" id="tally"></div>
+  <div class="limits" id="limits"></div>
+  <div class="side-views"><button data-side-view="floors">Floors</button><button data-side-view="stats" title="spend, work and waits, from the logs">Stats</button></div>
+  <div class="floors" id="floors"></div>
+  <div class="stats-side" id="stats"></div>
+  <div class="side-foot" id="side-foot"></div>
+  <div class="side-renderers" id="renderers"></div>
+  <div class="rail" id="rail"></div>
+</aside>
+<section class="main home" id="main">
+  <div class="bar">
+    <div class="bar-top"><div id="bar-info"></div><div id="bar-actions"></div></div>
+    <div id="bar-line"></div>
+  </div>
+  <div id="bar-details" popover></div>
+  <div id="bar-left" popover></div>
+  <div class="ask" id="ask"></div>
+  <div class="screen" id="screen"><div class="term" id="c-screen"></div><span id="c-mode"></span>
+    <div class="brief"><iframe id="brief-doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>
+    <div class="shown" id="shown"></div>
+    <div class="changes" id="changes"></div>
+    <div class="reviews" id="reviews"></div></div>
+  <div class="shelf-view" id="shelf-view"><div class="shelf-head" id="shelf-head"></div><div class="shelf-body" id="shelf-body"></div></div>
+  <div class="archive-view" id="archive-view"><div class="shelf-head" id="archive-head"></div><div class="archive" id="archive-list"></div></div>
+  <div class="draft-view" id="draft-view"><div class="shelf-head" id="draft-head"></div><div class="draft-note" id="draft-note"></div>
+    <textarea id="draft-text" spellcheck="false" placeholder="a prompt for later: the first line names it"></textarea></div>
+  <div class="sky" id="sky"></div>
+  <div class="dock">
+    <div class="grip" id="grip"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div></div>
+  </div>
+</section>
+<dialog id="spawn" class="spawn"></dialog>
+<dialog id="transfer">
+  <form method="dialog">
+    <h2 id="transfer-title">SEND TO A WORKER</h2>
+    <div class="targets" id="transfer-targets"></div>
+    <div class="actions"><small>the draft is typed into the worker's prompt and submitted</small><button value="">Cancel</button></div>
+  </form>
+</dialog>
+<dialog id="keys">
+  <form method="dialog">
+    <h2>Shortcuts</h2>
+    <div class="keys" id="keys-list"></div>
+    <div class="actions"><small>hover a button for what it does</small><button value="">Close</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast"></div>
+<div class="board-error" id="board-error" role="alert"></div>
+<script src="/tower.js"></script>
+<script src="/xterm.js"></script>
+<script src="/addon-fit.js"></script>
+<script src="/marked.js"></script>
+<script type="module">
+import { documentCss, skyAt, terminalTheme, type } from '/design.js'
+import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk } from '/cards.js'
+import { ICON, SHELF_ICON, originIcon } from '/icons.js'
+import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
+import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
+import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
+import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss }))
+
+const onDuty = (c) => c.onDuty
+/** The card's gist as HTML: a tool's name in bold, said words after their mark. */
+const lineOf = (c) => {
+  const gist = gistOf(c)
+  if (!gist) return '<i>no prompt yet</i>'
+  if (gist.kind === 'asks' || gist.kind === 'runs') return toolHtml(gist.text)
+  return `<span class="said">${GIST_MARK[gist.kind]}</span> ${esc(gist.text)}`
+}
+/** `Bash npm test` → the tool's name in bold, then what it acts on. */
+const toolHtml = (tool) => {
+  const [name, ...target] = tool.split(' ')
+  return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
+}
+/** Windows a building shows: its most recent sessions, oldest at the bottom. */
+const BUILDING_WINDOWS = 40
+const BUILDING_MIN_WINDOWS = 16
+const callsign = (id) => findCard(id).callsign
+const when = (ms) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+const $ = (id) => document.getElementById(id)
+/** A viewer's own conveniences, kept in this browser; storage can be unavailable, and then nothing is kept. */
+function remembered(key) {
+  try { return localStorage.getItem(key) } catch { return null }
+}
+function remember(key, value) {
+  try { localStorage.setItem(key, value) } catch {}
+}
+
+/** Why the tower can't build the board, until its next board. */
+let boardError
+let board = { user: { name: 'user' }, floors: [], waiting: [], rateLimits: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
+/** The web page of each project directory's origin remote. */
+let origins = {}
+let selected
+/** The sections a viewer unfolded under a floor's workers, by `<section>:<project>`, kept in this browser. */
+const unfolded = new Set(JSON.parse(remembered('tower.unfolded') ?? '[]'))
+
+function toggleSection(key) {
+  if (!unfolded.delete(key)) unfolded.add(key)
+  remember('tower.unfolded', JSON.stringify([...unfolded]))
+  render()
+}
+
+const cards = () => board.floors.flatMap((f) => f.cards)
+/** The project's color as `--p`, for an element's styles to use. */
+const paint = (projectId) => {
+  const color = board.floors.find((f) => f.id === projectId)?.color
+  return color ? `--p:${esc(color)}` : ''
+}
+/** A card by id: on the board, else in an archive this page has read. */
+const findCard = (id) => cards().find((c) => c.id === id) ?? [...archives.values()].flatMap((a) => a.cards ?? []).find((c) => c.id === id)
+
+/** The floors' archives this page has read, by project: the `archiveKey` each was read at, and its cards once read. */
+const archives = new Map()
+
+/** Reads a floor's archive, keeping the cards read before until it lands; a read a later one overtook is dropped. */
+function readArchive(project) {
+  const reading = { key: archiveKey(board, floorOf(project)), cards: archives.get(project)?.cards }
+  archives.set(project, reading)
+  return tower.archive(project).then(
+    (cards) => archives.get(project) === reading && ((reading.cards = cards), render()),
+    (err) => toast(`The archive of ${project} can't be read: ${err.message}`),
+  )
+}
+
+/** Reads again every archive held whose floor's archive moved since. */
+const freshArchives = () => {
+  for (const [project, { key }] of archives) if (floorOf(project) && key !== archiveKey(board, floorOf(project))) readArchive(project)
+}
+
+/** A card by id, reading every floor's archive on a miss: for an id the board may have left out. */
+async function lookUp(id) {
+  if (!findCard(id)) await Promise.all(board.floors.filter((f) => f.archived && !archives.get(f.id)?.cards).map((f) => readArchive(f.id)))
+  return findCard(id)
+}
+/** The workers waiting on you that you heed, in the order to go to them. */
+const waitsOnYou = () => heededWaits(board, heed).map((w) => findCard(w.id))
+/** Top floor first, like an elevator panel. */
+const floorsTopDown = () => [...board.floors].reverse()
+const byStart = (a, b) => a.startedAt - b.startedAt
+
+const sessionHtml = (c) => {
+  return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
+    <div class="top"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
+    ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
+    <div class="line">${lineOf(c)}</div>
+    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ resume</button></div>` : ''}
+  </div>`
+}
+
+/** A worker and everyone under it. */
+const wholeCrewHtml = (cards, c) => {
+  const hires = hiresOf(cards, c)
+  return sessionHtml(c) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(cards, h)).join('')}</div>` : '')
+}
+
+/** A worker, the crew under it not gone home, and those gone home on one line that unfolds them (`crewFold`). */
+const crewHtml = (cards, c) => {
+  const { drawn, home, folded } = crewFold(cards, c)
+  const open = crewsUnfolded.has(c.id)
+  const fold = home.length
+    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}">${open ? '▾' : '▸'} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
+    : ''
+  const under = drawn.map((h) => crewHtml(cards, h)).join('') + fold
+  return sessionHtml(c) + (under ? `<div class="crew">${under}</div>` : '')
+}
+
+/** The hirers whose gone-home crew this viewer unfolded, by card id, as `tower.store` keeps them. */
+let crewsUnfolded = new Set()
+async function readCrewFolds() {
+  crewsUnfolded = new Set((await tower.store.get(CREWS_UNFOLDED_KEY)) ?? [])
+}
+function toggleCrewFold(id) {
+  if (!crewsUnfolded.delete(id)) crewsUnfolded.add(id)
+  crewsUnfolded = new Set([...crewsUnfolded].filter((h) => findCard(h)))
+  tower.store.set(CREWS_UNFOLDED_KEY, [...crewsUnfolded])
+  render()
+}
+
+const resumeHtml = (c, conv) => can(conv, 'resume')
+  ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" title="resume this conversation">↻</button>`
+  : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
+
+const pastConversationHtml = (c, conv) =>
+  `<div class="conv" title="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
+    <span class="what">${conv.answer ? `<span class="said">${GIST_MARK.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_MARK.prompt}</span> ` + esc(conv.prompt) : '<i>no prompt</i>'}</span>
+    ${resumeHtml(c, conv)}</div>`
+
+/** A past worker and the conversations it held, oldest first. */
+const pastHtml = (c) =>
+  `<div class="past ${c.attention} ${c.id === selected ? 'sel' : ''}" data-id="${c.id}">
+    <div class="head" title="${statusName(c)}"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="when">${when(c.startedAt)}</span></div>
+    ${c.conversations.map((conv) => pastConversationHtml(c, conv)).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
+  </div>`
+
+const dirHtml = (f, dir, hub) =>
+  `<div class="dir"><span class="dname" title="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
+    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
+  </div>`
+
+/** A verb on a worktree or kept branch, its call on the button. */
+const wtVerbHtml = (thing, verb) => `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}" data-wt-verb="${verb}">${WORKTREE_VERB_NAME[verb]}</button>`
+
+const worktreeHtml = (f, w) => {
+  const risk = worktreeRisk(w)
+  const where = w.repos[0].path
+  const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
+  return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
+    <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
+    ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
+    ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+  </div>`
+}
+
+const keptBranchHtml = (b) =>
+  `<div class="wt" title="${esc(keptBranchLines(b).join('\n'))}">
+    <span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
+
+/** The floor's worktrees and the branches the tower kept. */
+const worktreesHtml = (f) => `<div class="worktrees">
+    <div class="drafts-head">Worktrees</div>
+    ${f.worktrees.map((w) => worktreeHtml(f, w)).join('')}${f.branches.map(keptBranchHtml).join('')}</div>`
+
+/** A floor's review threads, each named by its checkout beside its tag. */
+const threadsHtml = (f) => {
+  const rows = f.threads.map((t) => {
+    const meta = [t.tag, `${t.messages} note${t.messages === 1 ? '' : 's'}`, t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
+    return `<div class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" title="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></div>`
+  })
+  return `<div class="drafts"><div class="drafts-head">Review threads</div>${rows.join('')}</div>`
+}
+
+/** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
+const tidyHtml = (f) => `<div class="worktrees">
+    <div class="drafts-head">${esc(tidyLine(f.tidy))}<button data-tidy="${f.id}" title="do all of it, as listed">tidy</button></div>
+    ${tidyRows(f, Date.now()).map((r) => `<div class="wt" title="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span></div>`).join('')}</div>`
+
+
+const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
+  ? `<a href="${esc(entry.link)}" target="_blank" rel="noreferrer" title="${esc(entry.link)}">${SHELF_ICON.link} ${esc(entry.label)}</a>`
+  : `<button class="${shelfOpen?.project === f.id && shelfOpen.n === n ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" title="${esc(shelfSource(entry))}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
+
+const shelfHtml = (f) => !f.shelf?.length ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
+
+/** The drafts collection's reads and writes, over the page's routes. */
+const draftIo = {
+  call: tower.call,
+  read: (project, id) => tower.text(draftPath(project, id)),
+  failed: (err) => toast(err.message),
+}
+const { title: draftTitle, prune: pruneDraftTitles } = draftTitles(draftIo.read, () => render())
+
+const draftsHtml = (f) => {
+  const drafts = draftsOf(f)
+  const rows = drafts.items.map((item) => {
+    const open = draftOpen?.project === f.id && draftOpen.id === item.id
+    const meta = [item.tag, item.keptBy?.callsign].filter(Boolean).join(' · ')
+    return `<div class="draft ${open ? 'sel' : ''}" data-draft="${f.id}" data-item="${esc(item.id)}"><span class="t">${esc(draftTitle(f.id, item))}</span><span class="meta">${esc(meta)}</span></div>`
+  })
+  return `<div class="drafts"><div class="drafts-head">${esc(drafts.label)}<button data-new-draft="${f.id}" title="new draft">+</button></div>${drafts.description ? `<div class="drafts-about">${esc(drafts.description)}</div>` : ''}${rows.join('') || '<div class="empty">none kept</div>'}</div>`
+}
+
+/**
+ * What a floor keeps beside its workers, folded to one row of counts so the workers stay in sight: drafts,
+ * worktrees, threads and what Tidy would do unfold under it, the archive opens in the main pane. Worktrees that would lose work say so folded.
+ */
+function traysHtml(f) {
+  const drafts = draftsOf(f)
+  const trees = f.worktrees.length + f.branches.length
+  const atRisk = risky(f)
+  const past = pastCount(f)
+  const threads = f.threads.length
+  const tidy = can(f, 'tidy')
+  const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" title="${title}">${label}</button>`
+  const trays = [
+    drafts && tray('drafts', `✎ <b>${drafts.items.length}</b> ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
+    trees && tray('worktrees', `⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
+    threads && tray('threads', `◇ <b>${threads}</b> thread${threads === 1 ? '' : 's'}`, esc(reviewsOf(f)?.description ?? 'review threads, one per checkout')),
+    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" title="past workers and their conversations, in the main pane">▤ <b>${past}</b> archived</button>`,
+    tidy && tray('tidy', `⌫ ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
+  ].filter(Boolean)
+  if (!trays.length) return ''
+  return `<div class="trays">${trays.join('')}</div>
+    ${drafts && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${threads && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
+}
+
+/** A floor's sign: its number on the project's band, its name in caps. */
+const signHtml = (n, name, extra = '') =>
+  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name">${esc(name)}</span>${extra}</div>`
+
+const floorHtml = (f, i, all) => {
+  const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
+  return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
+    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" title="new session">+</button>` : '')}
+    <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
+    ${shelfHtml(f)}
+    <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
+    ${traysHtml(f)}
+  </section>`
+}
+
+/** A meter's fill: ink, the working colour past `warm`, needs past `hot`. */
+const fillOf = (pct, warm, hot) => (pct > hot ? 'var(--needs)' : pct > warm ? 'var(--working)' : 'var(--ink)')
+
+/** A limit's meter, with a tick where an even pace through the week would be. */
+const limitHtml = (r, now) => {
+  const pct = r.percentUsed
+  const elapsed = weekElapsed(r, now)
+  const pace = elapsed === undefined ? '' : `<s style="left:${elapsed}%"></s>`
+  return `<div${elapsed === undefined ? '' : ` title="${paceLine(pct, elapsed)}"`}><div class="row">${esc(r.kind.replaceAll('_', ' '))} <b>${pct}%</b>
+    <small>${r.resetsAt ? resetLine(r.resetsAt, now) : ''}</small></div>
+    <div class="meter" style="--fill:${fillOf(pct, 60, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
+}
+
+/** The rate limits as of their reading, dimmed once it is old enough to have moved. */
+const limitsHtml = (now) => {
+  if (!board.rateLimits.length) return '<small>no rate-limit reading yet</small>'
+  const age = now - board.rateLimitsAt
+  return `${board.rateLimits.map((r) => limitHtml(r, now)).join('')}
+    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" title="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`
+}
+
+let limitsPainted = ''
+function paintLimits() {
+  const html = limitsHtml(Date.now())
+  if (html !== limitsPainted) $('limits').innerHTML = limitsPainted = html
+}
+
+const windowHtml = (c) => {
+  const title = `${callsign(c.id)} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`
+  return `<div class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" data-id="${c.id}" title="${esc(title)}"></div>`
+}
+
+const buildingHtml = (f, i) => {
+  const shown = [...f.cards].sort(byStart).slice(-BUILDING_WINDOWS)
+  const dark = '<div class="w"></div>'.repeat(Math.max(0, BUILDING_MIN_WINDOWS - shown.length) + (4 - (Math.max(shown.length, BUILDING_MIN_WINDOWS) % 4)) % 4)
+  return `<div class="building" style="${paint(f.id)}">${signHtml(i + 1, f.name)}<div class="mast ${loudest(f.cards.filter((c) => c.waiting)) ?? ''} ${f.cards.some((c) => c.waiting) ? 'alarm' : ''}"></div>
+    <div class="body">${shown.map(windowHtml).join('')}${dark}</div></div>`
+}
+
+/** The skyline's sky follows the viewer's clock, as Tower 3D's does: the sun crosses by day, the moon hangs at night. */
+function paintSky() {
+  const now = new Date()
+  const hours = now.getHours() + now.getMinutes() / 60
+  const sky = skyAt(hours)
+  const day = Math.min(1, Math.max(0, (hours - 6) / 13))
+  for (const [name, value] of Object.entries({ top: sky.top, mid: sky.mid, horizon: sky.horizon })) $('sky').style.setProperty(`--sky-${name}`, value)
+  $('sky').style.setProperty('--stars', sky.stars)
+  $('sky').style.setProperty('--orb-x', sky.stars > 0.5 ? '86%' : `${36 + day * 56}%`)
+  $('sky').style.setProperty('--orb-y', sky.stars > 0.5 ? '14%' : `${46 - Math.sin(day * Math.PI) * 34}%`)
+  $('orb')?.classList.toggle('moon', sky.stars > 0.5)
+  $('orb')?.classList.toggle('sun', sky.stars <= 0.5)
+  if ($('clock')) $('clock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function skylineHtml() {
+  const waiting = heededWaits(board, heed).length
+  const working = cards().filter((c) => c.status === 'working').length
+  const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
+  return `<div class="stars"></div><div class="orb" id="orb"></div>
+    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting ? `press N or ${MOVE_KEYS.waiting.label} to go to the next one` : 'click a window, or + on a floor to start a session'}</div>
+      <div class="clock" id="clock"></div></div>
+    <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
+}
+
+/** The selected worker's header: who and where, a glance at its context, cost and leftovers, its views, what it does now, and the workers around it. */
+function barHtml(c) {
+  const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
+  const orphan = c.resources.some((r) => r.orphan)
+  const ctx = c.context
+  $('bar-info').innerHTML = `<span class="call">${callsign(c.id)}</span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck ? ` title="${STUCK_TITLE}"` : ''}><span class="lamp"></span>${statusName(c)} · <span data-since="${c.enteredAt}"></span></span>
+    <span class="where" title="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
+    <span class="stats">
+      ${ctx === undefined ? '' : `<span class="meter" title="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}
+      ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
+      ${claudeFlagHtml(c) ?? ''}
+      ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" title="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
+    </span>`
+  $('bar-actions').innerHTML = `<button class="info" popovertarget="bar-details" title="everything else about ${callsign(c.id)}">ⓘ</button>
+    ${can(c, 'resume') ? `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ Resume</button>` : ''}
+    ${can(c, 'review') ? `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>` : ''}
+    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" title="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
+    ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
+    <button data-act="home" title="back to the skyline (Esc outside the terminal)">✕</button>`
+  $('bar-details').innerHTML = detailsHtml(c)
+  $('bar-left').innerHTML = leftHtml(c)
+  $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
+  $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
+    ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
+  $('bar-line').innerHTML = [
+    paneTabsHtml(c, paneOf(c)),
+    `<button class="activity" popovertarget="bar-details" title="${esc(gistLine(c))}">${lineOf(c)}</button>`,
+    movesHtml(c),
+  ].filter(Boolean).join('')
+  renderPane(c)
+}
+
+/** The details open over the top of the screen, clear of the header that opened them. */
+$('bar-details').addEventListener('beforetoggle', (e) => e.newState === 'open' && ($('bar-details').style.top = `${$('screen').getBoundingClientRect().top + 6}px`))
+
+/** The rest of what is known about a worker, opened from its header: what it does now in full, and every detail. */
+/** What the worker left running, each process ended on its own or all at once. */
+function leftHtml(c) {
+  if (!c.resources.length) return `<h3>${callsign(c.id)} left nothing running</h3>`
+  const row = (r) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
+    <span class="cmd" title="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(r.calls.reap))}" title="end process ${r.pid}">End</button></div>`
+  return `<h3>Left running by ${callsign(c.id)}</h3>${c.resources.map(row).join('')}
+    <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
+}
+
+function detailsHtml(c) {
+  const conv = current(c)
+  const rows = [
+    ['now', gistLine(c)],
+    ...detailsOf(c),
+    ['resumes', conv?.resumes?.callsign ?? ''],
+    ['started', when(c.startedAt)],
+    ['terminal', term && selected === c.id ? `${term.cols}×${term.rows} · ${isOwner() ? 'sized to this view, you type' : 'watching'}` : ''],
+  ].filter(([, value]) => value)
+  return `<h3>${callsign(c.id)}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
+}
+
+const MOVE_TITLE = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
+
+/** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
+function movesHtml(c) {
+  const to = neighbours(board, c.id, heed)
+  const wait = heededWaits(board, heed).find((w) => w.id === c.id)
+  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" title="${DISMISS_TITLE}">✕</button>` : ''
+  const move = (m) => {
+    const card = to[m]
+    if (!card || card.id === c.id) return ''
+    return `<button class="move ${m} ${card.attention}" data-move="${m}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
+  }
+  return dismiss + ['prev', 'next', 'waiting'].map(move).join('')
+}
+
+/** The selected session's view in the main pane, as the viewer picked it since selecting the session. */
+let paneChoice
+/** A running session opens on its terminal, a finished one on its brief; a shown thing closed since falls back. */
+const paneOf = (c) =>
+  (paneChoice?.startsWith('shown:') && !shownOn(c, paneChoice) ? undefined : paneChoice) ?? (can(c, 'drive') || !can(c, 'brief') ? 'screen' : 'brief')
+
+const paneTabsHtml = (c, pane) => {
+  const shown = visibleShown(c)
+  return `<button class="pane-tab ${pane === 'screen' ? 'on' : ''}" data-pane="screen">Terminal</button>` +
+    (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" data-pane="brief" title="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
+    `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" data-pane="changes" title="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
+    (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" data-pane="reviews" title="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
+    shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('')
+}
+
+/** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. */
+const shownTabHtml = (c, s, on) => {
+  const from = shownFrom(c.lineage, s)
+  return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" data-pane="${esc(shownPane(s))}" title="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+  `${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}${from ? `<small>${from.mark}</small>` : ''}` +
+  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" title="open in a browser tab">↗</span>` : '') +
+  (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
+  `<span class="unshow" data-unshow="${esc(shownKey(s))}" title="close: it comes back if shown again">×</span></button>`
+}
+
+const shownPane = (s) => `shown:${s.target}`
+const shownOn = (c, pane) => visibleShown(c).find((s) => shownPane(s) === pane)
+/** Each showing has its own key: closing one leaves the next showing of the same target open. */
+const shownKey = (s) => `${s.session}|${s.target}|${s.at}`
+const shownHref = (s) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
+
+/** The showings this viewer closed, kept in this browser. */
+const unshown = new Set(JSON.parse(remembered('tower.unshown') ?? '[]'))
+const visibleShown = (c) => c.shown.filter((s) => !unshown.has(shownKey(s)))
+
+function unshow(key) {
+  unshown.add(key)
+  remember('tower.unshown', JSON.stringify([...unshown].slice(-200)))
+  render()
+}
+
+/** The selected session and its conversations as the brief last asked for them: it asks again when they change. */
+let briefKey
+
+/** The brief and what a worker showed lie over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. */
+function renderPane(c) {
+  const pane = paneOf(c)
+  renderShown(c, pane.startsWith('shown:') ? shownOn(c, pane) : undefined)
+  const brief = pane === 'brief'
+  $('main').classList.toggle('on-brief', brief)
+  $('main').classList.toggle('on-changes', pane === 'changes')
+  $('main').classList.toggle('on-reviews', pane === 'reviews')
+  const reviewing = pane === 'changes' || pane === 'reviews'
+  followChanges(reviewing ? c : undefined)
+  if (reviewing && keepsThreads(c)) followThread(c)
+  if (pane === 'changes') drawChanges()
+  if (pane === 'reviews') drawReviews(c)
+  const key = brief && `${c.id} ${JSON.stringify(c.conversations)}`
+  if (!key || key === briefKey) return
+  briefKey = key
+  told(tower.conversations(c.id)).then((threads) => threads && briefKey === key && showBrief(c, threads))
+}
+
+/** The showing the shown pane last drew: a new showing of the same target draws it again. */
+let shownDrawn
+
+/** Markdown served at `url` as html, its relative images read from beside it. */
+const markdownIn = (md, url) =>
+  marked.parse(md, { walkTokens: (t) => { if (t.type === 'image' && !/^([a-z][a-z\d+.-]*:|\/|#)/i.test(t.href)) t.href = new URL(t.href, new URL(url, location.origin)).pathname } })
+
+function renderShown(c, s) {
+  $('main').classList.toggle('on-shown', Boolean(s))
+  const key = s && shownKey(s)
+  if (key === shownDrawn) return
+  shownDrawn = key
+  if (!s) return ($('shown').innerHTML = '')
+  if (s.kind === 'url') return ($('shown').innerHTML = `<iframe src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`)
+  if (s.kind === 'link') return ($('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`, showLink(c, s))
+  if (/\.(png|jpe?g|gif|webp|svg)$/i.test(s.target)) return ($('shown').innerHTML = `<img src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`)
+  if (/\.(mp4|webm)$/i.test(s.target)) return ($('shown').innerHTML = `<video controls autoplay src="${esc(shownHref(s))}"></video>`)
+  if (!s.target.endsWith('.md')) return ($('shown').innerHTML = `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" src="${esc(shownHref(s))}"></iframe>`)
+  $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
+  told(tower.text(shownHref(s).slice(1))).then((md) => {
+    if (md === undefined || shownDrawn !== key) return
+    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style><article>${markdownIn(md, shownHref(s))}</article>`
+  })
+}
+
+/**
+ * The changes of the selected session, read when its Changes pane opens, every `CHANGES_POLL_MS` while it stays open,
+ * and when a turn ends. Claude edits through scripts as often as through its edit tools, so git is read on a timer.
+ */
+const CHANGES_POLL_MS = 30_000
+/** The last read: `viewed` holds each repo's marks, a file's path → the hash of the diff it was viewed at. */
+let changes
+let changesPoll
+/** Files the viewer folded or unfolded against what their viewed mark says, by `fileKey`; this page only. */
+const folds = new Set()
+
+/** The marks of a repo are shared by every renderer in this browser, through `tower.store`. */
+const viewedKey = (dir) => `viewed:${dir}`
+const fileAt = (key) => changedFiles(changes.repos).find(([repo, f]) => fileKey(repo, f) === key)
+
+function followChanges(c) {
+  if (changesPoll && changesPoll.id !== c?.id) changesPoll = (clearInterval(changesPoll.timer), undefined)
+  if (!c) return
+  if (!changesPoll) {
+    changesPoll = { id: c.id, status: c.status, timer: setInterval(() => readChanges(c.id), CHANGES_POLL_MS) }
+    return readChanges(c.id)
+  }
+  const turnEnded = changesPoll.status === 'working' && c.status !== 'working'
+  changesPoll.status = c.status
+  if (turnEnded) readChanges(c.id)
+}
+
+async function readChanges(id) {
+  const repos = await told(tower.get(`changes/${id}`))
+  if (!repos || changesPoll?.id !== id) return
+  const marks = await Promise.all(repos.map((repo) => tower.store.get(viewedKey(repo.dir))))
+  changes = { id, repos, at: Date.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
+  render()
+}
+
+/** Files viewed of files changed, once read. */
+const changesTally = (c) => {
+  if (changes?.id !== c.id) return ''
+  const { viewed, files } = viewedCount(changes)
+  return files ? `<small>${viewed}/${files}</small>` : ''
+}
+
+function toggleViewed(key) {
+  const [repo, f] = fileAt(key)
+  changes.viewed[repo.dir] = marksToggled(changes.viewed, repo, f)
+  tower.store.set(viewedKey(repo.dir), changes.viewed[repo.dir])
+  folds.delete(key)
+  render()
+}
+
+function toggleFold(key) {
+  if (!folds.delete(key)) folds.add(key)
+  drawChanges()
+}
+
+/** Lines picked in the Changes pane, and the note being written under them; `pickFresh` until the box first takes focus. */
+let pick
+let pickText = ''
+let pickFresh = false
+const dropPick = () => ((pick = undefined), (pickText = ''))
+
+function drawChanges() {
+  const c = findCard(selected)
+  const read = changes?.id === c.id ? changes : undefined
+  const live = read && livePick(read, pick)
+  if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
+  if (read) pick = live
+  drawPanel($('changes'), changesHtml({ read, folds, pick, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
+  if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
+  pickFresh = false
+  if (jump && read) jumpToAnchor()
+}
+
+function pickLine(value, extend) {
+  pick = picked(changes, pick, value, extend)
+  pickFresh = true
+  drawChanges()
+}
+
+const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
+const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
+const threadItem = (c) => reviewsOf(floorOf(c.project))?.items.find((i) => i.id === threadId(threadCheckoutOf(c)))
+
+/** The thread of the selected worker's checkout as last read: read again whenever its file's version moves on the board. */
+let review
+
+function followThread(c) {
+  const checkout = threadCheckoutOf(c)
+  const item = threadItem(c)
+  const key = `${c.project}/${checkout}@${item?.modifiedAt ?? 'none'}`
+  if (review?.key === key) return
+  const same = review?.project === c.project && review.checkout === checkout
+  review = { key, project: c.project, checkout, thread: !item ? { checkout, messages: [] } : same ? review.thread : undefined }
+  if (!item) return
+  told(tower.text(`collection/${c.project}/${REVIEWS}/${encodeURIComponent(item.id)}`)).then((text) => {
+    if (text === undefined || review?.key !== key) return
+    review.thread = parseThread(text)
+    render()
+  })
+}
+
+const threadOf = (c) => (review?.project === c.project && review.checkout === threadCheckoutOf(c) ? review.thread : undefined)
+
+/** What the worker hasn't seen of its checkout's thread, else how many notes it holds. */
+const reviewsTally = (c) => {
+  const notes = floorOf(c.project).threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
+  return c.unseen ? `<small class="unseen" title="${c.unseen} notes ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
+}
+
+async function addNote(c, fields) {
+  const reply = await told(tower.call('review/append', { project: c.project, checkout: threadCheckoutOf(c), author: board.user.name, ...fields }))
+  if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
+  return reply
+}
+
+async function addPicked() {
+  if (!(await addNote(findCard(selected), { anchors: [pickAnchor(changes.repos, pick)], body: pickText }))) return
+  dropPick()
+  drawChanges()
+}
+
+/** The reviews pane's composer: the note being written on each checkout, by `<project>/<checkout>`, and the note it answers. */
+const noteDrafts = new Map()
+const draftKey = (c) => `${c.project}/${threadCheckoutOf(c)}`
+let noteRe
+
+async function addWritten() {
+  const c = findCard(selected)
+  if (!(await addNote(c, { re: noteRe, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
+  noteDrafts.delete(draftKey(c))
+  noteRe = undefined
+  render()
+}
+
+/** The worker the viewer picked to send each checkout's notes to, by `<project>/<checkout>`; this page only. */
+const sendPicks = new Map()
+const sendTarget = (c) => {
+  const targets = sendTargets(floorOf(c.project), threadCheckoutOf(c))
+  return targets.find((t) => t.id === sendPicks.get(`${c.project}/${threadCheckoutOf(c)}`)) ?? targets.find((t) => t.checkout === threadCheckoutOf(c))
+}
+
+function sendNotes(c) {
+  const target = sendTarget(c)
+  const thread = threadOf(c)
+  const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [])
+  told(tower.run(target.calls.submit, { text })).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
+}
+
+const threadView = (c) => ({
+  checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), reader: c, changes: changes?.id === c.id ? changes.repos : undefined,
+  targets: sendTargets(floorOf(c.project), threadCheckoutOf(c)), target: sendTarget(c), re: noteRe, user: board.user.name,
+  files: threadFiles(floorOf(c.project), threadCheckoutOf(c)),
+})
+
+const drawReviews = (c) => drawPanel($('reviews'), reviewsHtml(threadView(c)), { 'note-text': noteDrafts.get(draftKey(c)) ?? '' })
+
+function replyTo(n) {
+  noteRe = n
+  render()
+  $('reviews').querySelector('[data-note-text]')?.focus()
+}
+
+/** An anchor's lines in the Changes pane: its file unfolded, scrolled to once drawn. */
+let jump
+
+function showAnchor(value) {
+  jump = anchorOf(threadOf(findCard(selected)), value)
+  showPane('changes')
+}
+
+function jumpToAnchor() {
+  const a = jump
+  jump = undefined
+  const spot = anchorSpot(changes.repos, a)
+  if (!spot) return toast(`${a.repo}:${a.path} has no changes now`)
+  if (isFolded(changes, folds, spot.repo, spot.file)) toggleFold(spot.key)
+  $('changes').querySelector(spotSelector(spot))?.scrollIntoView({ block: spot.row === -1 ? 'start' : 'center' })
+}
+
+/** A thread opened from the sidebar, on the worker most recently in its checkout. */
+function openThread(project, checkout) {
+  const c = workerIn(floorOf(project), checkout)
+  if (!c) return toast(`No worker has worked in ${checkout}`)
+  select(c.id)
+  showPane('reviews')
+}
+
+/** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. */
+function showLink(c, s) {
+  $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style>
+    <article><h4>${esc(callsign(c.id))} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
+    <p><a href="${esc(s.target)}" rel="noreferrer"><b>Open ↗</b></a></p></article>`
+}
+
+function showPane(pane) {
+  paneChoice = pane
+  if (pane === 'brief') term?.blur()
+  render()
+}
+
+const BRIEF_CSS = `article { max-width: 980px; margin: 0; padding: 14px 28px 48px; }`
+
+/**
+ * The session's conversations latest first, then each earlier session of its worker folded, and in each conversation
+ * its last turns, latest first. Prompts and answers are markdown, rendered in a frame where nothing can run; the page
+ * reads the frame's document, so a redraw keeps the folds the viewer opened and where they had scrolled.
+ */
+function showBrief(c, threads) {
+  const frame = $('brief-doc')
+  const drawn = frame.dataset.worker === c.id ? frame.contentDocument : undefined
+  const scrolled = drawn?.scrollingElement?.scrollTop ?? 0
+  frame.dataset.worker = c.id
+  const said = (text) => marked.parse(text)
+  const promptBy = (id) => c.conversations.find((conv) => conv.id === id)?.promptBy
+  frame.addEventListener('load', () => frame.contentDocument.scrollingElement.scrollTo(0, scrolled), { once: true })
+  frame.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}${briefCss}</style>
+    <article>${briefHtml({ briefs: threads, said, promptBy, open: openFolds(drawn) })}</article>`
+}
+
+/**
+ * The sidebar shows the floors or the stats, kept in this browser. The stats open on the floor in view (the selected
+ * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
+ * every minute while shown.
+ */
+let sideView = remembered('tower.sideView') ?? 'floors'
+const statsView = { stats: undefined, at: undefined, range: remembered('tower.statsRange') ?? 'week', all: false, reading: 0 }
+const STATS_POLL_MS = 60_000
+let statsPoll
+
+const floorInView = () =>
+  findCard(selected)?.project ?? shelfOpen?.project ?? archiveOpen?.project ?? draftOpen?.project ?? floorsTopDown()[0]?.id
+
+function drawSideView() {
+  document.querySelector('.side').classList.toggle('on-stats', sideView === 'stats')
+  for (const b of document.querySelectorAll('[data-side-view]')) b.classList.toggle('on', b.dataset.sideView === sideView)
+  if (sideView !== 'stats') return
+  const floor = board.floors.find((f) => f.id === floorInView())
+  const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
+  const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
+  drawPanel($('stats'), statsHtml({ ...statsView, projects, tabs, scope: statsView.all || !floor ? STATS_ALL : floor.id }), {})
+}
+
+async function readStats() {
+  const reading = ++statsView.reading
+  const stats = await tower.stats(statsQuery(statsView.range, Date.now()))
+  if (reading !== statsView.reading) return
+  Object.assign(statsView, { stats, at: Date.now() })
+  drawSideView()
+}
+
+function showSideView(view) {
+  sideView = view
+  remember('tower.sideView', view)
+  clearInterval(statsPoll)
+  if (view === 'stats') (readStats(), (statsPoll = setInterval(readStats, STATS_POLL_MS)))
+  drawSideView()
+}
+
+/** The `[data-hold]` row at a scrolled list's top edge, the last to start at or above it, and its offset from the edge. */
+const topAnchorOf = (list) => {
+  const top = list.getBoundingClientRect().top
+  const row = [...list.querySelectorAll('[data-hold]')].findLast((el) => el.getBoundingClientRect().top <= top) ?? list.querySelector('[data-hold]')
+  return row && { key: row.dataset.hold, offset: row.getBoundingClientRect().top - top }
+}
+
+/**
+ * Replaces a scrolled list's content with what stays at its top kept where it was: a browser's scroll anchoring holds
+ * a list still while rows above change height, and loses its anchor when the rows are replaced.
+ */
+function redrawHeld(list, html) {
+  const anchor = topAnchorOf(list)
+  list.innerHTML = html
+  const row = anchor && list.querySelector(`[data-hold="${CSS.escape(anchor.key)}"]`)
+  if (row) list.scrollTop += row.getBoundingClientRect().top - list.getBoundingClientRect().top - anchor.offset
+}
+
+function render() {
+  const all = cards()
+  const duty = all.filter(onDuty)
+  const count = (a) => duty.filter((c) => c.attention === a).length
+  const waiting = heededWaits(board, heed).length
+  document.title = waiting ? `(${waiting}) The Tower` : 'The Tower'
+  $('tally').innerHTML = `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" title="N jumps to the next one"><span class="lamp"></span><b>${waiting}</b> waiting on you</span>` +
+    [['ready', 'ready'], ['working', 'working'], ['quiet', 'quiet'], ['broken', 'broken']]
+      .map(([a, label]) => `<span class="chip ${a}"><span class="lamp"></span><b>${count(a)}</b> ${label}</span>`).join('')
+  const untested = claudeUntestedLine(board)
+  $('host').innerHTML = (board.hostOutdated
+    ? `<span class="lamp broken"></span> <span title="${HOST_OUTDATED}">host outdated</span>`
+    : board.hostUp ? '<span class="lamp quiet" title="host up"></span>' : '<span class="lamp broken"></span> host down') +
+    (untested ? ` <span class="untested" title="${CLAUDE_UNTESTED}">${esc(untested)}</span>` : '')
+  paintLimits()
+  redrawHeld($('floors'), floorsTopDown().map(floorHtml).join(''))
+  drawSideView()
+  $('rail').innerHTML = railHtml(waiting)
+  $('side-foot').innerHTML = `<span>config</span><code title="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}`
+  const c = selected && findCard(selected)
+  if (c) barHtml(c)
+  if (draftOpen) draftHeadHtml()
+  if (archiveOpen) drawArchive()
+  if (!selected) $('sky').innerHTML = skylineHtml()
+  paintSky()
+  renderDock()
+  bell()
+  tick()
+}
+
+/** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
+const railHtml = (waiting) =>
+  `<button class="side-toggle" data-side title="show the sidebar (⌘B)">»</button>
+  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" title="waiting on you">${waiting}</span>` : ''}
+  ${dutyOrder(board).map((c) => `<span class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}"
+    data-id="${c.id}" title="${esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))}"></span>`).join('')}`
+
+function toggleSide() {
+  document.body.classList.toggle('collapsed')
+  remember('tower.side', document.body.classList.contains('collapsed') ? 'collapsed' : 'open')
+}
+document.body.classList.toggle('collapsed', remembered('tower.side') === 'collapsed')
+
+function tick() {
+  if (!selected && !shelfOpen) paintSky()
+  paintLimits()
+  for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(Date.now() - Number(el.dataset.since))
+  if (ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(heededWaits(board, heed))
+}
+
+/**
+ * What this viewer did about the waits (`Heed` in cards.ts): dismissed, kept in `tower.store` for every renderer of
+ * theirs, and visited by N this round. `ring`: how often a wait rings, kept there too; `rungAt`: when one last rang.
+ */
+let heed = { dismissed: new Set(), visited: new Set() }
+let ring = 'once'
+let rungAt = Date.now()
+/** The board the last transitions were read against: none until the first, which is silent. */
+let attended
+
+/** The worker you are looking at: its waits notify and ring for nobody. */
+const watching = (id) => document.hasFocus() && selected === id
+
+/**
+ * One notification per wait that begins, none for the waits already on the board when the page opened, for those
+ * dismissed or for the worker being watched; each closes once its wait is over. The first of them rings.
+ */
+const alerts = new Map()
+function attend(next) {
+  const { began, ended } = transitions(attended, next)
+  attended = next
+  for (const w of ended) (alerts.get(w.key)?.close(), alerts.delete(w.key))
+  const fresh = began.filter((w) => !heed.dismissed.has(w.key) && !watching(w.id))
+  if (Notification.permission === 'granted') for (const w of fresh) alerts.set(w.key, showAlert(findCard(w.id), w))
+  ringFor(fresh)
+}
+
+/** Rings the first of `waits` not of the worker being watched, unless rings are off. */
+function ringFor(waits) {
+  const wait = ring === 'off' ? undefined : ringing(waits, document.hasFocus() ? selected : undefined)
+  if (!wait) return
+  rungAt = Date.now()
+  playSound(SOUNDS[soundOf(wait)])
+}
+
+let audio
+function playSound({ notes, wave, step }) {
+  audio ??= new AudioContext()
+  const now = audio.currentTime
+  notes.forEach((freq, i) => {
+    const osc = audio.createOscillator()
+    const gain = audio.createGain()
+    osc.type = wave
+    osc.frequency.value = freq
+    gain.gain.setValueAtTime(0, now + i * step)
+    gain.gain.linearRampToValueAtTime(0.12, now + i * step + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * step + 0.9)
+    osc.connect(gain).connect(audio.destination)
+    osc.start(now + i * step)
+    osc.stop(now + i * step + 1)
+  })
+}
+
+/** The viewer's dismissals and ring setting as `tower.store` keeps them: another renderer of theirs may have changed them. */
+async function readHeed() {
+  const [dismissed, stored] = await Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY)])
+  heed = { ...heed, dismissed: new Set(dismissed ?? []) }
+  ring = stored ?? 'once'
+}
+
+function dismissWait(key) {
+  const dismissed = dismissing(board, heed.dismissed, key)
+  heed = { ...heed, dismissed: new Set(dismissed) }
+  tower.store.set(DISMISSED_KEY, dismissed)
+  alerts.get(key)?.close()
+  render()
+}
+
+function cycleRing() {
+  ring = RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]
+  tower.store.set(RING_KEY, ring)
+  bell()
+}
+
+/** Every showing the page has seen: a new one opens its tab on the selected session, and alerts when you aren't looking at it. */
+const seenShown = new Set()
+let shownPrimed = false
+
+function noticeShown(all) {
+  for (const c of all) for (const s of visibleShown(c)) {
+    const key = shownKey(s)
+    if (seenShown.has(key)) continue
+    seenShown.add(key)
+    if (!shownPrimed) continue
+    if (selected === c.id) showPane(shownPane(s))
+    if (!(document.hasFocus() && selected === c.id) && Notification.permission === 'granted') showShownAlert(c, s)
+  }
+  shownPrimed = true
+}
+
+function showShownAlert(c, s) {
+  const n = new Notification(`${callsign(c.id)} ${s.kind === 'link' ? 'asks you to open' : 'shows you'} ${shownTitle(s)}`, { body: `${c.project}: ${s.target}`, tag: shownKey(s) })
+  n.onclick = () => (window.focus(), select(c.id), showPane(shownPane(s)), n.close())
+}
+
+function showAlert(c, w) {
+  const n = new Notification(`${callsign(c.id)} · ${statusName(c)}`, {
+    body: `${c.project}: ${gistLine(c)}`, tag: c.id, requireInteraction: w.reason === 'blocked' || w.reason === 'asks',
+  })
+  n.onclick = () => (window.focus(), select(c.id), n.close())
+  return n
+}
+
+function bell() {
+  const state = Notification.permission
+  $('bell').textContent = state === 'granted' ? '🔔' : state === 'denied' ? '🔕' : '🔔 alerts?'
+  $('bell').title = state === 'granted' ? 'alerts on: a notification whenever a session starts waiting on you' : state === 'denied' ? 'alerts blocked in this browser' : 'turn on alerts'
+  $('ring').textContent = RING_MARK[ring]
+  $('ring').title = `waits ${RING_NAME[ring]}: click for ${RING_NAME[RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]]}`
+}
+
+/** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. */
+function moveTo(id) {
+  select(id)
+  $('floors').querySelector(`.sess[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' })
+}
+
+/** To the worker a move key names, in the order every renderer moves in (src/shared/cards.ts). */
+function go(move) {
+  if (move !== 'waiting') {
+    const to = neighbours(board, selected, heed)[move]
+    return to ? moveTo(to.id) : toast('Nobody is on duty')
+  }
+  const waits = heededWaits(board, heed)
+  const step = nextWait(waits, heed.visited, selected)
+  heed = { ...heed, visited: step.visited }
+  if (step.to) return moveTo(step.to.id)
+  toast(waits.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you')
+}
+
+/** Those `send-home` ends: the worker and everyone under it that runs, each a card. */
+const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => c.calls['send-home'].some(([, { id }]) => id === h.id))
+
+const sendHomeTitle = (c) => `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
+
+async function sendHome(c) {
+  const sent = sentHome(c)
+  const busy = sent.filter((h) => h.status === 'working')
+  const ask = `Send ${callsign(c.id)} home with everyone under it that runs?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\nEach can be resumed.`
+  if (!confirm(ask)) return
+  for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
+}
+
+const toast = (msg) => {
+  $('toast').textContent = msg
+  $('toast').style.display = 'block'
+  clearTimeout(toast.t)
+  toast.t = setTimeout(() => ($('toast').style.display = 'none'), 4000)
+}
+
+/** A request whose failure is told in a toast, answering `undefined`. */
+const told = (request) => request.catch((err) => (toast(err.message), undefined))
+
+const floorOf = (project) => board.floors.find((f) => f.id === project)
+
+let term, fit, stopScreen
+const DRIVE_FONT = 13
+/** A monospace cell is about 0.6 of the font size wide and 1.2 tall. */
+const CELL_WIDTH = 0.6
+const CELL_HEIGHT = 1.2
+const REFIT_DEBOUNCE_MS = 120
+
+/**
+ * The PTY has one size: whoever types owns it. Opening the terminal claims it when no other terminal is open on the
+ * session, fitting the PTY to this pane; a resize from anyone else hands it back, and the view follows the PTY at a
+ * font scaled to fit.
+ */
+let claimed
+
+const fitFont = (cols, rows) => {
+  const { clientWidth, clientHeight } = $('c-screen')
+  return Math.max(6, Math.min(DRIVE_FONT, Math.floor(Math.min((clientWidth - 4) / (cols * CELL_WIDTH), (clientHeight - 4) / (rows * CELL_HEIGHT)))))
+}
+
+function showMode(text = isOwner() ? `in control · ${term.cols}×${term.rows}` : 'watching · type to take control') {
+  $('c-mode').className = isOwner() ? 'owner' : ''
+  $('c-mode').textContent = text
+}
+
+function claim() {
+  term.options.fontSize = DRIVE_FONT
+  fit.fit()
+  claimed = { cols: term.cols, rows: term.rows }
+  told(tower.call('resize', { id: selected, ...claimed }))
+  showMode()
+}
+
+const isOwner = () => Boolean(claimed && term && claimed.cols === term.cols && claimed.rows === term.rows)
+
+const sendKeys = tower.keys
+const sendShellKeys = tower.shellKeys
+
+function followPty(cols, rows) {
+  if (term.cols === cols && term.rows === rows) return
+  term.resize(cols, rows)
+  if (!isOwner()) term.options.fontSize = fitFont(cols, rows)
+  showMode()
+}
+
+const typed = (data) => {
+  if (document.activeElement !== term.textarea) return
+  if (!isOwner()) claim()
+  sendKeys(selected, data)
+}
+
+function openTerminal({ cols, rows, data, exited, terminals }) {
+  term?.dispose()
+  term = new Terminal({ cols, rows, fontSize: fitFont(cols, rows), fontFamily: type.mono, cursorBlink: false, scrollback: 0, theme: terminalTheme(scheme()) })
+  fit = new FitAddon.FitAddon()
+  term.loadAddon(fit)
+  term.open($('c-screen'))
+  term.write(data)
+  if (exited) return showMode('past session · read-only')
+  term.attachCustomKeyEventHandler(terminalKeys(shortcut, typed))
+  term.onData(typed)
+  if (terminals === 0) claim()
+  else showMode()
+  term.focus()
+}
+
+function closeTerminal() {
+  claimed = undefined
+  stopScreen?.()
+  term?.dispose()
+  term = undefined
+  $('c-screen').innerHTML = ''
+  $('c-mode').textContent = ''
+}
+
+/** The selected session is kept in the URL hash, so a reload reopens it. */
+function select(id) {
+  leaveShelf()
+  leaveDraft()
+  leaveArchive()
+  closeTerminal()
+  arriving = undefined
+  selected = id
+  paneChoice = undefined
+  dropPick()
+  noteRe = undefined
+  history.replaceState(null, '', `#${id}`)
+  $('main').classList.remove('home')
+  render()
+  stopScreen = tower.watch(`terminal/${id}`, (msg) => {
+    if (msg.t === 'snapshot') openTerminal(msg)
+    if (msg.t === 'o') term.write(msg.data)
+    if (msg.t === 'r') followPty(...msg.size.split('x').map(Number))
+    if (msg.t === 'x') select(id)
+  })
+}
+
+function goHome() {
+  followChanges(undefined)
+  leaveShelf()
+  leaveDraft()
+  leaveArchive()
+  closeTerminal()
+  arriving = undefined
+  selected = undefined
+  history.replaceState(null, '', location.pathname)
+  $('main').classList.add('home')
+  render()
+}
+
+let refitTimer
+new ResizeObserver(() => {
+  clearTimeout(refitTimer)
+  refitTimer = setTimeout(() => {
+    if (!term) return
+    if (isOwner()) claim()
+    else term.options.fontSize = fitFont(term.cols, term.rows)
+  }, REFIT_DEBOUNCE_MS)
+}).observe($('screen'))
+
+/** The shelf entry open in the main pane; for a collection, its files and the one shown. */
+let shelfOpen
+
+const shelfPath = (project, n, file) => `shelf/${project}/${n}${file ? '/' + file.split('/').map(encodeURIComponent).join('/') : ''}`
+const shelfUrl = (project, n, file) => `/${shelfPath(project, n, file)}`
+const shelfHash = ({ project, n, file }) => `#shelf/${project}/${n}${file ? '/' + encodeURIComponent(file) : ''}`
+
+
+function openShelf(project, n, file) {
+  const f = board.floors.find((f) => f.id === project)
+  const entry = f?.shelf?.[n]
+  if (!entry) return goHome()
+  leaveDraft()
+  leaveArchive()
+  closeTerminal()
+  arriving = undefined
+  closePageWatches()
+  Object.assign(pageRelay, { token: undefined, paired: false })
+  selected = undefined
+  shelfOpen = { project, n, file }
+  history.replaceState(null, '', shelfHash(shelfOpen))
+  $('main').classList.remove('home')
+  $('main').classList.add('shelf')
+  $('shelf-view').style.cssText = paint(project)
+  const own = { html: `/run/${project}/${n}`, url: entry.url, renderer: entry.renderer && rendererUrl(entry.renderer) }[shelfKind(entry)]
+  const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">↗ new tab</a>` : ''
+  $('shelf-head').innerHTML = `<span class="label">${esc(entry.label)}</span><span class="dim">${esc(f.name)} · ${esc(shelfSource(entry))}</span>
+    <span class="actions">${tab}<button data-act="home" title="back to the skyline">✕</button></span>`
+  $('shelf-body').innerHTML = ''
+  render()
+  if (shelfKind(entry) === 'html') showPage(shelfUrl(project, n, shelfPage(entry)))
+  if (shelfKind(entry) === 'renderer') showPage(rendererUrl(entry.renderer))
+  if (shelfKind(entry) === 'url') showUrl(entry.url)
+  if (shelfKind(entry) === 'md') showCollection(entry, file)
+}
+
+/** A page framed with the relay, at an opaque origin: an `html` entry's, or a declared renderer's. */
+function showPage(url) {
+  const { token } = pairPage()
+  $('shelf-body').innerHTML = `<iframe id="shelf-page" class="page" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" src="${esc(url)}?tower=${token}"></iframe>`
+  $('shelf-page').addEventListener('load', onPageLoad)
+}
+
+function leaveShelf() {
+  closePageWatches()
+  Object.assign(pageRelay, { token: undefined, paired: false })
+  shelfOpen = undefined
+  $('main').classList.remove('shelf')
+  $('shelf-body').innerHTML = ''
+}
+
+/** The open `html` or `renderer` entry's page, spoken to as in src/shared/shelf-page.ts: its requests go to the routes they name. */
+/**
+ * The open page's relay. Its frame URL carries a token each load, and the page sends it with every message: a
+ * document the frame navigates to never has it. Nothing is sent until the page says hello; a frame that loads
+ * without saying hello holds another document, and the relay ends.
+ */
+const pageRelay = { token: undefined, paired: false, helloSinceLoad: false }
+const pairPage = () => Object.assign(pageRelay, { token: crypto.randomUUID(), paired: false, helloSinceLoad: false })
+const onPageLoad = () => {
+  if (!pageRelay.helloSinceLoad) (pageRelay.paired = false, closePageWatches())
+  pageRelay.helloSinceLoad = false
+}
+const toShelfPage = (msg) => pageRelay.paired && $('shelf-page')?.contentWindow.postMessage(msg, '*')
+const sendBoard = () => {
+  if (!shelfOpen) return
+  const msg = { t: 'board', v: tower.version, self: { project: shelfOpen.project, n: shelfOpen.n } }
+  toShelfPage(boardError ? { ...msg, error: { code: boardError.code, message: boardError.message } } : { ...msg, board })
+}
+/** The scheme goes to a `url` page too: it is the only message such a page gets, and it carries nothing private. */
+const sendScheme = () => {
+  const msg = { t: 'scheme', scheme: document.documentElement.dataset.scheme }
+  toShelfPage(msg)
+  $('shelf-url')?.contentWindow.postMessage(msg, '*')
+}
+
+/** The streams the open page watches, by its id. Closed when the page goes away. */
+const pageWatches = new Map()
+const closePageWatches = () => {
+  for (const unwatch of pageWatches.values()) unwatch()
+  pageWatches.clear()
+}
+
+const pageRequests = {
+  call: ({ verb, body }) => tower.call(verb, body),
+  get: ({ path }) => tower.get(path),
+  text: ({ path }) => tower.text(path),
+  blob: ({ path }) => tower.blob(path),
+  recall: () => JSON.parse(remembered(pageKey(shelfOpen)) ?? 'null'),
+  stored: ({ key }) => tower.store.get(key),
+}
+
+/** Where the open page's remembered value is kept: one per shelf entry. */
+const pageKey = ({ project, n }) => `shelf-page:${project}/${n}`
+
+const towerVerbs = {
+  select: ({ id }) => select(id),
+  home: () => goHome(),
+  shelf: ({ project, n }) => openShelf(project, n),
+}
+
+addEventListener('message', async (e) => {
+  if (!e.source || e.source !== $('shelf-page')?.contentWindow) return
+  const msg = e.data
+  const token = pageRelay.token
+  if (!token || msg.token !== token) return
+  if (msg.t === 'hello') return (Object.assign(pageRelay, { paired: true, helloSinceLoad: true }), closePageWatches(), sendScheme(), sendBoard())
+  if (!pageRelay.paired) return
+  if (msg.t === 'tower') return towerVerbs[msg.verb](msg)
+  if (msg.t === 'remember') return shelfOpen && remember(pageKey(shelfOpen), JSON.stringify(msg.value))
+  if (msg.t === 'store') return (tower.store.set(msg.key, msg.value), Promise.all([readHeed(), readCrewFolds()]).then(render))
+  if (msg.t === 'watch') return pageWatches.set(msg.id, tower.watch(msg.path, (data) => toShelfPage({ t: 'event', id: msg.id, data })))
+  if (msg.t === 'unwatch') return (pageWatches.get(msg.id)?.(), pageWatches.delete(msg.id))
+  const answer = (reply) => pageRelay.token === token && toShelfPage({ t: 'answer', id: msg.id, ...reply })
+  try {
+    answer({ data: await pageRequests[msg.t](msg) })
+  } catch (err) {
+    answer({ error: err.message, code: err.code })
+  }
+})
+
+/** A frame of a page nobody serves would show the browser's error: say so instead, with a way to look again. */
+async function showUrl(url) {
+  const opened = shelfOpen
+  const up = await fetch(url, { mode: 'no-cors', cache: 'no-store' }).then(() => true, () => false)
+  if (shelfOpen !== opened) return
+  $('shelf-body').innerHTML = up
+    ? `<iframe id="shelf-url" class="page" src="${esc(url)}" allow="clipboard-read; clipboard-write"></iframe>`
+    : `<div class="shelf-empty">nothing answers at ${esc(url)}<br><br><button data-shelf-retry>look again</button></div>`
+  $('shelf-url')?.addEventListener('load', sendScheme)
+}
+
+async function showCollection(entry, file) {
+  const opened = shelfOpen
+  const files = await told(tower.get(shelfPath(opened.project, opened.n)))
+  if (!files) return
+  if (shelfOpen !== opened) return
+  if (!files.length) return ($('shelf-body').innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
+  opened.files = files
+  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</div>`).join('')}</div>
+    <iframe id="shelf-doc" sandbox="allow-same-origin"></iframe>`
+  showDoc(files.includes(file) ? file : files[0])
+}
+
+/** The document renders in a frame where its scripts can't run; the tower still reads its clicks. */
+async function showDoc(file) {
+  const opened = shelfOpen
+  opened.file = file
+  history.replaceState(null, '', shelfHash(opened))
+  for (const el of document.querySelectorAll('[data-doc]')) el.classList.toggle('sel', el.dataset.doc === file)
+  const md = await told(tower.text(shelfPath(opened.project, opened.n, file)))
+  if (md === undefined) return
+  if (shelfOpen !== opened || opened.file !== file) return
+  const doc = $('shelf-doc')
+  doc.onload = () => doc.contentDocument.addEventListener('click', followLink)
+  doc.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${markdownIn(md, `/${shelfPath(opened.project, opened.n, file)}`)}</article>`
+}
+
+/** A link to another file of the collection opens it here; a web link opens in a new tab. */
+function followLink(e) {
+  const a = e.target.closest('a[href]')
+  const href = a?.getAttribute('href')
+  if (!href || href.startsWith('#')) return
+  e.preventDefault()
+  const target = new URL(href, `http://shelf/${shelfOpen.file}`)
+  if (target.host !== 'shelf') return window.open(target.href, '_blank', 'noreferrer')
+  const file = decodeURIComponent(target.pathname.slice(1))
+  if (shelfOpen.files.includes(file)) return showDoc(file)
+  toast(`${file} is not in this collection`)
+}
+
+/** The floor whose past workers fill the main pane, and the words they are filtered by. */
+let archiveOpen
+
+function openArchive(project) {
+  const f = floorOf(project)
+  if (!f) return goHome()
+  followChanges(undefined)
+  leaveShelf()
+  leaveDraft()
+  closeTerminal()
+  arriving = undefined
+  selected = undefined
+  archiveOpen = { project, words: [] }
+  history.replaceState(null, '', `#archive/${project}`)
+  $('main').classList.remove('home')
+  $('main').classList.add('archived')
+  $('archive-view').style.cssText = paint(project)
+  $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
+    <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
+    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" title="back to the skyline">✕</button></span>`
+  render()
+  $('archive-filter').focus()
+}
+
+function leaveArchive() {
+  archiveOpen = undefined
+  $('main').classList.remove('archived')
+}
+
+let archiveDrawn = ''
+/** Newest first, each worker with every conversation it held and the way to resume or reach it. */
+function drawArchive() {
+  const f = floorOf(archiveOpen.project)
+  if (!archives.has(f.id)) readArchive(f.id)
+  const archive = archives.get(f.id).cards
+  if (!archive) {
+    $('archive-count').textContent = `${pastCount(f)} workers`
+    return void ($('archive-list').innerHTML = archiveDrawn = '<div class="empty">reading the archive…</div>')
+  }
+  const past = pastOf(f, archive)
+  const shown = past.filter((c) => matchesWords(c, archiveOpen.words))
+  $('archive-count').textContent = shown.length === past.length ? `${past.length} workers` : `${shown.length} of ${past.length}`
+  const html = shown.map(pastHtml).join('') || '<div class="empty">no past worker matches</div>'
+  if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
+}
+
+$('archive-view').addEventListener('input', (e) => {
+  if (e.target.id !== 'archive-filter') return
+  archiveOpen.words = wordsOf(e.target.value)
+  drawArchive()
+})
+
+/** The draft open in the main pane (src/shared/drafts.ts), its textarea holding `text`. */
+let draftOpen
+let saveTimer
+const AUTOSAVE_MS = 800
+
+const draftHash = ({ project, id }) => `#draft/${project}${id ? '/' + encodeURIComponent(id) : ''}`
+const targets = () => cards().filter((c) => can(c, 'submit'))
+const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it has words', editing: 'editing', saved: 'saved' }
+
+function draftHeadHtml() {
+  const d = draftOpen
+  const f = board.floors.find((f) => f.id === d.project)
+  const item = draftItem(board.floors, d.project, d.id)
+  const keptBy = item?.keptBy
+  const by = keptBy ? ` · kept by <a href="#${keptBy.session}" title="go to the worker that kept it">${keptBy.callsign}</a>` : ''
+  const tag = item ? `<button class="tag" data-copy="${esc(item.tag)}" title="${esc(`${draftsOf(f).dir}/${item.id}`)} · click to copy the tag">${esc(item.tag)}</button>` : ''
+  const file = item && fileButtonsHtml(`${draftsOf(f).dir}/${item.id}`)
+  $('draft-head').innerHTML = `<span class="label">Draft</span>${tag}${file ?? ''}<span class="dim">${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${by}</span>
+    <span class="actions"><small class="dim">⌘⏎ new session</small>
+      ${can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : ''}
+      ${targets().length ? '<button data-draft-act="transfer" title="type this prompt into a running worker">Send to worker…</button>' : ''}
+      <button class="danger" data-draft-act="delete">Delete</button>
+      <button data-act="home" title="back to the skyline">✕</button></span>`
+  $('draft-note').innerHTML = d.conflict !== undefined
+    ? `<span>Someone else changed this draft while you were editing it.</span>
+      <button data-draft-act="reload">Take theirs</button><button data-draft-act="keep">Keep mine</button>`
+    : ''
+}
+
+/** A new draft, or an existing one once its text has arrived: the textarea stays read-only until then. */
+async function openDraft(project, id) {
+  leaveShelf()
+  leaveDraft()
+  leaveArchive()
+  closeTerminal()
+  selected = undefined
+  arriving = undefined
+  const d = newDraft(project)
+  draftOpen = d
+  history.replaceState(null, '', draftHash({ project, id }))
+  $('main').classList.remove('home')
+  $('main').classList.add('drafting')
+  $('draft-view').style.cssText = paint(project)
+  $('draft-text').value = ''
+  $('draft-text').readOnly = Boolean(id)
+  render()
+  if (id) {
+    const item = draftItem(board.floors, project, id)
+    const loaded = item && (await loadDraft(draftIo, project, item).catch((err) => (toast(err.message), null)))
+    if (draftOpen !== d) return
+    if (loaded === null) return goHome()
+    if (!loaded) return (goHome(), toast('That draft is gone'))
+    draftOpen = loaded
+    $('draft-text').value = loaded.text
+    $('draft-text').readOnly = false
+    render()
+  }
+  $('draft-text').focus()
+}
+
+/** Leaving keeps what was typed: its save is queued like any other. */
+function leaveDraft() {
+  if (!draftOpen) return
+  clearTimeout(saveTimer)
+  if (keepsApart(draftOpen)) toast('Your edits were kept as a new draft')
+  leave(draftIo, draftOpen)
+  closeDraft()
+}
+
+function closeDraft() {
+  clearTimeout(saveTimer)
+  draftOpen = undefined
+  $('main').classList.remove('drafting')
+}
+
+/** Resolves to whether the draft's text is on disk; a first save gives it an id, which the URL then names. */
+function saveNow() {
+  clearTimeout(saveTimer)
+  const d = draftOpen
+  return save(draftIo, d).then((ok) => (draftOpen === d && (history.replaceState(null, '', draftHash(d)), render()), ok))
+}
+
+$('draft-text').addEventListener('input', () => {
+  edit(draftOpen, $('draft-text').value)
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(saveNow, AUTOSAVE_MS)
+  draftHeadHtml()
+})
+$('draft-text').addEventListener('keydown', (e) => {
+  if (!e.metaKey && !e.ctrlKey) return
+  if (e.key === 's') (e.preventDefault(), saveNow())
+  if (e.key === 'Enter') (e.preventDefault(), sendDraft())
+})
+
+/** The board shows the open draft as it is now: deleted elsewhere closes it, a change elsewhere replaces or conflicts. */
+async function followDraft() {
+  const d = draftOpen
+  if (!d?.id) return
+  const outcome = await follow(draftIo, d, draftItem(board.floors, d.project, d.id))
+  if (draftOpen !== d) return
+  if (outcome === 'gone') return (closeDraft(), goHome(), toast('The draft was deleted elsewhere'))
+  if (outcome === 'replaced') $('draft-text').value = d.text
+  draftHeadHtml()
+}
+
+function settleConflict(take) {
+  const d = draftOpen
+  settle(draftIo, d, take).then(() => draftOpen === d && render())
+  if (take) $('draft-text').value = d.text
+  draftHeadHtml()
+}
+
+/** Send and transfer save the draft first, then delete it once its words have reached a session. */
+async function savedDraft() {
+  const d = draftOpen
+  if (!d.text.trim()) return toast('The draft is empty')
+  clearTimeout(saveTimer)
+  const text = await sendable(draftIo, d)
+  if (text === undefined) return d.conflict !== undefined && toast('Settle the change made on disk first')
+  return { d, text }
+}
+
+const deleteSent = (d) => {
+  if (draftOpen === d) closeDraft()
+  return discard(draftIo, d)
+}
+
+async function sendDraft() {
+  const f = board.floors.find((f) => f.id === draftOpen.project)
+  if (!can(f, 'spawn')) return
+  const sent = await savedDraft()
+  if (sent) openSpawn(f.id, sent)
+}
+
+/** This floor's workers first, then the rest top down. */
+function openTransfer() {
+  const project = draftOpen.project
+  const order = floorsTopDown().map((f) => f.id)
+  const rank = (c) => (c.project === project ? -1 : order.indexOf(c.project))
+  $('transfer-targets').innerHTML = targets().sort((a, b) => rank(a) - rank(b) || byStart(a, b)).map((c) => `<button value="${c.id}" style="${paint(c.project)}">
+      <span class="call">${callsign(c.id)}</span><span class="where">${esc(board.floors.find((f) => f.id === c.project).name)} · ${statusName(c)}</span>
+      <span class="line">${lineOf(c)}</span></button>`).join('')
+  $('transfer').returnValue = ''
+  $('transfer').showModal()
+}
+
+$('transfer').addEventListener('close', async () => {
+  const id = $('transfer').returnValue
+  if (!id || !draftOpen) return
+  const sent = await savedDraft()
+  if (!sent) return
+  const reply = await told(tower.run(findCard(id).calls.submit, { text: sent.text }))
+  if (!reply) return
+  await deleteSent(sent.d)
+  select(id)
+})
+
+async function deleteDraft() {
+  const d = draftOpen
+  if (!confirm('Delete this draft?')) return
+  closeDraft()
+  goHome()
+  discard(draftIo, d)
+}
+
+/**
+ * A session the page started, to open once the board carries it: the host answers before the tower has read the
+ * new log, and until then there is no card to draw and no screen to stream. Any other way the viewer goes cancels it.
+ */
+let arriving
+
+function selectArriving(id) {
+  if (findCard(id)) return select(id)
+  goHome()
+  arriving = id
+}
+
+/** The shell open in the dock: its id and stream, and its terminal once the snapshot has arrived. */
+let shell
+const SHELL_SCROLLBACK = 2000
+
+const shellWhere = (sh) => {
+  const f = board.floors.find((f) => f.id === sh.project)
+  return `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
+}
+
+function renderDock() {
+  if (!board.termsUp) return ($('tabs').innerHTML = '<span>shells: the terms daemon is down · npm run terms</span>')
+  if (!board.shells.length) return ($('tabs').innerHTML = "<span>no shells · start one from a project dir's shell button</span>")
+  $('tabs').innerHTML = [...board.shells].sort(byStart).map((sh) =>
+    `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" title="${esc(sh.cwd)}">
+      <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
+      <span class="x" data-kill-shell="${sh.id}" title="kill this shell">×</span></button>`).join('')
+}
+
+function openShell(id) {
+  closeShell()
+  shell = { id }
+  $('shell-pane').style.cssText = paint(board.shells.find((sh) => sh.id === id)?.project)
+  $('main').classList.add('shell-open')
+  shell.stop = tower.watch(`shell/${id}`, (msg) => {
+    if (msg.t === 'snapshot') mountShell(msg)
+    if (msg.t === 'o') shell.term.write(msg.data)
+    if (msg.t === 'error') (toast(msg.message), closeShell())
+    if (msg.t === 'x') closeShell()
+  })
+  renderDock()
+}
+
+/** The stream sends a snapshot again each time it reconnects, as after a tower restart: it replaces the terminal. */
+function mountShell({ data, cols, rows }) {
+  shell.term?.dispose()
+  const id = shell.id
+  const term = new Terminal({ cols, rows, fontSize: DRIVE_FONT, fontFamily: type.mono, cursorBlink: false, scrollback: SHELL_SCROLLBACK, theme: terminalTheme(scheme()) })
+  const fit = new FitAddon.FitAddon()
+  term.loadAddon(fit)
+  term.open($('s-screen'))
+  term.write(data)
+  const typed = (d) => document.activeElement === term.textarea && sendShellKeys(id, d)
+  term.attachCustomKeyEventHandler(terminalKeys(shortcut, typed))
+  term.onData(typed)
+  Object.assign(shell, { term, fit, size: { cols, rows } })
+  fitShell()
+  term.focus()
+}
+
+/** The open shell takes the size of its pane. */
+function fitShell() {
+  if (!shell?.term) return
+  shell.fit.fit()
+  const { cols, rows } = shell.term
+  if (cols === shell.size.cols && rows === shell.size.rows) return
+  shell.size = { cols, rows }
+  told(tower.call('shell/resize', { id: shell.id, cols, rows }))
+}
+
+/** Closes the view only: the shell keeps running until it is killed. */
+function closeShell() {
+  shell?.stop()
+  shell?.term?.dispose()
+  shell = undefined
+  $('s-screen').innerHTML = ''
+  $('main').classList.remove('shell-open')
+  renderDock()
+}
+
+async function spawnShell(project, cwd) {
+  const reply = await told(tower.run(floorOf(project).calls.shell, { cwd }))
+  if (reply) openShell(reply.id)
+}
+
+let shellRefitTimer
+new ResizeObserver(() => {
+  clearTimeout(shellRefitTimer)
+  shellRefitTimer = setTimeout(fitShell, REFIT_DEBOUNCE_MS)
+}).observe($('s-screen'))
+
+$('grip').addEventListener('pointerdown', (e) => {
+  $('grip').setPointerCapture(e.pointerId)
+  const bottom = $('shell-pane').getBoundingClientRect().bottom
+  const tabs = $('tabs').offsetHeight
+  $('grip').onpointermove = (ev) => $('main').style.setProperty('--shell-h', `${Math.max(120, Math.min(innerHeight - 160, bottom - tabs - ev.clientY))}px`)
+  $('grip').onpointerup = () => ($('grip').onpointermove = null)
+})
+
+/** The draft the spawn dialog was opened with, deleted once its session starts. */
+let spawnDraft
+
+function openSpawn(projectId, sent) {
+  const f = board.floors.find((f) => f.id === projectId)
+  const top = floorsTopDown()
+  spawnDraft = sent?.d
+  $('spawn').dataset.project = projectId
+  $('spawn').innerHTML = spawnFormHtml(f, { sign: signHtml(top.length - top.indexOf(f), f.name), draft: sent && titleOf(sent.text) })
+  $('spawn').querySelector('[name=prompt]').value = sent?.text ?? ''
+  syncSpawn()
+  $('spawn').returnValue = ''
+  $('spawn').showModal()
+  $('spawn').querySelector('[name=prompt]').focus()
+}
+
+/** The form's values as they stand, its branch placeholder and summary redrawn from them. */
+function syncSpawn() {
+  const f = floorOf($('spawn').dataset.project)
+  const form = $('spawn').querySelector('form')
+  const v = spawnForm(f, new FormData(form))
+  form.querySelector('[name=branch]').placeholder = branchPlaceholder(f, v.name)
+  form.querySelector('[data-summary]').innerHTML = spawnSummaryHtml(f, v)
+  return v
+}
+$('spawn').addEventListener('input', syncSpawn)
+$('spawn').addEventListener('click', (e) => {
+  const close = e.target.closest('[data-close]')?.dataset.close
+  if (close === 'start' && !$('spawn').querySelector('form').reportValidity()) return
+  if (close) $('spawn').close(close)
+})
+$('spawn').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('spawn').querySelector('[data-close=start]').click()
+})
+
+$('spawn').addEventListener('close', async () => {
+  if ($('spawn').returnValue !== 'start') return
+  const f = floorOf($('spawn').dataset.project)
+  const reply = await told(tower.run(...spawnCall(f, syncSpawn())))
+  if (!reply) return
+  if (reply.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
+  if (spawnDraft) await deleteSent(spawnDraft)
+  selectArriving(reply.id)
+})
+
+async function resume(call) {
+  const reply = await tower.run(call).catch((err) => toast(err.message))
+  if (reply?.t === 'spawned') selectArriving(reply.id)
+}
+
+/** A file's Finder and editor buttons, wherever they are drawn, before any other click handling sees the click. */
+document.addEventListener(
+  'click',
+  (e) => {
+    const file = fileCall(e.target)
+    if (!file) return
+    e.stopPropagation()
+    told(tower.run(file))
+  },
+  true,
+)
+
+document.addEventListener('click', (e) => {
+  const spawn = e.target.closest('[data-spawn]')
+  if (spawn) return openSpawn(spawn.dataset.spawn)
+  const newDraft = e.target.closest('[data-new-draft]')
+  if (newDraft) return openDraft(newDraft.dataset.newDraft)
+  const draft = e.target.closest('[data-draft]')
+  if (draft) return openDraft(draft.dataset.draft, draft.dataset.item)
+  const copy = e.target.closest('[data-copy]')?.dataset.copy
+  if (copy) return navigator.clipboard.writeText(copy).then(() => toast(`Copied ${copy}`), (err) => toast(err.message))
+  const draftAct = e.target.closest('[data-draft-act]')?.dataset.draftAct
+  if (draftAct === 'send') return sendDraft()
+  if (draftAct === 'transfer') return openTransfer()
+  if (draftAct === 'delete') return deleteDraft()
+  if (draftAct === 'reload' || draftAct === 'keep') return settleConflict(draftAct === 'reload')
+  const wtCall = e.target.closest('[data-wt-call]')
+  if (wtCall) return told(tower.run(JSON.parse(wtCall.dataset.wtCall)))
+  const tidy = e.target.closest('[data-tidy]')
+  if (tidy) return told(tower.run(floorOf(tidy.dataset.tidy).calls.tidy)).then((r) => r && toast(tidiedLine(r)))
+  const picked = e.target.closest('[data-pick]')?.dataset.pick
+  if (picked) return pickLine(picked, e.shiftKey)
+  if (e.target.closest('[data-pick-add]')) return addPicked()
+  if (e.target.closest('[data-pick-cancel]')) return (dropPick(), drawChanges())
+  if (e.target.closest('[data-note-add]')) return addWritten()
+  const reply = e.target.closest('[data-reply]')?.dataset.reply
+  if (reply) return replyTo(Number(reply))
+  if (e.target.closest('[data-reply-clear]')) return ((noteRe = undefined), render())
+  const toNote = e.target.closest('[data-to-note]')?.dataset.toNote
+  if (toNote) return $('reviews').querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
+  const anchored = e.target.closest('[data-anchor]')?.dataset.anchor
+  if (anchored) return showAnchor(anchored)
+  if (e.target.closest('[data-send]')) return sendNotes(findCard(selected))
+  const thread = e.target.closest('[data-thread]')?.dataset.thread
+  if (thread) return openThread(...thread.split('|'))
+  const resumeButton = e.target.closest('[data-resume]')
+  if (resumeButton) return resume(JSON.parse(resumeButton.dataset.resume))
+  if (e.target.closest('[data-side]')) return toggleSide()
+  const sideTo = e.target.closest('[data-side-view]')?.dataset.sideView
+  if (sideTo) return showSideView(sideTo)
+  const scope = e.target.closest('[data-stats-scope]')?.dataset.statsScope
+  if (scope) return ((statsView.all = scope === STATS_ALL), drawSideView())
+  const range = e.target.closest('[data-stats-range]')?.dataset.statsRange
+  if (range) return (Object.assign(statsView, { range, stats: undefined }), remember('tower.statsRange', range), drawSideView(), readStats())
+  if (e.target.closest('[data-stats-read]')) return readStats()
+  if (e.target.closest('[data-keys]')) return showKeys()
+  const move = e.target.closest('[data-move]')?.dataset.move
+  if (move) return go(move)
+  const dismissed = e.target.closest('[data-dismiss]')?.dataset.dismiss
+  if (dismissed) return dismissWait(dismissed)
+  const unshowKey = e.target.closest('[data-unshow]')?.dataset.unshow
+  if (unshowKey) return unshow(unshowKey)
+  const out = e.target.closest('[data-out]')?.dataset.out
+  if (out) return window.open(out, '_blank', 'noreferrer')
+  const pane = e.target.closest('[data-pane]')?.dataset.pane
+  if (pane) return showPane(pane)
+  const viewed = e.target.closest('[data-viewed]')?.dataset.viewed
+  if (viewed) return toggleViewed(viewed)
+  const fold = e.target.closest('[data-fold]')?.dataset.fold
+  if (fold) return toggleFold(fold)
+  if (e.target.closest('[data-changes-read]')) return readChanges(selected)
+  const open = e.target.closest('[data-open]')
+  if (open) return told(tower.run(floorOf(open.dataset.openProject).calls.editor, { dir: open.dataset.open }))
+  const shelved = e.target.closest('[data-shelf]')
+  if (shelved) return openShelf(shelved.dataset.shelf, Number(shelved.dataset.n))
+  const doc = e.target.closest('[data-doc]')
+  if (doc) return showDoc(doc.dataset.doc)
+  if (e.target.closest('[data-shelf-retry]')) return openShelf(shelfOpen.project, shelfOpen.n)
+  const newShell = e.target.closest('[data-shell-dir]')
+  if (newShell) return spawnShell(newShell.dataset.shellProject, newShell.dataset.shellDir)
+  const killShell = e.target.closest('[data-kill-shell]')?.dataset.killShell
+  if (killShell) {
+    const sh = board.shells.find((sh) => sh.id === killShell)
+    return confirm(`Kill the shell in ${shellWhere(sh)} (${sh.activity})?`) && told(tower.call('shell/kill', { id: killShell }))
+  }
+  const tab = e.target.closest('[data-shell]')?.dataset.shell
+  if (tab) return tab === shell?.id ? closeShell() : openShell(tab)
+  const archive = e.target.closest('[data-archive]')?.dataset.archive
+  if (archive) return archiveOpen?.project === archive ? goHome() : openArchive(archive)
+  const section = e.target.closest('[data-section]')?.dataset.section
+  if (section) return toggleSection(section)
+  const reapOne = e.target.closest('[data-reap-process]')?.dataset.reapProcess
+  if (reapOne) return tower.run(JSON.parse(reapOne)).catch((err) => toast(err.message))
+  const reapable = e.target.closest('[data-reap]')
+  if (reapable) {
+    const c = findCard(reapable.dataset.reap)
+    const list = c.resources.map((r) => `${r.pid}  ${r.command}`).join('\n')
+    if (confirm(`End what ${callsign(c.id)} left running?\n\n${list}`)) tower.run(c.calls.reap).catch((err) => toast(err.message))
+    return
+  }
+  const act = e.target.closest('[data-act]')?.dataset.act
+  if (act === 'send-home') return sendHome(findCard(selected))
+  if (act === 'kill') return confirm(`Kill ${callsign(selected)}?`) && tower.run(findCard(selected).calls.kill).catch((err) => toast(err.message))
+  if (act === 'review') {
+    const author = findCard(selected)
+    return tower.run(author.calls.review).then((r) => toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`)).catch((err) => toast(err.message))
+  }
+  if (act === 'home') return goHome()
+  if (act === 'drive') {
+    showPane('screen')
+    return term?.focus()
+  }
+  const crewFolded = e.target.closest('[data-crew-fold]')?.dataset.crewFold
+  if (crewFolded) return toggleCrewFold(crewFolded)
+  const card = e.target.closest('[data-id]')
+  if (card) select(card.dataset.id)
+})
+$('home').onclick = goHome
+
+document.addEventListener('change', (e) => {
+  const picker = e.target.closest('[data-send-pick]')
+  if (!picker) return
+  const c = findCard(selected)
+  sendPicks.set(`${c.project}/${threadCheckoutOf(c)}`, picker.value)
+  render()
+})
+
+$('screen').addEventListener('input', (e) => {
+  if (e.target.matches('[data-note-text]')) noteDrafts.set(draftKey(findCard(selected)), e.target.value)
+  if (e.target.matches('[data-pick-text]')) pickText = e.target.value
+})
+
+$('screen').addEventListener('keydown', (e) => {
+  const submit = (e.metaKey || e.ctrlKey) && e.key === 'Enter'
+  if (e.target.matches('[data-note-text]') && submit) return (e.preventDefault(), addWritten())
+  if (e.target.matches('[data-pick-text]') && submit) return (e.preventDefault(), addPicked())
+  if (e.target.matches('[data-pick-text]') && e.key === 'Escape') return (e.preventDefault(), dropPick(), drawChanges())
+})
+$('bell').onclick = async () => (await Notification.requestPermission(), bell())
+$('ring').onclick = cycleRing
+
+/**
+ * The viewer's scheme choice, kept in this browser: `auto` follows the system's appearance. The stylesheet reads it
+ * from the root's `data-scheme`; terminals, the framed documents and the open shelf page are told again whenever it changes.
+ */
+const SCHEMES = ['auto', 'light', 'dark']
+const SCHEME_ICON = { auto: '◐', light: '☀', dark: '☾' }
+const SCHEME_TITLE = { auto: 'colours follow your system: click for light', light: 'light: click for dark', dark: 'dark: click to follow your system' }
+const darkSystem = matchMedia('(prefers-color-scheme: dark)')
+const chosenScheme = () => document.documentElement.dataset.scheme || 'auto'
+const scheme = () => (chosenScheme() === 'auto' ? (darkSystem.matches ? 'dark' : 'light') : chosenScheme())
+
+function showScheme() {
+  $('scheme').textContent = SCHEME_ICON[chosenScheme()]
+  $('scheme').title = SCHEME_TITLE[chosenScheme()]
+}
+
+function applyScheme() {
+  showScheme()
+  for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
+  briefKey = undefined
+  shownDrawn = undefined
+  if (shelfOpen?.file) showDoc(shelfOpen.file)
+  sendScheme()
+  render()
+}
+
+$('scheme').onclick = () => {
+  const next = SCHEMES[(SCHEMES.indexOf(chosenScheme()) + 1) % SCHEMES.length]
+  document.documentElement.dataset.scheme = next === 'auto' ? '' : next
+  remember('tower.scheme', next === 'auto' ? '' : next)
+  applyScheme()
+}
+darkSystem.addEventListener('change', applyScheme)
+showScheme()
+
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open
+
+/** Every shortcut of this page in one place, the move keys as the header names them. */
+const KEYS = [
+  [`<kbd>${MOVE_KEYS.prev.label}</kbd> <kbd>${MOVE_KEYS.next.label}</kbd>`, "previous or next worker on duty, in the sidebar's order: the top floor first, each floor's crews in order. Works in a terminal too"],
+  [`<kbd>${MOVE_KEYS.waiting.label}</kbd> · <kbd>N</kbd>`, 'next worker waiting on you: a question first, then whoever has waited longest. N outside a terminal or a field'],
+  ['<kbd>⌘B</kbd>', 'hide or show the sidebar'],
+  ['<kbd>Esc</kbd>', 'back to the skyline, outside a terminal or a field'],
+  ['<kbd>?</kbd>', 'this sheet, outside a terminal or a field'],
+  ...NATURAL_KEYS.map((k) => [`<kbd>${k.label}</kbd>`, k.does]),
+  ['<kbd>⌘S</kbd>', 'save the open draft'],
+  ['<kbd>⌘⏎</kbd>', 'start a session: from the open draft, or in the new session dialog'],
+]
+
+function showKeys() {
+  $('keys-list').innerHTML = KEYS.map(([keys, what]) => `<span>${keys}</span><span>${what}</span>`).join('')
+  $('keys').showModal()
+}
+
+/** Keys that work everywhere, the terminal included. Returns whether `e` was one. */
+function shortcut(e) {
+  if (e.type !== 'keydown') return false
+  const plain = !e.metaKey && !e.ctrlKey && !e.altKey
+  const move = moveOfKey(e)
+  if (move) e.repeat || go(move)
+  else if (e.metaKey && e.key === 'b') toggleSide()
+  else if (plain && e.key === 'n' && !isTyping()) go('waiting')
+  else if (plain && e.key === '?' && !isTyping()) showKeys()
+  else if (plain && e.key === 'Escape' && (selected || shelfOpen || draftOpen || archiveOpen) && !isTyping()) goHome()
+  else return false
+  e.preventDefault()
+  return true
+}
+
+/** The terminal's own key handler already ran `shortcut` on keys typed into it. */
+document.addEventListener('keydown', (e) => {
+  if (!e.defaultPrevented) shortcut(e)
+})
+
+/** xterm measures its cells when it opens: the terminal face must be loaded by then. */
+await Promise.all([`${DRIVE_FONT}px ${type.mono}`, `700 ${DRIVE_FONT}px ${type.mono}`].map((font) => document.fonts.load(font)))
+
+told(tower.get('origins')).then((o) => o && ((origins = o), render()))
+
+/** Every renderer of the same system: this one, the others to open, and those not built yet. */
+told(tower.get('renderers')).then((r) => r && ($('renderers').innerHTML = renderersHtml(r.renderers, location.pathname.split('/')[2], tower.framed)))
+
+let opened = false
+/** The board's failure stays on screen over the last board drawn, until the tower sends a board again. */
+const showBoardError = () =>
+  ($('board-error').innerHTML = boardError ? `<b>The tower can't build the board</b>${esc(boardError.message)}` : '')
+
+tower.onBoardError((err) => {
+  boardError = err
+  showBoardError()
+  sendBoard()
+})
+
+tower.subscribe(async (next) => {
+  await Promise.all([readHeed(), readCrewFolds()])
+  board = next
+  boardError = undefined
+  showBoardError()
+  attend(next)
+  noticeShown(cards())
+  freshArchives()
+  pruneDraftTitles(board.floors)
+  sendBoard()
+  void followDraft()
+  if (arriving && findCard(arriving)) return select(arriving)
+  const wanted = !opened && location.hash.slice(1)
+  opened = true
+  if (wanted && wanted.startsWith('shelf/')) {
+    const [, project, n, file] = wanted.split('/')
+    return openShelf(project, Number(n), file && decodeURIComponent(file))
+  }
+  if (wanted && wanted.startsWith('draft/')) {
+    const [, project, id] = wanted.split('/')
+    const drafts = board.floors.find((f) => f.id === project)?.collections.find((c) => c.id === DRAFTS)
+    if (drafts && (!id || drafts.items.some((i) => i.id === decodeURIComponent(id)))) return openDraft(project, id && decodeURIComponent(id))
+  }
+  if (wanted && wanted.startsWith('archive/')) return openArchive(wanted.slice('archive/'.length))
+  if (wanted && (await lookUp(wanted))) return select(wanted)
+  render()
+})
+setInterval(tick, 1000)
+showSideView(sideView)
+</script>
+</body>
+</html>

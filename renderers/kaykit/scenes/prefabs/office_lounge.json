@@ -1,0 +1,17 @@
+{
+ "title": "office lounge",
+ "note": "A sitting corner for the office floor, origin at the rug's centre, the couch's back toward -z: a couch and two armchairs round a low table, a sideboard behind the couch closing it off from the desks, a standing lamp, a side table with a lamp, and planters.",
+ "items": [
+  { "model": "furniture/rug_rectangle_B", "at": [0, 0, 0.1], "scale": [2.1, 1, 2.5] },
+  { "model": "furniture/couch_pillows", "at": [0, 0, -1.05] },
+  { "model": "furniture/armchair", "at": [-1.8, 0, 0.45], "turn": 90 },
+  { "model": "furniture/armchair_pillows", "at": [1.8, 0, 0.45], "turn": 270 },
+  { "model": "furniture/table_low_decorated", "at": [0, 0, 0.35] },
+  { "model": "furniture/cabinet_medium_decorated", "at": [0, 0, -2.05], "turn": 180 },
+  { "model": "furniture/lamp_standing", "at": [-1.75, 0, -1.2] },
+  { "model": "furniture/table_small", "at": [1.85, 0, -1.15], "scale": [0.75, 0.75, 0.75] },
+  { "model": "furniture/lamp_table", "at": [1.85, 0.56, -1.15], "scale": 0.55 },
+  { "scene": "planter.json", "at": [-2.9, 0, -2.0] },
+  { "scene": "planter.json", "at": [2.9, 0, -2.0] }
+ ]
+}

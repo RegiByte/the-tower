@@ -1,0 +1,9 @@
+#!/bin/sh
+# The tower command (src/cli.ts): on the PATH of every session the tower mod is loaded into, and the package's bin.
+self="$0"
+while [ -L "$self" ]; do
+  link="$(readlink "$self")"
+  case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac
+done
+root="$(cd "$(dirname "$self")/../../.." && pwd)"
+exec "$root/node_modules/.bin/tsx" "$root/src/cli.ts" "$@"

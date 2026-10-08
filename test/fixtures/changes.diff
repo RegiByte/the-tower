@@ -1,0 +1,69 @@
+diff --git a/blob.bin b/blob.bin
+index 8352675..d0c3599 100644
+Binary files a/blob.bin and b/blob.bin differ
+diff --git a/gone.txt b/gone.txt
+deleted file mode 100644
+index 286c5f5..0000000
+--- a/gone.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-gone
+diff --git a/keep.txt b/keep.txt
+index 0ff3bbb..c9fbe27 100644
+--- a/keep.txt
++++ b/keep.txt
+@@ -2,7 +2,7 @@
+ 2
+ 3
+ 4
+-5
++five
+ 6
+ 7
+ 8
+@@ -12,7 +12,7 @@
+ 12
+ 13
+ 14
+-15
++fifteen
+ 16
+ 17
+ 18
+diff --git a/moved.txt b/renamed.txt
+similarity index 91%
+rename from moved.txt
+rename to renamed.txt
+index e8823e1..6bbe250 100644
+--- a/moved.txt
++++ b/renamed.txt
+@@ -27,4 +27,4 @@
+ 27
+ 28
+ 29
+-30
++thirty
+diff --git a/same.txt b/same-renamed.txt
+similarity index 100%
+rename from same.txt
+rename to same-renamed.txt
+diff --git a/script.sh b/script.sh
+old mode 100644
+new mode 100755
+diff --git "a/tab\tname.txt" "b/tab\tname.txt"
+index 587be6b..975fbec 100644
+--- "a/tab\tname.txt"
++++ "b/tab\tname.txt"
+@@ -1 +1 @@
+-x
++y
+diff --git a/tail.txt b/tail.txt
+index 20cbb4d..e195481 100644
+--- a/tail.txt
++++ b/tail.txt
+@@ -1 +1,2 @@
+-no newline
+\ No newline at end of file
++no newline
++now one
+\ No newline at end of file

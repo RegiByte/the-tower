@@ -1,0 +1,7 @@
+{
+ "title": "city model table",
+ "note": "The table the lobby's city model stands on, origin at its centre on the floor, 2.25 m long along x and 1.35 m deep, its top at 0.75 m: the office stretches it along x to fit a building per project.",
+ "items": [
+  { "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1, 1, 0.9] }
+ ]
+}

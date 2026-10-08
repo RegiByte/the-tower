@@ -1,0 +1,10 @@
+{
+ "title": "low planter",
+ "note": "A long low planter for under a window, origin at its base centre, long along x: a crate with three bushes in it, overlapping on purpose so they read as one hedge.",
+ "items": [
+  { "model": "restaurant/crate", "at": [0, 0, 0], "scale": [1, 0.62, 0.36] },
+  { "model": "city/bush_B", "at": [-0.5, 0.33, 0], "turn": 10, "scale": 1.4 },
+  { "model": "city/bush_A", "at": [0.02, 0.33, 0.02], "turn": 70, "scale": 1.5 },
+  { "model": "city/bush_B", "at": [0.52, 0.33, -0.02], "turn": 200, "scale": 1.35 }
+ ]
+}

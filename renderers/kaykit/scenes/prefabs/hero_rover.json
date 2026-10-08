@@ -1,0 +1,8 @@
+{
+ "title": "hero: rover",
+ "note": "The base's command rover parked on a landing pad, origin at the pad's centre: the floor's hero.",
+ "items": [
+  {"model": "space/landingpad_large", "at": [0, 0, 0], "scale": 1.25},
+  {"model": "space/mobile_base_command", "at": [0, 0.625, 0], "turn": 20, "scale": 1.33}
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "title": "desk: done",
+ "note": "A worker that finished: a pizza box per finished turn (four here), a green screen.",
+ "items": [
+  { "scene": "workstation.json", "at": [0, 0, 0] },
+  { "model": "restaurant/pizzabox_closed", "at": [0.75, 0.75, -0.15], "turn": -10, "scale": 0.7 },
+  { "model": "restaurant/pizzabox_closed", "at": [0.75, 0.813, -0.15], "turn": 7, "scale": 0.7 },
+  { "model": "restaurant/pizzabox_closed", "at": [0.75, 0.876, -0.15], "turn": -6, "scale": 0.7 },
+  { "model": "restaurant/pizzabox_closed", "at": [0.75, 0.939, -0.15], "turn": 2, "scale": 0.7 }
+ ],
+ "boxes": [{ "size": [0.86, 0.5, 0.01], "at": [-0.15, 0.98, -0.155], "color": "#7fbf7f", "glow": true }]
+}

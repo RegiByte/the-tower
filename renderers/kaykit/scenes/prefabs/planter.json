@@ -1,0 +1,8 @@
+{
+ "title": "planter",
+ "note": "A tall plant in a wooden planter box, origin at the box's base centre: a City Builder tree at potted-plant size.",
+ "items": [
+  { "model": "restaurant/crate", "at": [0, 0, 0], "scale": [0.42, 0.6, 0.42] },
+  { "model": "city/tree_A", "at": [0, 0.34, 0], "turn": 20, "scale": 1.15 }
+ ]
+}

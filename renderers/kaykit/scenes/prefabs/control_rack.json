@@ -1,0 +1,7 @@
+{
+ "title": "control room rack",
+ "note": "A dark locker standing in for a server rack, origin at its base centre, its doors toward +z.",
+ "items": [
+  { "model": "prototype/Locker_Decorated", "at": [0, 0, 0] }
+ ]
+}

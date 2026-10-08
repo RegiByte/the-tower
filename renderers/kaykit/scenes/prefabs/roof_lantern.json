@@ -1,0 +1,7 @@
+{
+ "title": "roof lantern",
+ "note": "A lantern on a post for the roof's edge, origin at the post's foot, the lantern hanging toward +z.",
+ "items": [
+  { "model": "halloween/post_lantern", "at": [0, 0, 0], "scale": 0.75 }
+ ]
+}

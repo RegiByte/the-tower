@@ -1,0 +1,15 @@
+{
+ "title": "lounge",
+ "note": "A lounge around a low table, origin at the table: a couch, two armchairs facing in, a standing lamp, plants, a game console on the table.",
+ "items": [
+  { "model": "furniture/rug_oval_A", "at": [0, 0, 0] },
+  { "model": "furniture/couch_pillows", "at": [0, 0, 1.6], "turn": 180 },
+  { "model": "furniture/armchair", "at": [-2.1, 0, 0], "turn": 90 },
+  { "model": "furniture/armchair_pillows", "at": [2.1, 0, 0], "turn": 270 },
+  { "model": "furniture/table_low_decorated", "at": [0, 0, 0] },
+  { "model": "furniture/gameconsole_handheld", "at": [0.3, 0.41, 0], "turn": 30, "scale": 0.6 },
+  { "model": "furniture/lamp_standing", "at": [2.5, 0, 1.9] },
+  { "model": "city/tree_C", "at": [4.6, 0, 2.6], "scale": 2.2 },
+  { "model": "city/bush", "at": [-3, 0, 2.4], "scale": 3 }
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "title": "lobby waiting",
+ "note": "A waiting corner for the lobby, origin at the rug's centre: two couches facing each other across a low table, a standing lamp and two tall planters.",
+ "items": [
+  { "model": "furniture/rug_rectangle_stripes_A", "at": [0, 0, 0], "scale": [2.0, 0.5, 2.4] },
+  { "model": "furniture/couch_pillows", "at": [0, 0, -1.25] },
+  { "model": "furniture/couch", "at": [0, 0, 1.25], "turn": 180 },
+  { "model": "furniture/table_low", "at": [0, 0, 0] },
+  { "model": "furniture/book_set", "at": [0.3, 0.465, 0.05], "turn": 80, "scale": 0.45 },
+  { "model": "furniture/cup", "at": [-0.35, 0.38, -0.1], "scale": 0.45 },
+  { "model": "furniture/lamp_standing", "at": [-1.75, 0, -1.3] },
+  { "scene": "planter_tall.json", "at": [1.9, 0, -1.3] },
+  { "scene": "planter_tall.json", "at": [-1.9, 0, 1.3] }
+ ]
+}

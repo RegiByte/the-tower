@@ -1,0 +1,11 @@
+{
+ "title": "roof mechanicals",
+ "note": "A cluster of rooftop plant from the Space Base pack, origin at its centre, its back toward -z: a water tank, two solar modules and stacked cargo.",
+ "items": [
+  { "model": "space/water_storage", "at": [-2.4, 0, 0], "scale": 1.25 },
+  { "model": "space/roofmodule_solarpanels", "at": [0.2, 0.12, -0.6], "scale": 1.2 },
+  { "model": "space/roofmodule_solarpanels", "at": [1.95, 0.12, -0.6], "scale": 1.2 },
+  { "model": "space/roofmodule_cargo_B", "at": [1.1, 0.1, 1.2], "turn": 90 },
+  { "model": "space/cargo_A_stacked", "at": [-0.6, 0, 1.3], "turn": 15 }
+ ]
+}

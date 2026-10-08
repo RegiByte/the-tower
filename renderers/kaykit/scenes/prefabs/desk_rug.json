@@ -1,0 +1,7 @@
+{
+ "title": "desk rug",
+ "note": "A thin rug under a workstation and its chair, origin at its centre: an L desk 3.15 m wide with the chair a metre behind it.",
+ "items": [
+  { "model": "furniture/rug_rectangle_B", "at": [0, 0, 0], "scale": [1.62, 0.35, 1.9] }
+ ]
+}
