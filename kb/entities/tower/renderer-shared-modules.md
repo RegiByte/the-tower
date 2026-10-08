@@ -31,7 +31,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
   ([[settings-and-tips]]).
 - `markdown.ts`: markdown as html, the only way either renderer draws it ([[markdown-safe]]).
-- `cards.ts` also holds the words of the status counts (`ATTENTION_NAME`, `ATTENTION_MEANS`, `WAITING_MEANS`,
+- `cards.ts` also holds what a renderer's live region says as waits begin (`waitsBeganLine`, `WAIT_SAID`), and the words of the status counts (`ATTENTION_NAME`, `ATTENTION_MEANS`, `WAITING_MEANS`,
   `statusLegendHtml`) and of the host's state (`hostState`, `HOST_NAME`, `HOST_MEANS`).
 - `termkeys.ts`: the editing keys of a Mac text field in every browser terminal
   ([`NATURAL_KEYS`](ref:hub/src/shared/termkeys.ts#NATURAL_KEYS)): Shift+Enter sends `\n` (a newline in Claude's

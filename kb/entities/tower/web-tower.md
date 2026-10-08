@@ -4,7 +4,8 @@
   "name": "Web tower",
   "summary": "The disposable web renderer: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf, on 127.0.0.1:4317.",
   "in": "tower",
-  "reviewed": "2026-10-08"
+  "reviewed": "2026-10-08",
+  "refs": ["hub/renderers/page/index.html", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-server]] turns the
@@ -20,3 +21,18 @@ becomes the same conflict. The editing is `/drafts.js`
 prefilled with its text (directory, model and effort picked there), or is submitted to a running worker, then is
 deleted. A session the page
 starts opens once the board carries its card: the host answers before the tower has read the new log.
+
+*Keyboard and screen readers* (2026-10-08). The page is the tower's accessible renderer: Tower 3D's pointer-lock walk
+can't be. Every worker is a link to `#<id>`: a card's callsign, a lit or past window of the skyline, a lamp of the
+collapsed rail and a past worker's callsign in the archive. The page opens what the hash names at load and again on
+`hashchange` (a link, Back, the address bar); every view still writes its own hash in place. The selected worker's
+link is `aria-current`. Its pane tabs are an ARIA tablist (←, →, Home and End move along them and show the pane), and
+the terminal is `inert` while another pane lies over it, so Tab never falls into it unseen. Redraws give focus back to
+the control that had it ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus)), so a board arriving every few
+seconds doesn't throw a keyboard back to the page's start. A polite live region says every toast, and a line for each
+wait that begins and isn't dismissed ([`waitsBeganLine`](ref:hub/src/shared/cards.ts#waitsBeganLine): "ENKI-26 is
+waiting on you: done."), the worker you are watching included. Landmarks: the sidebar's `aside`, the floors' `nav`,
+`main`; floor signs and the selected callsign are level-2 headings; every dialog is named; buttons drawn as a glyph
+carry an `aria-label` and glyphs beside words are hidden from screen readers. Still mouse-only: picking lines for a
+note in Changes, a showing tab's ↗ and ×, a shell tab's ×, a file's Finder and editor buttons (spans, so they can sit
+inside a tab), drafts, threads and shelf files in their lists, and the dock's grip.

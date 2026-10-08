@@ -14,6 +14,7 @@
     "hub/src/shared/panels.ts#statsHtml",
     "hub/src/shared/panels.ts#statsQuery",
     "hub/src/shared/panels.ts#drawPanel",
+    "hub/src/shared/panels.ts#keepingFocus",
     "hub/src/shared/panels.ts#fileCall",
     "hub/src/shared/panels.ts#panelsCss",
     "hub/src/shared/panels.ts#rowCode",
@@ -53,7 +54,9 @@ panels are the same view in both renderers. Only where they sit, their state and
   in two places.
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panels.ts#drawPanel) replaces the element's
   html only when it changed (or something else wrote the element), sets each text box from the renderer's text,
-  and gives focus and caret back to the box that had them. A time is an empty `data-since` span that each
+  and gives focus and caret back to the box that had them, and focus to a control that had it
+  ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus): the element of the same tag and first attribute that
+  names what it does, which a renderer also wraps around its own redraws). A time is an empty `data-since` span that each
   renderer fills on its own clock, so the clock never forces a redraw that would drop a text selection in the diff.
 - *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels.ts#panelsCss)), scoped under the views' own roots
   (`.changes-panel`, `.reviews-panel`). Each renderer adds it as a `<style>`, as `documentCss` is used, and sizes
@@ -107,6 +110,12 @@ time, tokens by model and lines by file kind. Bars are html, so a column's reado
 ([[settings-and-tips]]), with nothing to wire; text stays in ink (lines added and removed wear the diff's colours, as in Changes), and a bar wears its project's colour mixed a quarter toward ink. `data-stats-scope`,
 `data-stats-range` and `data-stats-read` are the attributes a renderer wires. The tower page puts it on the sidebar
 (the floor in view and All floors), Tower 3D on the roof (every project and the overview).
+
+*Keyboard* (2026-10-08). A file's fold is a real button, the header's caret (`data-fold` on it too, with
+`aria-expanded` and the file's path as its name), so a keyboard folds a file the way a click on its header does;
+Viewed was already a button. Picking lines for a note stays a pointer gesture: which keys pick and extend lines is
+open. The file's Finder and editor buttons are spans with a name, out of the Tab order, since they also sit inside a
+showing's tab. The Stats scopes and ranges say which is on with `aria-pressed`.
 
 **Impact.** The tower page and Tower 3D draw Changes, Reviews and Stats through one module. Tower 3D's desk has the full
 Changes: hunks, folds, Viewed (written to `tower.store`), mouse line picking with ⇧ to extend, the note box,

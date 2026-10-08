@@ -10,7 +10,7 @@
  *   data-changes-read          read the worker's Changes again
  *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current
  *   data-file="<key>"          a file's section, by `fileKey`
- *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header)
+ *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
  *   data-viewed="<key>"        mark the file's version viewed, or not: `marksToggled` gives the repo's marks to keep
  *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend); also where an anchor scrolls to
  *   data-pick-text             the note being written under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
@@ -54,8 +54,8 @@ import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor
  * inside a button such as a tab.
  */
 export const fileButtonsHtml = (path: string, line?: number) =>
-  `<span class="file-acts"><span class="file-act" role="button" data-reveal="${esc(path)}" title="reveal ${esc(path)} in Finder">${ICON.finder}</span>` +
-  `<span class="file-act" role="button" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} title="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}</span></span>`
+  `<span class="file-acts"><span class="file-act" role="button" data-reveal="${esc(path)}" aria-label="reveal in Finder" title="reveal ${esc(path)} in Finder">${ICON.finder}</span>` +
+  `<span class="file-act" role="button" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} aria-label="open in your editor" title="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}</span></span>`
 
 /** The call a click on a `data-reveal` or `data-edit` element makes: none when the click was elsewhere. */
 export function fileCall(target: Element): Call<'reveal' | 'edit'> | undefined {
@@ -250,7 +250,7 @@ export function changesHtml(v: ChangesView) {
   const files = changedFiles(read.repos)
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read>↻ Read again</button></div>`
+      <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read><span aria-hidden="true">↻</span> Read again</button></div>`
   return `<div class="changes-panel">${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: livePick(read, v.pick) }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
 }
 
@@ -267,7 +267,7 @@ function fileHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   const folded = isFolded(v.read, v.folds, repo, f)
   const dir = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/') + 1) : ''
   return `<section class="file ${viewed ? 'viewed' : ''} ${folded ? 'folded' : ''}" data-file="${key}">
-    <header data-fold="${key}"><span class="caret">▾</span><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
+    <header data-fold="${key}"><button class="caret" data-fold="${key}" aria-expanded="${!folded}" aria-label="${esc(f.path)}">▾</button><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
       <span class="path">${f.from ? `<i>${esc(f.from)} → </i>` : ''}<i>${esc(dir)}</i>${esc(f.path.slice(dir.length))}</span>
       ${f.change === 'deleted' ? '' : fileButtonsHtml(`${repo.dir}/${f.path}`)}
       <span class="n">${f.added + f.removed ? countsHtml(f.added, f.removed) : ''}</span>
@@ -338,7 +338,7 @@ export function reviewsHtml(v: ThreadView) {
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
       <span><b>${v.thread.messages.length}</b> notes${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${sendHtml(v)}</div>` +
     (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
-    `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear title="not an answer">×</button></div>` : ''}
+    `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" title="not an answer">×</button></div>` : ''}
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
       <div class="actions"><button class="primary" data-note-add>Add note</button></div></div></div>`
 }
@@ -488,10 +488,10 @@ const spreadRow = (label: string, s: Spread, format: (v: number) => string) =>
 export function statsHtml(v: StatsView) {
   const tabs = v.tabs.map((t) => {
     const project = v.projects.find((p) => p.id === t.id)
-    return `<button class="${t.id === v.scope ? 'on' : ''}" data-stats-scope="${esc(t.id)}">${project ? `<i style="background:${seriesColor(project)}"></i>` : ''}${esc(t.label)}</button>`
+    return `<button class="${t.id === v.scope ? 'on' : ''}" aria-pressed="${t.id === v.scope}" data-stats-scope="${esc(t.id)}">${project ? `<i style="background:${seriesColor(project)}"></i>` : ''}${esc(t.label)}</button>`
   }).join('')
-  const ranges = RANGES.map(([r, label]) => `<button class="${r === v.range ? 'on' : ''}" data-stats-range="${r}">${label}</button>`).join('')
-  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read title="read again">↻</button></div></div>`
+  const ranges = RANGES.map(([r, label]) => `<button class="${r === v.range ? 'on' : ''}" aria-pressed="${r === v.range}" data-stats-range="${r}">${label}</button>`).join('')
+  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read aria-label="read again" title="read again">↻</button></div></div>`
   if (!v.stats) return `<div class="stats-panel">${head}<p class="none">reading the stats…</p></div>`
   const st = v.stats
   const all = v.scope === STATS_ALL
@@ -555,25 +555,45 @@ const painted = new WeakMap<HTMLElement, { html: string; root: Element | null }>
 
 /**
  * Puts `html` in `el` when it differs from what `el` shows, then sets each text box to the renderer's text for it:
- * the box that had focus keeps it, and its caret. A redraw that changes nothing leaves every box as it is.
+ * the box that had focus keeps it, and its caret, and a control that had focus keeps it (`keepingFocus`). A redraw that
+ * changes nothing leaves every box as it is.
  */
 export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<TextBox, string>>) {
   const had = document.activeElement
   const box = had instanceof HTMLTextAreaElement && el.contains(had) ? (Object.keys(texts) as TextBox[]).find((b) => had.hasAttribute(`data-${b}`)) : undefined
   const caret = box && [(had as HTMLTextAreaElement).selectionStart, (had as HTMLTextAreaElement).selectionEnd] as const
-  const was = painted.get(el)
-  if (was?.html !== html || was.root !== el.firstElementChild) {
-    el.innerHTML = html
-    painted.set(el, { html, root: el.firstElementChild })
-  }
-  for (const [b, text] of Object.entries(texts) as [TextBox, string][]) {
-    const area = el.querySelector<HTMLTextAreaElement>(`[data-${b}]`)
-    if (area && area.value !== text) area.value = text
-  }
+  keepingFocus(el, () => {
+    const was = painted.get(el)
+    if (was?.html !== html || was.root !== el.firstElementChild) {
+      el.innerHTML = html
+      painted.set(el, { html, root: el.firstElementChild })
+    }
+    for (const [b, text] of Object.entries(texts) as [TextBox, string][]) {
+      const area = el.querySelector<HTMLTextAreaElement>(`[data-${b}]`)
+      if (area && area.value !== text) area.value = text
+    }
+  })
   const again = box && el.querySelector<HTMLTextAreaElement>(`[data-${box}]`)
   if (!again || again === had) return
   again.focus()
   again.setSelectionRange(...caret!)
+}
+
+/** What finds a control again in html drawn anew: its first attribute that names what it does. */
+const IDENTITY = /^(data-(?!tip$|since$|hold$)|href$|popovertarget$)/
+const identityOf = (el: Element) => [...el.attributes].find((a) => IDENTITY.test(a.name))
+
+/**
+ * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: the element of
+ * the same tag and the same first attribute naming what it does (a `data-` one but a tip, a time or a hold, an `href`, a
+ * `popovertarget`), so a keyboard keeps its place through a redraw.
+ */
+export function keepingFocus(el: HTMLElement, write: () => void) {
+  const had = document.activeElement
+  const id = had && had !== el && el.contains(had) ? identityOf(had) : undefined
+  write()
+  if (!id || el.contains(document.activeElement)) return
+  el.querySelector<HTMLElement>(`${had!.localName}[${id.name}="${CSS.escape(id.value)}"]`)?.focus({ preventScroll: true })
 }
 
 /**
@@ -614,7 +634,7 @@ export const panelsCss = `
 .changes-panel .file > header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer;
   background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; font-size: 13px; }
 .changes-panel .file.folded > header { border-radius: var(--radius); }
-.changes-panel .file > header .caret { width: 10px; color: var(--faint); }
+.changes-panel .file > header .caret { width: 10px; padding: 0; border: 0; background: none; font: inherit; color: var(--faint); }
 .changes-panel .file.folded > header .caret { transform: rotate(-90deg); }
 .changes-panel .file > header .mark { font: 700 11px/1 var(--mono); padding: 2px 4px; border-radius: 3px; color: var(--panel); background: var(--muted); }
 .changes-panel .file > header .mark.added { background: var(--added); } .changes-panel .file > header .mark.deleted { background: var(--removed); }

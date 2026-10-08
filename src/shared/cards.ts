@@ -1,4 +1,4 @@
-import type { Attention, Board, Card, Floor, TidyPlan, Unresumable, Wait } from '../bridge/board.ts'
+import type { Attention, Board, Card, Floor, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
 import type { FloorWorktree, WorktreeState } from '../bridge/worktrees.ts'
@@ -313,6 +313,13 @@ export const REMIND_MS = 30_000
 export const RING_NAME: Record<Ring, string> = { once: 'ring once', remind: 'remind every 30s', off: 'silent' }
 /** @deprecated Rings are set in the settings popover, behind the shared `ICON.settings`: `soundSection` of /settings.js. */
 export const RING_MARK: Record<Ring, string> = { once: '🔔', remind: '🔔↻', off: '🔕' }
+
+/** Why a worker waits on you, as a screen reader says it. */
+export const WAIT_SAID: Record<WaitReason, string> = { blocked: 'held by a screen', asks: 'asks you', failed: 'failed', done: 'done' }
+
+/** What a renderer's polite live region says as `began` waits begin (`transitions`): one sentence per wait, empty for none. */
+export const waitsBeganLine = (began: Wait[], callsignOf: (id: string) => string) =>
+  began.map((w) => `${callsignOf(w.id)} is waiting on you: ${WAIT_SAID[w.reason]}.`).join(' ')
 
 export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worker waits again'
 

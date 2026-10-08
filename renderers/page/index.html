@@ -103,6 +103,7 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .sess.sel { outline: 2px solid var(--ink); outline-offset: 1px; }
 .sess.waits { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
 .sess .top { display: flex; align-items: center; gap: 8px; }
+.sess .call, .past .call { color: inherit; text-decoration: none; }
 .sess .call { font: 800 13px/1 var(--display); letter-spacing: .04em; padding-top: 2px; white-space: nowrap; }
 .sess .st { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sess.needs .st { color: var(--needs); }
@@ -338,10 +339,11 @@ dialog .actions small { margin-right: auto; }
   color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; max-width: min(720px, 90vw); }
 .board-error b { display: block; margin-bottom: 2px; }
 .board-error:empty { display: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
 <body>
-<aside class="side">
+<aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><span class="host" id="host"></span>
     <button class="head-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
     <button class="help" data-keys aria-label="shortcuts" data-tip="shortcuts and what the statuses mean (?)">?</button><button class="side-toggle" data-side aria-label="hide the sidebar" data-tip="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
@@ -349,13 +351,13 @@ dialog .actions small { margin-right: auto; }
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
   <div class="side-views"><button data-side-view="floors">Floors</button><button data-side-view="stats" title="spend, work and waits, from the logs">Stats</button></div>
-  <div class="floors" id="floors"></div>
+  <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>
   <div class="side-foot" id="side-foot"></div>
   <div class="side-renderers" id="renderers"></div>
   <div class="rail" id="rail"></div>
 </aside>
-<section class="main home" id="main">
+<main class="main home" id="main">
   <div class="bar">
     <div class="bar-top"><div id="bar-info"></div><div id="bar-actions"></div></div>
     <div class="tab-row" id="bar-line"></div>
@@ -363,11 +365,11 @@ dialog .actions small { margin-right: auto; }
   <div id="bar-details" popover></div>
   <div id="bar-left" popover></div>
   <div class="ask" id="ask"></div>
-  <div class="screen" id="screen"><div class="term" id="c-screen"></div><span id="c-mode"></span>
-    <div class="brief"><iframe id="brief-doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>
-    <div class="shown" id="shown"></div>
-    <div class="changes" id="changes"></div>
-    <div class="reviews" id="reviews"></div></div>
+  <div class="screen" id="screen"><div class="term" id="c-screen" role="tabpanel" aria-label="Terminal"></div><span id="c-mode"></span>
+    <div class="brief" id="brief" role="tabpanel" aria-label="Brief"><iframe id="brief-doc" title="Brief" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>
+    <div class="shown" id="shown" role="tabpanel" aria-label="Shown"></div>
+    <div class="changes" id="changes" role="tabpanel" aria-label="Changes"></div>
+    <div class="reviews" id="reviews" role="tabpanel" aria-label="Reviews"></div></div>
   <div class="shelf-view" id="shelf-view"><div class="shelf-head" id="shelf-head"></div><div class="shelf-body" id="shelf-body"></div></div>
   <div class="archive-view" id="archive-view"><div class="shelf-head" id="archive-head"></div><div class="archive" id="archive-list"></div></div>
   <div class="draft-view" id="draft-view"><div class="shelf-head" id="draft-head"></div><div class="draft-note" id="draft-note"></div>
@@ -378,18 +380,18 @@ dialog .actions small { margin-right: auto; }
     <div class="tabs" id="tabs"></div>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div></div>
   </div>
-</section>
-<dialog id="spawn" class="spawn"></dialog>
-<dialog id="transfer">
+</main>
+<dialog id="spawn" class="spawn" aria-label="New worker"></dialog>
+<dialog id="transfer" aria-labelledby="transfer-title">
   <form method="dialog">
     <h2 id="transfer-title">SEND TO A WORKER</h2>
     <div class="targets" id="transfer-targets"></div>
     <div class="actions"><small>the draft is typed into the worker's prompt and submitted</small><button value="">Cancel</button></div>
   </form>
 </dialog>
-<dialog id="keys">
+<dialog id="keys" aria-labelledby="keys-title">
   <form method="dialog">
-    <h2>Shortcuts</h2>
+    <h2 id="keys-title">Shortcuts</h2>
     <div class="keys" id="keys-list"></div>
     <h2 class="legend-head">Statuses</h2>
     <div class="keys legend" id="keys-legend"></div>
@@ -397,16 +399,17 @@ dialog .actions small { margin-right: auto; }
   </form>
 </dialog>
 <div class="toast" id="toast"></div>
+<div class="sr-only" id="announce" role="status"></div>
 <div class="board-error" id="board-error" role="alert"></div>
 <script src="/tower.js"></script>
 <script src="/xterm.js"></script>
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, KILL_COST, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
 import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
 import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
@@ -499,10 +502,10 @@ const byStart = (a, b) => a.startedAt - b.startedAt
 
 const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
     ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ resume</button></div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button></div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
@@ -517,7 +520,7 @@ const crewHtml = (cards, c) => {
   const { drawn, home, folded } = crewFold(cards, c)
   const open = crewsUnfolded.has(c.id)
   const fold = home.length
-    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}">${open ? '▾' : '▸'} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
+    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}"><span aria-hidden="true">${open ? '▾' : '▸'}</span> ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
     : ''
   const under = drawn.map((h) => crewHtml(cards, h)).join('') + fold
   return sessionHtml(c) + (under ? `<div class="crew">${under}</div>` : '')
@@ -539,7 +542,7 @@ function toggleCrewFold(id) {
 const unresumableHtml = (c) => `<span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
 
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" title="resume this conversation">↻</button>`
+  ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
 
 const pastConversationHtml = (c, conv) =>
@@ -550,15 +553,15 @@ const pastConversationHtml = (c, conv) =>
 /** A past worker and the conversations it held, oldest first. */
 const pastHtml = (c) =>
   `<div class="past ${c.attention} ${c.id === selected ? 'sel' : ''}" data-id="${c.id}">
-    <div class="head" title="${statusName(c)}"><span class="lamp"></span><span class="call">${callsign(c.id)}</span><span class="when">${c.unresumable ? `${unresumableHtml(c)} · ` : ''}${when(c.startedAt)}</span></div>
+    <div class="head" title="${statusName(c)}"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="when">${c.unresumable ? `${unresumableHtml(c)} · ` : ''}${when(c.startedAt)}</span></div>
     ${c.conversations.map((conv) => pastConversationHtml(c, conv)).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
   </div>`
 
 const dirHtml = (f, dir, hub) =>
   `<div class="dir"><span class="dname" title="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
-    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
-    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
+    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
 
 /** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
@@ -579,8 +582,8 @@ const worktreeHtml = (f, w) => {
   return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
-    ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
-    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
   </div>`
 }
 
@@ -633,7 +636,7 @@ const draftsHtml = (f) => {
     const meta = [item.tag, item.keptBy?.callsign].filter(Boolean).join(' · ')
     return `<div class="draft ${open ? 'sel' : ''}" data-draft="${f.id}" data-item="${esc(item.id)}"><span class="t">${esc(draftTitle(f.id, item))}</span><span class="meta">${esc(meta)}</span></div>`
   })
-  return `<div class="drafts"><div class="drafts-head">${esc(drafts.label)}<button data-new-draft="${f.id}" title="new draft">+</button></div>${drafts.description ? `<div class="drafts-about">${esc(drafts.description)}</div>` : ''}${rows.join('') || '<div class="empty">none kept</div>'}</div>`
+  return `<div class="drafts"><div class="drafts-head">${esc(drafts.label)}<button data-new-draft="${f.id}" aria-label="new draft" title="new draft">+</button></div>${drafts.description ? `<div class="drafts-about">${esc(drafts.description)}</div>` : ''}${rows.join('') || '<div class="empty">none kept</div>'}</div>`
 }
 
 /**
@@ -647,13 +650,14 @@ function traysHtml(f) {
   const past = pastCount(f)
   const threads = f.threads.length
   const tidy = can(f, 'tidy')
-  const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" title="${title}">${label}</button>`
+  const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" title="${title}">${label}</button>`
+  const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
-    drafts && tray('drafts', `✎ <b>${drafts.items.length}</b> ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
-    trees && tray('worktrees', `⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
-    threads && tray('threads', `◇ <b>${threads}</b> thread${threads === 1 ? '' : 's'}`, esc(reviewsOf(f)?.description ?? 'review threads, one per checkout')),
-    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" title="past workers and their conversations, in the main pane">▤ <b>${past}</b> archived</button>`,
-    tidy && tray('tidy', `⌫ ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
+    drafts && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
+    trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
+    threads && tray('threads', `${glyph('◇')} <b>${threads}</b> thread${threads === 1 ? '' : 's'}`, esc(reviewsOf(f)?.description ?? 'review threads, one per checkout')),
+    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" title="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
+    tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
   if (!trays.length) return ''
   return `<div class="trays">${trays.join('')}</div>
@@ -662,12 +666,12 @@ function traysHtml(f) {
 
 /** A floor's sign: its number on the project's band, its name in caps. */
 const signHtml = (n, name, extra = '') =>
-  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name">${esc(name)}</span>${extra}</div>`
+  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name" role="heading" aria-level="2">${esc(name)}</span>${extra}</div>`
 
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" title="new session">+</button>` : '')}
+    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : '')}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -704,7 +708,7 @@ function paintLimits() {
 
 const windowHtml = (c) => {
   const title = `${callsign(c.id)} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`
-  return `<div class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" data-id="${c.id}" title="${esc(title)}"></div>`
+  return `<a class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" href="#${c.id}" aria-label="${esc(title)}" title="${esc(title)}"></a>`
 }
 
 const buildingHtml = (f, i) => {
@@ -744,7 +748,7 @@ function barHtml(c) {
   const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
   const orphan = c.resources.some((r) => r.orphan)
   const ctx = c.context
-  $('bar-info').innerHTML = `<span class="call">${callsign(c.id)}</span>
+  repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck ? ` title="${STUCK_TITLE}"` : ''}><span class="lamp"></span>${statusName(c)} · <span data-since="${c.enteredAt}"></span></span>
     <span class="where" title="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
     <span class="stats">
@@ -752,23 +756,23 @@ function barHtml(c) {
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
       ${claudeFlagHtml(c) ?? ''}
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" title="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
-    </span>`
-  $('bar-actions').innerHTML = `<button class="info" popovertarget="bar-details" title="everything else about ${callsign(c.id)}">ⓘ</button>
-    ${can(c, 'resume') ? `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}">↻ Resume</button>` : ''}
+    </span>`)
+  repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" title="everything else about ${callsign(c.id)}">ⓘ</button>
+    ${can(c, 'resume') ? `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>` : ''}
     ${can(c, 'review') ? `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>` : ''}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" title="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
-    <button data-act="home" title="back to the skyline (Esc outside the terminal)">✕</button>`
+    <button data-act="home" aria-label="back to the skyline" title="back to the skyline (Esc outside the terminal)">✕</button>`)
   $('bar-details').innerHTML = detailsHtml(c)
   $('bar-left').innerHTML = leftHtml(c)
   $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
   $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
-  $('bar-line').innerHTML = [
+  repaint($('bar-line'), [
     paneTabsHtml(c, paneOf(c)),
     `<button class="activity" popovertarget="bar-details" title="${esc(gistLine(c))}">${lineOf(c)}</button>`,
     movesHtml(c),
-  ].filter(Boolean).join('')
+  ].filter(Boolean).join(''))
   renderPane(c)
 }
 
@@ -803,11 +807,11 @@ const MOVE_TITLE = { prev: 'previous on duty', next: 'next on duty', waiting: 'n
 function movesHtml(c) {
   const to = neighbours(board, c.id, heed)
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" title="${DISMISS_TITLE}">✕</button>` : ''
+  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" title="${DISMISS_TITLE}">✕</button>` : ''
   const move = (m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
-    return `<button class="move ${m} ${card.attention}" data-move="${m}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
+    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" title="${MOVE_TITLE[m]} (${MOVE_KEYS[m].label})"><small>${MOVE_KEYS[m].label}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
   }
   const moves = dismiss + ['prev', 'next', 'waiting'].map(move).join('')
   return moves && `<span class="moves">${moves}</span>`
@@ -819,23 +823,28 @@ let paneChoice
 const paneOf = (c) =>
   (paneChoice?.startsWith('shown:') && !shownOn(c, paneChoice) ? undefined : paneChoice) ?? (can(c, 'drive') || !can(c, 'brief') ? 'screen' : 'brief')
 
+/** A pane's tab, as the ARIA tabs pattern has it: only the selected one is in the Tab order, arrows move along the row. */
+const PANE_PANEL = { screen: 'c-screen', brief: 'brief', changes: 'changes', reviews: 'reviews' }
+const paneTabAttrs = (id, on) =>
+  `role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${id.startsWith('shown:') ? 'shown' : PANE_PANEL[id]}" data-pane="${esc(id)}"`
+
 const paneTabsHtml = (c, pane) => {
   const shown = visibleShown(c)
-  return `<span class="tab-set"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" data-pane="screen">Terminal</button>` +
-    (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" data-pane="brief" title="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
-    `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" data-pane="changes" title="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
-    (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" data-pane="reviews" title="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
+  return `<span class="tab-set" role="tablist" aria-label="views of ${callsign(c.id)}"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" ${paneTabAttrs('screen', pane === 'screen')}>Terminal</button>` +
+    (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief')} title="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
+    `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes')} title="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
+    (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews')} title="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
     shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('') + '</span>'
 }
 
 /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. */
 const shownTabHtml = (c, s, on) => {
   const from = shownFrom(c.lineage, s)
-  return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" data-pane="${esc(shownPane(s))}" title="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+  return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} title="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
   `<span class="shown-name">${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" title="open in a browser tab">↗</span>` : '') +
+  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" aria-hidden="true" title="open in a browser tab">↗</span>` : '') +
   (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
-  `<span class="unshow" data-unshow="${esc(shownKey(s))}" title="close: it comes back if shown again">×</span></button>`
+  `<span class="unshow" data-unshow="${esc(shownKey(s))}" aria-hidden="true" title="close: it comes back if shown again">×</span></button>`
 }
 
 const shownPane = (s) => `shown:${s.target}`
@@ -862,6 +871,7 @@ function renderPane(c) {
   const pane = paneOf(c)
   renderShown(c, pane.startsWith('shown:') ? shownOn(c, pane) : undefined)
   const brief = pane === 'brief'
+  $('c-screen').inert = pane !== 'screen'
   $('main').classList.toggle('on-brief', brief)
   $('main').classList.toggle('on-changes', pane === 'changes')
   $('main').classList.toggle('on-reviews', pane === 'reviews')
@@ -1130,7 +1140,7 @@ const floorInView = () =>
 
 function drawSideView() {
   document.querySelector('.side').classList.toggle('on-stats', sideView === 'stats')
-  for (const b of document.querySelectorAll('[data-side-view]')) b.classList.toggle('on', b.dataset.sideView === sideView)
+  for (const b of document.querySelectorAll('[data-side-view]')) (b.classList.toggle('on', b.dataset.sideView === sideView), b.setAttribute('aria-pressed', b.dataset.sideView === sideView))
   if (sideView !== 'stats') return
   const floor = board.floors.find((f) => f.id === floorInView())
   const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
@@ -1175,6 +1185,8 @@ function redrawHeld(list, html) {
 /** Writes `html` into `el` only when it changed, so a focused or hovered control in it survives a render. */
 const painted = new WeakMap()
 const paintOnce = (el, html) => painted.get(el) === html || (painted.set(el, html), (el.innerHTML = html))
+/** `paintOnce`, the control that had focus in `el` keeping it. */
+const repaint = (el, html) => keepingFocus(el, () => paintOnce(el, html))
 
 function render() {
   const all = cards()
@@ -1189,15 +1201,15 @@ function render() {
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
   paintLimits()
-  redrawHeld($('floors'), floorsTopDown().map(floorHtml).join(''))
+  keepingFocus($('floors'), () => redrawHeld($('floors'), floorsTopDown().map(floorHtml).join('')))
   drawSideView()
-  $('rail').innerHTML = railHtml(waiting)
+  repaint($('rail'), railHtml(waiting))
   $('side-foot').innerHTML = `<span>config</span><code title="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}`
   const c = selected && findCard(selected)
   if (c) barHtml(c)
   if (draftOpen) draftHeadHtml()
   if (archiveOpen) drawArchive()
-  if (!selected) $('sky').innerHTML = skylineHtml()
+  if (!selected) repaint($('sky'), skylineHtml())
   paintSky()
   renderDock()
   drawSettings()
@@ -1206,10 +1218,12 @@ function render() {
 
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
-  `<button class="side-toggle" data-side title="show the sidebar (⌘B)">»</button>
+  `<button class="side-toggle" data-side aria-label="show the sidebar" title="show the sidebar (⌘B)">»</button>
   ${waiting ? `<span class="count ${loudest(waitsOnYou())}" title="waiting on you">${waiting}</span>` : ''}
-  ${dutyOrder(board).map((c) => `<span class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}"
-    data-id="${c.id}" title="${esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))}"></span>`).join('')}`
+  ${dutyOrder(board).map((c) => {
+    const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
+    return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" title="${title}"></a>`
+  }).join('')}`
 
 function toggleSide() {
   document.body.classList.toggle('collapsed')
@@ -1246,6 +1260,8 @@ function attend(next) {
   const { began, ended } = transitions(attended, next)
   attended = next
   for (const w of ended) (alerts.get(w.key)?.close(), alerts.delete(w.key))
+  const said = waitsBeganLine(began.filter((w) => !heed.dismissed.has(w.key)), callsign)
+  if (said) announce(said)
   const fresh = began.filter((w) => !heed.dismissed.has(w.key) && !watching(w.id))
   if (Notification.permission === 'granted') for (const w of fresh) alerts.set(w.key, showAlert(findCard(w.id), w))
   ringFor(fresh)
@@ -1382,7 +1398,11 @@ async function sendHome(c) {
   for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
 }
 
+/** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. */
+const announce = (msg) => $('announce').replaceChildren(Object.assign(document.createElement('p'), { textContent: msg }))
+
 const toast = (msg) => {
+  announce(msg)
   $('toast').textContent = msg
   $('toast').style.display = 'block'
   clearTimeout(toast.t)
@@ -1540,7 +1560,7 @@ function openShelf(project, n, file) {
   const own = { html: `/run/${project}/${n}`, url: entry.url, renderer: entry.renderer && rendererUrl(entry.renderer) }[shelfKind(entry)]
   const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">↗ new tab</a>` : ''
   $('shelf-head').innerHTML = `<span class="label">${esc(entry.label)}</span><span class="dim">${esc(f.name)} · ${esc(shelfSource(entry))}</span>
-    <span class="actions">${tab}<button data-act="home" title="back to the skyline">✕</button></span>`
+    <span class="actions">${tab}<button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
   $('shelf-body').innerHTML = ''
   render()
   if (shelfKind(entry) === 'html') showPage(shelfUrl(project, n, shelfPage(entry)))
@@ -1704,7 +1724,7 @@ function openArchive(project) {
   $('archive-view').style.cssText = paint(project)
   $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
-    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" title="back to the skyline">✕</button></span>`
+    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
   render()
   $('archive-filter').focus()
 }
@@ -1759,7 +1779,7 @@ function draftHeadHtml() {
       ${can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : ''}
       ${targets().length ? '<button data-draft-act="transfer" title="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
-      <button data-act="home" title="back to the skyline">✕</button></span>`
+      <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
   $('draft-note').innerHTML = d.conflict !== undefined
     ? `<span>Someone else changed this draft while you were editing it.</span>
       <button data-draft-act="reload">Take theirs</button><button data-draft-act="keep">Keep mine</button>`
@@ -1929,7 +1949,7 @@ function renderDock() {
   $('tabs').innerHTML = [...board.shells].sort(byStart).map((sh) =>
     `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" title="${esc(sh.cwd)}">
       <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
-      <span class="x" data-kill-shell="${sh.id}" title="kill this shell">×</span></button>`).join('')
+      <span class="x" data-kill-shell="${sh.id}" aria-hidden="true" title="kill this shell">×</span></button>`).join('')
 }
 
 function openShell(id) {
@@ -2078,7 +2098,9 @@ document.addEventListener(
   true,
 )
 
+/** A link goes where its href says: a worker's `#<id>` reaches `route` as the hash changes. */
 document.addEventListener('click', (e) => {
+  if (e.target.closest('a[href]')) return
   const spawn = e.target.closest('[data-spawn]')
   if (spawn) return openSpawn(spawn.dataset.spawn)
   const newDraft = e.target.closest('[data-new-draft]')
@@ -2208,6 +2230,19 @@ $('screen').addEventListener('input', (e) => {
   if (e.target.matches('[data-pick-text]')) pickText = e.target.value
 })
 
+/** The pane tabs move as the ARIA tabs pattern has it: ← → Home End go along the row and show the pane they reach. */
+$('bar-line').addEventListener('keydown', (e) => {
+  const tab = e.target.closest('[role=tab]')
+  if (!tab || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
+  const tabs = [...tab.closest('[role=tablist]').querySelectorAll('[role=tab]')]
+  const at = tabs.indexOf(tab)
+  const to = tabs[{ ArrowLeft: (at - 1 + tabs.length) % tabs.length, ArrowRight: (at + 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key]]
+  if (!to) return
+  e.preventDefault()
+  to.focus()
+  showPane(to.dataset.pane)
+})
+
 $('screen').addEventListener('keydown', (e) => {
   const submit = (e.metaKey || e.ctrlKey) && e.key === 'Enter'
   if (e.target.matches('[data-note-text]') && submit) return (e.preventDefault(), addWritten())
@@ -2305,18 +2340,30 @@ tower.subscribe(async (next) => {
   if (arriving && findCard(arriving)) return select(arriving)
   const wanted = !opened && location.hash.slice(1)
   opened = true
-  if (wanted && wanted.startsWith('shelf/')) {
+  if (!wanted || !(await route(wanted))) render()
+})
+
+/** Opens what a hash names: a shelf entry, a draft, a floor's archive or a worker. Resolves to whether it named one. */
+async function route(wanted) {
+  if (wanted.startsWith('shelf/')) {
     const [, project, n, file] = wanted.split('/')
-    return openShelf(project, Number(n), file && decodeURIComponent(file))
+    return (openShelf(project, Number(n), file && decodeURIComponent(file)), true)
   }
-  if (wanted && wanted.startsWith('draft/')) {
+  if (wanted.startsWith('draft/')) {
     const [, project, id] = wanted.split('/')
     const drafts = board.floors.find((f) => f.id === project)?.collections.find((c) => c.id === DRAFTS)
-    if (drafts && (!id || drafts.items.some((i) => i.id === decodeURIComponent(id)))) return openDraft(project, id && decodeURIComponent(id))
+    if (drafts && (!id || drafts.items.some((i) => i.id === decodeURIComponent(id)))) return (openDraft(project, id && decodeURIComponent(id)), true)
   }
-  if (wanted && wanted.startsWith('archive/')) return openArchive(wanted.slice('archive/'.length))
-  if (wanted && (await lookUp(wanted))) return select(wanted)
-  render()
+  if (wanted.startsWith('archive/')) return (openArchive(wanted.slice('archive/'.length)), true)
+  if (await lookUp(wanted)) return (select(wanted), true)
+  return false
+}
+
+/** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */
+addEventListener('hashchange', async () => {
+  const wanted = location.hash.slice(1)
+  if (!opened || wanted === selected) return
+  if (!wanted || !(await route(wanted))) goHome()
 })
 setInterval(tick, 1000)
 showSideView(sideView)
