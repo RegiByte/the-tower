@@ -14,6 +14,7 @@
     "hub/src/shared/panels.ts#statsHtml",
     "hub/src/shared/panels.ts#statsQuery",
     "hub/src/shared/panels.ts#drawPanel",
+    "hub/src/shared/panels.ts#watchPickDrag",
     "hub/src/shared/panels.ts#keepingFocus",
     "hub/src/shared/panels.ts#fileCall",
     "hub/src/shared/panels.ts#panelsCss",
@@ -45,7 +46,8 @@ panels are the same view in both renderers. Only where they sit, their state and
   [`changesHtml`](ref:hub/src/shared/panels.ts#changesHtml) (head, repos, files, folds, hunks, picked rows, the note
   box under them, noted line marks) and [`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml) (head, Send,
   notes, anchors with their state, composer) take a view model and read nothing global. The logic only the page had
-  lives beside them as pure functions: `fileRows`, `picked` (the pick after a click), `pickAnchor`, `notedLines`,
+  lives beside them as pure functions: `fileRows`, `picked` (the pick after a click), `spanned` (the pick of a drag),
+  `pickAnchor`, `notedLines`,
   `anchorSpot` (where an anchor's line is), `marksToggled` (a repo's viewed marks after a toggle).
 - *A protocol of data attributes*, listed once in the module's header: `data-fold`, `data-viewed`, `data-pick`,
   `data-pick-text`, `data-anchor`, `data-reply`, `data-note-text`, `data-send`, `data-copy`, `data-since`, …
@@ -120,11 +122,20 @@ time, tokens by model and lines by file kind. Bars are html, so a column's reado
 
 *Keyboard* (2026-10-08). A file's fold is a real button, the header's caret (`data-fold` on it too, with
 `aria-expanded` and the file's path as its name), so a keyboard folds a file the way a click on its header does;
-Viewed was already a button. Picking lines for a note stays a pointer gesture: which keys pick and extend lines is
-open. The file's Finder and editor buttons are spans with a name, out of the Tab order, since they also sit inside a
+Viewed was already a button. Picking lines for a note stays a pointer gesture (the user saw no need for keys). The file's Finder and editor buttons are spans with a name, out of the Tab order, since they also sit inside a
 showing's tab. The Stats scopes and ranges say which is on with `aria-pressed`.
 
 **Impact.** The tower page and Tower 3D draw Changes, Reviews and Stats through one module. Tower 3D's desk has the full
-Changes: hunks, folds, Viewed (written to `tower.store`), mouse line picking with ⇧ to extend, the note box,
+Changes: hunks, folds, Viewed (written to `tower.store`), mouse line picking (drag or ⇧-click for a range), the note box,
 noted-line marks, and anchors that scroll to their line. A third renderer gets both panels by importing
 `/panels.js` and wiring the attributes.
+
+*Range picks* (2026-10-08, API 1.15). A note took one line or a ⇧-click range; a drag across line numbers now picks a
+range too. The gesture is DOM wiring, so it is shared as
+[`watchPickDrag`](ref:hub/src/shared/panels.ts#watchPickDrag): it calls the renderer's `drag(from, to)` for each
+line of the pressed file the pointer moves onto and `drop()` on release, and leaves a press that reaches no other
+line to the click. The renderer keeps the pick and a `picking` flag in its view model: while picking, the rows draw
+picked and the note box waits for the drop (a box under the last row would move the rows under the pointer). Both
+`picked` and `spanned` stop a range at the edge of its first line's hunk: an anchor is a span of the file's lines,
+and a range over a gap would claim lines its quote doesn't hold. A range of removed lines alone still anchors by
+their old numbers with a `diff` quote ([[review-threads]]).

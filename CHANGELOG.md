@@ -23,6 +23,10 @@ Commit messages hold the detail.
 - A past session's screen (the tower page's terminal of an exited worker, Tower 3D's logbook replay, `tower screen`)
   is its final frame, the conversation and status line as Claude last drew them, no longer the empty screen and resume
   line Claude leaves as it exits the alternate screen.
+- A review note picks a range of lines in Changes by dragging across line numbers as well as by ⇧-click, in the
+  tower page and Tower 3D's desk; a range stays within one hunk. `/panels.js` (API 1.13) adds `spanned`, the pick of
+  a drag, `watchPickDrag`, which wires the gesture, and `picking` on `ChangesView`, which holds the note box until the
+  drop.
 
 ## v1.1.0
 

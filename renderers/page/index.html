@@ -427,7 +427,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -1027,8 +1027,12 @@ function toggleFold(key) {
   drawChanges()
 }
 
-/** Lines picked in the Changes pane, and the note being written under them; `pickFresh` until the box first takes focus. */
+/**
+ * Lines picked in the Changes pane (`picking` while they are dragged across), and the note being written under them;
+ * `pickFresh` until the box first takes focus.
+ */
 let pick
+let picking = false
 let pickText = ''
 let pickFresh = false
 const dropPick = () => ((pick = undefined), (pickText = ''))
@@ -1040,7 +1044,7 @@ function drawChanges() {
   if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) pick = live
   const failed = read || changesFailed?.id !== c.id ? undefined : changesFailed.message
-  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
+  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && read) jumpToAnchor()
@@ -1051,6 +1055,11 @@ function pickLine(value, extend) {
   pickFresh = true
   drawChanges()
 }
+
+watchPickDrag($('changes'), {
+  drag: (from, to) => ((pick = spanned(changes, from, to)), (picking = true), drawChanges()),
+  drop: () => ((picking = false), (pickFresh = true), drawChanges()),
+})
 
 const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
 const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))

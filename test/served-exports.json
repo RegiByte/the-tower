@@ -368,12 +368,14 @@
       "pickRange",
       "picked",
       "reviewsHtml",
+      "spanned",
       "spotSelector",
       "statsHtml",
       "statsQuery",
       "threadFiles",
       "usd",
-      "viewedCount"
+      "viewedCount",
+      "watchPickDrag"
     ],
     "/brief.js": [
       "BRIEF_MARKDOWNS",

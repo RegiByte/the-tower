@@ -12,7 +12,8 @@
  *   data-file="<key>"          a file's section, by `fileKey`
  *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
  *   data-viewed="<key>"        mark the file's version viewed, or not: `marksToggled` gives the repo's marks to keep
- *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend); also where an anchor scrolls to
+ *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend), or drag across lines (`watchPickDrag`,
+ *                              `spanned`); also where an anchor scrolls to
  *   data-pick-text             the note being written under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
  *   data-pick-add              add the note on the picked lines (`pickAnchor`) through `review/append`
  *   data-pick-cancel           drop the pick
@@ -75,8 +76,8 @@ export type Viewed = Record<string, Record<string, string>>
 /** A worker's Changes as last read, at `at` (ms), with the viewer's marks. */
 export type ChangesRead = { repos: RepoChanges[]; at: number; viewed: Viewed }
 /**
- * Picked rows of one file's diff, `from` where the pick started and `to` where it ends, either way round, at the
- * version of the file's diff `hash` names: rows count only in that version.
+ * Picked rows of one file's diff, `from` where the pick started and `to` where it ends, either way round, within one
+ * hunk, at the version of the file's diff `hash` names: rows count only in that version.
  */
 export type LinePick = { key: string; hash: string; from: number; to: number }
 
@@ -84,8 +85,9 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
  * The Changes panel: `folds` are the files folded or unfolded against what their viewed mark says, by `fileKey`;
  * `thread` is the thread whose anchors mark lines, `checkout` the one a note on picked lines is added to, `user` the
  * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
+ * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop.
  */
-export type ChangesView = { read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; thread: ReviewThread | undefined; checkout: string; user: string }
+export type ChangesView = { read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string }
 
 /** A worker as the Reviews panel names it. */
 type Worker = { id: string; callsign: string; checkout: string }
@@ -154,16 +156,69 @@ export function fileRows(f: DiffFile): Row[] {
 
 export const pickRange = (pick: LinePick) => [Math.min(pick.from, pick.to), Math.max(pick.from, pick.to)] as const
 
-/** The pick after a click on a line number (`data-pick`): extended within its file, dropped when its one line is clicked again. */
-export function picked(read: ChangesRead, pick: LinePick | undefined, value: string, extend: boolean): LinePick | undefined {
+const lineOf = (value: string) => {
   const at = value.lastIndexOf('|')
-  const key = value.slice(0, at)
-  const row = Number(value.slice(at + 1))
-  const now = livePick(read, pick)
-  if (extend && now?.key === key) return { ...now, to: row }
-  if (now?.key === key && now.from === row && now.to === row) return undefined
+  return { key: value.slice(0, at), row: Number(value.slice(at + 1)) }
+}
+
+/** The rows from `from` toward `to` of a file's diff, stopped at the edge of `from`'s hunk. */
+function spanOf(read: ChangesRead, key: string, from: number, to: number): LinePick {
   const [, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
-  return { key, hash: f.hash, from: row, to: row }
+  const rows = fileRows(f)
+  const first = rows.findLastIndex((r, i) => i <= from && r.hunk) + 1
+  const next = rows.findIndex((r, i) => i > from && r.hunk)
+  const last = next === -1 ? rows.length - 1 : next - 1
+  return { key, hash: f.hash, from, to: Math.min(Math.max(to, first), last) }
+}
+
+/** The pick after a click on a line number (`data-pick`): extended within its hunk, dropped when its one line is clicked again. */
+export function picked(read: ChangesRead, pick: LinePick | undefined, value: string, extend: boolean): LinePick | undefined {
+  const { key, row } = lineOf(value)
+  const now = livePick(read, pick)
+  if (extend && now?.key === key) return spanOf(read, key, now.from, row)
+  if (now?.key === key && now.from === row && now.to === row) return undefined
+  return spanOf(read, key, row, row)
+}
+
+/** The pick of a drag from one line number (`data-pick`) to another of the same file, within the first line's hunk. */
+export function spanned(read: ChangesRead, from: string, to: string): LinePick {
+  const start = lineOf(from)
+  return spanOf(read, start.key, start.row, lineOf(to).row)
+}
+
+/**
+ * Wires a drag across the line numbers under `el`: `drag` is called with the line pressed and each other line of its
+ * file the pointer moves onto, `drop` when the button is let go after one. A press that reaches no other line is left
+ * to its click.
+ */
+export function watchPickDrag(el: HTMLElement, on: { drag: (from: string, to: string) => void; drop: () => void }) {
+  let from: string | undefined
+  let over: string | undefined
+  let dragged = false
+  el.addEventListener('pointerdown', (e) => {
+    const line = (e.target as Element).closest<HTMLElement>('[data-pick]')?.dataset.pick
+    if (!line || e.button !== 0 || e.shiftKey) return
+    e.preventDefault()
+    from = over = line
+    dragged = false
+  })
+  el.addEventListener('pointermove', (e) => {
+    const line = from && (e.target as Element).closest<HTMLElement>('[data-pick]')?.dataset.pick
+    if (!line || line === over || lineOf(line).key !== lineOf(from!).key) return
+    over = line
+    dragged = true
+    on.drag(from!, line)
+  })
+  window.addEventListener('pointerup', () => {
+    if (!from) return
+    from = over = undefined
+    if (!dragged) return
+    on.drop()
+    // The click that ends a drag is the drag's, whichever line it lands on.
+    const swallow = (e: Event) => e.stopPropagation()
+    window.addEventListener('click', swallow, { capture: true, once: true })
+    setTimeout(() => window.removeEventListener('click', swallow, { capture: true }))
+  })
 }
 
 /** The pick while its file's diff is still the version it was picked on; a read that changed the file drops it. */
@@ -299,9 +354,9 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
     const on = range && i >= range[0] && i <= range[1]
     const marks = r.now === undefined ? undefined : noted.get(r.now)
     const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' ? '' : `data-pick="${esc(key)}|${i}"`} title="${
-      notes ? `noted in ${notes.map((n) => `n${n}`).join(', ')}; ` : ''}click to note on this line, ⇧-click to extend">${n ?? ''}</td>`
+      notes ? `noted in ${notes.map((n) => `n${n}`).join(', ')}; ` : ''}click to note on this line, drag or ⇧-click for more">${n ?? ''}</td>`
     const line = `<tr class="${r.cls} ${on ? 'picked' : ''}">${ln(r.old, undefined)}${ln(r.now, marks)}<td><span class="m">${esc(r.line[0])}</span>${code[i]}</td></tr>`
-    return on && i === range[1] ? line + noteBoxHtml(v) : line
+    return on && i === range[1] && !v.picking ? line + noteBoxHtml(v) : line
   })
   return `<table>${rows.join('')}</table>`
 }
@@ -309,7 +364,7 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
 const noteBoxHtml = (v: ReadView) => `<tr class="note-row"><td colspan="3"><div class="note-box">
     <div class="where"><code>${esc(anchorWhere(pickAnchor(v.read.repos, v.pick!)))}</code><span>on the thread of <b>${esc(v.checkout)}</b>, as ${esc(v.user)}</span></div>
     <textarea data-pick-text placeholder="a note on these lines (⌘⏎ adds it, Esc cancels)"></textarea>
-    <div class="actions"><button class="primary" data-pick-add>Add note</button><button data-pick-cancel>Cancel</button><span class="hint">⇧-click a line number to extend</span></div>
+    <div class="actions"><button class="primary" data-pick-add>Add note</button><button data-pick-cancel>Cancel</button><span class="hint">drag across line numbers or ⇧-click one to extend, within a hunk</span></div>
   </div></td></tr>`
 
 const ANCHOR_STATE: Partial<Record<AnchorState, string>> = { changed: 'changed since', gone: 'no longer in the diff' }

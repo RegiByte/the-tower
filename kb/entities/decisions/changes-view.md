@@ -53,5 +53,6 @@ file opens in Finder or the user's editor ([[open-files]]). It is read on open, 
 ↻. A review anchor opens it scrolled to its line.
 
 **Impact.** The tower page has a Changes pane beside Terminal and Brief, and Tower 3D the same view at a desk, with a viewed/total tally on its tab.
-It is the surface review threads anchor notes to: its line numbers pick lines for a note ([[review-threads]]). Marks are per browser: another browser or machine
+It is the surface review threads anchor notes to: its line numbers pick lines for a note, one by a click or a range
+within a hunk by a drag or ⇧-click ([[review-threads]], [[shared-panels]]). Marks are per browser: another browser or machine
 starts unread.

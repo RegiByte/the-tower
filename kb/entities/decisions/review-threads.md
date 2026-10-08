@@ -128,7 +128,8 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   is the same call: what is new to the target is worked out.
 - *Tower page*: Reviews tab beside Changes (`N new` for the selected worker, else the count), quotes marked
   `changed since` or `no longer in the diff` by [`anchorState`](ref:hub/src/shared/reviews.ts#anchorState) over the
-  worker's Changes read, a click on an anchor opens its lines in Changes; line numbers in Changes pick lines (⇧ extends)
+  worker's Changes read, a click on an anchor opens its lines in Changes; line numbers in Changes pick lines (a drag
+  or ⇧-click picks a range, within one hunk)
   and open a note box under them, and noted lines carry a mark; a composer with `reply` for notes on the whole work;
   Send to the worker most recently active in the checkout, or one picked; a sidebar tray of threads by checkout
   beside their tags, with Tidy. Bodies are drawn through `markdownHtml`, raw HTML escaped, so nothing a worker wrote
