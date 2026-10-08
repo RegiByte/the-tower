@@ -41,10 +41,10 @@ function spread(p: Pointer, placed: Pointer[], width: number, height: number): P
   return q
 }
 
-/** Draws the arrows into `el`, each with what it points at: `labelOf` its text, `colorOf` its colour. */
-export function drawCompass(el: HTMLElement, ps: Pointer[], labelOf: (id: string) => string, colorOf: (id: string) => string) {
+/** Draws the arrows into `el`, each with what it points at: `labelOf` its text, `colorOf` its colour, `onOf` the text on it. */
+export function drawCompass(el: HTMLElement, ps: Pointer[], labelOf: (id: string) => string, colorOf: (id: string) => string, onOf: (id: string) => string) {
   const html = ps
-    .map((p) => `<div class="pointer" style="left:${p.x.toFixed(0)}px;top:${p.y.toFixed(0)}px;--c:${colorOf(p.id)}"><i style="transform:rotate(${p.angle.toFixed(2)}rad)"></i><span>${esc(labelOf(p.id))}</span></div>`)
+    .map((p) => `<div class="pointer" style="left:${p.x.toFixed(0)}px;top:${p.y.toFixed(0)}px;--c:${colorOf(p.id)};--on:${onOf(p.id)}"><i style="transform:rotate(${p.angle.toFixed(2)}rad)"></i><span>${esc(labelOf(p.id))}</span></div>`)
     .join('')
   if (el.innerHTML !== html) el.innerHTML = html
 }

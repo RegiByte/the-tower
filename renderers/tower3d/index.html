@@ -55,7 +55,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: 2px 
 .hud-music.on { color: var(--ink); }
 .hud-settings { display: grid; place-items: center; color: var(--muted); } .hud-settings:hover { color: var(--ink); }
 .hud-settings svg { width: 13px; height: 13px; }
-.hud-host.working, .hud-host.broken { color: color-mix(in oklab, var(--c) 65%, var(--ink)); }
+.hud-host.working, .hud-host.broken { color: var(--c-text); }
 #paused .paused-settings { display: inline-flex; align-items: center; gap: 5px; margin-left: 8px; padding: 2px 9px; font-size: 12px; vertical-align: 1px; }
 #paused .paused-settings svg { width: 12px; height: 12px; }
 #hud .hud-shown { background: var(--accent); color: var(--panel); }
@@ -67,7 +67,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: 2px 
 #compass { position: fixed; inset: 0; pointer-events: none; }
 #compass .pointer { position: absolute; display: grid; place-items: center; transform: translate(-50%, -50%); }
 #compass .pointer i { position: absolute; width: 0; height: 0; border-left: 14px solid var(--c); border-top: 8px solid transparent; border-bottom: 8px solid transparent; filter: drop-shadow(0 1px 2px #0008); translate: 0 0; transform-origin: center; }
-#compass .pointer span { margin-top: 34px; padding: 2px 6px; border-radius: 4px; background: var(--c); color: #fff; font: 700 10px/1.2 var(--display); letter-spacing: .04em; white-space: nowrap; box-shadow: 0 1px 3px #0006; }
+#compass .pointer span { margin-top: 34px; padding: 2px 6px; border-radius: 4px; background: var(--c); color: var(--on); font: 700 10px/1.2 var(--display); letter-spacing: .04em; white-space: nowrap; box-shadow: 0 1px 3px #0006; }
 #crosshair { position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #ffffffcc; box-shadow: 0 0 0 2px #0008; pointer-events: none; }
 #crosshair.on { width: 10px; height: 10px; margin: -5px 0 0 -5px; background: var(--panel); box-shadow: 0 0 0 2px var(--ink); }
 #prompt { position: fixed; right: 14px; bottom: 14px; width: 320px; padding: 10px 12px; pointer-events: none; display: grid; gap: 4px; }
