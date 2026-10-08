@@ -399,7 +399,6 @@ dialog .actions small { margin-right: auto; }
 <script src="/tower.js"></script>
 <script src="/xterm.js"></script>
 <script src="/addon-fit.js"></script>
-<script src="/marked.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
@@ -407,6 +406,7 @@ import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
+import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
 import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
 import { alertsSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
 import { placeOnOpen, watchTips } from '/tips.js'
@@ -869,10 +869,6 @@ function renderPane(c) {
 /** The showing the shown pane last drew: a new showing of the same target draws it again. */
 let shownDrawn
 
-/** Markdown served at `url` as html, its relative images read from beside it. */
-const markdownIn = (md, url) =>
-  marked.parse(md, { walkTokens: (t) => { if (t.type === 'image' && !/^([a-z][a-z\d+.-]*:|\/|#)/i.test(t.href)) t.href = new URL(t.href, new URL(url, location.origin)).pathname } })
-
 function renderShown(c, s) {
   $('main').classList.toggle('on-shown', Boolean(s))
   const key = s && shownKey(s)
@@ -887,7 +883,7 @@ function renderShown(c, s) {
   $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
   told(tower.text(shownHref(s).slice(1))).then((md) => {
     if (md === undefined || shownDrawn !== key) return
-    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style><article>${markdownIn(md, shownHref(s))}</article>`
+    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
   })
 }
 
@@ -1095,7 +1091,7 @@ const BRIEF_CSS = `article { max-width: 980px; margin: 0; padding: 14px 28px 48p
 
 /**
  * The session's conversations latest first, then each earlier session of its worker folded, and in each conversation
- * its last turns, latest first. Prompts and answers are markdown, rendered in a frame where nothing can run; the page
+ * its last turns, latest first. Prompts and answers are markdown, rendered with their raw HTML escaped, in a frame where nothing can run; the page
  * reads the frame's document, so a redraw keeps the folds the viewer opened and where they had scrolled.
  */
 function showBrief(c, threads) {
@@ -1103,11 +1099,10 @@ function showBrief(c, threads) {
   const drawn = frame.dataset.worker === c.id ? frame.contentDocument : undefined
   const scrolled = drawn?.scrollingElement?.scrollTop ?? 0
   frame.dataset.worker = c.id
-  const said = (text) => marked.parse(text)
   const promptBy = (id) => c.conversations.find((conv) => conv.id === id)?.promptBy
   frame.addEventListener('load', () => frame.contentDocument.scrollingElement.scrollTo(0, scrolled), { once: true })
   frame.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}${briefCss}</style>
-    <article>${briefHtml({ briefs: threads, said, promptBy, open: openFolds(drawn) })}</article>`
+    <article>${briefHtml({ briefs: threads, said: markdownHtml, promptBy, open: openFolds(drawn) })}</article>`
 }
 
 /**
@@ -1664,17 +1659,17 @@ async function showDoc(file) {
   if (shelfOpen !== opened || opened.file !== file) return
   const doc = $('shelf-doc')
   doc.onload = () => doc.contentDocument.addEventListener('click', followLink)
-  doc.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${markdownIn(md, `/${shelfPath(opened.project, opened.n, file)}`)}</article>`
+  doc.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${documentHtml(md, `/${shelfPath(opened.project, opened.n, file)}`)}</article>`
 }
 
-/** A link to another file of the collection opens it here; a web link opens in a new tab. */
+/** A link to another file of the collection opens it here; a web or mail link opens in a new tab, any other is refused. */
 function followLink(e) {
   const a = e.target.closest('a[href]')
   const href = a?.getAttribute('href')
   if (!href || href.startsWith('#')) return
   e.preventDefault()
   const target = new URL(href, `http://shelf/${shelfOpen.file}`)
-  if (target.host !== 'shelf') return window.open(target.href, '_blank', 'noreferrer')
+  if (target.host !== 'shelf') return safeHref(href) ? window.open(target.href, '_blank', 'noreferrer') : toast(`${href} is not a link the tower opens`)
   const file = decodeURIComponent(target.pathname.slice(1))
   if (shelfOpen.files.includes(file)) return showDoc(file)
   toast(`${file} is not in this collection`)

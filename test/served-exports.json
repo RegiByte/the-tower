@@ -363,6 +363,12 @@
       "placeOnOpen",
       "tipsCss",
       "watchTips"
+    ],
+    "/markdown.js": [
+      "documentHtml",
+      "imagePath",
+      "markdownHtml",
+      "safeHref"
     ]
   }
 }

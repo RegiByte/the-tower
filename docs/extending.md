@@ -230,6 +230,11 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/termkeys.js` | the editing keys every browser terminal sends |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
+| `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, safe in any element), `documentHtml` for a file in a frame without scripts, and `safeHref` |
+
+Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
+`parse`: those words can carry what a web page Claude read put in them, and your renderer runs at the tower's origin,
+which holds every verb. `documentHtml` keeps a file's raw HTML, so frame its html without `allow-scripts`.
 
 A renderer that draws the Stats panel or the settings popover installs the shared tooltip once, `watchTips(document)`
 from `/tips.js`: the Stats bars show their readouts through it, and the popover stays hidden until it is placed.

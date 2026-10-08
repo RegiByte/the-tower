@@ -50,7 +50,7 @@ one the next resumed), so a session's place, "session 2 of 3", is counted from t
   [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws the session read for in full and each earlier one as a
   `<details>`, closed when drawn, labelled "session 2 of 3 · Oct 6, 21:40 · 1 conversation". A conversation that
   resumes or is resumed by a session in the brief names it by number. The renderer hands in `said`, how a prompt or an
-  answer is set: the tower page renders markdown in its sandboxed frame, Tower 3D escapes plain text in its desk panel's
+  answer is set: the tower page renders markdown with `markdownHtml` ([[markdown-safe]]) in its sandboxed frame, Tower 3D escapes plain text in its desk panel's
   Logbook and its reader ([[logbook]]). One stylesheet, [`briefCss`](ref:hub/src/shared/brief.ts#briefCss). A redraw keeps the folds the viewer
   opened: the renderer reads them from what it drew ([`openFolds`](ref:hub/src/shared/brief.ts#openFolds)) and hands
   them to the view as `open` (the tower page redraws on every turn of a working worker, Tower 3D's logbook reader on

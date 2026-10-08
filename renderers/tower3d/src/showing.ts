@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { marked, type Token } from 'marked'
 import { type } from '../../../src/shared/design.ts'
+import { imagePath } from '../../../src/shared/markdown.ts'
 import { tower, type Card } from './api.ts'
 import { WORLD, base, shownTitle } from './cards.ts'
 import { FIXTURE, readBlob } from './fixtures.ts'
@@ -18,10 +19,6 @@ export const shownKey = (s: Shown) => `${s.session}|${s.target}|${s.at}`
 /** Where the showing is served: a file through the tower, by the session that showed it; a page at its own address. */
 export const shownHref = (s: Shown) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
 export const isMarkdown = (s: Shown) => s.kind === 'file' && s.target.endsWith('.md')
-
-/** Where a markdown page served at `url` reads a relative image from, a path of the tower's; none for an absolute or remote one. */
-export const imagePath = (href: string, url: string) =>
-  /^([a-z][a-z\d+.-]*:|\/|#)/i.test(href) ? undefined : new URL(href, new URL(url, location.href)).pathname
 
 const IMAGE = /\.(png|jpe?g|gif|webp|svg)$/i
 const VIDEO = /\.(mp4|webm)$/i

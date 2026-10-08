@@ -1,8 +1,8 @@
-import { marked, type Token } from 'marked'
 import { documentCss, type Scheme } from '../../../src/shared/design.ts'
 import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import { fileButtonsHtml, usd } from '../../../src/shared/panels.ts'
+import { documentHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
@@ -14,7 +14,7 @@ import type { Level, Plan } from './layout.ts'
 import { noteTitle } from './notes.ts'
 import { gameTitle } from './arcade.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
-import { imagePath, isImage, isMarkdown, isVideo, shownHref, type Shown } from './showing.ts'
+import { isImage, isMarkdown, isVideo, shownHref, type Shown } from './showing.ts'
 import { LOBBY_BAND } from './sign.ts'
 
 /** The panels' contents as HTML, from the board and where you are. main.ts puts them on the page and wires them. */
@@ -578,12 +578,7 @@ export function docHtml(doc: { frame: string } | { files: string[]; file?: strin
   return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, scheme))}"></iframe>`
 }
 
-/**
- * Markdown served at `url` as a page in the viewer's scheme, for a frame without scripts (`marked` passes raw HTML
- * through), its relative images read from beside it.
- */
-const mdPage = (text: string, url: string, scheme: Scheme) => {
-  const walkTokens = (t: Token) => void (t.type === 'image' && (t.href = imagePath(t.href, url) ?? t.href))
-  return `<!doctype html><html data-scheme="${scheme}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
-    <style>${documentCss}</style><article>${marked.parse(text, { async: false, walkTokens })}</article>`
-}
+/** Markdown served at `url` as a page in the viewer's scheme, for a frame without scripts (`documentHtml` keeps raw HTML). */
+const mdPage = (text: string, url: string, scheme: Scheme) =>
+  `<!doctype html><html data-scheme="${scheme}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
+    <style>${documentCss}</style><article>${documentHtml(text, url)}</article>`
