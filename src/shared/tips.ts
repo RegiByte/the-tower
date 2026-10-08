@@ -57,6 +57,8 @@ export function watchTips(doc: Document) {
   tip.setAttribute('role', 'tooltip')
   doc.body.append(tip)
   let shown: HTMLElement | undefined
+  /** A redraw may take the element away while its tip shows: the tip goes with it. */
+  const gone = new MutationObserver(() => shown && !shown.isConnected && hide())
 
   const show = (el: HTMLElement) => {
     hide()
@@ -65,11 +67,13 @@ export function watchTips(doc: Document) {
     tip.showPopover()
     placeBeside(tip, el)
     el.setAttribute('aria-describedby', tip.id)
+    gone.observe(doc.body, { childList: true, subtree: true })
   }
   const hide = () => {
     if (!shown) return
     shown.removeAttribute('aria-describedby')
     shown = undefined
+    gone.disconnect()
     delete tip.dataset.placed
     tip.hidePopover()
   }

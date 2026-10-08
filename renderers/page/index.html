@@ -1163,17 +1163,21 @@ function redrawHeld(list, html) {
   if (row) list.scrollTop += row.getBoundingClientRect().top - list.getBoundingClientRect().top - anchor.offset
 }
 
+/** Writes `html` into `el` only when it changed, so a focused or hovered control in it survives a render. */
+const painted = new WeakMap()
+const paintOnce = (el, html) => painted.get(el) === html || (painted.set(el, html), (el.innerHTML = html))
+
 function render() {
   const all = cards()
   const duty = all.filter(onDuty)
   const count = (a) => duty.filter((c) => c.attention === a).length
   const waiting = heededWaits(board, heed).length
   document.title = waiting ? `(${waiting}) The Tower` : 'The Tower'
-  $('tally').innerHTML = `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
+  paintOnce($('tally'), `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
     ['ready', 'working', 'quiet', 'broken']
-      .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join('')
+      .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = hostState(board)
-  $('host').innerHTML = `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`
+  paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
   paintLimits()
   redrawHeld($('floors'), floorsTopDown().map(floorHtml).join(''))
