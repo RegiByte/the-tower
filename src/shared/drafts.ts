@@ -161,3 +161,15 @@ export async function discard(io: DraftIo, d: Draft) {
   await d.queue
   if (d.id) await discardItem(io, d.project, d.id)
 }
+
+/**
+ * A prompt typed into the new-worker form that closed without starting a worker is kept, never lost: as a new draft,
+ * or, when the form was opened on a draft (`from`), as that draft's new text. Resolves to the draft it is in once on
+ * disk; `undefined` when there was nothing new to keep or it could not be saved. A blank prompt is never kept.
+ */
+export async function keepUnsent(io: DraftIo, project: string, from: Draft | undefined, text: string): Promise<Draft | undefined> {
+  if (!text.trim() || text === from?.text) return undefined
+  const d = from ?? newDraft(project)
+  edit(d, text)
+  return (await save(io, d)) ? d : undefined
+}

@@ -652,6 +652,21 @@ export const defaultWhere = (f: Floor): Where => (f.cutByDefault && can(f, 'cut'
 /** The worktrees a worker can join: every one whose folders are still there. */
 const joinable = (f: Floor) => f.worktrees.filter((w) => w.state !== 'lost')
 
+/** A directory a shell can start in: a floor's hub or repo, or a repo of one of its worktrees. */
+export type ShellPlace = { project: string; dir: string; name: string; worktree?: string }
+
+/**
+ * Where a new shell can start, floor by floor, `first`'s floor ahead of the rest (the one in view): each floor that
+ * offers `shell`, its hub and repos, then each worktree's repos.
+ */
+export const shellPlaces = (floors: Floor[], first?: string): ShellPlace[] =>
+  [...floors.filter((f) => f.id === first), ...floors.filter((f) => f.id !== first)]
+    .filter((f) => can(f, 'shell'))
+    .flatMap((f) => [
+      ...[f.hub, ...f.repos].map((dir) => ({ project: f.id, dir, name: base(dir) })),
+      ...joinable(f).flatMap((w) => w.repos.map((r) => ({ project: f.id, dir: r.path, name: base(r.dir), worktree: w.name }))),
+    ])
+
 /** The form as it opens, and as a quick hire sends it: everything left to its default. */
 export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
   where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, name: '', branch: '', base: '', model: '', effort: '', prompt,

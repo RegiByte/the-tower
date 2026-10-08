@@ -234,7 +234,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
 | `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`) |
 | `/brief.js` | a worker's brief as a view over `/conversations/<id>` |
-| `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs |
+| `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, and keeping a prompt the new-worker form closed on (`keepUnsent`) |
+| `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends |
@@ -273,6 +274,7 @@ Items are plain files at `collections/<project>/<collection>/<item>` in the syst
 lists them on the board (metadata only), reads them (`tower.text('collection/<p>/<c>/<item>')`), and creates, writes and
 deletes them (`collection/create`, `collection/write`, `collection/delete`). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
+`/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
 Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through
 `review/append`.
 

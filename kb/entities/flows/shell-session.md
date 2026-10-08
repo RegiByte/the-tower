@@ -26,6 +26,8 @@ sequenceDiagram
   T->>S: kill
 ```
 
+- A shell starts from a directory's shell button in a floor, or from the dock's `+`, which lists every place a shell
+  can start ([`shellPlaces`](ref:hub/src/shared/cards.ts#shellPlaces)), the floor in view first.
 - Keys go through the shared [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys), as in every browser
   terminal: the Mac editing keys (⌘⌫, ⌘←, Shift+Enter, …) become the readline keys a shell reads
   ([[renderer-shared-modules]]).

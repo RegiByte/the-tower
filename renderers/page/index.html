@@ -57,6 +57,8 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
   scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .floor { --pt: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p, var(--deco)) var(--p-wash-mix), var(--panel)); }
 .sign button { margin-left: auto; width: 26px; height: 24px; padding: 0; display: grid; place-items: center; font-size: 15px; }
+.sign button + button { margin-left: 4px; }
+.sign button.new-draft { font-size: 13px; color: var(--muted); }
 .dirs { padding: 6px 2px 0; }
 .dir { display: flex; align-items: center; gap: 4px; padding: 1px 6px; font-size: 12px; color: var(--muted); border-radius: var(--radius); }
 .dir:hover { background: var(--panel-2); }
@@ -84,6 +86,8 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .draft:hover, .draft.sel { background: var(--panel-2); color: var(--ink); }
 .draft.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
 .draft.thread::before { content: "◇"; }
+.kept-fold { display: block; margin: 4px 0 0; padding: 2px 8px; border: none; background: none; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.kept-fold:hover { color: var(--ink); }
 .worktrees { padding: 8px 2px 0; }
 .wt { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); }
 .wt:hover { background: var(--panel-2); }
@@ -258,6 +262,10 @@ dialog#keys { width: min(620px, 92vw); }
 .shelf-files div:hover { color: var(--ink); }
 .shelf-files div.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
 .draft-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.item-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.main:not(.kept) .item-view, .main.kept .bar, .main.kept .screen { display: none; }
+.item-image { flex: 1; min-width: 0; display: grid; place-items: center; overflow: auto; padding: 16px; }
+.item-image img { max-width: 100%; max-height: 100%; }
 .main:not(.drafting) .draft-view, .main.drafting .bar, .main.drafting .screen { display: none; }
 .draft-note { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border-radius: var(--radius); background: color-mix(in oklab, var(--needs) 11%, var(--panel));
   border: 1px solid var(--needs); }
@@ -288,6 +296,14 @@ dialog#keys { width: min(620px, 92vw); }
 .tab .what { color: var(--ink); font-weight: 700; max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab .x { padding: 0 5px; border-radius: 3px; color: var(--faint); }
 .tab .x:hover { color: var(--on-broken); background: var(--broken); }
+.tab-add { flex: none; width: 24px; height: 22px; padding: 0; display: grid; place-items: center; font-size: 15px; font-weight: 400; color: var(--muted); background: var(--panel); }
+.tab-add:hover { color: var(--ink); }
+.shell-pick { position: fixed; inset: auto; margin: 0; padding: 6px; min-width: 200px; max-height: calc(100vh - 16px); overflow: auto; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); font: 13px/1.4 var(--ui); }
+.shell-pick .pick-floor { padding: 6px 8px 2px; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
+.shell-pick button { display: block; width: 100%; padding: 4px 8px 4px 14px; border: none; background: none; text-align: left; font-weight: 400; color: var(--ink); }
+.shell-pick button:hover, .shell-pick button:focus-visible { background: var(--panel-2); }
+.shell-pick small { color: var(--faint); font: 11px var(--mono); }
 
 .sky { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; border-radius: var(--radius);
   background: linear-gradient(180deg, var(--sky-top), var(--sky-mid) 60%, var(--sky-horizon)); }
@@ -374,10 +390,11 @@ button.held { opacity: .45; cursor: not-allowed; }
   <div class="archive-view" id="archive-view"><div class="shelf-head" id="archive-head"></div><div class="archive" id="archive-list"></div></div>
   <div class="draft-view" id="draft-view"><div class="shelf-head" id="draft-head"></div><div class="draft-note" id="draft-note"></div>
     <textarea id="draft-text" spellcheck="false" placeholder="a prompt for later: the first line names it"></textarea></div>
+  <div class="item-view" id="item-view"><div class="shelf-head" id="item-head"></div><div class="shelf-body" id="item-body"></div></div>
   <div class="sky" id="sky"></div>
   <div class="dock">
     <div class="grip" id="grip"></div>
-    <div class="tabs" id="tabs"></div>
+    <div class="tabs" id="tabs"></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div></div>
   </div>
 </main>
@@ -406,18 +423,19 @@ button.held { opacity: .45; cursor: not-allowed; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
-import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
+import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
+import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
 import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
 import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
 import { alertsSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
 import { placeOnOpen, watchTips } from '/tips.js'
-import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss }))
 watchTips(document)
 
 const onDuty = (c) => c.onDuty
@@ -606,14 +624,21 @@ const worktreesHtml = (f) => `<div class="worktrees">
     <div class="drafts-head">Worktrees</div>
     ${f.worktrees.map((w) => worktreeHtml(f, w)).join('')}${f.branches.map(keptBranchHtml).join('')}</div>`
 
-/** A floor's review threads, each named by its checkout beside its tag. */
+/** A floor's review threads, each named by its checkout beside its tag, and the threads Tidy filed once their work landed, folded. */
 const threadsHtml = (f) => {
   const rows = f.threads.map((t) => {
     const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
     return `<div class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" title="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></div>`
   })
-  return `<div class="drafts"><div class="drafts-head">Review threads</div>${rows.join('')}</div>`
+  const landed = landedOf(f)
+  const fold = `landed:${f.id}`
+  const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" title="threads Tidy filed once their work landed: read them here">${unfolded.has(fold) ? '▾' : '▸'} ${landed.length} landed</button>
+    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${isOpenItem(f.id, REVIEWS, t.id) ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" title="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
+  return `<div class="drafts"><div class="drafts-head">Review threads</div>${rows.join('') || '<div class="empty">none open</div>'}${filed}</div>`
 }
+
+/** The threads Tidy filed in the floor's reviews collection, the one filed last first. */
+const landedOf = (f) => landedThreads(f.collections.find((c) => c.id === REVIEWS)?.items ?? [])
 
 /** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
 const tidyHtml = (f) => `<div class="worktrees">
@@ -639,15 +664,17 @@ const draftIo = {
 }
 const { title: draftTitle, prune: pruneDraftTitles } = draftTitles(draftIo.read, () => render())
 
-const draftsHtml = (f) => {
-  const drafts = draftsOf(f)
-  const rows = drafts.items.map((item) => {
-    const open = draftOpen?.project === f.id && draftOpen.id === item.id
-    const meta = [item.tag, item.keptBy?.callsign].filter(Boolean).join(' · ')
-    return `<div class="draft ${open ? 'sel' : ''}" data-draft="${f.id}" data-item="${esc(item.id)}"><span class="t">${esc(draftTitle(f.id, item))}</span><span class="meta">${esc(meta)}</span></div>`
-  })
-  return `<div class="drafts"><div class="drafts-head">${esc(drafts.label)}<button data-new-draft="${f.id}" aria-label="new draft" title="new draft">+</button></div>${drafts.description ? `<div class="drafts-about">${esc(drafts.description)}</div>` : ''}${rows.join('') || '<div class="empty">none kept</div>'}</div>`
-}
+const draftsHtml = (f) =>
+  collectionTrayHtml(f.id, draftsOf(f), (item) => draftTitle(f.id, item), draftOpen?.project === f.id ? draftOpen.id : undefined, Date.now(),
+    `<button data-new-draft="${f.id}" aria-label="new draft" title="new draft">+</button>`)
+
+/** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
+const { title: keptTitle, prune: pruneKeptTitles } = keptTitles((project, collection, id) => tower.text(itemPath(project, collection, id)), () => render())
+const isOpenItem = (project, collection, id) => itemOpen?.project === project && itemOpen.collection === collection && itemOpen.id === id
+const keptHtml = (f, c) => collectionTrayHtml(f.id, c, (item) => keptTitle(f.id, c.id, item), itemOpen?.project === f.id && itemOpen.collection === c.id ? itemOpen.id : undefined, Date.now())
+
+/** The collections a floor shows as trays of their own: drafts and review threads have theirs. */
+const keptCollections = (f) => f.collections.filter((c) => c.id !== DRAFTS && c.id !== REVIEWS && c.items.length)
 
 /**
  * What a floor keeps beside its workers, folded to one row of counts so the workers stay in sight: drafts,
@@ -659,19 +686,22 @@ function traysHtml(f) {
   const atRisk = risky(f)
   const past = pastCount(f)
   const threads = f.threads.length
+  const landed = landedOf(f).length
+  const kept = keptCollections(f)
   const tidy = can(f, 'tidy')
   const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" title="${title}">${label}</button>`
   const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
-    drafts && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
+    drafts?.items.length && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
     trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
-    threads && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
+    (threads || landed) && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
+    ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
     past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" title="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
     tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
   if (!trays.length) return ''
   return `<div class="trays">${trays.join('')}</div>
-    ${drafts && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${threads && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
+    ${drafts?.items.length && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${kept.filter((c) => unfolded.has(`kept-${c.id}:${f.id}`)).map((c) => keptHtml(f, c)).join('')}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${(threads || landed) && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
 }
 
 /** A floor's sign: its number on the project's band, its name in caps. */
@@ -681,7 +711,7 @@ const signHtml = (n, name, extra = '') =>
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : '')}
+    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" title="new draft: a prompt kept for later">✎</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : ''))}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -1103,10 +1133,10 @@ function jumpToAnchor() {
   $('changes').querySelector(spotSelector(spot))?.scrollIntoView({ block: spot.row === -1 ? 'start' : 'center' })
 }
 
-/** A thread opened from the sidebar, on the worker most recently in its checkout. */
+/** A thread opened from the sidebar, on the worker most recently in its checkout; read as a kept item when no worker has been there. */
 function openThread(project, checkout) {
   const c = workerIn(floorOf(project), checkout)
-  if (!c) return toast(`No worker has worked in ${checkout}`)
+  if (!c) return openItem(project, REVIEWS, threadId(checkout))
   select(c.id)
   showPane('reviews')
 }
@@ -1153,7 +1183,7 @@ const STATS_POLL_MS = 60_000
 let statsPoll
 
 const floorInView = () =>
-  findCard(selected)?.project ?? shelfOpen?.project ?? archiveOpen?.project ?? draftOpen?.project ?? floorsTopDown()[0]?.id
+  findCard(selected)?.project ?? shelfOpen?.project ?? archiveOpen?.project ?? draftOpen?.project ?? itemOpen?.project ?? floorsTopDown()[0]?.id
 
 function drawSideView() {
   document.querySelector('.side').classList.toggle('on-stats', sideView === 'stats')
@@ -1230,6 +1260,7 @@ function render() {
   const c = selected && findCard(selected)
   if (c) barHtml(c)
   if (draftOpen) draftHeadHtml()
+  if (itemOpen) drawItem()
   if (archiveOpen) drawArchive()
   if (!selected) repaint($('sky'), skylineHtml())
   paintSky()
@@ -1512,6 +1543,7 @@ function closeTerminal() {
 
 /** The selected session is kept in the URL hash, so a reload reopens it. */
 function select(id) {
+  leaveItem()
   leaveShelf()
   leaveDraft()
   leaveArchive()
@@ -1534,6 +1566,7 @@ function select(id) {
 
 function goHome() {
   followChanges(undefined)
+  leaveItem()
   leaveShelf()
   leaveDraft()
   leaveArchive()
@@ -1567,6 +1600,7 @@ function openShelf(project, n, file) {
   const f = board.floors.find((f) => f.id === project)
   const entry = f?.shelf?.[n]
   if (!entry) return goHome()
+  leaveItem()
   leaveDraft()
   leaveArchive()
   closeTerminal()
@@ -1738,6 +1772,7 @@ function openArchive(project) {
   const f = floorOf(project)
   if (!f) return goHome()
   followChanges(undefined)
+  leaveItem()
   leaveShelf()
   leaveDraft()
   closeTerminal()
@@ -1816,6 +1851,7 @@ function draftHeadHtml() {
 
 /** A new draft, or an existing one once its text has arrived: the textarea stays read-only until then. */
 async function openDraft(project, id) {
+  leaveItem()
   leaveShelf()
   leaveDraft()
   leaveArchive()
@@ -1950,6 +1986,84 @@ async function deleteDraft() {
   discard(draftIo, d)
 }
 
+/** The kept item open in the main pane, and the version of it its body was drawn from. */
+let itemOpen
+
+const itemHash = ({ project, collection, id }) => `#kept/${project}/${collection}/${encodeURIComponent(id)}`
+const itemOf = ({ project, collection, id }) => {
+  const c = floorOf(project)?.collections.find((c) => c.id === collection)
+  return { c, item: c?.items.find((i) => i.id === id) }
+}
+
+function openItem(project, collection, id) {
+  if (!itemOf({ project, collection, id }).item) return toast('That item is gone')
+  followChanges(undefined)
+  leaveItem()
+  leaveShelf()
+  leaveDraft()
+  leaveArchive()
+  closeTerminal()
+  arriving = undefined
+  selected = undefined
+  itemOpen = { project, collection, id, drawn: undefined }
+  history.replaceState(null, '', itemHash(itemOpen))
+  $('main').classList.remove('home')
+  $('main').classList.add('kept')
+  $('item-view').style.cssText = paint(project)
+  render()
+}
+
+function leaveItem() {
+  if (!itemOpen) return
+  itemOpen = undefined
+  $('main').classList.remove('kept')
+  $('item-body').innerHTML = ''
+}
+
+/** The head says what the item is and who kept it; the body is drawn again only when the item changes. Deleted elsewhere, it closes. */
+function drawItem() {
+  const { c, item } = itemOf(itemOpen)
+  if (!item) return (goHome(), toast('The item was deleted'))
+  const f = floorOf(itemOpen.project)
+  const file = itemFile(c, item.id)
+  const by = item.keptBy ? ` · kept by <a href="#${item.keptBy.session}" title="go to the worker that kept it">${esc(item.keptBy.callsign)}</a>` : ''
+  repaint($('item-head'), `<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" title="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
+    <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
+    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" title="open it on its own">↗ new tab</a>
+      <button class="danger" data-item-act="delete">Delete</button>
+      <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`)
+  if (itemOpen.drawn !== item.modifiedAt) showItemBody(c, item)
+}
+
+/**
+ * Markdown and text are read and drawn in a frame where nothing runs; an html item runs framed at an origin of its own
+ * with no API (the shelf's `item` entry grants that); an image is shown; any other file is left to Finder and the editor.
+ */
+async function showItemBody(c, item) {
+  const opened = itemOpen
+  opened.drawn = item.modifiedAt
+  const kind = itemKind(item.id)
+  const url = `/${itemPath(opened.project, c.id, item.id)}`
+  if (kind === 'html') return ($('item-body').innerHTML = `<iframe class="page" title="${esc(item.tag)}" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" src="${esc(url)}?v=${item.modifiedAt}"></iframe>`)
+  if (kind === 'image') return ($('item-body').innerHTML = `<div class="item-image"><img src="${esc(url)}?v=${item.modifiedAt}" alt="${esc(item.tag)}"></div>`)
+  if (!readsText(kind)) return ($('item-body').innerHTML = `<div class="shelf-empty">the tower shows no ${esc(item.id.split('.').pop())} file<br><br>reveal it in Finder or open it in your editor ${fileButtonsHtml(itemFile(c, item.id))}</div>`)
+  const text = await tower.text(url.slice(1)).catch((err) => {
+    if (itemOpen === opened) $('item-body').innerHTML = failedHtml(item.tag, err.message, 'data-item-read')
+  })
+  if (text === undefined || itemOpen !== opened || opened.drawn !== item.modifiedAt) return
+  $('item-body').innerHTML = `<iframe id="item-doc" title="${esc(item.tag)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
+  $('item-doc').srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`
+}
+
+/** Deleting is the user's: asked first, and the view closes before the file goes. */
+async function deleteKept() {
+  const { c, item } = itemOf(itemOpen)
+  const { project, collection, id } = itemOpen
+  if (!confirm(deleteAsk(c, item, keptTitle(project, collection, item)))) return
+  goHome()
+  if (await told(tower.call('collection/delete', { project, collection, id }))) toast(`Deleted ${item.tag} from ${c.label}`)
+}
+
 /**
  * A session the page started, to open once the board carries it: the host answers before the tower has read the
  * new log, and until then there is no card to draw and no screen to stream. Any other way the viewer goes cancels it.
@@ -1971,10 +2085,21 @@ const shellWhere = (sh) => {
   return `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
 }
 
+const shellAddHtml = () => shellPlaces(board.floors).length ? '<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" title="new shell: pick a directory">+</button>' : ''
+
+/** The directories a new shell can start in, the floor in view first, each floor under its name. */
+function shellPickHtml() {
+  const places = shellPlaces(board.floors, floorInView())
+  return [...new Set(places.map((p) => p.project))].map((project) => `<div class="pick-floor" style="${paint(project)}">${esc(floorOf(project).name)}</div>` +
+    places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" title="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>⎇ ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
+}
+$('shell-pick').addEventListener('toggle', (e) => e.newState === 'open' && ($('shell-pick').innerHTML = shellPickHtml()))
+placeOnOpen($('shell-pick'), () => $('tabs').querySelector('.tab-add'))
+
 function renderDock() {
   if (!board.termsUp) return ($('tabs').innerHTML = `<span>shells: ${esc(whyNot(board, 'shell'))}</span>`)
-  if (!board.shells.length) return ($('tabs').innerHTML = "<span>no shells · start one from a project dir's shell button</span>")
-  $('tabs').innerHTML = [...board.shells].sort(byStart).map((sh) =>
+  if (!board.shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · + starts one in a floor's directory</span>`)
+  $('tabs').innerHTML = shellAddHtml() + [...board.shells].sort(byStart).map((sh) =>
     `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" title="${esc(sh.cwd)}">
       <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
       <span class="x" data-kill-shell="${sh.id}" aria-hidden="true" title="kill this shell">×</span></button>`).join('')
@@ -2086,7 +2211,7 @@ $('spawn').addEventListener('keydown', (e) => {
 })
 
 $('spawn').addEventListener('close', async () => {
-  if ($('spawn').returnValue !== 'start') return
+  if ($('spawn').returnValue !== 'start') return keepSpawnPrompt()
   const f = floorOf($('spawn').dataset.project)
   const reply = await told(tower.run(...spawnCall(f, syncSpawn())))
   if (!reply) return
@@ -2094,6 +2219,16 @@ $('spawn').addEventListener('close', async () => {
   if (spawnDraft) await deleteSent(spawnDraft)
   selectArriving(reply.id)
 })
+
+/** A prompt typed into a form closed without starting is kept in the floor's drafts, or in the draft it was opened on. */
+async function keepSpawnPrompt() {
+  const f = floorOf($('spawn').dataset.project)
+  const text = $('spawn').querySelector('[name=prompt]').value
+  if (!f || !draftsOf(f)) return
+  const kept = await keepUnsent(draftIo, f.id, spawnDraft, text)
+  if (kept && draftOpen === kept) $('draft-text').value = kept.text
+  if (kept) toast(`${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
+}
 
 /** What is being asked, while it is in flight: a second press waits for the first's reply. */
 const inFlight = new Set()
@@ -2133,8 +2268,13 @@ document.addEventListener('click', (e) => {
   if (spawn) return openSpawn(spawn.dataset.spawn)
   const newDraft = e.target.closest('[data-new-draft]')
   if (newDraft) return openDraft(newDraft.dataset.newDraft)
-  const draft = e.target.closest('[data-draft]')
-  if (draft) return openDraft(draft.dataset.draft, draft.dataset.item)
+  const kept = e.target.closest('[data-kept]')?.dataset.kept
+  if (kept) {
+    const { project, collection, id } = keptOf(kept)
+    return collection === DRAFTS ? openDraft(project, id) : openItem(project, collection, id)
+  }
+  if (e.target.closest('[data-item-act=delete]')) return deleteKept()
+  if (e.target.closest('[data-item-read]')) return ((itemOpen.drawn = undefined), render())
   const copy = e.target.closest('[data-copy]')?.dataset.copy
   if (copy) return navigator.clipboard.writeText(copy).then(() => toast(`Copied ${copy}`), (err) => toast(err.message))
   const draftAct = e.target.closest('[data-draft-act]')?.dataset.draftAct
@@ -2207,7 +2347,10 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-thread-read]')) return ((review = undefined), render())
   if (e.target.closest('[data-shelf-retry]')) return openShelf(shelfOpen.project, shelfOpen.n)
   const newShell = e.target.closest('[data-shell-dir]')
-  if (newShell) return spawnShell(newShell.dataset.shellProject, newShell.dataset.shellDir)
+  if (newShell) {
+    if ($('shell-pick').matches(':popover-open')) $('shell-pick').hidePopover()
+    return spawnShell(newShell.dataset.shellProject, newShell.dataset.shellDir)
+  }
   const killShell = e.target.closest('[data-kill-shell]')?.dataset.killShell
   if (killShell) {
     const sh = board.shells.find((sh) => sh.id === killShell)
@@ -2291,6 +2434,7 @@ function applyScheme() {
   briefKey = undefined
   shownDrawn = undefined
   if (shelfOpen?.file) showDoc(shelfOpen.file)
+  if (itemOpen) itemOpen.drawn = undefined
   sendScheme()
   render()
 }
@@ -2377,6 +2521,7 @@ tower.subscribe(async (next) => {
   noticeShown(cards())
   freshArchives()
   pruneDraftTitles(board.floors)
+  pruneKeptTitles(board.floors)
   sendBoard()
   void followDraft()
   if (arriving && findCard(arriving)) return select(arriving)
@@ -2397,6 +2542,11 @@ async function route(wanted) {
     if (drafts && (!id || drafts.items.some((i) => i.id === decodeURIComponent(id)))) return (openDraft(project, id && decodeURIComponent(id)), true)
   }
   if (wanted.startsWith('archive/')) return (openArchive(wanted.slice('archive/'.length)), true)
+  if (wanted.startsWith('kept/')) {
+    const [, project, collection, id] = wanted.split('/')
+    const named = { project, collection, id: id && decodeURIComponent(id) }
+    if (itemOf(named).item) return (openItem(named.project, named.collection, named.id), true)
+  }
   if (await lookUp(wanted)) return (select(wanted), true)
   return false
 }

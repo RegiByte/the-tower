@@ -78,6 +78,8 @@ primitives every renderer can reach.
   delete; transfer is read, then `submit`, then delete. Its editing is one module renderers import,
   `src/shared/drafts.ts` ([[corkboard]]); nothing in the core imports it. Which collection a feature works on is named once, in
   that feature.
+- Any collection, given a meaning or not, is listed and read alike through `/items.js` ([[collection-trays]]): a
+  renderer shows what a floor keeps without knowing what it is for.
 - Games are a second renderer's meaning ([[arcade]]): Tower 3D draws a floor's `games` as arcade cabinets and plays
   each in a sandboxed frame, over the same reads. An item's title is derived where it is shown
   ([`src/shared/titles.ts`](ref:hub/src/shared/titles.ts): a text item's first line, an html item's `<title>`, read

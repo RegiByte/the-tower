@@ -66,6 +66,15 @@ export const landedOfId = (id: string): { checkout: string; landed: string } | u
   return checkout === undefined ? undefined : { checkout, landed: `${day} ${hh}:${mm}` }
 }
 
+/** The threads Tidy filed in a floor's `reviews` items, the one filed last first, each with its item's tag. */
+export const landedThreads = (items: { id: string; tag: string }[]) =>
+  items
+    .flatMap((item) => {
+      const filed = landedOfId(item.id)
+      return filed ? [{ ...filed, id: item.id, tag: item.tag }] : []
+    })
+    .sort((a, b) => b.landed.localeCompare(a.landed))
+
 /** A reviewer's closing note says what to do with the work in bold (the mod's `review` skill), `**ship**` or `**Verdict: ship**`. */
 export type Verdict = 'ship' | 'fix first' | 'rethink'
 
