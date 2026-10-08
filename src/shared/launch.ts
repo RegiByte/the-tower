@@ -92,6 +92,14 @@ export const newSessionId = (): string =>
 /** Claude's session name, the one its peers message it by: the worker's callsign. */
 const nameArgs = (name: string) => ['--name', name]
 
+/**
+ * Claude reads one `--settings`, the last it is given. `dirs` are the session's directories, its own first
+ * (`sessionDirs`): the others are granted file access only, so their CLAUDE.md and `.claude/` skills, commands and agents
+ * stay out of the session, and a skill copied into several repos shows up once. Claude's fullscreen TUI keeps the
+ * conversation on the alternate screen and reads the mouse, so a viewer's wheel scrolls Claude's transcript.
+ */
+const settingsArgs = ([, ...others]: string[]) => ['--settings', JSON.stringify({ permissions: { additionalDirectories: others }, tui: 'fullscreen' })]
+
 /** A worker edits the items its floor keeps, outside its own directories. The directory holds no `.claude/`. */
 const keptArgs = (kept: string) => ['--add-dir', kept]
 
@@ -102,28 +110,28 @@ const linkArgs = (worktree: WorktreeBrief | undefined) => (worktree?.links ?? []
 const pluginArgs = (plugins: string[]) => plugins.flatMap((dir) => ['--plugin-dir', dir])
 
 /**
- * `name`: the new worker's callsign (`callsignsOf`). `user`: the config's `user.name`. `worktree`: the brief of the worktree `cwd` is, `undefined` in a main checkout
+ * `name`: the new worker's callsign (`callsignsOf`). `dirs`: the session's directories (`sessionDirs`). `user`: the config's `user.name`. `worktree`: the brief of the worktree `cwd` is, `undefined` in a main checkout
  * (`worktreeBrief`). `kept`: the project's collections directory (`projectCollectionsPath`). `plugins`: the project's
  * plugin directories (`projectPlugins`).
  */
-export const spawnRequest = (id: string, name: string, project: string, cwd: string, launch: Launch, user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
+export const spawnRequest = (id: string, name: string, project: string, cwd: string, dirs: string[], launch: Launch, user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
   t: 'spawn',
   id,
   project,
   cwd,
-  args: [...nameArgs(name), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...launchArgs(launch, user, worktree)],
+  args: [...nameArgs(name), ...settingsArgs(dirs), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...launchArgs(launch, user, worktree)],
   ...SPAWN_SIZE,
 })
 
 /**
  * A resume continues a session's conversation in the directory it ran in, under the same project, as session `id`.
- * `name`: the callsign of the worker it carries on, or its own on a fork (`resumeName`).
+ * `name`: the callsign of the worker it carries on, or its own on a fork (`resumeName`). `dirs`: as for a spawn.
  */
-export const resumeRequest = ({ project, cwd }: SessionHeader, conversation: string, id: string, name: string, user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
+export const resumeRequest = ({ project, cwd }: SessionHeader, conversation: string, id: string, name: string, dirs: string[], user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
   t: 'spawn',
   id,
   project,
   cwd,
-  args: [...nameArgs(name), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...resumeArgs(conversation, user, worktree)],
+  args: [...nameArgs(name), ...settingsArgs(dirs), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...resumeArgs(conversation, user, worktree)],
   ...SPAWN_SIZE,
 })

@@ -20,6 +20,7 @@ export const CLAUDE_SURFACES: { surface: string; read: string }[] = [
   { surface: 'bracketed pastes kept short enough to stay out of the pasted-content wrapping', read: 'src/machine.ts' },
   { surface: 'the peer registry ~/.claude/sessions/<pid>.json', read: 'src/machine.ts, src/bridge/resources.ts' },
   { surface: 'a transcript saved with the first prompt, so a conversation can be resumed', read: 'src/bridge/conversation.ts' },
+  { surface: "the tui: fullscreen setting: the alternate screen and SGR mouse reports, so a viewer's wheel scrolls Claude's transcript", read: 'src/shared/launch.ts' },
 ]
 
 /** A release's `major.minor.patch`; anything after it (`-dev…`) is the build, not the release. */

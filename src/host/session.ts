@@ -2,20 +2,11 @@ import { withoutParentSession } from '../shared/env.ts'
 import type { ClaudeHookInput, Config, ModEvent } from '../shared/model.ts'
 
 /**
- * The project's other directories are granted file access only: their CLAUDE.md and `.claude/` skills, commands and
- * agents stay out of the session, so a skill copied into several repos shows up once.
+ * `modDir` is the tower mod (`src/mod`), which posts Claude's events to the host, read by each Claude as it starts.
+ * `args` come last, so they can end with `-- <prompt>`.
  */
-const sessionSettings = (additionalDirectories: string[]) => ({ permissions: { additionalDirectories } })
-
-/**
- * `dirs` are the session's directories, its own first (`sessionDirs`). `modDir` is the tower mod (`src/mod`),
- * which posts Claude's events to the host, read by each Claude as it starts. Only the directory the session starts in
- * configures Claude. `args` come last, so they can end with `-- <prompt>`.
- */
-export const sessionArgv = (config: Config, [, ...others]: string[], args: string[], modDir: string): string[] => [
+export const sessionArgv = (config: Config, args: string[], modDir: string): string[] => [
   ...config.argv,
-  '--settings',
-  JSON.stringify(sessionSettings(others)),
   '--plugin-dir',
   modDir,
   ...args,

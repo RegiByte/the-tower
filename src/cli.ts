@@ -43,7 +43,7 @@ import type { Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
-import { callsignsOf, configuredUser, projectPlugins, towerPort, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
+import { callsignsOf, configuredUser, projectPlugins, sessionDirs, towerPort, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
 import { newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
 import { briefFor } from './worktrees.ts'
@@ -149,7 +149,7 @@ const main = async (): Promise<void> => {
       const prompt = positionals.join(' ') || undefined
       const cwd = values.cwd ?? project.hub
       const session = newSessionId()
-      print(await request(spawnRequest(session, callsignsOf(config)(session), id, cwd, { ...values, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
+      print(await request(spawnRequest(session, callsignsOf(config)(session), id, cwd, sessionDirs(project, cwd), { ...values, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
       break
     }
     case 'resume': {
@@ -160,8 +160,9 @@ const main = async (): Promise<void> => {
       const source = sessions.find((s) => s.header.id === id)!
       const heir = newSessionId()
       const config = readConfigFile()
-      const brief = await briefFor(config.projects[log.header.project], worktreesConfig(config, log.header.project).links, log.header.cwd)
-      print(await request(resumeRequest(log.header, conversation.id, heir, resumeName(source, conversation.id, heir, sessions, callsignsOf(config)), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project))))
+      const project = config.projects[log.header.project]
+      const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
+      print(await request(resumeRequest(log.header, conversation.id, heir, resumeName(source, conversation.id, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project))))
       break
     }
     case 'submit':

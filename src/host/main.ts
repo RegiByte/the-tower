@@ -40,12 +40,12 @@ function spawnSession({ id, project: projectId, cwd, args, cols, rows }: Extract
   const config: Config = JSON.parse(readFileSync(paths.config, 'utf8'))
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
-  const dirs = sessionDirs(project, cwd)
+  sessionDirs(project, cwd)
 
   if (live.has(id) || existsSync(sessionLogPath(paths, id))) throw new Error(`Session "${id}" already exists`)
 
   const startedAt = Date.now()
-  const argv = sessionArgv(config, dirs, args, MOD_DIR)
+  const argv = sessionArgv(config, args, MOD_DIR)
   const header: SessionHeader = { id, project: projectId, cwd, argv, startedAt, cols, rows }
   const [file, ...rest] = argv
 

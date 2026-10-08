@@ -601,7 +601,7 @@ const resume = (id: string, conversation: string) =>
     if (lost) return lost
     const heir = newSessionId()
     const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
-    return host(resumeRequest(source.header, conversation, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
+    return host(resumeRequest(source.header, conversation, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
   })
 
 const withProject = (projectId: string, act: (project: Project, config: Config) => Answer | Promise<Answer>) => {
@@ -631,7 +631,7 @@ const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =
   withProject(projectId, async (project, config) => {
     const id = newSessionId()
     const cwd = given ?? project.hub
-    return lostWorktree(project, cwd) ?? host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+    return lostWorktree(project, cwd) ?? host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
   })
 
 /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -660,7 +660,7 @@ const spawnCut = (projectId: string, request: { name?: string; branch?: string; 
       const branch = request.branch ?? `${branchPrefix}${name}`
       const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
       const cwd = made.made[0].path
-      const answer = await host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+      const answer = await host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
       if (answer.t === 'error') {
         await rollback(made.made)
         return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)
