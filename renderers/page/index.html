@@ -336,6 +336,9 @@ dialog .actions small { margin-right: auto; }
   color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; max-width: min(720px, 90vw); }
 .board-error b { display: block; margin-bottom: 2px; }
 .board-error:empty { display: none; }
+.board-error small { display: block; margin-top: 4px; color: var(--muted); }
+body.lost :is(#tally, #limits, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
+button.held { opacity: .45; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
@@ -403,10 +406,10 @@ dialog .actions small { margin-right: auto; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
 import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
 import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
 import { NATURAL_KEYS, terminalKeys } from '/termkeys.js'
@@ -444,8 +447,11 @@ function remember(key, value) {
   try { localStorage.setItem(key, value) } catch {}
 }
 
-/** Why the tower can't build the board, until its next board. */
+/** Why there is no live board, until the next board. */
 let boardError
+/** When the tower stopped answering, while it doesn't: the page's times stand still there, as its board does. */
+let lostAt
+const pageNow = () => lostAt ?? Date.now()
 let board = { user: { name: 'user' }, floors: [], waiting: [], rateLimits: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
 /** The web page of each project directory's origin remote. */
 let origins = {}
@@ -477,7 +483,7 @@ function readArchive(project) {
   archives.set(project, reading)
   return tower.archive(project).then(
     (cards) => archives.get(project) === reading && ((reading.cards = cards), render()),
-    (err) => toast(`The archive of ${project} can't be read: ${err.message}`),
+    (err) => archives.get(project) === reading && (reading.cards ? toast(`The archive of ${project} can't be read: ${err.message}`) : ((reading.failed = err.message), render())),
   )
 }
 
@@ -502,7 +508,7 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
     ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act"><button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button></div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act">${whyNot(board, 'resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
@@ -538,8 +544,12 @@ function toggleCrewFold(id) {
 /** Why a past worker can't be resumed, quietly: it is history, not an alarm. */
 const unresumableHtml = (c) => `<span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
 
+/** A verb a daemon that is down holds back: drawn, inert, its tip saying why (`whyNot`). */
+const heldHtml = (verb, label, inner, cls = '') =>
+  `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(whyNot(board, verb))}">${inner}</button>`
+
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
+  ? whyNot(board, 'resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
 
 const pastConversationHtml = (c, conv) =>
@@ -556,7 +566,7 @@ const pastHtml = (c) =>
 
 const dirHtml = (f, dir, hub) =>
   `<div class="dir"><span class="dname" title="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
-    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : whyNot(board, 'shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : ''}
     ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
@@ -579,7 +589,7 @@ const worktreeHtml = (f, w) => {
   return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
-    ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state === 'lost' ? '' : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : whyNot(board, 'shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : ''}
     ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
   </div>`
 }
@@ -668,7 +678,7 @@ const signHtml = (n, name, extra = '') =>
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : '')}
+    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : whyNot(board, 'spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : '')}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -735,7 +745,7 @@ function skylineHtml() {
   const working = cards().filter((c) => c.status === 'working').length
   const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
   return `<div class="stars"></div><div class="orb" id="orb"></div>
-    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting ? `press N or ${MOVE_KEYS.waiting.label} to go to the next one` : 'click a window, or + on a floor to start a session'}</div>
+    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting ? `press N or ${MOVE_KEYS.waiting.label} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
       <div class="clock" id="clock"></div></div>
     <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
 }
@@ -755,8 +765,8 @@ function barHtml(c) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" title="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
   repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" title="everything else about ${callsign(c.id)}">ⓘ</button>
-    ${can(c, 'resume') ? `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>` : ''}
-    ${can(c, 'review') ? `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>` : ''}
+    ${!can(c, 'resume') ? '' : whyNot(board, 'resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
+    ${!can(c, 'review') ? '' : whyNot(board, 'review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" title="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
     <button data-act="home" aria-label="back to the skyline" title="back to the skyline (Esc outside the terminal)">✕</button>`)
@@ -930,9 +940,17 @@ function followChanges(c) {
   if (turnEnded) readChanges(c.id)
 }
 
+/** Why the last read of a worker's Changes failed, by its id, while none is held. */
+let changesFailed
+
 async function readChanges(id) {
-  const repos = await told(tower.get(`changes/${id}`))
+  const repos = await tower.get(`changes/${id}`).catch((err) => {
+    if (changes?.id === id) return void toast(err.message)
+    changesFailed = { id, message: err.message }
+    render()
+  })
   if (!repos || changesPoll?.id !== id) return
+  changesFailed = undefined
   const marks = await Promise.all(repos.map((repo) => tower.store.get(viewedKey(repo.dir))))
   changes = { id, repos, at: Date.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
   render()
@@ -970,7 +988,8 @@ function drawChanges() {
   const live = read && livePick(read, pick)
   if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) pick = live
-  drawPanel($('changes'), changesHtml({ read, folds, pick, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
+  const failed = read || changesFailed?.id !== c.id ? undefined : changesFailed.message
+  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && read) jumpToAnchor()
@@ -997,11 +1016,10 @@ function followThread(c) {
   const same = review?.project === c.project && review.checkout === checkout
   review = { key, project: c.project, checkout, thread: !item ? { checkout, messages: [] } : same ? review.thread : undefined }
   if (!item) return
-  told(tower.text(`collection/${c.project}/${REVIEWS}/${encodeURIComponent(item.id)}`)).then((text) => {
-    if (text === undefined || review?.key !== key) return
-    review.thread = parseThread(text)
-    render()
-  })
+  tower.text(`collection/${c.project}/${REVIEWS}/${encodeURIComponent(item.id)}`).then(
+    (text) => review?.key === key && ((review.thread = parseThread(text)), (review.failed = undefined), render()),
+    (err) => review?.key === key && (review.thread ? toast(err.message) : ((review.failed = err.message), render())),
+  )
 }
 
 const threadOf = (c) => (review?.project === c.project && review.checkout === threadCheckoutOf(c) ? review.thread : undefined)
@@ -1052,7 +1070,7 @@ function sendNotes(c) {
 }
 
 const threadView = (c) => ({
-  checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), reader: c, changes: changes?.id === c.id ? changes.repos : undefined,
+  checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), failed: threadOf(c) ? undefined : review?.failed, reader: c, changes: changes?.id === c.id ? changes.repos : undefined,
   targets: sendTargets(floorOf(c.project), threadCheckoutOf(c)), target: sendTarget(c), re: noteRe, user: board.user.name,
   files: threadFiles(floorOf(c.project), threadCheckoutOf(c)),
 })
@@ -1127,7 +1145,7 @@ function showBrief(c, threads) {
  * every minute while shown.
  */
 let sideView = (await tower.store.get('side.view')) ?? 'floors'
-const statsView = { stats: undefined, at: undefined, range: (await tower.store.get('stats.range')) ?? 'week', all: false, reading: 0 }
+const statsView = { stats: undefined, failed: undefined, at: undefined, range: (await tower.store.get('stats.range')) ?? 'week', all: false, reading: 0 }
 const STATS_POLL_MS = 60_000
 let statsPoll
 
@@ -1146,9 +1164,14 @@ function drawSideView() {
 
 async function readStats() {
   const reading = ++statsView.reading
-  const stats = await tower.stats(statsQuery(statsView.range, Date.now()))
-  if (reading !== statsView.reading) return
-  Object.assign(statsView, { stats, at: Date.now() })
+  const stats = await tower.stats(statsQuery(statsView.range, Date.now())).catch((err) => {
+    if (reading !== statsView.reading) return
+    if (statsView.stats) return void toast(err.message)
+    statsView.failed = err.message
+    drawSideView()
+  })
+  if (!stats || reading !== statsView.reading) return
+  Object.assign(statsView, { stats, failed: undefined, at: Date.now() })
   drawSideView()
 }
 
@@ -1230,7 +1253,7 @@ document.body.classList.toggle('collapsed', (await tower.store.get('side.collaps
 function tick() {
   if (!selected && !shelfOpen) paintSky()
   paintLimits()
-  for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(Date.now() - Number(el.dataset.since))
+  for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
   if (ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(heededWaits(board, heed))
 }
 
@@ -1667,9 +1690,10 @@ const shelfFileName = (entry, file) => ('item' in entry ? tagOf(file) : base(fil
 
 async function showCollection(entry, file) {
   const opened = shelfOpen
-  const files = await told(tower.get(shelfPath(opened.project, opened.n)))
-  if (!files) return
-  if (shelfOpen !== opened) return
+  const files = await tower.get(shelfPath(opened.project, opened.n)).catch((err) => {
+    if (shelfOpen === opened) $('shelf-body').innerHTML = failedHtml(shelfSource(entry), err.message, 'data-shelf-retry')
+  })
+  if (!files || shelfOpen !== opened) return
   if (!files.length) return ($('shelf-body').innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
   opened.files = files
   $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(shelfFileName(entry, f))}</div>`).join('')}</div>
@@ -1738,10 +1762,12 @@ let archiveDrawn = ''
 function drawArchive() {
   const f = floorOf(archiveOpen.project)
   if (!archives.has(f.id)) readArchive(f.id)
-  const archive = archives.get(f.id).cards
+  const { cards: archive, failed } = archives.get(f.id)
   if (!archive) {
     $('archive-count').textContent = plural(pastCount(f), 'worker')
-    return void ($('archive-list').innerHTML = archiveDrawn = '<div class="empty">reading the archive…</div>')
+    const html = failed ? failedHtml('the archive', failed, 'data-archive-read') : '<div class="empty">reading the archive…</div>'
+    if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
+    return
   }
   const past = pastOf(f, archive)
   const shown = past.filter((c) => matchesWords(c, archiveOpen.words))
@@ -1775,7 +1801,7 @@ function draftHeadHtml() {
   const file = item && fileButtonsHtml(`${draftsOf(f).dir}/${item.id}`)
   $('draft-head').innerHTML = `<span class="label">Draft</span>${tag}${file ?? ''}<span class="dim">${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${by}</span>
     <span class="actions"><small class="dim">⌘⏎ new session</small>
-      ${can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : ''}
+      ${can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : whyNot(board, 'spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : ''}
       ${targets().length ? '<button data-draft-act="transfer" title="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
       <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
@@ -1943,7 +1969,7 @@ const shellWhere = (sh) => {
 }
 
 function renderDock() {
-  if (!board.termsUp) return ($('tabs').innerHTML = '<span>shells: the terms daemon is down · npm run terms</span>')
+  if (!board.termsUp) return ($('tabs').innerHTML = `<span>shells: ${esc(whyNot(board, 'shell'))}</span>`)
   if (!board.shells.length) return ($('tabs').innerHTML = "<span>no shells · start one from a project dir's shell button</span>")
   $('tabs').innerHTML = [...board.shells].sort(byStart).map((sh) =>
     `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" title="${esc(sh.cwd)}">
@@ -2151,7 +2177,7 @@ document.addEventListener('click', (e) => {
   if (scope) return ((statsView.all = scope === STATS_ALL), drawSideView())
   const range = e.target.closest('[data-stats-range]')?.dataset.statsRange
   if (range) return (Object.assign(statsView, { range, stats: undefined }), tower.store.set('stats.range', range), drawSideView(), readStats())
-  if (e.target.closest('[data-stats-read]')) return readStats()
+  if (e.target.closest('[data-stats-read]')) return ((statsView.failed = undefined), drawSideView(), readStats())
   if (e.target.closest('[data-keys]')) return showKeys()
   const move = e.target.closest('[data-move]')?.dataset.move
   if (move) return go(move)
@@ -2167,13 +2193,15 @@ document.addEventListener('click', (e) => {
   if (viewed) return toggleViewed(viewed)
   const fold = e.target.closest('[data-fold]')?.dataset.fold
   if (fold) return toggleFold(fold)
-  if (e.target.closest('[data-changes-read]')) return readChanges(selected)
+  if (e.target.closest('[data-changes-read]')) return ((changesFailed = undefined), render(), readChanges(selected))
   const open = e.target.closest('[data-open]')
   if (open) return told(tower.run(floorOf(open.dataset.openProject).calls.editor, { dir: open.dataset.open }))
   const shelved = e.target.closest('[data-shelf]')
   if (shelved) return openShelf(shelved.dataset.shelf, Number(shelved.dataset.n))
   const doc = e.target.closest('[data-doc]')
   if (doc) return showDoc(doc.dataset.doc)
+  if (e.target.closest('[data-archive-read]')) return (readArchive(archiveOpen.project), render())
+  if (e.target.closest('[data-thread-read]')) return ((review = undefined), render())
   if (e.target.closest('[data-shelf-retry]')) return openShelf(shelfOpen.project, shelfOpen.n)
   const newShell = e.target.closest('[data-shell-dir]')
   if (newShell) return spawnShell(newShell.dataset.shellProject, newShell.dataset.shellDir)
@@ -2318,10 +2346,18 @@ told(tower.get('renderers')).then((r) => r && ($('renderers').innerHTML = render
 let opened = false
 /** The board's failure stays on screen over the last board drawn, until the tower sends a board again. */
 const showBoardError = () =>
-  ($('board-error').innerHTML = boardError ? `<b>The tower can't build the board</b>${esc(boardError.message)}` : '')
+  ($('board-error').innerHTML = !boardError ? '' : `<b>${boardErrorTitle(boardError.code)}</b>${esc(boardError.message)}${
+    lostAt ? `<small>what you see is how it stood at ${new Date(lostAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>` : ''}`)
+
+/** A lost tower leaves its board on screen, dimmed and with its times stopped, until it answers again. */
+function markLost(lost) {
+  lostAt = lost ? lostAt ?? Date.now() : undefined
+  document.body.classList.toggle('lost', lost)
+}
 
 tower.onBoardError((err) => {
   boardError = err
+  markLost(err.code === 'disconnected')
   showBoardError()
   sendBoard()
 })
@@ -2330,6 +2366,7 @@ tower.subscribe(async (next) => {
   await Promise.all([readHeed(), readCrewFolds()])
   board = next
   boardError = undefined
+  markLost(false)
   showBoardError()
   attend(next)
   noticeShown(cards())

@@ -13,6 +13,7 @@
     "hub/src/tower/server.ts#problemPage", "hub/src/tower/server.ts#withConfig",
     "hub/src/shared/shelf-page.ts#BoardMsg",
     "hub/src/shared/shelf-page.ts#BoardError",
+    "hub/src/shared/cards.ts#boardErrorTitle",
     "hub/src/shared/api.ts#ERROR_CODES",
     "hub/src/shared/model.ts#ConfigError",
     "hub/src/system.ts#readConfig",
@@ -44,6 +45,13 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. The tower page and Tower 3D show it in a
   banner over the last board they drew, gone with the next board; the tower page relays it to a framed page.
+- **A lost tower is a board error too.** When `/board` drops, `tower.js` tells `onBoardError` an error of code
+  `disconnected` ([`BoardError`](ref:hub/src/shared/shelf-page.ts#BoardError): told by the client, never sent by the
+  tower), once until a board comes back. The browser's `EventSource` reconnects by itself after a dropped connection;
+  one it gave up on (an error answer) `tower.js` opens again after 3 s, `/mux` alike, whose next id re-watches every
+  stream. The board through `subscribe` clears it, as for the tower's own errors, and the tower page relays it to a
+  framed page. Renderers head it with [`boardErrorTitle`](ref:hub/src/shared/cards.ts#boardErrorTitle); the tower
+  page also dims the board and stops its `data-since` times at the moment it was lost. API 1.9.
 - **Recovery without a reload.** [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches the config's directory
   for the config file (editors replace it on save, which a watch on the file itself would lose), so a fix publishes
   the board at once. A config the tower can't read keeps the repos' last git read.

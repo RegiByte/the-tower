@@ -18,6 +18,7 @@
     "hub/src/shared/panels.ts#fileCall",
     "hub/src/shared/panels.ts#panelsCss",
     "hub/src/shared/panels.ts#rowCode",
+    "hub/src/shared/panels.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
     "hub/src/tower/server.ts#design",
     "hub/renderers/page/index.html",
@@ -64,6 +65,10 @@ panels are the same view in both renderers. Only where they sit, their state and
 - *Served modules are bundled.* The tower serves every shared module bundled with what it imports at runtime
   (esbuild, [`design`](ref:hub/src/tower/server.ts#design)), the same way Tower 3D's bundle does. `./x.ts` imports
   then work in served modules with no rewriting.
+- *A read that failed says so.* Each view takes `failed`, why its last read failed, drawn while nothing is read in
+  place of "reading…": [`failedHtml`](ref:hub/src/shared/panels.ts#failedHtml) names what couldn't be read and why,
+  with Read again (`data-changes-read`, `data-thread-read`, `data-stats-read`). A failure over a read already held
+  leaves it drawn and toasts. The tower page draws its archive and shelf reads with the same `failedHtml`.
 - *What stays per renderer is wiring, not html.* Copying a tag, scrolling to `re n…` and toasts are each
   renderer's handlers on the same attributes. The page re-reads Changes while its pane is open and when a turn
   ends; Tower 3D every 30 s while either tab is open. A note picked in Tower 3D goes to the thread its Reviews tab

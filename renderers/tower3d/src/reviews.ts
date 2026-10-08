@@ -18,8 +18,9 @@ export const onReviews = (then: () => void, fail: (err: Error) => void) => ((arr
 const threadText = (project: string, checkout: string): Promise<string> =>
   FIXTURE === undefined ? tower.text(`collection/${project}/${REVIEWS}/${encodeURIComponent(threadId(checkout))}`) : Promise.resolve(FIXTURE_THREADS[`${project}/${checkout}`] ?? '')
 
-/** Each thread as last read, by `<project>/<checkout>`: the version of its file it was read at, and the read. */
-const threads = new Map<string, { at: number; thread?: ReviewThread; read: Promise<ReviewThread> }>()
+/** Each thread as last read, by `<project>/<checkout>`: the version of its file it was read at, the read, and why it failed. */
+type ThreadEntry = { at: number; thread?: ReviewThread; failed?: string; read: Promise<ReviewThread> }
+const threads = new Map<string, ThreadEntry>()
 
 const emptyThread = (checkout: string): ReviewThread => ({ checkout, messages: [] })
 
@@ -31,13 +32,18 @@ function entryOf(board: Board, project: string, checkout: string) {
   const had = threads.get(key)
   if (had?.at === item.modifiedAt) return had
   const read = threadText(project, checkout).then(parseThread)
-  const entry = { at: item.modifiedAt, thread: had?.thread, read }
+  const entry: ThreadEntry = { at: item.modifiedAt, thread: had?.thread, read }
   threads.set(key, entry)
   read.then((thread) => {
     if (threads.get(key) !== entry) return
     entry.thread = thread
     arrived()
-  }, failed)
+  }, (err: Error) => {
+    if (threads.get(key) !== entry) return
+    if (entry.thread) return failed(err)
+    entry.failed = err.message
+    arrived()
+  })
   return entry
 }
 
@@ -50,6 +56,15 @@ export const threadOf = (board: Board, project: string, checkout: string): Revie
   return entry ? entry.thread : emptyThread(checkout)
 }
 
+/** Why a checkout's thread couldn't be read, while none is held. */
+export const threadFailed = (board: Board, project: string, checkout: string) => {
+  const entry = entryOf(board, project, checkout)
+  return entry?.thread ? undefined : entry?.failed
+}
+
+/** Forgets a checkout's thread, to read it again on the next draw. */
+export const rereadThread = (project: string, checkout: string) => threads.delete(`${project}/${checkout}`)
+
 /** A checkout's thread as its file reads at the version the board names, once read. */
 export const threadRead = (board: Board, project: string, checkout: string): Promise<ReviewThread> =>
   entryOf(board, project, checkout)?.read ?? Promise.resolve(emptyThread(checkout))
@@ -59,6 +74,9 @@ export type ChangesRead = Read & { id: string }
 
 const changes = new Map<string, ChangesRead>()
 export const changesOf = (id: string) => changes.get(id)
+/** Why a worker's Changes couldn't be read, by its id, while none is held. */
+const changesFailures = new Map<string, string>()
+export const changesFailed = (id: string) => (changes.has(id) ? undefined : changesFailures.get(id))
 
 const readRepos = (id: string): Promise<RepoChanges[]> =>
   FIXTURE === undefined ? (tower.get as (path: string) => Promise<RepoChanges[]>)(`changes/${id}`) : Promise.resolve(FIXTURE_CHANGES[id] ?? [])
@@ -67,8 +85,13 @@ const readViewed = (dir: string) => (FIXTURE === undefined ? tower.store.get(`vi
 
 /** Reads a worker's Changes now, with the viewed marks every renderer in this browser keeps. */
 export async function readChanges(id: string, now: number) {
-  const repos = await readRepos(id).catch((err: Error) => (failed(err), undefined))
+  const repos = await readRepos(id).catch((err: Error) => {
+    if (changes.has(id)) return void failed(err)
+    changesFailures.set(id, err.message)
+    arrived()
+  })
   if (!repos) return
+  changesFailures.delete(id)
   const marks = await Promise.all(repos.map((r) => readViewed(r.dir)))
   changes.set(id, { id, repos, at: now, viewed: Object.fromEntries(repos.map((r, i) => [r.dir, marks[i] ?? {}])) })
   arrived()

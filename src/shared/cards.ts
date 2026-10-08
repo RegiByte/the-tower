@@ -417,6 +417,21 @@ export const HOST_MEANS: Record<HostState, string> = {
 
 export { CLAUDE_UNTESTED }
 
+/** The daemons a verb needs running: the host holds every session's terminal, the terms daemon every shell. */
+const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', review: 'host', shell: 'terms' } as const
+export type DaemonVerb = keyof typeof NEEDS
+const DOWN = { host: 'the host is down: tower up starts it', terms: 'the terms daemon is down: tower up starts it' } as const
+
+/**
+ * Why a verb can't run now because a daemon it needs is down, as a sentence: a renderer draws the verb disabled with
+ * it in place of leaving it out. `undefined` while the daemon runs.
+ */
+export const whyNot = (b: Pick<Board, 'hostUp' | 'termsUp'>, verb: DaemonVerb): string | undefined =>
+  (NEEDS[verb] === 'host' ? b.hostUp : b.termsUp) ? undefined : DOWN[NEEDS[verb]]
+
+/** What a renderer heads a board error with: the tower lost, or the board it can't build. */
+export const boardErrorTitle = (code: string) => (code === 'disconnected' ? 'Lost the tower' : "The tower can't build the board")
+
 /** What the board's `claudeUntested` says once for every worker: `undefined` while every live worker runs a tested Claude. */
 export const claudeUntestedLine = (board: Pick<Board, 'claudeUntested'>) =>
   board.claudeUntested.length ? `claude ${board.claudeUntested.join(', ')} untested` : undefined

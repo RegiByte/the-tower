@@ -75,6 +75,10 @@
   const framed = window.parent !== window
   if (!framed && location.origin === 'null') throw new Error('tower.js: open this page from its shelf inside the tower, at /run/<project>/<n>, or declare it as a renderer')
 
+  const LOST = 'The tower stopped answering: reconnecting as soon as it is back (tower up starts it).'
+  /** How long to wait before opening a stream the browser gave up on, as it does when the tower answers with an error. */
+  const REOPEN_MS = 3000
+
   const subscribers = new Set()
   const errorWatchers = new Set()
   /** The tower's latest word on the board: `{ board, self }`, or `{ error }` while it can't build one. */
@@ -90,6 +94,13 @@
     }
     latest = { board: msg.board, self }
     for (const fn of subscribers) fn(msg.board, self)
+  }
+
+  /** The tower stopped answering: told once, until a board comes back. */
+  const lost = () => {
+    if (latest?.error?.code === 'disconnected') return
+    latest = { error: failure(LOST, 'disconnected') }
+    for (const fn of errorWatchers) fn(latest.error)
   }
 
   const checkVersion = (v) => {
@@ -125,18 +136,28 @@
     let source
     const watchOn = (key) =>
       call('mux/watch', { mux, key, path: watchers.get(key).path }).catch((err) => watchers.get(key)?.fn({ t: 'error', message: err.message }))
+    /**
+     * An EventSource reconnects on its own after a dropped connection, and gives up after an error answer: `onLost`
+     * hears both, and a stream given up on is opened again.
+     */
+    const stream = (path, onMessage, onLost) => {
+      const open = () => {
+        const es = new EventSource(path)
+        es.onmessage = (m) => onMessage(JSON.parse(m.data))
+        es.onerror = () => (onLost(), es.readyState === EventSource.CLOSED && setTimeout(open, REOPEN_MS))
+        return es
+      }
+      return open()
+    }
     /** A new mux id means the connection came back, as after a tower restart: every stream starts over with a snapshot. */
     const connect = () => {
-      source = new EventSource('/mux')
-      source.onmessage = (m) => {
-        const msg = JSON.parse(m.data)
+      source = stream('/mux', (msg) => {
         if (msg.t === 'mux') return (mux = msg.id, [...watchers.keys()].forEach(watchOn))
         watchers.get(msg.key)?.fn(msg.data)
-      }
+      }, () => (mux = undefined))
     }
     return {
-      board: () =>
-        (new EventSource('/board').onmessage = (m) => publish(JSON.parse(m.data), self)),
+      board: () => stream('/board', (msg) => publish(msg, self), lost),
       call,
       get: (path) => fetch(`/${path}`).then(answer),
       text: (path) => fetch(`/${path}`).then(textOf),

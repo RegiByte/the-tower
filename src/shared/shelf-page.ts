@@ -46,8 +46,11 @@ export type Reads = {
   'shown/<id>/<path>': string
 }
 
-/** Why the tower can't build the board: `config` until the user fixes the config, `internal` for a failure of its own. */
-export type BoardError = { code: ErrorCode; message: string }
+/**
+ * Why a renderer has no live board: the tower can't build it, `config` until the user fixes the config, `internal` for
+ * a failure of its own; or `disconnected`, told by `/tower.js` (never by the tower) while the tower doesn't answer.
+ */
+export type BoardError = { code: ErrorCode | 'disconnected'; message: string }
 
 /** GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can. */
 export type BoardMsg = { v: typeof API_VERSION; board: Board } | { v: typeof API_VERSION; error: BoardError }

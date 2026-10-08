@@ -87,6 +87,16 @@ it misreads. A page that names no version
 moves with the tower: right for the renderers in the checkout, wrong for yours. `tower.version` is the tower's full
 version, for a feature check.
 
+**Say when the board is stale.** `tower.onBoardError((err) => …)` is called whenever there is no live board, with
+`err.code`: `config` or `internal` when the tower can't build it, `disconnected` (since 1.9) when the tower stopped
+answering. `/tower.js` reconnects on its own, and the next board through `subscribe` means it recovered. Until then
+the board you drew is how things stood: mark it so (`boardErrorTitle(code)` in `/cards.js` heads the message as the
+shipped renderers do), and stop any clock you draw from it. A framed page gets the same error, relayed.
+
+**Draw what can't run, and why.** The board leaves out `spawn`, `cut` and `shell` while the daemon they need is down;
+`whyNot(board, verb)` in `/cards.js` says why in a sentence (`undefined` while it runs), for a control drawn inert
+with that tip in place of one that vanishes. It answers `resume` and `review` too, which the board still offers.
+
 ### A copy of one that ships
 
 To change the tower page or Tower 3D, copy it out of the checkout and layer your changes on top of the copy. The
@@ -221,8 +231,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store` |
 | `/design.css` | the design's tokens as custom properties, both colour schemes, the faces, and a few classes (`.needs`, `.pill`…) |
 | `/design.js` | the design module: palettes, type, the terminal's theme, the sky by hour, a document's stylesheet |
-| `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds |
-| `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire |
+| `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
+| `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`) |
 | `/brief.js` | a worker's brief as a view over `/conversations/<id>` |
 | `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs |
 | `/reviews.js` | the review threads' format: parse, append, anchors |

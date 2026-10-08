@@ -3,7 +3,7 @@ import { discard as discardDraft, discardItem, draftItem, draftsOf, edit, follow
 import type { Call, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
-import { changesOf, markViewed, onReviews, readChanges, threadOf, threadRead, type ChangesRead } from './reviews.ts'
+import { changesFailed, changesOf, markViewed, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead } from './reviews.ts'
 import { briefCss, openFolds, sessionWhen } from '../../../src/shared/brief.ts'
 import { settingsCss, settingsHtml, soundSection, themeSection } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
@@ -11,7 +11,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import type { SchemeChoice } from '../../../src/shared/shelf-page.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -267,7 +267,8 @@ function dressLevels(board: Board) {
 }
 
 /** The board's failure stays over the last board drawn, until the tower sends a board again. */
-function onBoardError(err: Error) {
+function onBoardError(err: Error & { code: string }) {
+  $('board-error').querySelector('b')!.textContent = boardErrorTitle(err.code)
   $('board-error').querySelector('span')!.textContent = err.message
   show('board-error', true)
 }
@@ -436,8 +437,8 @@ function renderPanel() {
     $('doc-head').innerHTML = statsHeadHtml()
     const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
     const tabs = [{ id: STATS_ALL, label: 'Overview' }, ...projects.map(({ id, label }) => ({ id, label }))]
-    const { read: stats, at, range, scope } = s.stats
-    drawPanel($('doc-body'), statsHtml({ stats, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
+    const { read: stats, failed, at, range, scope } = s.stats
+    drawPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
     showSince($('doc-body'))
   }
   if (panel.kind === 'picture') {
@@ -580,9 +581,14 @@ function openStats() {
 
 async function readStats() {
   const reading = ++s.stats.reading
-  const read = await tower.stats(statsQuery(s.stats.range, wallNow())).catch((err: Error) => (toast(err.message), undefined))
+  const read = await tower.stats(statsQuery(s.stats.range, wallNow())).catch((err: Error) => {
+    if (reading !== s.stats.reading) return
+    if (s.stats.read) return void toast(err.message)
+    s.stats = { ...s.stats, failed: err.message }
+    renderPanel()
+  })
   if (!read || reading !== s.stats.reading) return
-  s.stats = { ...s.stats, read, at: wallNow() }
+  s.stats = { ...s.stats, read, failed: undefined, at: wallNow() }
   renderPanel()
 }
 
@@ -1656,7 +1662,7 @@ function threadView(project: string, checkout: string): ThreadView {
   const f = floorOf(project)
   const worker = workerIn(f, checkout)
   return {
-    checkout, tag: f.threads.find((t) => t.checkout === checkout)?.tag, thread: threadOf(s.board!, project, checkout),
+    checkout, tag: f.threads.find((t) => t.checkout === checkout)?.tag, thread: threadOf(s.board!, project, checkout), failed: threadFailed(s.board!, project, checkout),
     reader: worker?.onDuty ? worker : undefined, changes: worker && changesOf(worker.id)?.repos, targets: sendTargets(f, checkout),
     target: sendTarget(project, checkout), re: s.noteRe, user: s.board!.user.name, files: threadFiles(f, checkout),
   }
@@ -1679,7 +1685,7 @@ function drawChanges(c: Card) {
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, folds: s.folds, pick: s.pick, thread: threadOf(s.board!, c.project, checkout), checkout, user: s.board!.user.name }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, thread: threadOf(s.board!, c.project, checkout), checkout, user: s.board!.user.name }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -1801,6 +1807,7 @@ function onThreadClick(e: MouseEvent) {
   const { project, checkout } = threadIn(el)
   if (el.closest('[data-send]')) return sendNotes(project, checkout, sendTarget(project, checkout))
   if (el.closest('[data-note-add]')) return addNote(project, checkout)
+  if (el.closest('[data-thread-read]')) return (rereadThread(project, checkout), renderPanel())
   if (el.closest('[data-reply-clear]')) return ((s.noteRe = undefined), renderPanel())
   const copy = el.closest<HTMLElement>('[data-copy]')?.dataset.copy
   if (copy) return copied(copy)
@@ -1839,7 +1846,7 @@ $('desk-changes').addEventListener('click', (e) => {
   const el = e.target as HTMLElement
   const c = findCard(s.board!, s.panel.id)!
   const read = changesOf(c.id)
-  if (el.closest('[data-changes-read]')) return readChanges(c.id, wallNow())
+  if (el.closest('[data-changes-read]')) return (readChanges(c.id, wallNow()), renderPanel())
   if (!read) return
   const viewed = el.closest<HTMLElement>('[data-viewed]')?.dataset.viewed
   if (viewed) return toggleViewed(read, viewed)
@@ -1959,7 +1966,7 @@ function onStatsClick(el: HTMLElement) {
   if (scope) return ((s.stats = { ...s.stats, scope }), renderPanel())
   const range = el.closest<HTMLElement>('[data-stats-range]')?.dataset.statsRange as StatsRange | undefined
   if (range) return ((s.stats = { ...s.stats, range, read: undefined }), renderPanel(), readStats())
-  if (el.closest('[data-stats-read]')) readStats()
+  if (el.closest('[data-stats-read]')) ((s.stats = { ...s.stats, failed: undefined }), renderPanel(), readStats())
 }
 
 $('side').addEventListener('click', async (e) => {

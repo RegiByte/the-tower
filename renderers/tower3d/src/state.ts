@@ -200,7 +200,7 @@ export type State = {
   /** The web page of each project directory's origin remote. */
   origins: Record<string, string>
   /** The Stats panel: the last read over `range` and when, the scope shown, and the read in flight's number. */
-  stats: { read: Stats | undefined; at: number | undefined; range: StatsRange; scope: string; reading: number }
+  stats: { read: Stats | undefined; failed: string | undefined; at: number | undefined; range: StatsRange; scope: string; reading: number }
   /** A past session of a worker at a desk replayed on its monitor, and in its desk panel: its last screen, until back to live. */
   replay: { id: string; session: string } | undefined
 }
@@ -220,6 +220,6 @@ export const s: State = {
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   saved: undefined, muted: false, fpsShown: false, origins: {},
-  stats: { read: undefined, at: undefined, range: 'week', scope: STATS_ALL, reading: 0 },
+  stats: { read: undefined, failed: undefined, at: undefined, range: 'week', scope: STATS_ALL, reading: 0 },
   replay: undefined,
 }

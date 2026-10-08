@@ -2,9 +2,9 @@ import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait } fro
 import type { Brief } from '../../../src/bridge/turns.ts'
 import type { Stats, StatsQuery } from '../../../src/bridge/stats.ts'
 import type { Status } from '../../../src/bridge/status.ts'
-import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from '../../../src/shared/api.ts'
+import type { API_VERSION, Call, Replies, Verb, Verbs } from '../../../src/shared/api.ts'
 import type { Renderer } from '../../../src/shared/model.ts'
-import type { Reads, SchemeChoice, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
+import type { BoardError, Reads, SchemeChoice, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
 import type { ShellStream } from '../../../src/shared/terms.ts'
 import type { Scheme } from '../../../src/shared/design.ts'
 
@@ -22,8 +22,8 @@ export type Tower = {
   framed: boolean
   version: typeof API_VERSION
   subscribe(fn: (board: Board, self: ShelfSelf | undefined) => void): () => void
-  /** Why the tower can't build the board, `code` config or internal, until `subscribe` hands a board again. */
-  onBoardError(fn: (err: Error & { code: ErrorCode }) => void): () => void
+  /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
+  onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void
   conversations(session: string): Promise<Brief[]>
   archive(project: string): Promise<Card[]>
   /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */

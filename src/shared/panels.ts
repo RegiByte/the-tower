@@ -18,6 +18,7 @@
  *   data-pick-cancel           drop the pick
  *
  *   Reviews
+ *   data-thread-read           read the thread again, after a read that failed
  *   data-note="<n>"            a note, by number
  *   data-to-note="<n>"         the note this one answers: scroll to it
  *   data-anchor="<n>|<i>"      anchor `i` of note `n`: show its lines in Changes (`anchorSpot`)
@@ -80,9 +81,9 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
 /**
  * The Changes panel: `folds` are the files folded or unfolded against what their viewed mark says, by `fileKey`;
  * `thread` is the thread whose anchors mark lines, `checkout` the one a note on picked lines is added to, `user` the
- * name it is signed with (`board.user.name`).
+ * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
  */
-export type ChangesView = { read: ChangesRead | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; thread: ReviewThread | undefined; checkout: string; user: string }
+export type ChangesView = { read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; thread: ReviewThread | undefined; checkout: string; user: string }
 
 /** A worker as the Reviews panel names it. */
 type Worker = { id: string; callsign: string; checkout: string }
@@ -90,10 +91,11 @@ type Worker = { id: string; callsign: string; checkout: string }
 /**
  * The Reviews panel: `reader` is the worker whose notes new to it are marked; `changes` what its anchors are looked
  * for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
- * the composer signs with (`board.user.name`), its notes marked as the viewer's own.
+ * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
+ * of the thread failed, drawn while none is read.
  */
 export type ThreadView = {
-  checkout: string; tag: string | undefined; thread: ReviewThread | undefined; reader: Worker | undefined
+  checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
   changes: RepoChanges[] | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
   files: ThreadFiles
 }
@@ -243,10 +245,17 @@ function rowCode(f: DiffFile): string[] {
 const CHANGE_MARK: Record<DiffFile['change'], string> = { added: 'A', deleted: 'D', modified: 'M', renamed: 'R' }
 const countsHtml = (added: number, removed: number) => `<span class="add">+${added}</span> <span class="del">−${removed}</span>`
 
+/**
+ * A read that failed, in place of what it would have drawn: what couldn't be read and why, and the control that reads
+ * it again (`again`, its data attribute). Any renderer's own reads draw it too.
+ */
+export const failedHtml = (what: string, message: string, again: string) =>
+  `<div class="read-failed" role="alert"><p>couldn't read ${esc(what)}: ${esc(message)}</p><button ${again}><span aria-hidden="true">↻</span> Read again</button></div>`
+
 /** What changed in a worker's repos: each repo since what it counts from, each file with its diff, folded once viewed. */
 export function changesHtml(v: ChangesView) {
   const read = v.read
-  if (!read) return '<div class="changes-panel"><p class="none">reading what changed…</p></div>'
+  if (!read) return `<div class="changes-panel">${v.failed ? failedHtml('what changed', v.failed, 'data-changes-read') : '<p class="none">reading what changed…</p>'}</div>`
   const files = changedFiles(read.repos)
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
@@ -332,7 +341,7 @@ function sendHtml(v: ThreadView) {
 
 /** A checkout's thread: notes with their quotes marked as the Changes find them, Send, and a composer for a note on the whole work. */
 export function reviewsHtml(v: ThreadView) {
-  if (!v.thread) return '<div class="reviews-panel"><p class="none">reading the thread…</p></div>'
+  if (!v.thread) return `<div class="reviews-panel">${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
   const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
   return `<div class="reviews-panel"><div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<span class="tag" data-copy="${esc(v.tag)}" title="copy its tag">${esc(v.tag)}</span>` : ''}${
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
@@ -364,10 +373,11 @@ export type StatsProject = { id: string; label: string; color?: string }
 /**
  * The Stats panel: `projects` are the series the All tab stacks, every project's (one in the read but not here, such
  * as a project gone from the config, stacks in a neutral colour under its id); `tabs` the scopes the renderer
- * offers (a project's id, or `STATS_ALL`), `scope` the one shown; `stats` the last read over `range`, at `at` (ms).
+ * offers (a project's id, or `STATS_ALL`), `scope` the one shown; `stats` the last read over `range`, at `at` (ms);
+ * `failed` why the last read failed, drawn while none is held.
  */
 export type StatsView = {
-  stats: Stats | undefined; at: number | undefined; range: StatsRange
+  stats: Stats | undefined; failed: string | undefined; at: number | undefined; range: StatsRange
   projects: StatsProject[]; tabs: { id: string; label: string }[]; scope: string
 }
 
@@ -492,7 +502,7 @@ export function statsHtml(v: StatsView) {
   }).join('')
   const ranges = RANGES.map(([r, label]) => `<button class="${r === v.range ? 'on' : ''}" aria-pressed="${r === v.range}" data-stats-range="${r}">${label}</button>`).join('')
   const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read aria-label="read again" title="read again">↻</button></div></div>`
-  if (!v.stats) return `<div class="stats-panel">${head}<p class="none">reading the stats…</p></div>`
+  if (!v.stats) return `<div class="stats-panel">${head}${v.failed ? failedHtml('the stats', v.failed, 'data-stats-read') : '<p class="none">reading the stats…</p>'}</div>`
   const st = v.stats
   const all = v.scope === STATS_ALL
   const unlisted = Object.keys(st.projects).filter((id) => !v.projects.some((p) => p.id === id)).map((id) => ({ id, label: id, color: 'var(--deco)' }))
@@ -708,6 +718,8 @@ export const panelsCss = `
 .reviews-panel .composer .re-chip button { padding: 0 6px; }
 .stats-panel { font: 13px/1.4 var(--ui); color: var(--ink); }
 .stats-panel .none { margin: 6px 0; color: var(--faint); font-style: italic; }
+.read-failed { margin: 6px 0; padding: 8px 10px; border-left: 3px solid var(--broken); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.read-failed p { margin: 0; flex: 1; min-width: 12em; }
 .stats-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 0 8px; }
 .stats-head .scopes, .stats-head .ranges { display: flex; flex-wrap: wrap; gap: 4px; }
 .stats-head .ranges { margin-left: auto; }
