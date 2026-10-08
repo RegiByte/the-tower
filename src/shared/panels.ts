@@ -582,21 +582,22 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
  * The panels' look, under `.changes-panel`, `.reviews-panel` and `.stats-panel`: the renderer places and sizes the element
  * they're painted in.
  *
- * Also a worker's `.tab-row`: its `.tab-set` of tabs, an `.activity` line and its `.moves`. The tabs take the row's room
- * up to their full width and the activity line what is left. When the row is short, the shown tabs give way, each down to
- * a stub, the selected one least and down to its controls; past that the moves wrap to a line of their own. A
- * `.shown-tab`'s first child is its `.shown-name`, the only part of it that shrinks: a grid track that a title fills up
- * to its full width and that adds nothing to the row's least width.
+ * Also a worker's `.tab-row`: its tabs (any of them in a `.tab-set`, which lays out as if absent), an `.activity` line
+ * and its `.moves`, on lines that wrap. Where the row breaks into lines, a shown tab counts as a 9em stub (room for the
+ * selected one's controls, so selecting a tab with a longer title moves no break); on its line it grows toward its full
+ * width, the selected one five times faster, and the activity line takes what is left. A short row first narrows the
+ * shown tabs' titles, then moves the moves to a line of their own, then the shown tabs that don't fit: nothing passes
+ * the row's edge. A `.shown-tab`'s first child is its `.shown-name`, capped at 16em and the only part of it that shrinks.
  */
 export const panelsCss = `
 .tab-row { display: flex; flex-wrap: wrap; align-items: center; }
-.tab-row > .tab-set { display: flex; align-items: center; flex: 1000 1 0; max-width: max-content; }
-.tab-row > .tab-set > * { flex: none; }
+.tab-row > *, .tab-row > .tab-set > * { flex: none; }
+.tab-row > .tab-set { display: contents; }
+.tab-row .shown-tab { flex: 1000 1 9em; min-width: 0; max-width: max-content; }
+.tab-row .shown-tab.on { flex-grow: 5000; }
 .tab-row > .activity { flex: 1 1 0; min-width: 0; }
-.tab-row > .moves { flex: none; display: flex; margin-left: auto; }
+.tab-row > .moves { display: flex; margin-left: auto; }
 .shown-tab { display: inline-grid; grid-auto-flow: column; grid-template-columns: minmax(0, max-content); align-items: center; overflow: hidden; white-space: nowrap; }
-.tab-set > .shown-tab { flex: 0 5 auto; min-width: 5em; }
-.tab-set > .shown-tab.on { flex-shrink: 1; min-width: 9em; }
 .shown-tab > .shown-name { min-width: 0; max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
 .file-acts { display: inline-flex; gap: 2px; flex: none; }
 .file-act { width: 22px; height: 20px; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); color: var(--faint); cursor: pointer; }
