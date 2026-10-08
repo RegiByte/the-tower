@@ -359,6 +359,12 @@ export { CLAUDE_UNTESTED }
 export const claudeUntestedLine = (board: Pick<Board, 'claudeUntested'>) =>
   board.claudeUntested.length ? `claude ${board.claudeUntested.join(', ')} untested` : undefined
 
+/** That line with its reason on hover. It can run long (several releases, a build suffix): it takes a line of its own. */
+export const claudeUntestedHtml = (board: Pick<Board, 'claudeUntested'>) => {
+  const line = claudeUntestedLine(board)
+  return line && `<span class="untested" title="${CLAUDE_UNTESTED}">${esc(line)}</span>`
+}
+
 /** Where a declared renderer is served. */
 export const rendererUrl = (name: string) => `/r/${encodeURIComponent(name)}/`
 

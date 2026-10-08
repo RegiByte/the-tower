@@ -5,7 +5,7 @@
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after the fixture set is recorded again on it and replays clean.",
   "in": "tower",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedLine", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
@@ -20,7 +20,8 @@ What says a release is new to the tower:
   ([`register`](ref:hub/src/mod/hooks/register.js#register)), folded into `facts.claude`. A card whose release
   is outside [`CLAUDE_TESTED`](ref:hub/src/shared/claude.ts#CLAUDE_TESTED) has `claudeUntested`, and the board
   lists each such release a live worker runs once, as `board.claudeUntested`. The tower page and Tower 3D say
-  `claude <version> untested` beside the host lamp and in the worker's header, with the reason on hover.
+  `claude <version> untested` ([`claudeUntestedHtml`](ref:hub/src/shared/cards.ts#claudeUntestedHtml)) on a line
+  of its own, under the sidebar's head and above the HUD strip, and in the worker's header, with the reason on hover.
 - `doctor` checks the installed `claude --version` with
   [`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange): `below`, `tested`, `above`, or `unknown` for a version
   that doesn't read as a release, which is flagged too: a renamed or missing field is drift as well.

@@ -7,7 +7,7 @@ import { changesOf, markViewed, onReviews, readChanges, threadOf, threadRead, ty
 import { briefCss, openFolds, sessionWhen } from '../../../src/shared/brief.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, bubbleOf, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RINGS, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, threadCheckoutOf, workerIn } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RINGS, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type SpawnForm, current, esc, findCard, gistLine, wordsOf, moveOfKey, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, threadCheckoutOf, workerIn } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -349,6 +349,8 @@ let hudKey = ''
 function renderHud() {
   const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, s.heed), ring: s.ring })
   if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
+  const notes = claudeUntestedHtml(s.board!) ?? ''
+  if (notes !== $('hud-notes').innerHTML) $('hud-notes').innerHTML = notes
 }
 
 function renderElevator() {

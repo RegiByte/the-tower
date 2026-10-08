@@ -28,10 +28,13 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 8px; padding: 16px 12px 10px 16px; white-space: nowrap; }
 .brand h1 { margin: 0; font: 900 19px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
-.brand .host { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.brand .host { margin-left: auto; display: flex; }
 .scheme { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; font-size: 15px; }
 .scheme:hover { color: var(--ink); }
 .bell { background: none; border: none; padding: 0 2px; color: var(--muted); font-weight: 400; }
+.side-notes { margin-top: -4px; padding: 0 16px 10px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.side-notes:empty { display: none; }
+.side-notes .untested { white-space: normal; }
 .tally { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 12px; }
 .limits { display: grid; gap: 8px; padding: 2px 16px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
 .limits .row { display: flex; gap: 6px; align-items: baseline; margin-bottom: 4px; }
@@ -333,6 +336,7 @@ dialog .actions small { margin-right: auto; }
 <aside class="side">
   <div class="brand"><h1 id="home" title="the skyline">The Tower</h1><span class="host" id="host"></span><button class="bell" id="bell"></button><button class="bell" id="ring"></button><button class="scheme" id="scheme"></button>
     <button class="help" data-keys title="shortcuts (?)">?</button><button class="side-toggle" data-side title="hide the sidebar (⌘B)">« <small>⌘B</small></button></div>
+  <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
   <div class="side-views"><button data-side-view="floors">Floors</button><button data-side-view="stats" title="spend, work and waits, from the logs">Stats</button></div>
@@ -389,7 +393,7 @@ dialog .actions small { margin-right: auto; }
 <script src="/marked.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, CLAUDE_UNTESTED, claudeUntestedLine, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
+import { crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RINGS, RING_KEY, RING_MARK, RING_NAME, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, HOST_OUTDATED, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, threadFiles } from '/panels.js'
@@ -1155,11 +1159,9 @@ function render() {
   $('tally').innerHTML = `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" title="N jumps to the next one"><span class="lamp"></span><b>${waiting}</b> waiting on you</span>` +
     [['ready', 'ready'], ['working', 'working'], ['quiet', 'quiet'], ['broken', 'broken']]
       .map(([a, label]) => `<span class="chip ${a}"><span class="lamp"></span><b>${count(a)}</b> ${label}</span>`).join('')
-  const untested = claudeUntestedLine(board)
-  $('host').innerHTML = (board.hostOutdated
-    ? `<span class="lamp broken"></span> <span title="${HOST_OUTDATED}">host outdated</span>`
-    : board.hostUp ? '<span class="lamp quiet" title="host up"></span>' : '<span class="lamp broken"></span> host down') +
-    (untested ? ` <span class="untested" title="${CLAUDE_UNTESTED}">${esc(untested)}</span>` : '')
+  const host = board.hostOutdated ? `<span title="${HOST_OUTDATED}">host outdated</span>` : board.hostUp ? undefined : 'host down'
+  $('host').innerHTML = `<span class="lamp ${host ? 'broken' : 'quiet'}" title="${host ? '' : 'host up'}"></span>`
+  $('notes').innerHTML = [host, claudeUntestedHtml(board)].filter(Boolean).join(' · ')
   paintLimits()
   redrawHeld($('floors'), floorsTopDown().map(floorHtml).join(''))
   drawSideView()
@@ -1301,7 +1303,7 @@ function showAlert(c, w) {
 
 function bell() {
   const state = Notification.permission
-  $('bell').textContent = state === 'granted' ? '🔔' : state === 'denied' ? '🔕' : '🔔 alerts?'
+  $('bell').textContent = state === 'granted' ? '🔔' : state === 'denied' ? '🔕' : '🔔?'
   $('bell').title = state === 'granted' ? 'alerts on: a notification whenever a session starts waiting on you' : state === 'denied' ? 'alerts blocked in this browser' : 'turn on alerts'
   $('ring').textContent = RING_MARK[ring]
   $('ring').title = `waits ${RING_NAME[ring]}: click for ${RING_NAME[RINGS[(RINGS.indexOf(ring) + 1) % RINGS.length]]}`

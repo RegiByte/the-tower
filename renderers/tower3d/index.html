@@ -44,6 +44,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: 2px 
 .hud-group > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .hud-group b { color: var(--ink); }
 .untested { color: var(--muted); font-size: 12px; text-decoration: underline dotted; cursor: help; white-space: nowrap; }
+#hud-notes { max-width: calc(100vw - 370px); padding: 5px 9px; border-radius: 12px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere;
+  background: color-mix(in oklab, var(--panel) 82%, transparent); backdrop-filter: blur(6px); box-shadow: 0 1px 3px #0005; }
+#hud-notes:empty { display: none; }
+#hud-notes .untested { font-size: 11px; white-space: normal; }
 .hud-limits .meter { width: 24px; height: 4px; }
 .hud-limits small { color: var(--faint); font-weight: 500; }
 .hud-limits.stale > span { opacity: .5; }
@@ -262,6 +266,7 @@ button.wide { width: 100%; }
 <div id="rail">
   <div id="side" class="glass side hidden"></div>
   <div id="fps" class="glass hidden">… fps</div>
+  <div id="hud-notes"></div>
   <div id="hud"></div>
 </div>
 <div id="desk" class="glass hidden">
