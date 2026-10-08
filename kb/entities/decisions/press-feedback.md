@@ -40,7 +40,7 @@ them, and nothing it needs lives in the tower page.
   connected only while something is in flight), and the same call drawn elsewhere (a card's ↻ and the bar's Resume)
   is busy alike. A press of a busy control is ignored. A control that names nothing fails loudly, since it would mark
   every button. Bar buttons name whom they act on (`data-of="<id>"`). The tower page presses through it for resume,
-  review, kill, send home, tidy (all and per row), the worktree verbs, ending leftovers, notes and sending them, shells
+  review, kill, send home, let go, resume all (one press over every resume, busy to the last reply), tidy (all and per row), the worktree verbs, ending leftovers, notes and sending them, shells
   and the editor.
 - [`designCss`](ref:hub/src/shared/design.ts#designCss) draws every button's states, whatever the renderer's own
   look: `:active` sinks a pixel, `disabled` or `aria-disabled` (held, which stays focusable) fades to .45, and
@@ -57,7 +57,7 @@ them, and nothing it needs lives in the tower page.
   (the id and the text the file held), and [`restore`](ref:hub/src/shared/drafts.ts#restore) puts it back through
   `collection/restore` ([`restoreItem`](ref:hub/src/collections.ts#restoreItem)): the file under its own id, so its
   tag, its place in the tray and its name on disk are what they were. The id is claimed with an exclusive create, so
-  a restore never overwrites, and an id an item holds again is `refused`. API 1.16.
+  a restore never overwrites, and an id an item holds again is `refused`. API 1.17.
 
 **Alternatives considered.**
 - *Undo as `collection/create` with the same text*: a new id, so a new tag and a new place in the tray; the draft
@@ -72,6 +72,6 @@ them, and nothing it needs lives in the tower page.
 - *Busy as a pulse of the whole button*: its words would fade below AA while it pulses.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
-**Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb (API 1.16), and
+**Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb (API 1.17), and
 `discard` in `/drafts.js` now answers what it deleted. Tower 3D keeps its own single toast and its two-press confirm
 for now; it can adopt both modules over the same calls.

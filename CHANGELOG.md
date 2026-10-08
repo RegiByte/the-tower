@@ -41,7 +41,7 @@ Commit messages hold the detail.
   its foot, and a second press does nothing; every button sinks when pressed and fades when held (`/design.css`,
   `pressing` in the new `/press.js`). Toasts stack, wait while the pointer or focus is on them, and can carry an
   action (the new `/toasts.js`): after Kill, Resume; after deleting a draft, which no longer asks first, Undo, which
-  puts its file back under its own id through the new verb `collection/restore` (API 1.16).
+  puts its file back under its own id through the new verb `collection/restore` (API 1.17).
 
 ## v1.1.0
 
