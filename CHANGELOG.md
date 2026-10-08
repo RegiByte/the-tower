@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.0.1
+
+A past worker that can no longer be resumed says so before you click: its `cwd` is no longer one of its floor's
+directories (the floor's hub moved, or the project left the config), or its worktree's folder is gone (removed by
+Tidy, or deleted). The archive of the tower page and of Tower 3D marks it "outside the floor" or "folder gone" in
+place of ↻ resume, and `tower agent` says why. Derived on the board from the config and git, never stored.
+
+- The renderer API is `1.1`: cards carry `unresumable` (`outside` or `gone`) while their worker isn't running and
+  can't be resumed where it ran, and such a card and its conversations offer no `resume`. A worker the host stopped
+  that can't be resumed is no longer on duty: it moves to the archive.
+- The release workflow runs `actions/checkout` and `actions/setup-node` v7, on Node 24 (v4 ran on Node 20, which
+  GitHub deprecated).
+
 ## v1.0.0
 
 The first public release. A host owns every Claude Code session in a real PTY and logs everything about it; the
