@@ -20,7 +20,7 @@ import type { SchemeChoice } from './shelf-page.ts'
 import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS, type BriefMarkdown } from './brief.ts'
 import { REMIND_MS, RINGS, esc, type Ring, type Sound } from './cards.ts'
 import { ICON } from './icons.ts'
-import { GENERIC_FACES, PREFS_DEFAULT, TERM_SIZES, faceFamily, type Prefs } from './prefs.ts'
+import { GENERIC_FACES, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, faceFamily, type Prefs } from './prefs.ts'
 import { type } from './design.ts'
 
 /** Notifications as the browser allows them: `default` until it has asked the viewer. */
@@ -56,11 +56,11 @@ export const SCHEME_MEANS: Record<SchemeChoice, string> = {
 const SCHEME_ICON: Record<SchemeChoice, string> = { '': ICON.system, light: ICON.light, dark: ICON.dark }
 
 const section = (title: string, aside: string, body: string) =>
-  `<section><h3>${title}<small>${aside}</small></h3>${body}</section>`
+  `<section><h3 class="eyebrow">${title}<small>${aside}</small></h3>${body}</section>`
 
 /** One choice of a segmented control: `attr` its data attribute, its value `value`. */
-const choice = (attr: string, value: string, label: string, tip: string, on: boolean) =>
-  `<button class="${on ? 'on' : ''}" ${attr}="${esc(value)}" aria-pressed="${on}" data-tip="${esc(tip)}">${label}</button>`
+const choice = (attr: string, value: string | number, label: string, tip: string, on: boolean) =>
+  `<button class="${on ? 'on' : ''}" ${attr}="${esc(String(value))}" aria-pressed="${on}" data-tip="${esc(tip)}">${label}</button>`
 
 /** Browser notifications: the state in words, and the button that asks while the browser hasn't. */
 export const alertsSection = (alerts: Alerts) =>
@@ -88,11 +88,11 @@ export const markdownSection = (markdown: BriefMarkdown) =>
       choice('data-brief-markdown', m, BRIEF_MARKDOWN_LABEL[m], BRIEF_MARKDOWN_MEANS[m], m === markdown)).join('')}</div>`)
 
 /** One choice of a segmented setting: its value, the word on it, what it means, an icon before the word. */
-export type PrefChoice = { value: string; label: string; means: string; icon?: string }
+export type PrefChoice = { value: string | number; label: string; means: string; icon?: string }
 
 /** A setting of `tower.prefs`, drawn by its kind: a segmented choice, a face by name, a size in px. */
 export type PrefSetting =
-  | { kind: 'choice'; key: 'scheme' | 'motion' | 'contrast'; label?: string; choices: PrefChoice[] }
+  | { kind: 'choice'; key: 'scheme' | 'motion' | 'contrast' | 'scale'; label?: string; choices: PrefChoice[] }
   | { kind: 'face'; key: 'ui' | 'display' | 'mono'; label: string; means: string; shipped: string; suggestions: string[] }
   | { kind: 'size'; key: 'termSize'; label: string; means: string; min: number; max: number }
 
@@ -131,6 +131,8 @@ export const PREF_SECTIONS: PrefSection[] = [
         { value: '', label: 'System', means: 'contrast follows this computer’s increase contrast setting' },
         { value: 'more', label: 'More', means: 'muted text closer to ink, and stronger lines' },
       ] },
+      { kind: 'choice', key: 'scale', label: 'Text size', choices: PREF_CHOICES.scale.map((value) => ({ value, label: `${value}%`,
+        means: `every panel’s text at ${value}% of this browser’s text size; terminals keep the Terminal size` })) },
     ],
   },
 ]
@@ -170,7 +172,8 @@ export const prefSections = (prefs: Prefs, installed: (name: string) => boolean)
 /** What `wirePrefs` hands `set` for a control: a choice's value, a face's name trimmed, a size kept within its range. */
 const prefValue = (el: HTMLElement): Partial<Prefs> => {
   const key = el.dataset.pref as keyof Prefs
-  if (el.dataset.prefValue !== undefined) return { [key]: el.dataset.prefValue }
+  const value = el.dataset.prefValue
+  if (value !== undefined) return { [key]: typeof PREFS_DEFAULT[key] === 'number' ? Number(value) : value }
   const input = el as HTMLInputElement
   if (input.type === 'number') return { [key]: Math.min(TERM_SIZES.max, Math.max(TERM_SIZES.min, Math.round(input.valueAsNumber || PREFS_DEFAULT.termSize))) }
   return { [key]: input.value.trim() }
@@ -208,32 +211,32 @@ export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>S
 
 /** The popover's look, under `.settings-pop` (the popover element) and `.settings` (its content). */
 export const settingsCss = `
-.settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(300px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto;
+.settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(18.75rem, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
-.settings { font: 13px/1.45 var(--ui); }
-.settings h2 { margin: 0; padding: 13px 14px 9px; font: 800 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
-.settings section { display: grid; gap: 8px; padding: 10px 14px 13px; border-top: 1px solid var(--line); }
-.settings h3 { display: flex; align-items: baseline; gap: 8px; margin: 0; font: 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.settings h3 small { font: 400 11px/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
-.settings .now { margin: 0; color: var(--muted); font-size: 12px; }
+.settings { font: var(--fs-m)/1.45 var(--ui); }
+.settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: 800 var(--fs-m)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.settings section { display: grid; gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl); border-top: 1px solid var(--line); }
+.settings h3 { display: flex; align-items: baseline; gap: var(--sp-m); margin: 0; }
+.settings h3 small { font: 400 var(--fs-xs)/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
+.settings .now { margin: 0; color: var(--muted); font-size: var(--fs-s); }
 .settings .now b { color: var(--ink); } .settings .now.denied b { color: var(--broken-text); }
-.settings .row { display: flex; flex-wrap: wrap; gap: 6px; }
-.settings .row button { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-size: 12px; }
-.settings .seg { display: flex; gap: 2px; padding: 2px; border-radius: var(--radius); background: var(--sunk); }
-.settings .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 6px; border: 0; border-radius: 4px;
-  background: none; color: var(--muted); font: 700 12px/1.3 var(--ui); cursor: pointer; }
+.settings .row { display: flex; flex-wrap: wrap; gap: var(--sp-s); }
+.settings .row button { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-l); font-size: var(--fs-s); }
+.settings .seg { display: flex; gap: var(--sp-2xs); padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
+.settings .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-s); border: 0; border-radius: var(--radius);
+  background: none; color: var(--muted); font: 700 var(--fs-s)/1.3 var(--ui); cursor: pointer; }
 .settings .seg button:hover { color: var(--ink); }
 .settings .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
 .settings svg { width: 12px; height: 12px; flex: none; }
-.settings .pref { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; }
+.settings .pref { display: grid; grid-template-columns: 4.75rem minmax(0, 1fr); align-items: center; gap: var(--sp-m); }
 .settings .pref:not(:has(.lbl)) { grid-template-columns: minmax(0, 1fr); }
-.settings .pref .lbl { color: var(--muted); font-size: 12px; }
-.settings .pref input { width: 100%; min-width: 0; font: 13px/1.3 var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong);
-  border-radius: var(--radius); padding: 4px 7px; }
+.settings .pref .lbl { color: var(--muted); font-size: var(--fs-s); }
+.settings .pref input { width: 100%; min-width: 0; font: var(--fs-m)/1.3 var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); padding: var(--sp-xs) var(--sp-m); }
 .settings .pref input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .settings .pref input::placeholder { color: var(--faint); font-style: italic; }
 .settings .pref input[data-pref=display] { font-family: var(--display); } .settings .pref input[data-pref=mono] { font-family: var(--mono); }
-.settings .pref .size { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
-.settings .pref .size input { width: 64px; font-variant-numeric: tabular-nums; }
-.settings .missing { margin: -4px 0 0 84px; color: var(--needs-text); font-size: 11px; }
+.settings .pref .size { display: flex; align-items: center; gap: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
+.settings .pref .size input { width: 4rem; font-variant-numeric: tabular-nums; }
+.settings .missing { margin: calc(-1 * var(--sp-xs)) 0 0 calc(4.75rem + var(--sp-m)); color: var(--needs-text); font-size: var(--fs-xs); }
 `

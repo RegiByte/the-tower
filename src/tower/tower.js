@@ -32,7 +32,7 @@
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
  *   tower.prefs.get()                               the viewer's appearance (src/shared/prefs.ts): scheme, ui, display and mono
- *                                                   faces, termSize, motion, contrast; on this page's root before it paints
+ *                                                   faces, termSize, motion, contrast, scale; on this page's root before it paints
  *   tower.prefs.set({ mono: 'Fira Code' })          change some of it, for every page of theirs, through the tower when framed
  *   tower.prefs.on((prefs) => …)                    called whenever it changes; returns unsubscribe
  *   tower.prefs.attributes()                        the root's attributes as html, for a document drawn in a frame without
@@ -258,8 +258,8 @@
 
   /**
    * The viewer's appearance on the root, which `/design.css` reads: the scheme as `data-scheme`, motion and contrast
-   * as `data-motion` and `data-contrast` when the viewer overrides the system, and each face they picked at the head
-   * of its stack (`--ui`, `--display`, `--mono`). Framed, the tower sends the record; at the tower's origin it is the
+   * as `data-motion` and `data-contrast` when the viewer overrides the system, each face they picked at the head
+   * of its stack (`--ui`, `--display`, `--mono`), and the text size as `--scale`. Framed, the tower sends the record; at the tower's origin it is the
    * one the browser keeps under `PREFS_KEY`, shared by every tab.
    */
   const root = document.documentElement
@@ -292,12 +292,15 @@
     root.dataset.scheme = prefs.scheme
     for (const face of FACE_KEYS) prefs[face] ? root.style.setProperty(`--${face}`, stack(prefs, face)) : root.style.removeProperty(`--${face}`)
     for (const key of ['motion', 'contrast']) prefs[key] ? (root.dataset[key] = prefs[key]) : delete root.dataset[key]
+    scaled() ? root.style.setProperty('--scale', scaled()) : root.style.removeProperty('--scale')
     prefsWatchers.forEach((fn) => fn(prefs))
     if (scheme() !== was) announceScheme()
   }
+  /** The root's text size as a factor of the browser's, read by `/design.css` as `--scale`; none at 100%. */
+  const scaled = () => (prefs.scale === PREFS_DEFAULT.scale ? '' : String(prefs.scale / 100))
   const escAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   const attributes = () => {
-    const faces = FACE_KEYS.filter((face) => prefs[face]).map((face) => `--${face}: ${stack(prefs, face)};`).join(' ')
+    const faces = [...FACE_KEYS.filter((face) => prefs[face]).map((face) => `--${face}: ${stack(prefs, face)};`), ...(scaled() ? [`--scale: ${scaled()};`] : [])].join(' ')
     const data = ['motion', 'contrast'].filter((key) => prefs[key]).map((key) => ` data-${key}="${escAttr(prefs[key])}"`).join('')
     return `data-scheme="${escAttr(scheme())}"${data}${faces ? ` style="${escAttr(faces)}"` : ''}`
   }

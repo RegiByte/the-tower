@@ -166,19 +166,43 @@ export const type = {
   mono: "'JetBrains Mono', ui-monospace, Menlo, monospace",
 }
 
-export const shape = { radius: '4px' }
+/**
+ * The type scale: every size of text the renderers draw, as `--fs-<step>`, in rem. The root's font size is the
+ * browser's text size times the viewer's `scale` (`tower.prefs`, set as `--scale`), so every size follows both.
+ * Terminals and Tower 3D's canvas keep sizes of their own. At the browser's default: 11, 12, 13, 14, 16, 20 and 26 px.
+ */
+export const size = { xs: '.6875rem', s: '.75rem', m: '.8125rem', l: '.875rem', xl: '1rem', '2xl': '1.25rem', '3xl': '1.625rem' }
+
+/**
+ * The spacing scale, on a 4 px grid with 2 and 6 for the tightest places, as `--sp-<step>`: every padding, margin and
+ * gap. In px: text grows with the type scale and the space around it stays.
+ */
+export const space = { '2xs': '2px', xs: '4px', s: '6px', m: '8px', l: '12px', xl: '16px', '2xl': '24px', '3xl': '32px' }
+
+/** Corners: `radius` for panels and controls, `radiusS` for small marks (a key, a window), `radiusPill` for pills. */
+export const shape = { radius: '4px', radiusS: '2px', radiusPill: '999px' }
 
 /** Overpass draws `·` with almost no advance, so it eats the space after it: the next face in the stack draws it. */
 const OVERPASS_RANGE = 'U+0000-00B6, U+00B8-10FFFF'
 
+/**
+ * Overpass's own ascent and descent (88% and 38% of the em) leave its capitals 0.1 em above the middle of a line, where
+ * Atkinson's sit on it. The same total, split so ascent less descent is the cap height (70%), centres a line of
+ * capitals in its box, as signs, labels and callsigns are drawn.
+ */
+const OVERPASS_METRICS = 'ascent-override: 98%; descent-override: 28%; line-gap-override: 0%;'
+
 /** Latin subsets of the @fontsource packages, served at `/fonts/<file>`. All three faces are SIL OFL. */
-export const fonts: { family: string; weight: number; pkg: string; file: string; range?: string }[] = [
-  { family: 'Overpass', weight: 800, pkg: 'overpass', file: 'overpass-latin-800-normal.woff2', range: OVERPASS_RANGE },
-  { family: 'Overpass', weight: 900, pkg: 'overpass', file: 'overpass-latin-900-normal.woff2', range: OVERPASS_RANGE },
-  { family: 'Atkinson Hyperlegible', weight: 400, pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-400-normal.woff2' },
-  { family: 'Atkinson Hyperlegible', weight: 700, pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-700-normal.woff2' },
-  { family: 'JetBrains Mono', weight: 400, pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-400-normal.woff2' },
-  { family: 'JetBrains Mono', weight: 700, pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-700-normal.woff2' },
+export const fonts: { family: string; weight: number; style: 'normal' | 'italic'; pkg: string; file: string; range?: string; metrics?: string }[] = [
+  { family: 'Overpass', weight: 800, style: 'normal', pkg: 'overpass', file: 'overpass-latin-800-normal.woff2', range: OVERPASS_RANGE, metrics: OVERPASS_METRICS },
+  { family: 'Overpass', weight: 900, style: 'normal', pkg: 'overpass', file: 'overpass-latin-900-normal.woff2', range: OVERPASS_RANGE, metrics: OVERPASS_METRICS },
+  { family: 'Atkinson Hyperlegible', weight: 400, style: 'normal', pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-400-normal.woff2' },
+  { family: 'Atkinson Hyperlegible', weight: 700, style: 'normal', pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-700-normal.woff2' },
+  { family: 'Atkinson Hyperlegible', weight: 400, style: 'italic', pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-400-italic.woff2' },
+  { family: 'Atkinson Hyperlegible', weight: 700, style: 'italic', pkg: 'atkinson-hyperlegible', file: 'atkinson-hyperlegible-latin-700-italic.woff2' },
+  { family: 'JetBrains Mono', weight: 400, style: 'normal', pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-400-normal.woff2' },
+  { family: 'JetBrains Mono', weight: 700, style: 'normal', pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-700-normal.woff2' },
+  { family: 'JetBrains Mono', weight: 400, style: 'italic', pkg: 'jetbrains-mono', file: 'jetbrains-mono-latin-400-italic.woff2' },
 ]
 
 const ANSI = {
@@ -268,15 +292,15 @@ const variables = (tokens: Record<string, string>) => Object.entries(tokens).map
 
 /** A rendered markdown document in a frame of its own (a shelf's file, a brief): the page links `/design.css` too. */
 export const documentCss = `html { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-body { margin: 0; background: var(--panel); color: var(--ink); font: 16px/1.65 var(--ui); -webkit-font-smoothing: antialiased; }
-article { max-width: 860px; margin: 0 auto; padding: 28px 36px 80px; }
+body { margin: 0; background: var(--panel); color: var(--ink); font: var(--fs-xl)/1.65 var(--ui); -webkit-font-smoothing: antialiased; }
+article { max-width: 860px; margin: 0 auto; padding: var(--sp-3xl) 36px 80px; }
 h1, h2, h3 { font-family: var(--display); font-weight: 800; line-height: 1.2; margin: 1.6em 0 .6em; } h1 { font-size: 1.8em; } h3 { font-size: 1.1em; }
 h2 { font-size: 1.3em; border-bottom: 1px solid var(--line); padding-bottom: .3em; }
 a { color: var(--accent); } li { margin: .2em 0; } article img { max-width: 100%; height: auto; } hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
-code { font: .86em var(--mono); background: var(--panel-2); padding: .1em .35em; border-radius: 4px; }
-pre { background: var(--enamel); color: var(--term-fg); border-radius: var(--radius); padding: 12px 14px; overflow: auto; } pre code { background: none; padding: 0; color: inherit; }
+code { font: .86em var(--mono); background: var(--panel-2); padding: .1em .35em; border-radius: var(--radius); }
+pre { background: var(--enamel); color: var(--term-fg); border-radius: var(--radius); padding: var(--sp-l) var(--sp-xl); overflow: auto; } pre code { background: none; padding: 0; color: inherit; }
 blockquote { margin: 0; padding: 0 1em; border-left: 3px solid var(--line); color: var(--muted); }
-table { border-collapse: collapse; } th, td { border: 1px solid var(--line); padding: 4px 10px; } th { background: var(--panel-2); }`
+table { border-collapse: collapse; } th, td { border: 1px solid var(--line); padding: var(--sp-xs) var(--sp-l); } th { background: var(--panel-2); }`
 
 /**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
@@ -288,6 +312,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * `pressing` in `/press.js`) a bar sweeps along its foot in its text colour, which stays at full contrast.
  */
 const COMPONENTS = `
+.eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
 .quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
@@ -296,10 +321,10 @@ const COMPONENTS = `
 @keyframes blink { 50% { opacity: .25; } }
 .watching .lamp, .lamp.watching { animation: breathe 2.8s ease-in-out infinite; }
 @keyframes breathe { 50% { opacity: .35; } }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700;
+.pill { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-l) var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: 700;
   white-space: nowrap; background: var(--c); color: var(--on); }
 .pill .lamp { background: var(--on); }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 7px; border-radius: 999px; font-size: 12px; font-weight: 700;
+.chip { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: 700;
   background: var(--panel-2); white-space: nowrap; }
 .chip b { font-variant-numeric: tabular-nums; }
 .chip.some { background: var(--c); color: var(--on); }
@@ -313,75 +338,74 @@ button[aria-busy='true']::after { content: ''; position: absolute; left: 3px; ri
 @keyframes busy { from { background-position: -100% 0; } to { background-position: 200% 0; } }
 ${reduced(':is(*, ::before, ::after)', 'animation-iteration-count: 1 !important;')}
 ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 100% 100%;')}
-.meter { position: relative; height: 6px; border-radius: 999px; background: var(--sunk); }
+.meter { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
-.sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: 9px; padding: 6px 6px 6px 13px; border-radius: var(--radius);
+.sign { --pp: var(--p, var(--deco)); display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l); border-radius: var(--radius);
   background: color-mix(in oklab, var(--pp) var(--p-plate-mix), var(--panel)); border: 1px solid color-mix(in oklab, var(--pp) var(--p-plate-edge-mix), var(--panel));
   color: color-mix(in oklab, var(--pp) var(--p-plate-text-mix), var(--ink)); box-shadow: inset 5px 0 0 var(--pp); }
-.sign .num { display: grid; place-items: center; min-width: 26px; height: 22px; padding: 0 4px; border-radius: 3px; background: var(--pp);
-  color: var(--enamel); font: 900 14px/1 var(--display); font-variant-numeric: tabular-nums; }
-.sign .name { font: 800 14px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; white-space: nowrap;
+.sign .num { display: grid; place-items: center; min-width: 26px; min-height: 22px; padding: 0 var(--sp-xs); border-radius: var(--radius-s); background: var(--pp);
+  color: var(--enamel); font: 900 var(--fs-l)/1 var(--display); font-variant-numeric: tabular-nums; }
+.sign .name { font: 800 var(--fs-l)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1000px, calc(100vw - 32px));
-  height: min(680px, calc(100vh - 48px)); color: var(--ink); font: 14px/1.45 var(--ui); }
-.spawn-form header { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  height: min(680px, calc(100vh - 48px)); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
+.spawn-form header { display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
-.spawn-form h2 { margin: 0; font: 800 16px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; }
-.spawn-form .draft { margin-left: auto; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spawn-form h2 { margin: 0; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+.spawn-form .draft { margin-left: auto; color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .draft b { color: var(--ink); }
 .spawn-form .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); min-height: 0; }
-.spawn-form .task { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-right: 1px solid var(--line); min-height: 0; }
-.spawn-form .setup { display: grid; align-content: start; gap: 18px; padding: 18px 20px; overflow: auto; }
+.spawn-form .task { display: flex; flex-direction: column; gap: var(--sp-m); padding: var(--sp-xl) var(--sp-2xl); border-right: 1px solid var(--line); min-height: 0; }
+.spawn-form .setup { display: grid; align-content: start; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); overflow: auto; }
 .spawn-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-.spawn-form legend { padding: 0; margin-bottom: 8px; }
-.spawn-form .lbl { display: flex; align-items: baseline; gap: 8px; color: var(--muted); font: 800 11px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; }
-.spawn-form .lbl i { font: italic 500 11px/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
+.spawn-form legend { padding: 0; margin-bottom: var(--sp-m); }
+.spawn-form .lbl { display: flex; align-items: baseline; gap: var(--sp-m); }
+.spawn-form .lbl i { font: italic 400 var(--fs-xs)/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
 .spawn-form input:not([type=radio]), .spawn-form select, .spawn-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
-  border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 7px 9px; min-width: 0; }
+  border: 1px solid var(--line-strong); border-radius: var(--radius); padding: var(--sp-m); min-width: 0; }
 .spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pe); outline-offset: -1px; }
 .spawn-form input[type=radio]:focus-visible { outline: 2px solid var(--pe); outline-offset: 2px; border-radius: 50%; }
 .spawn-form ::placeholder { color: var(--faint); font-style: italic; }
-.spawn-form textarea { flex: 1; resize: none; font: 14px/1.55 var(--ui); padding: 12px 14px; }
+.spawn-form textarea { flex: 1; resize: none; font: var(--fs-l)/1.55 var(--ui); padding: var(--sp-l) var(--sp-xl); }
 .spawn-form input:invalid { border-color: var(--broken-text); }
-.spawn-form .where { display: grid; gap: 6px; }
-.spawn-form .choice { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; row-gap: 2px; align-items: baseline; padding: 9px 12px;
+.spawn-form .where { display: grid; gap: var(--sp-s); }
+.spawn-form .choice { display: grid; grid-template-columns: auto 1fr auto; column-gap: var(--sp-l); row-gap: var(--sp-2xs); align-items: baseline; padding: var(--sp-m) var(--sp-l);
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }
 .spawn-form .choice:hover { border-color: var(--deco); }
-.spawn-form .choice small { grid-column: 2 / -1; color: var(--muted); font-size: 12px; }
-.spawn-form .choice .aside { color: var(--faint); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.spawn-form .choice small { grid-column: 2 / -1; color: var(--muted); font-size: var(--fs-s); }
 .spawn-form .choice:has(:checked) { border-color: var(--pe); background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); box-shadow: inset 4px 0 0 var(--pp); }
 .spawn-form .choice:has(:disabled) { opacity: .55; cursor: default; }
-.spawn-form .choice:has(:disabled) .aside { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.spawn-form .choice:has(:disabled) .aside { font: 400 var(--fs-xs)/1.3 var(--ui); text-transform: none; letter-spacing: 0; }
 .spawn-form input[type=radio] { accent-color: var(--pp); margin: 0; translate: 0 2px; }
-.spawn-form .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.spawn-form .fields { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-l); }
 .spawn-form .fields > legend { grid-column: 1 / -1; }
-.spawn-form .fields label { display: grid; gap: 6px; }
+.spawn-form .fields label { display: grid; gap: var(--sp-s); }
 .spawn-form .fields .wide { grid-column: 1 / -1; }
-.spawn-form .picks { display: grid; gap: 4px; max-height: 190px; overflow: auto; }
-.spawn-form .pick { display: flex; align-items: baseline; gap: 10px; padding: 6px 10px; border-radius: var(--radius); cursor: pointer; }
+.spawn-form .picks { display: grid; gap: var(--sp-xs); max-height: 190px; overflow: auto; }
+.spawn-form .pick { display: flex; align-items: baseline; gap: var(--sp-l); padding: var(--sp-s) var(--sp-l); border-radius: var(--radius); cursor: pointer; }
 .spawn-form .pick:hover { background: var(--panel-2); }
 .spawn-form .pick:has(:checked) { background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); }
-.spawn-form .pick span { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spawn-form .pick span { color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .pick .st { margin-left: auto; }
 .spawn-form .pick .st.at-risk { color: var(--needs-text); }
 .spawn-form .pick .st.live { color: var(--working-text); }
-.spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: -6px; padding-left: 14px; border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
+.spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: calc(-1 * var(--sp-s)); padding-left: var(--sp-xl); border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
 .spawn-form:has([name=where][value=new]:checked) .if-new, .spawn-form:has([name=where][value=worktree]:checked) .if-worktree,
   .spawn-form:has([name=where][value=main]:checked) .if-main { display: grid; }
-.spawn-form footer { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--sunk) 40%, var(--panel)); }
-.spawn-form .summary { display: flex; flex-wrap: wrap; gap: 2px 0; margin: 0 auto 0 0; color: var(--muted); font-size: 12px; min-width: 0; }
-.spawn-form .summary span + span::before { content: '·'; margin: 0 7px; color: var(--deco); }
+.spawn-form footer { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-l) var(--sp-2xl); border-top: 1px solid var(--line); background: color-mix(in oklab, var(--sunk) 40%, var(--panel)); }
+.spawn-form .summary { display: flex; flex-wrap: wrap; gap: var(--sp-2xs) 0; margin: 0 auto 0 0; color: var(--muted); font-size: var(--fs-s); min-width: 0; }
+.spawn-form .summary span + span::before { content: '·'; margin: 0 var(--sp-m); color: var(--deco); }
 .spawn-form .summary b { color: var(--ink); }
 .spawn-form footer button { flex: none; }
-.spawn-form footer kbd { margin-left: 8px; padding: 0; min-width: 0; background: none; color: inherit; opacity: .6; font: 600 12px/1 var(--ui); }
+.spawn-form footer kbd { margin-left: var(--sp-m); padding: 0; min-width: 0; background: none; color: inherit; opacity: .6; font: 700 var(--fs-s)/1 var(--ui); }
 @media (max-width: 760px) {
   .spawn-form { height: calc(100vh - 32px); }
   .spawn-form .cols { grid-template-columns: 1fr; grid-template-rows: minmax(160px, 1fr) auto; overflow: auto; }
   .spawn-form .task { border-right: 0; border-bottom: 1px solid var(--line); }
   .spawn-form .setup { overflow: visible; }
   .spawn-form footer { flex-wrap: wrap; }
-  .spawn-form .summary { flex-basis: 100%; margin-bottom: 4px; }
+  .spawn-form .summary { flex-basis: 100%; margin-bottom: var(--sp-xs); }
 }
 `
 
@@ -393,16 +417,20 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
  */
 export function designCss(): string {
   const faces = fonts.map(
-    ({ family, weight, file, range }) =>
-      `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: normal; font-display: block; src: url(fonts/${file}) format('woff2');${range ? ` unicode-range: ${range};` : ''} }`,
+    ({ family, weight, style, file, range, metrics }) =>
+      `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: ${style}; font-display: block; src: url(fonts/${file}) format('woff2');${range ? ` unicode-range: ${range};` : ''}${metrics ? ` ${metrics}` : ''} }`,
   )
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
   const shared = { ...type, ...shape, termFg: ANSI.foreground, ...mixes }
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
   const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
+  const steps = (prefix: string, scale: Record<string, string>) => Object.entries(scale).map(([step, value]) => `--${prefix}-${step}: ${value};`).join('\n  ')
   return `${faces.join('\n')}
 :root {
+  font-size: calc(100% * var(--scale, 1));
   ${variables(shared)}
+  ${steps('fs', size)}
+  ${steps('sp', space)}
   ${scheme('light')}
 }
 @media (prefers-color-scheme: dark) {
