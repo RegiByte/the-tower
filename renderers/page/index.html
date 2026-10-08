@@ -2046,11 +2046,12 @@ $('transfer').addEventListener('close', async () => {
   select(id)
 })
 
-/** Deleting is the user's, and done at once: the toast's Undo puts the file back, under its id. */
+/** Deleting is the user's, and done at once: what was typed is saved first, and the toast's Undo puts the file back, under its id. */
 async function deleteDraft() {
   const d = draftOpen
   closeDraft()
   goHome()
+  save(draftIo, d)
   const gone = await discard(draftIo, d)
   if (gone) toast(`Deleted "${titleOf(gone.text)}" from Drafts`, { label: 'Undo', run: () => undoDelete(gone) })
 }

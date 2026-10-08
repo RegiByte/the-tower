@@ -24,7 +24,8 @@ export function toaster(stack: HTMLElement) {
     clearTimeout(shown.get(el)?.timer)
     shown.delete(el)
     el.remove()
-    if (!shown.size) Object.assign(held, { pointer: false, focus: false })
+    if (!shown.size) held.pointer = false
+    hold('focus', stack.contains(document.activeElement))
   }
   const run = (el: HTMLElement, s: Shown) => ((s.since = Date.now()), (s.timer = setTimeout(() => close(el), s.left)))
   const pause = (s: Shown) => (clearTimeout(s.timer), (s.left -= Date.now() - s.since))
