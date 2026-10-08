@@ -55,8 +55,8 @@ panels are the same view in both renderers. Only where they sit, their state and
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panels.ts#drawPanel) replaces the element's
   html only when it changed (or something else wrote the element), sets each text box from the renderer's text,
   and gives focus and caret back to the box that had them, and focus to a control that had it
-  ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus): the element of the same tag and first attribute that
-  names what it does, which a renderer also wraps around its own redraws). A time is an empty `data-since` span that each
+  ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus): the one element of the same tag and the same attributes
+  naming what it does, none when two match, which a renderer also wraps around its own redraws). A time is an empty `data-since` span that each
   renderer fills on its own clock, so the clock never forces a redraw that would drop a text selection in the diff.
 - *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels.ts#panelsCss)), scoped under the views' own roots
   (`.changes-panel`, `.reviews-panel`). Each renderer adds it as a `<style>`, as `documentCss` is used, and sizes

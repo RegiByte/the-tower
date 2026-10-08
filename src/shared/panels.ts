@@ -581,19 +581,20 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
 
 /** What finds a control again in html drawn anew: its first attribute that names what it does. */
 const IDENTITY = /^(data-(?!tip$|since$|hold$)|href$|popovertarget$)/
-const identityOf = (el: Element) => [...el.attributes].find((a) => IDENTITY.test(a.name))
+const identityOf = (el: Element) => el.localName + [...el.attributes].filter((a) => IDENTITY.test(a.name)).map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
 
 /**
- * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: the element of
- * the same tag and the same first attribute naming what it does (a `data-` one but a tip, a time or a hold, an `href`, a
- * `popovertarget`), so a keyboard keeps its place through a redraw.
+ * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: the one element
+ * of the same tag and the same attributes naming what it does (`data-` ones but a tip, a time or a hold, an `href`, a
+ * `popovertarget`), so a keyboard keeps its place through a redraw. A control nothing names, or that two now match, loses focus.
  */
 export function keepingFocus(el: HTMLElement, write: () => void) {
   const had = document.activeElement
   const id = had && had !== el && el.contains(had) ? identityOf(had) : undefined
   write()
-  if (!id || el.contains(document.activeElement)) return
-  el.querySelector<HTMLElement>(`${had!.localName}[${id.name}="${CSS.escape(id.value)}"]`)?.focus({ preventScroll: true })
+  if (!id || id === had!.localName || el.contains(document.activeElement)) return
+  const again = el.querySelectorAll<HTMLElement>(id)
+  if (again.length === 1) again[0].focus({ preventScroll: true })
 }
 
 /**
