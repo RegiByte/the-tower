@@ -508,7 +508,7 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
     ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act">${whyNot(board, 'resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
@@ -544,12 +544,15 @@ function toggleCrewFold(id) {
 /** Why a past worker can't be resumed, quietly: it is history, not an alarm. */
 const unresumableHtml = (c) => `<span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
 
-/** A verb a daemon that is down holds back: drawn, inert, its tip saying why (`whyNot`). */
+/** Why a daemon verb can't run now: the tower lost (its board is stale), or a daemon it needs down (`whyNot`). */
+const heldWhy = (verb) => (lostAt ? HOST_MEANS.unknown : whyNot(board, verb))
+
+/** A verb `heldWhy` holds back: drawn, inert, its tip saying why. */
 const heldHtml = (verb, label, inner, cls = '') =>
-  `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(whyNot(board, verb))}">${inner}</button>`
+  `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb))}">${inner}</button>`
 
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? whyNot(board, 'resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
+  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
 
 const pastConversationHtml = (c, conv) =>
@@ -566,7 +569,7 @@ const pastHtml = (c) =>
 
 const dirHtml = (f, dir, hub) =>
   `<div class="dir"><span class="dname" title="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
-    ${can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : whyNot(board, 'shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : ''}
+    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
     ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
@@ -589,7 +592,7 @@ const worktreeHtml = (f, w) => {
   return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
-    ${w.state === 'lost' ? '' : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : whyNot(board, 'shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : ''}
+    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
     ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
   </div>`
 }
@@ -678,7 +681,7 @@ const signHtml = (n, name, extra = '') =>
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : whyNot(board, 'spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : '')}
+    ${signHtml(all.length - i, f.name, heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : '')}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -765,8 +768,8 @@ function barHtml(c) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" title="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
   repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" title="everything else about ${callsign(c.id)}">ⓘ</button>
-    ${!can(c, 'resume') ? '' : whyNot(board, 'resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
-    ${!can(c, 'review') ? '' : whyNot(board, 'review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
+    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
+    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" title="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
     <button data-act="home" aria-label="back to the skyline" title="back to the skyline (Esc outside the terminal)">✕</button>`)
@@ -945,7 +948,7 @@ let changesFailed
 
 async function readChanges(id) {
   const repos = await tower.get(`changes/${id}`).catch((err) => {
-    if (changes?.id === id) return void toast(err.message)
+    if (changes?.id === id) return void (lostAt || toast(err.message))
     changesFailed = { id, message: err.message }
     render()
   })
@@ -1166,7 +1169,7 @@ async function readStats() {
   const reading = ++statsView.reading
   const stats = await tower.stats(statsQuery(statsView.range, Date.now())).catch((err) => {
     if (reading !== statsView.reading) return
-    if (statsView.stats) return void toast(err.message)
+    if (statsView.stats) return void (lostAt || toast(err.message))
     statsView.failed = err.message
     drawSideView()
   })
@@ -1254,7 +1257,7 @@ function tick() {
   if (!selected && !shelfOpen) paintSky()
   paintLimits()
   for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
-  if (ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(heededWaits(board, heed))
+  if (!lostAt && ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(heededWaits(board, heed))
 }
 
 /**
@@ -1801,7 +1804,7 @@ function draftHeadHtml() {
   const file = item && fileButtonsHtml(`${draftsOf(f).dir}/${item.id}`)
   $('draft-head').innerHTML = `<span class="label">Draft</span>${tag}${file ?? ''}<span class="dim">${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${by}</span>
     <span class="actions"><small class="dim">⌘⏎ new session</small>
-      ${can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : whyNot(board, 'spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : ''}
+      ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : ''}
       ${targets().length ? '<button data-draft-act="transfer" title="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
       <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
