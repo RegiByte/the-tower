@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Markdown is drawn through one shared module, safe by construction for unvetted words",
-  "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown or shelved file, raw HTML kept for a frame without scripts; both refuse any other link, and the tower page opens a shelf link only when safeHref allows it.",
+  "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown or shelved file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML, and the tower page opens a shelf link only when safeHref allows it.",
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -49,8 +49,9 @@ would reach for a markdown library's `parse` and draw it inline.
   construction, in any element.
 - [`documentHtml`](ref:hub/src/shared/markdown.ts#documentHtml), for a file a worker showed or a shelf keeps: raw HTML
   stays (the user's documents may use it), relative images are read beside the file
-  ([`imagePath`](ref:hub/src/shared/markdown.ts#imagePath), moved here from Tower 3D), and links obey `safeHref`. Its
-  html belongs in a frame without `allow-scripts`.
+  ([`imagePath`](ref:hub/src/shared/markdown.ts#imagePath), moved here from Tower 3D), and markdown links obey
+  `safeHref`. Raw HTML is kept as written, a `javascript:` anchor or a `<script>` included: containing it is the
+  frame's job, without `allow-scripts`, and the test pins that `documentHtml` does not.
 - `safeHref` resolves a href against a placeholder origin and allows `http:`, `https:` and `mailto:`; a relative path
   resolves to `http:`. The href written is the string checked, escaped, so an entity (`&#106;avascript:`) reaches the
   browser as the text it was checked as.
@@ -69,4 +70,5 @@ files may use it, and they stay framed without scripts.
 
 **Impact.** Raw HTML in an answer or a prompt shows as its text on the tower page (Claude's occasional `<details>` or
 `<br>` included); a remote image in an answer is a link. Review notes and Tower 3D's logbook still show raw markdown,
-escaped. API 1.4: `/markdown.js` is a served module under the contract ([[renderer-api-contract]]).
+escaped. Prompts in the card gist and in a past conversation's line lose `**` and backticks with `plain`, as answers
+already did; a gist reduced through marked's lexer waits for the brief's chat redesign. API 1.4: `/markdown.js` is a served module under the contract ([[renderer-api-contract]]).

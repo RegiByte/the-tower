@@ -542,7 +542,7 @@ const resumeHtml = (c, conv) => can(conv, 'resume')
 
 const pastConversationHtml = (c, conv) =>
   `<div class="conv" title="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
-    <span class="what">${conv.answer ? `<span class="said">${GIST_MARK.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_MARK.prompt}</span> ` + esc(conv.prompt) : '<i>no prompt</i>'}</span>
+    <span class="what">${conv.answer ? `<span class="said">${GIST_MARK.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_MARK.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
     ${resumeHtml(c, conv)}</div>`
 
 /** A past worker and the conversations it held, oldest first. */

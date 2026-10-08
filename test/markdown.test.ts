@@ -84,9 +84,10 @@ test('markdownHtml: markdown itself renders as before', () => {
     '<table>\n<thead>\n<tr>\n<th>f</th>\n<th align="right">n</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>a</td>\n<td align="right">1</td>\n</tr>\n</tbody></table>\n')
 })
 
-test('documentHtml: raw HTML stays for a frame without scripts, links never leave the web, relative images read beside the file', () => {
+test('documentHtml: raw HTML stays as written for a frame without scripts, markdown links never leave the web, relative images read beside the file', () => {
   const html = documentHtml('<details><summary>more</summary>kept</details>\n\n[js](javascript:alert(1)) [web](https://example.com) ![a](img/a.png) ![r](https://example.com/r.png)', '/shown/s1/tmp/notes/a.md')
   assert.match(html, /<details><summary>more<\/summary>kept<\/details>/)
+  assert.equal(documentHtml('<a href="javascript:alert(1)">raw</a>', '/a.md'), '<p><a href="javascript:alert(1)">raw</a></p>\n', 'the frame contains raw HTML, not documentHtml')
   assert.match(html, /<p>js <a href="https:\/\/example.com">web<\/a> <img src="\/shown\/s1\/tmp\/notes\/img\/a.png" alt="a"> <img src="https:\/\/example.com\/r.png" alt="r"><\/p>/)
 })
 

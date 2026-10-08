@@ -234,7 +234,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
 `parse`: those words can carry what a web page Claude read put in them, and your renderer runs at the tower's origin,
-which holds every verb. `documentHtml` keeps a file's raw HTML, so frame its html without `allow-scripts`.
+which holds every verb. `documentHtml` keeps a file's raw HTML as written, its links and scripts included (only markdown links are checked), so
+frame its html without `allow-scripts`.
 
 A renderer that draws the Stats panel or the settings popover installs the shared tooltip once, `watchTips(document)`
 from `/tips.js`: the Stats bars show their readouts through it, and the popover stays hidden until it is placed.

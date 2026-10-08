@@ -1,8 +1,8 @@
 /**
  * Markdown as html, two ways. `markdownHtml` is for words nobody vetted (Claude's answers, prompts, what workers
  * write): raw HTML shows as text, links go only where `safeHref` lets them, images come only from the tower. Its html
- * is safe in any element. `documentHtml` is for a file a worker showed or a shelf keeps: raw HTML stays, so its html
- * belongs in a frame without scripts; its links obey `safeHref` too.
+ * is safe in any element. `documentHtml` is for a file a worker showed or a shelf keeps: raw HTML stays, its own links
+ * and scripts included, so its html belongs in a frame without scripts; only its markdown links obey `safeHref`.
  */
 import { Marked, type Tokens } from 'marked'
 import { esc } from './cards.ts'
@@ -55,7 +55,7 @@ const documents = new Marked({
 /** Words nobody vetted as html safe in any element: raw HTML escaped, links `safeHref`, remote images as links to them. */
 export const markdownHtml = (text: string) => words.parse(text, { async: false })
 
-/** A markdown file served at `url` as html for a frame without scripts: raw HTML kept, links `safeHref`, relative images read beside it. */
+/** A markdown file served at `url` as html for a frame without scripts: raw HTML kept as written, markdown links `safeHref`, relative images read beside it. */
 export function documentHtml(text: string, url: string) {
   const tokens = documents.lexer(text)
   documents.walkTokens(tokens, (t) => void (t.type === 'image' && (t.href = imagePath(t.href, url) ?? t.href)))

@@ -348,7 +348,7 @@ export function gistOf(c: Card): Gist | undefined {
   if (c.compacting) return { kind: 'compacts', text: 'compacting the conversation' }
   if (c.status === 'working' && c.tool) return { kind: 'runs', text: c.tool }
   if (c.status !== 'working' && conv?.answer) return { kind: 'answer', text: plain(conv.answer) }
-  return conv?.prompt ? { kind: 'prompt', text: conv.prompt } : undefined
+  return conv?.prompt ? { kind: 'prompt', text: plain(conv.prompt) } : undefined
 }
 
 /** What a worker says over its head while it works: once the turn ends, its gist speaks. */
