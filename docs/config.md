@@ -149,7 +149,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `home` (back to the skyline) | global | `Escape` |
 | `sidebar` | global | `Meta+B` |
 | `help` (the `?` sheet) | global | `?` |
-| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Alt+1` … `Alt+4` |
+| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+1` … `Ctrl+4` |
 | `leave-terminal` | terminal | `Alt+Escape` |
 | `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight` |
 | `save-draft` | field | `Meta+S`, `Ctrl+S` |
@@ -159,5 +159,8 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 `tower config check` fails a value that is no chord, at `keys.<id>` or `keys.<id>[n]`, and a chord bound to two
 commands that can fire in the same place (a global chord with a modifier reaches terminals and fields too), at the
 override, naming the other command: rebind that one too, or set it to `null`. An id no command has is a warning, and
-ignored. A global chord with a modifier is kept from the terminal: `Ctrl` chords there are Claude's and the shell's
-own keys, and the browser keeps some `Meta` chords (⌘W, ⌘T, ⌘Q) for itself.
+ignored. A character chord and a key chord that are the same key on a US layout (`?` and `Shift+Slash`) are a warning:
+the check can't know your layout, and on that key only the command listed first runs. A global chord with a modifier is kept from the terminal: `Ctrl` chords there are Claude's and the shell's
+own keys, and the browser keeps some `Meta` chords (⌘W, ⌘T, ⌘Q) for itself. A default that fires in a terminal or a field types nothing worth keeping: ⌥ with a digit types `#` or `€`
+on some layouts, so the panes are on ⌃1–4, which in a terminal are only legacy control bytes. macOS takes ⌃1–4
+while "Switch to Desktop" shortcuts are on in its Keyboard settings: rebind the panes then.

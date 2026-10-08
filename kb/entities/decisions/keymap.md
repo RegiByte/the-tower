@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One keymap: commands as data, defaults in the module, overrides in the config",
-  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does and its default chords. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌥1–4 show a worker's panes, from inside the terminal too.",
+  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does and its default chords. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃1–4 show a worker's panes, from inside the terminal too.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -43,9 +43,13 @@ hand-edited file, checked like every other key, and reach every renderer the way
   sheet, grouped, saying where each chord works; `keysLabel` and `chordLabel` name chords (`⌥↓`);
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
 - `leave-terminal` (⌥Esc): focus goes back to the control it came from before the terminal, else the selected pane's
-  tab, else the page. `pane-*` (⌥1–4) show the selected worker's pane, focusing its terminal or its tab. Checked
+  tab, else the page. `pane-*` (⌃1–4) show the selected worker's pane, focusing its terminal or its tab. Checked
   live on Claude Code 2.1.295: xterm sends ⌥Esc as ESC ESC, which clears Claude's prompt like Esc twice (still
-  there), and ⌥1–4 as `¡™£¢` with `macOptionIsMeta` off; Claude binds neither.
+  there), and Claude binds no ⌃ digit. ⌃1–4 send xterm's legacy control bytes (⌃3 an ESC, ⌃4 `^\\`, a quit
+  signal in a shell), so a default there costs nothing typed. ⌥1–4 were the first choice and were dropped in review:
+  ⌥3 types `#` on a British layout, ⌥2 `€` on several European ones, and a default must not eat a printable
+  character in Claude's prompt or a note. A character chord and a key chord that are one key on a US layout (`?`,
+  `Shift+Slash`) warn: the check can't know the layout.
 - Tower 3D reads the moves and `leave-terminal` from `board.keys`, in the world and at a desk's terminal. Its walk
   keys (WASD, H, M, P, …) stay its own; its panes, the `?` sheet and `aria-keyshortcuts` would come from the same
   calls.

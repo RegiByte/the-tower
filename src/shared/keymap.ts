@@ -12,6 +12,8 @@
  * Where a chord fires is its command's scope and what holds focus: `global` anywhere, but a chord without Alt, Ctrl or
  * Meta only while nothing types (a terminal or a text field would take it as typing); `terminal` with focus in a
  * terminal; `field` in a text field. ⌥ letters reach the tower from a terminal while xterm's `macOptionIsMeta` is off.
+ * A default that fires in a terminal or a field types nothing worth keeping: ⌥ digits type `#` or `€` on some layouts,
+ * ⌃ digits only legacy control bytes (⌃3 an Esc, ⌃4 a quit signal in a shell).
  */
 
 export type Scope = 'global' | 'terminal' | 'field'
@@ -31,10 +33,10 @@ export const COMMANDS: Command[] = [
   { id: 'home', scope: 'global', group: 'Move', chords: ['Escape'], does: 'back to the skyline' },
   { id: 'sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
   { id: 'help', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
-  { id: 'pane-terminal', scope: 'global', group: 'Panes', chords: ['Alt+1'], does: "the selected worker's terminal, focused" },
-  { id: 'pane-brief', scope: 'global', group: 'Panes', chords: ['Alt+2'], does: "the selected worker's brief" },
-  { id: 'pane-changes', scope: 'global', group: 'Panes', chords: ['Alt+3'], does: "the selected worker's changes" },
-  { id: 'pane-reviews', scope: 'global', group: 'Panes', chords: ['Alt+4'], does: "the selected worker's review thread" },
+  { id: 'pane-terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+1'], does: "the selected worker's terminal, focused" },
+  { id: 'pane-brief', scope: 'global', group: 'Panes', chords: ['Ctrl+2'], does: "the selected worker's brief" },
+  { id: 'pane-changes', scope: 'global', group: 'Panes', chords: ['Ctrl+3'], does: "the selected worker's changes" },
+  { id: 'pane-reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+4'], does: "the selected worker's review thread" },
   { id: 'leave-terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
   { id: 'newline', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
   { id: 'delete-word', scope: 'terminal', group: 'Terminal', chords: ['Ctrl+Backspace'], does: 'delete the word before the cursor, as ⌥⌫ does' },
@@ -116,17 +118,38 @@ export const keysProblems = (overrides: unknown): KeysProblem[] => {
   if (shape.some((p) => p.level === 'fail')) return shape
   const keys = keymapOf(overrides as Record<string, string | string[] | null>)
   const bound = COMMANDS.flatMap((c) => keys[c.id].map((text) => ({ id: c.id, text, focus: reach(c.scope, parse(text) as Chord) })))
-  const clashes = bound.flatMap((a, i) =>
-    bound.slice(i + 1).filter((b) => b.text === a.text && b.id !== a.id && a.focus.some((f) => b.focus.includes(f))).map((b) => [a, b] as const),
-  )
+  const pairs = (same: (a: string, b: string) => boolean) =>
+    bound.flatMap((a, i) => bound.slice(i + 1).filter((b) => b.id !== a.id && same(a.text, b.text) && a.focus.some((f) => b.focus.includes(f))).map((b) => [a, b] as const))
+  const at = (a: { id: string }, b: { id: string }) => (Object.hasOwn(overrides, a.id) ? [a.id, b.id] : [b.id, a.id])
   return [
     ...shape,
-    ...clashes.map(([a, b]): KeysProblem => {
-      const at = Object.hasOwn(overrides, a.id) ? a.id : b.id
-      const other = at === a.id ? b.id : a.id
-      return { level: 'fail', at: `.${at}`, problem: `${a.text} is bound to ${other} as well, where both may fire: rebind ${other} too, or set it to null` }
+    ...pairs((a, b) => a === b).map(([a, b]): KeysProblem => {
+      const [id, other] = at(a, b)
+      return { level: 'fail', at: `.${id}`, problem: `${a.text} is bound to ${other} as well, where both may fire: rebind ${other} too, or set it to null` }
+    }),
+    ...pairs(sameOnUs).map(([a, b]): KeysProblem => {
+      const [id, other] = at(a, b)
+      return { level: 'warn', at: `.${id}`, problem: `${a.text} and ${b.text} (${other}) are one key on a US layout, where only the command listed first in the keymap runs` }
     }),
   ]
+}
+
+/** The key and Shift that type each character on a US layout. */
+const US_SHIFTED: Record<string, string> = {
+  '!': 'Digit1', '@': 'Digit2', '#': 'Digit3', $: 'Digit4', '%': 'Digit5', '^': 'Digit6', '&': 'Digit7', '*': 'Digit8', '(': 'Digit9', ')': 'Digit0',
+  _: 'Minus', '+': 'Equal', '{': 'BracketLeft', '}': 'BracketRight', '|': 'Backslash', ':': 'Semicolon', '"': 'Quote', '~': 'Backquote', '<': 'Comma', '>': 'Period', '?': 'Slash',
+}
+const US_PLAIN: Record<string, string> = {
+  '-': 'Minus', '=': 'Equal', '[': 'BracketLeft', ']': 'BracketRight', '\\': 'Backslash', ';': 'Semicolon', "'": 'Quote', '`': 'Backquote', ',': 'Comma', '.': 'Period', '/': 'Slash',
+}
+
+/** Whether a character chord and a key chord press the same key on a US layout: the check can't know the user's. */
+const sameOnUs = (a: string, b: string): boolean => {
+  const [x, y] = [parse(a) as Chord, parse(b) as Chord]
+  const [char, code] = x.char && y.code ? [x, y] : y.char && x.code ? [y, x] : []
+  if (!char || !code) return false
+  const shift = US_SHIFTED[char.char!] === code.code! ? true : US_PLAIN[char.char!] === code.code! ? false : undefined
+  return shift !== undefined && code.mods.has('Shift') === shift && MODIFIERS.every((m) => m === 'Shift' || char.mods.has(m) === code.mods.has(m))
 }
 
 const asList = (value: string | string[] | null): string[] => (value === null ? [] : typeof value === 'string' ? [value] : value)
