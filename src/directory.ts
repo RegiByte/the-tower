@@ -115,9 +115,9 @@ const noReviewReason = (card: Card) =>
     ? 'it has no conversation yet'
     : card.reviews
       ? `it is a reviewer itself, of ${card.reviews}'s work`
-      : card.unresumable === 'gone'
+      : card.worktree?.gone
         ? `its checkout ${card.checkout} is gone, so there is nothing to fork`
-        : "a dir of its floor isn't a git repo, or its checkout is gone"
+        : "a dir of its floor isn't a git repo"
 
 const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${card.hiredBy!.callsign}`)
 

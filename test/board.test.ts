@@ -217,6 +217,9 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
   const reviewable = (session: SessionLog, repos: Map<string, RepoRead>) => cardAt(session, repos).verbs.includes('review')
   assert.deepEqual([reviewable(log, reads([])), reviewable(inTree, reads([{ ...tree, present: true }])), reviewable(inTree, reads([{ ...tree, present: false }])), reviewable(inTree, reads([]))], [true, true, false, false])
+  const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
+  const liveGone = board(CONFIG, [{ header: running.header, facts: factsOf(running) }], hostWith(running.header.id), [], [], [], [], [], reads([]), new Map(), PATHS, 0).floors[0].cards[0]
+  assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone, liveGone.verbs.includes('review')], [true, undefined, true, false])
   const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
   assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
   const spanning = { name: 'tower', hub: '/hub', repos: ['/lib'] }

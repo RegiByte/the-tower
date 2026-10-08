@@ -40,8 +40,8 @@ sequenceDiagram
   dir of its floor or a worktree of one (`inProject`: the hub moved, or the project left the config) is
   `unresumable: 'outside'`; one whose worktree git no longer lists with its folder in every repo of the project
   (removed by Tidy, deleted, or lost: the same folders the tower's resume refuses as `lost` without) is `'gone'` ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), from the config and git's reads,
-  nothing until the floor's git is read once; the same [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone) withholds
-  the card's `review`, which would fork that checkout). Only a card holding a conversation nobody resumed says so; it and its conversations offer no `resume`, a stranded one is
+  nothing until the floor's git is read once; the same [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone) is
+  `card.worktree.gone`, live or not, which withholds the card's `review`: it would fork that checkout). Only a card holding a conversation nobody resumed says so; it and its conversations offer no `resume`, a stranded one is
   not on duty, and every renderer and `tower agent` say why in a word or two
   ([`UNRESUMABLE_NAME`](ref:hub/src/shared/cards.ts#UNRESUMABLE_NAME)). A recut worktree makes it resumable again.
 - **The chain is derived.** [`resumes`](ref:hub/src/bridge/chains.ts#resumes) links a resumed conversation

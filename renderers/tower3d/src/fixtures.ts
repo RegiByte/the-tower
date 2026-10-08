@@ -92,7 +92,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
   return {
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
-    worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author) } : undefined,
+    worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
     status: f.status, blocked: f.blocked, live, waiting,
     ...(f.waitsOn !== undefined && { reportsTo: idOf(project, f.waitsOn), waitsOn: { id: idOf(project, f.waitsOn), callsign: callsign(idOf(project, f.waitsOn)) } }),

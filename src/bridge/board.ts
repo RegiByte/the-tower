@@ -82,9 +82,10 @@ export type Card = {
   cwd: string
   /**
    * The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and,
-   * for a fork, the checkout it was forked from.
+   * for a fork, the checkout it was forked from; `gone` once git no longer lists it with its folder in every repo of the
+   * project (`checkoutGone`).
    */
-  worktree?: { name: string; branch?: string; from?: string }
+  worktree?: { name: string; branch?: string; from?: string; gone: boolean }
   /** The callsign of the worker whose work this one reviews, named by its first prompt (`reviewPrompt`). */
   reviews?: string
   /** The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none. */
@@ -305,10 +306,11 @@ export const unresumableAt = (project: Project | undefined, cwd: string, reads: 
   return checkoutGone(project, cwd, reads) ? 'gone' : undefined
 }
 
-const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[]): Card['worktree'] => {
+/** `projectRead`: the reads of the project's dirs, `undefined` until each was read once. */
+const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[], projectRead: RepoRead[] | undefined): Card['worktree'] => {
   const name = project && worktreeName(project, cwd)
   const tree = treeAt(reads, cwd)
-  return name === undefined ? undefined : { name, branch: tree?.branch, from: tree?.from }
+  return name === undefined ? undefined : { name, branch: tree?.branch, from: tree?.from, gone: checkoutGone(project!, cwd, projectRead) }
 }
 
 const card = (
@@ -405,7 +407,7 @@ const card = (
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
     onDuty: live || (stranded && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy),
-    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && unresumableHere !== 'gone' ? { project: header.project, checkout, callsign } : undefined),
+    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined),
   }
 }
 
@@ -541,10 +543,8 @@ export const allCards = (
   const delivered = deliveries(sessions)
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
   const callsignOf = (id: string) => nameOf(byId.get(id)!)
-  const unresumableOf = ({ project, cwd }: Session['header']) => {
-    const p = config.projects[project]
-    return unresumableAt(p, cwd, p && projectReads(projectDirs(p), repos))
-  }
+  const projectRead = (p: Project | undefined) => p && projectReads(projectDirs(p), repos)
+  const unresumableOf = ({ project, cwd }: Session['header']) => unresumableAt(config.projects[project], cwd, projectRead(config.projects[project]))
   return withSeats(withCrews(sessions.map((s) =>
     card(
       s,
@@ -553,7 +553,7 @@ export const allCards = (
       host?.ids ?? new Set(),
       running,
       peers,
-      cardWorktree(config.projects[s.header.project], s.header.cwd, reads),
+      cardWorktree(config.projects[s.header.project], s.header.cwd, reads, projectRead(config.projects[s.header.project])),
       unresumableOf(s.header),
       threadAt(s.header.project),
       forkable(s.header.project),
