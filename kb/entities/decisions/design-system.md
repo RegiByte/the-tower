@@ -26,7 +26,8 @@ draws with almost no advance, so the next face in the stack draws it.
   in Node, in the browser and in Tower 3D's bundle.
 - The tower serves it three ways ([`design`](ref:hub/src/tower/server.ts#design)): `/design.css`
   ([`designCss`](ref:hub/src/shared/design.ts#designCss): faces, `--` variables and the shared components:
-  lamp, pill, chip, meter, floor sign and the attention classes), `/design.js` (the module
+  lamp, pill, chip, meter, floor sign, the attention classes, and every button's pressed, held and busy states,
+  [[press-feedback]]), `/design.js` (the module
   itself, types stripped by esbuild per request) and `/fonts/<file>` from the `@fontsource` packages. All three
   answer any origin: a framed shelf page has an opaque origin, and fonts and modules load only with CORS.
 - **Colour is attention.** Each board card carries `attention` (`needs | ready | working | quiet | broken`),

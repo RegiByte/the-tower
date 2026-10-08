@@ -283,6 +283,9 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * `quiet`, `broken`) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
+ * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
+ * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
+ * `pressing` in `/press.js`) a bar sweeps along its foot in its text colour, which stays at full contrast.
  */
 const COMPONENTS = `
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
@@ -302,7 +305,14 @@ const COMPONENTS = `
 .chip.some { background: var(--c); color: var(--on); }
 .chip.some .lamp { background: var(--on); }
 .chip:not(.some) .lamp { animation: none; }
+button:active:not(:disabled, [aria-disabled='true'], [aria-busy='true']) { translate: 0 1px; }
+button:is(:disabled, [aria-disabled='true']) { opacity: .45; cursor: not-allowed; }
+button[aria-busy='true'] { position: relative; cursor: progress; }
+button[aria-busy='true']::after { content: ''; position: absolute; left: 3px; right: 3px; bottom: 2px; height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent) 0 0 / 50% 100% no-repeat; animation: busy 1s ease-in-out infinite; }
+@keyframes busy { from { background-position: -100% 0; } to { background-position: 200% 0; } }
 ${reduced(':is(*, ::before, ::after)', 'animation-iteration-count: 1 !important;')}
+${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 100% 100%;')}
 .meter { position: relative; height: 6px; border-radius: 999px; background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }

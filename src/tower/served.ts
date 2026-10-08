@@ -29,6 +29,8 @@ export const MODULES: Record<string, string> = {
   '/settings.js': path.join(SHARED, 'settings.ts'),
   '/tips.js': path.join(SHARED, 'tips.ts'),
   '/markdown.js': path.join(SHARED, 'markdown.ts'),
+  '/press.js': path.join(SHARED, 'press.ts'),
+  '/toasts.js': path.join(SHARED, 'toasts.ts'),
 }
 
 /** A shared module as the tower serves it: one ES module, with the names it exports. */

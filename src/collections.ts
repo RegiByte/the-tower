@@ -99,6 +99,18 @@ export const createItem = (
   }
 }
 
+/**
+ * Puts `content` back under the id of an item that was deleted, answering its version; `undefined` when an item holds
+ * the id. The id is claimed empty first, as a new item's is, so an item is never overwritten.
+ */
+export const restoreItem = (paths: SystemPaths, project: string, collection: string, id: string, content: string): number | undefined => {
+  const file = itemPath(paths, project, collection, id)
+  mkdirSync(path.dirname(file), { recursive: true })
+  if (!claimed(file)) return undefined
+  renameSync(staged(file, content), file)
+  return itemVersion(file)
+}
+
 /** Replaces an item's content, answering its new version. An item that no longer exists stays gone. */
 export const writeItem = (paths: SystemPaths, project: string, collection: string, id: string, content: string): number => {
   const file = itemPath(paths, project, collection, id)

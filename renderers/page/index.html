@@ -352,15 +352,12 @@ dialog.spawn { padding: 0; width: fit-content; max-width: none; max-height: none
 dialog h2 { margin: 0 0 12px; font: 800 16px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
 dialog .actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 16px; color: var(--faint); font-size: 12px; }
 dialog .actions small { margin-right: auto; }
-.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--ink);
-  color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; display: none; max-width: 90vw; }
 .board-error { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken);
   color: var(--ink); box-shadow: var(--shadow); padding: 9px 14px; border-radius: var(--radius); z-index: 20; max-width: min(720px, 90vw); }
 .board-error b { display: block; margin-bottom: 2px; }
 .board-error:empty { display: none; }
 .board-error small { display: block; margin-top: 4px; color: var(--muted); }
 body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
-button.held { opacity: .45; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
@@ -421,7 +418,7 @@ button.held { opacity: .45; cursor: not-allowed; }
     <div class="actions"><small>hover a button for what it does</small><button value="">Close</button></div>
   </form>
 </dialog>
-<div class="toast" id="toast"></div>
+<div id="toasts"></div>
 <div class="sr-only" id="announce" role="status"></div>
 <div class="board-error" id="board-error" role="alert"></div>
 <script src="/xterm.js"></script>
@@ -440,9 +437,11 @@ import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keysho
 import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/settings.js'
 import { fitSize, loadTerminalFont, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
-import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { pressing } from '/press.js'
+import { toaster, toastsCss } from '/toasts.js'
+import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
 watchTips(document)
 
 const onDuty = (c) => c.onDuty
@@ -815,10 +814,10 @@ function barHtml(c) {
     </span>`)
   repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">ⓘ</button>
     ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
-    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
+    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
-    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
-    ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
+    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
+    ${can(c, 'kill') ? `<button class="danger" data-act="kill" data-of="${c.id}">Kill</button>` : ''}
     <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">✕</button>`)
   $('bar-details').innerHTML = detailsHtml(c)
   $('bar-left').innerHTML = leftHtml(c)
@@ -1105,14 +1104,14 @@ const reviewsTally = (c) => {
   return c.unseen ? `<small class="unseen" data-tip="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
 }
 
-async function addNote(c, fields) {
-  const reply = await told(tower.call('review/append', { project: c.project, checkout: threadCheckoutOf(c), author: board.user.name, ...fields }))
+async function addNote(button, c, fields) {
+  const reply = await told(pressing(button, () => tower.call('review/append', { project: c.project, checkout: threadCheckoutOf(c), author: board.user.name, ...fields })))
   if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
   return reply
 }
 
-async function addPicked() {
-  if (!(await addNote(findCard(selected), { anchors: [pickAnchor(changes.repos, pick)], body: pickText }))) return
+async function addPicked(button) {
+  if (!(await addNote(button, findCard(selected), { anchors: [pickAnchor(changes.repos, pick)], body: pickText }))) return
   dropPick()
   drawChanges()
 }
@@ -1122,9 +1121,9 @@ const noteDrafts = new Map()
 const draftKey = (c) => `${c.project}/${threadCheckoutOf(c)}`
 let noteRe
 
-async function addWritten() {
+async function addWritten(button) {
   const c = findCard(selected)
-  if (!(await addNote(c, { re: noteRe, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
+  if (!(await addNote(button, c, { re: noteRe, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
   noteDrafts.delete(draftKey(c))
   noteRe = undefined
   render()
@@ -1137,11 +1136,11 @@ const sendTarget = (c) => {
   return targets.find((t) => t.id === sendPicks.get(`${c.project}/${threadCheckoutOf(c)}`)) ?? targets.find((t) => t.checkout === threadCheckoutOf(c))
 }
 
-function sendNotes(c) {
+function sendNotes(button, c) {
   const target = sendTarget(c)
   const thread = threadOf(c)
   const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [])
-  told(tower.run(target.calls.submit, { text })).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
+  told(pressing(button, () => tower.run(target.calls.submit, { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
 }
 
 const threadView = (c) => ({
@@ -1515,24 +1514,21 @@ const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => c.calls['send-h
 
 const sendHomeTitle = (c) => `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
 
-async function sendHome(c) {
+async function sendHome(button, c) {
   const sent = sentHome(c)
   const busy = sent.filter((h) => h.status === 'working')
   const ask = `Send ${callsign(c.id)} home with everyone under it that runs?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\nEach can be resumed.`
   if (!confirm(ask)) return
-  for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
+  await pressing(button, async () => {
+    for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
+  })
 }
 
 /** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. */
 const announce = (msg) => $('announce').replaceChildren(Object.assign(document.createElement('p'), { textContent: msg }))
 
-const toast = (msg) => {
-  announce(msg)
-  $('toast').textContent = msg
-  $('toast').style.display = 'block'
-  clearTimeout(toast.t)
-  toast.t = setTimeout(() => ($('toast').style.display = 'none'), 4000)
-}
+/** Tells what just happened, with an action that follows it up when given (`/toasts.js`, a live region of its own). */
+const toast = toaster($('toasts'))
 
 /** A request whose failure is told in a toast, answering `undefined`. */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
@@ -2050,13 +2046,16 @@ $('transfer').addEventListener('close', async () => {
   select(id)
 })
 
+/** Deleting is the user's, and done at once: the toast's Undo puts the file back, under its id. */
 async function deleteDraft() {
   const d = draftOpen
-  if (!confirm('Delete this draft?')) return
   closeDraft()
   goHome()
-  discard(draftIo, d)
+  const gone = await discard(draftIo, d)
+  if (gone) toast(`Deleted "${titleOf(gone.text)}" from Drafts`, { label: 'Undo', run: () => undoDelete(gone) })
 }
+
+const undoDelete = (gone) => told(restoreDraft(draftIo, gone)).then((r) => r && toast(`"${titleOf(gone.text)}" is back in Drafts`))
 
 /** The kept item open in the main pane, and the version of it its body was drawn from. */
 let itemOpen
@@ -2228,8 +2227,8 @@ function closeShell() {
   renderDock()
 }
 
-async function spawnShell(project, cwd) {
-  const reply = await told(tower.run(floorOf(project).calls.shell, { cwd }))
+async function spawnShell(button, project, cwd) {
+  const reply = await told(pressing(button, () => tower.run(floorOf(project).calls.shell, { cwd })))
   if (reply) openShell(reply.id)
 }
 
@@ -2325,18 +2324,9 @@ async function keepSpawnPrompt(why) {
   if (kept) toast(`${why}${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
 }
 
-/** What is being asked, while it is in flight: a second press waits for the first's reply. */
-const inFlight = new Set()
-async function pressOnce(key, button, request) {
-  if (inFlight.has(key)) return
-  inFlight.add(key)
-  button.disabled = true
-  try {
-    return await request()
-  } finally {
-    inFlight.delete(key)
-    button.disabled = false
-  }
+async function resume(button, call) {
+  const reply = await told(pressing(button, () => tower.run(call)))
+  if (reply?.t === 'spawned') selectArriving(reply.id)
 }
 
 /** Every stranded worker of a floor resumed, one after another, asked first with the list. */
@@ -2344,19 +2334,29 @@ async function resumeAll(button, f) {
   const stranded = strandedOf(f)
   if (!confirm(`Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)}`).join('\n')}`)) return
   const failed = []
-  await pressOnce(`resume-all ${f.id}`, button, async () => {
+  const ran = await pressing(button, async () => {
     for (const c of stranded) await tower.run(c.calls.resume).catch((err) => failed.push(`${c.callsign}: ${err.message}`))
+    return true
   })
-  toast(failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`)
+  if (ran) toast(failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`)
 }
 
-async function letGo(c) {
+async function letGo(button, c) {
   if (!confirm(`Let ${callsign(c.id)} go?\n\nIt goes ${LET_GO_MEANS}.`)) return
-  if (await told(tower.run(c.calls['let-go']))) toast(`Let ${callsign(c.id)} go: it is in the archive`)
+  if (await told(pressing(button, () => tower.run(c.calls['let-go'])))) toast(`Let ${callsign(c.id)} go: it is in the archive`)
 }
 
-async function resume(button, call) {
-  const reply = await pressOnce(JSON.stringify(call), button, () => tower.run(call)).catch((err) => toast(err.message))
+/** Killing asks first; once killed, the toast offers the worker's resume, read from the board or its floor's archive. */
+async function kill(button, c) {
+  if (!confirm(`Kill ${callsign(c.id)}?\n\nIt stays ${KILL_COST}.`)) return
+  if (!(await told(pressing(button, () => tower.run(c.calls.kill))))) return
+  toast(`Killed ${callsign(c.id)}`, { label: 'Resume', run: () => resumeKilled(c) })
+}
+
+async function resumeKilled(c) {
+  const dead = cards().find((d) => d.id === c.id) ?? (await told(tower.archive(c.project)))?.find((d) => d.id === c.id)
+  if (!dead?.calls.resume) return toast(`${callsign(c.id)} can't be resumed now`)
+  const reply = await told(tower.run(dead.calls.resume))
   if (reply?.t === 'spawned') selectArriving(reply.id)
 }
 
@@ -2403,21 +2403,23 @@ document.addEventListener('click', (e) => {
   if (wtCall) {
     const { wtVerb: verb, wtName: name } = wtCall.dataset
     if (WORKTREE_ASK[verb] && !confirm(WORKTREE_ASK[verb](name))) return
-    return told(tower.run(JSON.parse(wtCall.dataset.wtCall))).then((r) => r && toast(`${WORKTREE_DONE[verb]} ${name}`))
+    return told(pressing(wtCall, () => tower.run(JSON.parse(wtCall.dataset.wtCall)))).then((r) => r && toast(`${WORKTREE_DONE[verb]} ${name}`))
   }
   const tidyCall = e.target.closest('[data-tidy-call]')
-  if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(tower.run(JSON.parse(tidyCall.dataset.tidyCall))).then((r) => r && toast(tidiedLine(r)))
+  if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(pressing(tidyCall, () => tower.run(JSON.parse(tidyCall.dataset.tidyCall)))).then((r) => r && toast(tidiedLine(r)))
   const tidy = e.target.closest('[data-tidy]')
   if (tidy) {
     const f = floorOf(tidy.dataset.tidy)
     const rows = tidyRows(f, Date.now()).map((r) => `${r.what}: ${r.does}`).join('\n')
-    return confirm(`${tidyLine(f.tidy)}\n\n${rows}\n\nDo all of it?`) && told(tower.run(f.calls.tidy)).then((r) => r && toast(tidiedLine(r)))
+    return confirm(`${tidyLine(f.tidy)}\n\n${rows}\n\nDo all of it?`) && told(pressing(tidy, () => tower.run(f.calls.tidy))).then((r) => r && toast(tidiedLine(r)))
   }
   const picked = e.target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)
-  if (e.target.closest('[data-pick-add]')) return addPicked()
+  const pickAdd = e.target.closest('[data-pick-add]')
+  if (pickAdd) return addPicked(pickAdd)
   if (e.target.closest('[data-pick-cancel]')) return (dropPick(), drawChanges())
-  if (e.target.closest('[data-note-add]')) return addWritten()
+  const noteAdd = e.target.closest('[data-note-add]')
+  if (noteAdd) return addWritten(noteAdd)
   const reply = e.target.closest('[data-reply]')?.dataset.reply
   if (reply) return replyTo(Number(reply))
   if (e.target.closest('[data-reply-clear]')) return ((noteRe = undefined), render())
@@ -2425,13 +2427,14 @@ document.addEventListener('click', (e) => {
   if (toNote) return $('reviews').querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
   const anchored = e.target.closest('[data-anchor]')?.dataset.anchor
   if (anchored) return showAnchor(anchored)
-  if (e.target.closest('[data-send]')) return sendNotes(findCard(selected))
+  const send = e.target.closest('[data-send]')
+  if (send) return sendNotes(send, findCard(selected))
   const thread = e.target.closest('[data-thread]')?.dataset.thread
   if (thread) return openThread(...thread.split('|'))
   const resumeAllButton = e.target.closest('[data-resume-all]')
   if (resumeAllButton) return resumeAll(resumeAllButton, floorOf(resumeAllButton.dataset.resumeAll))
-  const letGoId = e.target.closest('[data-let-go]')?.dataset.letGo
-  if (letGoId) return letGo(findCard(letGoId))
+  const letGoButton = e.target.closest('[data-let-go]')
+  if (letGoButton) return letGo(letGoButton, findCard(letGoButton.dataset.letGo))
   const resumeButton = e.target.closest('[data-resume]')
   if (resumeButton) return resume(resumeButton, JSON.parse(resumeButton.dataset.resume))
   if (e.target.closest('[data-side]')) return toggleSide()
@@ -2459,7 +2462,7 @@ document.addEventListener('click', (e) => {
   if (fold) return toggleFold(fold)
   if (e.target.closest('[data-changes-read]')) return ((changesFailed = undefined), render(), readChanges(selected))
   const open = e.target.closest('[data-open]')
-  if (open) return told(tower.run(floorOf(open.dataset.openProject).calls.editor, { dir: open.dataset.open }))
+  if (open) return told(pressing(open, () => tower.run(floorOf(open.dataset.openProject).calls.editor, { dir: open.dataset.open })))
   const shelved = e.target.closest('[data-shelf]')
   if (shelved) return openShelf(shelved.dataset.shelf, Number(shelved.dataset.n))
   const doc = e.target.closest('[data-doc]')
@@ -2470,12 +2473,12 @@ document.addEventListener('click', (e) => {
   const newShell = e.target.closest('[data-shell-dir]')
   if (newShell) {
     if ($('shell-pick').matches(':popover-open')) $('shell-pick').hidePopover()
-    return spawnShell(newShell.dataset.shellProject, newShell.dataset.shellDir)
+    return spawnShell(newShell, newShell.dataset.shellProject, newShell.dataset.shellDir)
   }
   const killShell = e.target.closest('[data-kill-shell]')?.dataset.killShell
   if (killShell) {
     const sh = board.shells.find((sh) => sh.id === killShell)
-    return confirm(`Kill the shell in ${shellWhere(sh)} (${sh.activity})?`) && told(tower.call('shell/kill', { id: killShell }))
+    return confirm(`Kill the shell in ${shellWhere(sh)} (${sh.activity})?`) && told(pressing(e.target.closest('[data-kill-shell]'), () => tower.call('shell/kill', { id: killShell })))
   }
   const tab = e.target.closest('[data-shell]')?.dataset.shell
   if (tab) return tab === shell?.id ? closeShell() : openShell(tab)
@@ -2483,21 +2486,22 @@ document.addEventListener('click', (e) => {
   if (archive) return archiveOpen?.project === archive ? goHome() : openArchive(archive)
   const section = e.target.closest('[data-section]')?.dataset.section
   if (section) return toggleSection(section)
-  const reapOne = e.target.closest('[data-reap-process]')?.dataset.reapProcess
-  if (reapOne) return tower.run(JSON.parse(reapOne)).catch((err) => toast(err.message))
+  const reapOne = e.target.closest('[data-reap-process]')
+  if (reapOne) return told(pressing(reapOne, () => tower.run(JSON.parse(reapOne.dataset.reapProcess))))
   const reapable = e.target.closest('[data-reap]')
   if (reapable) {
     const c = findCard(reapable.dataset.reap)
     const list = c.resources.map((r) => `${r.pid}  ${r.command}`).join('\n')
-    if (confirm(`End what ${callsign(c.id)} left running?\n\n${list}`)) tower.run(c.calls.reap).catch((err) => toast(err.message))
+    if (confirm(`End what ${callsign(c.id)} left running?\n\n${list}`)) told(pressing(reapable, () => tower.run(c.calls.reap)))
     return
   }
-  const act = e.target.closest('[data-act]')?.dataset.act
-  if (act === 'send-home') return sendHome(findCard(selected))
-  if (act === 'kill') return confirm(`Kill ${callsign(selected)}?\n\nIt stays ${KILL_COST}.`) && tower.run(findCard(selected).calls.kill).catch((err) => toast(err.message))
+  const actor = e.target.closest('[data-act]')
+  const act = actor?.dataset.act
+  if (act === 'send-home') return sendHome(actor, findCard(selected))
+  if (act === 'kill') return kill(actor, findCard(selected))
   if (act === 'review') {
     const author = findCard(selected)
-    return pressOnce(`review ${author.id}`, e.target.closest('[data-act]'), () => tower.run(author.calls.review)).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`)).catch((err) => toast(err.message))
+    return told(pressing(actor, () => tower.run(author.calls.review))).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`))
   }
   if (act === 'home') return goHome()
   if (act === 'drive') {
@@ -2539,8 +2543,8 @@ $('bar-line').addEventListener('keydown', (e) => {
 
 $('screen').addEventListener('keydown', (e) => {
   const id = commandOf(board.keys, e, 'field')
-  if (e.target.matches('[data-note-text]') && id === 'submit') return (e.preventDefault(), addWritten())
-  if (e.target.matches('[data-pick-text]') && id === 'submit') return (e.preventDefault(), addPicked())
+  if (e.target.matches('[data-note-text]') && id === 'submit') return (e.preventDefault(), addWritten($('screen').querySelector('[data-note-add]')))
+  if (e.target.matches('[data-pick-text]') && id === 'submit') return (e.preventDefault(), addPicked($('screen').querySelector('[data-pick-add]')))
   if (e.target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
 })
 

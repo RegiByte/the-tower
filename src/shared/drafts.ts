@@ -19,7 +19,7 @@ type Floor = { id: string; collections: FloorCollection[] }
  * `not_found` once an item is gone, `refused` when a write finds the item moved on. `failed` says why to the viewer.
  */
 export type DraftIo = {
-  call<K extends 'collection/create' | 'collection/write' | 'collection/delete'>(verb: K, body: Verbs[K]): Promise<Replies[K]>
+  call<K extends 'collection/create' | 'collection/write' | 'collection/delete' | 'collection/restore'>(verb: K, body: Verbs[K]): Promise<Replies[K]>
   read(project: string, id: string): Promise<string>
   failed(err: Error): void
 }
@@ -156,11 +156,23 @@ export async function sendable(io: DraftIo, d: Draft): Promise<string | undefine
 export const discardItem = (io: DraftIo, project: string, id: string) =>
   io.call('collection/delete', { project, collection: DRAFTS, id }).catch(io.failed)
 
-/** Deletes an open draft once its pending saves are done; a draft never saved has nothing to delete. */
-export async function discard(io: DraftIo, d: Draft) {
+/** A deleted draft: its id and the text its file held, all `restore` needs to put it back. */
+export type Deleted = { project: string; id: string; text: string }
+
+/**
+ * Deletes an open draft once its pending saves are done, answering what was deleted; `undefined` when the delete
+ * failed, or for a draft never saved, which has nothing to delete.
+ */
+export async function discard(io: DraftIo, d: Draft): Promise<Deleted | undefined> {
   await d.queue
-  if (d.id) await discardItem(io, d.project, d.id)
+  if (!d.id) return undefined
+  const text = d.conflict ?? d.saved
+  return (await discardItem(io, d.project, d.id)) ? { project: d.project, id: d.id, text } : undefined
 }
+
+/** Puts a deleted draft back under its id, where it sorted and with its tag; refused while an item holds the id. */
+export const restore = (io: DraftIo, gone: Deleted) =>
+  io.call('collection/restore', { project: gone.project, collection: DRAFTS, id: gone.id, content: gone.text })
 
 /**
  * A prompt typed into the new-worker form that closed without starting a worker, or whose start failed, is kept, never lost: as a new draft,

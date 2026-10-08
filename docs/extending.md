@@ -243,12 +243,12 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | URL | What it holds |
 |---|---|
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) |
-| `/design.css` | the design's tokens as custom properties, both colour schemes, the faces, and a few classes (`.needs`, `.pill`…) |
+| `/design.css` | the design's tokens as custom properties, both colour schemes, the faces, a few classes (`.needs`, `.pill`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states |
 | `/design.js` | the design module: palettes, type, the terminal's theme, the sky by hour, a document's stylesheet |
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
 | `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`) |
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
-| `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, and keeping a prompt the new-worker form closed on (`keepUnsent`) |
+| `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`) |
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
@@ -258,6 +258,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
+| `/press.js` | a control busy while what it asks is in flight (`pressing(control, request)`: `aria-busy` on it and on every control drawn with the same identity, a second press ignored), and a control's identity in html drawn anew (`identityOf`) |
+| `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
@@ -290,7 +292,8 @@ for, every floor's at the top level, one floor's under its project:
 
 Items are plain files at `collections/<project>/<collection>/<item>` in the system root, in any format. The tower
 lists them on the board (metadata only), reads them (`tower.text('collection/<p>/<c>/<item>')`), and creates, writes and
-deletes them (`collection/create`, `collection/write`, `collection/delete`). What a file means is your renderer's
+deletes them (`collection/create`, `collection/write`, `collection/delete`), and puts a deleted one back under its id
+(`collection/restore`, an undo). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
 `/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
 Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through

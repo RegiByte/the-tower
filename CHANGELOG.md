@@ -37,6 +37,11 @@ Commit messages hold the detail.
   tower page and Tower 3D's desk; a range stays within one hunk. `/panels.js` (API 1.15) adds `spanned`, the pick of
   a drag, `watchPickDrag`, which wires the gesture, and `picking` on `ChangesView`, which holds the note box until the
   drop.
+- Every press is answered. A button that asks the tower something stays busy until the reply, a bar sweeping along
+  its foot, and a second press does nothing; every button sinks when pressed and fades when held (`/design.css`,
+  `pressing` in the new `/press.js`). Toasts stack, wait while the pointer or focus is on them, and can carry an
+  action (the new `/toasts.js`): after Kill, Resume; after deleting a draft, which no longer asks first, Undo, which
+  puts its file back under its own id through the new verb `collection/restore` (API 1.16).
 
 ## v1.1.0
 

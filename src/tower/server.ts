@@ -43,7 +43,7 @@
  *        relayed to the terms daemon
  *   POST /submit {id, text}   type a prompt into a session's composer and submit it
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
- *        | /collection/delete {project, collection, id}
+ *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
@@ -65,7 +65,7 @@ import { LET_GO } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
-import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, readItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, readItem, restoreItem, writeItem } from '../collections.ts'
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
@@ -863,6 +863,11 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
         ? { t: 'written', modifiedAt: writeItem(paths, project, collection, id, content) }
         : apiError('refused', `${project}/${collection}/${id} changed since version ${modifiedAt}`),
     ),
+  'collection/restore': ({ project, collection, id, content }) =>
+    inCollection(project, collection, () => {
+      const modifiedAt = restoreItem(paths, project, collection, id, content)
+      return modifiedAt === undefined ? apiError('refused', `${project}/${collection} already holds an item "${id}"`) : { t: 'created', id, modifiedAt }
+    }),
   'collection/delete': ({ project, collection, id }) => toItem(project, collection, id, () => (deleteItem(paths, project, collection, id), OK)),
   'worktree/recut': ({ project, name }) =>
     onWorktrees(project, async (p, config) => (await recutWorktree(p, project, worktreesConfig(config, project).links, name, occupants()), OK)),

@@ -13,6 +13,7 @@
     "hub/src/shared/model.ts#projectCollections",
     "hub/src/collections.ts",
     "hub/src/collections.ts#slugOf",
+    "hub/src/collections.ts#restoreItem",
     "hub/src/system.ts#watchSystem",
     "hub/src/bridge/board.ts#FloorCollection",
     "hub/src/bridge/verbs.ts#cardVerbs",
@@ -60,7 +61,8 @@ primitives every renderer can reach.
 - [[renderer-api]] verbs: `collection/create` (answers `created` with the id and its version), `collection/write`
   (names the version it edited, the `modifiedAt` the writer last saw, and answers `written` with the new one; a
   file that moved on since is `refused`, and an item that no longer exists is `not_found`, never recreated),
-  `collection/delete`, and `submit`. A view reads an item as text with `tower.text`, whatever its type.
+  `collection/delete`, `collection/restore` (an undo of a delete: the file put back under its own id, claimed as a
+  create claims one, so it never overwrites; `refused` while an item holds the id, [[press-feedback]]), and `submit`. A view reads an item as text with `tower.text`, whatever its type.
 - `submit` is a card verb ([[board-verbs]]) on a worker at its composer: idle, working, done or failed. A booting
   worker may be on a startup dialog, and one needing input on a question, so keys there would answer them.
   [`submitText`](ref:hub/src/machine.ts#submitText) types the text as the user would, over one host connection:

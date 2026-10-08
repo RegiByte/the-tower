@@ -131,6 +131,12 @@ export const VERBS = {
       ),
     reply: written,
   },
+  'collection/restore': {
+    input: z
+      .object({ ...item, id: z.string().regex(ITEM_ID), content: z.string() })
+      .describe("Put a deleted item back under its id, with the content it held: undoing a delete. Refused while an item holds the id."),
+    reply: created,
+  },
   'collection/delete': { input: z.object({ ...item, id: z.string().regex(ITEM_ID) }).describe('Delete an item.'), reply: ok },
   'review/append': {
     input: z

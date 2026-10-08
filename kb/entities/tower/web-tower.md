@@ -5,7 +5,7 @@
   "summary": "The disposable web renderer: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf, on 127.0.0.1:4317.",
   "in": "tower",
   "reviewed": "2026-10-08",
-  "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine"]
+  "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-server]] turns the
@@ -35,7 +35,9 @@ collapsed rail and a past worker's callsign in the archive. The page opens what 
 link is `aria-current`. Its pane tabs are an ARIA tablist (←, →, Home and End move along them and show the pane), and
 the terminal is `inert` while another pane lies over it, so Tab never falls into it unseen. Redraws give focus back to
 the control that had it ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus)), so a board arriving every few
-seconds doesn't throw a keyboard back to the page's start. A polite live region says every toast, and a line for each
+seconds doesn't throw a keyboard back to the page's start. Every press that asks the tower something stays busy
+until the reply, and toasts stack, some with an action: Resume after Kill, Undo after deleting a draft
+([[press-feedback]]). The toast stack is a polite live region that says every toast, and another says a line for each
 wait that begins and isn't dismissed ([`waitsBeganLine`](ref:hub/src/shared/cards.ts#waitsBeganLine): "ENKI-26 is
 waiting on you: done."), the worker you are watching included. Landmarks: the sidebar's `aside`, the floors' `nav`,
 `main`; floor signs and the selected callsign are level-2 headings; every dialog is named; buttons drawn as a glyph

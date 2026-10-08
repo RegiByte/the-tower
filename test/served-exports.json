@@ -161,6 +161,7 @@
       "newDraft",
       "openDraft",
       "readDraft",
+      "restore",
       "save",
       "sendable",
       "settle",
@@ -461,6 +462,17 @@
       "markdownCss",
       "markdownHtml",
       "safeHref"
+    ],
+    "/press.js": [
+      "identityOf",
+      "pressing"
+    ],
+    "/toasts.js": [
+      "ACTION_TOAST_MS",
+      "TOAST_MAX",
+      "TOAST_MS",
+      "toaster",
+      "toastsCss"
     ]
   }
 }

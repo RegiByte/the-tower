@@ -52,6 +52,7 @@ import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
 import { markdownHtml } from './markdown.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { identityOf } from './press.ts'
 
 /**
  * Quiet buttons that show a file or folder in Finder and open it in the user's editor, at `line` when given. Spans, so they may sit
@@ -651,10 +652,6 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
   again.focus()
   again.setSelectionRange(...caret!)
 }
-
-/** What finds a control again in html drawn anew: its first attribute that names what it does. */
-const IDENTITY = /^(data-(?!tip$|since$|hold$)|href$|popovertarget$)/
-const identityOf = (el: Element) => el.localName + [...el.attributes].filter((a) => IDENTITY.test(a.name)).map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
 
 /**
  * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: the one element
