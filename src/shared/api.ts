@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.1'
+export const API_VERSION = '1.2'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -38,22 +38,20 @@ const cutName = {
   branch: z.string().min(1).optional().describe("The new branch; the project's branch prefix and the name when left out."),
 }
 const cut = z
-  .union([
-    z.strictObject({
-      ...cutName,
-      base: z
-        .string()
-        .regex(/^origin\/./)
-        .optional()
-        .describe("A branch on origin to cut from, `origin/<branch>`, fetched first; origin's default branch when left out."),
-    }),
-    z.strictObject({
-      ...cutName,
-      from: id.describe(
+  .strictObject({
+    ...cutName,
+    base: z
+      .string()
+      .regex(/^origin\/./)
+      .optional()
+      .describe("A branch on origin to cut from, `origin/<branch>`, fetched first; origin's default branch when left out and no `from` is given."),
+    from: id
+      .optional()
+      .describe(
         'A checkout to fork: a worktree name, or `main`. Each repo starts from a snapshot of it as it is now, uncommitted work included, and counts its work from the same base.',
       ),
-    }),
-  ])
+  })
+  .refine((c) => c.base === undefined || c.from === undefined, { message: 'A cut takes `base` or `from`, not both', path: ['from'] })
   .describe('A new worktree in every directory of the project, under one name and on one new branch; the session starts in the hub\'s.')
 /** What a cut made, and from what: each repo's base, and why it is that one. */
 const cutReply = z.object({ name: z.string(), branch: z.string(), bases: z.array(z.object({ dir: z.string(), base: z.string(), why: z.string() })) })
@@ -61,9 +59,15 @@ const cutReply = z.object({ name: z.string(), branch: z.string(), bases: z.array
 export const VERBS = {
   spawn: {
     input: z
-      .union([z.strictObject({ project: id, cwd: id, ...launch }), z.strictObject({ project: id, cut, ...launch })])
+      .strictObject({
+        project: id,
+        cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),
+        cut: cut.optional(),
+        ...launch,
+      })
+      .refine((s) => s.cwd === undefined || s.cut === undefined, { message: 'A spawn takes `cwd` or `cut`, not both', path: ['cut'] })
       .describe(
-        "Start a session in one of the project's directories or one of their worktrees (`cwd`), or in a new worktree (`cut`); whatever is left out is Claude's own default.",
+        "Start a session in one of the project's directories or one of their worktrees (`cwd`, the hub when left out), or in a new worktree (`cut`); whatever else is left out is Claude's own default.",
       ),
     reply: spawned.extend({ cut: cutReply.optional() }),
   },

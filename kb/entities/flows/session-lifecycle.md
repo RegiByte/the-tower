@@ -47,8 +47,8 @@ sequenceDiagram
   [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which mints the session id and names Claude by its
   [[callsign]]; the host adds only its own wiring
   ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)).
-- **Where.** A session starts in a main checkout, in a [[worktree]] the floor already has, or in a new one: `spawn
-  {cut}` cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
+- **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
+  the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
   back if the spawn fails ([`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)). The host accepts a `cwd` only through
   [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs), which also gives the other directories the session may
   read; a worktree whose folder is gone in any repo is refused as `lost` ([[tower-cuts-worktrees]]).

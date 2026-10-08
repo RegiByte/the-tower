@@ -34,7 +34,7 @@
  *   GET  /reviews.js    the review threads' format (src/shared/reviews.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /fonts/<file>  a face the design names
- *   POST /spawn {project, cwd | cut: {name?, branch?, base? | from}, model?, effort?, prompt?} | /resume {id, conversation} | /keys {id, data}
+ *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?} | /resume {id, conversation} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
  *        | /branch/recut {project, name} | /branch/delete {project, name} | /tidy {project}   the tower's worktrees and kept branches, through git
@@ -626,9 +626,11 @@ async function worktreeVerb(act: () => Promise<Answer>): Promise<Answer> {
 const occupants = () => occupantsOf(cardsNow(), system.shells())
 const cardsNow = () => boardOf().floors.flatMap((f) => f.cards)
 
-const spawnIn = (projectId: string, cwd: string, launch: Launch) =>
+/** A session in `cwd`, or in the hub's main checkout when none is given. */
+const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =>
   withProject(projectId, async (project, config) => {
     const id = newSessionId()
+    const cwd = given ?? project.hub
     return lostWorktree(project, cwd) ?? host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
   })
 
@@ -650,13 +652,13 @@ async function freeName(project: Project, branchPrefix: string, callsign: (id: s
  * hub's. The worker is named for the worktree unless the worktree was named: a session id is drawn until its callsign is
  * a free name. A failed spawn rolls the cut back.
  */
-const spawnCut = (projectId: string, request: { name?: string; branch?: string } & ({ base?: string } | { from: string }), launch: Launch) =>
+const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, launch: Launch) =>
   withProject(projectId, (project, config) =>
     worktreeVerb(async () => {
       const { branchPrefix, links } = worktreesConfig(config, projectId)
       const { id, name } = request.name ? { id: newSessionId(), name: request.name } : await freeName(project, branchPrefix, callsignsOf(config))
       const branch = request.branch ?? `${branchPrefix}${name}`
-      const made = await ('from' in request ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
+      const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
       const cwd = made.made[0].path
       const answer = await host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
       if (answer.t === 'error') {
@@ -817,7 +819,7 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
   })
 
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
-  spawn: ({ project, model, effort, prompt, ...where }) => ('cut' in where ? spawnCut(project, where.cut, { model, effort, prompt }) : spawnIn(project, where.cwd, { model, effort, prompt })),
+  spawn: ({ project, cwd, cut, model, effort, prompt }) => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })),
   resume: ({ id, conversation }) => resume(id, conversation),
   keys: ({ id, data }) =>
     withSession(id, () => {
