@@ -16,3 +16,7 @@ the recorded fixtures under `test/fixtures/` are the reference for what the brid
 tower is tested on are one range, `CLAUDE_TESTED` in `src/shared/claude.ts`, beside the list of Claude's
 surfaces the tower reads; a session on a release outside it is flagged on the board, and moving the range is
 the runbook [[new-claude-release]].
+
+Every session runs Claude's fullscreen TUI ([[fullscreen-tui]]): the conversation on the alternate screen
+(`?1049h`) with mouse reporting (`?1000h ?1002h ?1003h ?1006h`), so a viewer's xterm keeps no scrollback and its wheel
+scrolls Claude's own transcript.

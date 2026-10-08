@@ -7,7 +7,7 @@
   "reviewed": "2026-10-08",
   "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost"],
   "links": [
-    { "to": "claude-code", "verb": "triggers", "carries": "a PTY running config argv + --settings (the session's other dirs from sessionDirs as additionalDirectories) + --plugin-dir (the tower mod, which declares the hooks) + client args, with TOWER_SESSION_ID and TOWER_HOOKS_SOCKET in a scrubbed env" },
+    { "to": "claude-code", "verb": "triggers", "carries": "a PTY running config argv + --plugin-dir (the tower mod, which declares the hooks) + client args (its --settings among them), with the cwd checked by sessionDirs, with TOWER_SESSION_ID and TOWER_HOOKS_SOCKET in a scrubbed env" },
     { "to": "system-root", "verb": "writes", "carries": "sessions/<id>.jsonl: header, then o/i/r/h/x events" },
     { "to": "system-root", "verb": "reads", "carries": "config.json on every spawn: argv, env, the project's dirs" }
   ]

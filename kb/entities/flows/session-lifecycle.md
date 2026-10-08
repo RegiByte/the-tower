@@ -24,7 +24,7 @@ sequenceDiagram
   end
   T->>H: spawn {id, project, cwd, args} (composed by spawnRequest)
   H->>R: read config.json, sessionDirs(project, cwd)
-  H->>C: pty.spawn(argv + --settings (the other session dirs) + --plugin-dir (tower-mod, with the hooks) + args)
+  H->>C: pty.spawn(argv + --plugin-dir (tower-mod, with the hooks) + args (--settings: the other session dirs, the fullscreen TUI))
   H->>R: sessions/<id>.jsonl header
   H-->>T: spawned <id>
   loop while it runs
@@ -44,8 +44,8 @@ sequenceDiagram
 ```
 
 - **Triggers.** The tower's spawn dialog, or `tower spawn`. Both build the request with
-  [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which mints the session id and names Claude by its
-  [[callsign]]; the host adds only its own wiring
+  [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which mints the session id, names Claude by its
+  [[callsign]] and composes its `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]); the host adds only its own wiring
   ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)).
 - **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
   the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut

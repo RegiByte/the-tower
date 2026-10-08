@@ -1,7 +1,7 @@
 # The tower
 
 A local-first surface for managing many Claude Code sessions. Each session runs the full Claude Code TUI in a
-real PTY, owned by a detached host that appends everything about it to a log. Everything a view shows is
+real PTY (its fullscreen renderer, whatever your own `tui` setting, so the mouse wheel scrolls Claude's transcript), owned by a detached host that appends everything about it to a log. Everything a view shows is
 derived from those logs, so renderers are swappable: today the tower page, Tower 3D and the `tower` command.
 
 A personal experiment, in daily use. Local only: no accounts, no external services. macOS (it reads `ps -E`,

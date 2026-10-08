@@ -10,7 +10,7 @@
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
 payloads, classic hook fields, the trust and sign-in screens, the short pastes `submit` sends, the peer
-registry, and a transcript saved with the first prompt (the list, with where each is read:
+registry, a transcript saved with the first prompt, and the fullscreen TUI the tower's `--settings` asks for (the list, with where each is read:
 [`CLAUDE_SURFACES`](ref:hub/src/shared/claude.ts#CLAUDE_SURFACES)). When one drifts, nothing crashes: the board
 goes quietly wrong, with a worker stuck `working`, waits that never come, or a card that stays `booting`
 ([[stuck-booting]]).
@@ -47,7 +47,8 @@ the screens a fresh directory raises with [`blocked.ts`](ref:hub/src/bridge/bloc
    fixture, write its expectation by hand from what was observed, then raise the range. A release that drops
    what an older one had raises `lowest` too.
 5. Re-check each surface in `CLAUDE_SURFACES` that a fixture doesn't exercise (the paste limit, the peer
-   registry), and update the list if the tower now reads something new.
+   registry, the fullscreen TUI: a session's log enables `?1049h` and `?1006h`, and the wheel over the tower page's
+   terminal scrolls the transcript), and update the list if the tower now reads something new.
 
 The draft tagged `lanky-delta` (Haiku scenario runs recorded as fixtures, with a drift table) is this
 runbook as an unattended night shift: once it lands, its recordings are the step-2 set.
