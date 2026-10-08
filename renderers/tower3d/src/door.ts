@@ -15,12 +15,12 @@ import { aim, facing, type Walker } from './walker.ts'
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
  * produce, and steps the same clock the screen's frames do.
  *
- *   await tower3d.ready()                  the first board is built and its pictures read (on a stepped page, people
- *                                          and cats take their places on the first step)
+ *   await tower3d.ready()                  the first board is built and its pictures read
  *   tower3d.capture()                      walk as if the mouse were locked (headless Chrome never grants the lock)
  *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once
  *   tower3d.acts('station')                every thing in the world of a kind, as it is aimed at (all without a kind)
  *   tower3d.locate({ kind: 'desk', id })   where a thing stands: its level and its center; teleport within reach
+ *                                          (on a stepped clock, guests and cats stand somewhere once a step follows the board)
  *   tower3d.aimAt({ kind: 'desk', id })    turn to face a thing on your level; answers what is aimed after
  *   tower3d.press('use')                   run a verb the aimed thing offers; held verbs need { hold: true }
  *   tower3d.key('KeyN')                    a building key (N, V, M, H, 0–9, R, P, B, Escape, Backquote)
@@ -149,7 +149,13 @@ export function installDoor(e: Engine) {
     scene.updateMatrixWorld()
   }
 
+  /** `s.boards` when the clock last stepped. */
+  let boardsStepped = 0
+  /** Guests and cats are placed by a frame's ticks: on a stepped clock, one a board brought stands nowhere until a step. */
+  const unplaced = (target: Act) => (target.kind === 'guest' || target.kind === 'cat') && s.stepped && boardsStepped !== s.boards
+
   function centerOf(target: Act) {
+    if (unplaced(target)) throw new Error(`${target.kind}s take their places on a frame, and none has run since the last board: step() first`)
     current()
     const o = objectOf(target)
     if (!o) throw new Error(`nothing in the world stands for ${JSON.stringify(target)}`)
@@ -224,7 +230,7 @@ export function installDoor(e: Engine) {
     },
     step(frames = 1, dt = STEP) {
       s.stepped = true
-      for (let i = 0; i < frames; i++) e.update(dt)
+      for (let i = 0; i < frames; i++) (e.update(dt), (boardsStepped = s.boards))
       e.render()
       return state()
     },
