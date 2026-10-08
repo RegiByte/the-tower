@@ -1,8 +1,9 @@
 /**
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
- * the top layer: at once on hover and on keyboard focus, beside the element and inside the viewport, until the pointer
- * or the focus leaves it, Esc, a press, a scroll or a redraw that removes it. A renderer calls `watchTips(document)` once; what it draws later
- * needs only the attribute. `placeBeside` stands any popover by the element that opened it the same way. The tower
+ * the top layer: on keyboard focus at once, on hover once the pointer rests on the element (at once while a tip shows or
+ * has just hidden), beside the element and inside the viewport, until the pointer or the focus leaves it, Esc, a press,
+ * a scroll or a redraw that removes it. It fades in and out, without motion under `prefers-reduced-motion`. A renderer
+ * calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by the element that opened it the same way. The tower
  * serves this module as `/tips.js`.
  */
 
@@ -12,6 +13,9 @@ export type Size = { width: number; height: number }
 /** Space between a tip and its element, and the least between a tip and the viewport's edge. */
 const GAP = 6
 const MARGIN = 8
+/** How long the pointer rests on an element before its tip shows, and how long after a tip hides the next shows at once. */
+const INTENT_MS = 350
+const WARM_MS = 300
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi))
 
@@ -41,11 +45,21 @@ export function placeOnOpen(el: HTMLElement, anchor: () => Element) {
   el.addEventListener('toggle', (e) => ((e as ToggleEvent).newState === 'open' ? placeBeside(el, anchor()) : delete el.dataset.placed))
 }
 
-/** The tip's look, from the design's tokens: ink paper in either scheme. A placed popover hides until it is placed. */
+/**
+ * The tip's look, from the design's tokens: ink paper in either scheme. It fades in drifting away from its element
+ * (`data-side`, where it stands), and back out: `display` and `overlay` transition discretely, so a hidden tip stays in
+ * the top layer until its fade ends. A placed popover hides until it is placed.
+ */
 export const tipsCss = `
 .tower-tip { position: fixed; inset: auto; margin: 0; max-width: min(320px, calc(100vw - 16px)); padding: 6px 9px; border: 0; border-radius: var(--radius);
   background: var(--ink); color: var(--panel); box-shadow: 0 0 0 1px color-mix(in oklab, var(--panel) 30%, transparent), var(--shadow); font: 12px/1.45 var(--ui); font-weight: 400; letter-spacing: 0; text-transform: none;
-  white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; overflow: visible; }
+  white-space: pre-line; overflow-wrap: anywhere; pointer-events: none; overflow: visible;
+  --tip-from: 0 -3px; opacity: 0; translate: var(--tip-from);
+  transition: opacity 120ms ease-out, translate 120ms ease-out, display 120ms allow-discrete, overlay 120ms allow-discrete; }
+.tower-tip[data-side=above] { --tip-from: 0 3px; }
+.tower-tip:popover-open { opacity: 1; translate: 0 0; }
+@starting-style { .tower-tip:popover-open { opacity: 0; translate: var(--tip-from); } }
+@media (prefers-reduced-motion: reduce) { .tower-tip { transition: none; --tip-from: 0 0; } }
 .tower-tip:not([data-placed]), [popover][data-placeable]:not([data-placed]) { visibility: hidden; }
 `
 
@@ -57,32 +71,42 @@ export function watchTips(doc: Document) {
   tip.setAttribute('role', 'tooltip')
   doc.body.append(tip)
   let shown: HTMLElement | undefined
+  let pending: ReturnType<typeof setTimeout> | undefined
+  let warmUntil = 0
   /** A redraw may take the element away while its tip shows: the tip goes with it. */
   const gone = new MutationObserver(() => shown && !shown.isConnected && hide())
 
   const show = (el: HTMLElement) => {
-    hide()
+    clearTimeout(pending)
+    if (shown) shown.removeAttribute('aria-describedby')
+    else gone.observe(doc.body, { childList: true, subtree: true })
     shown = el
     tip.textContent = el.dataset.tip ?? ''
-    tip.showPopover()
+    if (!tip.matches(':popover-open')) tip.showPopover()
     placeBeside(tip, el)
+    tip.dataset.side = tip.getBoundingClientRect().top < el.getBoundingClientRect().top ? 'above' : 'below'
     el.setAttribute('aria-describedby', tip.id)
-    gone.observe(doc.body, { childList: true, subtree: true })
+  }
+  const showSoon = (el: HTMLElement) => {
+    if (shown || performance.now() < warmUntil) return show(el)
+    clearTimeout(pending)
+    pending = setTimeout(() => el.isConnected && show(el), INTENT_MS)
   }
   const hide = () => {
+    clearTimeout(pending)
     if (!shown) return
     shown.removeAttribute('aria-describedby')
     shown = undefined
     gone.disconnect()
-    delete tip.dataset.placed
+    warmUntil = performance.now() + WARM_MS
     tip.hidePopover()
   }
   const tipped = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('[data-tip]') : null)
 
   doc.addEventListener('pointerover', (e) => {
     const el = tipped(e.target)
-    if (el === shown) return
-    if (el) show(el)
+    if (el === shown || (!shown && el?.contains(e.relatedTarget as Node | null))) return
+    if (el) showSoon(el)
     else hide()
   })
   doc.addEventListener('pointerout', (e) => e.relatedTarget === null && hide())

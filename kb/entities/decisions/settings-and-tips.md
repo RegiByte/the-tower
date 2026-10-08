@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One settings popover and one tooltip for every renderer",
-  "summary": "Alerts, sound and theme sit in a small settings popover drawn from shared pure views; any element with data-tip shows its text in one shared tooltip, at once on hover and keyboard focus and inside the viewport; the status counts and the host lamp say what they mean in shared words.",
+  "summary": "Alerts, sound and theme sit in a small settings popover drawn from shared pure views; any element with data-tip shows its text in one shared tooltip, on keyboard focus at once and on hover once the pointer rests, fading in and out, inside the viewport; the status counts and the host lamp say what they mean in shared words.",
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -16,6 +16,7 @@
     "hub/src/shared/tips.ts#watchTips",
     "hub/src/shared/tips.ts#placeNear",
     "hub/src/shared/tips.ts#placeOnOpen",
+    "hub/src/shared/tips.ts#tipsCss",
     "hub/src/shared/cards.ts#ATTENTION_MEANS",
     "hub/src/shared/cards.ts#statusLegendHtml",
     "hub/src/shared/cards.ts#hostState",
@@ -59,8 +60,13 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   `/icons.js` like the scheme icons, so it looks the same on every OS.
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `/tips.js`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
   puts one element in the top layer (a manual popover, so it shows above an open popover or a modal) and shows any
-  `data-tip`'s text at once on hover and on keyboard focus (`:focus-visible`), lines kept, until the pointer or the
-  focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets `aria-describedby` while shown.
+  `data-tip`'s text, lines kept, at once on keyboard focus (`:focus-visible`) and on hover after the pointer rests
+  350 ms (at once while a tip shows or within 300 ms of one hiding, so running along a row of controls doesn't wait at
+  each), until the pointer or the focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets
+  `aria-describedby` while shown. [`tipsCss`](ref:hub/src/shared/tips.ts#tipsCss) fades it in and out over 120 ms with
+  a 3 px drift away from its element: `@starting-style` gives the entry, and `display` and `overlay` transition with
+  `allow-discrete` so a hidden popover stays drawn in the top layer while it fades; `prefers-reduced-motion: reduce`
+  drops the transition.
   [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) stands it below its element, above when only above has room,
   inside the viewport; [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands the settings popover by its
   button the same way. Ink on panel in either scheme, edged in a wash of panel so it parts from dark surfaces (Tower
@@ -78,7 +84,11 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
 
 **Alternatives considered.**
 - *A modal dialog for settings*: three small choices don't deserve taking the screen.
-- *Keeping `title`s, worded better*: shown after a delay, never on focus, styled by the OS.
+- *Keeping `title`s, worded better*: shown after a long delay, never on focus, styled by the OS.
+- *Showing a tip at once on hover*: the first version did; tips flashed as the pointer crossed the head on its way
+  elsewhere. A rest delay with a warm window after a hide is how native toolbars behave.
+- *A fade in JavaScript (waiting for `transitionend` before `hidePopover`)*: a second timer and state; the discrete
+  transitions of `display` and `overlay` let the stylesheet hold the popover open through its fade.
 - *A tooltip in CSS alone* (`:hover::after`, as the Stats bars had): clipped by a scrolling parent, no keyboard focus,
   and it can't stay inside the viewport.
 - *CSS anchor positioning* for the popover and tip: not in every browser the tower may run in; the placement is a
