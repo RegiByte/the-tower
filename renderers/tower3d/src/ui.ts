@@ -2,8 +2,8 @@ import { documentCss, type Scheme } from '../../../src/shared/design.ts'
 import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import { fileButtonsHtml, usd } from '../../../src/shared/panels.ts'
-import { documentHtml } from '../../../src/shared/markdown.ts'
-import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } from '../../../src/shared/brief.ts'
+import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
+import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
@@ -358,9 +358,12 @@ export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolea
     <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button><button data-act="close">✕</button></span>`
 }
 
-/** The worker's conversations by session (`lineageBriefHtml`), as plain text: nothing in them runs in the panel. `open`: the earlier sessions unfolded. */
-const briefHtml = (c: Card, threads: Brief[], open: ReadonlySet<string>) =>
-  lineageBriefHtml({ briefs: threads, said: (text) => `<p class="plain">${esc(text)}</p>`, promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy, open })
+/** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`) and how they read its words. */
+export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown'>
+
+/** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel. */
+const briefHtml = (c: Card, threads: Brief[], look: BriefLook) =>
+  lineageBriefHtml({ briefs: threads, said: markdownHtml, promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy, ...look })
 
 /**
  * A worker's sessions, oldest first, each a button that shows its screen (`data-replay`, its id); a running worker's
@@ -374,8 +377,8 @@ const sessionsHtml = (c: Card, on: string | undefined) =>
   }).join('')}</div>`
 
 /** The logbook: the worker's sessions to replay, over its conversations by session; `threads` undefined while they are read. */
-export const logbookHtml = (c: Card, threads: Brief[] | undefined, open: ReadonlySet<string>, on: string | undefined) =>
-  sessionsHtml(c, on) + (threads ? briefHtml(c, threads, open) : '<p><i>reading the logbook…</i></p>')
+export const logbookHtml = (c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined) =>
+  sessionsHtml(c, on) + (threads ? briefHtml(c, threads, look) : '<p><i>reading the logbook…</i></p>')
 
 /** "REPLAY · Oct 6, 21:40": a past session's screen, with the way back to the live one when there is one. */
 export const stampHtml = (startedAt: number, back: boolean) =>

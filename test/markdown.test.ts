@@ -36,8 +36,8 @@ const PAYLOADS = [
 ]
 
 const TAGS = new Set(['p', 'a', 'img', 'em', 'strong', 'del', 'code', 'pre', 'ul', 'ol', 'li', 'input', 'blockquote', 'hr', 'br',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td'])
-const ATTRIBUTES = new Set(['href', 'src', 'alt', 'title', 'class', 'align', 'start', 'type', 'checked', 'disabled'])
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'button', 'span'])
+const ATTRIBUTES = new Set(['href', 'src', 'alt', 'title', 'class', 'align', 'start', 'type', 'checked', 'disabled', 'target', 'rel', 'data-copy-code', 'aria-label'])
 
 /** An attribute's value as a browser reads it. */
 const unescaped = (value: string) =>
@@ -63,6 +63,7 @@ test('markdownHtml: every payload comes out as markdown tags alone, links to the
       for (const { key, value } of attributes) {
         assert.ok(ATTRIBUTES.has(key), `${payload}\n→ ${html}\n${key} is not a markdown attribute`)
         if (key === 'href') assert.match(new URL(value, TOWER).protocol, /^(https?|mailto):$/, `${payload}\n→ ${html}`)
+        if (key === 'target') assert.equal(value, '_blank', `${payload}\n→ ${html}`)
         if (key === 'src') assert.equal(new URL(value, TOWER).origin, new URL(TOWER).origin, `${payload}\n→ ${html}`)
       }
     }
@@ -73,15 +74,22 @@ test('markdownHtml: raw HTML shows as its text, a refused link as its words, a r
   assert.equal(markdownHtml('<style>body{}</style>'), '<p>&lt;style&gt;body{}&lt;/style&gt;</p>\n')
   assert.equal(markdownHtml('say <b>hi</b>'), '<p>say &lt;b&gt;hi&lt;/b&gt;</p>\n')
   assert.equal(markdownHtml('[click](javascript:alert(1))'), '<p>click</p>\n')
-  assert.equal(markdownHtml('![chart](https://example.com/c.png)'), '<p><a href="https://example.com/c.png">chart</a></p>\n')
+  assert.equal(markdownHtml('![chart](https://example.com/c.png)'), '<p><a href="https://example.com/c.png" target="_blank" rel="noopener noreferrer">chart</a></p>\n')
   assert.equal(markdownHtml('![chart](shots/c.png)'), '<p><img src="shots/c.png" alt="chart"></p>\n')
 })
 
 test('markdownHtml: markdown itself renders as before', () => {
   assert.equal(markdownHtml('## Plan\n\n**bold** and `code` [docs](https://example.com) [kb](kb/dist/tower.html)'),
-    '<h2>Plan</h2>\n<p><strong>bold</strong> and <code>code</code> <a href="https://example.com">docs</a> <a href="kb/dist/tower.html">kb</a></p>\n')
+    '<h2>Plan</h2>\n<p><strong>bold</strong> and <code>code</code> <a href="https://example.com" target="_blank" rel="noopener noreferrer">docs</a> <a href="kb/dist/tower.html" target="_blank" rel="noopener noreferrer">kb</a></p>\n')
   assert.equal(markdownHtml('| f | n |\n|---|--:|\n| a | 1 |'),
     '<table>\n<thead>\n<tr>\n<th>f</th>\n<th align="right">n</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>a</td>\n<td align="right">1</td>\n</tr>\n</tbody></table>\n')
+})
+
+test('markdownHtml: a fence is a figure with its syntax marked and a button to copy it', () => {
+  assert.equal(markdownHtml('```typescript\nconst a = 1\n```'),
+    '<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code><span class="hljs-keyword">const</span> a = <span class="hljs-number">1</span></code></pre></figure>\n')
+  assert.equal(markdownHtml('```\n<b>\n```'),
+    '<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code>&lt;b&gt;</code></pre></figure>\n')
 })
 
 test('documentHtml: raw HTML stays as written for a frame without scripts, markdown links never leave the web, relative images read beside the file', () => {

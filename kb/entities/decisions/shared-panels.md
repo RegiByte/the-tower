@@ -93,7 +93,9 @@ one pass and cuts the html at its newlines, closing and reopening the spans a li
 a removed line reads in the code it was removed from, and keeps the result by file and diff hash (the last 500), so
 redraws (a pick, a keystroke in the note box, a re-read that changed nothing) never highlight again. A `diff` quote
 is highlighted in its file's language, each line on its mark's wash. The colours are the design's `syn*` tokens
-([[design-system]]), so both schemes and both renderers read them from `/design.css`. About 25 µs a line: a
+([[design-system]]), so both schemes and both renderers read them from `/design.css`, set under a scope by
+[`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss), which rendered markdown's fences share. A note's body is
+markdown drawn through `markdownHtml` ([[chat-brief]]). About 25 µs a line: a
 2000-line file, the most a diff shows, highlights in some 40 ms, once per version. A hunk that starts inside a
 block comment or a template string is highlighted as code, since a hunk carries no state from the lines before it.
 - *A CDN* (the user's first idea): the tower is local-first and Tower 3D's framed page fetches nothing beside it,

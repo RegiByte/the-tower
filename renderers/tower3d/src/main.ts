@@ -4,8 +4,9 @@ import type { Call, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import { changesFailed, changesOf, markViewed, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead } from './reviews.ts'
-import { briefCss, openFolds, sessionWhen } from '../../../src/shared/brief.ts'
-import { settingsCss, settingsHtml, soundSection, themeSection } from '../../../src/shared/settings.ts'
+import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
+import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
+import { markdownSection, settingsCss, settingsHtml, soundSection, themeSection } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import type { SchemeChoice } from '../../../src/shared/shelf-page.ts'
@@ -58,7 +59,7 @@ import { boardFace, buildWorld, paintDirectory, setDoors, setLimits, setShellTit
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + settingsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss }))
 watchTips(document)
 
 const directory = boardFace(640, 480)
@@ -418,7 +419,7 @@ function renderPanel() {
   if (panel.kind === 'logbook') {
     const c = findCard(board, panel.card.id) ?? panel.card
     $('doc-head').innerHTML = logbookHeadHtml(c, board.floors.find((f) => f.id === c.project))
-    $('logbook-text').innerHTML = logbookHtml(c, panel.threads, openFolds($('logbook-text')), panel.on)
+    $('logbook-text').innerHTML = logbookHtml(c, panel.threads, briefLook($('logbook-text')), panel.on)
   }
   if (panel.kind === 'draft') {
     const d = s.draft!
@@ -976,9 +977,10 @@ function tickRing() {
 /** Your dismissals and ring setting, as all your renderers keep them in `tower.store`: another may have changed them. */
 function readHeed() {
   if (FIXTURE !== undefined) return
-  Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY)]).then(([dismissed, ring]) => {
+  Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY), tower.store.get(BRIEF_MARKDOWN_KEY)]).then(([dismissed, ring, markdown]) => {
     s.heed = { ...s.heed, dismissed: new Set((dismissed as string[] | null) ?? []) }
     s.ring = (ring as Ring | null) ?? 'once'
+    s.briefMarkdown = (markdown as BriefMarkdown | null) ?? 'rendered'
     renderHud()
   })
 }
@@ -1006,7 +1008,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(s.ring), themeSection(tower.schemeChoice())])
+  const html = settingsHtml([soundSection(s.ring), themeSection(tower.schemeChoice()), markdownSection(s.briefMarkdown)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1582,11 +1584,45 @@ async function openBrief(id: string) {
   hideReviewing()
   renderPanel()
   const threads = await threadsOf(id)
-  const c = findCard(s.board!, id)
-  if (!c || s.panel?.kind !== 'desk' || s.panel.id !== id || s.deskTab !== 'brief') return
-  $('desk-brief').innerHTML = logbookHtml(c, threads, openFolds($('desk-brief')), s.replay?.id === id ? s.replay.session : undefined)
+  if (!findCard(s.board!, id) || s.panel?.kind !== 'desk' || s.panel.id !== id || s.deskTab !== 'brief') return
+  const same = deskBrief?.id === id
+  deskBrief = { id, threads }
+  drawDeskBrief(same)
   show('desk-brief', true)
+  if (!same) $('desk-brief').scrollTop = $('desk-brief').scrollHeight
 }
+
+/** The desk's brief as last read: what it is drawn again from, and what a copy reads its text from. */
+let deskBrief: { id: string; threads: Threads } | undefined
+
+/** What the viewer opened in a drawn logbook, and how they read its words. */
+const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), markdown: s.briefMarkdown })
+
+function drawDeskBrief(same: boolean) {
+  const c = findCard(s.board!, deskBrief!.id)!
+  const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), markdown: s.briefMarkdown }
+  $('desk-brief').innerHTML = logbookHtml(c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
+}
+
+function chooseBriefMarkdown(markdown: BriefMarkdown) {
+  s.briefMarkdown = markdown
+  if (FIXTURE === undefined) tower.store.set(BRIEF_MARKDOWN_KEY, markdown)
+  if (deskBrief && s.panel?.kind === 'desk' && s.panel.id === deskBrief.id && s.deskTab === 'brief') drawDeskBrief(true)
+  renderPanel()
+  drawSettings()
+}
+
+/** A logbook's words and code, copied as written; its words rendered or raw, wherever the choice is offered. */
+document.addEventListener('click', (e) => {
+  const el = e.target as Element
+  const code = el.closest('[data-copy-code]')
+  if (code) return copiedAs(fenceText(code), 'the code')
+  const markdown = el.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown
+  if (markdown) return chooseBriefMarkdown(markdown as BriefMarkdown)
+  const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
+  const threads = el.closest('#desk-brief') ? deskBrief?.threads : s.panel?.kind === 'logbook' ? s.panel.threads : undefined
+  if (said && threads) copiedAs(saidText(threads, said)!, said.endsWith(':prompt') ? 'the prompt' : 'the answer')
+})
 
 function openScreen() {
   s.deskTab = 'screen'
@@ -1802,7 +1838,8 @@ async function addPicked(c: Card) {
   renderPanel()
 }
 
-const copied = (text: string) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${text}`), (err: Error) => toast(err.message))
+const copiedAs = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err: Error) => toast(err.message))
+const copied = (text: string) => copiedAs(text, text)
 
 /** The thread an element shows, as `drawThread` drew it. */
 const threadIn = (el: HTMLElement) => {
@@ -1911,7 +1948,7 @@ function openLogbook(c: Card) {
   showLogbookScreen(c, c.id)
   renderPanel()
   const panel = s.panel
-  threadsOf(c.id).then((threads) => s.panel === panel && ((panel.threads = threads), renderPanel()))
+  threadsOf(c.id).then((threads) => s.panel === panel && ((panel.threads = threads), renderPanel(), ($('logbook-text').scrollTop = $('logbook-text').scrollHeight)))
 }
 
 /** The reader's screen: a session's last screen from its log, read-only, stamped. */

@@ -14,6 +14,7 @@ test('each conversation of a log keeps its own turns, a prompt with the answer t
     [['reply with exactly the word PONG and nothing else', 'PONG']],
     [['reply with exactly the word PING and nothing else', 'PING']],
   ])
+  assert.deepEqual(turns.map((t) => t.map(({ startedAt, answeredAt }) => answeredAt! - startedAt)), [[1291], [1319]])
 })
 
 test('a resumed conversation brief goes on from the turns of the session it resumed, only as far as it needs', () => {

@@ -368,10 +368,16 @@
       "viewedCount"
     ],
     "/brief.js": [
+      "BRIEF_MARKDOWNS",
+      "BRIEF_MARKDOWN_KEY",
+      "BRIEF_MARKDOWN_LABEL",
+      "BRIEF_MARKDOWN_MEANS",
       "briefCss",
       "briefHtml",
       "briefParts",
+      "expandedSaid",
       "openFolds",
+      "saidText",
       "sessionLabel",
       "sessionWhen",
       "shownFrom"
@@ -404,6 +410,7 @@
       "SOUND_LABEL",
       "SOUND_MEANS",
       "alertsSection",
+      "markdownSection",
       "settingsCss",
       "settingsHtml",
       "soundSection",
@@ -418,7 +425,9 @@
     ],
     "/markdown.js": [
       "documentHtml",
+      "fenceText",
       "imagePath",
+      "markdownCss",
       "markdownHtml",
       "safeHref"
     ]

@@ -3,8 +3,11 @@ import { continuations, lineage, namer, resumes, threads, type SessionRef, type 
 import { USER_ORIGINS, type Conversation } from './conversation.ts'
 import type { Session } from './facts.ts'
 
-/** What the user asked and Claude's latest answer in the turn that followed; no answer while Claude still works on it. */
-export type Turn = { startedAt: number; prompt: string; answer?: string }
+/**
+ * What the user asked and Claude's latest answer in the turn that followed, with when each was given (epoch ms); no
+ * answer while Claude still works on it.
+ */
+export type Turn = { startedAt: number; prompt: string; answer?: string; answeredAt?: number }
 
 /** A session of a worker's lineage: its id, its worker's callsign, and when it started (epoch ms). */
 export type BriefSession = SessionRef & { startedAt: number }
@@ -23,17 +26,17 @@ const tallied = (tally: Tally, id: string, change: (turns: Turn[]) => Turn[]): T
 export const turnsByConversation = ({ header, events }: SessionLog): Record<string, Turn[]> =>
   events.reduce<Tally>((tally, [t, code, data]) => {
     if (code !== 'h') return tally
-    const startedAt = header.startedAt + t * 1000
+    const at = header.startedAt + t * 1000
     switch (data.hook_event_name) {
       case 'SessionStart':
         return { ...tally, current: String(data.session_id) }
       case 'prompt.submit':
         return tally.current && USER_ORIGINS.has((data.origin as { kind: string }).kind)
-          ? tallied(tally, tally.current, (turns) => [...turns, { startedAt, prompt: String(data.text) }])
+          ? tallied(tally, tally.current, (turns) => [...turns, { startedAt: at, prompt: String(data.text) }])
           : tally
       case 'turn.complete':
         return tally.current && data.agentId === undefined && data.answer
-          ? tallied(tally, tally.current, (turns) => (turns.length ? [...turns.slice(0, -1), { ...turns.at(-1)!, answer: String(data.answer) }] : turns))
+          ? tallied(tally, tally.current, (turns) => (turns.length ? [...turns.slice(0, -1), { ...turns.at(-1)!, answer: String(data.answer), answeredAt: at }] : turns))
           : tally
       default:
         return tally

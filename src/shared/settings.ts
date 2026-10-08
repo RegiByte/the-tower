@@ -1,7 +1,7 @@
 /**
  * The settings every renderer offers in one small popover: pure views from a viewer's settings to html, and one
- * stylesheet (`settingsCss`). Each setting stays where it lives: the ring in `tower.store` under `RING_KEY`, the scheme
- * with tower.js (`tower.schemeChoice`, `tower.chooseScheme`), notifications with the browser. A renderer composes the
+ * stylesheet (`settingsCss`). Each setting stays where it lives: the ring in `tower.store` under `RING_KEY`, how the
+ * brief draws prompts and answers under `BRIEF_MARKDOWN_KEY` (`/brief.js`), the scheme with tower.js (`tower.schemeChoice`, `tower.chooseScheme`), notifications with the browser. A renderer composes the
  * sections it offers with `settingsHtml`, draws it in a `popover` element of class `settings-pop` (`placeOnOpen` of
  * tips.ts stands it by its button) and wires, by the attribute on the element clicked:
  *
@@ -9,10 +9,12 @@
  *   data-ring-choice="<ring>"    how often a wait rings (`RINGS`), kept under `RING_KEY`
  *   data-sound-play="<sound>"    play a sound of `SOUNDS` the way the renderer rings
  *   data-scheme-choice="<c>"     the colour scheme: '' follows the system, or light, or dark (`tower.chooseScheme`)
+ *   data-brief-markdown="<m>"    prompts and answers rendered or raw (`BRIEF_MARKDOWNS`), kept under `BRIEF_MARKDOWN_KEY`
  *
  * Every control carries its `data-tip`. The tower serves this module as `/settings.js`.
  */
 import type { SchemeChoice } from './shelf-page.ts'
+import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS, type BriefMarkdown } from './brief.ts'
 import { REMIND_MS, RINGS, esc, type Ring, type Sound } from './cards.ts'
 import { ICON } from './icons.ts'
 
@@ -73,6 +75,12 @@ export const themeSection = (scheme: SchemeChoice) =>
   section('Theme', 'colours of every panel',
     `<div class="seg" role="group" aria-label="theme">${SCHEME_CHOICES.map((c) =>
       choice('data-scheme-choice', c, `${SCHEME_ICON[c]}${SCHEME_LABEL[c]}`, SCHEME_MEANS[c], c === scheme)).join('')}</div>`)
+
+/** How the brief draws prompts and answers: markdown rendered, or as written. */
+export const markdownSection = (markdown: BriefMarkdown) =>
+  section('Brief', 'prompts and answers',
+    `<div class="seg" role="group" aria-label="brief">${BRIEF_MARKDOWNS.map((m) =>
+      choice('data-brief-markdown', m, BRIEF_MARKDOWN_LABEL[m], BRIEF_MARKDOWN_MEANS[m], m === markdown)).join('')}</div>`)
 
 /** The popover's content: the sections a renderer offers, in order. */
 export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>Settings</h2>${sections.join('')}</div>`

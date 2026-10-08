@@ -233,16 +233,16 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/design.js` | the design module: palettes, type, the terminal's theme, the sky by hour, a document's stylesheet |
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
 | `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`) |
-| `/brief.js` | a worker's brief as a view over `/conversations/<id>` |
+| `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
 | `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, and keeping a prompt the new-worker form closed on (`keepUnsent`) |
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
 | `/keymap.js` | every keyboard command as data with its default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults); chord labels, `aria-keyshortcuts` and the `?` sheet |
-| `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications |
+| `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications, the brief rendered or raw |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
-| `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, safe in any element), `documentHtml` for a file in a frame without scripts, and `safeHref` |
+| `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
 `parse`: those words can carry what a web page Claude read put in them, and your renderer runs at the tower's origin,

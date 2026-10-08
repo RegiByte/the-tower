@@ -131,8 +131,8 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   worker's Changes read, a click on an anchor opens its lines in Changes; line numbers in Changes pick lines (⇧ extends)
   and open a note box under them, and noted lines carry a mark; a composer with `reply` for notes on the whole work;
   Send to the worker most recently active in the checkout, or one picked; a sidebar tray of threads by checkout
-  beside their tags, with Tidy. Bodies show as plain text: a thread is read as markdown source, and nothing a worker
-  wrote runs in the page.
+  beside their tags, with Tidy. Bodies are drawn through `markdownHtml`, raw HTML escaped, so nothing a worker wrote
+  runs in the page ([[chat-brief]]).
 - *Shared by both renderers* ([`cards.ts`](ref:hub/src/shared/cards.ts#sendTargets)): who Send reaches (`sendTargets`: the
   workers at their composer in the checkout, the most recently active first, then the floor's others), the worker a
   thread opens on (`workerIn`), the thread a worker's work belongs to (`threadCheckoutOf`: its author's for a

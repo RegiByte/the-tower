@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The brief shows a conversation's last turns, read from the logs when asked for",
-  "summary": "A worker's brief lists the saved conversations of every session it ran as, each with its session and its last brief.pairs turns (a user prompt with Claude's latest answer to it); they are derived from the session logs (and a resume's sources) when /conversations/<id> is read, never kept in facts or on the board, and every renderer draws the earlier sessions folded through one shared view.",
+  "summary": "A worker's brief lists the saved conversations of every session it ran as, each with its session and its last brief.pairs turns (a user prompt with Claude's latest answer to it, and when each was given); they are derived from the session logs (and a resume's sources) when /conversations/<id> is read, never kept in facts or on the board, and every renderer draws the earlier sessions folded through one shared view.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
@@ -24,10 +24,12 @@ the useful window.
 
 **Decision.** `GET /conversations/<id>` serves each conversation with `turns`: the last `brief.pairs` (config, the
 project's over the top level's, default 2) turns, oldest first, each a user prompt (`prompt.submit` of the user's
-own origins) with the latest main-loop `turn.complete` answer until the next prompt; a turn with no answer is still
-being worked on. They are read from the log by [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation),
+own origins) with the latest main-loop `turn.complete` answer until the next prompt, and when the prompt was given
+(`startedAt`) and the answer (`answeredAt`, that `turn.complete`'s time); a turn with no answer is still being worked
+on. They are read from the log by [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation),
 and a resumed conversation continues from its source session's log, read only while the count falls short. Every
-renderer draws them latest first (the tower page and Tower 3D briefs, `tower agent`).
+renderer draws them oldest first, the latest at the bottom (the tower page and Tower 3D briefs as a chat,
+[[chat-brief]]; `tower agent`).
 
 **Alternatives considered.**
 - *Fold every turn into `Conversation`.* Rejected: full prompt text of every turn of every session would sit in
@@ -47,16 +49,15 @@ earlier session holds that session and the ones before it. Every lineage session
 one the next resumed), so a session's place, "session 2 of 3", is counted from the brief alone.
 - *One view, in shared code* ([`brief.ts`](ref:hub/src/shared/brief.ts), served as `/brief.js`):
   [`briefParts`](ref:hub/src/shared/brief.ts#briefParts) groups a brief by session, and
-  [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws the session read for in full and each earlier one as a
-  `<details>`, closed when drawn, labelled "session 2 of 3 · Oct 6, 21:40 · 1 conversation". A conversation that
+  [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws each earlier session as a `<details>`, closed when
+  drawn, labelled "session 2 of 3 · Oct 6, 21:40 · 1 conversation", oldest first, then the session read for in full
+  ([[chat-brief]]). A conversation that
   resumes or is resumed by a session in the brief names it by number. The renderer hands in `said`, how a prompt or an
-  answer is set: the tower page renders markdown with `markdownHtml` ([[markdown-safe]]) in its sandboxed frame, Tower 3D escapes plain text in its desk panel's
-  Logbook and its reader ([[logbook]]). One stylesheet, [`briefCss`](ref:hub/src/shared/brief.ts#briefCss). A redraw keeps the folds the viewer
+  answer is set: both renderers pass `markdownHtml` ([[markdown-safe]]) and draw the brief inline, the tower page in its
+  Brief pane, Tower 3D in its desk panel's Logbook and its reader ([[logbook]]). One stylesheet, [`briefCss`](ref:hub/src/shared/brief.ts#briefCss). A redraw keeps the folds the viewer
   opened: the renderer reads them from what it drew ([`openFolds`](ref:hub/src/shared/brief.ts#openFolds)) and hands
   them to the view as `open` (the tower page redraws on every turn of a working worker, Tower 3D's logbook reader on
-  every board). The tower page's frame is sandboxed `allow-same-origin` without `allow-scripts`, so the page reads
-  its document (folds, and the scroll it keeps for the same worker) while nothing in it runs. Folds are not kept
-  past the open brief.
+  every board). Folds are not kept past the open brief.
 - *Showings say their session.* `card.lineage` ([`LineageSession`](ref:hub/src/bridge/board.ts#LineageSession), oldest
   first) lists the sessions a worker ran as; [`shownFrom`](ref:hub/src/shared/brief.ts#shownFrom) marks a showing's tab
   `s1` with the full label in its title, while the worker has run as more than one.

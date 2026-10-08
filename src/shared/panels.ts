@@ -1,6 +1,6 @@
 /**
  * The Changes and Reviews panels every renderer draws: pure views from plain data to html, the logic of picking lines
- * and finding an anchor's, and one stylesheet (`panelsCss`). A renderer keeps the state (what it read, folds, the
+ * and finding an anchor's, and one stylesheet (`panelsCss`, beside `markdownCss`: a note's words are markdown). A renderer keeps the state (what it read, folds, the
  * pick, text being written), passes it in as a view model, puts the html in an element with `drawPanel` and wires the
  * attributes below. The tower serves it as `/panels.js`.
  *
@@ -29,6 +29,7 @@
  *   data-send                  submit `sendText` into the send target
  *   data-send-pick             the send target's picker (a select): its value is the worker's id
  *   data-copy="<text>"         copy the text (the thread's tag)
+ *   data-copy-code             copy a fence's code in a note (`/markdown.js`)
  *
  *   Files, wherever a panel names one (`fileButtonsHtml`), and any renderer's own (`fileCall` gives the call)
  *   data-reveal="<path>"       show the file or folder in Finder through `reveal`
@@ -47,7 +48,8 @@ import type { Call } from './api.ts'
 import { esc, noun, plural } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
-import { highlightLines } from './highlight.ts'
+import { highlightCss, highlightLines } from './highlight.ts'
+import { markdownHtml } from './markdown.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 
 /**
@@ -331,7 +333,7 @@ function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
 const noteHtml = (v: ThreadView, m: Message, fresh: boolean) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''}" data-note="${m.n}">
   <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<span class="re" data-to-note="${m.re}">re n${m.re}</span>` : ''}${
     fresh ? `<span class="new-mark" title="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}<button data-reply="${m.n}">reply</button></header>
-  ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body">${esc(m.body)}</div>` : ''}</article>`
+  ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body md">${markdownHtml(m.body)}</div>` : ''}</article>`
 
 function sendHtml(v: ThreadView) {
   const option = (t: Worker) => `<option value="${esc(t.id)}" ${t.id === v.target?.id ? 'selected' : ''}>${esc(t.callsign)} · ${esc(t.checkout)}</option>`
@@ -694,7 +696,7 @@ export const panelsCss = `
 .reviews-panel .note > header .re { font: 12px var(--mono); color: var(--accent); cursor: pointer; }
 .reviews-panel .note > header .new-mark { padding: 0 6px; border-radius: 999px; font-weight: 700; color: var(--on-needs); background: var(--needs); }
 .reviews-panel .note > header button { margin-left: auto; padding: 0 8px; font-size: 11px; font-weight: 400; background: none; }
-.reviews-panel .note .body { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
+.reviews-panel .note .body { font-size: 14px; line-height: 1.5; }
 .reviews-panel .anchor { margin: 6px 0; border: 1px solid var(--line); border-radius: var(--radius); }
 .reviews-panel .anchor .where { display: flex; align-items: center; gap: 8px; padding: 3px 8px; background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; }
 .reviews-panel .anchor .where:hover code { text-decoration: underline; }
@@ -704,17 +706,7 @@ export const panelsCss = `
 .reviews-panel .anchor pre .row { min-height: 1lh; padding: 0 10px; } .reviews-panel .anchor pre .m { display: inline-block; width: 2ch; color: var(--muted); user-select: none; }
 .reviews-panel .anchor pre .plus { background: var(--added-wash); } .reviews-panel .anchor pre .minus { background: var(--removed-wash); }
 .reviews-panel .anchor pre .plus .m, .reviews-panel .anchor pre .minus .m { color: var(--ink); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-keyword, .hljs-selector-tag, .hljs-name, .hljs-doctag) { color: var(--syn-keyword); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-string, .hljs-code, .hljs-template-tag, .hljs-selector-attr, .hljs-selector-pseudo) { color: var(--syn-string); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet) { color: var(--syn-number); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-comment, .hljs-quote) { color: var(--syn-comment); font-style: italic; }
-:is(.changes-panel, .reviews-panel) :is(.hljs-title, .hljs-section) { color: var(--syn-title); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-type, .hljs-built_in, .hljs-title.class_, .hljs-selector-class, .hljs-selector-id) { color: var(--syn-type); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable.language_) { color: var(--syn-attr); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-regexp, .hljs-link, .hljs-meta) { color: var(--syn-regexp); }
-:is(.changes-panel, .reviews-panel) :is(.hljs-section, .hljs-strong) { font-weight: 700; } :is(.changes-panel, .reviews-panel) .hljs-emphasis { font-style: italic; }
-:is(.changes-panel, .reviews-panel) .hljs-subst { color: var(--ink); }
-.reviews-panel .composer { max-width: 980px; margin-top: 14px; }
+${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer { max-width: 980px; margin-top: 14px; }
 .reviews-panel .composer .re-chip button { padding: 0 6px; }
 .stats-panel { font: 13px/1.4 var(--ui); color: var(--ink); }
 .stats-panel .none { margin: 6px 0; color: var(--faint); font-style: italic; }

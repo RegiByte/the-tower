@@ -223,9 +223,10 @@ dialog#keys { width: min(620px, 92vw); }
 .ask .what b { color: var(--needs-text); }
 .ask .call { font: 800 14px/1 var(--display); letter-spacing: .04em; }
 .ask button { margin-left: auto; flex: none; }
-.brief { display: none; position: absolute; inset: 0; z-index: 1; }
-.main.on-brief .brief { display: flex; }
-.brief iframe { flex: 1; min-width: 0; border: 0; background: var(--panel); }
+.brief { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 24px 40px; background: var(--panel); color: var(--ink); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.main.on-brief .brief { display: block; }
+.brief .brief-view { max-width: 980px; margin: 0 auto; }
+@media (max-width: 640px) { .brief { padding: 0 12px 32px; } }
 .shown { display: none; position: absolute; inset: 0; z-index: 1; }
 .main.on-shown .shown { display: flex; }
 .shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
@@ -384,7 +385,7 @@ button.held { opacity: .45; cursor: not-allowed; }
   <div id="bar-left" popover></div>
   <div class="ask" id="ask"></div>
   <div class="screen" id="screen"><div class="term" id="c-screen" role="tabpanel" aria-label="Terminal"></div><span id="c-mode"></span>
-    <div class="brief" id="brief" role="tabpanel" aria-label="Brief"><iframe id="brief-doc" title="Brief" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>
+    <div class="brief" id="brief" role="tabpanel" aria-label="Brief"></div>
     <div class="shown" id="shown" role="tabpanel" aria-label="Shown"></div>
     <div class="changes" id="changes" role="tabpanel" aria-label="Changes"></div>
     <div class="reviews" id="reviews" role="tabpanel" aria-label="Reviews"></div></div>
@@ -430,15 +431,15 @@ import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
-import { briefCss, briefHtml, openFolds, shownFrom } from '/brief.js'
-import { documentHtml, markdownHtml, safeHref } from '/markdown.js'
+import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
+import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
-import { alertsSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
+import { alertsSection, markdownSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss }))
 watchTips(document)
 
 const onDuty = (c) => c.onDuty
@@ -961,7 +962,7 @@ function renderShown(c, s) {
   $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
   told(tower.text(shownHref(s).slice(1))).then((md) => {
     if (md === undefined || shownDrawn !== key) return
-    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
+    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
   })
 }
 
@@ -1162,7 +1163,7 @@ function openThread(project, checkout) {
 
 /** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. */
 function showLink(c, s) {
-  $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}</style>
+  $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style>
     <article><h4>${esc(callsign(c.id))} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
     <p><a href="${esc(s.target)}" rel="noreferrer"><b>Open ↗</b></a></p></article>`
 }
@@ -1173,23 +1174,43 @@ function showPane(pane) {
   render()
 }
 
-const BRIEF_CSS = `article { max-width: 980px; margin: 0; padding: 14px 28px 48px; }`
+const DOC_CSS = `article { max-width: 980px; margin: 0; padding: 14px 28px 48px; }`
+
+/** The brief drawn last, the worker's and its conversations as read: what a copy reads its text from. */
+let briefShown
+/** Whether the brief draws prompts and answers rendered or raw: this viewer's, kept in `tower.store`. */
+let briefMarkdown = (await tower.store.get(BRIEF_MARKDOWN_KEY)) ?? 'rendered'
 
 /**
- * The session's conversations latest first, then each earlier session of its worker folded, and in each conversation
- * its last turns, latest first. Prompts and answers are markdown, rendered with their raw HTML escaped, in a frame where nothing can run; the page
- * reads the frame's document, so a redraw keeps the folds the viewer opened and where they had scrolled.
+ * The worker's earlier sessions folded, then its session's conversations, each turn's prompt and answer, the latest at
+ * the bottom. Opening a worker's brief scrolls to its end, and a redraw stays at the end when the viewer was there.
  */
 function showBrief(c, threads) {
-  const frame = $('brief-doc')
-  const drawn = frame.dataset.worker === c.id ? frame.contentDocument : undefined
-  const scrolled = drawn?.scrollingElement?.scrollTop ?? 0
-  frame.dataset.worker = c.id
-  const promptBy = (id) => c.conversations.find((conv) => conv.id === id)?.promptBy
-  frame.addEventListener('load', () => frame.contentDocument.scrollingElement.scrollTo(0, scrolled), { once: true })
-  frame.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${BRIEF_CSS}${briefCss}</style>
-    <article>${briefHtml({ briefs: threads, said: markdownHtml, promptBy, open: openFolds(drawn) })}</article>`
+  const el = $('brief')
+  const same = briefShown?.id === c.id
+  const atEnd = !same || el.scrollHeight - el.scrollTop - el.clientHeight < 48
+  briefShown = { id: c.id, threads }
+  drawBrief(same)
+  if (atEnd) el.scrollTop = el.scrollHeight
 }
+
+function drawBrief(same = true) {
+  const el = $('brief')
+  const c = findCard(briefShown.id)
+  const promptBy = (id) => c?.conversations.find((conv) => conv.id === id)?.promptBy
+  const open = same ? openFolds(el) : new Set()
+  const expanded = same ? expandedSaid(el) : new Set()
+  drawPanel(el, briefHtml({ briefs: briefShown.threads, said: markdownHtml, promptBy, open, expanded, markdown: briefMarkdown }), {})
+}
+
+function chooseBriefMarkdown(markdown) {
+  briefMarkdown = markdown
+  tower.store.set(BRIEF_MARKDOWN_KEY, markdown)
+  if (briefShown) drawBrief()
+  drawSettings()
+}
+
+const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err) => toast(err.message))
 
 /**
  * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
@@ -1429,9 +1450,9 @@ function showAlert(c, w) {
 let settingsDrawn
 const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), themeSection(tower.schemeChoice())])
+  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), themeSection(tower.schemeChoice()), markdownSection(briefMarkdown)])
   if (html === settingsDrawn) return
-  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-scheme-choice], #settings [data-sound-play]')
+  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-scheme-choice], #settings [data-sound-play], #settings [data-brief-markdown]')
   const again = focused && [...focused.attributes].find((a) => a.name.startsWith('data-') && a.name !== 'data-tip')
   $('settings').innerHTML = settingsDrawn = html
   if (again) $('settings').querySelector(`[${again.name}="${CSS.escape(again.value)}"]`)?.focus()
@@ -2310,7 +2331,13 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-item-act=delete]')) return deleteKept()
   if (e.target.closest('[data-item-read]')) return ((itemOpen.drawn = undefined), render())
   const copy = e.target.closest('[data-copy]')?.dataset.copy
-  if (copy) return navigator.clipboard.writeText(copy).then(() => toast(`Copied ${copy}`), (err) => toast(err.message))
+  if (copy) return copyText(copy, copy)
+  const said = e.target.closest('[data-copy-said]')?.dataset.copySaid
+  if (said) return copyText(saidText(briefShown.threads, said), said.endsWith(':prompt') ? 'the prompt' : 'the answer')
+  const code = e.target.closest('[data-copy-code]')
+  if (code) return copyText(fenceText(code), 'the code')
+  const markdown = e.target.closest('[data-brief-markdown]')?.dataset.briefMarkdown
+  if (markdown) return chooseBriefMarkdown(markdown)
   const draftAct = e.target.closest('[data-draft-act]')?.dataset.draftAct
   if (draftAct === 'send') return sendDraft()
   if (draftAct === 'transfer') return openTransfer()
@@ -2465,7 +2492,6 @@ const scheme = tower.scheme
 
 function applyScheme() {
   for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
-  briefKey = undefined
   shownDrawn = undefined
   if (shelfOpen?.file) showDoc(shelfOpen.file)
   if (itemOpen && readsText(itemKind(itemOpen.id))) itemOpen.drawn = undefined
