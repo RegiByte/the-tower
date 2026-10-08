@@ -14,7 +14,7 @@ Commit messages hold the detail.
 
 ## Unreleased
 
-- **config** One shared keymap: every key the tower page answers is a command in `/keymap.js` (API 1.10), with its
+- **config** One shared keymap: every key the tower page answers is a command in `/keymap.js` (API 1.11), with its
   default chords, and the config's new `keys` rebinds or unbinds any of them by id (`docs/config.md`, checked by
   `tower config check`); the board carries the result as `board.keys`, and the `?` sheet, tooltips and
   `aria-keyshortcuts` are drawn from it. ⌥Esc leaves a terminal, back to where focus was before it, and ⌃1–4 show the

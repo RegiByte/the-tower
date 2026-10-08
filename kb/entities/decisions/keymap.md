@@ -62,6 +62,6 @@ hand-edited file, checked like every other key, and reach every renderer the way
 - Plain letters inside a terminal: they are Claude's typing. F6 to cycle panes: Chrome keeps it.
 - A rebinding UI in the sheet: left for when someone asks; the config is the place for now.
 
-**Impact.** `/keymap.js` and `board.keys` are API minors (1.10); `MOVE_KEYS` and `moveOfKey` stay, deprecated,
+**Impact.** `/keymap.js` and `board.keys` are API minors (1.11); `MOVE_KEYS` and `moveOfKey` stay, deprecated,
 until the next major, and `terminalKeys` stays for renderers on the default keys. A new top-level config key, `keys`
 (`docs/config.md`). The `?` sheet can't drift from the bindings again.
