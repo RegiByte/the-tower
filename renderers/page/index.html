@@ -2211,23 +2211,26 @@ $('spawn').addEventListener('keydown', (e) => {
 })
 
 $('spawn').addEventListener('close', async () => {
-  if ($('spawn').returnValue !== 'start') return keepSpawnPrompt()
+  if ($('spawn').returnValue !== 'start') return keepSpawnPrompt('')
   const f = floorOf($('spawn').dataset.project)
-  const reply = await told(tower.run(...spawnCall(f, syncSpawn())))
+  const reply = await tower.run(...spawnCall(f, syncSpawn())).catch((err) => (toast(err.message), keepSpawnPrompt(`${err.message.replace(/\.?$/, '.')} `), undefined))
   if (!reply) return
   if (reply.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
   if (spawnDraft) await deleteSent(spawnDraft)
   selectArriving(reply.id)
 })
 
-/** A prompt typed into a form closed without starting is kept in the floor's drafts, or in the draft it was opened on. */
-async function keepSpawnPrompt() {
+/**
+ * A prompt typed into a form closed without starting, or whose start failed, is kept in the floor's drafts, or in the
+ * draft it was opened on; `why` heads the toast that says so.
+ */
+async function keepSpawnPrompt(why) {
   const f = floorOf($('spawn').dataset.project)
   const text = $('spawn').querySelector('[name=prompt]').value
   if (!f || !draftsOf(f)) return
   const kept = await keepUnsent(draftIo, f.id, spawnDraft, text)
   if (kept && draftOpen === kept) $('draft-text').value = kept.text
-  if (kept) toast(`${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
+  if (kept) toast(`${why}${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
 }
 
 /** What is being asked, while it is in flight: a second press waits for the first's reply. */
@@ -2434,7 +2437,7 @@ function applyScheme() {
   briefKey = undefined
   shownDrawn = undefined
   if (shelfOpen?.file) showDoc(shelfOpen.file)
-  if (itemOpen) itemOpen.drawn = undefined
+  if (itemOpen && readsText(itemKind(itemOpen.id))) itemOpen.drawn = undefined
   sendScheme()
   render()
 }

@@ -37,13 +37,15 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
   fold lists the threads Tidy filed ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the
   board's `reviews` items, no read needed), each opened in the item view. A live thread no worker has been in opens
   there too.
-- A prompt in the new-worker form that closes without Start is kept
+- A prompt in the new-worker form that closes without Start, or whose Start fails, is kept
   ([`keepUnsent`](ref:hub/src/shared/drafts.ts#keepUnsent)): a new draft, or the draft the form was opened on, with
   the edits made in the form. A toast names it. A blank prompt is never kept.
 - A floor keeping drafts has ✎ beside its `+`, a new draft in one click. The shell dock starts with `+`, a picker of
   every directory a shell can start in ([`shellPlaces`](ref:hub/src/shared/cards.ts#shellPlaces): hubs, repos and
   worktrees), the floor in view first.
-- A tray shows only while its collection holds items; drafts too, now that ✎ makes one.
+- A tray shows only while its collection holds items; drafts too, now that ✎ makes one. An empty tray would sit
+  under every floor for each collection declared at the top level; what a collection is for is said where items are
+  made (`tower whoami`, `tower keep`), and its tray appears with its first item.
 
 **Alternatives considered.**
 - Restoring an unsent prompt the next time the form opens (view state in `tower.store`): per browser, invisible to

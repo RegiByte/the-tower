@@ -24,7 +24,7 @@ another writer's change unless it holds edits of its own; a save the tower refus
 becomes the same conflict. The editing is `/drafts.js`
 ([`src/shared/drafts.ts`](ref:hub/src/shared/drafts.ts)), shared with Tower 3D's draft panel ([[corkboard]]). A draft starts a session through the new-session dialog,
 prefilled with its text (directory, model and effort picked there), or is submitted to a running worker, then is
-deleted. A prompt typed into the dialog that closes without starting is kept as a draft, or in the draft it was
+deleted. A prompt typed into the dialog that closes without starting, or whose start fails, is kept as a draft, or in the draft it was
 opened on. A session the page
 starts opens once the board carries its card: the host answers before the tower has read the new log.
 

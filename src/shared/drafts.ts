@@ -163,7 +163,7 @@ export async function discard(io: DraftIo, d: Draft) {
 }
 
 /**
- * A prompt typed into the new-worker form that closed without starting a worker is kept, never lost: as a new draft,
+ * A prompt typed into the new-worker form that closed without starting a worker, or whose start failed, is kept, never lost: as a new draft,
  * or, when the form was opened on a draft (`from`), as that draft's new text. Resolves to the draft it is in once on
  * disk; `undefined` when there was nothing new to keep or it could not be saved. A blank prompt is never kept.
  */
