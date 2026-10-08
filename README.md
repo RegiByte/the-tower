@@ -21,7 +21,7 @@ has a desk. Both read the same board and drive the same API, and so can a render
 
 - macOS
 - Node ≥ 24
-- Claude Code 2.1.292 or later, signed in (tested up to 2.1.294; `tower doctor` and the board say when yours is outside that range)
+- Claude Code 2.1.292 or later, signed in (tested up to 2.1.295; `tower doctor` and the board say when yours is outside that range)
 - `git` and `curl` (Xcode's command line tools)
 - Optional: VS Code's `code` on the PATH, or another editor set in the config, to open projects and files from the tower
 
