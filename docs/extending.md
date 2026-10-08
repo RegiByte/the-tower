@@ -39,7 +39,7 @@ key path.
 ## Your own renderer
 
 A renderer is a directory of built files. Declare it under `renderers` and the tower serves it at `/r/<name>/`, at
-its own origin, so it calls the API directly. `renderer` names the one `/` opens.
+the tower's origin, so it calls the API directly. `renderer` names the one `/` opens.
 
 ```json
 {
@@ -165,14 +165,14 @@ the board and drive the API:
 
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
-`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. The same page
-runs on its own at `/run/<project>/<n>`, at the tower's origin. The colour scheme follows the framing page:
+`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. An `html` or
+`item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin. The colour scheme follows the framing page:
 `tower.scheme()` and `tower.onScheme` read it, and `tower.chooseScheme(choice)` asks the framing page to change it, for
 every page of the viewer's.
 
 Relaying is the framing renderer's work, over the protocol in `src/shared/shelf-page.ts`. The tower page relays;
 Tower 3D relays nothing to the pages it frames. A renderer of yours frames shelf pages with the API by relaying the
-same messages, or opens them at `/run/<project>/<n>`.
+same messages, or opens them on their own.
 
 ## The API
 
@@ -257,8 +257,8 @@ Items are plain files at `collections/<project>/<collection>/<item>` in the syst
 lists them on the board (metadata only), reads them (`tower.text('collection/<p>/<c>/<item>')`), and creates, writes and
 deletes them (`collection/create`, `collection/write`, `collection/delete`). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
-Workers add with `tower keep <collection>`. Two ids mean something to the core: `drafts`, and `reviews`, written only
-through `review/append`.
+Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through
+`review/append`.
 
 ## Claude plugins
 
