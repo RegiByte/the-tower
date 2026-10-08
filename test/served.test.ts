@@ -12,11 +12,11 @@ type Served = { major: number; served: Record<string, string[]> }
 
 const LIST = path.join(import.meta.dirname, 'served-exports.json')
 
-/** `window.tower`'s members, `store`'s as `store.get`, read by running `/tower.js` in a page of its own at `/r/test/`. */
+/** `window.tower`'s members, a namespace's as `store.get`, read by running `/tower.js` in a page of its own at `/r/test/`. */
 function towerMembers(): string[] {
   const listener = { addEventListener: () => {} }
   const page: Record<string, unknown> = {
-    document: { currentScript: null, documentElement: { dataset: {} } },
+    document: { currentScript: null, documentElement: { dataset: {}, style: { setProperty: () => {}, removeProperty: () => {} } } },
     location: { origin: 'http://127.0.0.1', pathname: '/r/test/', search: '' },
     matchMedia: () => ({ matches: false, ...listener }),
     localStorage: { getItem: () => null },
@@ -27,7 +27,7 @@ function towerMembers(): string[] {
   vm.runInNewContext(towerClient(), page)
   const tower = page.tower as Record<string, unknown>
   return Object.entries(tower).flatMap(([name, member]) =>
-    name === 'store' ? Object.keys(member as object).map((key) => `store.${key}`) : [name],
+    typeof member === 'object' ? Object.keys(member as object).map((key) => `${name}.${key}`) : [name],
   )
 }
 

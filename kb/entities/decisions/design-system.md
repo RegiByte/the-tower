@@ -34,13 +34,14 @@ draws with almost no advance, so the next face in the stack draws it.
   needs is a screen or a question, ready an answer nobody has read yet (whoever it waits on, [[waiting-on-you]]),
   working is booting or at work, broken is failed or lost. Red is kept for what needs a hand; an answer ready is a
   calm green (`ready`, enamel text on it), and a failure keeps its own colour (2026-10-07, [[attention-list]]). Renderers
-  colour by it and never derive it; the status word keeps the exact state. Only needs blinks; a `watching` lamp breathes ([[watching-status]]); and with `prefers-reduced-motion` every animation in
-  `design.css` runs once.
+  colour by it and never derive it; the status word keeps the exact state. Only needs blinks; a `watching` lamp breathes ([[watching-status]]); and with reduced motion (the viewer's `data-motion`, or the system's setting: `reduced`) every animation in
+  `design.css` runs once. More contrast (the viewer's `data-contrast`, or the system's) moves muted and faint text
+  toward ink and draws lines as strong as a field's edge ([[viewer-prefs]]).
 - **Two schemes, one set of roles.** `palettes.light` is a soft parchment (bright white paper tired the eyes over
   long sessions), `palettes.dark` a deep green-grey; both fill the same roles, `ink` for text and `enamel` for dark
   surfaces (terminals, buildings), so components never name a scheme. `designCss` follows the system's
   appearance unless the root carries `data-scheme`; the settings popover offers system, light and dark ([[settings-and-tips]]), kept
-  in localStorage by `tower.js`, and re-themes open terminals ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
+  in localStorage by `tower.js` with the rest of the viewer's appearance ([[viewer-prefs]]: the faces of each stack, by name, ahead of the shipped ones), and re-themes open terminals ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
   The choice reaches framed shelf pages as a `scheme` message ([[renderer-api]]), so Tower 3D's panels follow it;
   `url` entries get it too, so an app the tower frames can follow it with a copy of the palette.
 - **Panels follow the scheme; the world doesn't.** Tower 3D's DOM chrome (HUD, prompt card, panels, elevator

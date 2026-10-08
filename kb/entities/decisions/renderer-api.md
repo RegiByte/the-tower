@@ -27,13 +27,14 @@ page → tower  {t: 'get', id, path}          GET  /<path>
 page → tower  {t: 'text' | 'blob', id, path}  GET  /<path>, as text or as a Blob of its type
 page → tower  {t: 'watch', id, path}        POST /mux/watch {mux, key, path}  (events on GET /mux)
 page → tower  {t: 'unwatch', id}            POST /mux/unwatch {mux, key}
-page → tower  {t: 'tower', verb, …}         —   (select, home, shelf: the framing tower's own view; scheme: the viewer's choice)
+page → tower  {t: 'tower', verb, …}         —   (select, home, shelf: the framing tower's own view; prefs: the viewer's appearance; scheme, deprecated)
 page → tower  {t: 'remember', value}        localStorage, keyed by the page's path
 page → tower  {t: 'recall', id}             localStorage, keyed by the page's path
 page → tower  {t: 'store', key, value}      localStorage, keyed by `key`, shared by every page
 page → tower  {t: 'stored', id, key}        localStorage, keyed by `key`, shared by every page
 tower → page  board v14 · answer · event     GET /board {v, board | error} · replies · GET /mux
-tower → page  {t: 'scheme', scheme}         localStorage `tower.scheme`, the tower page's choice
+tower → page  {t: 'prefs', prefs}           localStorage `tower.prefs`, the viewer's appearance
+tower → page  {t: 'scheme', scheme}         its scheme alone, for a `url` entry's frame
 ```
 
 A board the tower can't build arrives as `{v, error: {code, message}}` on the same stream and message, handed to
@@ -69,10 +70,10 @@ storage: what one renderer marks (the files viewed in a diff), another reads in 
 the root's `data-scheme`, so a page linking `/design.css` follows the tower's toggle as well as the system. A
 `url` entry's frame is sent the same `scheme` message on each load and change (its only message: the choice is
 not private), so a separately served app can follow the toggle by setting its own `data-scheme`.
-`tower.schemeChoice()`/`chooseScheme(c)` (API 1.3) read and set the choice behind it (`''` follows the system): at the
-tower's origin `tower.js` keeps it in localStorage `tower.scheme`, framed it asks the framing page (`{t: 'tower',
-verb: 'scheme'}`), which keeps it and sends `scheme` back, so any renderer's settings change every page's scheme
-([[settings-and-tips]]).
+The choice behind it is a field of the viewer's appearance, `tower.prefs` (API 1.13, [[viewer-prefs]]): at the
+tower's origin `tower.js` keeps the record in localStorage `tower.prefs`, framed it asks the framing page (`{t: 'tower',
+verb: 'prefs'}`), which keeps it and sends `prefs` back, so any renderer's settings change every page's appearance
+([[settings-and-tips]]). `tower.schemeChoice()`/`chooseScheme(c)` (API 1.3) and the `scheme` verb stay, deprecated.
 
 **Alternatives considered.**
 - A semantic message set per verb: a second vocabulary to keep in step with the routes, for no gain.

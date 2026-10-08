@@ -246,6 +246,22 @@ export function skyAt(hours: number): Sky {
   }
 }
 
+/**
+ * Rules for `selector` under reduced motion: the viewer's `data-motion` on the root (`tower.prefs`), or the system's
+ * setting unless the viewer asked for full motion.
+ */
+export const reduced = (selector: string, rules: string) =>
+  `:root[data-motion='reduce'] ${selector} { ${rules} }\n@media (prefers-reduced-motion: reduce) { :root:not([data-motion='full']) ${selector} { ${rules} } }`
+
+/**
+ * More contrast, asked by the viewer (`data-contrast` on the root) or the system: muted and faint text move toward
+ * ink, what is never read takes faint's tone, and lines draw as strong as a field's edge.
+ */
+const moreContrast = (name: Scheme) => {
+  const p = palettes[name]
+  return { muted: mixOklab(p.muted, 40, p.ink), faint: mixOklab(p.faint, 40, p.ink), deco: p.faint, line: p.lineStrong }
+}
+
 const kebab = (name: string) => name.replace(/[A-Z0-9]/g, (c) => `-${c.toLowerCase()}`)
 
 const variables = (tokens: Record<string, string>) => Object.entries(tokens).map(([name, value]) => `--${kebab(name)}: ${value};`).join('\n  ')
@@ -266,7 +282,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
  * `quiet`, `broken`) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
- * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion, every animation runs once.
+ * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
  */
 const COMPONENTS = `
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
@@ -286,7 +302,7 @@ const COMPONENTS = `
 .chip.some { background: var(--c); color: var(--on); }
 .chip.some .lamp { background: var(--on); }
 .chip:not(.some) .lamp { animation: none; }
-@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation-iteration-count: 1 !important; } }
+${reduced(':is(*, ::before, ::after)', 'animation-iteration-count: 1 !important;')}
 .meter { position: relative; height: 6px; border-radius: 999px; background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
@@ -361,7 +377,9 @@ const COMPONENTS = `
 
 /**
  * The stylesheet every tower page links: the faces, every token as a `--` variable, and the shared components. The
- * scheme follows the system's appearance unless the page sets `data-scheme` on its root element.
+ * scheme follows the system's appearance unless the page sets `data-scheme` on its root element, and contrast and
+ * motion the system's settings unless it sets `data-contrast` or `data-motion` (tower.js sets all three from
+ * `tower.prefs`).
  */
 export function designCss(): string {
   const faces = fonts.map(
@@ -371,6 +389,7 @@ export function designCss(): string {
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
   const shared = { ...type, ...shape, termFg: ANSI.foreground, ...mixes }
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
+  const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
   return `${faces.join('\n')}
 :root {
   ${variables(shared)}
@@ -384,5 +403,11 @@ export function designCss(): string {
 :root[data-scheme='dark'] {
   ${scheme('dark')}
 }
+:root[data-contrast='more'] { ${more} }
+@media (prefers-contrast: more) { :root { ${more} } }
+@media (prefers-color-scheme: dark) { :root[data-contrast='more']:not([data-scheme='light']) { ${moreDark} } }
+:root[data-contrast='more'][data-scheme='dark'] { ${moreDark} }
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) { :root:not([data-scheme='light']) { ${moreDark} } }
+@media (prefers-contrast: more) { :root[data-scheme='dark'] { ${moreDark} } }
 ${COMPONENTS}`
 }

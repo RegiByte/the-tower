@@ -12,6 +12,10 @@
       "keys",
       "onBoardError",
       "onScheme",
+      "prefs.attributes",
+      "prefs.get",
+      "prefs.on",
+      "prefs.set",
       "recall",
       "remember",
       "renderer",
@@ -133,6 +137,7 @@
       "palettes",
       "projectMix",
       "projectTones",
+      "reduced",
       "shape",
       "skyAt",
       "terminalTheme",
@@ -399,9 +404,23 @@
       "keysProblems",
       "keyshortcuts"
     ],
+    "/terminal.js": [
+      "cellOf",
+      "fitSize",
+      "loadTerminalFont",
+      "terminalFont"
+    ],
+    "/prefs.js": [
+      "GENERIC_FACES",
+      "PREFS_DEFAULT",
+      "TERM_SIZES",
+      "faceFamily",
+      "reducedMotion"
+    ],
     "/settings.js": [
       "ALERTS_MEANS",
       "ALERTS_NAME",
+      "PREF_SECTIONS",
       "RING_LABEL",
       "RING_MEANS",
       "SCHEME_CHOICES",
@@ -410,11 +429,14 @@
       "SOUND_LABEL",
       "SOUND_MEANS",
       "alertsSection",
+      "faceInstalled",
       "markdownSection",
+      "prefSections",
       "settingsCss",
       "settingsHtml",
       "soundSection",
-      "themeSection"
+      "themeSection",
+      "wirePrefs"
     ],
     "/tips.js": [
       "placeBeside",

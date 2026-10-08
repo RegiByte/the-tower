@@ -13,6 +13,7 @@ import type { ReviewHistory } from '../bridge/reviews.ts'
 import type { RepoChanges } from '../changes.ts'
 import type { API_VERSION, ErrorCode, Verbs } from './api.ts'
 import type { Renderer } from './model.ts'
+import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
 
 /** A scheme of `/design.css`, or `''` for whichever the system's appearance picks. */
@@ -78,7 +79,9 @@ export type TowerVerb =
   | { verb: 'select'; id: string }
   | { verb: 'home' }
   | { verb: 'shelf'; project: string; n: number }
-  /** The viewer's colour scheme choice, kept by the tower page for every page of theirs and sent back as `scheme`. */
+  /** Some of the viewer's appearance, kept by the tower page for every page of theirs and sent back as `prefs`. */
+  | { verb: 'prefs'; prefs: Partial<Prefs> }
+  /** @deprecated `{ verb: 'prefs', prefs: { scheme } }` */
   | { verb: 'scheme'; scheme: SchemeChoice }
 
 /** The shelf entry a page was opened from: the `n`th entry of `project`'s shelf. */
@@ -114,3 +117,5 @@ export type ToPage =
    * entry's frame gets it too, on each load and change, and nothing else.
    */
   | { t: 'scheme'; scheme: SchemeChoice }
+  /** The viewer's whole appearance (`tower.prefs`): sent after `hello`, then whenever it changes. */
+  | { t: 'prefs'; prefs: Prefs }

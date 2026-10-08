@@ -1,4 +1,4 @@
-import { documentCss, type Scheme } from '../../../src/shared/design.ts'
+import { documentCss } from '../../../src/shared/design.ts'
 import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import { fileButtonsHtml, usd } from '../../../src/shared/panels.ts'
@@ -335,7 +335,7 @@ export const threadHeadHtml = (f: Floor, checkout: string) =>
  * A showing in the desk panel: a file framed from the tower, sandboxed; a web page framed at its address; markdown
  * set in the scheme, once its text is read; a link as one button, since a browser opens no tab without a click.
  */
-export function shownHtml(callsign: string, s: Shown, scheme: Scheme, md?: string) {
+export function shownHtml(callsign: string, s: Shown, root: string, md?: string) {
   if (s.kind === 'url') return `<iframe class="doc-frame" src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`
   if (s.kind === 'link') {
     return `<div class="shown-link"><small>${esc(callsign)} asks you to open</small><h2>${esc(shownTitle(s))}</h2>
@@ -343,7 +343,7 @@ export function shownHtml(callsign: string, s: Shown, scheme: Scheme, md?: strin
   }
   if (isImage(s)) return `<img class="doc-image" src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`
   if (isVideo(s)) return `<video class="doc-video" controls autoplay src="${esc(shownHref(s))}"></video>`
-  if (isMarkdown(s)) return md === undefined ? '' : `<iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(md, shownHref(s), scheme))}"></iframe>`
+  if (isMarkdown(s)) return md === undefined ? '' : `<iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(md, shownHref(s), root))}"></iframe>`
   return `<iframe class="doc-frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" src="${esc(shownHref(s))}"></iframe>`
 }
 
@@ -577,13 +577,16 @@ export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, 
 }
 
 /** A shelf entry's body: a page in a frame, or a markdown collection's files beside the open one, rendered without scripts. */
-export function docHtml(doc: { frame: string } | { files: string[]; file?: string; text: string; url: string }, scheme: Scheme) {
+export function docHtml(doc: { frame: string } | { files: string[]; file?: string; text: string; url: string }, root: string) {
   if ('frame' in doc) return `<iframe class="doc-frame" src="${esc(doc.frame)}"></iframe>`
   const list = doc.files.map((f) => `<div class="doc-file${f === doc.file ? ' on' : ''}" data-file="${esc(f)}" title="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</div>`).join('')
-  return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, scheme))}"></iframe>`
+  return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, root))}"></iframe>`
 }
 
-/** Markdown served at `url` as a page in the viewer's scheme, for a frame without scripts (`documentHtml` keeps raw HTML). */
-const mdPage = (text: string, url: string, scheme: Scheme) =>
-  `<!doctype html><html data-scheme="${scheme}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
+/**
+ * Markdown served at `url` as a page in the viewer's appearance, its root's attributes `root` (`tower.prefs.attributes`),
+ * for a frame without scripts (`documentHtml` keeps raw HTML).
+ */
+const mdPage = (text: string, url: string, root: string) =>
+  `<!doctype html><html ${root}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
     <style>${documentCss}</style><article>${documentHtml(text, url)}</article>`

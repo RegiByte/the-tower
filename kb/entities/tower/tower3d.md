@@ -85,8 +85,8 @@ without the pause card, the view held as it is (prompt card, HUD, crosshair), fo
 running tower. Where you stand is kept
 with `tower.remember`, so a reload puts you back. Which verbs a desk, a tile, a guest, the console, the archive or the
 floor panel offers comes from the board's verbs ([[board-verbs]]), asked with
-[`can`](ref:hub/src/shared/cards.ts#can); monitors stream while the card is `live`. With `prefers-reduced-motion`
-([`reducedMotion`](ref:hub/renderers/tower3d/src/motion.ts#reducedMotion)) the camera cuts where it would fly, and
+[`can`](ref:hub/src/shared/cards.ts#can); monitors stream while the card is `live`. With reduced motion
+([`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion): the viewer's motion setting, or else the system's) the camera cuts where it would fly, and
 waiting lights pulse once when someone new starts waiting, then hold. Waiting lights (a floor's lamp, a wall tile, the
 beacon) take the colour of the loudest wait they light for ([`loudest`](ref:hub/src/shared/cards.ts#loudest)), and only
 one that needs you pulses: an answer ready holds a calm green ([[design-system]]). A changing

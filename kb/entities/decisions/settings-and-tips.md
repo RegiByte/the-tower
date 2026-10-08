@@ -32,7 +32,8 @@
     { "to": "shared-panels", "verb": "follows", "carries": "pure views, one stylesheet, data attributes each renderer wires" },
     { "to": "attention-list", "verb": "uses", "carries": "the ring setting in tower.store and the sounds as scores" },
     { "to": "design-system", "verb": "uses", "carries": "the scheme choice, the tokens a tip and the popover are drawn in" },
-    { "to": "renderer-api", "verb": "uses", "carries": "tower.schemeChoice and tower.chooseScheme, the scheme verb of a framed page" }
+    { "to": "renderer-api", "verb": "uses", "carries": "tower.prefs, the prefs verb of a framed page" },
+    { "to": "viewer-prefs", "verb": "uses", "carries": "the appearance sections, drawn from descriptors and wired by wirePrefs" }
   ]
 }
 ---
@@ -49,11 +50,12 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
 - *Settings popover* ([`settings.ts`](ref:hub/src/shared/settings.ts), served as `/settings.js`): sections as pure
   views, `alertsSection` (the browser's permission in words, and Turn on while the browser hasn't asked),
   [`soundSection`](ref:hub/src/shared/settings.ts#soundSection) (once, remind, off, and a play button per sound) and
-  `themeSection` (system, light, dark), composed by [`settingsHtml`](ref:hub/src/shared/settings.ts#settingsHtml)
-  from the sections a renderer offers; one stylesheet; `data-alerts-ask`, `data-ring-choice`, `data-sound-play` and
-  `data-scheme-choice` wired by each renderer. It is a native `popover` (light dismiss, top layer, not a modal).
+  the viewer's appearance (Theme, Type, Accessibility: `prefSections`, wired once by `wirePrefs`, [[viewer-prefs]]),
+  composed by [`settingsHtml`](ref:hub/src/shared/settings.ts#settingsHtml) from the sections a renderer offers; one
+  stylesheet; `data-alerts-ask`, `data-ring-choice` and `data-sound-play` wired by each renderer. `themeSection` and
+  its `data-scheme-choice`, the first Theme section, are kept `@deprecated`. It is a native `popover` (light dismiss, top layer, not a modal).
   Settings stay where they lived: the ring in `tower.store` ([[attention-list]]), notifications with the browser, and
-  the scheme with `tower.js`, which gained `tower.schemeChoice()` and `tower.chooseScheme(c)`: localStorage at the
+  the scheme with `tower.js` (since API 1.13 a field of `tower.prefs`, [[viewer-prefs]]), which gained `tower.schemeChoice()` and `tower.chooseScheme(c)`: localStorage at the
   tower's origin, and framed, a `{t: 'tower', verb: 'scheme'}` message the framing page keeps and answers with
   `scheme` (API 1.3, [[renderer-api]]). The tower page now reads its own scheme through the same calls.
 - *The head* keeps the host lamp, the gear, `?` and `«`. The gear is `ICON.settings`, an inline SVG from
@@ -65,7 +67,7 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   each), until the pointer or the focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets
   `aria-describedby` while shown. [`tipsCss`](ref:hub/src/shared/tips.ts#tipsCss) fades it in and out over 120 ms,
   growing from 97%: `@starting-style` gives the entry, and `display` and `overlay` transition with `allow-discrete` so
-  a hidden popover stays drawn in the top layer while it fades; `prefers-reduced-motion: reduce` drops the transition.
+  a hidden popover stays drawn in the top layer while it fades; reduced motion (the viewer's or the system's, `reduced` of design.ts) drops the transition.
   Safari and Firefox don't know `overlay` yet: there a hiding tip leaves the top layer as its fade starts, so over an
   open popover or modal it fades beneath it, for 120 ms.
   [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) stands it below its element, above when only above has room,

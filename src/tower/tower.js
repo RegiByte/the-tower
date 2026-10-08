@@ -31,9 +31,15 @@
  *   tower.keys(id, data) / tower.shellKeys(id, data)  keystrokes, delivered in order
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
- *   tower.scheme() / tower.onScheme((scheme) => …)   the viewer's colour scheme, 'light' or 'dark'; returns unsubscribe
- *   tower.schemeChoice() / tower.chooseScheme(c)    the viewer's choice behind it: '' to follow the system, 'light' or 'dark';
- *                                                   choosing keeps it for every page of theirs, through the tower when framed
+ *   tower.prefs.get()                               the viewer's appearance (src/shared/prefs.ts): scheme, ui, display and mono
+ *                                                   faces, termSize, motion, contrast; on this page's root before it paints
+ *   tower.prefs.set({ mono: 'Fira Code' })          change some of it, for every page of theirs, through the tower when framed
+ *   tower.prefs.on((prefs) => …)                    called whenever it changes; returns unsubscribe
+ *   tower.prefs.attributes()                        the root's attributes as html, for a document drawn in a frame without
+ *                                                   tower.js: `<html ${tower.prefs.attributes()}>`
+ *   tower.scheme() / tower.onScheme((scheme) => …)   the colour scheme drawn, 'light' or 'dark', the system's when the viewer
+ *                                                   chose none; returns unsubscribe
+ *   tower.schemeChoice() / tower.chooseScheme(c)    @deprecated: tower.prefs.get().scheme and tower.prefs.set({ scheme })
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
@@ -60,6 +66,13 @@
 ;(() => {
   /** Filled in by the tower as it serves this script, from src/shared/api.ts. */
   const VERSION = API_VERSION
+  /**
+   * The appearance a viewer starts from and the families CSS names by keyword, from src/shared/prefs.ts; the shipped
+   * faces each stack ends in, from src/shared/design.ts.
+   */
+  const PREFS_DEFAULT = PREFS_DEFAULT
+  const GENERIC_FACES = GENERIC_FACES
+  const FACES = FACES
   const versionOf = (text) => {
     const match = /^(\d+)\.(\d+)$/.exec(text)
     if (!match) throw new Error(`tower.js: "${text}" is not an API version: <major>.<minor>`)
@@ -170,9 +183,10 @@
         return () => watchers.delete(key) && mux && call('mux/unwatch', { mux, key }).catch(() => {})
       },
       ui: () => {},
-      chooseScheme: (choice) => {
-        try { localStorage.setItem('tower.scheme', choice) } catch {}
-        chooseScheme(choice)
+      setPrefs: (patch) => {
+        const next = { ...prefs, ...patch }
+        try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)) } catch {}
+        applyPrefs(next)
       },
       remember: (value) => {
         try { localStorage.setItem(`tower-page:${location.pathname}`, JSON.stringify(value)) } catch {}
@@ -230,7 +244,7 @@
         return () => (watchers.delete(id), send({ t: 'unwatch', id }))
       },
       ui: (verb, fields) => send({ t: 'tower', verb, ...fields }),
-      chooseScheme: (scheme) => send({ t: 'tower', verb: 'scheme', scheme }),
+      setPrefs: (patch) => send({ t: 'tower', verb: 'prefs', prefs: patch }),
       remember: (value) => send({ t: 'remember', value }),
       recall: () => request({ t: 'recall' }),
       store: {
@@ -241,24 +255,56 @@
   }
 
   /**
-   * The viewer's scheme choice on the root's `data-scheme`, which `/design.css` reads; none follows the system. Framed,
-   * the tower sends the choice; at the tower's origin it is the one the tower page keeps.
+   * The viewer's appearance on the root, which `/design.css` reads: the scheme as `data-scheme`, motion and contrast
+   * as `data-motion` and `data-contrast` when the viewer overrides the system, and each face they picked at the head
+   * of its stack (`--ui`, `--display`, `--mono`). Framed, the tower sends the record; at the tower's origin it is the
+   * one the browser keeps under `PREFS_KEY`, shared by every tab.
    */
+  const root = document.documentElement
   const darkSystem = matchMedia('(prefers-color-scheme: dark)')
+  const prefsWatchers = new Set()
   const schemeWatchers = new Set()
-  const scheme = () => document.documentElement.dataset.scheme || (darkSystem.matches ? 'dark' : 'light')
+  /** A face's name as a CSS font family, as `faceFamily` of src/shared/prefs.ts writes it: a generic family's unquoted. */
+  const family = (name) => (GENERIC_FACES.includes(name) ? name : `"${name.replace(/["\\]/g, '\\$&')}"`)
+  const stack = (prefs, face) => `${family(prefs[face])}, ${FACES[face]}`
+  const FACE_KEYS = ['ui', 'display', 'mono']
+  let prefs = PREFS_DEFAULT
+  const scheme = () => prefs.scheme || (darkSystem.matches ? 'dark' : 'light')
   const announceScheme = () => schemeWatchers.forEach((fn) => fn(scheme()))
-  const chooseScheme = (choice) => {
-    if ((document.documentElement.dataset.scheme ?? '') === choice) return
-    document.documentElement.dataset.scheme = choice
-    announceScheme()
+  const applyPrefs = (next) => {
+    const was = scheme()
+    prefs = { ...PREFS_DEFAULT, ...next }
+    root.dataset.scheme = prefs.scheme
+    for (const face of FACE_KEYS) prefs[face] ? root.style.setProperty(`--${face}`, stack(prefs, face)) : root.style.removeProperty(`--${face}`)
+    for (const key of ['motion', 'contrast']) prefs[key] ? (root.dataset[key] = prefs[key]) : delete root.dataset[key]
+    prefsWatchers.forEach((fn) => fn(prefs))
+    if (scheme() !== was) announceScheme()
   }
-  darkSystem.addEventListener('change', () => document.documentElement.dataset.scheme || announceScheme())
-  const schemeChoice = () => document.documentElement.dataset.scheme ?? ''
-  if (framed) addEventListener('message', (e) => e.source === window.parent && e.data.t === 'scheme' && chooseScheme(e.data.scheme))
-  else {
-    try { chooseScheme(localStorage.getItem('tower.scheme') ?? '') } catch {}
-    addEventListener('storage', (e) => e.key === 'tower.scheme' && chooseScheme(e.newValue ?? ''))
+  const escAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+  const attributes = () => {
+    const faces = FACE_KEYS.filter((face) => prefs[face]).map((face) => `--${face}: ${stack(prefs, face)};`).join(' ')
+    const data = ['motion', 'contrast'].filter((key) => prefs[key]).map((key) => ` data-${key}="${prefs[key]}"`).join('')
+    return `data-scheme="${scheme()}"${data}${faces ? ` style="${escAttr(faces)}"` : ''}`
+  }
+  darkSystem.addEventListener('change', () => prefs.scheme || announceScheme())
+  const PREFS_KEY = 'tower.prefs'
+  /** Before `PREFS_KEY`, the scheme alone was kept under this key: a viewer's choice there carries over. */
+  const SCHEME_KEY = 'tower.scheme'
+  const kept = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(PREFS_KEY) ?? 'null')
+      return stored ?? { scheme: localStorage.getItem(SCHEME_KEY) ?? '' }
+    } catch { return {} }
+  }
+  if (framed) {
+    addEventListener('message', (e) => {
+      if (e.source !== window.parent) return
+      if (e.data.t === 'prefs') applyPrefs(e.data.prefs)
+      if (e.data.t === 'scheme') applyPrefs({ ...prefs, scheme: e.data.scheme })
+    })
+  } else {
+    applyPrefs(kept())
+    addEventListener('storage', (e) => e.key === PREFS_KEY && applyPrefs(kept()))
   }
 
   const api = framed ? viaTower() : viaRoutes()
@@ -313,9 +359,20 @@
     remember: api.remember,
     recall: api.recall,
     store: api.store,
+    prefs: {
+      get: () => prefs,
+      set: api.setPrefs,
+      on(fn) {
+        prefsWatchers.add(fn)
+        return () => prefsWatchers.delete(fn)
+      },
+      attributes,
+    },
     scheme,
-    schemeChoice,
-    chooseScheme: api.chooseScheme,
+    /** @deprecated `tower.prefs.get().scheme` */
+    schemeChoice: () => prefs.scheme,
+    /** @deprecated `tower.prefs.set({ scheme })` */
+    chooseScheme: (scheme) => api.setPrefs({ scheme }),
     onScheme(fn) {
       schemeWatchers.add(fn)
       return () => schemeWatchers.delete(fn)

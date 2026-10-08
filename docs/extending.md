@@ -176,9 +176,9 @@ the board and drive the API:
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
 `tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. An `html` or
-`item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin. The colour scheme follows the framing page:
-`tower.scheme()` and `tower.onScheme` read it, and `tower.chooseScheme(choice)` asks the framing page to change it, for
-every page of the viewer's.
+`item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin. The viewer's appearance follows the framing page: `tower.prefs.get()` and
+`tower.prefs.on` read it, and `tower.prefs.set(patch)` asks the framing page to change it, for every page of the
+viewer's. A `url` entry's frame gets the colour scheme alone, as `{t: 'scheme', scheme}`.
 
 Relaying is the framing renderer's work, over the protocol in `src/shared/shelf-page.ts`. The tower page relays;
 Tower 3D relays nothing to the pages it frames. A renderer of yours frames shelf pages with the API by relaying the
@@ -212,6 +212,20 @@ do. The tower makes a best effort to avoid majors.
 included, so the files you mark viewed in one renderer are viewed in the next. `tower.remember` and `tower.recall`
 keep one value for the page alone.
 
+**The viewer's appearance** is `tower.prefs`: the scheme, the text, heading and code faces (any face installed on the
+viewer's computer, by name), the terminal's font size, motion and contrast (`src/shared/prefs.ts`). `tower.js` keeps
+it in the viewer's browser, shared by every tab and every page of theirs, and puts it on your page's root before it
+paints: `data-scheme`, `data-motion`, `data-contrast` and the `--ui`, `--display` and `--mono` stacks. A page that
+links `/design.css` and draws with its variables follows it with no code. Read it with `tower.prefs.get()`, hear
+changes with `tower.prefs.on(fn)`, change it with `tower.prefs.set({ mono: 'Fira Code' })`. A document you draw in a
+frame without scripts takes it as `<html ${tower.prefs.attributes()}>`. A terminal draws in it through
+`/terminal.js`. Offer its settings with `prefSections` and `wirePrefs` of `/settings.js`: a setting the tower adds
+later reaches your popover with nothing to wire.
+
+Which store, then: the **config** holds intent, the same in every browser (projects, the editor, the user's name); a
+renderer's **`settings`** in the config hold that renderer's own art or behaviour (Tower 3D's cats); **`tower.prefs`**
+holds how the viewer likes to read, across renderers; **`tower.store`** holds view state (marks, a remembered tab).
+
 **Scripts and cron jobs are clients too.** Anything running as you may call every verb:
 
 ```sh
@@ -228,7 +242,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 
 | URL | What it holds |
 |---|---|
-| `/tower.js` | the client: the board, every verb and read, streams, `tower.store` |
+| `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) |
 | `/design.css` | the design's tokens as custom properties, both colour schemes, the faces, and a few classes (`.needs`, `.pill`…) |
 | `/design.js` | the design module: palettes, type, the terminal's theme, the sky by hour, a document's stylesheet |
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
@@ -240,7 +254,9 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
 | `/keymap.js` | every keyboard command as data with its default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults); chord labels, `aria-keyshortcuts` and the `?` sheet |
-| `/settings.js` | the settings popover as a pure view: the ring, its sounds, the colour scheme, notifications, the brief rendered or raw |
+| `/terminal.js` | a browser terminal's face and size from the viewer's appearance, and the size a watched one fits its PTY at |
+| `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
+| `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
 

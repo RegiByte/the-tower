@@ -7,6 +7,7 @@ import type { Renderer } from '../../../src/shared/model.ts'
 import type { BoardError, Reads, SchemeChoice, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
 import type { ShellStream } from '../../../src/shared/terms.ts'
 import type { Scheme } from '../../../src/shared/design.ts'
+import type { Prefs } from '../../../src/shared/prefs.ts'
 
 export type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait }
 
@@ -41,9 +42,13 @@ export type Tower = {
   recall(): Promise<unknown>
   store: { set(key: string, value: unknown): void; get(key: string): Promise<unknown> }
   ui<V extends TowerVerb['verb']>(verb: V, fields?: Omit<Extract<TowerVerb, { verb: V }>, 'verb'>): void
+  /** The viewer's appearance, on the root before the page paints. */
+  prefs: { get(): Prefs; set(patch: Partial<Prefs>): void; on(fn: (prefs: Prefs) => void): () => void; attributes(): string }
   scheme(): Scheme
   onScheme(fn: (scheme: Scheme) => void): () => void
+  /** @deprecated `prefs.get().scheme` */
   schemeChoice(): SchemeChoice
+  /** @deprecated `prefs.set({ scheme })` */
   chooseScheme(choice: SchemeChoice): void
 }
 

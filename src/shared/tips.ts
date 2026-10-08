@@ -2,10 +2,11 @@
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
  * the top layer: on keyboard focus at once, on hover once the pointer rests on the element (at once while a tip shows or
  * has just hidden), beside the element and inside the viewport, until the pointer or the focus leaves it, Esc, a press,
- * a scroll or a redraw that removes it. It fades in and out, at once under `prefers-reduced-motion`. A renderer
+ * a scroll or a redraw that removes it. It fades in and out, at once under reduced motion. A renderer
  * calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
  * the element that opened it the same way. The tower serves this module as `/tips.js`.
  */
+import { reduced } from './design.ts'
 
 export type Box = { left: number; top: number; width: number; height: number }
 export type Size = { width: number; height: number }
@@ -58,7 +59,7 @@ export const tipsCss = `
   transition: opacity 120ms ease-out, scale 120ms ease-out, display 120ms allow-discrete, overlay 120ms allow-discrete; }
 .tower-tip:popover-open { opacity: 1; scale: 1; }
 @starting-style { .tower-tip:popover-open { opacity: 0; scale: 0.97; } }
-@media (prefers-reduced-motion: reduce) { .tower-tip { transition: none; scale: 1; } }
+${reduced('.tower-tip', 'transition: none; scale: 1;')}
 .tower-tip:not([data-placed]), [popover][data-placeable]:not([data-placed]) { visibility: hidden; }
 `
 

@@ -7,6 +7,8 @@ import { buildSync } from 'esbuild'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { API_VERSION } from '../shared/api.ts'
+import { type } from '../shared/design.ts'
+import { GENERIC_FACES, PREFS_DEFAULT } from '../shared/prefs.ts'
 
 const SHARED = path.join(import.meta.dirname, '..', 'shared')
 
@@ -22,6 +24,8 @@ export const MODULES: Record<string, string> = {
   '/brief.js': path.join(SHARED, 'brief.ts'),
   '/termkeys.js': path.join(SHARED, 'termkeys.ts'),
   '/keymap.js': path.join(SHARED, 'keymap.ts'),
+  '/terminal.js': path.join(SHARED, 'terminal.ts'),
+  '/prefs.js': path.join(SHARED, 'prefs.ts'),
   '/settings.js': path.join(SHARED, 'settings.ts'),
   '/tips.js': path.join(SHARED, 'tips.ts'),
   '/markdown.js': path.join(SHARED, 'markdown.ts'),
@@ -33,10 +37,15 @@ export function bundled(url: string) {
   return { text: outputFiles[0].text, exports: Object.values(metafile.outputs)[0].exports }
 }
 
-/** `/tower.js` speaks the API version this tower serves: the script names `API_VERSION` and is filled in from api.ts. */
+/**
+ * `/tower.js` speaks the API version this tower serves, starts a viewer from the default appearance and knows the shipped
+ * faces: the script names each constant and it is filled in here, from api.ts, prefs.ts and design.ts.
+ */
 export function towerClient() {
-  const script = readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8')
-  const declaration = 'const VERSION = API_VERSION'
-  if (!script.includes(declaration)) throw new Error(`tower.js no longer declares "${declaration}"`)
-  return script.replace(declaration, `const VERSION = ${JSON.stringify(API_VERSION)}`)
+  const filled: Record<string, unknown> = { API_VERSION, PREFS_DEFAULT, GENERIC_FACES, FACES: type }
+  return Object.entries(filled).reduce((script, [name, value]) => {
+    const declaration = new RegExp(`^(\\s*const \\w+ = )${name}$`, 'm')
+    if (!declaration.test(script)) throw new Error(`tower.js no longer declares a constant as "${name}"`)
+    return script.replace(declaration, (_, head) => head + JSON.stringify(value))
+  }, readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8'))
 }

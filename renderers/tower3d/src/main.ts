@@ -6,10 +6,9 @@ import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/r
 import { changesFailed, changesOf, markViewed, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead } from './reviews.ts'
 import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
-import { markdownSection, settingsCss, settingsHtml, soundSection, themeSection } from '../../../src/shared/settings.ts'
+import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import type { SchemeChoice } from '../../../src/shared/shelf-page.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn } from './cards.ts'
@@ -42,7 +41,7 @@ import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
-import { reducedMotion } from './motion.ts'
+import { reducedMotion } from '../../../src/shared/prefs.ts'
 import { FIXTURE, fixtureBoards, readConversations } from './fixtures.ts'
 import { archiveOf, drawersAt, readArchives } from './archive.ts'
 import { poseFiling } from './filing.ts'
@@ -58,6 +57,11 @@ import { boardFace, buildWorld, paintDirectory, setDoors, setLimits, setShellTit
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
+/**
+ * A document drawn in a frame follows the viewer's appearance: drawn again when the record changes, or the system's
+ * scheme while the viewer chose none.
+ */
+const onAppearance = (fn: () => void) => (tower.onScheme(() => tower.prefs.get().scheme || fn()), tower.prefs.on(fn))
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss }))
 watchTips(document)
@@ -659,15 +663,15 @@ async function openShelf(project: string, n: number, file?: string) {
   show('paused', false)
   show('doc', true)
   renderPanel()
-  if (shelfKind(entry) === 'html') return ($('doc-body').innerHTML = docHtml({ frame: shelfUrl(project, n, shelfPage(entry)) }, tower.scheme()))
+  if (shelfKind(entry) === 'html') return ($('doc-body').innerHTML = docHtml({ frame: shelfUrl(project, n, shelfPage(entry)) }, tower.prefs.attributes()))
   const files = await shelfFiles(project, n).catch((err: Error) => (toast(err.message), []))
   const shown = file ?? files[0]
   const text = shown ? await shelfText(project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
   if (s.panel?.kind !== 'doc' || s.panel.project !== project || s.panel.n !== n) return
   s.panel.file = shown
-  $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? '') }, tower.scheme())
+  $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? '') }, tower.prefs.attributes())
 }
-tower.onScheme(() => s.panel?.kind === 'doc' && s.panel.file && openShelf(s.panel.project, s.panel.n, s.panel.file))
+onAppearance(() => s.panel?.kind === 'doc' && s.panel.file && openShelf(s.panel.project, s.panel.n, s.panel.file))
 
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
 async function openPicture(id: string, target: string) {
@@ -681,13 +685,13 @@ async function openPicture(id: string, target: string) {
   show('doc', true)
   see(sh)
   renderPanel()
-  $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.scheme())
+  $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
   if (!isMarkdown(sh)) return
   const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
   if (s.panel?.kind !== 'picture' || s.panel.id !== id || s.panel.target !== target) return
-  $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.scheme(), md)
+  $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes(), md)
 }
-tower.onScheme(() => s.panel?.kind === 'picture' && openPicture(s.panel.id, s.panel.target))
+onAppearance(() => s.panel?.kind === 'picture' && openPicture(s.panel.id, s.panel.target))
 
 /** To the worker's desk, on the showing's tab. */
 function goShown(id: string, target: string) {
@@ -1000,7 +1004,7 @@ function chooseRing(ring: Ring) {
 }
 
 /**
- * The settings popover: how waits ring and the scheme. Notifications are the tower page's, so it offers none. It
+ * The settings popover: how waits ring and the viewer's appearance. Notifications are the tower page's, so it offers none. It
  * stands by the button that opened it, in the HUD or on the pause card.
  */
 let settingsDrawn = ''
@@ -1008,7 +1012,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(s.ring), themeSection(tower.schemeChoice()), markdownSection(s.briefMarkdown)])
+  const html = settingsHtml([soundSection(s.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.briefMarkdown)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1016,13 +1020,13 @@ document.querySelector('.paused-settings')!.innerHTML = `${ICON.settings}Setting
 settingsEl.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && paintSettings())
 document.addEventListener('click', (e) => (settingsBy = (e.target as Element).closest('[popovertarget="settings"]') ?? settingsBy), true)
 settingsEl.addEventListener('click', (e) => {
-  const el = (e.target as Element).closest<HTMLElement>('[data-ring-choice], [data-sound-play], [data-scheme-choice]')
+  const el = (e.target as Element).closest<HTMLElement>('[data-ring-choice], [data-sound-play]')
   if (!el) return
   if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice as Ring)
-  if (el.dataset.soundPlay) return ring(el.dataset.soundPlay as Sound)
-  tower.chooseScheme(el.dataset.schemeChoice as SchemeChoice)
+  ring(el.dataset.soundPlay as Sound)
 })
-tower.onScheme(() => drawSettings())
+wirePrefs(settingsEl, tower.prefs.set)
+tower.prefs.on(() => drawSettings())
 
 const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'next', 'next-waiting': 'waiting' }
 
@@ -1640,12 +1644,12 @@ async function openShown(id: string, sh: Shown) {
   hideReviewing()
   see(sh)
   renderPanel()
-  $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.scheme())
+  $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes())
   show('desk-shown', true)
   if (!isMarkdown(sh)) return
   const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
   if (s.panel?.kind !== 'desk' || s.panel.id !== id || s.deskTab !== shownTab(sh)) return
-  $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.scheme(), md)
+  $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes(), md)
 }
 
 function closeShown() {
@@ -1690,7 +1694,7 @@ for (const el of ['desk-brief', 'desk-stamp']) {
     if (s.panel?.kind === 'desk' && session !== undefined) replay(s.panel.id, session || undefined)
   })
 }
-tower.onScheme(() => {
+onAppearance(() => {
   if (s.panel?.kind !== 'desk') return
   const sh = findCard(s.board!, s.panel.id)?.shown.find((sh) => shownTab(sh) === s.deskTab)
   if (sh && isMarkdown(sh)) openShown(s.panel.id, sh)

@@ -1,15 +1,18 @@
 /**
  * The settings every renderer offers in one small popover: pure views from a viewer's settings to html, and one
  * stylesheet (`settingsCss`). Each setting stays where it lives: the ring in `tower.store` under `RING_KEY`, how the
- * brief draws prompts and answers under `BRIEF_MARKDOWN_KEY` (`/brief.js`), the scheme with tower.js (`tower.schemeChoice`, `tower.chooseScheme`), notifications with the browser. A renderer composes the
+ * brief draws prompts and answers under `BRIEF_MARKDOWN_KEY` (`/brief.js`), the viewer's appearance with tower.js (`tower.prefs`), notifications with the browser. A renderer composes the
  * sections it offers with `settingsHtml`, draws it in a `popover` element of class `settings-pop` (`placeOnOpen` of
  * tips.ts stands it by its button) and wires, by the attribute on the element clicked:
  *
  *   data-alerts-ask              ask the browser to allow notifications
  *   data-ring-choice="<ring>"    how often a wait rings (`RINGS`), kept under `RING_KEY`
  *   data-sound-play="<sound>"    play a sound of `SOUNDS` the way the renderer rings
- *   data-scheme-choice="<c>"     the colour scheme: '' follows the system, or light, or dark (`tower.chooseScheme`)
  *   data-brief-markdown="<m>"    prompts and answers rendered or raw (`BRIEF_MARKDOWNS`), kept under `BRIEF_MARKDOWN_KEY`
+ *
+ * The appearance is data: `PREF_SECTIONS` describes each setting of `tower.prefs`, `prefSections` draws them, and
+ * `wirePrefs(popover, tower.prefs.set)` wires every one, so a setting added here reaches every renderer with no wiring
+ * of its own. A renderer draws the popover again when `tower.prefs.on` says the record changed.
  *
  * Every control carries its `data-tip`. The tower serves this module as `/settings.js`.
  */
@@ -17,6 +20,8 @@ import type { SchemeChoice } from './shelf-page.ts'
 import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS, type BriefMarkdown } from './brief.ts'
 import { REMIND_MS, RINGS, esc, type Ring, type Sound } from './cards.ts'
 import { ICON } from './icons.ts'
+import { GENERIC_FACES, PREFS_DEFAULT, TERM_SIZES, faceFamily, type Prefs } from './prefs.ts'
+import { type } from './design.ts'
 
 /** Notifications as the browser allows them: `default` until it has asked the viewer. */
 export type Alerts = 'default' | 'granted' | 'denied'
@@ -70,7 +75,7 @@ export const soundSection = (ring: Ring) =>
     `<div class="row plays">${(['question', 'done'] as Sound[]).map((s) =>
       `<button data-sound-play="${s}" data-tip="${esc(SOUND_MEANS[s])}">${ICON.play}${SOUND_LABEL[s]}</button>`).join('')}</div>`)
 
-/** The colour scheme: the system's, light or dark. */
+/** @deprecated `prefSections` draws the scheme beside the rest of the viewer's appearance, wired by `wirePrefs`. */
 export const themeSection = (scheme: SchemeChoice) =>
   section('Theme', 'colours of every panel',
     `<div class="seg" role="group" aria-label="theme">${SCHEME_CHOICES.map((c) =>
@@ -81,6 +86,107 @@ export const markdownSection = (markdown: BriefMarkdown) =>
   section('Brief', 'prompts and answers',
     `<div class="seg" role="group" aria-label="brief">${BRIEF_MARKDOWNS.map((m) =>
       choice('data-brief-markdown', m, BRIEF_MARKDOWN_LABEL[m], BRIEF_MARKDOWN_MEANS[m], m === markdown)).join('')}</div>`)
+
+/** One choice of a segmented setting: its value, the word on it, what it means, an icon before the word. */
+export type PrefChoice = { value: string; label: string; means: string; icon?: string }
+
+/** A setting of `tower.prefs`, drawn by its kind: a segmented choice, a face by name, a size in px. */
+export type PrefSetting =
+  | { kind: 'choice'; key: 'scheme' | 'motion' | 'contrast'; label?: string; choices: PrefChoice[] }
+  | { kind: 'face'; key: 'ui' | 'display' | 'mono'; label: string; means: string; shipped: string; suggestions: string[] }
+  | { kind: 'size'; key: 'termSize'; label: string; means: string; min: number; max: number }
+
+export type PrefSection = { title: string; aside: string; settings: PrefSetting[] }
+
+/** The first face of a stack of design.ts's `type`, by name: what shows when the viewer picks none. */
+const shippedFace = (stack: string) => stack.split(',')[0].replace(/'/g, '')
+
+export const PREF_SECTIONS: PrefSection[] = [
+  {
+    title: 'Theme', aside: 'colours of every panel',
+    settings: [{ kind: 'choice', key: 'scheme', choices: SCHEME_CHOICES.map((c) => ({ value: c, label: SCHEME_LABEL[c], means: SCHEME_MEANS[c], icon: SCHEME_ICON[c] })) }],
+  },
+  {
+    title: 'Type', aside: 'any face on this computer, by name',
+    settings: [
+      { kind: 'face', key: 'ui', label: 'Text', means: 'the face of every panel, list and document', shipped: shippedFace(type.ui),
+        suggestions: ['system-ui', 'Inter', 'SF Pro Text', 'Helvetica Neue', 'Avenir Next', 'IBM Plex Sans', 'Verdana'] },
+      { kind: 'face', key: 'display', label: 'Headings', means: 'the face of headings, signs and callsigns', shipped: shippedFace(type.display),
+        suggestions: ['system-ui', 'Inter', 'Avenir Next', 'Futura', 'Helvetica Neue', 'IBM Plex Sans'] },
+      { kind: 'face', key: 'mono', label: 'Code', means: 'the face of terminals and code', shipped: shippedFace(type.mono),
+        suggestions: ['ui-monospace', 'SF Mono', 'Menlo', 'Monaco', 'Fira Code', 'IBM Plex Mono', 'Cascadia Code', 'Source Code Pro'] },
+      { kind: 'size', key: 'termSize', label: 'Terminal', ...TERM_SIZES,
+        means: 'the terminal’s font while you drive a session, in px: a bigger font gives the session fewer columns and rows. A terminal you watch shrinks to fit, up to this size' },
+    ],
+  },
+  {
+    title: 'Accessibility', aside: 'over this computer’s settings',
+    settings: [
+      { kind: 'choice', key: 'motion', label: 'Motion', choices: [
+        { value: '', label: 'System', means: 'animations follow this computer’s reduce motion setting' },
+        { value: 'reduce', label: 'Reduce', means: 'every animation runs once and moves no further: blinking lamps settle, the camera cuts' },
+        { value: 'full', label: 'Full', means: 'every animation, whatever this computer’s setting' },
+      ] },
+      { kind: 'choice', key: 'contrast', label: 'Contrast', choices: [
+        { value: '', label: 'System', means: 'contrast follows this computer’s increase contrast setting' },
+        { value: 'more', label: 'More', means: 'muted text closer to ink, and stronger lines' },
+      ] },
+    ],
+  },
+]
+
+/**
+ * Whether a face is installed (or loaded by the page): text set in it measures otherwise than in each generic face
+ * alone. A browser lists no installed faces, so this is how a name is checked.
+ */
+export function faceInstalled(name: string): boolean {
+  if (GENERIC_FACES.includes(name)) return true
+  const g = document.createElement('canvas').getContext('2d')!
+  const width = (font: string) => ((g.font = font), g.measureText('mmmmmmmmmmlli1WQ@#').width)
+  return ['monospace', 'serif', 'sans-serif'].some((base) => width(`72px ${faceFamily(name)}, ${base}`) !== width(`72px ${base}`))
+}
+
+const settingHtml = (setting: PrefSetting, prefs: Prefs, installed: (name: string) => boolean) => {
+  const label = setting.label ? `<span class="lbl">${setting.label}</span>` : ''
+  if (setting.kind === 'choice') {
+    return `<div class="pref">${label}<div class="seg" role="group" aria-label="${esc(setting.label ?? setting.key)}">${setting.choices.map((c) =>
+      choice(`data-pref="${setting.key}" data-pref-value`, c.value, `${c.icon ?? ''}${c.label}`, c.means, prefs[setting.key] === c.value)).join('')}</div></div>`
+  }
+  if (setting.kind === 'size') {
+    return `<label class="pref">${label}<span class="size"><input type="number" data-pref="${setting.key}" min="${setting.min}" max="${setting.max}" step="1"
+      value="${prefs[setting.key]}" data-tip="${esc(setting.means)}"> px</span></label>`
+  }
+  const picked = prefs[setting.key]
+  const faces = setting.suggestions.filter(installed).map((f) => `<option value="${esc(f)}"></option>`).join('')
+  const missing = picked && !installed(picked) ? `<small class="missing">not on this computer: ${esc(setting.shipped)} shows</small>` : ''
+  return `<label class="pref">${label}<input data-pref="${setting.key}" value="${esc(picked)}" placeholder="${esc(setting.shipped)}" list="pref-${setting.key}-faces"
+    spellcheck="false" autocomplete="off" data-tip="${esc(`${setting.means}: a face’s name, or empty for ${setting.shipped}`)}"></label><datalist id="pref-${setting.key}-faces">${faces}</datalist>${missing}`
+}
+
+/** The viewer's appearance, a section each of `PREF_SECTIONS`; `installed` says whether a face is on this computer (`faceInstalled`). */
+export const prefSections = (prefs: Prefs, installed: (name: string) => boolean) =>
+  PREF_SECTIONS.map((s) => section(s.title, s.aside, s.settings.map((setting) => settingHtml(setting, prefs, installed)).join('')))
+
+/** What `wirePrefs` hands `set` for a control: a choice's value, a face's name trimmed, a size kept within its range. */
+const prefValue = (el: HTMLElement): Partial<Prefs> => {
+  const key = el.dataset.pref as keyof Prefs
+  if (el.dataset.prefValue !== undefined) return { [key]: el.dataset.prefValue }
+  const input = el as HTMLInputElement
+  if (input.type === 'number') return { [key]: Math.min(TERM_SIZES.max, Math.max(TERM_SIZES.min, Math.round(input.valueAsNumber || PREFS_DEFAULT.termSize))) }
+  return { [key]: input.value.trim() }
+}
+
+/** Every setting `prefSections` draws in `el`: a choice on click, a field on change (Enter, or leaving it). */
+export function wirePrefs(el: HTMLElement, set: (patch: Partial<Prefs>) => void) {
+  el.addEventListener('click', (e) => {
+    const control = (e.target as Element).closest<HTMLElement>('[data-pref][data-pref-value]')
+    if (control) set(prefValue(control))
+  })
+  el.addEventListener('change', (e) => {
+    const control = (e.target as Element).closest<HTMLElement>('input[data-pref]')
+    if (control) set(prefValue(control))
+  })
+}
 
 /** The popover's content: the sections a renderer offers, in order. */
 export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>Settings</h2>${sections.join('')}</div>`
@@ -104,4 +210,15 @@ export const settingsCss = `
 .settings .seg button:hover { color: var(--ink); }
 .settings .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
 .settings svg { width: 12px; height: 12px; flex: none; }
+.settings .pref { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; }
+.settings .pref:not(:has(.lbl)) { grid-template-columns: minmax(0, 1fr); }
+.settings .pref .lbl { color: var(--muted); font-size: 12px; }
+.settings .pref input { width: 100%; min-width: 0; font: 13px/1.3 var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); padding: 4px 7px; }
+.settings .pref input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.settings .pref input::placeholder { color: var(--faint); font-style: italic; }
+.settings .pref input[data-pref=display] { font-family: var(--display); } .settings .pref input[data-pref=mono] { font-family: var(--mono); }
+.settings .pref .size { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.settings .pref .size input { width: 64px; font-variant-numeric: tabular-nums; }
+.settings .missing { margin: -4px 0 0 84px; color: var(--needs-text); font-size: 11px; }
 `

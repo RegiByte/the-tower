@@ -6,9 +6,7 @@
 <title>The Tower</title>
 <link rel="stylesheet" href="/xterm.css">
 <link rel="stylesheet" href="/design.css">
-<script>
-try { document.documentElement.dataset.scheme = localStorage.getItem('tower.scheme') ?? '' } catch {}
-</script>
+<script src="/tower.js"></script>
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overscroll-behavior: none; }
@@ -421,11 +419,10 @@ button.held { opacity: .45; cursor: not-allowed; }
 <div class="toast" id="toast"></div>
 <div class="sr-only" id="announce" role="status"></div>
 <div class="board-error" id="board-error" role="alert"></div>
-<script src="/tower.js"></script>
 <script src="/xterm.js"></script>
 <script src="/addon-fit.js"></script>
 <script type="module">
-import { documentCss, skyAt, terminalTheme, type } from '/design.js'
+import { documentCss, skyAt, terminalTheme } from '/design.js'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
@@ -435,7 +432,8 @@ import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidT
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
-import { alertsSection, markdownSection, settingsCss, settingsHtml, soundSection, themeSection } from '/settings.js'
+import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/settings.js'
+import { fitSize, loadTerminalFont, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { DRAFTS, discard, draftItem, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
@@ -962,7 +960,7 @@ function renderShown(c, s) {
   $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
   told(tower.text(shownHref(s).slice(1))).then((md) => {
     if (md === undefined || shownDrawn !== key) return
-    $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
+    $('shown').firstChild.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
   })
 }
 
@@ -1163,7 +1161,7 @@ function openThread(project, checkout) {
 
 /** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. */
 function showLink(c, s) {
-  $('shown').firstChild.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style>
+  $('shown').firstChild.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style>
     <article><h4>${esc(callsign(c.id))} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
     <p><a href="${esc(s.target)}" rel="noreferrer"><b>Open ↗</b></a></p></article>`
 }
@@ -1450,24 +1448,24 @@ function showAlert(c, w) {
 let settingsDrawn
 const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), themeSection(tower.schemeChoice()), markdownSection(briefMarkdown)])
+  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(briefMarkdown)])
   if (html === settingsDrawn) return
-  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-scheme-choice], #settings [data-sound-play], #settings [data-brief-markdown]')
-  const again = focused && [...focused.attributes].find((a) => a.name.startsWith('data-') && a.name !== 'data-tip')
+  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-pref]')
+  const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
   $('settings').innerHTML = settingsDrawn = html
-  if (again) $('settings').querySelector(`[${again.name}="${CSS.escape(again.value)}"]`)?.focus()
+  if (again) $('settings').querySelector(again)?.focus()
 }
 $('settings-open').innerHTML = ICON.settings
 placeOnOpen($('settings'), () => $('settings-open'))
 $('settings').addEventListener('beforetoggle', (e) => e.newState === 'open' && paintSettings())
 $('settings').addEventListener('click', async (e) => {
-  const el = e.target.closest('[data-alerts-ask], [data-ring-choice], [data-sound-play], [data-scheme-choice]')
+  const el = e.target.closest('[data-alerts-ask], [data-ring-choice], [data-sound-play]')
   if (!el) return
   if (el.matches('[data-alerts-ask]')) return (await Notification.requestPermission(), drawSettings())
   if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice)
-  if (el.dataset.soundPlay) return playSound(SOUNDS[el.dataset.soundPlay])
-  tower.chooseScheme(el.dataset.schemeChoice)
+  playSound(SOUNDS[el.dataset.soundPlay])
 })
+wirePrefs($('settings'), tower.prefs.set)
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. */
 function moveTo(id) {
@@ -1518,10 +1516,6 @@ const told = (request) => request.catch((err) => (toast(err.message), undefined)
 const floorOf = (project) => board.floors.find((f) => f.id === project)
 
 let term, fit, stopScreen
-const DRIVE_FONT = 13
-/** A monospace cell is about 0.6 of the font size wide and 1.2 tall. */
-const CELL_WIDTH = 0.6
-const CELL_HEIGHT = 1.2
 const REFIT_DEBOUNCE_MS = 120
 
 /**
@@ -1531,10 +1525,9 @@ const REFIT_DEBOUNCE_MS = 120
  */
 let claimed
 
-const fitFont = (cols, rows) => {
-  const { clientWidth, clientHeight } = $('c-screen')
-  return Math.max(6, Math.min(DRIVE_FONT, Math.floor(Math.min((clientWidth - 4) / (cols * CELL_WIDTH), (clientHeight - 4) / (rows * CELL_HEIGHT)))))
-}
+/** The terminals' face and the size the viewer drives at, from their appearance. */
+const termFont = () => terminalFont(tower.prefs.get())
+const fitFont = (cols, rows) => fitSize($('c-screen'), cols, rows, termFont())
 
 const leaveHint = () => (keysLabel(board.keys, 'leave-terminal') ? ` · ${keysLabel(board.keys, 'leave-terminal')} leaves` : '')
 
@@ -1544,7 +1537,7 @@ function showMode(text = isOwner() ? `in control · ${term.cols}×${term.rows}` 
 }
 
 function claim() {
-  term.options.fontSize = DRIVE_FONT
+  term.options.fontSize = termFont().size
   fit.fit()
   claimed = { cols: term.cols, rows: term.rows }
   told(tower.call('resize', { id: selected, ...claimed }))
@@ -1571,7 +1564,7 @@ const typed = (data) => {
 
 function openTerminal({ cols, rows, data, exited, terminals }) {
   term?.dispose()
-  term = new Terminal({ cols, rows, fontSize: fitFont(cols, rows), fontFamily: type.mono, cursorBlink: false, scrollback: 0, theme: terminalTheme(scheme()) })
+  term = new Terminal({ cols, rows, fontSize: fitFont(cols, rows), fontFamily: termFont().family, cursorBlink: false, scrollback: 0, theme: terminalTheme(scheme()) })
   fit = new FitAddon.FitAddon()
   term.loadAddon(fit)
   term.open($('c-screen'))
@@ -1710,12 +1703,9 @@ const sendBoard = () => {
   const msg = { t: 'board', v: tower.version, self: { project: shelfOpen.project, n: shelfOpen.n } }
   toShelfPage(boardError ? { ...msg, error: { code: boardError.code, message: boardError.message } } : { ...msg, board })
 }
-/** The scheme goes to a `url` page too: it is the only message such a page gets, and it carries nothing private. */
-const sendScheme = () => {
-  const msg = { t: 'scheme', scheme: document.documentElement.dataset.scheme }
-  toShelfPage(msg)
-  $('shelf-url')?.contentWindow.postMessage(msg, '*')
-}
+/** The viewer's appearance goes to the open page; a `url` page gets the scheme alone, the only message it gets, which carries nothing private. */
+const sendPrefs = () => toShelfPage({ t: 'prefs', prefs: tower.prefs.get() })
+const sendScheme = () => $('shelf-url')?.contentWindow.postMessage({ t: 'scheme', scheme: tower.prefs.get().scheme }, '*')
 
 /** The streams the open page watches, by its id. Closed when the page goes away. */
 const pageWatches = new Map()
@@ -1740,7 +1730,9 @@ const towerVerbs = {
   select: ({ id }) => select(id),
   home: () => goHome(),
   shelf: ({ project, n }) => openShelf(project, n),
-  scheme: ({ scheme }) => tower.chooseScheme(scheme),
+  prefs: ({ prefs }) => tower.prefs.set(prefs),
+  /** @deprecated a page's tower.js asks with `prefs` */
+  scheme: ({ scheme }) => tower.prefs.set({ scheme }),
 }
 
 addEventListener('message', async (e) => {
@@ -1748,7 +1740,7 @@ addEventListener('message', async (e) => {
   const msg = e.data
   const token = pageRelay.token
   if (!token || msg.token !== token) return
-  if (msg.t === 'hello') return (Object.assign(pageRelay, { paired: true, helloSinceLoad: true }), closePageWatches(), sendScheme(), sendBoard())
+  if (msg.t === 'hello') return (Object.assign(pageRelay, { paired: true, helloSinceLoad: true }), closePageWatches(), sendPrefs(), sendBoard())
   if (!pageRelay.paired) return
   if (msg.t === 'tower') return towerVerbs[msg.verb](msg)
   if (msg.t === 'remember') return shelfOpen && remember(pageKey(shelfOpen), JSON.stringify(msg.value))
@@ -1801,7 +1793,7 @@ async function showDoc(file) {
   if (shelfOpen !== opened || opened.file !== file) return
   const doc = $('shelf-doc')
   doc.onload = () => doc.contentDocument.addEventListener('click', followLink)
-  doc.srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${documentHtml(md, `/${shelfPath(opened.project, opened.n, file)}`)}</article>`
+  doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${documentHtml(md, `/${shelfPath(opened.project, opened.n, file)}`)}</article>`
 }
 
 /** A link to another file of the collection opens it here; a web or mail link opens in a new tab, any other is refused. */
@@ -2104,7 +2096,7 @@ async function showItemBody(c, item) {
   })
   if (text === undefined || itemOpen !== opened || opened.drawn !== item.modifiedAt) return
   $('item-body').innerHTML = `<iframe id="item-doc" title="${esc(item.tag)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
-  $('item-doc').srcdoc = `<!doctype html><html data-scheme="${scheme()}"><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`
+  $('item-doc').srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`
 }
 
 /** Deleting is the user's: asked first, and the view closes before the file goes. */
@@ -2175,7 +2167,7 @@ function openShell(id) {
 function mountShell({ data, cols, rows }) {
   shell.term?.dispose()
   const id = shell.id
-  const term = new Terminal({ cols, rows, fontSize: DRIVE_FONT, fontFamily: type.mono, cursorBlink: false, scrollback: SHELL_SCROLLBACK, theme: terminalTheme(scheme()) })
+  const term = new Terminal({ cols, rows, fontSize: termFont().size, fontFamily: termFont().family, cursorBlink: false, scrollback: SHELL_SCROLLBACK, theme: terminalTheme(scheme()) })
   const fit = new FitAddon.FitAddon()
   term.loadAddon(fit)
   term.open($('s-screen'))
@@ -2485,21 +2477,47 @@ $('screen').addEventListener('keydown', (e) => {
 })
 
 /**
- * The viewer's scheme, kept by tower.js in this browser for every page of theirs, on the root's `data-scheme` that the
- * stylesheet reads; terminals, the framed documents and the open shelf page are told again whenever it changes.
+ * The viewer's appearance, kept by tower.js in this browser for every page of theirs, on the root that the stylesheet
+ * reads; terminals, the framed documents, the open shelf page and the settings follow it whenever it changes.
  */
 const scheme = tower.scheme
 
-function applyScheme() {
-  for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
+function redrawDocs() {
   shownDrawn = undefined
   if (shelfOpen?.file) showDoc(shelfOpen.file)
   if (itemOpen && readsText(itemKind(itemOpen.id))) itemOpen.drawn = undefined
-  sendScheme()
   render()
 }
 
+function applyScheme() {
+  for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
+  redrawDocs()
+}
+
+/**
+ * A new face or size reaches every open terminal once the face has loaded. A terminal the viewer drives fits again,
+ * resizing the PTY: a bigger font gives the session fewer columns and rows. A watched one fits the PTY it follows.
+ */
+let fontShown = termFont()
+async function applyTermFont() {
+  const font = termFont()
+  if (font.family === fontShown.family && font.size === fontShown.size) return
+  fontShown = font
+  await loadTerminalFont(font)
+  if (fontShown !== font) return
+  if (term) {
+    term.options.fontFamily = font.family
+    if (isOwner()) claim()
+    else term.options.fontSize = fitFont(term.cols, term.rows)
+  }
+  if (shell?.term) {
+    Object.assign(shell.term.options, { fontFamily: font.family, fontSize: font.size })
+    fitShell()
+  }
+}
+
 tower.onScheme(applyScheme)
+tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendPrefs(), sendScheme(), drawSettings()))
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open
 
@@ -2553,7 +2571,7 @@ document.addEventListener('keydown', (e) => {
 })
 
 /** xterm measures its cells when it opens: the terminal face must be loaded by then. */
-await Promise.all([`${DRIVE_FONT}px ${type.mono}`, `700 ${DRIVE_FONT}px ${type.mono}`].map((font) => document.fonts.load(font)))
+await loadTerminalFont(termFont())
 
 told(tower.get('origins')).then((o) => o && ((origins = o), render()))
 
