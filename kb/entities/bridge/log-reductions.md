@@ -5,7 +5,7 @@
   "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
   "in": "bridge",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
+  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -45,7 +45,13 @@ or one event at a time as it is tailed:
   and never kept ([[brief-turns]]).
 - [`waitsOnSomeone`](ref:hub/src/bridge/status.ts#waitsOnSomeone): see [[waiting-on-you]].
 - [`snapshot`](ref:hub/src/bridge/screen.ts#snapshot) and [`screenAt`](ref:hub/src/bridge/screen.ts#screenAt):
-  replay `o` and `r` events into a headless xterm to redraw a screen now or at any moment.
+  replay `o` and `r` events into a headless xterm to redraw a screen now or at any moment. An ended session's
+  snapshot is its last frame ([`lastFrame`](ref:hub/src/bridge/screen.ts#lastFrame)): the log cut just before
+  Claude's last exit from the alternate screen (`?1049l`, found in the output joined across events, so an escape
+  split between two `o` events or sharing one with other bytes cuts at its first byte), which would leave the empty
+  normal screen under Claude's resume line ([[fullscreen-tui]]). A log with no `x`, or whose last `?1049h` follows
+  its last `?1049l` (killed in the alternate screen), is replayed whole. `tower screen <id>` reads the same frame;
+  with a time, the screen as it stood then.
 - [`resources`](ref:hub/src/bridge/resources.ts#resources): a session's [[leftover]] processes, from `ps`
   and `lsof` output. [`peers`](ref:hub/src/bridge/resources.ts#peers): the peer name of each session's own
   Claude, from Claude Code's registrations and the same `ps` output ([[agent-directory]]).

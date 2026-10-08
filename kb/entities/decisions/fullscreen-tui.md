@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html"]
+  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
 **Context.** A session's screen is replayed into a viewer's xterm with no scrollback (`scrollback: 0` on the tower
@@ -34,3 +34,9 @@ sets it.
 default renderer elsewhere keeps it outside the tower. Checked on 2.1.295 on a sandbox system: a session with
 `{"tui":"default"}` first in its argv still runs fullscreen, and the wheel over the tower page's terminal scrolls the
 transcript to "Jump to bottom".
+
+As Claude exits it leaves the alternate screen (`?1049l`) for the empty normal screen and prints its resume line
+there, so a whole log replays to that line alone. An ended session's screen is therefore cut just before that exit
+([`lastFrame`](ref:hub/src/bridge/screen.ts#lastFrame), [[log-reductions]]): its final frame, the conversation, last
+answer and status line. The resume line is dropped: the frame fills every row, there is no row under it to keep the
+line on without covering the status line, and every renderer offers Resume for a past session from the board.

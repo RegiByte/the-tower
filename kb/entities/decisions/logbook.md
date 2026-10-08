@@ -25,7 +25,8 @@
     "hub/renderers/tower3d/src/layout.ts#filingSpot",
     "hub/renderers/tower3d/src/layers.ts#FILINGS",
     "hub/renderers/tower3d/src/fixtures.ts#readConversations",
-    "hub/scripts/frames.scenario.js"
+    "hub/scripts/frames.scenario.js",
+    "hub/src/bridge/screen.ts#lastFrame"
   ],
   "links": [
     { "to": "brief-turns", "verb": "uses", "carries": "the lineage brief (briefHtml) under the session chips" },
@@ -59,7 +60,9 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   [`dressReplays`](ref:hub/renderers/tower3d/src/main.ts#dressReplays)). It stays on the monitor after the panel
   closes, so standing at the desk you see it; ● live or Esc in the panel ends it, and so does the worker leaving.
   A replay is the session's last screen, not a playback over time (the user's answer, 2026-10-07): the API serves a
-  screen rebuilt from the whole log and has no read of the screen at a time.
+  screen rebuilt from the whole log and has no read of the screen at a time. Since Claude runs in the alternate
+  screen ([[fullscreen-tui]]), the last screen is its final frame as it stood before it left the alternate screen
+  to exit ([`lastFrame`](ref:hub/src/bridge/screen.ts#lastFrame)), not the empty screen and resume line after it.
 - **The filing cabinet** ([`buildFiling`](ref:hub/renderers/tower3d/src/filing.ts#buildFiling)), on every floor,
   against the control room's outer wall between the back glass and the Running board, facing the same way
   ([`filingSpot`](ref:hub/renderers/tower3d/src/layout.ts#filingSpot)), with its collider. Every floor's archive is

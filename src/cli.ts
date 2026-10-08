@@ -42,7 +42,7 @@ import { heldBy, resumeName, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import type { Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
-import { screenAt } from './bridge/screen.ts'
+import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
 import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
@@ -226,8 +226,8 @@ const main = async (): Promise<void> => {
       break
     case 'screen': {
       const log = readSessionLog(id)
-      const until = rest[0] === undefined ? Infinity : Number(rest[0])
-      console.log((await screenAt(log, until)).join('\n'))
+      const rows = rest[0] === undefined ? await screenAt(lastFrame(log)) : await screenAt(log, Number(rest[0]))
+      console.log(rows.join('\n'))
       break
     }
     case 'config': {

@@ -20,6 +20,9 @@ Commit messages hold the detail.
   `aria-keyshortcuts` are drawn from it. ⌥Esc leaves a terminal, back to where focus was before it, and ⌃1–4 show the
   selected worker's Terminal, Brief, Changes and Reviews, from inside the terminal too. Tower 3D moves by the same
   keys. `MOVE_KEYS` and `moveOfKey` are deprecated for `commandOf` over `board.keys`.
+- A past session's screen (the tower page's terminal of an exited worker, Tower 3D's logbook replay, `tower screen`)
+  is its final frame, the conversation and status line as Claude last drew them, no longer the empty screen and resume
+  line Claude leaves as it exits the alternate screen.
 
 ## v1.1.0
 
