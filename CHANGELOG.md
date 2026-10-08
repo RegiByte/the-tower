@@ -12,7 +12,11 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
-## Unreleased
+## v1.2.0
+
+The second polish pass on the tower page, on the user's decisions from the first: a keymap, a chat brief, your own
+faces and text size, collections everywhere, and the host able to let a stranded worker go. It asks a **host
+restart** (letting go needs host protocol 2; everything else works before it) and adds a **config** key, `keys`.
 
 - **host restart** Let a stranded worker go (API 1.16): a worker the host stopped or lost leaves duty for the archive,
   still resumable, from its card's `let-go` (the page's "let go", `POST /let-go`, `tower let-go <CALLSIGN>`). The host
@@ -42,6 +46,30 @@ Commit messages hold the detail.
   `pressing` in the new `/press.js`). Toasts stack, wait while the pointer or focus is on them, and can carry an
   action (the new `/toasts.js`): after Kill, Resume; after deleting a draft, which no longer asks first, Undo, which
   puts its file back under its own id through the new verb `collection/restore` (API 1.17).
+- The brief reads as a chat, drawn inline by the tower page and Tower 3D's Logbook: your prompts and Claude's answers
+  as bubbles, oldest to newest, each with when Claude answered and how long it took (a turn's `answeredAt`). Long
+  answers fold behind "show all"; every bubble and code block has a copy button, and code blocks are highlighted.
+  Rendered or raw is a per-viewer setting (`tower.store` `brief.markdown`, also in the settings popover). Review notes
+  render as markdown (API 1.12).
+- Your appearance is one record per browser, `tower.prefs` in `/tower.js` (`get`, `set`, `on`, `attributes`): the
+  scheme, the text, heading and code faces (any face installed on your computer, by name), the terminal's font size,
+  motion and contrast, applied before the page paints, synced across tabs and sent to framed pages. The settings
+  popover gains Type and Accessibility, drawn from `PREF_SECTIONS` in `/settings.js`. Terminals draw in the code face
+  at the chosen size; a driven terminal's session gets the columns and rows that size leaves. New modules `/prefs.js`
+  and `/terminal.js` (API 1.13). `tower.schemeChoice`, `tower.chooseScheme`, the framed `scheme` verb and
+  `themeSection` are deprecated, kept until a major.
+- A session log holding an event the tower can't fold no longer takes the tower down: that session reads broken, with
+  the reason as its gist and on hover (`Card.broken`, `statusTitle` in `/cards.js`), its facts stopped at the event;
+  every other session lives on, and it can still be killed, resumed or let go. `tower ls` says it (API 1.14).
+- Every collection a floor keeps has a tray in the tower page: its items by title, tag, who kept them and when, opened
+  by kind (markdown, html framed without the API, images, text), deleted only when asked. Threads Tidy filed are under
+  the threads tray. A New worker prompt closed with Cancel or Esc, or whose start fails, is kept as a draft. ✎ beside
+  a floor's + starts a new draft, and + in the shell dock starts a shell in any of a floor's directories (API 1.10:
+  `/items.js`).
+- Text follows the browser's text size and a new Text size setting (Accessibility: 90–150%): every size is a step of
+  one rem type scale (`--fs-*`), spacing a 4 px scale (`--sp-*`), and the small uppercase label one `.eyebrow` (API
+  1.18). Overpass sits on its line without per-rule nudges. The tower page holds at 200% zoom: under 900 px the
+  sidebar is a rail that ⌘B opens over the main pane, and the worker bar wraps. Terminals keep the Terminal size.
 
 ## v1.1.0
 
