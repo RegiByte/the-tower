@@ -82,14 +82,17 @@ const checkoutDirsAt = (project: Project, cwd: string): string[] => {
 /** Whether a session can work in `cwd`: a directory of the project, or a worktree of one (`sessionDirs`). */
 export const inProject = (project: Project, cwd: string): boolean => checkoutDirsAt(project, cwd).includes(cwd)
 
+/** Why no session works in `cwd`, `undefined` when one can. */
+export const outsideProject = (project: Project, cwd: string): string | undefined =>
+  inProject(project, cwd) ? undefined : `"${cwd}" is neither a directory of project "${project.name}" (${projectDirs(project).join(', ')}) nor a worktree of one (<dir>/${WORKTREES_DIR}/<name>)`
+
 /**
  * The directories a session in `cwd` works in, its own first: the project's dirs, or the same worktree of each of them.
  * A session in a worktree never reaches the main checkouts, which belong to other workers.
  */
 export const sessionDirs = (project: Project, cwd: string): string[] => {
-  if (!inProject(project, cwd)) {
-    throw new Error(`"${cwd}" is neither a directory of project "${project.name}" (${projectDirs(project).join(', ')}) nor a worktree of one (<dir>/${WORKTREES_DIR}/<name>)`)
-  }
+  const outside = outsideProject(project, cwd)
+  if (outside) throw new Error(outside)
   return [cwd, ...checkoutDirsAt(project, cwd).filter((dir) => dir !== cwd)]
 }
 

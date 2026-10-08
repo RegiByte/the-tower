@@ -68,7 +68,7 @@ import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, rea
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
-import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import { briefFor, cut, deleteBranch, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { configPath, projectCollectionsPath, systemPaths } from '../shared/paths.ts'
 import { attachShell } from '../shared/client.ts'
@@ -631,6 +631,8 @@ const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =
   withProject(projectId, async (project, config) => {
     const id = newSessionId()
     const cwd = given ?? project.hub
+    const outside = outsideProject(project, cwd)
+    if (outside) return apiError('refused', outside)
     return lostWorktree(project, cwd) ?? host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
   })
 

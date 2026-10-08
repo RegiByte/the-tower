@@ -43,7 +43,7 @@ import type { Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
-import { callsignsOf, configuredUser, projectPlugins, sessionDirs, towerPort, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
+import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
 import { newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
 import { briefFor } from './worktrees.ts'
@@ -148,6 +148,8 @@ const main = async (): Promise<void> => {
       if (!project) throw new CliError(`No project "${id ?? ''}". Projects: ${Object.keys(config.projects).join(', ')}`, 'Usage: tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]')
       const prompt = positionals.join(' ') || undefined
       const cwd = values.cwd ?? project.hub
+      const outside = outsideProject(project, cwd)
+      if (outside) throw new CliError(outside)
       const session = newSessionId()
       print(await request(spawnRequest(session, callsignsOf(config)(session), id, cwd, sessionDirs(project, cwd), { ...values, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
       break

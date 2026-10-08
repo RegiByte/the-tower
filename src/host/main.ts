@@ -40,7 +40,7 @@ function spawnSession({ id, project: projectId, cwd, args, cols, rows }: Extract
   const config: Config = JSON.parse(readFileSync(paths.config, 'utf8'))
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
-  sessionDirs(project, cwd)
+  sessionDirs(project, cwd) // throws for a directory the project's sessions don't work in
 
   if (live.has(id) || existsSync(sessionLogPath(paths, id))) throw new Error(`Session "${id}" already exists`)
 
