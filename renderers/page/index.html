@@ -403,7 +403,7 @@ dialog .actions small { margin-right: auto; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme, type } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, moveOfKey, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
@@ -786,15 +786,11 @@ function leftHtml(c) {
     <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
 }
 
-/** The session a worker's conversation came from: its own earlier one when the callsign carried over. */
-const resumesRow = (c, ref) =>
-  !ref ? ['resumes', ''] : ref.callsign === c.callsign ? ['continues', `its session of ${when(ref.startedAt)}`] : ['resumes', `${ref.callsign}, session of ${when(ref.startedAt)}`]
-
 function detailsHtml(c) {
   const rows = [
     ['now', gistLine(c)],
     ...detailsOf(c),
-    resumesRow(c, current(c)?.resumes),
+    resumesRow(c, when),
     ['started', when(c.startedAt)],
     ['terminal', term && selected === c.id ? `${term.cols}×${term.rows} · ${isOwner() ? 'sized to this view, you type' : 'watching'}` : ''],
   ].filter(([, value]) => value)
@@ -1667,8 +1663,7 @@ async function showUrl(url) {
 }
 
 /** A kept item by its tag, as every renderer calls it; any other file by its name. */
-const shelfFileName = (project, entry, file) =>
-  'item' in entry ? floorOf(project).collections.flatMap((c) => c.items).find((i) => i.id === file).tag : base(file).replace(/\.md$/, '')
+const shelfFileName = (entry, file) => ('item' in entry ? tagOf(file) : base(file).replace(/\.md$/, ''))
 
 async function showCollection(entry, file) {
   const opened = shelfOpen
@@ -1677,7 +1672,7 @@ async function showCollection(entry, file) {
   if (shelfOpen !== opened) return
   if (!files.length) return ($('shelf-body').innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
   opened.files = files
-  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(shelfFileName(opened.project, entry, f))}</div>`).join('')}</div>
+  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(shelfFileName(entry, f))}</div>`).join('')}</div>
     <iframe id="shelf-doc" sandbox="allow-same-origin"></iframe>`
   showDoc(files.includes(file) ? file : files[0])
 }

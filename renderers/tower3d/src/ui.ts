@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom } f
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, MOVE_KEYS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
@@ -266,12 +266,12 @@ export function activityHtml(c: Card) {
 
 /** The rest of what is known about a worker, opened from its desk head: what it does now in full, and every detail. */
 export function detailsHtml(board: Board, c: Card) {
-  const resumes = current(c)?.resumes
+  const when = (ms: number) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   const rows = [
     ['now', gistLine(c)],
     ...detailsOf(c),
-    ['resumes', resumes?.callsign ?? ''],
-    ['started', new Date(c.startedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })],
+    resumesRow(c, when),
+    ['started', when(c.startedAt)],
   ].filter(([, value]) => value)
   return `<h3>${esc(c.callsign)}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
 }

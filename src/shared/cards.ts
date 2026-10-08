@@ -6,6 +6,8 @@ import type { Call, Replies, Verbs } from './api.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
 
+export { tagOf } from './tags.ts'
+
 /**
  * Cards in words: what every renderer says about a worker, so they all say the same. Each draws the words its own
  * way. The tower serves this module as `/cards.js`; nothing in the core imports it.
@@ -30,7 +32,7 @@ export const ATTENTION_MEANS: Record<Attention, string> = {
 
 /** The count of waits on the board that are yours, by `heededWaits`. */
 export const WAITING_NAME = 'waiting on you'
-export const WAITING_MEANS = 'workers whose next step is yours: a screen or a question to answer, or an answer or a failure nobody has typed to since. An answer for the worker that hired it waits on that worker, and a wait you dismissed is out of the count. N goes to the next one'
+export const WAITING_MEANS = 'workers whose next step is yours: a screen or a question to answer, or an answer or a failure nobody has typed to since. An answer for the worker that hired it waits on that worker, and a wait you dismissed is out of the count. N goes to the next one. Its lamp takes the colour of the loudest wait'
 
 /** Counts of workers by attention are over the workers on duty (`Card.onDuty`). */
 export const ON_DUTY_MEANS = 'counted over the workers on duty: running, or stopped and resumable'
@@ -563,6 +565,16 @@ export const hireRefusal = (cards: Card[], f: Floor, c: Card): string | undefine
 /** Where a worker works, short: its floor, then its branch in a worktree or its folder off the hub, and whose work it reviews. */
 export const whereLine = (c: Card, f: Floor | undefined) =>
   [f?.name ?? c.project, c.worktree ? branchLine(c) : c.cwd === f?.hub ? '' : base(c.cwd), pairLine(c)].filter(Boolean).join(' · ')
+
+/**
+ * The session a worker's conversation came from, as label and value, its start in `when`'s words: its own earlier
+ * session when the callsign carried over; none when it resumes nothing.
+ */
+export const resumesRow = (c: Card, when: (ms: number) => string): [string, string] => {
+  const ref = current(c)?.resumes
+  if (!ref) return ['resumes', '']
+  return ref.callsign === c.callsign ? ['continues', `its session of ${when(ref.startedAt)}`] : ['resumes', `${ref.callsign}, session of ${when(ref.startedAt)}`]
+}
 
 /** What a worker's header keeps out of sight until asked, as label and value: only what is known. */
 export const detailsOf = (c: Card): [string, string][] =>
