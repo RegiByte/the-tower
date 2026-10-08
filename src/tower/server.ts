@@ -52,7 +52,6 @@
  * `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
  */
 import { randomUUID } from 'node:crypto'
-import { buildSync } from 'esbuild'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
@@ -89,6 +88,7 @@ import { z } from 'zod'
 import { designCss, fonts } from '../shared/design.ts'
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
+import { bundled, MODULES, towerClient } from './served.ts'
 
 const PUBLISH_DEBOUNCE_MS = 150
 /** Time alone moves the board: a worker goes quiet long enough to look stuck. */
@@ -104,36 +104,13 @@ const STATIC: Record<string, [file: string, type: string]> = {
   '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
 }
 
-/** Shared modules renderers import, TypeScript served as JavaScript, each bundled with what it imports. */
-const MODULES: Record<string, string> = {
-  '/design.js': path.join(import.meta.dirname, '..', 'shared', 'design.ts'),
-  '/drafts.js': path.join(import.meta.dirname, '..', 'shared', 'drafts.ts'),
-  '/cards.js': path.join(import.meta.dirname, '..', 'shared', 'cards.ts'),
-  '/icons.js': path.join(import.meta.dirname, '..', 'shared', 'icons.ts'),
-  '/reviews.js': path.join(import.meta.dirname, '..', 'shared', 'reviews.ts'),
-  '/panels.js': path.join(import.meta.dirname, '..', 'shared', 'panels.ts'),
-  '/brief.js': path.join(import.meta.dirname, '..', 'shared', 'brief.ts'),
-  '/termkeys.js': path.join(import.meta.dirname, '..', 'shared', 'termkeys.ts'),
-  '/settings.js': path.join(import.meta.dirname, '..', 'shared', 'settings.ts'),
-  '/tips.js': path.join(import.meta.dirname, '..', 'shared', 'tips.ts'),
-}
-
-/** `/tower.js` speaks the API version this tower serves: the script names `API_VERSION` and is filled in from api.ts. */
-function towerClient() {
-  const script = readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8')
-  const declaration = 'const VERSION = API_VERSION'
-  if (!script.includes(declaration)) throw new Error(`tower.js no longer declares "${declaration}"`)
-  return script.replace(declaration, `const VERSION = ${JSON.stringify(API_VERSION)}`)
-}
-
 /** The design reaches shelf pages too, framed at an opaque origin: fonts and modules load only with CORS. */
 const ANY_ORIGIN = { 'access-control-allow-origin': '*' }
 
 function design(res: http.ServerResponse, url: string) {
   if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...ANY_ORIGIN }).end(designCss())
   if (MODULES[url]) {
-    const [bundle] = buildSync({ entryPoints: [MODULES[url]], bundle: true, format: 'esm', write: false }).outputFiles
-    return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(bundle.text)
+    return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(bundled(url).text)
   }
   const font = fonts.find((f) => url === `/fonts/${f.file}`)
   if (!font) return fail(res, 'not_found', `No face at "${url}"`)

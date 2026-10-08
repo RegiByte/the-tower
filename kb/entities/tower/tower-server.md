@@ -55,7 +55,9 @@ the module `/design.js` and its faces, readable from any origin, and the drafts 
 ([`cards.ts`](ref:hub/src/shared/cards.ts)): status words, the one-line gist, times, the order and keys that move
 between workers, and the icons they draw, `/icons.js` ([`icons.ts`](ref:hub/src/shared/icons.ts)), and the review threads' format,
 `/reviews.js` ([[review-threads]]), and the Changes and Reviews panels, `/panels.js` ([[shared-panels]]). Every module
-in [`MODULES`](ref:hub/src/tower/server.ts#MODULES) is served as JavaScript, bundled with what it imports.
+in [`MODULES`](ref:hub/src/tower/served.ts#MODULES) is served as JavaScript, bundled with what it imports
+([`bundled`](ref:hub/src/tower/served.ts#bundled)). What it serves for renderers to build on (`/tower.js`, `/design.css`
+and these modules) is part of the API's contract ([[renderer-api-contract]]).
 
 Shelf entries are served only when declared in the config, with a CSP `sandbox` header
 ([`sandboxed`](ref:hub/src/tower/server.ts#sandboxed)); a video (`.mp4`, `.webm`) gets `nosniff` instead: it runs no

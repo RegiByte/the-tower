@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The renderer API is declared once, as schemas",
-  "summary": "Every verb of the renderer API is a zod schema of its input and reply in one module; the tower parses every request with it and answers failures as typed errors, the board carries ready requests beside its verbs, and the schemas are served as JSON Schema for renderers in any language. Its version is major.minor, and only a major breaks a renderer.",
+  "summary": "Every verb of the renderer API is a zod schema of its input and reply in one module; the tower parses every request with it and answers failures as typed errors, the board carries ready requests beside its verbs, and the schemas are served as JSON Schema for renderers in any language. Its version is major.minor, and only a major breaks a renderer. What the tower serves for renderers to build on (/tower.js, /design.css and the shared modules) is part of the contract: removing or renaming an export is a major, adding one a minor, held by a test over a checked-in list of every served name.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/server.ts#towerClient", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS"]
 }
 ---
 **Problem.** The [[renderer-api]] was typed but never checked. `Verbs` in `shelf-page.ts` is a TypeScript type the
@@ -60,7 +60,7 @@ what went wrong.
   is the same whole-millisecond mtime the board shows. The draft editor turns the refusal into its conflict.
 - **One version on every transport.** `GET /board` sends `{v, board}`, as the tunnel's `board` message does, and
   `tower.js` checks `v` on both. The version lives only in [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION): the tower
-  fills it into `tower.js` as it serves the script ([`towerClient`](ref:hub/src/tower/server.ts#towerClient)).
+  fills it into `tower.js` as it serves the script ([`towerClient`](ref:hub/src/tower/served.ts#towerClient)).
 - **A version is `major.minor`, and only a major breaks.** An addition an older renderer reads past (a board field, a
   verb, a read, a stream) moves the minor. A rename, a removal or a changed meaning moves the major, the minor returns
   to 0, and CHANGELOG.md says why. `tower.js` reads a board from a tower of its own major at its own minor or newer, and
@@ -70,6 +70,21 @@ what went wrong.
   for a renderer that checks a feature. The public release starts at `1.0`; before it, one integer moved on every
   change a renderer had to follow, up to 23 (the history of those moves is in the decisions that made them: [[blob-reads]],
   [[agent-show]], [[tower-cuts-worktrees]], [[attention-list]], [[watching-status]], [[board-errors]], [[tidy]], [[board-archive]]).
+
+- **The served modules are part of the contract** (2026-10-08). They are how the core hands its capabilities to
+  renderers: [`MODULES`](ref:hub/src/tower/served.ts#MODULES) (`/cards.js`, `/panels.js`, `/drafts.js`, `/icons.js`,
+  `/design.js`, `/reviews.js`, `/brief.js`, `/termkeys.js`), `/design.css` (its custom properties and classes) and
+  `/tower.js` (the members of `window.tower`). A renderer copied out of the checkout imports them by URL, so they are
+  versioned with the API: removing or renaming a name is a major, with a CHANGELOG line saying what to use instead;
+  adding one is a minor. Changes are announced, not frozen; the core makes a best effort to avoid majors. The
+  libraries the tower page loads (`/xterm.js`, `/marked.js`…) are those libraries' own APIs, outside the contract.
+  [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name with the API major it was
+  written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major hasn't
+  moved, saying what to do (keep the name, as a deprecated alias if need be, or move the major and write the CHANGELOG
+  line), and otherwise writes the list anew, so an addition shows in the diff without failing. Customizing is a
+  copy of a renderer outside the checkout with the user's own layer on top, and there is no plugin API: the state is
+  outside the tower, the API does the work, and the modules are a convenience over it. [`docs/extending.md`](ref:hub/docs/extending.md)
+  is the user's guide to it.
 
 **Alternatives considered.**
 - Hand-written parsers beside the types: a second copy of every shape, which drifts.
@@ -84,10 +99,19 @@ what went wrong.
 - One integer that moves on every change (the scheme before 1.0): every renderer in the repo moves with it, but one
   kept apart breaks on each addition it would have read past.
 - Full semver for the API: a patch says nothing to a renderer, which reads the same shapes before and after one.
+- Served modules outside the contract, free to change: every copied renderer breaks silently on a rename, with no
+  version to pin and nothing in the CHANGELOG.
+- Served modules frozen: they would collect dead names, and the shared code would stop moving with the renderers
+  that need it.
+- A plugin API (hooks into the tower page's code): a second contract over one renderer's internals, while the
+  config, the logs and the collections already hold the whole state and the API already does every act.
+- A test that fails on any change to the list, additions included: every new export would need a hand edit of the
+  list. Written by the test, the list moves in the same diff, where a reviewer reads it.
 - The pin as a call (`tower.require('1.3')`): it would run after the script set itself up, and a page could forget it;
   the script URL is read before anything else, by the script itself.
 
 **Impact.** A renderer in any language can read `/schema`, build requests from the board's `calls`, and act on
 `code`. Requests the tower used to coerce now fail as `invalid`. Both renderers drop their hand mapping and
 `current()` for requests, and the tower page loses its own copy of `tower.js`. Old pages break once on a major
-bump, by design, and never on a minor.
+bump, by design, and never on a minor. Since 2026-10-08 the same holds for the served modules: `npm test` stops a
+removal that doesn't move the major.
