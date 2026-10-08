@@ -25,6 +25,7 @@
  *   tower review <CALLSIGN> [tell]  hire a reviewer of a worker's work, in a fork of its checkout (its card's `review`);
  *                                   with `tell`, the reviewer sends its notes to that worker when done
  *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed (its card's `send-home`)
+ *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
  *   tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>]   start a worker on this floor, placed
  *                                   as a quick hire in a renderer places it, on a prompt: the text of an item of the
  *                                   floor's collections, or stdin; refused past the floor's `hiring` limits
@@ -580,6 +581,15 @@ switch (verb) {
     console.log(`Sent home ${sent.map((c) => c.callsign).join(', ')}: their sessions ended, and each can be resumed.`)
     break
   }
+  case 'let-go': {
+    if (!flag) throw new CliError('Usage: tower let-go <CALLSIGN>')
+    const card = await cardNamed(await readBoard(), flag)
+    const call = card.calls['let-go']
+    if (!call) throw new CliError(`${card.callsign} is not stranded (${statusName(card)}): only a worker the host stopped or lost, waiting to be resumed, is let go`)
+    await command(...call)
+    console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
+    break
+  }
   case 'send': {
     if (!flag) throw new CliError('Usage: tower send <CALLSIGN>')
     const board = await readBoard()
@@ -595,7 +605,7 @@ switch (verb) {
   }
   default:
     throw new CliError(
-      `Unknown command "${verb ?? ''}". The user's: init, doctor, config check, up, down, update, spawn, resume, submit, kill, live, ls, ps, reap, screen, attach. A worker's: whoami, agents [--all], agent <CALLSIGN>, show <file|url> [title], open <url> [title], reveal <path>, edit <path> [line], keep [<collection> [file] [name <words>]], kept [collection], read <tag|id>, thread [checkout], note [on <checkout>] [re n<k>] [repo:path:lines …], send <CALLSIGN>, review <CALLSIGN> [tell], hire [<tag|id>] […], home <CALLSIGN>, api [name]`,
+      `Unknown command "${verb ?? ''}". The user's: init, doctor, config check, up, down, update, spawn, resume, submit, kill, live, ls, ps, reap, screen, attach. A worker's: whoami, agents [--all], agent <CALLSIGN>, show <file|url> [title], open <url> [title], reveal <path>, edit <path> [line], keep [<collection> [file] [name <words>]], kept [collection], read <tag|id>, thread [checkout], note [on <checkout>] [re n<k>] [repo:path:lines …], send <CALLSIGN>, review <CALLSIGN> [tell], hire [<tag|id>] […], home <CALLSIGN>, let-go <CALLSIGN>, api [name]`,
       'the tower:handbook skill says what each is for',
     )
 }

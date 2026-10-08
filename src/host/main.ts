@@ -6,7 +6,7 @@
  *
  * Sessions live exactly as long as this process.
  */
-import { createWriteStream, existsSync, mkdirSync, readFileSync, type WriteStream } from 'node:fs'
+import { appendFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, type WriteStream } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import path from 'node:path'
@@ -15,6 +15,7 @@ import { sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type Mod
 import { configPath, sessionLogPath, systemPaths } from '../shared/paths.ts'
 import { frame, HOST_PROTOCOL, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { claimSocket } from '../shared/socket.ts'
+import { readHeader } from '../tail.ts'
 import { elapsed, hookFact, sessionArgv, sessionEnv } from './session.ts'
 
 type LiveSession = { header: SessionHeader; proc: pty.IPty; log: WriteStream }
@@ -87,6 +88,21 @@ function spawnSession({ id, project: projectId, cwd, args, cols, rows }: Extract
   return id
 }
 
+/**
+ * A `tower.*` fact about a session: a running one's goes where its output does, any other's is appended to its log,
+ * once the host that ran it, this one or an earlier one, has closed it.
+ */
+function appendFact(id: string, fact: ModEvent) {
+  if (!fact.hook_event_name.startsWith('tower.')) throw new Error(`Only tower.* facts are appended, not "${fact.hook_event_name}"`)
+  const s = live.get(id)
+  if (s) return void append(s, [now(s), 'h', fact])
+  const file = sessionLogPath(paths, id)
+  if (!existsSync(file)) throw new Error(`No log of session "${id}" to append to`)
+  if ([...ending].some((log) => log.path === file)) throw new Error(`Session "${id}" is still writing its exit`)
+  const event: LogEvent = [elapsed(readHeader(file)!.header.startedAt, Date.now()), 'h', fact]
+  appendFileSync(file, `${JSON.stringify(event)}\n`)
+}
+
 function handle(msg: ToHost): FromHost {
   switch (msg.t) {
     case 'spawn':
@@ -105,6 +121,9 @@ function handle(msg: ToHost): FromHost {
     }
     case 'kill':
       liveSession(msg.id).proc.kill()
+      return { t: 'ok' }
+    case 'fact':
+      appendFact(msg.id, msg.fact)
       return { t: 'ok' }
     case 'live':
       return { t: 'live', ids: [...live.keys()], protocol: HOST_PROTOCOL }

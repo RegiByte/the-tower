@@ -198,6 +198,7 @@
       "HOST_NAME",
       "HOST_OUTDATED",
       "KILL_COST",
+      "LET_GO_MEANS",
       "LIMITS_STALE_MS",
       "MODELS",
       "MOVE_KEYS",
@@ -295,6 +296,7 @@
       "statusName",
       "statusTitle",
       "stepFrom",
+      "strandedOf",
       "tagOf",
       "threadCheckoutOf",
       "tidiedLine",
@@ -309,6 +311,7 @@
       "wordsOf",
       "workerIn",
       "workerNamed",
+      "workersIn",
       "worktreeBranch",
       "worktreeRisk"
     ],

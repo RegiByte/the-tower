@@ -1,10 +1,11 @@
 import type net from 'node:net'
+import type { ModEvent } from './model.ts'
 
 /**
  * The host protocol's version, sent in every `live` reply. A change to a message to or from the host bumps it, so a
  * client that outlived a host restart's code change can say the running host is older than itself.
  */
-export const HOST_PROTOCOL = 1
+export const HOST_PROTOCOL = 2
 
 /** Control messages to the host. Every request gets exactly one reply, in order. */
 export type ToHost =
@@ -13,6 +14,11 @@ export type ToHost =
   | { t: 'write'; id: string; data: string }
   | { t: 'resize'; id: string; cols: number; rows: number }
   | { t: 'kill'; id: string }
+  /**
+   * Appends a `tower.*` fact to a session's log, as a hook event at the host's time: a running session's, or the log
+   * of one this host does not run (stopped or lost with an earlier host), which no other process writes.
+   */
+  | { t: 'fact'; id: string; fact: ModEvent }
   | { t: 'live' }
 
 /** What a running host says of itself: the ids of its running sessions and the protocol it speaks. */

@@ -158,13 +158,15 @@ export type Card = {
   sent: CardSent[]
   /** Ended by the host stopping or dying, while nobody meant it to end. */
   stranded: boolean
+  /** When the user let it go, stranded (epoch ms): off duty, its conversation still resumable from the archive. */
+  letGoAt?: number
   /** Not running, holding a conversation nobody resumed, which can't be resumed where it ran: why. */
   unresumable?: Unresumable
   /** The conversations Claude saved, in order: the last is the one a resume continues. */
   conversations: CardConversation[]
   /** The session that carries this worker on, holding its callsign and showings from then on. */
   continuedBy?: SessionRef
-  /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be. */
+  /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go. */
   onDuty: boolean
   /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
   seat?: Seat
@@ -363,6 +365,8 @@ const card = (
     resumedBy,
     ...conversationOffers(header.id, id, live, !unresumable, resumedBy),
   }))
+  const letGoAt = facts.letGoAt === undefined ? undefined : header.startedAt + facts.letGoAt * 1000
+  const awaitsResume = stranded && letGoAt === undefined && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy
   const shown = shownBy(worker)
   const heardAt = facts.heardAt === undefined ? undefined : header.startedAt + facts.heardAt * 1000
   const continuedBy = [...continued].find(([, before]) => before === session)?.[0].header.id
@@ -413,11 +417,12 @@ const card = (
       .map(([at, path]) => ({ path, at, shown: shown.some((s) => s.target === path) })),
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     stranded,
+    letGoAt,
     unresumable,
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    onDuty: live || (stranded && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy),
-    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined),
+    onDuty: live || awaitsResume,
+    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume),
   }
 }
 

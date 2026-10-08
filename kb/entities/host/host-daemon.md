@@ -5,7 +5,7 @@
   "summary": "The detached Node process that spawns Claude sessions in PTYs, relays control requests, and appends output, input, hooks and exits to each session's log.",
   "in": "host",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost"],
+  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost"],
   "links": [
     { "to": "claude-code", "verb": "triggers", "carries": "a PTY running config argv + --plugin-dir (the tower mod, which declares the hooks) + client args (its --settings among them), with the cwd checked by sessionDirs, with TOWER_SESSION_ID and TOWER_HOOKS_SOCKET in a scrubbed env" },
     { "to": "system-root", "verb": "writes", "carries": "sessions/<id>.jsonl: header, then o/i/r/h/x events" },
@@ -16,8 +16,10 @@
 `npm run host` (foreground) or `tower up` (detached). Two sockets in [[system-root]]:
 
 - `control.sock`: newline-delimited JSON, one reply per request in order:
-  `spawn {id, project, cwd, args, cols, rows} | write | resize | kill | live`. A spawn names its session: the host
-  refuses an id it runs or holds a log for.
+  `spawn {id, project, cwd, args, cols, rows} | write | resize | kill | fact | live`. A spawn names its session: the host
+  refuses an id it runs or holds a log for. `fact {id, fact}` appends a `tower.*` event as an `h` event at the
+  host's time: a running session's like a hook, any other's to its plain log once closed, which is how a fact
+  reaches a session an earlier host ran ([[let-go]]); an archived or unknown log is refused.
   A `spawn` is refused unless `cwd` is one of the project's dirs. The `live` reply carries the ids of the running
   sessions and [`HOST_PROTOCOL`](ref:hub/src/shared/protocol.ts#HOST_PROTOCOL), the protocol's version, bumped
   by any change to a host message: the board says `hostOutdated` while the running host speaks another (one

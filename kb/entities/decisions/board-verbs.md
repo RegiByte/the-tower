@@ -26,7 +26,8 @@ a fixed order, the first being the thing's primary verb.
   conversation's `resume` or `goto`; `submit` while at Claude's composer (idle, working, done or failed:
   not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout is there and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone, live or not, is `card.worktree.gone`, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
   [[leftover]]s, live or not; `send-home` on a worker in a crew while any of it runs, its call a list of kills, the
-  deepest first ([[crews]]).
+  deepest first ([[crews]]); `let-go` while it is stranded and on duty, its latest conversation not yet resumed
+  ([[let-go]]).
 - Each of a card's `resources`, a process it left running
   ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)): `reap`, always, its call
   `['reap/process', { id, pid }]`, which the tower refuses for a pid that isn't one of that session's leftovers.

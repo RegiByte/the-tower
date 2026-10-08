@@ -57,6 +57,8 @@ export type Facts = {
   /** When Claude last raised a hook or a mod event, its subagents' included. */
   heardAt?: number
   hostStopped?: boolean
+  /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
+  letGoAt?: number
   /**
    * What Claude spent, each reading's increase on its conversation's running total (`costUsd`), at the reading's time
    * (epoch ms). A conversation new to the session starts from zero; a resumed one from its first reading here.
@@ -107,6 +109,9 @@ export const initialFacts = (header: SessionHeader): Facts => ({
   spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], spawns: [], limitReadings: {},
   pages: [], sent: [], received: [],
 })
+
+/** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
+export const LET_GO = 'tower.letGo'
 
 /** The board is pushed on every change: a few short lines per worker. */
 const SAYS_KEPT = 3
@@ -255,17 +260,20 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
     const [cols, rows] = event[2].split('x').map(Number)
     return { ...next, cols, rows }
   }
+  if (isLetGo(event)) return { ...next, letGoAt: event[0] }
   if (event[1] === 'h') return hookFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
   return next
 }
 
+const isLetGo = (event: LogEvent) => event[1] === 'h' && event[2].hook_event_name === LET_GO
+
 /**
  * The step every fold of a log takes. An event the fold can't follow breaks the session where it stands: its facts
- * stay as they were before it, `broken` says why, and nothing after it is folded, so one bad line costs its own
- * session and no other reader.
+ * stay as they were before it, `broken` says why, and nothing after it is folded but the user letting it go, so one
+ * bad line costs its own session and no other reader.
  */
 export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent): Facts => {
-  if (facts.broken) return facts
+  if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
   try {
     return stepAfter(startedAt, facts, event)
   } catch (err) {

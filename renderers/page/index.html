@@ -88,10 +88,12 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .kept-fold { display: block; margin: 4px 0 0; padding: 2px 8px; border: none; background: none; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .kept-fold:hover { color: var(--ink); }
 .worktrees { padding: 8px 2px 0; }
-.wt { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); }
-.wt:hover { background: var(--panel-2); }
+.wt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: var(--radius); font-size: 12px; color: var(--muted); }
 .wt .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wt .n b { color: var(--ink); font-weight: 700; }
+.wt .who-line { flex-basis: 100%; padding-left: 10px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wt .who { font-weight: 700; color: var(--ink); text-decoration: none; }
+.wt .who:hover { text-decoration: underline; }
 .wt .st { flex: none; font-size: 10px; letter-spacing: .04em; color: var(--faint); }
 .wt.at-risk .st, .wt.lost .st { color: var(--needs-text); }
 .wt button { flex: none; padding: 0 7px; height: 20px; font-size: 11px; }
@@ -113,7 +115,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .st.stuck, .pill.stuck { color: var(--needs-text); }
 .sess .line { margin-top: 4px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
-.sess .act { margin-top: 6px; }
+.sess .act { margin-top: 6px; display: flex; gap: 6px; }
 .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-left: 10px; padding-left: 8px; border-left: 2px solid var(--line); }
 .sess.gone { opacity: .55; }
 .gone-home { justify-self: start; padding: 1px 8px; font-size: 11px; font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
@@ -426,7 +428,7 @@ button.held { opacity: .45; cursor: not-allowed; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -531,9 +533,12 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
+
+/** Let a stranded worker go, asked first. */
+const letGoHtml = (c, label) => !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go="${c.id}" data-tip="${esc(`let ${callsign(c.id)} go: ${LET_GO_MEANS}`)}">${label}</button>`
 
 /** A worker and everyone under it. */
 const wholeCrewHtml = (cards, c) => {
@@ -612,11 +617,15 @@ const worktreeHtml = (f, w) => {
   const risk = worktreeRisk(w)
   const where = w.repos[0].path
   const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
+  const workers = workersIn(f, w.name)
+  const resumable = workers.find((c) => c.calls.resume)
   return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
+    ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, '↻', 'ic') : `<button class="ic" data-resume="${esc(JSON.stringify(resumable.calls.resume))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">↻</button>`}
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
     ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
     ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${workers.length ? `<span class="who-line">${workers.map((c) => `<a class="who" href="#${c.id}" data-tip="${esc(`${c.callsign} · ${statusName(c)}`)}">${c.callsign}</a> <span>${esc(statusName(c))}</span>`).join(' · ')}</span>` : ''}
   </div>`
 }
 
@@ -694,6 +703,7 @@ function traysHtml(f) {
   const landed = landedOf(f).length
   const kept = keptCollections(f)
   const tidy = can(f, 'tidy')
+  const stranded = strandedOf(f).length
   const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" data-tip="${title}">${label}</button>`
   const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
@@ -701,6 +711,7 @@ function traysHtml(f) {
     trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
     (threads || landed) && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
     ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
+    stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${glyph('↻')} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker the host stopped or lost: asked first, listing them">${glyph('↻')} resume all <b>${stranded}</b> stranded</button>`),
     past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
     tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
@@ -805,6 +816,7 @@ function barHtml(c) {
   repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">ⓘ</button>
     ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
+    ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
     <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">✕</button>`)
@@ -2327,6 +2339,22 @@ async function pressOnce(key, button, request) {
   }
 }
 
+/** Every stranded worker of a floor resumed, one after another, asked first with the list. */
+async function resumeAll(button, f) {
+  const stranded = strandedOf(f)
+  if (!confirm(`Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)}`).join('\n')}`)) return
+  const failed = []
+  await pressOnce(`resume-all ${f.id}`, button, async () => {
+    for (const c of stranded) await tower.run(c.calls.resume).catch((err) => failed.push(`${c.callsign}: ${err.message}`))
+  })
+  toast(failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`)
+}
+
+async function letGo(c) {
+  if (!confirm(`Let ${callsign(c.id)} go?\n\nIt goes ${LET_GO_MEANS}.`)) return
+  if (await told(tower.run(c.calls['let-go']))) toast(`Let ${callsign(c.id)} go: it is in the archive`)
+}
+
 async function resume(button, call) {
   const reply = await pressOnce(JSON.stringify(call), button, () => tower.run(call)).catch((err) => toast(err.message))
   if (reply?.t === 'spawned') selectArriving(reply.id)
@@ -2400,6 +2428,10 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-send]')) return sendNotes(findCard(selected))
   const thread = e.target.closest('[data-thread]')?.dataset.thread
   if (thread) return openThread(...thread.split('|'))
+  const resumeAllButton = e.target.closest('[data-resume-all]')
+  if (resumeAllButton) return resumeAll(resumeAllButton, floorOf(resumeAllButton.dataset.resumeAll))
+  const letGoId = e.target.closest('[data-let-go]')?.dataset.letGo
+  if (letGoId) return letGo(findCard(letGoId))
   const resumeButton = e.target.closest('[data-resume]')
   if (resumeButton) return resume(resumeButton, JSON.parse(resumeButton.dataset.resume))
   if (e.target.closest('[data-side]')) return toggleSide()

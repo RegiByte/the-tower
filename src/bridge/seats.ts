@@ -3,8 +3,9 @@ import type { Card } from './board.ts'
 /** Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the author it reviews (the author's card id). */
 export type Seat = { n: number } | { beside: string }
 
-/** When a worker left its desk: a stranded one when its conversation was resumed, any other when it stopped. */
+/** When a worker left its desk: a stranded one when it was let go or its conversation resumed, any other when it stopped. */
 function leftAt(c: Card, everyone: Card[]) {
+  if (c.letGoAt !== undefined) return c.letGoAt
   const resumer = c.stranded ? c.conversations.at(-1)?.resumedBy : undefined
   return resumer ? everyone.find((r) => r.id === resumer.id)!.startedAt : c.enteredAt
 }

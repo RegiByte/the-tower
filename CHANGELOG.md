@@ -14,6 +14,11 @@ Commit messages hold the detail.
 
 ## Unreleased
 
+- **host restart** Let a stranded worker go (API 1.16): a worker the host stopped or lost leaves duty for the archive,
+  still resumable, from its card's `let-go` (the page's "let go", `POST /let-go`, `tower let-go <CALLSIGN>`). The host
+  appends it as a `tower.letGo` fact through a new control message (host protocol 2); until the host is restarted,
+  letting go answers that the running host is too old. A floor with stranded workers offers "resume all N", asked
+  first with the list, and a worktree's row names the workers in it, each a link, with ↻ for its last worker.
 - Every explanation in the tower page, the shared views and Tower 3D's HUD and panels is a `data-tip`, shown by the
   shared tooltip on hover and on keyboard focus; icon-only controls carry an `aria-label`. `title` stays only on
   iframes and markdown links. A renderer that draws the shared views without `watchTips` (`/tips.js`) shows none of

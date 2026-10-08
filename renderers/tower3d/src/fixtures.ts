@@ -92,6 +92,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   }]
   const stranded = f.status === 'lost' || f.hostStopped === true
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
+  const awaitsResume = stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy
   return {
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
@@ -102,8 +103,8 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, unresumable: f.unresumable, conversations,
-    onDuty: live || (stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy),
-    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined),
+    onDuty: live || awaitsResume,
+    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined, awaitsResume),
   }
 }
 

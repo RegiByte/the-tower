@@ -45,6 +45,7 @@ When told of new notes, or `tower thread` lists some: read the thread, act on ea
 Hire when the user asks, or when the task calls for work done apart from yours. The hire has none of your context, nor your unpushed work: give it the goal, paths, checks and what done means, and say who you are and how to report back (a message to your **message as** name, or a note on a thread). Tell the user whom you hired and why; `tower agent <CALLSIGN>` follows it.
 
 - `tower home <CALLSIGN>`: ends that worker and everyone under it (resumable). Send your hires home once you have what you need. Read `tower agents` first, and never name your hirer or anyone above you unless the user asks.
+- `tower let-go <CALLSIGN>`: takes a worker stranded by a host restart (stopped or lost, resumable) off duty without resuming it; it stays resumable from the floor's archive. Only when the user asks.
 
 The floor limits how deep hires chain and how many of yours run at once. When `tower hire` refuses, don't work around it: tell the user what you would hire and why. `tower review` is never limited. When a worker hired you, report to it as its prompt asks.
 

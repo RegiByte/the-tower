@@ -14,9 +14,10 @@ import type { WorktreeState } from './worktrees.ts'
 /**
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
- * ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew.
+ * ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a
+ * stranded worker off duty, its conversation left resumable.
  */
-export type CardVerb = 'drive' | 'submit' | 'resume' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'send-home'
+export type CardVerb = 'drive' | 'submit' | 'resume' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home'
 export type ConversationVerb = 'resume' | 'goto'
 /** A process a session left running can always be ended on its own. */
 export type ResourceVerb = 'reap'
@@ -52,7 +53,8 @@ const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: Session
  */
 export type ReviewTarget = { project: string; checkout: string; callsign: string }
 
-const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined): CardVerb[] => {
+/** `awaitsResume`: stranded, on duty until its latest conversation is resumed or it is let go. */
+const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined, awaitsResume: boolean): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
@@ -63,6 +65,7 @@ const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedB
     ...(conversations.length > 0 && review ? ['review' as const] : []),
     ...(leftovers > 0 ? ['reap' as const] : []),
     ...(live ? ['kill' as const] : []),
+    ...(awaitsResume ? ['let-go' as const] : []),
   ]
 }
 
@@ -80,7 +83,7 @@ const worktreeVerbs = (state: WorktreeState): WorktreeVerb[] => (state === 'lost
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
-export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'send-home'?: Call<'kill'>[] }
+export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[] }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
 /** `spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none. */
@@ -106,8 +109,9 @@ export const cardOffers = (
   conversations: { id: string; resumedBy?: SessionRef }[],
   leftovers: number,
   review: ReviewTarget | undefined,
+  awaitsResume: boolean,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, resumable, conversations, leftovers, review)
+  const verbs = cardVerbs(status, resumable, conversations, leftovers, review, awaitsResume)
   return {
     verbs,
     calls: callsOf(verbs, {
@@ -116,6 +120,7 @@ export const cardOffers = (
       review: (): Call<'spawn'> => ['spawn', { project: review!.project, cut: { from: review!.checkout }, prompt: reviewPrompt(review!.callsign, false) }],
       reap: (): Call<'reap'> => ['reap', { id }],
       kill: (): Call<'kill'> => ['kill', { id }],
+      'let-go': (): Call<'let-go'> => ['let-go', { id }],
     }),
   }
 }

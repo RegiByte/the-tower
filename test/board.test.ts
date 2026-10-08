@@ -192,7 +192,20 @@ test('verbs: a live session is driven and killed, takes a prompt at its composer
   assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'kill'])
   assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
-  assert.deepEqual(at(140, []).verbs, ['resume', 'brief'])
+  assert.deepEqual(at(140, []).verbs, ['resume', 'brief', 'let-go'])
+})
+
+test('let go: a stranded worker leaves duty for the archive on the tower.letGo the host appends, its conversation still resumable', () => {
+  const log = homed(fixture('interrupts'))
+  const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }
+  const [stranded] = cardsOf([lost])
+  assert.equal(stranded.onDuty, true)
+  assert.deepEqual(stranded.calls['let-go'], ['let-go', { id: log.header.id }])
+  const [letGo] = cardsOf([{ ...lost, events: [...lost.events, [150, 'h', { hook_event_name: 'tower.letGo' }]] }])
+  assert.equal(letGo.onDuty, false)
+  assert.equal(letGo.letGoAt, log.header.startedAt + 150_000)
+  assert.deepEqual(letGo.verbs, ['resume', 'brief'])
+  assert.equal(letGo.heardAt, stranded.heardAt)
 })
 
 test('verbs: a stopped session resumes its conversation; once resumed, it leads to whoever resumed it', () => {
@@ -462,5 +475,8 @@ test("a Stop the fold can't follow breaks its session there: its facts stop, the
   const [killed] = cardsOf([log])
   assert.equal(killed.status, 'lost')
   assert.equal(killed.attention, 'broken')
-  assert.deepEqual(killed.verbs, ['resume', 'brief'])
+  assert.deepEqual(killed.verbs, ['resume', 'brief', 'let-go'])
+  const [letGo] = cardsOf([{ ...log, events: [...log.events, [20, 'h', { hook_event_name: 'tower.letGo' }]] }])
+  assert.equal(letGo.onDuty, false)
+  assert.equal(letGo.broken?.code, 'h')
 })

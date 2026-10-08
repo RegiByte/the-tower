@@ -3,7 +3,7 @@
  * to it, the items of every collection, the host's live set, the terms daemon's shells, what sessions left
  * running on the machine, and what git says about the tower's worktrees in every project dir.
  */
-import { mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs'
 import path from 'node:path'
 import { factsAfter, type Session } from './bridge/facts.ts'
 import { foldLog } from './checkpoints.ts'
@@ -160,6 +160,19 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     tails.set(id, stop)
   }
 
+  /**
+   * A log no longer tailed (its session exited) that grew holds facts appended after its exit (`tower.letGo`): it is
+   * folded again, from its checkpoint.
+   */
+  const refoldGrown = (file: string) => {
+    const id = logIdOf(file)
+    if (!sessions.has(id) || tails.has(id) || isArchived(file)) return
+    const logPath = path.join(paths.sessions, file)
+    if (!existsSync(logPath) || statSync(logPath).size === logs.get(id)!.bytes) return
+    track(file)
+    onChange()
+  }
+
   /** The directory changes on every append; only a newly tracked log or a log archived changes the system. */
   const trackNew = () => {
     let changed = false
@@ -262,7 +275,10 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   }
 
   trackNew()
-  watch(paths.sessions, trackNew)
+  watch(paths.sessions, (_, file) => {
+    if (file && logFilesIn([file]).length) refoldGrown(file)
+    trackNew()
+  })
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)

@@ -10,7 +10,7 @@ import { isDeepStrictEqual } from 'node:util'
 import { deserialize, serialize } from 'node:v8'
 import { factsAfter, initialFacts, type Facts, type Session } from './bridge/facts.ts'
 import type { SessionHeader } from './shared/model.ts'
-import { factEvents, logSize, noEvents, readEvents, readHeader } from './tail.ts'
+import { afterBreak, factEvents, logSize, readEvents, readHeader } from './tail.ts'
 
 export type Checkpoint = { fold: string; header: SessionHeader; offset: number; facts: Facts }
 
@@ -87,14 +87,14 @@ const checkpointFor = (cache: string, header: SessionHeader, size: number): Chec
 /**
  * The session's facts, folded from its log in `cache`'s checkpoint on, and the byte offset where the log's next line
  * starts; the checkpoint moves there. `undefined` while the host hasn't written the log's header. A broken session
- * (`Facts.broken`) folds nothing more, its checkpoint included: one resumed before the break meets it again.
+ * (`Facts.broken`) folds nothing more but being let go, its checkpoint included: one resumed before the break meets it again.
  */
 export const foldLog = (cache: string, logPath: string): { session: Session; offset: number } | undefined => {
   const head = readHeader(logPath)
   if (!head) return undefined
   const { header } = head
   const from = checkpointFor(cache, header, logSize(logPath)) ?? { offset: head.offset, facts: initialFacts(header) }
-  const { events, offset } = readEvents(logPath, from.offset, from.facts.broken ? noEvents : factEvents(from.facts.state))
+  const { events, offset } = readEvents(logPath, from.offset, from.facts.broken ? afterBreak : factEvents(from.facts.state))
   const facts = events.reduce(factsAfter(header.startedAt), from.facts)
   if (offset > from.offset) writeCheckpoint(cache, { fold: FOLD, header, offset, facts })
   return { session: { header, facts }, offset }

@@ -61,9 +61,12 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
   gone: "can't be resumed: its worktree's folder is gone",
 }
 
-/** A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says. */
+/**
+ * A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says,
+ * until the user lets it go.
+ */
 export const statusName = (c: Card) =>
-  c.broken ? 'broken' : c.stranded ? `${c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
@@ -166,6 +169,12 @@ export const tidiedLine = (r: Replies['tidy']) => {
 
 /** A floor's past workers, the newest first: those the board carries, and its archive as read (`tower.archive`). */
 export const pastOf = (f: Floor, archive: Card[]) => [...f.cards.filter((c) => !c.onDuty), ...archive].sort((a, b) => b.startedAt - a.startedAt)
+
+/** A floor's workers stranded by the host, waiting to be resumed or let go, the first started first. */
+export const strandedOf = (f: Floor) => f.cards.filter((c) => c.calls['let-go'] && c.calls.resume).sort((a, b) => a.startedAt - b.startedAt)
+
+/** What letting a stranded worker go means, said before it is done. */
+export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's archive, where its conversation can still be resumed"
 
 /** How many past workers a floor has, its archive's among them, before the archive is read. */
 export const pastCount = (f: Floor) => f.cards.filter((c) => !c.onDuty).length + f.archived
@@ -434,7 +443,7 @@ export const HOST_MEANS: Record<HostState, string> = {
 export { CLAUDE_UNTESTED }
 
 /** The daemons a verb needs running: the host holds every session's terminal, the terms daemon every shell. */
-const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', review: 'host', shell: 'terms' } as const
+const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', review: 'host', 'let-go': 'host', shell: 'terms' } as const
 export type DaemonVerb = keyof typeof NEEDS
 const DOWN = { host: 'the host is down: tower up starts it', terms: 'the terms daemon is down: tower up starts it' } as const
 
@@ -560,6 +569,13 @@ export const threadCheckoutOf = (c: Pick<Card, 'reviews' | 'worktree' | 'checkou
 export const workerIn = (f: Floor, checkout: string) => {
   const here = f.cards.filter((c) => c.checkout === checkout)
   return here.find((c) => c.onDuty) ?? here.toSorted((a, b) => b.startedAt - a.startedAt)[0]
+}
+
+/** Who a checkout is a desk of: its workers on duty, else the one there last, if the board still carries it. */
+export const workersIn = (f: Floor, checkout: string) => {
+  const here = f.cards.filter((c) => c.checkout === checkout)
+  const onDuty = here.filter((c) => c.onDuty)
+  return onDuty.length ? onDuty : here.toSorted((a, b) => b.startedAt - a.startedAt).slice(0, 1)
 }
 
 /**

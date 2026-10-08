@@ -11,7 +11,7 @@
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/facts.ts#Broken",
     "hub/src/tail.ts#factEvents",
-    "hub/src/tail.ts#noEvents",
+    "hub/src/tail.ts#afterBreak",
     "hub/src/checkpoints.ts#foldLog",
     "hub/src/system.ts#watchSystem",
     "hub/src/bridge/board.ts#Card",
@@ -44,7 +44,8 @@ the session's start) and its code. A broken session's facts fold nothing more.
   stops reading output, so it meets the bad event first. It keeps that event, for the fold to break on, and keeps
   nothing after it.
 - **Checkpoints** ([[fold-checkpoints]]) hold `broken` like any other fact, computed from the log by this code: one
-  before the bad line meets it again, one after it reads on with [`noEvents`](ref:hub/src/tail.ts#noEvents). Nothing
+  before the bad line meets it again, one after it reads on with [`afterBreak`](ref:hub/src/tail.ts#afterBreak), which folds only the user letting the
+  session go ([[let-go]]). Nothing
   is stored beyond the cache.
 - **The live tail** ([[live-system]]) stops when its session breaks, as it does when one exits; a broken log is not
   tailed at the next start. `tower ls` reads `broken` and the reason; archiving folds through the same step.

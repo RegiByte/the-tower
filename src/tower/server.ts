@@ -61,6 +61,7 @@ import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
 import { snapshot } from '../bridge/screen.ts'
+import { LET_GO } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
@@ -72,7 +73,7 @@ import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outs
 import { briefFor, cut, deleteBranch, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { configPath, projectCollectionsPath, systemPaths } from '../shared/paths.ts'
 import { attachShell } from '../shared/client.ts'
-import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { HOST_PROTOCOL, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
 import { everyEvent, logFileOf, readLog, screenEvents, tailLog } from '../tail.ts'
@@ -562,6 +563,20 @@ async function terms(msg: ToTerms): Promise<Answer> {
 const withSession = (id: string, act: () => Answer | Promise<Answer>) =>
   system.session(id) ? act() : apiError('not_found', `No session "${id}"`)
 
+/**
+ * Only a card that offers `let-go` is let go: stranded, on duty, its latest conversation not yet resumed. The fact is
+ * appended by the host, which takes it from `HOST_PROTOCOL` 2 on.
+ */
+const letGo = (id: string) =>
+  withSession(id, () => {
+    const live = system.live()
+    if (live && (live.protocol ?? 0) < HOST_PROTOCOL)
+      return apiError('unavailable', `The running host is too old to let a worker go (protocol ${live.protocol ?? 0}, this tower needs ${HOST_PROTOCOL}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
+    return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && c.verbs.includes('let-go')))
+      ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
+      : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
+  })
+
 /** A worktree with a folder gone, in any repo, can't be worked in until it is recut. */
 const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
   const name = worktreeName(project, cwd)
@@ -829,6 +844,7 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
   submit: ({ id, text }) => withSession(id, () => daemon(() => submitText(paths, id, text))),
   resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
   kill: ({ id }) => withSession(id, () => host({ t: 'kill', id })),
+  'let-go': ({ id }) => letGo(id),
   reap: ({ id }) => reapSession(id),
   'reap/process': ({ id, pid }) => reapProcess(id, pid),
   open: ({ dir }) => openDir(dir),

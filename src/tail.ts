@@ -19,8 +19,8 @@ const codeOf = (line: Buffer): string => String.fromCharCode(line[line.indexOf('
 
 export const everyEvent: EventFilter = parse
 
-/** What a broken session's facts fold from: nothing, as nothing after its break is folded. */
-export const noEvents: EventFilter = () => undefined
+/** What a broken session's facts fold from: only the user letting it go (`tower.letGo`), as nothing else after its break is folded. */
+export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.includes('"hook_event_name":"tower.letGo"') ? parse(line) : undefined)
 
 /** What draws a session's screen, and the exit that ends it. */
 export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parse(line) : undefined)

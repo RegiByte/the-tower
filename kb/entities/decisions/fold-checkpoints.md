@@ -47,7 +47,8 @@ checkpoint to the new offset when it read anything. A checkpoint is `{fold, head
   into place, so a reader never sees half of one.
 - **A broken log** ([[broken-logs]]): `broken` is a fact like any other, so a checkpoint holds it. One made before
   the event the fold can't follow meets it again; one made after it reads on with
-  [`noEvents`](ref:hub/src/tail.ts#noEvents), folding nothing, and moves to the log's end.
+  [`afterBreak`](ref:hub/src/tail.ts#afterBreak), folding nothing but a `tower.letGo` ([[let-go]]), and moves to the
+  log's end.
 - **Failures**: a write the file system refuses (`ENOSPC`, `EDQUOT`, `EACCES`, `EPERM`, `EROFS`) is said once per
   process and the fold goes on without it; any other error is thrown.
 - **Archived logs** ([[log-retention]]): a log Tidy gzipped is read as the plain log it was, offsets in plain
