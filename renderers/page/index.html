@@ -337,7 +337,7 @@ dialog .actions small { margin-right: auto; }
 .board-error b { display: block; margin-bottom: 2px; }
 .board-error:empty { display: none; }
 .board-error small { display: block; margin-top: 4px; color: var(--muted); }
-body.lost :is(#tally, #limits, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
+body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
 button.held { opacity: .45; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
@@ -1216,7 +1216,7 @@ function render() {
   paintOnce($('tally'), `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
     ['ready', 'working', 'quiet', 'broken']
       .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
-  const host = hostState(board)
+  const host = lostAt ? 'unknown' : hostState(board)
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
   paintLimits()
@@ -2351,7 +2351,8 @@ const showBoardError = () =>
 
 /** A lost tower leaves its board on screen, dimmed and with its times stopped, until it answers again. */
 function markLost(lost) {
-  lostAt = lost ? lostAt ?? Date.now() : undefined
+  if (lost === (lostAt !== undefined)) return
+  lostAt = lost ? Date.now() : undefined
   document.body.classList.toggle('lost', lost)
 }
 
@@ -2359,6 +2360,7 @@ tower.onBoardError((err) => {
   boardError = err
   markLost(err.code === 'disconnected')
   showBoardError()
+  if (opened) render()
   sendBoard()
 })
 
