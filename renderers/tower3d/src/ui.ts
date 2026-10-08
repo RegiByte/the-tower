@@ -51,11 +51,11 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
   const state = hostState(board)
   const host = `<span class="hud-host ${HOST_ATTENTION[state]}" data-tip="${esc(HOST_MEANS[state])}"><span class="lamp"></span>${state === 'up' ? '' : HOST_NAME[state]}</span>`
-  const tune = `<button class="hud-music${music ? ' on' : ''}" data-music title="music ${music ? 'on' : 'off'} (B)">${music ? '♪' : '♪̸'}</button>`
+  const tune = `<button class="hud-music${music ? ' on' : ''}" data-music aria-label="music" aria-pressed="${music}" data-tip="music ${music ? 'on' : 'off'} (B)">${music ? '♪' : '♪̸'}</button>`
   const gear = `<button class="hud-music hud-settings" popovertarget="settings" aria-label="settings" data-tip="settings: sound and theme">${ICON.settings}</button>`
   const tally = (['ready', 'working', 'quiet', 'broken'] as const).filter((a) => count(a))
     .map((a) => `<span class="${a}" data-tip="${esc(`${count(a)} ${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b></span>`)
-  const shells = board.shells.length ? [`<span title="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
+  const shells = board.shells.length ? [`<span data-tip="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
   const crew = [...tally, ...shells]
   const now = wallNow()
   const age = now - (board.rateLimitsAt ?? now)
@@ -66,16 +66,16 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
       elapsed !== undefined && paceLine(r.percentUsed, elapsed), `as of ${span(age)} ago`].filter(Boolean).join(' · ')
     const pace = elapsed === undefined ? '' : `<s style="left:${elapsed}%"></s>`
     const reset = r.resetsAt ? `<small>${resetWhen(r.resetsAt, now) ?? 'reset'}</small>` : ''
-    return `<span title="${esc(title)}">${esc(limitName(r.kind))}
+    return `<span data-tip="${esc(title)}">${esc(limitName(r.kind))}
       <span class="meter" style="--fill:${fillOf(r.percentUsed)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
   })
-  const asOf = stale ? [`<small title="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`] : []
+  const asOf = stale ? [`<small data-tip="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`] : []
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
-    ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next title="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
+    ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
     ${limits.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf].join('')}</span>` : ''}
-    ${fresh ? `<button class="chip hud-shown" data-shown title="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
-    ${sharing ? '<button class="chip hud-share" data-stop-share title="stop sharing the big screen">■ stop sharing</button>' : ''}`
+    ${fresh ? `<button class="chip hud-shown" data-shown data-tip="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
+    ${sharing ? '<button class="chip hud-share" data-stop-share data-tip="stop sharing the big screen">■ stop sharing</button>' : ''}`
 }
 
 const LEFT_SHOWN = 4
@@ -84,7 +84,7 @@ const LEFT_SHOWN = 4
 const leftHtml = (c: Card) => {
   if (!c.resources.length) return ''
   const rows = c.resources.slice(0, LEFT_SHOWN).map((r) =>
-    `<code title="${esc(r.command)}">${r.pid}${r.ports.length ? ` :${r.ports.join(' :')}` : ''}${r.orphan ? ' orphan' : ''} · ${esc(r.command)}</code>`).join('')
+    `<code data-tip="${esc(r.command)}">${r.pid}${r.ports.length ? ` :${r.ports.join(' :')}` : ''}${r.orphan ? ' orphan' : ''} · ${esc(r.command)}</code>`).join('')
   const more = c.resources.length > LEFT_SHOWN ? `<span>and ${c.resources.length - LEFT_SHOWN} more</span>` : ''
   return `<div class="left"><span>left running</span>${rows}${more}</div>`
 }
@@ -146,7 +146,7 @@ function aimedHead(act: Act, board: Board, cats: CatNames) {
     const r = c?.resources.find((r) => r.pid === act.pid)
     if (!c || !r) return ''
     return `<div class="head"><span class="call">${r.pid}${r.ports.length ? ` :${r.ports.join(' :')}` : ''}</span><span class="meta">${r.orphan ? 'orphaned · ' : ''}left by ${esc(c.callsign)}</span></div>
-      <div class="left"><code title="${esc(r.command)}">${esc(r.command)}</code></div>`
+      <div class="left"><code data-tip="${esc(r.command)}">${esc(r.command)}</code></div>`
   }
   if (act.kind === 'tidy') {
     const f = board.floors.find((f) => f.id === act.project)
@@ -241,19 +241,19 @@ export const levelForKey = (p: Plan, code: string) => {
 export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: string) => boolean, framed: boolean) {
   const ctx = c.context
   const stats = [
-    ctx !== undefined && `<span class="meter" title="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
+    ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
     c.costUsd != null && `<b>$${c.costUsd.toFixed(2)}</b>`,
     claudeFlagHtml(c),
   ].filter(Boolean).join('')
   const acts = [
-    `<button class="info" popovertarget="desk-details" title="everything else about ${esc(c.callsign)}">ⓘ</button>`,
+    `<button class="info" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">ⓘ</button>`,
     can(c, 'resume') && `<button class="primary" data-act="resume">↻ Resume</button>`,
-    can(c, 'reap') && `<button data-act="reap" title="${esc(c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'))}">${armed(`reap ${c.id}`) ? 'sure?' : `reap ${c.resources.length}`}</button>`,
-    framed && `<button data-act="tower" title="open in the tower's own view">tower ↗</button>`,
-    (can(c, 'send-home') || can(c, 'kill')) && `<button data-act="kill" class="danger" title="${esc(`ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`)}">${armed(`kill ${c.id}`) ? 'sure?' : 'Send home'}</button>`,
-    `<button data-act="close" title="back to walking (or click the world)">✕</button>`,
+    can(c, 'reap') && `<button data-act="reap" data-tip="${esc(c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'))}">${armed(`reap ${c.id}`) ? 'sure?' : `reap ${c.resources.length}`}</button>`,
+    framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
+    (can(c, 'send-home') || can(c, 'kill')) && `<button data-act="kill" class="danger" data-tip="${esc(`ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`)}">${armed(`kill ${c.id}`) ? 'sure?' : 'Send home'}</button>`,
+    `<button data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">✕</button>`,
   ].filter(Boolean).join('')
-  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}<span class="meta" title="${esc(c.cwd)}">${esc(whereLine(c, floor))}</span>
+  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floor))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
 }
 
@@ -284,11 +284,11 @@ const MOVE_COMMAND: Record<Move, string> = { prev: 'prev-worker', next: 'next-wo
 export function movesHtml(board: Board, c: Card, heed: Heed) {
   const to = neighbours(board, c.id, heed)
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" title="${DISMISS_TITLE}">✕</button>` : ''
+  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">✕</button>` : ''
   return dismiss + (['prev', 'next', 'waiting'] as const).map((m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
-    return `<button class="move ${m}" data-move="${m}" title="${MOVE_TITLE[m]}${keysLabel(board.keys, MOVE_COMMAND[m]) && ` (${keysLabel(board.keys, MOVE_COMMAND[m])})`}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ''}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${esc(card.callsign)}</span></button>`
+    return `<button class="move ${m}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${esc(card.callsign)}, ${statusName(card)}" data-tip="${MOVE_TITLE[m]}${keysLabel(board.keys, MOVE_COMMAND[m]) && ` (${keysLabel(board.keys, MOVE_COMMAND[m])})`}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ''}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${esc(card.callsign)}</span></button>`
   }).join('')
 }
 
@@ -302,9 +302,9 @@ export const shownTab = (s: Shown): DeskTab => `shown:${s.target}`
 /** A showing's tab: a dot while you have yet to open it, ↗ on the open one to take it to a browser tab. */
 const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean) => {
   const from = shownFrom(c.lineage, s)
-  return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" title="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+  return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" data-tip="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
     `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-    `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" title="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileButtonsHtml(s.target) : ''}</button>`
+    `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" data-tip="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileButtonsHtml(s.target) : ''}</button>`
 }
 
 const TAB_NAME = { screen: 'Terminal', brief: 'Logbook', changes: 'Changes', reviews: 'Reviews' } as const
@@ -354,7 +354,7 @@ export const askHtml = (c: Card) =>
 
 export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolean) {
   return `${swatch(floor?.color ?? NO_BAND)}<span class="call">Shell</span>
-    <span class="meta" title="${esc(sh.activity)}">${esc(floor?.name ?? sh.project)}/${esc(base(sh.cwd))} · ${esc(sh.activity)}</span>
+    <span class="meta" data-tip="${esc(sh.activity)}">${esc(floor?.name ?? sh.project)}/${esc(base(sh.cwd))} · ${esc(sh.activity)}</span>
     <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button><button data-act="close">✕</button></span>`
 }
 
@@ -373,7 +373,7 @@ const sessionsHtml = (c: Card, on: string | undefined) =>
   `<div class="logbook-sessions">${c.lineage.map((l, i) => {
     const live = c.live && l.id === c.id
     const label = live ? '● live' : `s${i + 1} · ${sessionWhen(l.startedAt)}`
-    return `<button class="${[live && 'live', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" title="${esc(live ? 'back to the live screen' : `the last screen of ${sessionLabel(i + 1, c.lineage.length, l.startedAt)}`)}">${esc(label)}</button>`
+    return `<button class="${[live && 'live', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(live ? 'back to the live screen' : `the last screen of ${sessionLabel(i + 1, c.lineage.length, l.startedAt)}`)}">${esc(label)}</button>`
   }).join('')}</div>`
 
 /** The logbook: the worker's sessions to replay, over its conversations by session; `threads` undefined while they are read. */
@@ -401,17 +401,17 @@ const workerCards = (cards: Card[]) =>
   cards.map((c) => `<div class="sess ${lampOf(c)}" data-desk="${esc(c.id)}"><div class="top"><span class="lamp"></span><span class="call">${esc(c.callsign)}</span>
     <span class="st">${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span></div>${gistLine(c) ? `<div class="line">${esc(gistLine(c))}</div>` : ''}</div>`).join('')
 
-const closeButton = '<button class="x" data-act="close">✕</button>'
+const closeButton = '<button class="x" data-act="close" aria-label="close">✕</button>'
 
 /** Every process the floor's workers left running, each with its own reap. */
 const runningHtml = (f: Floor, armed: (key: string) => boolean) =>
-  leftoversOf(f).map(({ card, resource: r }) => `<div class="proc"><span class="call">${esc(card.callsign)}</span><code title="${esc(r.command)}">${r.pid}${
+  leftoversOf(f).map(({ card, resource: r }) => `<div class="proc"><span class="call">${esc(card.callsign)}</span><code data-tip="${esc(r.command)}">${r.pid}${
     r.ports.length ? ` :${r.ports.join(' :')}` : ''}${r.orphan ? ' orphan' : ''} · ${esc(commandName(r.command))}</code>${
     can(r, 'reap') ? `<button data-reap-pid="${esc(card.id)} ${r.pid}">${armed(`reap ${card.id} ${r.pid}`) ? 'sure?' : 'end'}</button>` : ''}</div>`).join('')
 
 /** Everything the floor's Tidy would do, a row each. */
 const tidyListHtml = (f: Floor) =>
-  tidyRows(f, wallNow()).map((r) => `<div class="wt" title="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span></div>`).join('')
+  tidyRows(f, wallNow()).map((r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span></div>`).join('')
 
 /** A verb on a worktree or kept branch, its call on the button. */
 const wtVerb = (thing: { calls: Record<string, unknown> }, verb: keyof typeof WORKTREE_VERB_NAME) =>
@@ -422,19 +422,19 @@ const worktreesHtml = (f: Floor) => [
   ...f.worktrees.map((w) => {
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
     const where = w.repos[0].path
-    return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
+    return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
       <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.map((v) => wtVerb(w, v)).join('')}
-      ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(where)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
-      ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
+      ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+      ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
-  ...f.branches.map((b) => `<div class="wt" title="${esc(keptBranchLines(b).join('\n'))}"><span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
+  ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
 const pastHtml = (board: Board, c: Card) =>
   `<div class="past"><span class="call">${esc(c.callsign)}</span> · ${new Date(c.startedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-    ${c.unresumable ? `· <span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>` : ''}
-    <button data-logbook="${esc(c.id)}" title="its logbook and last screen">logbook</button>
+    ${c.unresumable ? `· <span class="unresumable" data-tip="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>` : ''}
+    <button data-logbook="${esc(c.id)}" data-tip="its logbook and last screen">logbook</button>
     ${c.conversations.map((conv) => `<div class="conv"><span>${esc(plain(conv.answer ?? conv.prompt ?? conv.id))}</span>${
       can(conv, 'goto') ? `<button data-desk="${esc(conv.resumedBy!.id)}">→ ${esc(conv.resumedBy!.callsign)}</button>`
         : can(conv, 'resume') ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}">↻</button>` : ''}</div>`).join('')}</div>`
@@ -444,10 +444,10 @@ const pastHtml = (board: Board, c: Card) =>
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
 export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, worktreesOpen: boolean) {
-  const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span title="${esc(dir)}">${i ? '·' : '⌂'} ${esc(base(dir))}</span>
-    ${can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
-    ${can(f, 'editor') ? `<button class="ic" data-open="${esc(dir)}" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a class="ic" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
+  const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? '·' : '⌂'} ${esc(base(dir))}</span>
+    ${can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button class="ic" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a class="ic" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
   const shelf = (f.shelf ?? []).map((entry, n) => {
     if ('link' in entry) return `<a href="${esc(entry.link)}" target="_blank" rel="noreferrer">${SHELF_ICON.link} ${esc(entry.label)}</a>`
     const glyph = SHELF_ICON[shelfKind(entry)]
@@ -464,8 +464,8 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
   const trees = f.worktrees.length + f.branches.length
   const atRisk = risky(f)
   const trays = [
-    trees && `<button class="tray${worktreesOpen ? ' on' : ''}" data-worktrees title="worktrees and the branches the tower kept">⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
-    past && `<button class="tray" data-archive title="past workers and their conversations">▤ <b>${past}</b> archived ›</button>`,
+    trees && `<button class="tray${worktreesOpen ? ' on' : ''}" data-worktrees data-tip="worktrees and the branches the tower kept">⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
+    past && `<button class="tray" data-archive data-tip="past workers and their conversations">▤ <b>${past}</b> archived ›</button>`,
   ].filter(Boolean).join('')
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
     <div class="section">Dirs</div>${dirs}
@@ -473,14 +473,14 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     <div class="section">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
     ${can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''}
     ${running && `<div class="section">Running</div>${running}`}
-    ${can(f, 'tidy') ? `<div class="section">${esc(tidyLine(f.tidy))}</div>${tidyListHtml(f)}<button class="wide" data-tidy title="do all of it, as listed">tidy</button>` : ''}
+    ${can(f, 'tidy') ? `<div class="section">${esc(tidyLine(f.tidy))}</div>${tidyListHtml(f)}<button class="wide" data-tidy data-tip="do all of it, as listed">tidy</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
     ${worktreesOpen && trees ? `<div class="section">Worktrees</div>${worktreesHtml(f)}` : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */
 export const archiveSideHtml = (f: Floor) =>
-  `<div class="side-title" data-archive-of="${esc(f.id)}"><button class="back" data-floor title="back to the floor">‹</button><h2>Archive</h2>${closeButton}</div>
+  `<div class="side-title" data-archive-of="${esc(f.id)}"><button class="back" data-floor aria-label="back to the floor" data-tip="back to the floor">‹</button><h2>Archive</h2>${closeButton}</div>
     <div class="meta">${esc(f.name)} · <span id="archive-count"></span></div>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
     <div class="archive" id="archive-list"></div>`
@@ -525,10 +525,10 @@ const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${kept
 /** The draft editor's head: whose draft and how it stands, and what can be done with it. */
 export function draftHeadHtml(f: Floor, d: Draft, armed: boolean, carrying: boolean) {
   const acts = [
-    d.id && !carrying && `<button data-act="carry" title="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
-    can(f, 'spawn') && `<button class="primary" data-act="start" title="start a new session on this prompt">Start session</button>`,
+    d.id && !carrying && `<button data-act="carry" data-tip="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
+    can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
     `<button data-act="delete" class="danger">${armed ? 'sure?' : 'Delete'}</button>`,
-    `<button data-act="close" title="back to walking (Esc)">✕</button>`,
+    `<button data-act="close" aria-label="back to walking" data-tip="back to walking (Esc)">✕</button>`,
   ].filter(Boolean).join('')
   const item = d.id ? draftItem([f], f.id, d.id) : undefined
   return `${swatch(f.color ?? NO_BAND)}<span class="call">Draft</span><span class="meta">${item ? `${esc(item.tag)} · ` : ''}${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${keptByText(item?.keptBy)}</span>${
@@ -539,8 +539,8 @@ export function draftHeadHtml(f: Floor, d: Draft, armed: boolean, carrying: bool
 export function gameHeadHtml(f: Floor, project: string, id: string) {
   const item = gameItem([f], project, id)!
   const acts = [
-    `<button data-out="/${esc(gamePath(project, id))}" title="play it in a browser tab">↗</button>`,
-    `<button data-act="close" title="back to walking: the game holds the keys, so Esc stays with it">✕</button>`,
+    `<button data-out="/${esc(gamePath(project, id))}" aria-label="play it in a browser tab" data-tip="play it in a browser tab">↗</button>`,
+    `<button data-act="close" aria-label="back to walking" data-tip="back to walking: the game holds the keys, so Esc stays with it">✕</button>`,
   ].join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(gameTitle(project, item))}</span>
     <span class="meta">${esc(item.tag)} · ${esc(f.name)}${keptByText(item.keptBy)}</span><span class="acts">${acts}</span>`
@@ -556,30 +556,30 @@ export const draftNoteHtml = `<span>Someone else changed this draft while you we
 export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
   const where = shelfSource(entry)
   const acts = [
-    framed && `<button data-act="tower" title="open in the tower's own view">tower ↗</button>`,
+    framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
     `<button data-act="close">✕</button>`,
   ].filter(Boolean).join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(entry.label)}</span>
-    <span class="meta" title="${esc(where)}">${esc(f.name)} · ${esc(where)}</span><span class="acts">${acts}</span>`
+    <span class="meta" data-tip="${esc(where)}">${esc(f.name)} · ${esc(where)}</span><span class="acts">${acts}</span>`
 }
 
 /** A gallery picture in the reader: who showed it and when, its way to the worker's desk while on duty, and ↗. */
 export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, color: string) {
   const acts = [
-    onDuty && `<button data-act="desk" title="to its desk, on this showing's tab">at ${esc(worker.callsign)}'s desk</button>`,
+    onDuty && `<button data-act="desk" data-tip="to its desk, on this showing's tab">at ${esc(worker.callsign)}'s desk</button>`,
     sh.kind === 'file' && fileButtonsHtml(sh.target),
-    sh.kind !== 'link' && `<button data-out="${esc(shownHref(sh))}" title="open in a browser tab">↗</button>`,
+    sh.kind !== 'link' && `<button data-out="${esc(shownHref(sh))}" aria-label="open in a browser tab" data-tip="open in a browser tab">↗</button>`,
     `<button data-act="close">✕</button>`,
   ].filter(Boolean).join('')
   const meta = `${worker.callsign} showed ${sh.target} · ${ago(wallNow() - sh.at)} ago`
   return `${swatch(color)}<span class="call">${esc(shownTitle(sh))}</span>
-    <span class="meta" title="${esc(meta)}">${esc(meta)}</span><span class="acts">${acts}</span>`
+    <span class="meta" data-tip="${esc(meta)}">${esc(meta)}</span><span class="acts">${acts}</span>`
 }
 
 /** A shelf entry's body: a page in a frame, or a markdown collection's files beside the open one, rendered without scripts. */
 export function docHtml(doc: { frame: string } | { files: string[]; file?: string; text: string; url: string }, root: string) {
   if ('frame' in doc) return `<iframe class="doc-frame" src="${esc(doc.frame)}"></iframe>`
-  const list = doc.files.map((f) => `<div class="doc-file${f === doc.file ? ' on' : ''}" data-file="${esc(f)}" title="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</div>`).join('')
+  const list = doc.files.map((f) => `<button class="doc-file${f === doc.file ? ' on' : ''}" data-file="${esc(f)}"${f === doc.file ? ' aria-current="true"' : ''} data-tip="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</button>`).join('')
   return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, root))}"></iframe>`
 }
 

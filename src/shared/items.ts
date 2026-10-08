@@ -76,7 +76,7 @@ export const keptOf = (key: string) => {
 
 /** One item as a button carrying `data-kept`; `open` marks the one shown. */
 export const itemRowHtml = (project: string, collection: string, item: FloorItem, title: string, open: boolean, now: number) =>
-  `<button class="kept-row ${open ? 'sel' : ''}" data-kept="${esc(keptKey(project, collection, item.id))}"${open ? ' aria-current="true"' : ''} title="${esc(`${title}\n${item.id}`)}">` +
+  `<button class="kept-row ${open ? 'sel' : ''}" data-kept="${esc(keptKey(project, collection, item.id))}"${open ? ' aria-current="true"' : ''} data-tip="${esc(`${title}\n${item.id}`)}">` +
   `<span class="t">${esc(title)}</span><span class="meta">${esc(itemMeta(item, title, now))}</span></button>`
 
 /**

@@ -1,9 +1,9 @@
 /**
  * The tooltip every renderer shows. Any element with `data-tip="<text>"` shows its text, lines kept, in one element in
- * the top layer: on keyboard focus at once, on hover once the pointer rests on the element (at once while a tip shows or
- * has just hidden), beside the element and inside the viewport, until the pointer or the focus leaves it, Esc, a press,
- * a scroll or a redraw that removes it. It fades in and out, at once under reduced motion. A renderer
- * calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
+ * the top layer: on keyboard focus at once, on hover once the pointer rests on the element with no button held (at once
+ * while a tip shows or has just hidden), beside the element and inside the viewport, until the pointer or the focus
+ * leaves it, Esc, a press, a scroll or a redraw that removes it. It fades in and out, at once under reduced motion. A
+ * renderer calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
  * the element that opened it the same way. The tower serves this module as `/tips.js`.
  */
 import { reduced } from './design.ts'
@@ -105,7 +105,7 @@ export function watchTips(doc: Document) {
   doc.addEventListener('pointerover', (e) => {
     const el = tipped(e.target)
     if (el === shown || (!shown && el?.contains(e.relatedTarget as Node | null))) return
-    if (el) showSoon(el)
+    if (el && !e.buttons) showSoon(el)
     else hide()
   })
   doc.addEventListener('pointerout', (e) => e.relatedTarget === null && hide())

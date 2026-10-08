@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One settings popover and one tooltip for every renderer",
-  "summary": "Alerts, sound and theme sit in a small settings popover drawn from shared pure views; any element with data-tip shows its text in one shared tooltip, on keyboard focus at once and on hover once the pointer rests, fading in and out, inside the viewport; the status counts and the host lamp say what they mean in shared words.",
+  "summary": "Alerts, sound and theme sit in a small settings popover drawn from shared pure views; any element with data-tip shows its text in one shared tooltip, on keyboard focus at once and on hover once the pointer rests, fading in and out, inside the viewport, and every renderer and shared view explains through it, title kept only where no tip can show; the status counts and the host lamp say what they mean in shared words.",
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -63,7 +63,7 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `/tips.js`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
   puts one element in the top layer (a manual popover, so it shows above an open popover or a modal) and shows any
   `data-tip`'s text, lines kept, at once on keyboard focus (`:focus-visible`) and on hover after the pointer rests
-  350 ms (at once while a tip shows or within 300 ms of one hiding, so running along a row of controls doesn't wait at
+  350 ms with no button held (a drag across line numbers shows none) (at once while a tip shows or within 300 ms of one hiding, so running along a row of controls doesn't wait at
   each), until the pointer or the focus leaves, Esc, a press, a scroll or a redraw that removes the element; it sets
   `aria-describedby` while shown. [`tipsCss`](ref:hub/src/shared/tips.ts#tipsCss) fades it in and out over 120 ms,
   growing from 97%: `@starting-style` gives the entry, and `display` and `overlay` transition with `allow-discrete` so
@@ -74,6 +74,12 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   inside the viewport; [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands the settings popover by its
   button the same way. Ink on panel in either scheme, edged in a wash of panel so it parts from dark surfaces (Tower
   3D's world). The Stats bars' readouts, a CSS `::after` before, use it too.
+- *Every explanation through it*: the tower page, the shared views (`cards.ts`, `items.ts`, `panels.ts`) and Tower
+  3D's HUD and panels say what a control does with `data-tip`, and a control with no visible name (an icon, ✕, ↗)
+  carries an `aria-label`; a tip that repeats a visible name has none. `title` stays where no tip can show or it is
+  not a tooltip: an `<iframe>`'s title (its accessible name) and a markdown link's title (`markdown.ts`), drawn also
+  into framed documents that run no `watchTips`. The tower page's review threads and shelf files are buttons, and the
+  dock's grip is a focusable `separator` that ↑ and ↓ resize.
 - *Words* in `/cards.js`: [`ATTENTION_MEANS`](ref:hub/src/shared/cards.ts#ATTENTION_MEANS) says what puts a worker in
   each attention (from `attentionOf` and the statuses), `WAITING_MEANS` what the waiting count counts, and
   `ON_DUTY_MEANS` that counts are over workers on duty. The counts' tooltips and the `?` sheet's legend
@@ -100,8 +106,11 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   pure function of three boxes.
 - *The tooltip's stylesheet in `/design.css`*: every shelf page would carry it; `watchTips` adds it with the element.
 - *Alerts in Tower 3D*: a framed page can't read the framing page's permission, and Tower 3D notifies nothing.
+- *`watchTips` adopting `title` on hover*: screen readers read `title` as a description of its own, and a tip read
+  from an attribute the renderer still writes keeps two systems in the markup.
 - *Removing `RING_NAME` and `RING_MARK`*: served exports are the renderer API's; both stay, `@deprecated`.
 
 **Impact.** One head with four controls, every one explained on hover and focus; status counts that say what they
 count; a host lamp readable without hovering; settings and tooltips a third renderer gets by importing `/settings.js`
-and `/tips.js`. Other `title`s can move to `data-tip` one by one with nothing else to change.
+and `/tips.js`. A renderer that draws the shared views without `watchTips` shows none of their explanations, only
+their labels.

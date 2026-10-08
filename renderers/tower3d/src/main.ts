@@ -385,7 +385,7 @@ function renderPanel() {
     if (s.deskTab === 'reviews') drawThread($('desk-reviews'), c.project, threadCheckoutOf(c))
     if (s.deskTab === 'changes') drawChanges(c)
     $('desk-activity').innerHTML = activityHtml(c)
-    $('desk-activity').title = gistLine(c)
+    $('desk-activity').dataset.tip = gistLine(c)
     $('desk-moves').innerHTML = movesHtml(board, c, s.heed)
     $('desk-details').innerHTML = detailsHtml(board, c)
     $('desk-ask').innerHTML = askHtml(c)

@@ -265,8 +265,9 @@ Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, 
 which holds every verb. `documentHtml` keeps a file's raw HTML as written, its links and scripts included (only markdown links are checked), so
 frame its html without `allow-scripts`.
 
-A renderer that draws the Stats panel or the settings popover installs the shared tooltip once, `watchTips(document)`
-from `/tips.js`: the Stats bars show their readouts through it, and the popover stays hidden until it is placed.
+A renderer that draws any shared view installs the shared tooltip once, `watchTips(document)` from `/tips.js`: the
+views explain their controls with `data-tip` (the Stats bars their readouts), and the settings popover stays hidden
+until it is placed.
 
 They are part of the API's contract. Removing or renaming an export, a `tower` member, a token or a class is a
 major, with a line in `CHANGELOG.md` saying what to use instead; adding one is a minor. They change, versioned and

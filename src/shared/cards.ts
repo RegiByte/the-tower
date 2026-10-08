@@ -455,7 +455,7 @@ export const claudeUntestedLine = (board: Pick<Board, 'claudeUntested'>) =>
 /** That line with its reason on hover. It can run long (several releases, a build suffix): it takes a line of its own. */
 export const claudeUntestedHtml = (board: Pick<Board, 'claudeUntested'>) => {
   const line = claudeUntestedLine(board)
-  return line && `<span class="untested" title="${CLAUDE_UNTESTED}">${esc(line)}</span>`
+  return line && `<span class="untested" data-tip="${CLAUDE_UNTESTED}">${esc(line)}</span>`
 }
 
 /** Where a declared renderer is served. */
@@ -491,13 +491,13 @@ export const renderersHtml = (renderers: Renderer[], here: string | undefined, f
   const target = framed ? ' target="_blank" rel="noopener"' : ''
   return `<span>renderers</span>${renderers.map((r) =>
     r.name === here ? `<b>${esc(r.name)}</b>`
-    : r.available ? `<a href="${esc(rendererUrl(r.name))}"${target} title="open ${esc(r.name)}">${esc(r.name)}</a>`
-    : `<span title="not built: ${esc(r.root)}/${esc(r.entry)} doesn't exist">${esc(r.name)}</span>`).join('')}`
+    : r.available ? `<a href="${esc(rendererUrl(r.name))}"${target} data-tip="open ${esc(r.name)}">${esc(r.name)}</a>`
+    : `<span data-tip="not built: ${esc(r.root)}/${esc(r.entry)} doesn't exist">${esc(r.name)}</span>`).join('')}`
 }
 
 /** A worker's own flag beside its stats: `undefined` while its Claude is tested or unknown. */
 export const claudeFlagHtml = (c: Pick<Card, 'claude' | 'claudeUntested'>) =>
-  c.claudeUntested ? `<span class="untested" title="${CLAUDE_UNTESTED}">claude ${esc(c.claude!)} untested</span>` : undefined
+  c.claudeUntested ? `<span class="untested" data-tip="${CLAUDE_UNTESTED}">claude ${esc(c.claude!)} untested</span>` : undefined
 
 export const LIMITS_STALE_MS = 15 * MINUTE
 

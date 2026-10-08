@@ -84,6 +84,7 @@ kbd { font: 700 10px/1 var(--mono); padding: 2px 4px; border-radius: 3px; backgr
 .draft:hover, .draft.sel { background: var(--panel-2); color: var(--ink); }
 .draft.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
 .draft.thread::before { content: "◇"; }
+button.draft { width: 100%; border: none; background: none; font-weight: 400; text-align: left; }
 .kept-fold { display: block; margin: 4px 0 0; padding: 2px 8px; border: none; background: none; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .kept-fold:hover { color: var(--ink); }
 .worktrees { padding: 8px 2px 0; }
@@ -259,9 +260,10 @@ dialog#keys { width: min(620px, 92vw); }
 .shelf-body iframe.page { background: #fff; }
 .shelf-files { flex: none; width: 260px; overflow-y: auto; padding: 8px 0; border-right: 1px solid var(--line); background: var(--panel-2); font-size: 13px;
   scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.shelf-files div { padding: 4px 14px; color: var(--muted); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shelf-files div:hover { color: var(--ink); }
-.shelf-files div.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
+.shelf-files button { display: block; width: 100%; padding: 4px 14px; border: none; border-radius: 0; background: none; color: var(--muted); font-weight: 400; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shelf-files button:hover { color: var(--ink); }
+.shelf-files button:focus-visible { outline-offset: -2px; }
+.shelf-files button.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
 .draft-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .item-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .main:not(.kept) .item-view, .main.kept .bar, .main.kept .screen { display: none; }
@@ -290,6 +292,7 @@ dialog#keys { width: min(620px, 92vw); }
 .shell-pane .term { width: 100%; height: 100%; }
 .grip { display: none; position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; z-index: 2; }
 .main.shell-open .grip { display: block; }
+.grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .tabs { display: flex; align-items: center; gap: 6px; padding: 6px 10px; overflow-x: auto; scrollbar-width: none; font-size: 12px; color: var(--faint); }
 .tab { display: flex; align-items: center; gap: 7px; flex: none; padding: 3px 4px 3px 10px; font-weight: 400; font-size: 12px; background: var(--panel); color: var(--muted); }
 .tab::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--p, var(--deco)); }
@@ -367,7 +370,7 @@ button.held { opacity: .45; cursor: not-allowed; }
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
-  <div class="side-views"><button data-side-view="floors">Floors</button><button data-side-view="stats" title="spend, work and waits, from the logs">Stats</button></div>
+  <div class="side-views"><button data-side-view="floors">Floors</button><button data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>
   <div class="side-foot" id="side-foot"></div>
@@ -394,7 +397,7 @@ button.held { opacity: .45; cursor: not-allowed; }
   <div class="item-view" id="item-view"><div class="shelf-head" id="item-head"></div><div class="shelf-body" id="item-body"></div></div>
   <div class="sky" id="sky"></div>
   <div class="dock">
-    <div class="grip" id="grip"></div>
+    <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-controls="shell-pane" aria-label="shells height" aria-valuemin="120" tabindex="0" data-tip="drag, or ↑ and ↓, to resize the shells"></div>
     <div class="tabs" id="tabs"></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div></div>
   </div>
@@ -525,8 +528,8 @@ const byStart = (a, b) => a.startedAt - b.startedAt
 
 const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
-    ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
+    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
@@ -562,7 +565,7 @@ function toggleCrewFold(id) {
 }
 
 /** Why a past worker can't be resumed, quietly: it is history, not an alarm. */
-const unresumableHtml = (c) => `<span class="unresumable" title="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
+const unresumableHtml = (c) => `<span class="unresumable" data-tip="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>`
 
 /** Why a daemon verb can't run now: the tower lost (its board is stale), or a daemon it needs down (`whyNot`). */
 const heldWhy = (verb) => (lostAt ? HOST_MEANS.unknown : whyNot(board, verb))
@@ -572,26 +575,26 @@ const heldHtml = (verb, label, inner, cls = '') =>
   `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb))}">${inner}</button>`
 
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" title="resume this conversation">↻</button>`
+  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">↻</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
 
 const pastConversationHtml = (c, conv) =>
-  `<div class="conv" title="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
+  `<div class="conv" data-tip="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
     <span class="what">${conv.answer ? `<span class="said">${GIST_MARK.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_MARK.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
     ${resumeHtml(c, conv)}</div>`
 
 /** A past worker and the conversations it held, oldest first. */
 const pastHtml = (c) =>
   `<div class="past ${c.attention} ${c.id === selected ? 'sel' : ''}" data-id="${c.id}">
-    <div class="head" title="${statusName(c)}"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="when">${c.unresumable ? `${unresumableHtml(c)} · ` : ''}${when(c.startedAt)}</span></div>
+    <div class="head" data-tip="${statusName(c)}"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="when">${c.unresumable ? `${unresumableHtml(c)} · ` : ''}${when(c.startedAt)}</span></div>
     ${c.conversations.map((conv) => pastConversationHtml(c, conv)).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
   </div>`
 
 const dirHtml = (f, dir, hub) =>
-  `<div class="dir"><span class="dname" title="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
-    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" title="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
-    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" title="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" title="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
+  `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
+    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
 
 /** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
@@ -609,16 +612,16 @@ const worktreeHtml = (f, w) => {
   const risk = worktreeRisk(w)
   const where = w.repos[0].path
   const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
-  return `<div class="wt ${w.state}" title="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
+  return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
-    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" title="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
-    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" title="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
   </div>`
 }
 
 const keptBranchHtml = (b) =>
-  `<div class="wt" title="${esc(keptBranchLines(b).join('\n'))}">
+  `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}">
     <span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
 
 /** The floor's worktrees and the branches the tower kept. */
@@ -630,12 +633,12 @@ const worktreesHtml = (f) => `<div class="worktrees">
 const threadsHtml = (f) => {
   const rows = f.threads.map((t) => {
     const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
-    return `<div class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" title="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></div>`
+    return `<button class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
   })
   const landed = landedOf(f)
   const fold = `landed:${f.id}`
-  const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" title="threads Tidy filed once their work landed: read them here">${unfolded.has(fold) ? '▾' : '▸'} ${landed.length} landed</button>
-    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${isOpenItem(f.id, REVIEWS, t.id) ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" title="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
+  const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" data-tip="threads Tidy filed once their work landed: read them here">${unfolded.has(fold) ? '▾' : '▸'} ${landed.length} landed</button>
+    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${isOpenItem(f.id, REVIEWS, t.id) ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
   return `<div class="drafts"><div class="drafts-head">Review threads</div>${rows.join('') || '<div class="empty">none open</div>'}${filed}</div>`
 }
 
@@ -644,17 +647,17 @@ const landedOf = (f) => landedThreads(f.collections.find((c) => c.id === REVIEWS
 
 /** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
 const tidyHtml = (f) => `<div class="worktrees">
-    <div class="drafts-head">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" title="do all of it, as listed">Tidy all</button></div>
+    <div class="drafts-head">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" data-tip="do all of it, as listed">Tidy all</button></div>
     ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}</div>`
 
 /** One thing Tidy would do, with a button that does only it. */
-const tidyRowHtml = (r) => `<div class="wt" title="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>
-    <button class="ic" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" title="${esc(`only this: ${r.does}`)}">⌫</button></div>`
+const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>
+    <button class="ic" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">⌫</button></div>`
 
 
 const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
-  ? `<a href="${esc(entry.link)}" target="_blank" rel="noreferrer" title="${esc(entry.link)}">${SHELF_ICON.link} ${esc(entry.label)}</a>`
-  : `<button class="${shelfOpen?.project === f.id && shelfOpen.n === n ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" title="${esc(shelfSource(entry))}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
+  ? `<a href="${esc(entry.link)}" target="_blank" rel="noreferrer" data-tip="${esc(entry.link)}">${SHELF_ICON.link} ${esc(entry.label)}</a>`
+  : `<button class="${shelfOpen?.project === f.id && shelfOpen.n === n ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" data-tip="${esc(shelfSource(entry))}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
 
 const shelfHtml = (f) => !f.shelf?.length ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
 
@@ -668,7 +671,7 @@ const { title: draftTitle, prune: pruneDraftTitles } = draftTitles(draftIo.read,
 
 const draftsHtml = (f) =>
   collectionTrayHtml(f.id, draftsOf(f), (item) => draftTitle(f.id, item), draftOpen?.project === f.id ? draftOpen.id : undefined, Date.now(),
-    `<button data-new-draft="${f.id}" aria-label="new draft" title="new draft">+</button>`)
+    `<button data-new-draft="${f.id}" aria-label="new draft" data-tip="new draft">+</button>`)
 
 /** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
 const { title: keptTitle, prune: pruneKeptTitles } = keptTitles((project, collection, id) => tower.text(itemPath(project, collection, id)), () => render())
@@ -691,14 +694,14 @@ function traysHtml(f) {
   const landed = landedOf(f).length
   const kept = keptCollections(f)
   const tidy = can(f, 'tidy')
-  const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" title="${title}">${label}</button>`
+  const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" data-tip="${title}">${label}</button>`
   const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
     drafts?.items.length && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
     trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
     (threads || landed) && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
     ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
-    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" title="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
+    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
     tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
   if (!trays.length) return ''
@@ -713,7 +716,7 @@ const signHtml = (n, name, extra = '') =>
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" title="new draft: a prompt kept for later">✎</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" title="new session">+</button>` : ''))}
+    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">✎</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">+</button>` : ''))}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -729,7 +732,7 @@ const limitHtml = (r, now) => {
   const pct = r.percentUsed
   const elapsed = weekElapsed(r, now)
   const pace = elapsed === undefined ? '' : `<s style="left:${elapsed}%"></s>`
-  return `<div${elapsed === undefined ? '' : ` title="${paceLine(pct, elapsed)}"`}><div class="row">${esc(r.kind.replaceAll('_', ' '))} <b>${pct}%</b>
+  return `<div${elapsed === undefined ? '' : ` data-tip="${paceLine(pct, elapsed)}"`}><div class="row">${esc(r.kind.replaceAll('_', ' '))} <b>${pct}%</b>
     <small>${r.resetsAt ? resetLine(r.resetsAt, now) : ''}</small></div>
     <div class="meter" style="--fill:${fillOf(pct, 60, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
 }
@@ -739,7 +742,7 @@ const limitsHtml = (now) => {
   if (!board.rateLimits.length) return '<small>no rate-limit reading yet</small>'
   const age = now - board.rateLimitsAt
   return `${board.rateLimits.map((r) => limitHtml(r, now)).join('')}
-    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" title="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`
+    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`
 }
 
 let limitsPainted = ''
@@ -750,7 +753,7 @@ function paintLimits() {
 
 const windowHtml = (c) => {
   const title = `${callsign(c.id)} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`
-  return `<a class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" href="#${c.id}" aria-label="${esc(title)}" title="${esc(title)}"></a>`
+  return `<a class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" href="#${c.id}" aria-label="${esc(title)}" data-tip="${esc(title)}"></a>`
 }
 
 const buildingHtml = (f, i) => {
@@ -791,20 +794,20 @@ function barHtml(c) {
   const orphan = c.resources.some((r) => r.orphan)
   const ctx = c.context
   repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` title="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
-    <span class="where" title="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
+    <span class="where" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
     <span class="stats">
-      ${ctx === undefined ? '' : `<span class="meter" title="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}
+      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
       ${claudeFlagHtml(c) ?? ''}
-      ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" title="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
+      ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
-  repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" title="everything else about ${callsign(c.id)}">ⓘ</button>
+  repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">ⓘ</button>
     ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
-    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" title="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
-    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" title="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
+    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
+    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? '<button class="danger" data-act="kill">Kill</button>' : ''}
-    <button data-act="home" aria-label="back to the skyline" title="back to the skyline (Esc outside the terminal)">✕</button>`)
+    <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">✕</button>`)
   $('bar-details').innerHTML = detailsHtml(c)
   $('bar-left').innerHTML = leftHtml(c)
   $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
@@ -812,7 +815,7 @@ function barHtml(c) {
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
   repaint($('bar-line'), [
     paneTabsHtml(c, paneOf(c)),
-    `<button class="activity" popovertarget="bar-details" title="${esc(gistLine(c))}">${lineOf(c)}</button>`,
+    `<button class="activity" popovertarget="bar-details" data-tip="${esc(gistLine(c))}">${lineOf(c)}</button>`,
     movesHtml(c),
   ].filter(Boolean).join(''))
   renderPane(c)
@@ -826,7 +829,7 @@ $('bar-details').addEventListener('beforetoggle', (e) => e.newState === 'open' &
 function leftHtml(c) {
   if (!c.resources.length) return `<h3>${callsign(c.id)} left nothing running</h3>`
   const row = (r) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
-    <span class="cmd" title="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(r.calls.reap))}" title="end process ${r.pid}">End</button></div>`
+    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(r.calls.reap))}" data-tip="end process ${r.pid}">End</button></div>`
   return `<h3>Left running by ${callsign(c.id)}</h3>${c.resources.map(row).join('')}
     <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
 }
@@ -854,11 +857,11 @@ const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabe
 function movesHtml(c) {
   const to = neighbours(board, c.id, heed)
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" title="${DISMISS_TITLE}">✕</button>` : ''
+  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">✕</button>` : ''
   const move = (m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
-    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" title="${withKeys(MOVE_TITLE[m], MOVE_COMMAND[m])}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND[m])}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ""}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
+    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" data-tip="${withKeys(MOVE_TITLE[m], MOVE_COMMAND[m])}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND[m])}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ""}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
   }
   const moves = dismiss + ['prev', 'next', 'waiting'].map(move).join('')
   return moves && `<span class="moves">${moves}</span>`
@@ -888,20 +891,20 @@ const paneTabAttrs = (id, on) =>
 const paneTabsHtml = (c, pane) => {
   const shown = visibleShown(c)
   return `<span class="tab-set" role="tablist" aria-label="views of ${callsign(c.id)}"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" ${paneTabAttrs('screen', pane === 'screen')}>Terminal</button>` +
-    (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief')} title="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
-    `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes')} title="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
-    (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews')} title="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
+    (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief')} data-tip="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
+    `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes')} data-tip="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
+    (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews')} data-tip="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
     shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('') + '</span>'
 }
 
 /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. */
 const shownTabHtml = (c, s, on) => {
   const from = shownFrom(c.lineage, s)
-  return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} title="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+  return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} data-tip="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
   `<span class="shown-name">${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" aria-hidden="true" title="open in a browser tab">↗</span>` : '') +
+  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">↗</span>` : '') +
   (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
-  `<span class="unshow" data-unshow="${esc(shownKey(s))}" aria-hidden="true" title="close: it comes back if shown again">×</span></button>`
+  `<span class="unshow" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">×</span></button>`
 }
 
 const shownPane = (s) => `shown:${s.target}`
@@ -1087,7 +1090,7 @@ const threadOf = (c) => (review?.project === c.project && review.checkout === th
 /** What the worker hasn't seen of its checkout's thread, else how many notes it holds. */
 const reviewsTally = (c) => {
   const notes = floorOf(c.project).threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
-  return c.unseen ? `<small class="unseen" title="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
+  return c.unseen ? `<small class="unseen" data-tip="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
 }
 
 async function addNote(c, fields) {
@@ -1304,7 +1307,7 @@ function render() {
   keepingFocus($('floors'), () => redrawHeld($('floors'), floorsTopDown().map(floorHtml).join('')))
   drawSideView()
   repaint($('rail'), railHtml(waiting))
-  $('side-foot').innerHTML = `<span>config</span><code title="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}`
+  $('side-foot').innerHTML = `<span>config</span><code data-tip="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}`
   const c = selected && findCard(selected)
   if (c) barHtml(c)
   if (draftOpen) draftHeadHtml()
@@ -1319,11 +1322,11 @@ function render() {
 
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
-  `<button class="side-toggle" data-side aria-label="show the sidebar" title="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">»</button>
-  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" title="waiting on you">${waiting}</span>` : ''}
+  `<button class="side-toggle" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">»</button>
+  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" data-tip="waiting on you">${waiting}</span>` : ''}
   ${dutyOrder(board).map((c) => {
     const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
-    return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" title="${title}"></a>`
+    return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
   }).join('')}`
 
 /** The header's buttons name the chords of the commands they share, as the config binds them. */
@@ -1670,7 +1673,7 @@ function openShelf(project, n, file) {
   const own = { html: `/run/${project}/${n}`, url: entry.url, renderer: entry.renderer && rendererUrl(entry.renderer) }[shelfKind(entry)]
   const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">↗ new tab</a>` : ''
   $('shelf-head').innerHTML = `<span class="label">${esc(entry.label)}</span><span class="dim">${esc(f.name)} · ${esc(shelfSource(entry))}</span>
-    <span class="actions">${tab}<button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
+    <span class="actions">${tab}<button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
   $('shelf-body').innerHTML = ''
   render()
   if (shelfKind(entry) === 'html') showPage(shelfUrl(project, n, shelfPage(entry)))
@@ -1786,7 +1789,7 @@ async function showCollection(entry, file) {
   if (!files || shelfOpen !== opened) return
   if (!files.length) return ($('shelf-body').innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
   opened.files = files
-  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<div data-doc="${esc(f)}" title="${esc(f)}">${esc(shelfFileName(entry, f))}</div>`).join('')}</div>
+  $('shelf-body').innerHTML = `<div class="shelf-files">${files.map((f) => `<button data-doc="${esc(f)}" data-tip="${esc(f)}">${esc(shelfFileName(entry, f))}</button>`).join('')}</div>
     <iframe id="shelf-doc" sandbox="allow-same-origin"></iframe>`
   showDoc(files.includes(file) ? file : files[0])
 }
@@ -1796,7 +1799,11 @@ async function showDoc(file) {
   const opened = shelfOpen
   opened.file = file
   history.replaceState(null, '', shelfHash(opened))
-  for (const el of document.querySelectorAll('[data-doc]')) el.classList.toggle('sel', el.dataset.doc === file)
+  for (const el of document.querySelectorAll('[data-doc]')) {
+    el.classList.toggle('sel', el.dataset.doc === file)
+    if (el.dataset.doc === file) el.setAttribute('aria-current', 'true')
+    else el.removeAttribute('aria-current')
+  }
   const md = await told(tower.text(shelfPath(opened.project, opened.n, file)))
   if (md === undefined) return
   if (shelfOpen !== opened || opened.file !== file) return
@@ -1838,7 +1845,7 @@ function openArchive(project) {
   $('archive-view').style.cssText = paint(project)
   $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
-    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
+    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
   render()
   $('archive-filter').focus()
 }
@@ -1887,15 +1894,15 @@ function draftHeadHtml() {
   const f = board.floors.find((f) => f.id === d.project)
   const item = draftItem(board.floors, d.project, d.id)
   const keptBy = item?.keptBy
-  const by = keptBy ? ` · kept by <a href="#${keptBy.session}" title="go to the worker that kept it">${keptBy.callsign}</a>` : ''
-  const tag = item ? `<button class="tag" data-copy="${esc(item.tag)}" title="${esc(`${draftsOf(f).dir}/${item.id}`)} · click to copy the tag">${esc(item.tag)}</button>` : ''
+  const by = keptBy ? ` · kept by <a href="#${keptBy.session}" data-tip="go to the worker that kept it">${keptBy.callsign}</a>` : ''
+  const tag = item ? `<button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(`${draftsOf(f).dir}/${item.id}`)} · click to copy the tag">${esc(item.tag)}</button>` : ''
   const file = item && fileButtonsHtml(`${draftsOf(f).dir}/${item.id}`)
   $('draft-head').innerHTML = `<span class="label">Draft</span>${tag}${file ?? ''}<span class="dim">${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${by}</span>
     <span class="actions"><small class="dim">⌘⏎ new session</small>
-      ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" title="start a new session on this prompt">Start session</button>' : ''}
-      ${targets().length ? '<button data-draft-act="transfer" title="type this prompt into a running worker">Send to worker…</button>' : ''}
+      ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" data-tip="start a new session on this prompt">Start session</button>' : ''}
+      ${targets().length ? '<button data-draft-act="transfer" data-tip="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
-      <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`
+      <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
   $('draft-note').innerHTML = d.conflict !== undefined
     ? `<span>Someone else changed this draft while you were editing it.</span>
       <button data-draft-act="reload">Take theirs</button><button data-draft-act="keep">Keep mine</button>`
@@ -2079,12 +2086,12 @@ function drawItem() {
   if (!item) return (goHome(), toast('The item was deleted'))
   const f = floorOf(itemOpen.project)
   const file = itemFile(c, item.id)
-  const by = item.keptBy ? ` · kept by <a href="#${item.keptBy.session}" title="go to the worker that kept it">${esc(item.keptBy.callsign)}</a>` : ''
-  repaint($('item-head'), `<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" title="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
+  const by = item.keptBy ? ` · kept by <a href="#${item.keptBy.session}" data-tip="go to the worker that kept it">${esc(item.keptBy.callsign)}</a>` : ''
+  repaint($('item-head'), `<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
     <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
-    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" title="open it on its own">↗ new tab</a>
+    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">↗ new tab</a>
       <button class="danger" data-item-act="delete">Delete</button>
-      <button data-act="home" aria-label="back to the skyline" title="back to the skyline">✕</button></span>`)
+      <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`)
   if (itemOpen.drawn !== item.modifiedAt) showItemBody(c, item)
 }
 
@@ -2138,13 +2145,13 @@ const shellWhere = (sh) => {
   return `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
 }
 
-const shellAddHtml = () => shellPlaces(board.floors).length ? '<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" title="new shell: pick a directory">+</button>' : ''
+const shellAddHtml = () => shellPlaces(board.floors).length ? '<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" data-tip="new shell: pick a directory">+</button>' : ''
 
 /** The directories a new shell can start in, the floor in view first, each floor under its name. */
 function shellPickHtml() {
   const places = shellPlaces(board.floors, floorInView())
   return [...new Set(places.map((p) => p.project))].map((project) => `<div class="pick-floor" style="${paint(project)}">${esc(floorOf(project).name)}</div>` +
-    places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" title="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>⎇ ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
+    places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" data-tip="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>⎇ ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
 }
 $('shell-pick').addEventListener('toggle', (e) => e.newState === 'open' && ($('shell-pick').innerHTML = shellPickHtml()))
 placeOnOpen($('shell-pick'), () => $('tabs').querySelector('.tab-add'))
@@ -2153,9 +2160,9 @@ function renderDock() {
   if (!board.termsUp) return ($('tabs').innerHTML = `<span>shells: ${esc(whyNot(board, 'shell'))}</span>`)
   if (!board.shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · + starts one in a floor's directory</span>`)
   $('tabs').innerHTML = shellAddHtml() + [...board.shells].sort(byStart).map((sh) =>
-    `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" title="${esc(sh.cwd)}">
+    `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" data-tip="${esc(sh.cwd)}">
       <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
-      <span class="x" data-kill-shell="${sh.id}" aria-hidden="true" title="kill this shell">×</span></button>`).join('')
+      <span class="x" data-kill-shell="${sh.id}" aria-hidden="true" data-tip="kill this shell">×</span></button>`).join('')
 }
 
 function openShell(id) {
@@ -2220,12 +2227,32 @@ new ResizeObserver(() => {
   shellRefitTimer = setTimeout(fitShell, REFIT_DEBOUNCE_MS)
 }).observe($('s-screen'))
 
+/** The grip's reading of the shells' height, which stays between 120px and all but 160px of the window. */
+const markGrip = (h) => {
+  $('grip').setAttribute('aria-valuenow', h)
+  $('grip').setAttribute('aria-valuemax', innerHeight - 160)
+}
+const resizeShells = (px) => {
+  const h = Math.round(Math.max(120, Math.min(innerHeight - 160, px)))
+  $('main').style.setProperty('--shell-h', `${h}px`)
+  markGrip(h)
+}
+const SHELLS_STEP_PX = 24
+
 $('grip').addEventListener('pointerdown', (e) => {
   $('grip').setPointerCapture(e.pointerId)
   const bottom = $('shell-pane').getBoundingClientRect().bottom
   const tabs = $('tabs').offsetHeight
-  $('grip').onpointermove = (ev) => $('main').style.setProperty('--shell-h', `${Math.max(120, Math.min(innerHeight - 160, bottom - tabs - ev.clientY))}px`)
+  $('grip').onpointermove = (ev) => resizeShells(bottom - tabs - ev.clientY)
   $('grip').onpointerup = () => ($('grip').onpointermove = null)
+})
+$('grip').addEventListener('focus', () => markGrip($('shell-pane').offsetHeight))
+$('grip').addEventListener('keydown', (e) => {
+  const step = { ArrowUp: SHELLS_STEP_PX, ArrowDown: -SHELLS_STEP_PX }[e.key]
+  if (!step) return
+  e.preventDefault()
+  e.stopPropagation()
+  resizeShells($('shell-pane').offsetHeight + step)
 })
 
 /** The draft the spawn dialog was opened with, deleted once its session starts. */

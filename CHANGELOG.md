@@ -14,6 +14,11 @@ Commit messages hold the detail.
 
 ## Unreleased
 
+- Every explanation in the tower page, the shared views and Tower 3D's HUD and panels is a `data-tip`, shown by the
+  shared tooltip on hover and on keyboard focus; icon-only controls carry an `aria-label`. `title` stays only on
+  iframes and markdown links. A renderer that draws the shared views without `watchTips` (`/tips.js`) shows none of
+  their tips. The tower page's review threads and shelf files are buttons, and the dock's grip resizes the shells
+  with ↑ and ↓. No tip shows while a button is held, so a drag across line numbers stays clear.
 - **config** One shared keymap: every key the tower page answers is a command in `/keymap.js` (API 1.11), with its
   default chords, and the config's new `keys` rebinds or unbinds any of them by id (`docs/config.md`, checked by
   `tower config check`); the board carries the result as `board.keys`, and the `?` sheet, tooltips and

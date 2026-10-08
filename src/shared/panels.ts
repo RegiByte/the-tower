@@ -58,8 +58,8 @@ import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor
  * inside a button such as a tab.
  */
 export const fileButtonsHtml = (path: string, line?: number) =>
-  `<span class="file-acts"><span class="file-act" role="button" data-reveal="${esc(path)}" aria-label="reveal in Finder" title="reveal ${esc(path)} in Finder">${ICON.finder}</span>` +
-  `<span class="file-act" role="button" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} aria-label="open in your editor" title="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}</span></span>`
+  `<span class="file-acts"><span class="file-act" role="button" data-reveal="${esc(path)}" aria-label="reveal in Finder" data-tip="reveal ${esc(path)} in Finder">${ICON.finder}</span>` +
+  `<span class="file-act" role="button" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} aria-label="open in your editor" data-tip="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}</span></span>`
 
 /** The call a click on a `data-reveal` or `data-edit` element makes: none when the click was elsewhere. */
 export function fileCall(target: Element): Call<'reveal' | 'edit'> | undefined {
@@ -359,7 +359,7 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
     if (r.hunk) return `<tr class="hunk"><td colspan="3">@@ −${r.hunk.old} +${r.hunk.new} @@ ${esc(r.hunk.heading)}</td></tr>`
     const on = range && i >= range[0] && i <= range[1]
     const marks = r.now === undefined ? undefined : noted.get(r.now)
-    const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' ? '' : `data-pick="${esc(key)}|${i}"`} title="${
+    const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' ? '' : `data-pick="${esc(key)}|${i}"`} data-tip="${
       notes ? `noted in ${notes.map((n) => `n${n}`).join(', ')}; ` : ''}click to note on this line, drag or ⇧-click for more">${n ?? ''}</td>`
     const line = `<tr class="${r.cls} ${on ? 'picked' : ''}">${ln(r.old, undefined)}${ln(r.now, marks)}<td><span class="m">${esc(r.line[0])}</span>${code[i]}</td></tr>`
     return on && i === range[1] && !v.picking ? line + noteBoxHtml(v) : line
@@ -387,30 +387,30 @@ function quoteHtml(path: string, quote: Quote) {
 function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
   const state = v.changes && anchorState(a, v.changes)
   const dir = v.files.dirs.find((d) => repoName(d) === a.repo)
-  return `<div class="anchor ${state ?? ''}"><div class="where" data-anchor="${n}|${i}" title="show these lines in Changes"><code>${esc(anchorWhere(a))}</code>${
+  return `<div class="anchor ${state ?? ''}"><div class="where" data-anchor="${n}|${i}" data-tip="show these lines in Changes"><code>${esc(anchorWhere(a))}</code>${
     state && ANCHOR_STATE[state] ? `<span class="state">${ANCHOR_STATE[state]}</span>` : ''}${dir ? fileButtonsHtml(`${dir}/${a.path}`, a.from) : ''}</div>${a.quote ? quoteHtml(a.path, a.quote) : ''}</div>`
 }
 
 const noteHtml = (v: ThreadView, m: Message, fresh: boolean) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''}" data-note="${m.n}">
-  <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<span class="re" data-to-note="${m.re}">re n${m.re}</span>` : ''}${
-    fresh ? `<span class="new-mark" title="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}<button data-reply="${m.n}">reply</button></header>
+  <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<button class="re" data-to-note="${m.re}">re n${m.re}</button>` : ''}${
+    fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}<button data-reply="${m.n}">reply</button></header>
   ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body md">${markdownHtml(m.body)}</div>` : ''}</article>`
 
 function sendHtml(v: ThreadView) {
   const option = (t: Worker) => `<option value="${esc(t.id)}" ${t.id === v.target?.id ? 'selected' : ''}>${esc(t.callsign)} · ${esc(t.checkout)}</option>`
-  return `<span class="send"><button class="primary" data-send ${v.target ? '' : 'disabled'} title="type a pointer to the new notes into the worker's composer">Send to <b>${v.target ? esc(v.target.callsign) : '…'}</b></button>
-    <select data-send-pick title="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
+  return `<span class="send"><button class="primary" data-send ${v.target ? '' : 'disabled'} data-tip="type a pointer to the new notes into the worker's composer">Send to <b>${v.target ? esc(v.target.callsign) : '…'}</b></button>
+    <select data-send-pick aria-label="send to another worker" data-tip="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
 }
 
 /** A checkout's thread: notes with their quotes marked as the Changes find them, Send, and a composer for a note on the whole work. */
 export function reviewsHtml(v: ThreadView) {
   if (!v.thread) return `<div class="reviews-panel">${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
   const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
-  return `<div class="reviews-panel"><div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<span class="tag" data-copy="${esc(v.tag)}" title="copy its tag">${esc(v.tag)}</span>` : ''}${
+  return `<div class="reviews-panel"><div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<button class="tag" data-copy="${esc(v.tag)}" data-tip="copy its tag">${esc(v.tag)}</button>` : ''}${
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
       <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${sendHtml(v)}</div>` +
     (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
-    `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" title="not an answer">×</button></div>` : ''}
+    `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" data-tip="not an answer">×</button></div>` : ''}
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
       <div class="actions"><button class="primary" data-note-add>Add note</button></div></div></div>`
 }
@@ -564,7 +564,7 @@ export function statsHtml(v: StatsView) {
     return `<button class="${t.id === v.scope ? 'on' : ''}" aria-pressed="${t.id === v.scope}" data-stats-scope="${esc(t.id)}">${project ? `<i style="background:${seriesColor(project)}"></i>` : ''}${esc(t.label)}</button>`
   }).join('')
   const ranges = RANGES.map(([r, label]) => `<button class="${r === v.range ? 'on' : ''}" aria-pressed="${r === v.range}" data-stats-range="${r}">${label}</button>`).join('')
-  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read aria-label="read again" title="read again">↻</button></div></div>`
+  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read aria-label="read again" data-tip="read again">↻</button></div></div>`
   if (!v.stats) return `<div class="stats-panel">${head}${v.failed ? failedHtml('the stats', v.failed, 'data-stats-read') : '<p class="none">reading the stats…</p>'}</div>`
   const st = v.stats
   const all = v.scope === STATS_ALL
@@ -755,6 +755,8 @@ export const panelsCss = `
 .reviews-panel .note > header b { font: 800 13px/1 var(--display); letter-spacing: .04em; color: var(--ink); }
 .reviews-panel .note > header .n { font: 12px var(--mono); }
 .reviews-panel .note > header .re { font: 12px var(--mono); color: var(--accent); cursor: pointer; }
+.reviews-panel .note > header button.re { margin-left: 0; padding: 0; border: none; background: none; }
+.reviews-panel .reviews-head button.tag { border: none; font-weight: 400; }
 .reviews-panel .note > header .new-mark { padding: 0 6px; border-radius: 999px; font-weight: 700; color: var(--on-needs); background: var(--needs); }
 .reviews-panel .note > header button { margin-left: auto; padding: 0 8px; font-size: 11px; font-weight: 400; background: none; }
 .reviews-panel .note .body { font-size: 14px; line-height: 1.5; }
