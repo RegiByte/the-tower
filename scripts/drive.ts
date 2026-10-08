@@ -8,6 +8,7 @@
  *     --shot <file>   save a PNG of the page, DOM panels included
  *     --wait <ms>     wait in real time
  *     --hover <css>   move the mouse to the middle of the first element the selector finds, as a real pointer would
+ *     --wheel <dy>    turn the mouse wheel where the pointer is (after --hover), 100 a notch: --wheel=-100 scrolls up
  *     --key <chord>   press a key on the focused element as a real keyboard would: a key name with any of Meta+, Ctrl+,
  *                     Alt+, Shift+ before it (Meta+Backspace, Shift+Enter, Alt+ArrowLeft, Ctrl+c)
  *     --type <text>   type text into the focused element
@@ -26,7 +27,7 @@ import { parseArgs } from 'node:util'
 
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
-const STEPS = ['eval', 'shot', 'wait', 'hover', 'key', 'type'] as const
+const STEPS = ['eval', 'shot', 'wait', 'hover', 'wheel', 'key', 'type'] as const
 type Step = { kind: (typeof STEPS)[number]; value: string }
 
 function parse(argv: string[]) {
@@ -37,7 +38,7 @@ function parse(argv: string[]) {
     options: { size: { type: 'string', default: '1280x800' }, scheme: { type: 'string' }, motion: { type: 'string' }, ...Object.fromEntries(STEPS.map((s) => [s, { type: 'string', multiple: true }])) },
   })
   const url = tokens.find((t) => t.kind === 'positional')?.value
-  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--eval js | --shot file | --wait ms | --hover css | --key chord | --type text]…')
+  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--eval js | --shot file | --wait ms | --hover css | --wheel dy | --key chord | --type text]…')
   const steps: Step[] = tokens.flatMap((t) => (t.kind === 'option' && (STEPS as readonly string[]).includes(t.name) ? [{ kind: t.name as Step['kind'], value: t.value! }] : []))
   const [width, height] = values.size.split('x').map(Number)
   return { url, steps, width, height, scheme: values.scheme, motion: values.motion }
@@ -113,6 +114,8 @@ export type Page = {
   eval(expression: string): Promise<unknown>
   shot(file: string): Promise<void>
   mouse(x: number, y: number): Promise<void>
+  /** At the pointer, where `mouse` last moved it. */
+  wheel(deltaY: number): Promise<void>
   key(chord: string): Promise<void>
   type(text: string): Promise<void>
 }
@@ -138,6 +141,7 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
     const loaded = new Promise((resolve) => cdp.on('Page.loadEventFired', resolve))
     await cdp.send('Page.navigate', { url })
     await loaded
+    let pointer = { x: 0, y: 0 }
     const result = await use({
       async eval(expression) {
         const r = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
@@ -149,7 +153,11 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
         writeFileSync(file, Buffer.from(data, 'base64'))
       },
       async mouse(x, y) {
+        pointer = { x, y }
         await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y })
+      },
+      async wheel(deltaY) {
+        await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...pointer, deltaX: 0, deltaY })
       },
       async key(chord) {
         const down = keyDown(chord)
@@ -175,6 +183,7 @@ async function main() {
       if (step.kind === 'wait') await sleep(Number(step.value))
       if (step.kind === 'shot') (await page.shot(step.value), console.log(`shot: ${step.value}`))
       if (step.kind === 'eval') console.log(JSON.stringify(await page.eval(step.value)))
+      if (step.kind === 'wheel') await page.wheel(Number(step.value))
       if (step.kind === 'key') await page.key(step.value)
       if (step.kind === 'type') await page.type(step.value)
       if (step.kind === 'hover') {
