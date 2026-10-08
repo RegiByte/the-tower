@@ -19,6 +19,9 @@ const codeOf = (line: Buffer): string => String.fromCharCode(line[line.indexOf('
 
 export const everyEvent: EventFilter = parse
 
+/** What a broken session's facts fold from: nothing, as nothing after its break is folded. */
+export const noEvents: EventFilter = () => undefined
+
 /** What draws a session's screen, and the exit that ends it. */
 export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parse(line) : undefined)
 
@@ -39,12 +42,21 @@ const isPostToolUse = (line: Buffer): boolean => {
  * Everything a session's facts fold from, for one log read on from where its state was `state` (`BOOTING` at its
  * start): output only until the session starts (a blocking screen is the only fact output holds), and of a
  * `PostToolUse` only its name, its tool's response unread. The filter folds the session's state over what it keeps to
- * know when it has started.
+ * know when it has started. An event whose state it can't follow is kept, for the fold to break on it (`factsAfter`),
+ * and nothing after it.
  */
 export const factEvents = (from: SessionState): EventFilter => {
-  let state = from
-  const keep = (event: LogEvent) => ((state = nextState(state, event)), event)
+  let state: SessionState | undefined = from
+  const keep = (event: LogEvent) => {
+    try {
+      state = nextState(state!, event)
+    } catch {
+      state = undefined
+    }
+    return event
+  }
   return (line) => {
+    if (!state) return undefined
     const code = codeOf(line)
     if (code === 'o') return readsOutput(state) ? keep(parse(line)) : undefined
     if (code === 'h' && isPostToolUse(line)) {

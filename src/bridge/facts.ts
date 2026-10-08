@@ -93,7 +93,12 @@ export type Facts = {
   sent: [at: number, to: string, digest: number][]
   /** The messages it received from other Claude sessions: when (epoch ms), and the digest of the text as sent. */
   received: [at: number, digest: number][]
+  /** The first event the fold couldn't follow: the error it threw, the event's time and code. Nothing after it is folded. */
+  broken?: Broken
 }
+
+/** `at`: the event's time, in seconds since the session's start. */
+export type Broken = { message: string; at: number; code: string }
 
 export type Session = { header: SessionHeader; facts: Facts }
 
@@ -234,7 +239,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
  * Output draws the screen, and changes no fact but a blocking screen's state: otherwise the same facts come back, so a
  * caller can tell nothing changed.
  */
-export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent): Facts => {
+const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
   if (event[1] === 'o') {
     const state = nextState(facts.state, event)
     return state === facts.state ? facts : { ...facts, state }
@@ -252,6 +257,20 @@ export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent)
   }
   if (event[1] === 'h') return hookFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
   return next
+}
+
+/**
+ * The step every fold of a log takes. An event the fold can't follow breaks the session where it stands: its facts
+ * stay as they were before it, `broken` says why, and nothing after it is folded, so one bad line costs its own
+ * session and no other reader.
+ */
+export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent): Facts => {
+  if (facts.broken) return facts
+  try {
+    return stepAfter(startedAt, facts, event)
+  } catch (err) {
+    return { ...facts, broken: { message: (err as Error).message, at: event[0], code: event[1] } }
+  }
 }
 
 export const factsOf = ({ header, events }: SessionLog): Facts => events.reduce(factsAfter(header.startedAt), initialFacts(header))

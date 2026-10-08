@@ -25,7 +25,9 @@ or one event at a time as it is tailed:
   up with no `SessionStart`, ended by the turn's next step). The state keeps the `trigger` of the compaction in
   progress for that, and the board's card says `compacting` while it runs. A session without
   an `x` event that the host no longer runs is `lost` ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
-- [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter): state plus size, context, cost, rate limits,
+- [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one
+  place a bad event is caught: a step that throws leaves the facts as they were with `broken` (the error, the event's
+  time and code) and folds nothing after it ([[broken-logs]]). It folds state plus size, context, cost, rate limits,
   current tool (its label clipped to 280 characters, like each of `says`: a Bash heredoc runs to kilobytes), what
   Claude told the user between tool calls this turn (`says`, its latest few steps), model,
   effort, the release of Claude it runs (`claude`, from `tower.claude`), the main loop's finished turns (`turns`: each `Stop`; an interrupt or a failure raises none), the [[conversation]]s held, what the worker showed (`shown`, from `tower.show`: [[agent-show]]), what it kept (`kept`, from `tower.keep`: [[agent-keep]]), when someone

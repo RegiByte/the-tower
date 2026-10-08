@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom, ty
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -26,7 +26,7 @@ const levelKey = (l: Level) => (l.kind === 'roof' ? 'R' : String(l.index))
 
 /** A project's lamp: its colour, never an attention. */
 const swatch = (color: string) => `<span class="lamp" style="--c:${color}"></span>`
-const pill = (c: Card) => `<span class="pill ${lampOf(c)}"><span class="lamp"></span>${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span>`
+const pill = (c: Card) => `<span class="pill ${lampOf(c)}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span>${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span>`
 /** A floor sign: a plate tinted by the band on its edge, the key that rides there on a tile, the name in caps. */
 const sign = (key: string, name: string, band: string, extra = '') =>
   `<div class="sign" style="--p:${band}"><span class="num">${esc(key)}</span><span class="name">${esc(name)}</span>${extra}</div>`

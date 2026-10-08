@@ -423,7 +423,7 @@ button.held { opacity: .45; cursor: not-allowed; }
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -525,7 +525,7 @@ const byStart = (a, b) => a.startedAt - b.startedAt
 
 const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${c.stuck ? STUCK_TITLE : esc(statusName(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" title="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span></span></div>
     ${c.worktree ? `<div class="branch" title="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
@@ -697,7 +697,7 @@ function traysHtml(f) {
     drafts?.items.length && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
     trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
     (threads || landed) && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
-    ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
+    ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
     past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" title="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
     tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
@@ -791,7 +791,7 @@ function barHtml(c) {
   const orphan = c.resources.some((r) => r.orphan)
   const ctx = c.context
   repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck ? ` title="${STUCK_TITLE}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` title="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
     <span class="where" title="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" title="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`}

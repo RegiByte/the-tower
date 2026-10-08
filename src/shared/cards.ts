@@ -27,7 +27,7 @@ export const ATTENTION_MEANS: Record<Attention, string> = {
   ready: 'its turn ended with an answer nobody has read: nothing it started can wake it, and nobody has typed to it since. Typing to it reads it. An answer for the worker that hired it reads ready too, and waits on that worker',
   working: 'booting, or in a turn: thinking, running tools or compacting',
   quiet: 'nothing for you: at its prompt, its answer read, watching (a background task or a /loop it started will wake it, and its lamp breathes), exited, or stopped with the host and resumable',
-  broken: 'its last turn failed (an API error or a refusal), or it was lost: the host no longer runs it and it never logged an exit',
+  broken: "its last turn failed (an API error or a refusal), it was lost: the host no longer runs it and it never logged an exit, or its log holds an event the tower can't read, and its facts stop there",
 }
 
 /** The count of waits on the board that are yours, by `heededWaits`. */
@@ -63,10 +63,10 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
 
 /** A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says. */
 export const statusName = (c: Card) =>
-  c.stranded ? `${c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.broken ? 'broken' : c.stranded ? `${c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
-export const bubbleOf = (c: Card) => (c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
+export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
 
 /** The conversation a resume continues: the latest one Claude saved. */
 export const current = (c: Card) => c.conversations.at(-1)
@@ -352,7 +352,17 @@ export const ringing = (waits: Wait[], watched: string | undefined) => waits.fin
  * One line of what a worker is up to: the tool it asks for, its compaction, the tool it runs, the prompt it works on,
  * else Claude's latest answer, else the prompt it was given.
  */
-export type Gist = { kind: 'blocked' | 'asks' | 'compacts' | 'runs' | 'answer' | 'prompt'; text: string }
+export type Gist = { kind: 'broken' | 'blocked' | 'asks' | 'compacts' | 'runs' | 'answer' | 'prompt'; text: string }
+
+/** Why a broken worker's facts stopped: the event its log can't be read past, and the error it raised. */
+export const brokenText = (c: Card) => `log unreadable past a${c.broken!.code === 'h' ? ' hook' : 'n event'} (${new Date(c.broken!.at).toLocaleTimeString()}): ${c.broken!.message}`
+
+/** What the user does about a broken worker. */
+export const BROKEN_DOES =
+  "Nothing after that event is read, so its status, cost and answers stand as they were. It still runs if the host runs it: drive it, or kill it and resume its conversation, which starts a new log."
+
+/** What a worker's status says on hover. */
+export const statusTitle = (c: Card) => (c.broken ? `${brokenText(c)}. ${BROKEN_DOES}` : c.stuck ? STUCK_TITLE : statusName(c))
 
 /** What a screen that blocks a worker asks of you. */
 export const BLOCKED_TEXT: Record<BlockedKind, string> = {
@@ -362,6 +372,7 @@ export const BLOCKED_TEXT: Record<BlockedKind, string> = {
 
 export function gistOf(c: Card): Gist | undefined {
   const conv = current(c)
+  if (c.broken) return { kind: 'broken', text: brokenText(c) }
   if (c.blocked) return { kind: 'blocked', text: BLOCKED_TEXT[c.blocked] }
   if (c.status === 'needs_input' && c.tool) return { kind: 'asks', text: c.tool }
   if (c.compacting) return { kind: 'compacts', text: 'compacting the conversation' }
@@ -371,9 +382,9 @@ export function gistOf(c: Card): Gist | undefined {
 }
 
 /** What a worker says over its head while it works: once the turn ends, its gist speaks. */
-export const speechOf = (c: Card): string[] => (c.status === 'working' ? c.says.map(plain) : [])
+export const speechOf = (c: Card): string[] => (c.status === 'working' && !c.broken ? c.says.map(plain) : [])
 
-export const GIST_MARK: Record<Gist['kind'], string> = { blocked: '⚠', asks: '⚠', compacts: '≡', runs: '⚙', answer: '↳', prompt: '❯' }
+export const GIST_MARK: Record<Gist['kind'], string> = { broken: '×', blocked: '⚠', asks: '⚠', compacts: '≡', runs: '⚙', answer: '↳', prompt: '❯' }
 
 /** The gist as plain text, its mark first; `''` for a worker with nothing to say yet. */
 export const gistLine = (c: Card) => {

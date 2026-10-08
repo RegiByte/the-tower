@@ -131,8 +131,8 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   const awaited = new Map<string, () => void>()
 
   /**
-   * Folds the log so far, from its checkpoint on, then keeps folding what the host appends while the session runs. A
-   * log the host just created may not hold its header yet: it is tracked on a later change.
+   * Folds the log so far, from its checkpoint on, then keeps folding what the host appends while the session runs, until
+   * it exits or breaks. A log the host just created may not hold its header yet: it is tracked on a later change.
    */
   const track = (file: string) => {
     const logPath = path.join(paths.sessions, file)
@@ -144,11 +144,11 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     sessions.set(id, session)
     measure()
     awaited.get(id)?.()
-    if (session.facts.state.status === 'exited' || isArchived(logPath)) return
+    if (session.facts.state.status === 'exited' || session.facts.broken || isArchived(logPath)) return
     const step = factsAfter(session.header.startedAt)
     const stop = tailLog(logPath, offset, factEvents(session.facts.state), (event) => {
       const facts = step(session.facts, event)
-      if (event[1] === 'x') {
+      if (event[1] === 'x' || facts.broken) {
         stop()
         tails.delete(id)
         measure()

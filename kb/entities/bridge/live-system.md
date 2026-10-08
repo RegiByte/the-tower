@@ -19,14 +19,16 @@
 ---
 `src/system.ts`, with its machine edges in `src/machine.ts` (host and terms requests, `ps`/`lsof`, git
 origins, the editor, `bringUp`). A new log file is picked up by a directory watch; an exited session stops being
-tailed. Each log is folded from its checkpoint on ([`foldLog`](ref:hub/src/checkpoints.ts#foldLog),
+tailed, as does one whose fold breaks on an event it can't follow ([[broken-logs]]): it costs that session's facts,
+and the tower and every other session carry on. Each log is folded from its checkpoint on ([`foldLog`](ref:hub/src/checkpoints.ts#foldLog),
 [[fold-checkpoints]]): an exited log costs a header read and a lookup, so a start is about 36 ms for 235 logs
 (881 MB) once checkpointed, against 1.6 s folding them all; a running session's tail goes on from where its fold
 stopped. Logs are read and tailed through an event filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) that tells
 from a line's bytes what the fold ignores, before decoding or parsing it: output is skipped once the session has started
 (the filter folds the session's state over what it keeps, and reads output only while it is `booting` or `blocked`, the
 only time output holds a fact), and a `PostToolUse` is read for its name alone (output and tool responses are over 90% of
-a log's bytes). A filter is made from the state a read starts at (`factEvents(state)`): the
+a log's bytes). An event whose state the filter can't follow is kept, for the fold to break on, with nothing after it. A filter is
+made from the state a read starts at (`factEvents(state)`): the
 fold's own state at every step, so a fold resumed from a checkpoint and the tail after it skip exactly what a fold
 from the start skips. Folding every log from its start (235 logs, 881 MB) takes about 1.7 s, the same with the
 boot-time output read as without it. `onChange` fires only when something renderers read changed, each poll comparing its read with the last by

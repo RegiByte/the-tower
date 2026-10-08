@@ -121,6 +121,12 @@ export type Card = {
   heardAt?: number
   /** Working with no word from Claude for `STUCK_MS`: a hung tool, or a long build. */
   stuck: boolean
+  /**
+   * Its log holds an event the tower can't fold (`Facts.broken`): the error, the event's code and its time (epoch ms).
+   * Its facts stand as they were before it and are never folded on, so it waits on no one and is never stuck; whether
+   * it runs is the host's word, so it can still be driven and killed, or resumed once it no longer runs.
+   */
+  broken?: { message: string; code: string; at: number }
   startedAt: number
   cols: number
   rows: number
@@ -343,7 +349,7 @@ const card = (
   const thread = threadOf(threadCheckoutOf({ reviews, worktree, checkout }))
   const state = withLiveness(facts.state, header.id, liveIds)
   const stranded = state.status === 'lost' || facts.hostStopped === true
-  const waiting = waitsOnSomeone(state, facts.typedAt)
+  const waiting = !facts.broken && waitsOnSomeone(state, facts.typedAt)
   const live = isLive(state.status)
   const held = threads(session, sessions, nameOf)
   const unresumable = !live && held.some((t) => !t.resumedBy) ? unresumableHere : undefined
@@ -378,11 +384,12 @@ const card = (
     blocked: state.blocked,
     live,
     waiting,
-    attention: attentionOf(state.status, waiting),
+    attention: facts.broken ? 'broken' : attentionOf(state.status, waiting),
     enteredAt: header.startedAt + state.since * 1000,
     typedAt: facts.typedAt === undefined ? undefined : header.startedAt + facts.typedAt * 1000,
     heardAt,
-    stuck: isStuck(state.status, heardAt, now),
+    stuck: !facts.broken && isStuck(state.status, heardAt, now),
+    broken: facts.broken && { ...facts.broken, at: header.startedAt + facts.broken.at * 1000 },
     startedAt: header.startedAt,
     cols: facts.cols,
     rows: facts.rows,

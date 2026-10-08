@@ -4,7 +4,7 @@ import { factsOf } from '../src/bridge/facts.ts'
 import { board, unresumableAt } from '../src/bridge/board.ts'
 import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
-import { gistLine, speechOf } from '../src/shared/cards.ts'
+import { gistLine, speechOf, statusName } from '../src/shared/cards.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
 import type { RepoRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL, type HostLive } from '../src/shared/protocol.ts'
@@ -437,4 +437,30 @@ test('a hire’s answer to its hirer’s prompt waits on the hirer while it runs
   assert.deepEqual([hirerGone.card.waiting, hirerGone.card.waitsOn, hirerGone.waits], [true, undefined, [hire.header.id]])
   const usersPrompt = at([answered, { ...hirer, events: [...idle.events, [110, 'h', { hook_event_name: 'tower.hire', id: answered.header.id }]] } as SessionLog], both)
   assert.deepEqual([usersPrompt.card.waiting, usersPrompt.card.attention, usersPrompt.waits], [true, 'ready', [hire.header.id]])
+})
+
+test("a Stop the fold can't follow breaks its session there: its facts stop, the card reads broken and why, and it can still be killed, then resumed", () => {
+  const log = homed(fixture('stop-without-tasks'))
+  const facts = factsOf(log)
+  assert.deepEqual(facts.broken, { message: "Cannot read properties of undefined (reading 'some')", at: 8.056, code: 'h' })
+  assert.equal(facts.state.status, 'working')
+  assert.equal(facts.state.since, 0.061)
+  assert.equal(facts.heardAt, 7.035)
+  assert.equal(facts.hostStopped, undefined)
+
+  const [running] = cardsOf([log], hostWith(log.header.id))
+  assert.equal(running.status, 'working')
+  assert.equal(running.attention, 'broken')
+  assert.equal(running.waiting, false)
+  assert.equal(running.stuck, false)
+  assert.deepEqual(running.broken, { message: "Cannot read properties of undefined (reading 'some')", at: log.header.startedAt + 8056, code: 'h' })
+  assert.equal(statusName(running), 'broken')
+  assert.match(gistLine(running), /^× log unreadable past a hook \(.+\): Cannot read properties of undefined \(reading 'some'\)$/)
+  assert.deepEqual(speechOf(running), [])
+  assert.deepEqual(running.verbs, ['drive', 'submit', 'brief', 'kill'])
+
+  const [killed] = cardsOf([log])
+  assert.equal(killed.status, 'lost')
+  assert.equal(killed.attention, 'broken')
+  assert.deepEqual(killed.verbs, ['resume', 'brief'])
 })
