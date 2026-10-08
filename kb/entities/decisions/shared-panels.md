@@ -103,8 +103,8 @@ neutral colour under its id, so the bars add up to the tiles),
 and the scope tabs the renderer offers (`STATS_ALL` is every project's). It draws tiles (spent, agent-hours, waiting
 on you, sessions, prompts, asks, commits landed, lines changed, and "left this week" on the All tab), bar charts of
 spend, agent-hours and commits per bucket, lines added above an axis and removed below it, and spend by hour of day, stacked by project on the All tab with a legend, and the spreads of waits, turns and active
-time, tokens by model and lines by file kind. Bars are html, so a column's readout (`data-tip`) shows on hover from the stylesheet alone, with nothing to
-wire; text stays in ink (lines added and removed wear the diff's colours, as in Changes), and a bar wears its project's colour mixed a quarter toward ink. `data-stats-scope`,
+time, tokens by model and lines by file kind. Bars are html, so a column's readout (`data-tip`) shows on hover and focus through the renderer's one tooltip
+([[settings-and-tips]]), with nothing to wire; text stays in ink (lines added and removed wear the diff's colours, as in Changes), and a bar wears its project's colour mixed a quarter toward ink. `data-stats-scope`,
 `data-stats-range` and `data-stats-read` are the attributes a renderer wires. The tower page puts it on the sidebar
 (the floor in view and All floors), Tower 3D on the roof (every project and the overview).
 

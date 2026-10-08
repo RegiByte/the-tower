@@ -48,7 +48,8 @@ worker (decisions [[renderer-is-disposable]], [[agents-have-every-capability]]).
   [`nextWait`](ref:hub/src/shared/cards.ts#nextWait) (round-robin, `here` skipped, a new round once all were visited),
   [`heededWaits`](ref:hub/src/shared/cards.ts#heededWaits) and `dismissing`, the ring setting (`once`, `remind` every
   30 s while unwatched, `off`) and [`SOUNDS`](ref:hub/src/shared/cards.ts#SOUNDS), a score per sound (question, done)
-  each renderer plays its own way. Dismissals and the setting live in `tower.store` (`waits.dismissed`,
+  each renderer plays its own way. The setting is chosen in the shared settings popover, where each sound can be played
+  ([[settings-and-tips]]). Dismissals and the setting live in `tower.store` (`waits.dismissed`,
   `waits.ring`): per viewer, shared by their renderers, re-read on every board.
 - One ringer per viewer: a framed renderer rings nothing and leaves it to the page framing it (Tower 3D checks
   `tower.framed`), which sees the same transitions; Tower 3D run on its own rings itself.

@@ -38,8 +38,8 @@ terminals, and a terminal that is a block of the ink colour.
 - **Two schemes, one set of roles.** `palettes.light` is a soft parchment (bright white paper tired the eyes over
   long sessions), `palettes.dark` a deep green-grey; both fill the same roles, `ink` for text and `enamel` for dark
   surfaces (terminals, buildings), so components never name a scheme. `designCss` follows the system's
-  appearance unless the root carries `data-scheme`; the tower page's toggle cycles auto, light and dark, kept in
-  localStorage, and re-themes open terminals ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
+  appearance unless the root carries `data-scheme`; the settings popover offers system, light and dark ([[settings-and-tips]]), kept
+  in localStorage by `tower.js`, and re-themes open terminals ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)).
   The choice reaches framed shelf pages as a `scheme` message ([[renderer-api]]), so Tower 3D's panels follow it;
   `url` entries get it too, so an app the tower frames can follow it with a copy of the palette.
 - **Panels follow the scheme; the world doesn't.** Tower 3D's DOM chrome (HUD, prompt card, panels, elevator

@@ -116,7 +116,7 @@ back-left corner:
 
 **Panels and world** ([[design-system]]). The panels are the shared components of `/design.css` in the
 viewer's scheme, which reaches the frame as the renderer API's `scheme` message: the HUD, one row of loose chips at the
-bottom-left over the world, as wide as the prompt card leaves room for, the floor name the one that shrinks (the host lamp and the music toggle, a floor sign for where you are, a waiting chip that is the
+bottom-left over the world, as wide as the prompt card leaves room for, the floor name the one that shrinks (the host lamp, a word beside it once the host is outdated or down, the music toggle and the settings gear, a floor sign for where you are, a waiting chip that is the
 N button, lamp counts per attention and shells, rate-limit mini meters with when each resets, a pace tick on a weekly one (how much of the week has gone, [`weekElapsed`](ref:hub/src/shared/cards.ts#weekElapsed), shared with the tower page) and the reading's age, dimmed once it is past 15 minutes, new showings (V) and stop sharing, each shown only
 while it says something; [`hudHtml`](ref:hub/renderers/tower3d/src/ui.ts#hudHtml)), the prompt card (what you aim at and its verbs on their keys), the elevator list,
 the floor panel and directory (signs and worker cards; the left rail `#rail` stacks it from the top, above the fps readout and the HUD, so none of them needs an offset), the desk panel (status pill, an ask banner while the
@@ -231,8 +231,8 @@ grid to the open cell beside the desk, coming out of the elevator when it starts
 (the `pet` view, which ignores the building's keys), the right hand strokes its back head to tail three times while it
 sits up and leans into the hand, hearts float off its head (placed from the time since the pet began and a hash of the
 cat's name), it purrs unless the music is muted ([`purr`](ref:hub/renderers/tower3d/src/life.ts#purr)), and the camera flies home;
-anything else that takes the view ends the pet where it is. A wait that begins rings, as the HUD's bell is set (once,
-remind every 30 s, off), with one sound for an answer and another for every other wait ([[waiting-on-you]]); framed, it
+anything else that takes the view ends the pet where it is. A wait that begins rings, as the settings popover sets it (once,
+remind every 30 s, off; the gear in the HUD or on the pause card, [[settings-and-tips]]), with one sound for an answer and another for every other wait ([[waiting-on-you]]); framed, it
 rings nothing and leaves ringing to the page framing it ([[attention-list]]); N goes round the
 waits; the desk panel's ✕ dismisses the worker's wait, which then stops pulsing; while you walk a floor, an arrow on the
 screen's edge points to each worker on it waiting on you out of view
