@@ -85,6 +85,10 @@ test('markdownHtml: markdown itself renders as before', () => {
     '<table>\n<thead>\n<tr>\n<th>f</th>\n<th align="right">n</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>a</td>\n<td align="right">1</td>\n</tr>\n</tbody></table>\n')
 })
 
+test('markdownHtml: a line break is kept, as in a comment on GitHub', () => {
+  assert.equal(markdownHtml('**bug** · correctness\nWhat goes wrong.'), '<p><strong>bug</strong> · correctness<br>What goes wrong.</p>\n')
+})
+
 test('markdownHtml: a fence is a figure with its syntax marked and a button to copy it', () => {
   assert.equal(markdownHtml('```typescript\nconst a = 1\n```'),
     '<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code><span class="hljs-keyword">const</span> a = <span class="hljs-number">1</span></code></pre></figure>\n')

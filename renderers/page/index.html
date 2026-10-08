@@ -922,7 +922,7 @@ function unshow(key) {
   render()
 }
 
-/** The selected session and its conversations as the brief last asked for them: it asks again when they change. */
+/** The selected session, whether it works, and its conversations as the brief last drew them: it asks again when they change. */
 let briefKey
 
 /** The brief and what a worker showed lie over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. */
@@ -939,7 +939,7 @@ function renderPane(c) {
   if (reviewing && keepsThreads(c)) followThread(c)
   if (pane === 'changes') drawChanges()
   if (pane === 'reviews') drawReviews(c)
-  const key = brief && `${c.id} ${JSON.stringify(c.conversations)}`
+  const key = brief && `${c.id} ${c.status === 'working'} ${JSON.stringify(c.conversations)}`
   if (!key || key === briefKey) return
   briefKey = key
   told(tower.conversations(c.id)).then((threads) => threads && briefKey === key && showBrief(c, threads))
@@ -1200,7 +1200,7 @@ function drawBrief(same = true) {
   const promptBy = (id) => c?.conversations.find((conv) => conv.id === id)?.promptBy
   const open = same ? openFolds(el) : new Set()
   const expanded = same ? expandedSaid(el) : new Set()
-  drawPanel(el, briefHtml({ briefs: briefShown.threads, said: markdownHtml, promptBy, open, expanded, markdown: briefMarkdown }), {})
+  drawPanel(el, briefHtml({ briefs: briefShown.threads, said: markdownHtml, promptBy, open, expanded, markdown: briefMarkdown, working: c?.status === 'working' }), {})
 }
 
 function chooseBriefMarkdown(markdown) {

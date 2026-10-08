@@ -51,8 +51,10 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
   redraw stays at the end when the viewer was there.
 - *Bubbles.* [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws a turn as a prompt on the right ("YOU · 18:35",
   or the hirer's name on a hired worker's launch prompt, from `promptBy`) and Claude's answer stretched on the left
-  ("CLAUDE · 18:41 · took 6m 12s"), "working on it" with the working lamp while the conversation's last turn has no
-  answer, "no answer" for an earlier one. Each bubble has a copy button (`data-copy-said`); the renderer reads the text
+  ("CLAUDE · 18:41 · took 6m 12s"), "working on it" with the working lamp on the brief's latest prompt while the
+  worker's status is working (the renderer passes `working`), "no answer" on any other unanswered prompt (one
+  interrupted, a past session's). Each bubble has a copy button (`data-copy-said`, keyed by session, conversation and
+  turn, since a resumed conversation's turns are drawn again in the session that resumed it); the renderer reads the text
   as written from the reply it holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText)), never from the html.
 - *D2, rendered or raw.* A viewer's choice in `tower.store` under
   [`BRIEF_MARKDOWN_KEY`](ref:hub/src/shared/brief.ts#BRIEF_MARKDOWN_KEY), rendered unless set: a segmented control at
@@ -73,7 +75,8 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
 - *Code.* `markdownHtml` draws each fence as a `<figure class="code">` with its syntax marked by
   [`fenceLang`](ref:hub/src/shared/highlight.ts#fenceLang) and `highlightLines`, and a `data-copy-code` button
   ([`fenceText`](ref:hub/src/shared/markdown.ts#fenceText) reads its code); its links open a tab of their own, since
-  the words now sit in the renderer's page. [`markdownCss`](ref:hub/src/shared/markdown.ts#markdownCss) sets words
+  the words now sit in the renderer's page, and a single line break is kept (`breaks`, as in a comment on GitHub: a
+  review note's first line, a prompt typed over lines). [`markdownCss`](ref:hub/src/shared/markdown.ts#markdownCss) sets words
   under `.md`, with the syntax colours of [`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss), shared
   with the Changes and Reviews panels.
 
@@ -85,8 +88,8 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
 - *Folds as config (`brief.fold`).* Nobody asked for it; a constant until someone does.
 - *Conversations latest first, turns oldest first.* Scrolling to the end would land in the oldest conversation.
 
-**Impact.** API 1.11: `briefHtml` takes optional `expanded` and `markdown` (an older call draws rendered with nothing
-expanded), `/brief.js`, `/markdown.js` and `/settings.js` gain exports, a turn gains `answeredAt`. A renderer that
+**Impact.** API 1.11: `briefHtml` takes optional `expanded`, `markdown` and `working` (an older call draws rendered
+with nothing expanded and nothing at work), `/brief.js`, `/markdown.js` and `/settings.js` gain exports, a turn gains `answeredAt`. A renderer that
 draws `markdownHtml` or the Reviews panel adds `markdownCss` beside `panelsCss` and wires `data-copy-code`. Contrast:
 a prompt bubble's words and inline code are measured by `npm run tool:contrast`; links and "show all" in a prompt
 bubble take the ink, since the accent on its tint falls short of AA in the light scheme.

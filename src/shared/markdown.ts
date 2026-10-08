@@ -45,6 +45,7 @@ const fenceHtml = ({ text, lang }: Tokens.Code) =>
   `<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code>${highlightLines(text.split('\n'), fenceLang(lang)).join('\n')}</code></pre></figure>\n`
 
 const words = new Marked({
+  breaks: true,
   renderer: {
     html: ({ text, block }) => (block ? `<p>${esc(text.trim())}</p>\n` : esc(text)),
     code: fenceHtml,

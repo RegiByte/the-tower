@@ -363,7 +363,7 @@ export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown'>
 
 /** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel. */
 const briefHtml = (c: Card, threads: Brief[], look: BriefLook) =>
-  lineageBriefHtml({ briefs: threads, said: markdownHtml, promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy, ...look })
+  lineageBriefHtml({ briefs: threads, said: markdownHtml, promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy, working: c.status === 'working', ...look })
 
 /**
  * A worker's sessions, oldest first, each a button that shows its screen (`data-replay`, its id); a running worker's
