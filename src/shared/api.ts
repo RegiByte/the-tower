@@ -52,6 +52,7 @@ const cut = z
       ),
   })
   .refine((c) => c.base === undefined || c.from === undefined, { message: 'A cut takes `base` or `from`, not both', path: ['from'] })
+  .meta({ not: { required: ['base', 'from'] } })
   .describe('A new worktree in every directory of the project, under one name and on one new branch; the session starts in the hub\'s.')
 /** What a cut made, and from what: each repo's base, and why it is that one. */
 const cutReply = z.object({ name: z.string(), branch: z.string(), bases: z.array(z.object({ dir: z.string(), base: z.string(), why: z.string() })) })
@@ -66,6 +67,7 @@ export const VERBS = {
         ...launch,
       })
       .refine((s) => s.cwd === undefined || s.cut === undefined, { message: 'A spawn takes `cwd` or `cut`, not both', path: ['cut'] })
+      .meta({ not: { required: ['cwd', 'cut'] } })
       .describe(
         "Start a session in one of the project's directories or one of their worktrees (`cwd`, the hub when left out), or in a new worktree (`cut`); whatever else is left out is Claude's own default.",
       ),
