@@ -88,7 +88,7 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
 - *Folds as config (`brief.fold`).* Nobody asked for it; a constant until someone does.
 - *Conversations latest first, turns oldest first.* Scrolling to the end would land in the oldest conversation.
 
-**Impact.** API 1.11: `briefHtml` takes optional `expanded`, `markdown` and `working` (an older call draws rendered
+**Impact.** API 1.12: `briefHtml` takes optional `expanded`, `markdown` and `working` (an older call draws rendered
 with nothing expanded and nothing at work), `/brief.js`, `/markdown.js` and `/settings.js` gain exports, a turn gains `answeredAt`. A renderer that
 draws `markdownHtml` or the Reviews panel adds `markdownCss` beside `panelsCss` and wires `data-copy-code`. Contrast:
 a prompt bubble's words and inline code are measured by `npm run tool:contrast`; links and "show all" in a prompt
