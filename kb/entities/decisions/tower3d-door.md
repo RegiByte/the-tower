@@ -27,9 +27,10 @@ needs a before/after it can be checked against.
   `random` (`?seed=`) replaces `Math.random` wherever chance reaches a frame (music keeps its own). `?at=<ISO
   time>` pins the wall clock (`clock.ts`): the sky's hour, today's guests, fixture times and the panels' "ago"
   labels read it, so repeats hold on any day, not only within the same minute.
-- `window.tower3d` is typed and always present: `ready`, `capture`/`release`, `teleport`, `acts` (every thing of a kind, as it is aimed at), `locate` (where a thing
+- `window.tower3d` is typed and always present: `ready`, `capture`/`release`, `teleport`, `acts` (every thing of a kind that is drawn on its level, as it is aimed at), `locate` (where a thing
   stands, to teleport within its reach), `aimAt` (turns to the
-  thing and answers what the crosshair now picks), `press(verb, {hold})` (refuses verbs not offered, and a held
+  thing and answers what the crosshair now picks), all three over the world as the next frame draws it (its levels
+  shown or hidden, every object where it stands), so `locate`, `teleport`, `aimAt` holds with no frame between them, `press(verb, {hold})` (refuses verbs not offered, and a held
   verb without a hold), `key`, `drive`, `step`/`play`, `advance` (a fixture's next board), `pictured` (every picture being read is painted, a later board's too), `state` (frame times, what the last frame drew, counters for boards and rebuilds) and
   `shot`. The door plays no music and never stores the walker's spot.
 - `?board=<name>` renders a fabricated board (`busy`, `empty`, `tall`, `party`, `review`, `attention`), a list of boards delivered one by one

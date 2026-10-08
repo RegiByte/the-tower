@@ -1,11 +1,12 @@
 import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
 import { EYE } from './layout.ts'
+import { levelsShown, showLevels } from './levels.ts'
 import { drive, type Move } from './input.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
-import { camera, canvas } from './stage.ts'
+import { camera, canvas, scene } from './stage.ts'
 import { s, type Standing, type View } from './state.ts'
 import type { CatName } from './life.ts'
 import { aim, facing, type Walker } from './walker.ts'
@@ -14,7 +15,8 @@ import { aim, facing, type Walker } from './walker.ts'
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
  * produce, and steps the same clock the screen's frames do.
  *
- *   await tower3d.ready()                  the first board is built and its pictures read
+ *   await tower3d.ready()                  the first board is built and its pictures read (on a stepped page, people
+ *                                          and cats take their places on the first step)
  *   tower3d.capture()                      walk as if the mouse were locked (headless Chrome never grants the lock)
  *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once
  *   tower3d.acts('station')                every thing in the world of a kind, as it is aimed at (all without a kind)
@@ -112,12 +114,15 @@ const STEP = 1 / 60
 const actKey = (a: Act) => JSON.stringify(Object.entries(a).sort(([x], [y]) => x.localeCompare(y)))
 
 export function installDoor(e: Engine) {
-  /** The outermost object standing for `target`, among everything pickable. */
+  /**
+   * The outermost object standing for `target`, among everything pickable that is drawn on its level (a desk's second
+   * monitor is hidden until its worker shows something); a level you are not on still counts.
+   */
   function objectOf(target: Act) {
     const key = actKey(target)
     let found: THREE.Object3D | undefined
     for (const root of e.pickables()) {
-      root.traverse((o) => {
+      root.traverseVisible((o) => {
         if (!found && o.userData.act && actKey(o.userData.act) === key) found = o
       })
       if (found) return found
@@ -127,7 +132,7 @@ export function installDoor(e: Engine) {
   function everyAct(kind: Act['kind'] | undefined) {
     const found = new Map<string, Act>()
     for (const root of e.pickables()) {
-      root.traverse((o) => {
+      root.traverseVisible((o) => {
         const a: Act | undefined = o.userData.act
         if (a && (!kind || a.kind === kind)) found.set(actKey(a), a)
       })
@@ -135,7 +140,17 @@ export function installDoor(e: Engine) {
     return [...found.values()]
   }
 
+  /**
+   * The world as the next frame draws it: its levels shown or hidden, and every object where it stands. A frame does
+   * this before it renders, so a door call made before one (a stepped page, a teleport) reads it the same.
+   */
+  function current() {
+    showLevels(levelsShown(s))
+    scene.updateMatrixWorld()
+  }
+
   function centerOf(target: Act) {
+    current()
     const o = objectOf(target)
     if (!o) throw new Error(`nothing in the world stands for ${JSON.stringify(target)}`)
     return new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3())
