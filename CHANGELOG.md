@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.0.4
+
+- [docs/extending.md](docs/extending.md): every way to extend the tower, each with its contract, and what isn't one.
+  It has the recipe for customizing a renderer: copy the tower page or Tower 3D out of the checkout, declare it in the
+  config, layer your own stylesheet and modules on top, and take an update by copying again. There is no plugin API:
+  the config, the logs and the collections hold the whole state, and the API does the work.
+- The served modules (`/tower.js`, `/design.css`, `/cards.js`, `/panels.js` and the rest) are part of the renderer
+  API's contract: removing or renaming an export is an API major, with a line here saying what to use instead, and
+  adding one is a minor. `test/served-exports.json` lists every name they serve, and `npm test` fails on a removal that
+  doesn't move the major.
+- Settings live in one popover behind a gear, on the tower page and in Tower 3D (its HUD and pause card): how a wait
+  rings, with each sound to play, notifications, and the colour scheme. The status counts, the host's lamp and the
+  Stats bars explain themselves in one tooltip shared by both renderers, and the ? sheet has a legend of the statuses.
+- API 1.3: two served modules, `/settings.js` and `/tips.js`; `tower.schemeChoice()` and `tower.chooseScheme(c)`, which
+  a framed page asks of the tower that frames it. `RING_NAME` and `RING_MARK` in `/cards.js` are deprecated, kept
+  until a major. A renderer that draws the Stats panel or the settings popover calls `watchTips(document)` from
+  `/tips.js`: the Stats bars' readouts show through it.
+
 ## v1.0.3
 
 **host restart** (optional): the host no longer adds its own `--settings`. Until it restarts, the one it adds comes
