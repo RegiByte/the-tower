@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.14.1
+
+Finished sessions' screens open at once too. It asks nothing of you: no host restart, no config change, no API change.
+Restart the tower (`tower down tower && tower up tower`).
+
+- A session that has ended has a last frame that never changes: the tower computes it once and keeps it in memory
+  (the last 500), so reopening one takes milliseconds where a long log took a third of a second each time. Nothing is
+  stored.
+
 ## v1.14.0
 
 Screens open at once. It asks nothing of you: no host restart, no config change, no API change. Restart the tower
