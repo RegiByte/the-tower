@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.15.0
+
+**Host restart.** Workers the host cut off carry on, and the host and terms daemons never die on bad input. No config
+change; the renderer API moves to 1.38, an addition. Restart the tower (`tower down tower && tower up tower`) and
+rebuild Tower 3D (`npm run tower3d`) where it is built. The host and terms fixes take effect when you restart them
+(`tower down`, then `tower up`), which ends every running session and shell; each session can be resumed, and those
+cut off mid-turn now say so.
+
+- A worker that was mid-turn (working, compacting or asking permission) when the host stopped reads "stopped
+  mid-turn" (or "lost mid-turn"), and offers **Carry on** beside Resume: it resumes the conversation with "You were
+  cut off mid-turn when the tower's host stopped. Carry on where you left off." The floor's Resume all carries on
+  the cut-off workers and plainly resumes the rest, listing which is which. `tower resume <id> --carry-on` does the
+  same. The board carries `card.cutOff`, and `resume` takes an optional `prompt`.
+- The host's sockets and the terms daemon's answer input that isn't a JSON object, or a message they don't know,
+  with an error and keep serving; one such message used to end every session (or every shell).
+- Terminal sizes are whole numbers from 1 to 1000: a fractional or huge size used to end the terms daemon, or break
+  a session's screen for good.
+- A write or resize the terminal refuses is not logged, and letting a worker go cuts a line a dead host left half
+  written instead of turning it into a line that isn't JSON.
+
 ## v1.14.1
 
 Finished sessions' screens open at once too. It asks nothing of you: no host restart, no config change, no API change.
