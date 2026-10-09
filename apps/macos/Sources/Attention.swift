@@ -20,7 +20,7 @@ struct Wait {
 /**
  * Posts {waits, began, ended} on every board and every change to the dismissed waits: `waits` heeded in the board's
  * order, `began` and `ended` the keys that came and went since the last board (none on the first: what waited when the
- * app opened is not news).
+ * app opened is not news). Posts {lost} when the tower stops answering.
  */
 private let ATTENTION_PAGE = """
   <!doctype html><meta charset="utf-8"><title>Tower attention</title>
@@ -50,6 +50,7 @@ private let ATTENTION_PAGE = """
       post(began, ended)
     })
     addEventListener('storage', (e) => board && e.key?.endsWith(DISMISSED_KEY) && post())
+    tower.onBoardError((e) => e.code === 'disconnected' && webkit.messageHandlers.attention.postMessage({ lost: true }))
   </script>
   """
 
@@ -59,6 +60,8 @@ final class Attention: NSObject, WKScriptMessageHandler, UNUserNotificationCente
   /** Whether the user is looking at that worker now, so its wait needs no notification. */
   let watching: (String) -> Bool
   private var page: WKWebView?
+  private var home: URL?
+  private var awaitingTower = false
   private var waits: [Wait] = []
   private let status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
   private let menu = NSMenu()
@@ -85,10 +88,28 @@ final class Attention: NSObject, WKScriptMessageHandler, UNUserNotificationCente
     let page = WKWebView(frame: .zero, configuration: config)
     page.loadHTMLString(ATTENTION_PAGE, baseURL: home)
     self.page = page
+    self.home = home
+  }
+
+  /**
+   * Once the tower answers again, the page starts over on the modules it serves then: a restarted tower may speak a
+   * new API version, which the page's `/tower.js` would refuse on every board.
+   */
+  private func restartWhenBack() {
+    guard let home, !awaitingTower else { return }
+    awaitingTower = true
+    URLSession.shared.dataTask(with: home.appendingPathComponent("renderers")) { _, response, _ in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        self.awaitingTower = false
+        if (response as? HTTPURLResponse)?.statusCode == 200 { self.start(home: home) } else { self.restartWhenBack() }
+      }
+    }.resume()
   }
 
   func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-    guard let body = message.body as? [String: Any], let list = body["waits"] as? [[String: String]] else { return }
+    guard let body = message.body as? [String: Any] else { return }
+    if body["lost"] != nil { return restartWhenBack() }
+    guard let list = body["waits"] as? [[String: String]] else { return }
     waits = list.map { Wait(key: $0["key"]!, id: $0["id"]!, title: $0["title"]!, body: $0["body"]!, line: $0["line"]!) }
     let began = Set(body["began"] as? [String] ?? [])
     let ended = body["ended"] as? [String] ?? []

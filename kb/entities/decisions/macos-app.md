@@ -45,7 +45,9 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   window; a notification taken back when its wait ends. A click on either opens the session at `/#<id>`. Words and
   dismissals stay in the shared modules, so the app and every renderer agree. A web view in no window is suspended by
   WebKit, so this one runs with suspension off, and the window's page, once hidden, is throttled as a background tab
-  is, not stopped.
+  is, not stopped. When the tower stops answering, the page starts over once it answers again, on the modules it
+  serves then: a restarted tower may speak a new API version, which the old page's `/tower.js` would refuse on every
+  board.
 - **A window, not a session.** Closing it hides it, so the page keeps its connection and state; quitting leaves the
   tower and every session running, as closing a tab does.
 - **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
