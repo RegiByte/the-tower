@@ -59,4 +59,4 @@ read and the failure is logged ([[tower-cuts-worktrees]]).
 No poll or watch can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails (the host, the terms
 daemon, the process scan, git) keeps its last read and says why in the tower's log, and the next poll reads again; a
 watcher's callback (the sessions directory, a log's tail, the collections' rescan, the config) that throws is logged
-and runs again on the next change; a watcher that fails says in the log what is no longer watched.
+and runs again on the next change. A log's tail whose watcher fails says so in the log and that session's facts stop there; a failed watch of the sessions directory, the collections or the config's directory ends the tower with the reason, since every board after it would look current and be stale.

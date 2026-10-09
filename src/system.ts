@@ -19,7 +19,7 @@ import type { Shell } from './shared/terms.ts'
 import type { LogFile } from './bridge/retention.ts'
 import { factEvents, isArchived, logFilesIn, logIdOf, tailLog } from './tail.ts'
 import { readRepo } from './worktrees.ts'
-import { logged, loggedRead, watchedLoudly } from './logged.ts'
+import { logged, loggedRead, watchedOrExit } from './logged.ts'
 
 const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
@@ -288,7 +288,7 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   }
 
   trackNew()
-  watchedLoudly(
+  watchedOrExit(
     watch(
       paths.sessions,
       logged('sessions', (_: string, file: string | null) => {
@@ -301,8 +301,8 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)
-  watchedLoudly(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
-  watchedLoudly(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
+  watchedOrExit(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
+  watchedOrExit(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
   await refreshShells()
   setInterval(refreshLive, LIVE_POLL_MS)

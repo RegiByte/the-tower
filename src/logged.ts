@@ -25,3 +25,13 @@ export const loggedRead =
 /** A watcher that fails sees no more changes: the log says what is no longer watched. */
 export const watchedLoudly = (watcher: FSWatcher, what: string): FSWatcher =>
   watcher.on('error', say(`${what} is no longer watched`))
+
+/**
+ * A watcher the whole process reads through ends the process when it fails, saying why: carrying on would serve a
+ * view that never changes again and looks healthy.
+ */
+export const watchedOrExit = (watcher: FSWatcher, what: string): FSWatcher =>
+  watcher.on('error', (err) => {
+    say(`${what} is no longer watched, so the process exits: start it again`)(err)
+    process.exit(1)
+  })
