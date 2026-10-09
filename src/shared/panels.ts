@@ -337,7 +337,9 @@ function settledHtml(state: CheckoutState, checkout: string) {
   if (state.is === 'live') return ''
   const said = state.is === 'gone'
     ? `<b>Worktree removed</b>: the folders of ${esc(checkout)} are gone, and nothing says its work landed.`
-    : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}</b>: the work of ${esc(checkout)} is in its base${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
+    : state.empty
+      ? `<b>Nothing to land</b>: ${esc(checkout)} made no commits of its own${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
+      : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}</b>: the work of ${esc(checkout)} is in its base${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
   return `<p class="settled" role="status">${said} Notes on it would reach nobody.</p>`
 }
 

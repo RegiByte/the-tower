@@ -6,9 +6,10 @@ import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf, statusName } from '../src/shared/cards.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
-import type { BranchRead, RepoRead } from '../src/bridge/worktrees.ts'
+import type { BranchRead, RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL, type HostLive } from '../src/shared/protocol.ts'
 import { tagOf } from '../src/shared/tags.ts'
+import type { ReviewThread } from '../src/shared/reviews.ts'
 import { fixture } from './replay.ts'
 
 const callsign = callsigns(CALLSIGNS)
@@ -241,7 +242,7 @@ test('verbs: what a session left running makes it reapable', () => {
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
-test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty; a review forks its checkout only while it is there', () => {
+test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty; a review forks its checkout only while its work goes on there', () => {
   const log = homed(fixture('tool-turn'))
   const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
   const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
@@ -256,7 +257,10 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), ['gone', false, [[]]])
   assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
   const reviewable = (session: SessionLog, repos: Map<string, RepoRead>) => cardAt(session, repos).verbs.includes('review')
-  assert.deepEqual([reviewable(log, reads([])), reviewable(inTree, reads([{ ...tree, present: true }])), reviewable(inTree, reads([{ ...tree, present: false }])), reviewable(inTree, reads([]))], [true, true, false, false])
+  assert.deepEqual(
+    [reviewable(log, reads([])), reviewable(inTree, reads([{ ...tree, present: true, absorbed: false }])), reviewable(inTree, reads([{ ...tree, present: true }])), reviewable(inTree, reads([{ ...tree, present: false }])), reviewable(inTree, reads([]))],
+    [true, true, false, false, false],
+  )
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
   const liveGone = board(CONFIG, [{ header: running.header, facts: factsOf(running) }], hostWith(running.header.id), [], [], [], [], [], reads([]), new Map(), PATHS, 0).floors[0].cards[0]
   assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone, liveGone.verbs.includes('review')], [true, undefined, true, false])
@@ -444,10 +448,10 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
 test('a card says where its checkout’s work stands, and offers a note on its thread only while that work goes on', () => {
   const config: Config = { ...CONFIG, collections: { reviews: { label: 'Reviews' } } }
   const log = homed(fixture('tool-turn'))
-  const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: true, against: 'origin/main', risk: [] }
-  const reads = (trees: (typeof tree)[], kept: BranchRead[] = []) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept }]])
+  const tree: TreeRead = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: true, against: 'origin/main', risk: [] }
+  const reads = (trees: TreeRead[], kept: BranchRead[] = []) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept }]])
   const filed = (at: string) => ({ project: 'tower', id: `odin-42@${at}.md`, thread: { checkout: 'odin-42', messages: [] } })
-  const cardOf = (session: SessionLog, repos: Map<string, RepoRead>, threads: ReturnType<typeof filed>[] = [], host = hostWith()) =>
+  const cardOf = (session: SessionLog, repos: Map<string, RepoRead>, threads: { project: string; id: string; thread: ReviewThread }[] = [], host = hostWith()) =>
     board(config, [{ header: session.header, facts: factsOf(session) }], host, [], [], [], [], threads, repos, new Map(), PATHS, 0).floors[0].cards[0]
   const said = (c: Card) => [c.checkoutState, c.threadState, c.verbs.includes('note')]
   const inTree = homed(log, tree.path)
@@ -456,6 +460,12 @@ test('a card says where its checkout’s work stands, and offers a note on its t
   assert.deepEqual(said(cardOf(inTree, new Map())), [{ is: 'live' }, { is: 'live' }, true])
   assert.deepEqual(said(cardOf(inTree, reads([{ ...tree, absorbed: false }]))), [{ is: 'live' }, { is: 'live' }, true])
   assert.deepEqual(said(cardOf(inTree, reads([tree]))), [{ is: 'landed', on: 'origin/main' }, { is: 'landed', on: 'origin/main' }, false])
+  assert.deepEqual(cardOf(inTree, reads([{ ...tree, own: 2 }])).checkoutState, { is: 'landed', on: 'origin/main' })
+  assert.deepEqual(cardOf(inTree, reads([{ ...tree, own: 0 }])).checkoutState, { is: 'landed', on: 'origin/main', empty: true })
+  assert.deepEqual([cardOf(inTree, reads([{ ...tree, absorbed: false }])).verbs.includes('review'), cardOf(inTree, reads([tree])).verbs.includes('review')], [true, false])
+  assert.equal(cardOf(inTree, reads([tree])).calls.review, undefined)
+  const thread = { project: 'tower', id: 'odin-42.md', thread: { checkout: 'odin-42', messages: [{ author: 'user', at: '2026-10-06 15:00', n: 1, anchors: [], body: 'x' }] } }
+  assert.deepEqual([cardOf(inTree, reads([{ ...tree, absorbed: false }]), [thread]).unseen, cardOf(inTree, reads([tree]), [thread]).unseen], [1, undefined])
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
   assert.deepEqual(said(cardOf(running, reads([tree]), [], hostWith(running.header.id))), [{ is: 'live' }, { is: 'live' }, true])
   assert.deepEqual(said(cardOf(running, reads([tree]))), [{ is: 'live' }, { is: 'live' }, true])
@@ -464,6 +474,7 @@ test('a card says where its checkout’s work stands, and offers a note on its t
   const branch = (absorbed: boolean): BranchRead => ({ branch: 'tower/odin-42', base: 'origin/main', tree: 'odin-42', unpushed: 1, absorbed, risk: [] })
   assert.deepEqual(cardOf(inTree, reads([], [branch(true)])).checkoutState, { is: 'landed', on: 'origin/main' })
   assert.deepEqual(cardOf(inTree, reads([], [branch(false)])).checkoutState, { is: 'gone' })
+  assert.deepEqual(cardOf(inTree, reads([], [{ ...branch(true), own: 0 }])).checkoutState, { is: 'landed', on: 'origin/main', empty: true })
   const later = filed('2099-01-01-0000')
   assert.deepEqual(cardOf(inTree, reads([]), [filed('2000-01-01-0000'), later]).threadState, { is: 'landed', filed: { id: later.id, tag: tagOf(later.id), at: '2099-01-01 00:00' } })
   assert.deepEqual(cardOf(inTree, reads([]), [filed('2000-01-01-0000')]).threadState, { is: 'gone' })

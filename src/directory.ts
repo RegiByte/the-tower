@@ -116,9 +116,16 @@ const noReviewReason = (card: Card) =>
     ? 'it has no conversation yet'
     : card.reviews
       ? `it is a reviewer itself, of ${card.reviews}'s work`
-      : card.worktree?.gone
-        ? `its checkout ${card.checkout} is gone, so there is nothing to fork`
-        : "a dir of its floor isn't a git repo"
+      : card.checkoutState.is === 'landed'
+        ? card.checkoutState.empty
+          ? `its checkout ${card.checkout} had nothing to land`
+          : `its work in ${card.checkout} landed${card.checkoutState.on ? ` on ${card.checkoutState.on}` : ''}`
+        : card.worktree?.gone || card.checkoutState.is === 'gone'
+          ? `its checkout ${card.checkout} is gone, so there is nothing to fork`
+          : "a dir of its floor isn't a git repo"
+
+/** Where work that landed is read once no worktree holds it. */
+const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
 
 const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${card.hiredBy!.callsign}`)
 
@@ -547,7 +554,7 @@ switch (verb) {
     if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const author = await cardNamed(board, flag)
-    if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`)
+    if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
     const tell = rest[0] === 'tell'
     const [verbName, body] = author.calls.review
     const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell) })

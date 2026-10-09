@@ -26,6 +26,7 @@
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/src/changes.ts#changesIn",
     "hub/src/worktrees.ts#cut",
+    "hub/src/worktrees.ts#ownCommits",
     "hub/renderers/page/index.html",
     "hub/src/shared/cards.ts#sendTargets",
     "hub/src/shared/cards.ts#threadCheckoutOf",
@@ -131,6 +132,14 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   while `live`; `review/append` still takes any checkout (`main`'s thread and odd cases need it), so only the offer
   goes. Rejected: a per-floor map of every checkout's state (one entry per archived worker on every board push), and
   deciding in the panels (each renderer would hold the rule).
+- *Nothing to land, review and unseen follow the state* (2026-10-08, SIGURD-96). A worktree cut and stopped with no
+  commits is trivially absorbed, so it read "Landed". Git now reads, per branch the tower cut, the commits it gained
+  since its reflog's creation entry (`own`, [`ownCommits`](ref:hub/src/worktrees.ts#ownCommits); none once the reflog
+  no longer holds the creation), and a landed state whose every branch says 0 carries `empty`: both panels say
+  "Nothing to land". A worktree already removed says nothing, so it stays plainly landed. Tidy is unchanged. `review` is
+  offered only while the card's own checkout is live ([[reviewer]]), and `card.unseen` is left out once its thread's
+  checkout isn't, so no renderer tallies notes new to a worker on landed work. Rejected: an ahead count against the
+  base (0 for landed work and for none alike), and a recorded cut commit (absent on every branch cut before it).
 - *Workers*: `tower thread [checkout]` prints the file and the notes new to you; `tower note [on <checkout>] [re n<k>]
   [repo:path:lines …]` appends under your callsign with the body on stdin, quoting each anchor from the checkout's
   copy of the repo as it is now, or from your own when your worktree is a fork of that checkout: the version a

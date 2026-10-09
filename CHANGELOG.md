@@ -23,6 +23,9 @@ Commit messages hold the detail.
 - Reviews and Changes on landed work (API 1.20): each card says where its checkout's work stands
   (`checkoutState`: `live`, `landed` on its base, or `gone` with its worktree), and where its review thread's does
   (`threadState`, with the thread Tidy filed); the card and each floor thread offer `note` only while that work goes on.
+- Landed checkouts, follow-ups (API 1.24): a landed checkout whose branches made no commits of their own says "Nothing
+  to land" (`checkoutState.empty`, from git's new `own` count on worktrees and kept branches); `review` is offered,
+  and `tower review` runs, only while the worker's checkout is live; `card.unseen` leaves out threads on landed work.
   Both renderers draw the note forms only when offered: a landed worker's Reviews read its thread, filed or not, under a
   line saying it landed, and its Changes say "Landed on <base>" or "Worktree removed" instead of an empty diff.
   `POST /review/append` still takes any checkout. `/panels.js` adds `threadItemFiles`.

@@ -27,10 +27,11 @@ export type FiledThread = { id: string; tag: string; at: string }
 
 /**
  * Where a checkout's work stands. `live`: work can go on there, so a note on it reaches someone. `landed`: its work is in
- * its base, `on` naming that base while git still holds the worktree or a branch cut under its name, and `filed` once
- * Tidy filed its thread. `gone`: its worktree is gone, and nothing says its work landed. The main checkouts are always live.
+ * its base, `on` naming that base while git still holds the worktree or a branch cut under its name, `empty` when git
+ * says no branch of it gained a commit since it was cut (there was nothing to land), and `filed` once Tidy filed its
+ * thread. `gone`: its worktree is gone, and nothing says its work landed. The main checkouts are always live.
  */
-export type CheckoutState = { is: 'live' } | { is: 'landed'; on?: string; filed?: FiledThread } | { is: 'gone' }
+export type CheckoutState = { is: 'live' } | { is: 'landed'; on?: string; empty?: true; filed?: FiledThread } | { is: 'gone' }
 
 /** No worktree of the name is in use or holds work, and every branch cut under it is absorbed into its base. */
 const worktreeLanded = (tree: FloorWorktree | undefined, cutUnder: FloorBranch['repos']) =>
@@ -58,9 +59,11 @@ export const checkoutState = (
   if (checkout === MAIN_CHECKOUT || !reads) return { is: 'live' }
   const tree = worktrees.find((w) => w.name === checkout)
   const cutUnder = cutUnderOf(checkout, branches)
-  const base = tree?.repos[0] ?? cutUnder[0]
+  const cut = [...(tree?.repos ?? []), ...cutUnder]
+  const base = cut[0]
   const on = base && (base.against ?? base.base)
-  const landedHere = { is: 'landed' as const, ...(on && { on }), ...(filed && { filed }) }
+  const empty = cut.length > 0 && cut.every((r) => r.own === 0)
+  const landedHere = { is: 'landed' as const, ...(on && { on }), ...(empty && { empty: true as const }), ...(filed && { filed }) }
   if (tree) return worktreeLanded(tree, cutUnder) ? landedHere : tree.state === 'lost' ? { is: 'gone' } : { is: 'live' }
   return (cutUnder.length && worktreeLanded(tree, cutUnder)) || filed ? landedHere : { is: 'gone' }
 }

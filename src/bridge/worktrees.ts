@@ -64,16 +64,19 @@ export const parseTowerRecords = (out: string): Map<string, TowerRecord> => {
  */
 export type Exposure = { dirty: number; unpushed: number; absorbed: boolean; against?: string; risk: string[] }
 
+/** The commits its branch gained since it was cut (its reflog's first entry); `undefined` once git no longer says. */
+export type Cut = { own?: number }
+
 export const atRisk = ({ dirty, unpushed, absorbed }: Exposure) => dirty > 0 || (unpushed > 0 && !absorbed)
 
 /**
  * One of the tower's worktrees in one repo. `present`: its folder exists; a missing one is git's `prunable`. `from`: the
  * checkout it was forked from, for a fork.
  */
-export type TreeRead = Exposure & { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; present: boolean }
+export type TreeRead = Exposure & Cut & { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; present: boolean }
 
 /** A branch the tower cut that no worktree has checked out. `tree`: the worktree name it was cut under, when recorded. */
-export type BranchRead = Omit<Exposure, 'dirty'> & { branch: string; base: string; tree?: string }
+export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; base: string; tree?: string }
 
 /**
  * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `bases`: origin's

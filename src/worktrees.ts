@@ -154,6 +154,16 @@ const exposureOf = async (dir: string, rev: string, { fork }: TowerRecord, again
   return { unpushed, absorbed: (fork !== undefined && unpushed.count === 0) || (await absorbed(dir, rev, against)) }
 }
 
+/**
+ * Commits `branch` gained since it was created, counted from its reflog's first entry; `undefined` once the reflog no
+ * longer holds that creation.
+ */
+const ownCommits = async (dir: string, branch: string): Promise<number | undefined> => {
+  const created = lines(await git(dir, ['reflog', 'show', '--format=%H %gs', `refs/heads/${branch}`])).at(-1)
+  if (!created?.includes(' branch: Created from ')) return undefined
+  return Number(await git(dir, ['rev-list', '--count', `${created.split(' ')[0]}..refs/heads/${branch}`]))
+}
+
 const treeRead = async (dir: string, name: string, entry: ReturnType<typeof parseWorktreeList>[number], records: Map<string, TowerRecord>, originHead: string | undefined): Promise<TreeRead> => {
   const record = (entry.branch && records.get(entry.branch)) || {}
   const against = await againstOf(dir, record.base, originHead)
@@ -172,6 +182,7 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
     unpushed: exposure.unpushed.count,
     against,
     absorbed: exposure.absorbed,
+    own: entry.branch ? await ownCommits(dir, entry.branch) : undefined,
     risk: [...status.slice(0, RISK_LINES), ...exposure.unpushed.named],
   }
 }
@@ -179,7 +190,7 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
 const branchRead = async (dir: string, branch: string, record: TowerRecord & { base: string }, originHead: string | undefined): Promise<BranchRead> => {
   const against = await againstOf(dir, record.base, originHead)
   const { unpushed, absorbed } = await exposureOf(dir, `refs/heads/${branch}`, record, against)
-  return { branch, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, risk: unpushed.named }
+  return { branch, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, own: await ownCommits(dir, branch), risk: unpushed.named }
 }
 
 /** The branch checked out in `dir`'s upstream, `origin/<x>`; `undefined` on a detached HEAD or a branch tracking nothing. */

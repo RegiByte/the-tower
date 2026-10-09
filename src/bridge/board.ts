@@ -106,7 +106,10 @@ export type Card = {
    * Tidy filed once it landed. The card offers `note` while it is live.
    */
   threadState: CheckoutState
-  /** The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen (after its own last one); none without a thread. */
+  /**
+   * The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen
+   * (after its own last one); none without a thread, or once `threadState` is no longer live.
+   */
   unseen?: number
   status: Status
   /** The screen a `blocked` worker shows: answered on its terminal. */
@@ -546,8 +549,8 @@ export const archiveAtOf = (cards: Card[], archived: Card[]) => {
 const keepsThreads = (config: Config, projectId: string) => Object.hasOwn(config.projects, projectId) && Object.hasOwn(projectCollections(config, projectId), REVIEWS)
 
 /**
- * Each card with where its checkout's work stands and where its thread's does (`checkoutState`), and `note` while the
- * latter goes on on a floor keeping threads. Who is in a worktree is folded from the cards on duty and the shells, as
+ * Each card with where its checkout's work stands and where its thread's does (`checkoutState`): `review` only while the
+ * former goes on, `note` and the notes new to it (`unseen`) only while the latter does, `note` on a floor keeping threads. Who is in a worktree is folded from the cards on duty and the shells, as
  * the board's floors fold it. `threadFiles`: the review thread files of floors keeping threads.
  */
 const withCheckouts = (
@@ -566,10 +569,21 @@ const withCheckouts = (
       const filed = filedThreadOf(threadFiles.filter((t) => t.project === c.project), checkout, stamp(new Date(c.startedAt)))
       return checkoutState(checkout, floor.read, floor.worktrees, floor.branches, filed)
     }
+    const ownState = stateOf(c.checkout)
     const threadCheckout = threadCheckoutOf(c)
     const threadState = stateOf(threadCheckout)
-    const note = noteOffers(c.project, threadCheckout, keepsThreads(config, c.project) && threadState.is === 'live')
-    return { ...c, checkoutState: stateOf(c.checkout), threadState, verbs: [...c.verbs, ...note.verbs], calls: { ...c.calls, ...note.calls } }
+    const threadLive = threadState.is === 'live'
+    const note = noteOffers(c.project, threadCheckout, keepsThreads(config, c.project) && threadLive)
+    const { review, ...calls } = c.calls
+    const reviewable = ownState.is === 'live'
+    return {
+      ...c,
+      checkoutState: ownState,
+      threadState,
+      unseen: threadLive ? c.unseen : undefined,
+      verbs: [...c.verbs.filter((v) => reviewable || v !== 'review'), ...note.verbs],
+      calls: { ...calls, ...(reviewable && review && { review }), ...note.calls },
+    }
   })
 }
 
