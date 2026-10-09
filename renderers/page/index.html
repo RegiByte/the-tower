@@ -437,7 +437,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -1053,12 +1053,12 @@ function toggleViewed(key) {
   changes.viewed[repo.dir] = marksToggled(changes.viewed, repo, f)
   tower.store.set(viewedKey(repo.dir), changes.viewed[repo.dir])
   folds.delete(key)
-  render()
+  keepingFileTop($('changes'), key, render)
 }
 
 function toggleFold(key) {
   if (!folds.delete(key)) folds.add(key)
-  drawChanges()
+  keepingFileTop($('changes'), key, drawChanges)
 }
 
 /**

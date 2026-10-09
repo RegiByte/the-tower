@@ -14,6 +14,7 @@
  *   data-file="<key>"          a file's section, by `fileKey`
  *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
  *   data-viewed="<key>"        mark the file's version viewed, or not: `marksToggled` gives the repo's marks to keep
+ *                              (either redraw goes through `keepingFileTop`, so a reader deep in a long file lands on the next)
  *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend), or drag across lines (`watchPickDrag`,
  *                              `spanned`); also where an anchor scrolls to
  *   data-pick-text             the note being written under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
@@ -776,6 +777,19 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
   if (!again || again === had) return
   again.focus()
   again.setSelectionRange(...caret!)
+}
+
+/**
+ * Runs `write`, which folds or unfolds the file `key` in the Changes panel `el` (its Viewed box, its caret), and, when the
+ * reader was inside that file's diff (its header stuck to the top), scrolls the file back to its header: the next file
+ * follows it, where the scroll alone would leave the reader as far down as the fold took away.
+ */
+export function keepingFileTop(el: HTMLElement, key: string, write: () => void) {
+  const at = `[data-file="${CSS.escape(key)}"]`
+  const file = el.querySelector(at)
+  const inside = file && file.getBoundingClientRect().top < file.querySelector('header')!.getBoundingClientRect().top - file.clientTop - 0.5
+  write()
+  if (inside) el.querySelector(at)?.scrollIntoView({ block: 'start' })
 }
 
 /**

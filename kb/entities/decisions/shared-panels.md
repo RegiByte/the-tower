@@ -16,6 +16,7 @@
     "hub/src/shared/panels.ts#drawPanel",
     "hub/src/shared/panels.ts#watchPickDrag",
     "hub/src/shared/panels.ts#keepingFocus",
+    "hub/src/shared/panels.ts#keepingFileTop",
     "hub/src/shared/panels.ts#fileCall",
     "hub/src/shared/panels.ts#panelsCss",
     "hub/src/shared/panels.ts#rowCode",
@@ -62,6 +63,10 @@ panels are the same view in both renderers. Only where they sit, their state and
   ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus): the one element of the same tag and the same attributes
   naming what it does, none when two match, which a renderer also wraps around its own redraws). A time is an empty `data-since` span that each
   renderer fills on its own clock, so the clock never forces a redraw that would drop a text selection in the diff.
+- *A fold keeps the reader's place.* Marking a file viewed, or folding it by its caret, while the reader is inside its
+  diff (its header stuck under the panel's head) would leave them as far past the next file as the fold took away;
+  both renderers redraw through [`keepingFileTop`](ref:hub/src/shared/panels.ts#keepingFileTop), which scrolls the file
+  back to its header, so the next file follows it. A file whose header was not stuck does not move.
 - *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels.ts#panelsCss)), scoped under the views' own roots
   (`.changes-panel`, `.reviews-panel`). Each renderer adds it as a `<style>`, as `documentCss` is used, and sizes
   the element the panel is drawn in.

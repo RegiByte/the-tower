@@ -12,7 +12,7 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type DiffLayout, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type DiffLayout, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, landingHtml, type DaemonVerb } from './cards.ts'
@@ -1930,14 +1930,14 @@ function jumpTo(read: ChangesRead) {
 
 function toggleFold(key: string) {
   if (!s.folds.delete(key)) s.folds.add(key)
-  renderPanel()
+  keepingFileTop($('desk-changes'), key, renderPanel)
 }
 
 function toggleViewed(read: ChangesRead, key: string) {
   const [repo, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
   markViewed(read, repo.dir, marksToggled(read.viewed, repo, f))
   s.folds.delete(key)
-  renderPanel()
+  keepingFileTop($('desk-changes'), key, renderPanel)
 }
 
 const dropPick = () => ((s.pick = undefined), (s.pickText = ''))
