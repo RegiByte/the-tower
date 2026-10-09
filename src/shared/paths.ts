@@ -21,7 +21,10 @@ export type SystemPaths = {
   towerPid: string
 }
 
-export const configPath = (): string => process.env.TOWER_CONFIG ?? path.join(os.homedir(), '.tower', 'config.json')
+/** The config every `tower` reads when TOWER_CONFIG names none. */
+export const DEFAULT_CONFIG = path.join(os.homedir(), '.tower', 'config.json')
+
+export const configPath = (): string => process.env.TOWER_CONFIG ?? DEFAULT_CONFIG
 
 export const systemPaths = (config: string): SystemPaths => {
   const root = path.dirname(path.resolve(config))

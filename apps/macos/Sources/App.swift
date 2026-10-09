@@ -198,7 +198,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
       return decisionHandler(.cancel)
     }
     if url.scheme == "tower-app" {
-      if url.absoluteString == "tower-app:retry" { start() }
+      // Only the app's own status page, shown while the tower has no address, offers Retry.
+      if url.absoluteString == "tower-app:retry", home == nil { start() }
       return decisionHandler(.cancel)
     }
     // Frames inside the page (shelf pages, served at origins of their own) go where the page sends them.

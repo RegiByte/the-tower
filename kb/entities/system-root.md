@@ -4,7 +4,7 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), sessions/<id>.jsonl (facts) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts"]
 }
 ---

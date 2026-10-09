@@ -17,5 +17,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run tower3d
+      - name: Tower.app's Swift sources compile
+        run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
       - name: CHANGELOG.md has an entry for the tag
         run: grep -q "^## ${GITHUB_REF_NAME}$" CHANGELOG.md

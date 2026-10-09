@@ -14,16 +14,13 @@ import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
 import { REPO } from './machine.ts'
 import { fnv1a } from './shared/hash.ts'
-import type { SystemPaths } from './shared/paths.ts'
+import { DEFAULT_CONFIG, type SystemPaths } from './shared/paths.ts'
 
 const run = promisify(execFile)
 
 const SOURCES = path.join(REPO, 'apps', 'macos', 'Sources')
 const ICON = path.join(REPO, 'apps', 'macos', 'icon.svg')
 const OUT = path.join(REPO, 'apps', 'macos', 'out')
-
-/** The config every `tower` reads when TOWER_CONFIG names none. */
-const DEFAULT_CONFIG = path.join(os.homedir(), '.tower', 'config.json')
 
 /** One app per system: the default config's is Tower, another's is named after its system root. */
 const appName = (config: string): string => (config === DEFAULT_CONFIG ? 'Tower' : `Tower (${path.basename(path.dirname(config))})`)
