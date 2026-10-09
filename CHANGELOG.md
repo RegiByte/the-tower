@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.11.2
+
+Tower 3D takes the mouse in Tower.app. It asks nothing of you: no host restart, no config change, no API change, and
+the tower needs no restart. If you use the app, quit it (⌘Q) and run `tower app` again.
+
+- A click in Tower 3D, opened in the app's window or framed on its shelf, locks the mouse for walking and looking.
+  WebKit gives pointer lock to a page only when the app hosting it grants it, and the app now does; until then every
+  click said "Pointer lock requires the window to have focus".
+
 ## v1.11.1
 
 Tower.app starts nothing. It asks nothing of you: no host restart, no config change, no API change, and the tower
