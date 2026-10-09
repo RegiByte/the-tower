@@ -589,8 +589,8 @@ const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupant
  */
 const forgetLost = (dir: string, tree: string) => git(dir, ['worktree', 'remove', '--force', tree])
 
-/** A repo's branch as a read found it: `head`, the commit it was at. */
-type Read = { dir: string; branch?: string; head?: string }
+/** A repo's branch as a read found it: `head`, the commit it was at; `base`, recorded when the tower cut it. */
+type Read = { dir: string; branch?: string; head?: string; base?: string }
 
 type Landed = Read & Pick<Exposure, 'absorbed' | 'carried'>
 
@@ -604,13 +604,16 @@ const deleteAt = async (dir: string, branch: string, head: string): Promise<stri
   await git(dir, ['config', '--remove-section', `branch.${branch}`])
 }
 
-/** Deletes each repo's branch still at its head as read; returns why each other one was kept. */
+/**
+ * Deletes each repo's branch the tower cut, still at its head as read; returns why each other one was kept. A branch
+ * with no record of a cut is someone else's, checked out in the worktree by hand.
+ */
 const deleteBranches = (repos: Read[]) =>
   writingConfig(async () => {
     const kept: string[] = []
-    for (const { dir, branch, head } of repos) {
+    for (const { dir, branch, head, base } of repos) {
       if (!branch) continue
-      const why = await deleteAt(dir, branch, head!)
+      const why = base === undefined ? `${branch} in ${dir}: kept, the tower didn't cut it` : await deleteAt(dir, branch, head!)
       if (why) kept.push(why)
     }
     return kept
@@ -657,6 +660,7 @@ export const discardable = async (project: Project, projectId: string, name: str
     tree.repos.map(async (r) => ({
       dir: r.dir,
       branch: r.branch,
+      base: r.base,
       head: r.head!,
       dirty: r.dirty,
       tip: r.dirty ? await snapshot(r.path, `Uncommitted work of ${name}, discarded`) : r.head!,

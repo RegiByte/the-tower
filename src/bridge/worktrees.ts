@@ -230,15 +230,16 @@ export const treeAt = (reads: RepoRead[], cwd: string): TreeRead | undefined =>
  * What a discarded worktree held in one repo: its branch, its `head`, and its `tip`, the head itself or a commit of its
  * `dirty` uncommitted files on top of it; `unpushed` names the commits of it on no remote.
  */
-export type Tip = { dir: string; branch?: string; tip: string; head: string; dirty: number; unpushed: string[] }
+/** `base`: recorded when the tower cut `branch`; a branch it didn't cut is kept. */
+export type Tip = { dir: string; branch?: string; base?: string; tip: string; head: string; dirty: number; unpushed: string[] }
 
 /** The note a discard leaves on the checkout's thread: what each repo held, and how to get it back while git keeps it. */
 export const discardNote = (name: string, tips: Tip[]): string =>
   [
-    `Discarded the worktree ${name}: its work never landed. Its branches are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: \`git branch <name> <tip>\`.`,
+    `Discarded the worktree ${name}: its work never landed. The branches the tower cut are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: \`git branch <name> <tip>\`.`,
     '',
     ...tips.flatMap((t) => [
-      `- \`${t.dir}\`: ${t.branch ? `branch \`${t.branch}\`` : 'a detached HEAD'}, tip \`${t.tip}\`${t.dirty ? ` (${t.dirty} uncommitted ${t.dirty === 1 ? 'file' : 'files'} committed on top of \`${t.head}\`)` : ''}`,
+      `- \`${t.dir}\`: ${t.branch ? `branch \`${t.branch}\`${t.base === undefined ? " (kept: the tower didn't cut it)" : ''}` : 'a detached HEAD'}, tip \`${t.tip}\`${t.dirty ? ` (${t.dirty} uncommitted ${t.dirty === 1 ? 'file' : 'files'} committed on top of \`${t.head}\`)` : ''}`,
       ...t.unpushed.map((c) => `  - ${c}`),
     ]),
   ].join('\n')

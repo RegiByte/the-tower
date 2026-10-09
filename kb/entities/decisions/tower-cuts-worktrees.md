@@ -97,7 +97,10 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   [`deleteAt`](ref:hub/src/worktrees.ts#deleteAt): `git update-ref -d refs/heads/<b> <head as read>`, then its
   `branch.<b>` config, so git refuses once the branch moved after the read (a commit from an editor, a hook or another
   tool between the fetch's read and the delete) and the branch is kept, named in the reply's `kept` (Tidy's
-  `skipped`). `branch -D` deleted whatever the branch held by then.
+  `skipped`). `branch -D` deleted whatever the branch held by then. Only a branch with a record of the tower's cut
+  (`branch.<b>.towerBase`, the same test a kept branch is listed by) is deleted: one checked out by hand in a folder
+  under `.worktrees/` (a `git switch develop` there, or a worktree added by hand) is the user's, and its worktree
+  goes while the branch stays, named in `kept`.
   A carried worktree is removed by its own `remove`, its branch deleted where carried. Work at risk is thrown away
   only by `worktree/discard`, which notes each repo's tip on the review thread first ([[discard]]). Tidy then files the review thread of every checkout
   whose work has landed ([[review-threads]]). A cut refuses the name `main`, which names the main checkouts' thread.

@@ -41,8 +41,9 @@ thread ([[review-threads]]).
 - [`discardWorktree`](ref:hub/src/tower/server.ts#discardWorktree) appends
   [`discardNote`](ref:hub/src/bridge/worktrees.ts#discardNote) to the thread first (each repo's branch, full tip,
   unpushed commits, and `git branch <name> <tip>`), then [`discard`](ref:hub/src/worktrees.ts#discard) removes each
-  worktree with `--force` and deletes its branch while it is still at the head the read judged (one that moved since
-  is kept, named in the reply's `kept`), then the thread is filed as Tidy files a landed one. The reply names
+  worktree with `--force` and deletes its branch while it is still at the head the read judged, and only one the
+  tower cut (one that moved since, or one checked out there by hand, is kept, named in the reply's `kept`; the note
+  says which it keeps), then the thread is filed as Tidy files a landed one. The reply names
   each tip and the filed thread; the page's toast says `discarded tower/x at a4cf18c`.
 - The page draws it as a destructive press: a `danger` button, a `confirm()` naming what goes
   ([`discardAsk`](ref:hub/src/shared/cards.ts#discardAsk)), then `pressing` ([[press-feedback]]).
