@@ -89,7 +89,7 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
 
 /**
  * The last frames of sessions whose log holds their exit, kept in memory: such a log never changes again, so its
- * snapshot is computed once per log size (a rewritten log differs in size or is archived) and the least recently opened
+ * snapshot is computed once per plain log size (archiving a log keeps it valid, a rewrite changes it) and the least recently opened
  * is dropped past `maxEntries`. Opens of one session in flight share one computation, and a log without an exit, or a
  * computation that failed, is not kept.
  */
