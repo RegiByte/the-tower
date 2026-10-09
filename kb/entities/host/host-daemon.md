@@ -5,7 +5,7 @@
   "summary": "The detached Node process that spawns Claude sessions in PTYs, relays control requests, and appends output, input, hooks and exits to each session's log.",
   "in": "host",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject"],
+  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize"],
   "links": [
     { "to": "claude-code", "verb": "triggers", "carries": "a PTY running config argv + --plugin-dir (the tower mod, which declares the hooks) + client args (its --settings among them), with the cwd checked by sessionDirs, with TOWER_SESSION_ID and TOWER_HOOKS_SOCKET in a scrubbed env" },
     { "to": "system-root", "verb": "writes", "carries": "sessions/<id>.jsonl: header, then o/i/r/h/x events" },
@@ -33,8 +33,10 @@ Bad input costs a request, never the host: a control line that isn't a JSON obje
 handling throws is answered `error` with the reason, and the host keeps serving every session.
 
 Every `write` and `resize` is logged once the PTY took it, in the same tick, before any output it causes, so the log
-replays exactly what the session saw; one the PTY refuses (data that isn't a string, a size that isn't positive) is
-answered `error` and never logged. Sessions live as long as this process: SIGINT, SIGTERM or SIGHUP kills each PTY and logs its exit with
+replays exactly what the session saw. One the log or a screen couldn't take is answered `error` and never logged:
+data that isn't a string, or a size that isn't whole cols and rows from 1 to `MAX_TERMINAL_SIDE` (1000), checked
+by [`checkSize`](ref:hub/src/shared/protocol.ts#checkSize) for a `spawn` too, since node-pty takes fractions that
+xterm throws on later. Sessions live as long as this process: SIGINT, SIGTERM or SIGHUP kills each PTY and logs its exit with
 `hostStopped`, and the host exits only once every log has flushed its last line. A log behind its disk by more than 1 MB pauses its session's PTY until it drains, so
 output waits in the PTY (and Claude slows down) instead of growing the host's memory; input, resizes and hooks
 are always appended. A log that fails to write

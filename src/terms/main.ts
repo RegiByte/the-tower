@@ -14,7 +14,7 @@ import { serializer, type Terminal } from '../bridge/screen.ts'
 import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import { sessionDirs, type Config } from '../shared/model.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
-import { frame, jsonObject, onLines } from '../shared/protocol.ts'
+import { checkSize, frame, jsonObject, onLines } from '../shared/protocol.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { SHELL_SCROLLBACK, type FromTerms, type Shell, type ShellStream, type ToTerms } from '../shared/terms.ts'
 
@@ -56,6 +56,7 @@ function spawnShell({ project: projectId, cwd, cols, rows }: Extract<ToTerms, { 
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
   sessionDirs(project, cwd) // throws for a directory the project's sessions don't work in
+  checkSize(cols, rows)
 
   const id = `sh-${randomBytes(3).toString('hex')}`
   const proc = pty.spawn(SHELL!, ['-l'], { name: 'xterm-256color', cols, rows, cwd, env: withoutTerminal(withoutParentSession(process.env)) })
@@ -80,6 +81,7 @@ function spawnShell({ project: projectId, cwd, cols, rows }: Extract<ToTerms, { 
 /** The screen is resized once it has parsed everything written before, so earlier output lays out at its own size. */
 function resizeShell({ id, cols, rows }: Extract<ToTerms, { t: 'resize' }>) {
   const s = liveShell(id)
+  checkSize(cols, rows)
   s.proc.resize(cols, rows)
   s.shell = { ...s.shell, cols, rows }
   s.screen.write('', () => s.screen.resize(cols, rows))

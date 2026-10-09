@@ -40,6 +40,18 @@ export const jsonObject = (text: string): object => {
   throw new Error(`Expected a JSON object, got ${Array.isArray(value) ? 'an array' : value === null ? 'null' : typeof value}`)
 }
 
+/** The most columns or rows a daemon gives a terminal: its screen's buffer grows with both. */
+export const MAX_TERMINAL_SIDE = 1000
+
+/**
+ * Throws unless `cols` and `rows` are whole numbers from 1 to `MAX_TERMINAL_SIDE`. A PTY takes fractions and huge
+ * sizes that a screen (xterm) refuses later, on a timer, and that a log's `r` event would keep for every replay.
+ */
+export const checkSize = (cols: unknown, rows: unknown): void => {
+  const side = (n: unknown) => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= MAX_TERMINAL_SIDE
+  if (!side(cols) || !side(rows)) throw new Error(`A terminal's size is whole cols and rows from 1 to ${MAX_TERMINAL_SIDE}, not ${JSON.stringify(cols)}x${JSON.stringify(rows)}`)
+}
+
 /** Calls `onLine` with each complete newline-delimited line received on `sock`. */
 export const onLines = (sock: net.Socket, onLine: (line: string) => void): void => {
   let buffered = ''

@@ -13,7 +13,7 @@ import path from 'node:path'
 import * as pty from '@lydell/node-pty'
 import { sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type ModEvent, type SessionHeader } from '../shared/model.ts'
 import { configPath, sessionLogPath, systemPaths } from '../shared/paths.ts'
-import { frame, HOST_PROTOCOL, jsonObject, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { checkSize, frame, HOST_PROTOCOL, jsonObject, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { firstLine, wholeLinesLength } from '../shared/log-file.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { elapsed, hookFact, sessionArgv, sessionEnv } from './session.ts'
@@ -42,6 +42,7 @@ function spawnSession({ id, project: projectId, cwd, args, cols, rows }: Extract
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
   sessionDirs(project, cwd) // throws for a directory the project's sessions don't work in
+  checkSize(cols, rows)
 
   if (live.has(id) || existsSync(sessionLogPath(paths, id))) throw new Error(`Session "${id}" already exists`)
 
@@ -110,15 +111,17 @@ function handle(msg: ToHost): FromHost {
   switch (msg.t) {
     case 'spawn':
       return { t: 'spawned', id: spawnSession(msg) }
-    /** The PTY refuses malformed input by throwing; what it took is logged in the same tick, before any output it causes. */
+    /** Checked, then given to the PTY, which may still refuse it; what it took is logged in the same tick, before any output it causes. */
     case 'write': {
       const s = liveSession(msg.id)
+      if (typeof msg.data !== 'string') throw new Error(`A write's data is a string, not ${JSON.stringify(msg.data)}`)
       s.proc.write(msg.data)
       append(s, [now(s), 'i', msg.data])
       return { t: 'ok' }
     }
     case 'resize': {
       const s = liveSession(msg.id)
+      checkSize(msg.cols, msg.rows)
       s.proc.resize(msg.cols, msg.rows)
       append(s, [now(s), 'r', `${msg.cols}x${msg.rows}`])
       return { t: 'ok' }
