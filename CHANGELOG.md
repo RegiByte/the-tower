@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.9.0
+
+**host restart.** Sessions and shells no longer inherit the terminal `tower up` was run from. No config change, no
+API change. Restart everything (`tower down`, then `tower up`): it ends every session and shell, and sessions can be
+resumed.
+
+- A session's and a shell's environment drop the launching terminal's identity: `TERM_PROGRAM`,
+  `TERM_PROGRAM_VERSION`, `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `GHOSTTY_*`, `KITTY_*`, `WEZTERM_*`, `TMUX` and the like.
+  Started from VS Code's or Cursor's terminal, every Claude believed it ran in an editor's xterm.js and scrolled for
+  one: a flick moved many times its travel and the last ~30 rows eased in after the wheel stopped. Now the transcript
+  follows the wheel about one to one and stops when it stops, and `/scroll-speed` matters little. `GIT_ASKPASS` goes
+  with `VSCODE_*` (it reaches the running editor through them): git in a session falls back to your credential
+  helper. The config's `env` can set any of these again.
+
 ## v1.8.0
 
 Scrolling a session's terminal follows your mouse and trackpad. It asks nothing of you: no host restart, no config
