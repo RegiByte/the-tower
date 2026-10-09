@@ -129,6 +129,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
   scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .archive-view .past { padding: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }
 .archive-view .past .call { font-size: var(--fs-m); }
+.archive .crew { gap: var(--sp-2xs); }
 #archive-filter { flex: 1; min-width: 120px; max-width: 420px; padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 #archive-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .past { overflow: hidden; padding: var(--sp-xs) var(--sp-m); border-radius: var(--radius); font-size: var(--fs-s); color: var(--muted); cursor: pointer; }
@@ -436,7 +437,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -1908,7 +1909,11 @@ function leaveArchive() {
 }
 
 let archiveDrawn = ''
-/** Newest first, each worker with every conversation it held and the way to resume or reach it. */
+/** Past workers by crew (`pastCrews`), each crew drawn above the worker it reports to. */
+const pastCrewsHtml = (crews) =>
+  crews.map(({ card, crew }) => (crew.length ? `<div class="crew">${pastCrewsHtml(crew)}</div>` : '') + pastHtml(card)).join('')
+
+/** By crew, each worker with every conversation it held and the way to resume or reach it. */
 function drawArchive() {
   const f = floorOf(archiveOpen.project)
   if (!archives.has(f.id)) readArchive(f.id)
@@ -1919,10 +1924,11 @@ function drawArchive() {
     if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
     return
   }
-  const past = pastOf(f, archive)
-  const shown = past.filter((c) => matchesWords(c, archiveOpen.words))
-  $('archive-count').textContent = shown.length === past.length ? plural(past.length, 'worker') : `${shown.length} of ${past.length}`
-  const html = shown.map(pastHtml).join('') || '<div class="empty">no past worker matches</div>'
+  const past = pastCrews(f, archive)
+  const shown = pastMatching(past, archiveOpen.words)
+  const [all, matching] = [pastSize(past), pastSize(shown)]
+  $('archive-count').textContent = matching === all ? plural(all, 'worker') : `${matching} of ${all}`
+  const html = pastCrewsHtml(shown) || '<div class="empty">no past worker matches</div>'
   if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
 }
 

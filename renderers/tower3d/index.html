@@ -160,7 +160,8 @@ button.wide { width: 100%; }
 .side .meta { color: var(--muted); font-size: var(--fs-s); }
 #archive-filter { padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); }
 #archive-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-.archive { flex: none; display: grid; grid-auto-rows: max-content; gap: var(--sp-m); }
+.archive { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: var(--sp-m); }
+.archive .crew { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: var(--sp-m); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
 
 #desk, #doc { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(94vw, 1500px); height: min(90vh, 1000px);
   box-shadow: var(--shadow), 0 0 0 100vmax #0d121199; }

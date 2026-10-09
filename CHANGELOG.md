@@ -25,6 +25,10 @@ Commit messages hold the detail.
   (uncommitted files committed on top) are noted on its review thread, recoverable with `git branch` until git
   collects them, then it is removed with force, its branches deleted and its thread filed. The tower page draws
   both; Tower 3D hides `discard` until it draws it.
+- A floor's archive goes by crew (API 1.27): in both renderers a coordinator's hires are listed above it, indented a
+  step per depth, crews by their latest start, the newest first, and a worker's earlier lives after its latest. A filter
+  keeps the order. `/cards.js` adds `pastCrews`, `pastMatching` and `pastSize`. Tower 3D's archive list no longer runs
+  past its panel.
 
 ## v1.3.0
 

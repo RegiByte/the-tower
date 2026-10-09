@@ -76,5 +76,5 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 nested sidebar and Send home. Tower 3D: X sends a crew home. Members gone home stayed drawn, dimmed, under an on-duty
 head until it went off duty too; a coordinator that had hired and sent home sixteen workers in a day buried its live
 crew under them, so they fold into one line (2026-10-07, settled by the user). The board carries only today's past
-cards (board split), so the fold counts those; it never reads the archive. Tower 3D draws no crew tree and has nothing
-to fold.
+cards (board split), so the fold counts those; it never reads the archive. Tower 3D draws no crew tree on duty and has nothing
+to fold. Both archives list past workers by crew too ([[archive-crews]]).

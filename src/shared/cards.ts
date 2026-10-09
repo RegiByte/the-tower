@@ -170,6 +170,43 @@ export const tidiedLine = (r: Replies['tidy']) => {
 /** A floor's past workers, the newest first: those the board carries, and its archive as read (`tower.archive`). */
 export const pastOf = (f: Floor, archive: Card[]) => [...f.cards.filter((c) => !c.onDuty), ...archive].sort((a, b) => b.startedAt - a.startedAt)
 
+/** A past worker and its crew, the workers under it, drawn before it and each the same way (`pastCrews`). */
+export type PastCrew = { card: Card; crew: PastCrew[] }
+
+/**
+ * A floor's past workers (`pastOf`) by crew: each worker that reports to none of them heads one, its hires before it
+ * and their hires before them, so a coordinator closes its crew. A worker's earlier lives, the sessions a resume carried
+ * on, follow its latest one, the newest first. Crews, and the hires of a worker, go by the latest start among them, the
+ * newest first.
+ */
+export const pastCrews = (f: Floor, archive: Card[]): PastCrew[] => {
+  const past = pastOf(f, archive)
+  const byId = new Map(past.map((c) => [c.id, c]))
+  const latest = (c: Card): Card => (c.continuedBy && byId.has(c.continuedBy.id) ? latest(byId.get(c.continuedBy.id)!) : c)
+  const heads = past.filter((c) => latest(c) === c)
+  const lives = (c: Card) => past.filter((l) => l !== c && latest(l) === c).map((card) => ({ card, crew: [] }))
+  const newest = ({ card, crew }: PastCrew): number => Math.max(card.startedAt, ...crew.map(newest))
+  const ordered = (cards: Card[]): PastCrew[] =>
+    cards
+      .map((c) => ({ head: { card: c, crew: ordered(heads.filter((h) => h.reportsTo === c.id)) }, lives: lives(c) }))
+      .sort((a, b) => newest(b.head) - newest(a.head))
+      .flatMap(({ head, lives }) => [head, ...lives])
+  return ordered(heads.filter((c) => c.reportsTo === undefined || !byId.has(c.reportsTo)))
+}
+
+/**
+ * The past workers that match `words`, in their crews' order: a worker that doesn't match leaves its place to its crew,
+ * so a matching hire is drawn under the nearest worker above it that matches too.
+ */
+export const pastMatching = (crews: PastCrew[], words: string[]): PastCrew[] =>
+  crews.flatMap(({ card, crew }) => {
+    const shown = pastMatching(crew, words)
+    return matchesWords(card, words) ? [{ card, crew: shown }] : shown
+  })
+
+/** How many workers crews hold, every depth counted. */
+export const pastSize = (crews: PastCrew[]): number => crews.reduce((n, { crew }) => n + 1 + pastSize(crew), 0)
+
 /** A floor's workers stranded by the host, waiting to be resumed or let go, the first started first. */
 export const strandedOf = (f: Floor) => f.cards.filter((c) => c.calls['let-go'] && c.calls.resume).sort((a, b) => a.startedAt - b.startedAt)
 
