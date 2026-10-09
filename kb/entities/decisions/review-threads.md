@@ -138,7 +138,8 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   no longer holds the creation), and a landed state whose every branch says 0 carries `empty`: both panels say
   "Nothing to land". A worktree already removed says nothing, so it stays plainly landed. Tidy is unchanged. `review` is
   offered only while the card's own checkout is live ([[reviewer]]), and `card.unseen` is left out once its thread's
-  checkout isn't, so no renderer tallies notes new to a worker on landed work. Rejected: an ahead count against the
+  checkout isn't, and the shared Reviews panel marks nothing new on a settled thread, so no renderer tallies notes new to
+  a worker on landed work. Rejected: an ahead count against the
   base (0 for landed work and for none alike), and a recorded cut commit (absent on every branch cut before it).
 - *Workers*: `tower thread [checkout]` prints the file and the notes new to you; `tower note [on <checkout>] [re n<k>]
   [repo:path:lines …]` appends under your callsign with the body on stdin, quoting each anchor from the checkout's

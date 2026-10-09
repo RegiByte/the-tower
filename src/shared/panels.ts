@@ -104,8 +104,8 @@ export type ChangesView = {
 type Worker = { id: string; callsign: string; checkout: string }
 
 /**
- * The Reviews panel: `reader` is the worker whose notes new to it are marked; `changes` what its anchors are looked
- * for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
+ * The Reviews panel: `reader` is the worker whose notes new to it are marked while the work goes on; `changes` what its
+ * anchors are looked for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
  * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
  * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (`card.threadState`, or a
  * floor thread's `state`); `noting`: the card or floor thread offers `note`, so the composer, replies and Send are drawn.
@@ -445,7 +445,7 @@ export function reviewsHtml(v: ThreadView) {
   const settled = settledHtml(v.state, v.checkout)
   if (!v.thread) return `<div class="reviews-panel">${settled}${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
   if (settled && !v.thread.messages.length) return `<div class="reviews-panel">${settled}<p class="none">${esc(v.checkout)} has no review thread.</p></div>`
-  const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
+  const unseen = new Set(v.reader && !settled ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
   return `<div class="reviews-panel">${settled}<div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<button class="tag" data-copy="${esc(v.tag)}" data-tip="copy its tag">${esc(v.tag)}</button>` : ''}${
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
       <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${v.noting ? sendHtml(v) : ''}</div>` +
