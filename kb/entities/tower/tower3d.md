@@ -62,8 +62,10 @@ closer (logbook, overview), G spawns, T opens a shell, C opens the user's editor
 home, kill, stop sharing; reap) once its ring fills. A worker's card lists what it left running, and each floor's
 Running board ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)), on the control room's outer
 wall between the back glass and the door, lists every process the floor's workers left running (worker, pid,
-ports, orphan, command): held Z on a row ends that one process, F goes to its worker's desk; past the rows that fit,
-the floor panel lists them all, each ended on a second click. The mouse wheel marks a verb and a click runs it.
+ports, orphan, command): held Z on a row ends that one process, F goes to its worker's desk; a hire whose work landed
+is a row too, its own `landed` act, held Z killing only it through its Tidy row's call; past the rows that fit,
+the floor panel lists them all, each ended on a second click, and lists Tidy's rows, each with a ⌫ that applies only
+that row and Tidy all, both on a second click. The mouse wheel marks a verb and a click runs it.
 [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives each thing's offers from the board on
 every frame. A stopped worker's desk offers resume first, and sitting there shows its last screen read-only.
 Beside every worker's keyboard lies its logbook, a binder as thick as the sessions it ran as; E on it opens the desk

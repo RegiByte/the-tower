@@ -146,7 +146,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 .wt .n b { color: var(--ink); }
 .wt .st { font-size: var(--fs-xs); letter-spacing: .04em; color: var(--faint); white-space: nowrap; }
 .wt.at-risk .st, .wt.lost .st { color: var(--needs-text); }
-.wt button { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
+.wt button:not(.icon-btn) { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
 .shelf { display: flex; flex-wrap: wrap; gap: var(--sp-xs); --pt: color-mix(in oklab, var(--p) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p) var(--p-wash-mix), var(--panel)); }
 .shelf button, .shelf a { padding: var(--sp-2xs) var(--sp-l); font-size: var(--fs-xs); font-weight: 700; border-radius: var(--radius-pill); background: var(--pw); color: var(--pt); border: 1px solid transparent; text-decoration: none; line-height: 1.45; }
 .shelf button:hover, .shelf a:hover { border-color: color-mix(in oklab, var(--pt) 40%, transparent); }

@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -151,6 +151,11 @@ function aimedHead(act: Act, board: Board, cats: CatNames) {
   if (act.kind === 'tidy') {
     const f = board.floors.find((f) => f.id === act.project)
     return f ? `<div class="head"><span class="call">${esc(tidyLine(f.tidy))}</span></div>${tidyListHtml(f)}` : ''
+  }
+  if (act.kind === 'landed') {
+    const f = board.floors.find((f) => f.id === act.project)
+    const row = f && landedRow(f, act.id, wallNow())
+    return row ? `<div class="head"><span class="call">${esc(row.what)}</span><span class="meta">${esc(row.does)}</span></div><div class="meta">${esc(KILL_COST)}</div>` : ''
   }
   if (act.kind === 'shell') {
     const sh = board.shells.find((s) => s.id === act.id)
@@ -423,9 +428,20 @@ const runningHtml = (f: Floor, armed: (key: string) => boolean) =>
     r.ports.length ? ` :${r.ports.join(' :')}` : ''}${r.orphan ? ' orphan' : ''} · ${esc(commandName(r.command))}</code>${
     can(r, 'reap') ? `<button data-reap-pid="${esc(card.id)} ${r.pid}">${armed(`reap ${card.id} ${r.pid}`) ? 'sure?' : 'end'}</button>` : ''}</div>`).join('')
 
+/** One thing the floor's Tidy would do, with `button` after it. */
+const tidyRowHtml = (r: TidyRow, button: string) =>
+  `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>${button}</div>`
+
 /** Everything the floor's Tidy would do, a row each. */
-const tidyListHtml = (f: Floor) =>
-  tidyRows(f, wallNow()).map((r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span></div>`).join('')
+const tidyListHtml = (f: Floor) => tidyRows(f, wallNow()).map((r) => tidyRowHtml(r, '')).join('')
+
+/** Tidy's rows on the floor's panel, each with a button that does only that row, on a second click. */
+const tidyPanelHtml = (f: Floor, armed: (key: string) => boolean) =>
+  tidyRows(f, wallNow()).map((r) => {
+    const call = JSON.stringify(r.call)
+    const sure = armed(`tidy ${call}`)
+    return tidyRowHtml(r, `<button${sure ? '' : ' class="icon-btn"'} data-tidy-call="${esc(call)}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">${sure ? 'sure?' : ICON.tidy}</button>`)
+  }).join('')
 
 /** A verb on a worktree or kept branch, its call on the button. */
 const wtVerb = (thing: { calls: Record<string, unknown> }, verb: keyof typeof WORKTREE_VERB_NAME) =>
@@ -487,7 +503,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
     ${can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
-    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyListHtml(f)}<button class="wide" data-tidy data-tip="do all of it, as listed">tidy</button>` : ''}
+    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}<button class="wide" data-tidy data-tip="do all of it, as listed">${armed(`tidy ${f.id}`) ? 'sure? tidy all of it' : 'tidy all'}</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
     ${worktreesOpen && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f)}` : ''}`
 }

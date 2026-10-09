@@ -3,8 +3,9 @@ import { draftItem } from '../../../src/shared/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { base, can, current, defaultWhere, findCard, pictureOf, sendTargets, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
+import { base, can, current, defaultWhere, findCard, landedRow, pictureOf, sendTargets, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
+import { wallNow } from './clock.ts'
 import { gameItem } from './games.ts'
 import type { CatName } from './life.ts'
 
@@ -30,6 +31,8 @@ export type Act =
   | { kind: 'leftover'; id: string; pid: number }
   /** A floor's Tidy, the head of its Running board. */
   | { kind: 'tidy'; project: string }
+  /** A hire whose work has landed, Tidy's to kill: a row on its floor's Running board. */
+  | { kind: 'landed'; project: string; id: string }
   | { kind: 'shell'; id: string }
   | { kind: 'floor'; id: string }
   | { kind: 'shelf'; project: string; n: number }
@@ -71,7 +74,7 @@ export const act = <T extends THREE.Object3D>(o: T, what: Act, pickables: THREE.
 }
 
 /** How far away each act can be used from while walking: a video wall or a big screen is read from across the room. */
-export const reachOf = (a: Act) => (a.kind === 'tile' ? 9 : a.kind === 'tv' ? 12 : a.kind === 'picture' || a.kind === 'leftover' || a.kind === 'tidy' ? 6 : 4.5)
+export const reachOf = (a: Act) => (a.kind === 'tile' ? 9 : a.kind === 'tv' ? 12 : a.kind === 'picture' || a.kind === 'leftover' || a.kind === 'tidy' || a.kind === 'landed' ? 6 : 4.5)
 
 /**
  * What can be done to an aimed thing. `use` is the thing's own action (sit, read, watch, open its panel); the rest
@@ -247,6 +250,16 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
     const f = floorOf(board, a.project)
     if (!f || !can(f, 'tidy')) return []
     return [{ verb: 'use', label: 'the list, at the console' }, { verb: 'reap', label: tidyLine(f.tidy).toLowerCase() }]
+  },
+  landed(a, board) {
+    const f = floorOf(board, a.project)
+    const row = f && landedRow(f, a.id, wallNow())
+    if (!row) return []
+    return [
+      { verb: 'reap', label: `kill ${row.what}: only this` },
+      ...(findCard(board, a.id)?.onDuty ? [{ verb: 'goto' as const, label: `go to ${row.what}'s desk` }] : []),
+      { verb: 'use', label: 'the list, at the console' },
+    ]
   },
   guest(a, board) {
     const c = findCard(board, a.id)

@@ -26,6 +26,7 @@
     "hub/src/shared/cards.ts#tidyRows",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
+    "hub/renderers/tower3d/src/cards.ts#landedRow",
     "hub/test/prunable.test.ts",
     "hub/test/board.test.ts"
   ]
@@ -91,11 +92,11 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   thread; the old logs together, as their one row). Applied and refused by the same checks as the whole.
 - Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/cards.ts#tidyLine), "Tidy: 4 leftovers, 2 finished
   hires"; [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)). The tower page folds it into a tray under the floor
-  that unfolds the list with the press; its Tidy all button and each row's own ⌫ are confirmed before they run, the whole list named in the first. Tower 3D draws the same rows in its
-  floor panel without a per-row act: it would put the row's call on a button there and run it after its own "sure?"
-  arming, and give the Running board a per-row act beside its held Z. Tower 3D lists it in the floor panel and on the Running board
+  that unfolds the list with the press; its Tidy all button and each row's own ⌫ are confirmed before they run, the whole list named in the first. Tower 3D lists it in the floor panel, each row
+  with its own ⌫ beside Tidy all, both run on a second click ("sure?", its arming in place of `confirm()`), and on the Running board
   ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)): its head is the floor's `tidy` act (E
-  the list at the console, held Z applies it), finished hires are rows, and what Tidy ends is edged in amber.
+  the list at the console, held Z applies it), a leftover row ends that process, a finished hire's row is its own
+  `landed` act whose held Z runs only its row's call ([`landedRow`](ref:hub/renderers/tower3d/src/cards.ts#landedRow)), and what Tidy ends is edged in amber.
 
 **Alternatives considered.**
 - *A let-go worker still holding its worktree*: let go means off duty without resuming, the stranded worker's

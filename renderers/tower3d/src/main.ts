@@ -14,7 +14,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -918,7 +918,13 @@ const RUN: ByKind<unknown, [Verb]> = {
     return verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)
   },
   guest: (a, verb) => verb !== 'use' && runOnWorker(a, verb),
-  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, worktrees: false }) : tidy(floorOf(a.project))),
+  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, worktrees: false }) : tidy(floorOf(a.project).calls.tidy!)),
+  landed(a, verb) {
+    if (verb === 'use') return openSide({ kind: 'floor', id: a.project, worktrees: false })
+    if (verb === 'goto') return goDesk(a.id)
+    const row = landedRow(floorOf(a.project), a.id, wallNow())
+    return row && tidy(row.call)
+  },
   leftover(a, verb) {
     if (verb === 'goto') return goDesk(a.id)
     const r = findCard(s.board!, a.id)?.resources.find((r) => r.pid === a.pid)
@@ -2103,7 +2109,8 @@ $('side').addEventListener('click', async (e) => {
   if (d.reapPid) return reapProcess(d.reapPid)
   if (d.shellDir && s.panel?.kind === 'floor') return spawnShell(floorOf(s.panel.id).calls.shell!, d.shellDir)
   if (d.wtCall) return offered(JSON.parse(d.wtCall))
-  if (d.tidy !== undefined && s.panel?.kind === 'floor') return tidy(floorOf(s.panel.id))
+  if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && tidy(JSON.parse(d.tidyCall))
+  if (d.tidy !== undefined && s.panel?.kind === 'floor') return confirmed(`tidy ${s.panel.id}`) && tidy(floorOf(s.panel.id).calls.tidy!)
   if (d.worktrees !== undefined && s.panel?.kind === 'floor') return (s.panel.worktrees = !s.panel.worktrees, renderPanel())
   if (d.archive !== undefined && s.panel?.kind === 'floor') return (openSide({ kind: 'archive', id: s.panel.id, words: [] }), $('archive-filter').focus())
   if (d.floor !== undefined && s.panel?.kind === 'archive') return openSide({ kind: 'floor', id: s.panel.id, worktrees: false })
@@ -2115,8 +2122,8 @@ $('side').addEventListener('input', (e) => {
   renderPanel()
 })
 
-async function tidy(f: Floor) {
-  const reply = await offered(f.calls.tidy!)
+async function tidy(c: Call<'tidy'>) {
+  const reply = await offered(c)
   if (reply) toast(tidiedLine(reply))
 }
 

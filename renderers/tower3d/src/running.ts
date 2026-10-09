@@ -41,7 +41,8 @@ const clock = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-dig
 
 /**
  * A floor's "Running" board: every process its workers left running, a row each (the worker, pid, ports, orphaned or
- * not, the command), each row its own `leftover` act, then the hires whose work has landed, Tidy's to kill. What Tidy
+ * not, the command), each row its own `leftover` act, then the hires whose work has landed, Tidy's to kill, each its own
+ * `landed` act. What Tidy
  * would end is edged in amber, and its head, Tidy's line, is the floor's `tidy` act. More than fit end in a row
  * counting the rest, which the floor panel lists.
  */
@@ -104,7 +105,7 @@ export function buildRunning(p: Plan, level: FloorLevel): Running {
       g.fillStyle = WORLD.muted
       g.font = `400 ${m(0.085)}px ${type.ui}`
       g.fillText(fitted(g, 'kill: resumable, its next turn re-reads the conversation uncached', W - m(3.35) - m(0.12)), m(3.35), y)
-      group.add(act(strip(rowY(i), BOARD.row), { kind: 'tidy', project: level.floor.id }, []))
+      group.add(act(strip(rowY(i), BOARD.row), { kind: 'landed', project: level.floor.id, id: card.id }, []))
       return
     }
     const r = row.resource

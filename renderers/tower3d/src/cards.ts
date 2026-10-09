@@ -1,8 +1,12 @@
 import { palettes } from '../../../src/shared/design.ts'
-import { base, findCard, gistLine, modelName, pairLine } from '../../../src/shared/cards.ts'
-import type { Board, Card } from './api.ts'
+import { base, findCard, gistLine, modelName, pairLine, tidyRows } from '../../../src/shared/cards.ts'
+import type { Board, Card, Floor } from './api.ts'
 
 export * from '../../../src/shared/cards.ts'
+
+/** The Tidy row that kills the hire `id`, its work landed: its call applies only that. */
+export const landedRow = (f: Floor, id: string, now: number) =>
+  tidyRows(f, now).find(({ call: [, { plan }] }) => plan?.prune.some((p) => p.t === 'kill' && p.id === id))
 
 /**
  * The building's own colours: lamps, tags, bubbles and signs are things in the world, painted once, so they keep the
