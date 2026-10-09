@@ -9,13 +9,37 @@ export type Client<Request, Reply> = {
 
 export type HostClient = Client<ToHost, FromHost>
 
-/** The server replies to requests in the order they arrive, so the oldest pending request owns each reply. */
-const connect = <Request extends object, Reply>(socketPath: string, server: string, start: string): Promise<Client<Request, Reply>> =>
+/** A line a server sent, read as JSON, or why it can't be. */
+const parseLine = (line: string): { json: unknown } | { error: Error } => {
+  try {
+    return { json: JSON.parse(line) }
+  } catch (err) {
+    return { error: err as Error }
+  }
+}
+
+const PREVIEW_LENGTH = 200
+
+/** A server whose handler returns nothing for a request it doesn't know answers `undefined`. */
+const notJson = (server: string, socketPath: string, line: string, cause: Error, request?: string) =>
+  new Error(`The ${server} on ${socketPath} answered${request ? ` "${request}"` : ''} with ${line.slice(0, PREVIEW_LENGTH)}, which isn't JSON: a ${server} older than this client answers so to a request it doesn't know`, { cause })
+
+/**
+ * The server replies to requests in the order they arrive, so the oldest pending request owns each reply; one that
+ * isn't JSON fails that request, and the next reply is the next request's.
+ */
+const connect = <Request extends { t: string }, Reply>(socketPath: string, server: string, start: string): Promise<Client<Request, Reply>> =>
   new Promise((resolve, reject) => {
     const sock = net.createConnection(socketPath)
-    const pending: { settle: (reply: Reply) => void; fail: (err: Error) => void }[] = []
+    const pending: { t: string; settle: (reply: Reply) => void; fail: (err: Error) => void }[] = []
     sock.once('error', (err) => reject(new Error(`No ${server} on ${socketPath} (${err.message}). Start it with: ${start}`, { cause: err })))
-    onLines(sock, (line) => pending.shift()?.settle(JSON.parse(line)))
+    onLines(sock, (line) => {
+      const request = pending.shift()
+      if (!request) return
+      const reply = parseLine(line)
+      if ('json' in reply) request.settle(reply.json as Reply)
+      else request.fail(notJson(server, socketPath, line, reply.error, request.t))
+    })
     let lastError: Error | undefined
     sock.on('error', (err) => (lastError = err))
     /** A server that goes away mid-request reset the connection, whether or not the socket saw an error. */
@@ -27,7 +51,7 @@ const connect = <Request extends object, Reply>(socketPath: string, server: stri
       resolve({
         request: (msg) =>
           new Promise((settle, fail) => {
-            pending.push({ settle, fail })
+            pending.push({ t: msg.t, settle, fail })
             sock.write(frame(msg))
           }),
         close: () => sock.end(),
@@ -46,6 +70,11 @@ export const attachShell = (socketPath: string, id: string, onMessage: (msg: She
   const sock = net.createConnection(socketPath)
   sock.on('error', (err) => onMessage({ t: 'error', message: `No terms daemon on ${socketPath} (${err.message}). Start it with: npm run terms` }))
   sock.once('connect', () => sock.write(frame({ t: 'attach', id } satisfies ToTerms)))
-  onLines(sock, (line) => onMessage(JSON.parse(line)))
+  onLines(sock, (line) => {
+    const msg = parseLine(line)
+    if ('json' in msg) return onMessage(msg.json as ShellStream)
+    onMessage({ t: 'error', message: notJson('terms daemon', socketPath, line, msg.error).message })
+    sock.destroy()
+  })
   return () => sock.destroy()
 }
