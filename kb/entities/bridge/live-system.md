@@ -27,7 +27,7 @@ stopped. Logs are read and tailed through an event filter ([`factEvents`](ref:hu
 from a line's bytes what the fold ignores, before decoding or parsing it: output is skipped once the session has started
 (the filter folds the session's state over what it keeps, and reads output only while it is `booting` or `blocked`, the
 only time output holds a fact), and a `PostToolUse` is read for its name alone (output and tool responses are over 90% of
-a log's bytes). An event whose state the filter can't follow is kept, for the fold to break on, with nothing after it. A filter is
+a log's bytes). An event whose state the filter can't follow is kept, as is a complete line that isn't JSON, for the fold to break on, with nothing after it but the user letting the session go ([[broken-logs]]). A filter is
 made from the state a read starts at (`factEvents(state)`): the
 fold's own state at every step, so a fold resumed from a checkpoint and the tail after it skip exactly what a fold
 from the start skips. Folding every log from its start (235 logs, 881 MB) takes about 1.7 s, the same with the

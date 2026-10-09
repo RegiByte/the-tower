@@ -1,6 +1,7 @@
 import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, watch } from 'node:fs'
 import { constants, gunzipSync } from 'node:zlib'
 import { nextState, readsOutput, type SessionState } from './bridge/status.ts'
+import type { FoldEvent, Unreadable } from './bridge/facts.ts'
 import type { LogEvent, SessionHeader, SessionLog } from './shared/model.ts'
 import { firstLine } from './shared/log-file.ts'
 import { sessionLogPath, type SystemPaths } from './shared/paths.ts'
@@ -12,20 +13,42 @@ const READ_CHUNK = 64 * 1024
  * Reads one of a log's event lines as the event a reader needs, or `undefined` for a line it ignores, told from the
  * line's bytes without decoding or parsing it: output and tool responses are most of a log's bytes.
  */
-export type EventFilter = (line: Buffer) => LogEvent | undefined
+export type EventFilter<E = LogEvent> = (line: Buffer) => E | undefined
 
 const parse = (line: Buffer): LogEvent => JSON.parse(line.toString('utf8'))
+
+/**
+ * A complete line that isn't JSON is a write the host never finished, ended by a later append (a fact appended to
+ * the log of a session whose host died mid-write): it holds no event.
+ */
+const parseWhole = (line: Buffer): LogEvent | undefined => {
+  try {
+    return parse(line)
+  } catch (err) {
+    if (err instanceof SyntaxError) return undefined
+    throw err
+  }
+}
+
+const TIME_AND_CODE = /^\[(\d+(?:\.\d+)?),"(\w)"/
+const PREFIX_BYTES = 32
+
+/** A line that isn't JSON, read as far as its prefix goes: its time (the session's start if cut before it) and code. */
+const unreadable = (line: Buffer, err: SyntaxError): Unreadable => {
+  const [, at = '0', code = '?'] = TIME_AND_CODE.exec(line.toString('latin1', 0, PREFIX_BYTES)) ?? []
+  return { unreadable: { message: `a line that isn't JSON (${err.message})`, at: Number(at), code } }
+}
 
 /** The host writes each event as `[t,"code",data]`, with no spaces. */
 const codeOf = (line: Buffer): string => String.fromCharCode(line[line.indexOf(',') + 2])
 
-export const everyEvent: EventFilter = parse
+export const everyEvent: EventFilter = parseWhole
 
 /** What a broken session's facts fold from: only the user letting it go (`tower.letGo`), as nothing else after its break is folded. */
-export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.includes('"hook_event_name":"tower.letGo"') ? parse(line) : undefined)
+export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.includes('"hook_event_name":"tower.letGo"') ? parseWhole(line) : undefined)
 
 /** What draws a session's screen, and the exit that ends it. */
-export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parse(line) : undefined)
+export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parseWhole(line) : undefined)
 
 const HOOK_NAME = '"hook_event_name":"'
 const POST_TOOL_USE = `${HOOK_NAME}PostToolUse"`
@@ -44,10 +67,10 @@ const isPostToolUse = (line: Buffer): boolean => {
  * Everything a session's facts fold from, for one log read on from where its state was `state` (`BOOTING` at its
  * start): output only until the session starts (a blocking screen is the only fact output holds), and of a
  * `PostToolUse` only its name, its tool's response unread. The filter folds the session's state over what it keeps to
- * know when it has started. An event whose state it can't follow is kept, for the fold to break on it (`factsAfter`),
- * and nothing after it.
+ * know when it has started. An event whose state it can't follow is kept, and a line that isn't JSON is read as
+ * `Unreadable`, for the fold to break on it (`factsAfter`); after it, only what `afterBreak` keeps.
  */
-export const factEvents = (from: SessionState): EventFilter => {
+export const factEvents = (from: SessionState): EventFilter<FoldEvent> => {
   let state: SessionState | undefined = from
   const keep = (event: LogEvent) => {
     try {
@@ -57,15 +80,24 @@ export const factEvents = (from: SessionState): EventFilter => {
     }
     return event
   }
-  return (line) => {
-    if (!state) return undefined
+  const follow = (line: Buffer): LogEvent | undefined => {
     const code = codeOf(line)
-    if (code === 'o') return readsOutput(state) ? keep(parse(line)) : undefined
+    if (code === 'o') return readsOutput(state!) ? keep(parse(line)) : undefined
     if (code === 'h' && isPostToolUse(line)) {
       const agent = AGENT_ID.exec(line.toString('latin1', 0, line.indexOf(HOOK_NAME)))?.[1]
       return keep([Number(line.subarray(1, line.indexOf(',')).toString()), 'h', { hook_event_name: 'PostToolUse', ...(agent && { agent_id: agent }) }])
     }
     return keep(parse(line))
+  }
+  return (line) => {
+    if (!state) return afterBreak(line)
+    try {
+      return follow(line)
+    } catch (err) {
+      if (!(err instanceof SyntaxError)) throw err
+      state = undefined
+      return unreadable(line, err)
+    }
   }
 }
 
@@ -80,7 +112,7 @@ const completeLines = (buf: Buffer): { lines: Buffer[]; rest: Buffer } => {
   return { lines, rest: buf.subarray(start) }
 }
 
-const eventsIn = (lines: Buffer[], filter: EventFilter): LogEvent[] =>
+const eventsIn = <E>(lines: Buffer[], filter: EventFilter<E>): E[] =>
   lines.flatMap((line) => {
     const event = filter(line)
     return event ? [event] : []
@@ -178,14 +210,14 @@ const archivedHeader = (logPath: string): { header: SessionHeader; offset: numbe
  * The events `filter` keeps of the log's complete lines from byte `offset` (a line's start) on, and the byte offset
  * where the next line starts.
  */
-export const readEvents = (logPath: string, offset: number, filter: EventFilter): { events: LogEvent[]; offset: number } => {
+export const readEvents = <E>(logPath: string, offset: number, filter: EventFilter<E>): { events: E[]; offset: number } => {
   if (offset === logSize(logPath)) return { events: [], offset }
   const buf = readFrom(logPath, offset)
   return { events: eventsIn(completeLines(buf).lines, filter), offset: offset + buf.lastIndexOf(0x0a) + 1 }
 }
 
 /** The log's header and the events `filter` keeps of its complete lines, and the byte offset where the next line starts. */
-export const readLog = (logPath: string, filter: EventFilter): { log: SessionLog; offset: number } => {
+export const readLog = <E>(logPath: string, filter: EventFilter<E>): { log: { header: SessionHeader; events: E[] }; offset: number } => {
   const buf = logBytes(logPath)
   const [header, ...events] = completeLines(buf).lines
   return { log: { header: header && JSON.parse(header.toString('utf8')), events: eventsIn(events, filter) }, offset: buf.lastIndexOf(0x0a) + 1 }
@@ -195,7 +227,7 @@ export const readLog = (logPath: string, filter: EventFilter): { log: SessionLog
  * Calls `onEvent` with each event `filter` keeps in the log from byte `offset` on, as the host appends them, until the
  * returned function is called. The first events arrive after this returns, so `onEvent` may stop the tail.
  */
-export const tailLog = (logPath: string, offset: number, filter: EventFilter, onEvent: (event: LogEvent) => void): (() => void) => {
+export const tailLog = <E>(logPath: string, offset: number, filter: EventFilter<E>, onEvent: (event: E) => void): (() => void) => {
   const fd = openSync(logPath, 'r')
   let position = offset
   let partial: Buffer = Buffer.alloc(0)

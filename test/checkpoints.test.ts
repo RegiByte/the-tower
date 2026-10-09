@@ -127,3 +127,17 @@ test('the fold hash covers every module the fold imports, statically or dynamica
   assert.notEqual(sourceHash(path.join(dir, 'main.ts')), before)
   rmSync(dir, { recursive: true })
 })
+
+test('a line that isn\'t JSON, left by a host that died mid-write and ended by a let-go, breaks the fold there and the let-go is still folded', () => {
+  const name = 'tool-turn'
+  const file = path.join(freshCache(), `${name}.jsonl`)
+  writeFileSync(file, readFileSync(logPath(name)))
+  const cache = freshCache()
+  const before = foldLog(cache, file)!
+  writeFileSync(file, '[40.5,"h",{"hook_event_name":"Sto\n[41.25,"h",{"hook_event_name":"tower.letGo"}]\n', { flag: 'a' })
+  const message = 'a line that isn\'t JSON (Unterminated string in JSON at position 33 (line 1 column 34))'
+  const expected = { ...factsOf(fixture(name)), broken: { message, at: 40.5, code: 'h' }, letGoAt: 41.25 }
+  assert.deepEqual(foldLog(cache, file)!.session.facts, expected, 'from the checkpoint before it')
+  assert.deepEqual(foldLog(freshCache(), file)!.session.facts, expected, 'from the start')
+  assert.equal(before.session.facts.broken, undefined)
+})

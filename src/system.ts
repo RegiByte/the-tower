@@ -149,7 +149,15 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     const step = factsAfter(session.header.startedAt)
     const stop = tailLog(logPath, offset, factEvents(session.facts.state), (event) => {
       const facts = step(session.facts, event)
-      if (event[1] === 'x' || facts.broken) {
+      if (facts.broken) {
+        stop()
+        tails.delete(id)
+        /** The tail stops at the break, before what came in the same append: the user letting it go, read by folding again. */
+        track(file)
+        onChange()
+        return
+      }
+      if (!('unreadable' in event) && event[1] === 'x') {
         stop()
         tails.delete(id)
         measure()

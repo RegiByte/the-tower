@@ -1,4 +1,4 @@
-import type { LogEvent, SessionHeader, SessionLog } from '../shared/model.ts'
+import type { LogEvent, SessionHeader } from '../shared/model.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { isTyped } from './input.ts'
 import { delivered } from './messages.ts'
@@ -107,6 +107,12 @@ export type Facts = {
 
 /** `at`: the event's time, in seconds since the session's start. */
 export type Broken = { message: string; at: number; code: string }
+
+/** A complete line of a log that isn't JSON, a write cut short and ended by a later append: the fold breaks on it. */
+export type Unreadable = { unreadable: Broken }
+
+/** What a fold of facts takes: the log's events, and the lines that can't be read as one. */
+export type FoldEvent = LogEvent | Unreadable
 
 export type Session = { header: SessionHeader; facts: Facts }
 
@@ -285,7 +291,8 @@ const isLetGo = (event: LogEvent) => event[1] === 'h' && event[2].hook_event_nam
  * stay as they were before it, `broken` says why, and nothing after it is folded but the user letting it go, so one
  * bad line costs its own session and no other reader.
  */
-export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent): Facts => {
+export const factsAfter = (startedAt: number) => (facts: Facts, event: FoldEvent): Facts => {
+  if ('unreadable' in event) return facts.broken ? facts : { ...facts, broken: event.unreadable }
   if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
   try {
     return stepAfter(startedAt, facts, event)
@@ -294,7 +301,7 @@ export const factsAfter = (startedAt: number) => (facts: Facts, event: LogEvent)
   }
 }
 
-export const factsOf = ({ header, events }: SessionLog): Facts => events.reduce(factsAfter(header.startedAt), initialFacts(header))
+export const factsOf = ({ header, events }: { header: SessionHeader; events: FoldEvent[] }): Facts => events.reduce(factsAfter(header.startedAt), initialFacts(header))
 
 /** Rate limits belong to the account: the most recent reading of any session stands for all of them. */
 export const latestRateLimits = (facts: Facts[]): Facts['rateLimits'] =>
