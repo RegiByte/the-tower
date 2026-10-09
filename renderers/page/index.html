@@ -31,9 +31,7 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .host-state.quiet { padding: 1px var(--sp-2xs); font-weight: 400; color: var(--faint); }
 .host-state.working, .host-state.broken { background: var(--c); color: var(--on); }
 .host-state.working .lamp, .host-state.broken .lamp { background: var(--on); }
-.head-btn { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; background: none; border: none; color: var(--faint); }
-.head-btn svg { width: 15px; height: 15px; }
-.head-btn:hover, .head-btn:has(+ :popover-open) { color: var(--ink); }
+.brand .icon-btn:has(+ :popover-open) { color: var(--ink); }
 .side-notes { margin-top: calc(-1 * var(--sp-xs)); padding: 0 var(--sp-xl) var(--sp-l); color: var(--muted); font-size: var(--fs-s); overflow-wrap: anywhere; }
 .side-notes:empty { display: none; }
 .side-notes .untested { white-space: normal; }
@@ -45,48 +43,45 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .asof { color: var(--faint); }
 .limits:has(.asof.stale) > div { opacity: .5; }
 .limits .asof.stale { color: var(--ink); }
-.side-views { display: flex; gap: var(--sp-2xs); padding: var(--sp-m) var(--sp-xl) 0; border-bottom: 1px solid var(--line); }
-.side-views button { padding: var(--sp-xs) var(--sp-l) var(--sp-s); border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); }
-.side-views button.on { color: var(--ink); border-bottom-color: var(--ink); }
-.stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-l) var(--sp-xl); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
+.side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
+.stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .side.on-stats .stats-side { display: block; } .side.on-stats .floors { display: none; }
-.floors { flex: 1; overflow-y: auto; padding: var(--sp-l) var(--sp-l) var(--sp-xl); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-xl);
+.floors { flex: 1; overflow-y: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-xl);
   scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .floor { --pt: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p, var(--deco)) var(--p-wash-mix), var(--panel)); }
-.sign button { margin-left: auto; min-width: 26px; min-height: 24px; padding: 0; display: grid; place-items: center; font-size: var(--fs-xl); }
+.sign button { margin-left: auto; min-width: var(--control); min-height: var(--control); padding: 0; display: grid; place-items: center; }
 .sign button + button { margin-left: var(--sp-xs); }
-.sign button.new-draft { font-size: var(--fs-m); color: var(--muted); }
-.dirs { padding: var(--sp-s) var(--sp-2xs) 0; }
+.sign button.new-draft { color: var(--muted); }
+.sign button .icon { width: var(--icon-m); height: var(--icon-m); }
+.dirs { padding: var(--sp-s) 0 0; }
 .dir { display: flex; align-items: center; gap: var(--sp-xs); padding: 1px var(--sp-s); font-size: var(--fs-s); color: var(--muted); border-radius: var(--radius); }
 .dir:hover { background: var(--panel-2); }
 .dir .dname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dir a, .dir button { display: grid; place-items: center; width: 24px; height: 22px; padding: 0; background: none; border: 1px solid transparent; color: var(--faint); }
-.dir svg { width: 13px; height: 13px; }
-.dir:hover a, .dir:hover button { color: var(--muted); }
-.dir a:hover, .dir button:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
-.shelf { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-s) var(--sp-s) 0; }
+.dir .dname .icon { margin-right: var(--sp-2xs); }
+.shelf { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-s) 0 0; }
 .shelf button, .shelf a { padding: var(--sp-2xs) var(--sp-m); font-size: var(--fs-xs); font-weight: 700; border-radius: var(--radius-pill); background: var(--pw); color: var(--pt); border: 1px solid transparent;
   text-decoration: none; line-height: 1.45; }
 .shelf button:hover, .shelf a:hover { border-color: color-mix(in oklab, var(--pt) 40%, transparent); }
 .shelf button.sel { background: var(--pt); color: var(--panel); }
-.drafts { padding: var(--sp-m) var(--sp-2xs) 0; }
+.drafts { padding: var(--sp-m) 0 0; }
 .drafts-head { display: flex; align-items: center; padding: 0 var(--sp-2xs) 0 var(--sp-m); }
 .drafts-head button { margin-left: auto; background: none; border: none; padding: 0 var(--sp-s); color: var(--faint); font: 400 var(--fs-xl) var(--ui); }
 .drafts-head button:hover { color: var(--ink); }
-.drafts-head button.tidy-all { min-height: 20px; padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); }
+.drafts-head button.tidy-all { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); }
 .drafts-head button.tidy-all:hover { border-color: var(--faint); }
 .drafts-about { padding: var(--sp-2xs) var(--sp-m) var(--sp-xs); color: var(--faint); font-size: var(--fs-xs); line-height: 1.35; }
 .draft { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--sp-s); padding: var(--sp-xs) var(--sp-m); border-radius: var(--radius); font-size: var(--fs-s); color: var(--muted); cursor: pointer; white-space: nowrap; }
-.draft::before { content: "✎"; color: var(--faint); }
 .draft .t { overflow: hidden; text-overflow: ellipsis; }
 .draft .meta { grid-column: 2; overflow: hidden; text-overflow: ellipsis; color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); letter-spacing: .02em; }
 .draft:hover, .draft.sel { background: var(--panel-2); color: var(--ink); }
 .draft.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
-.draft.thread::before { content: "◇"; }
+.draft > .icon { align-self: center; color: var(--muted); }
 button.draft { width: 100%; border: none; background: none; font-weight: 400; text-align: left; }
-.kept-fold { display: block; margin: var(--sp-xs) 0 0; padding: var(--sp-2xs) var(--sp-m); border: none; background: none; color: var(--faint); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .04em; }
+.kept-fold { display: flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); margin: var(--sp-xs) 0 0; padding: 0 var(--sp-m); border: none; background: none; color: var(--faint); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .04em; }
 .kept-fold:hover { color: var(--ink); }
-.worktrees { padding: var(--sp-m) var(--sp-2xs) 0; }
+:is(.kept-fold, .gone-home)[aria-expanded='false'] .icon { rotate: -90deg; }
+.worktrees { padding: var(--sp-m) 0 0; }
 .wt { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-xs) var(--sp-2xs) var(--sp-m); border-radius: var(--radius); font-size: var(--fs-s); color: var(--muted); }
 .wt .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wt .n b { color: var(--ink); font-weight: 700; }
@@ -95,17 +90,16 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .wt .who:hover { text-decoration: underline; }
 .wt .st { flex: none; font-size: var(--fs-xs); letter-spacing: .04em; color: var(--faint); }
 .wt.at-risk .st, .wt.lost .st { color: var(--needs-text); }
-.wt button { flex: none; padding: 0 var(--sp-m); min-height: 20px; font-size: var(--fs-xs); }
-.wt .ic { width: 22px; display: grid; place-items: center; padding: 0; background: none; border-color: transparent; color: var(--faint); }
-.wt .ic svg { width: 12px; height: 12px; }
-.wt .ic:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.wt button { flex: none; min-height: var(--control); }
+.wt button:not(.icon-btn) { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
 .sess .branch { color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sessions { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); padding: var(--sp-m) var(--sp-2xs) 0; }
+.sessions { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); padding: var(--sp-m) 0 0; }
 .sess { position: relative; padding: var(--sp-m) var(--sp-l); border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line);
   border-left: 4px solid var(--c); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
 .sess:hover { box-shadow: var(--shadow); }
-.sess.sel { outline: 2px solid var(--ink); outline-offset: 1px; }
 .sess.waits { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
+:is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button.on) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
+.floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
 .sess .call, .past .call { color: inherit; text-decoration: none; }
 .sess .call { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; white-space: nowrap; }
@@ -117,18 +111,17 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .act { margin-top: var(--sp-s); display: flex; gap: var(--sp-s); }
 .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
 .sess.gone { opacity: .55; }
-.gone-home { justify-self: start; padding: 1px var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
+.gone-home { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
 .gone-home:hover { color: var(--ink); }
 .sess.gone:hover, .sess.gone.sel { opacity: 1; }
-.sess .act button { padding: 1px var(--sp-m); font-size: var(--fs-s); }
+.sess .act button { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .unresumable { color: var(--faint); font-size: var(--fs-s); white-space: nowrap; }
 .empty { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }
-.trays { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-2xs) 0; }
-.tray { padding: 1px var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; white-space: nowrap; }
+.trays { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-m) 0 0; }
+.tray { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; white-space: nowrap; }
 .tray b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .tray i { font-style: normal; font-weight: 700; color: var(--needs-text); }
-.tray:hover { border-color: var(--line); color: var(--ink); }
-.tray.on { background: var(--panel-2); border-color: var(--line); color: var(--ink); }
+.tray:hover { color: var(--ink); }
 .archive { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: var(--sp-2xs); }
 .archive-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-m); }
 .main:not(.archived) .archive-view, .main.archived .bar, .main.archived .screen { display: none; }
@@ -146,14 +139,10 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .past .head .when { margin-left: auto; }
 .past .conv { display: flex; align-items: center; gap: var(--sp-s); padding-left: var(--sp-xl); }
 .past .what { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.past button { padding: 0 var(--sp-m); font-size: var(--fs-s); }
+.past button:not(.icon-btn) { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .said { color: var(--faint); }
-.side-toggle, .help { background: none; border: none; padding: 0 var(--sp-xs); color: var(--faint); font-size: var(--fs-xl); font-weight: 400; white-space: nowrap; }
-.side-toggle small { font: var(--fs-xs) var(--mono); }
-.side-toggle:hover, .help:hover { color: var(--ink); }
-.help { font-weight: 700; }
-.side-foot { display: flex; align-items: center; gap: var(--sp-s); margin-top: auto; padding: var(--sp-s) var(--sp-l) var(--sp-s) var(--sp-xl); border-top: 1px solid var(--line); color: var(--faint); font-size: var(--fs-xs); }
-.side-renderers { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: 0 var(--sp-l) var(--sp-m) var(--sp-xl); color: var(--faint); font-size: var(--fs-xs); }
+.side-foot { display: flex; align-items: center; gap: var(--sp-s); margin-top: auto; padding: var(--sp-s) var(--sp-xl); border-top: 1px solid var(--line); color: var(--faint); font-size: var(--fs-xs); }
+.side-renderers { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: 0 var(--sp-xl) var(--sp-m); color: var(--faint); font-size: var(--fs-xs); }
 .side-renderers b { color: var(--ink); }
 .side-renderers a { color: var(--muted); text-decoration: none; }
 .side-renderers a:hover { color: var(--ink); }
@@ -186,7 +175,7 @@ dialog h2.legend-head { margin-top: var(--sp-2xl); }
 .keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
 
-.main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-l) var(--sp-l) 0; }
+.main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
 .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); }
 #bar-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); min-width: 0; flex: 1 1 20rem; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
@@ -200,18 +189,18 @@ dialog#keys { width: min(620px, 92vw); }
 #bar-info .ports { color: var(--ink); cursor: pointer; font-family: var(--mono); font-size: var(--fs-xs); padding: 1px var(--sp-s); border: 0; border-radius: var(--radius); background: var(--panel-2); }
 #bar-info .ports.orphan { color: var(--on-broken); background: var(--broken); }
 #bar-actions { flex: none; display: flex; gap: var(--sp-s); margin-left: auto; }
-#bar-actions .info { padding: var(--sp-xs) var(--sp-m); color: var(--muted); font-weight: 400; }
+#bar-actions .icon-btn { aspect-ratio: 1; }
 #c-mode { position: absolute; top: 8px; right: 12px; z-index: 1; padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); background: var(--panel); color: var(--muted); font-size: var(--fs-s);
   box-shadow: var(--shadow); pointer-events: none; }
 #c-mode:empty, #c-mode.owner, .main.on-brief #c-mode, .main.on-shown #c-mode, .main.on-changes #c-mode, .main.on-reviews #c-mode { display: none; }
 #bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
-.move.dismiss { color: var(--needs-text); border-color: var(--needs); }
+.dismiss { color: var(--needs-text); }
 #bar-line .moves { gap: var(--sp-s); }
-#bar-line .activity { overflow: hidden; text-overflow: ellipsis; text-align: left; padding: 1px var(--sp-m); margin-left: var(--sp-s); background: none; border-color: transparent;
+#bar-line .activity { overflow: hidden; text-overflow: ellipsis; text-align: left; min-height: var(--control); padding: 0 var(--sp-m); margin-left: var(--sp-s); background: none; border-color: transparent;
   color: var(--muted); font: var(--fs-s)/1.6 var(--mono); }
 #bar-line .activity:hover { border-color: var(--line); }
 #bar-line .activity .tool b { font-family: var(--ui); }
-.move { flex: none; display: flex; align-items: center; gap: var(--sp-s); padding: 1px var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
+.move { flex: none; display: flex; align-items: center; gap: var(--sp-s); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
 .move .call { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
 .move small { font: var(--fs-xs) var(--mono); color: var(--faint); }
 .move.waiting { border-color: var(--c); }
@@ -227,8 +216,7 @@ dialog#keys { width: min(620px, 92vw); }
 #bar-details dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-xs) var(--sp-xl); margin: 0; font-size: var(--fs-s); }
 #bar-details dt { color: var(--faint); }
 #bar-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); }
-.pane-tab { padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }
-.pane-tab.on { color: var(--ink); border-color: var(--ink); }
+.pane-tab { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }
 .ask { display: none; align-items: center; gap: var(--sp-l); flex: none; padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius); font-size: var(--fs-l);
   background: color-mix(in oklab, var(--needs) 11%, var(--panel)); border: 1px solid var(--needs); }
 .main.asking:not(.home):not(.shelf):not(.drafting):not(.archived) .ask { display: flex; }
@@ -236,17 +224,17 @@ dialog#keys { width: min(620px, 92vw); }
 .ask .what b { color: var(--needs-text); }
 .ask .call { font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
 .ask button { margin-left: auto; flex: none; }
-.brief { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-2xl) 40px; background: var(--panel); color: var(--ink); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.brief { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-xl) 40px; background: var(--panel); color: var(--ink); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .main.on-brief .brief { display: block; }
 .brief .brief-view { max-width: 980px; margin: 0 auto; }
-@media (max-width: 640px) { .brief { padding: 0 var(--sp-l) var(--sp-3xl); } }
 .shown { display: none; position: absolute; inset: 0; z-index: 1; }
 .main.on-shown .shown { display: flex; }
 .shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
 .shown iframe.doc { background: var(--panel); }
 .shown img, .shown video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
-.pane-tab .unshow, .pane-tab .out { margin-left: var(--sp-s); color: var(--faint); text-decoration: none; }
-.pane-tab .unshow:hover, .pane-tab .out:hover { color: var(--ink); }
+.pane-tab .icon-btn, .tab .icon-btn { margin-block: -1px; }
+.pane-tab .icon-btn .icon, .tab .icon-btn .icon { width: var(--icon-s); height: var(--icon-s); }
+.pane-tab:has(> .icon-btn:last-child), .tab { padding-right: 0; }
 .pane-tab small { margin-left: var(--sp-xs); color: var(--faint); font-variant-numeric: tabular-nums; }
 .pane-tab small.unseen { color: var(--needs-text); font-weight: 700; }
 .changes { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); }
@@ -262,13 +250,13 @@ dialog#keys { width: min(620px, 92vw); }
 
 .shelf-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-m); }
 .main:not(.shelf) .shelf-view, .main.shelf .bar, .main.shelf .screen { display: none; }
-.shelf-head { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+.shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); white-space: nowrap; }
 .shelf-head .label { font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
   color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
 .shelf-head .dim { color: var(--faint); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; }
 .shelf-head .tag { flex: none; padding: var(--sp-2xs) var(--sp-m); border: none; border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-s)/1.3 var(--mono); cursor: copy; }
-.shelf-head .actions { margin-left: auto; display: flex; align-items: center; gap: var(--sp-l); font-size: var(--fs-m); }
+.shelf-head .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }
 .shelf-body { flex: 1; min-height: 0; display: flex; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--panel); }
 .shelf-body iframe { flex: 1; min-width: 0; border: 0; }
 .shelf-body iframe.page { background: #fff; }
@@ -299,22 +287,21 @@ dialog#keys { width: min(620px, 92vw); }
 .targets .line { flex: 1; min-width: 0; color: var(--muted); font-size: var(--fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .shelf-empty { margin: auto; text-align: center; color: var(--muted); }
 
-.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--sp-l)); background: var(--panel); border-top: 1px solid var(--line); }
-.shell-pane { display: none; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--sp-l) var(--sp-l); background: var(--enamel); border-radius: var(--radius);
+.dock { position: relative; flex: none; margin: 0 calc(-1 * var(--sp-xl)); background: var(--panel); border-top: 1px solid var(--line); }
+.shell-pane { display: none; height: var(--shell-h, 38vh); padding: var(--sp-m) var(--sp-l); margin: 0 var(--sp-xl) var(--sp-xl); background: var(--enamel); border-radius: var(--radius);
   box-shadow: inset 0 3px 0 var(--p, var(--deco)); }
 .main.shell-open .shell-pane { display: block; }
 .shell-pane .term { width: 100%; height: 100%; }
 .grip { display: none; position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; z-index: 2; }
 .main.shell-open .grip { display: block; }
 .grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.tabs { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-s) var(--sp-l); overflow-x: auto; scrollbar-width: none; font-size: var(--fs-s); color: var(--faint); }
-.tab { display: flex; align-items: center; gap: var(--sp-m); flex: none; padding: var(--sp-xs) var(--sp-xs) var(--sp-xs) var(--sp-l); font-weight: 400; font-size: var(--fs-s); background: var(--panel); color: var(--muted); }
+.tabs { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-s) var(--sp-xl); overflow-x: auto; scrollbar-width: none; font-size: var(--fs-s); color: var(--faint); }
+.tab { display: flex; align-items: center; gap: var(--sp-m); flex: none; min-height: var(--control); padding: 0 0 0 var(--sp-l); font-weight: 400; font-size: var(--fs-s); background: var(--panel); color: var(--muted); }
 .tab::before { content: ""; width: 8px; height: 8px; border-radius: var(--radius-s); background: var(--p, var(--deco)); }
-.tab.open { border-color: var(--ink); color: var(--ink); }
 .tab .what { color: var(--ink); font-weight: 700; max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tab .x { padding: 0 var(--sp-xs); border-radius: var(--radius-s); color: var(--faint); }
-.tab .x:hover { color: var(--on-broken); background: var(--broken); }
-.tab-add { flex: none; min-width: 24px; min-height: 22px; padding: 0; display: grid; place-items: center; font-size: var(--fs-xl); font-weight: 400; color: var(--muted); background: var(--panel); }
+.tab .icon-btn:hover { color: var(--on-broken); background: var(--broken); border-color: var(--broken); }
+.tab-add { flex: none; min-width: var(--control); min-height: var(--control); padding: 0; display: grid; place-items: center; color: var(--muted); background: var(--panel); }
+.tab-add .icon { width: var(--icon-m); height: var(--icon-m); }
 .tab-add:hover { color: var(--ink); }
 .shell-pick { position: fixed; inset: auto; margin: 0; padding: var(--sp-s); min-width: 200px; max-height: calc(100vh - 16px); overflow: auto; border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); font: var(--fs-m)/1.4 var(--ui); }
@@ -376,8 +363,8 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <body>
 <aside class="side" aria-label="sidebar">
   <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><span class="host" id="host"></span>
-    <button class="head-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
-    <button class="help" id="keys-open" data-keys aria-label="shortcuts">?</button><button class="side-toggle" id="side-hide" data-side aria-label="hide the sidebar">« <small></small></button></div>
+    <button class="icon-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
+    <button class="icon-btn" id="keys-open" data-keys aria-label="shortcuts"></button><button class="icon-btn side-toggle" id="side-hide" data-side aria-label="hide the sidebar"></button></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits" id="limits"></div>
@@ -438,7 +425,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
-import { ICON, SHELF_ICON, originIcon } from '/icons.js'
+import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
@@ -462,7 +449,7 @@ const lineOf = (c) => {
   const gist = gistOf(c)
   if (!gist) return '<i>no prompt yet</i>'
   if (gist.kind === 'asks' || gist.kind === 'runs') return toolHtml(gist.text)
-  return `<span class="said">${GIST_MARK[gist.kind]}</span> ${esc(gist.text)}`
+  return `<span class="said">${GIST_ICON[gist.kind]}</span> ${esc(gist.text)}`
 }
 /** `Bash npm test` → the tool's name in bold, then what it acts on. */
 const toolHtml = (tool) => {
@@ -542,9 +529,9 @@ const byStart = (a, b) => a.startedAt - b.startedAt
 const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
-    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · '))}</div>` : ''}
+    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · ')))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', '<span aria-hidden="true">↻</span> resume') : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
@@ -562,7 +549,7 @@ const crewHtml = (cards, c) => {
   const { drawn, home, folded } = crewFold(cards, c)
   const open = crewsUnfolded.has(c.id)
   const fold = home.length
-    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}"><span aria-hidden="true">${open ? '▾' : '▸'}</span> ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
+    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
     : ''
   const under = drawn.map((h) => crewHtml(cards, h)).join('') + fold
   return sessionHtml(c) + (under ? `<div class="crew">${under}</div>` : '')
@@ -591,12 +578,12 @@ const heldHtml = (verb, label, inner, cls = '') =>
   `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb))}">${inner}</button>`
 
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', '↻') : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">↻</button>`
+  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${conv.resumedBy.callsign}</span>` : ''
 
 const pastConversationHtml = (c, conv) =>
   `<div class="conv" data-tip="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
-    <span class="what">${conv.answer ? `<span class="said">${GIST_MARK.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_MARK.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
+    <span class="what">${conv.answer ? `<span class="said">${GIST_ICON.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_ICON.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
     ${resumeHtml(c, conv)}</div>`
 
 /** A past worker and the conversations it held, oldest first. */
@@ -607,10 +594,10 @@ const pastHtml = (c) =>
   </div>`
 
 const dirHtml = (f, dir, hub) =>
-  `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? '⌂' : '·'} ${esc(base(dir))}</span>
-    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
-    ${can(f, 'editor') ? `<button data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
+  `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
+    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
 
 /** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
@@ -630,19 +617,19 @@ const worktreeHtml = (f, w) => {
   const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
   const workers = workersIn(f, w.name)
   const resumable = workers.find((c) => c.calls.resume)
-  return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
+  return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
-    ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, '↻', 'ic') : `<button class="ic" data-resume="${esc(JSON.stringify(resumable.calls.resume))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">↻</button>`}
+    ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(resumable.calls.resume))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
-    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'ic') : can(f, 'shell') ? `<button class="ic" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
-    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${workers.length ? `<span class="who-line">${workers.map((c) => `<a class="who" href="#${c.id}" data-tip="${esc(`${c.callsign} · ${statusName(c)}`)}">${c.callsign}</a> <span>${esc(statusName(c))}</span>`).join(' · ')}</span>` : ''}
   </div>`
 }
 
 const keptBranchHtml = (b) =>
   `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}">
-    <span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
+    <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
 
 /** The floor's worktrees and the branches the tower kept. */
 const worktreesHtml = (f) => `<div class="worktrees">
@@ -653,11 +640,11 @@ const worktreesHtml = (f) => `<div class="worktrees">
 const threadsHtml = (f) => {
   const rows = f.threads.map((t) => {
     const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
-    return `<button class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
+    return `<button class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
   })
   const landed = landedOf(f)
   const fold = `landed:${f.id}`
-  const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" data-tip="threads Tidy filed once their work landed: read them here">${unfolded.has(fold) ? '▾' : '▸'} ${landed.length} landed</button>
+  const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" data-tip="threads Tidy filed once their work landed: read them here">${ICON.caret} ${landed.length} landed</button>
     ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${isOpenItem(f.id, REVIEWS, t.id) ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
   return `<div class="drafts"><div class="drafts-head eyebrow">Review threads</div>${rows.join('') || '<div class="empty">none open</div>'}${filed}</div>`
 }
@@ -671,8 +658,8 @@ const tidyHtml = (f) => `<div class="worktrees">
     ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}</div>`
 
 /** One thing Tidy would do, with a button that does only it. */
-const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>
-    <button class="ic" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">⌫</button></div>`
+const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>
+    <button class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">${ICON.tidy}</button></div>`
 
 
 const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
@@ -691,7 +678,7 @@ const { title: draftTitle, prune: pruneDraftTitles } = draftTitles(draftIo.read,
 
 const draftsHtml = (f) =>
   collectionTrayHtml(f.id, draftsOf(f), (item) => draftTitle(f.id, item), draftOpen?.project === f.id ? draftOpen.id : undefined, Date.now(),
-    `<button data-new-draft="${f.id}" aria-label="new draft" data-tip="new draft">+</button>`)
+    `<button data-new-draft="${f.id}" aria-label="new draft" data-tip="new draft">${ICON.plus}</button>`)
 
 /** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
 const { title: keptTitle, prune: pruneKeptTitles } = keptTitles((project, collection, id) => tower.text(itemPath(project, collection, id)), () => render())
@@ -716,15 +703,14 @@ function traysHtml(f) {
   const tidy = can(f, 'tidy')
   const stranded = strandedOf(f).length
   const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" data-tip="${title}">${label}</button>`
-  const glyph = (g) => `<span aria-hidden="true">${g}</span>`
   const trays = [
-    drafts?.items.length && tray('drafts', `${glyph('✎')} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
-    trees && tray('worktrees', `${glyph('⎇')} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
-    (threads || landed) && tray('threads', `${glyph('◇')} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
-    ...kept.map((c) => tray(`kept-${c.id}`, `${glyph('▦')} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
-    stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${glyph('↻')} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker the host stopped or lost: asked first, listing them">${glyph('↻')} resume all <b>${stranded}</b> stranded</button>`),
-    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${glyph('▤')} <b>${past}</b> archived</button>`,
-    tidy && tray('tidy', `${glyph('⌫')} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
+    drafts?.items.length && tray('drafts', `${ICON.draft} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(drafts.description ?? 'prompts kept for later')),
+    trees && tray('worktrees', `${ICON.branch} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
+    (threads || landed) && tray('threads', `${ICON.thread} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
+    ...kept.map((c) => tray(`kept-${c.id}`, `${ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
+    stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${ICON.resume} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker the host stopped or lost: asked first, listing them">${ICON.resume} resume all <b>${stranded}</b> stranded</button>`),
+    past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${ICON.archive} <b>${past}</b> archived</button>`,
+    tidy && tray('tidy', `${ICON.tidy} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
   if (!trays.length) return ''
   return `<div class="trays">${trays.join('')}</div>
@@ -738,7 +724,7 @@ const signHtml = (n, name, extra = '') =>
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
   return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">✎</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, '+') : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">+</button>` : ''))}
+    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''))}
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
@@ -817,20 +803,20 @@ function barHtml(c) {
   const ctx = c.context
   repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
-    <span class="where" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floorOf(c.project)))}</span>
+    <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, floorOf(c.project))))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
       ${claudeFlagHtml(c) ?? ''}
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
-  repaint($('bar-actions'), `<button class="info" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">ⓘ</button>
-    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', '<span aria-hidden="true">↻</span> Resume', 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}"><span aria-hidden="true">↻</span> Resume</button>`}
+  repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
+    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} Resume</button>`}
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
     ${can(c, 'kill') ? `<button class="danger" data-act="kill" data-of="${c.id}">Kill</button>` : ''}
-    <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">✕</button>`)
+    <button class="icon-btn" data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">${ICON.close}</button>`)
   $('bar-details').innerHTML = detailsHtml(c)
   $('bar-left').innerHTML = leftHtml(c)
   $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
@@ -874,13 +860,16 @@ const MOVE_TITLE = { prev: 'previous on duty', next: 'next on duty', waiting: 'n
 const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
 /** What a control does with the chords of the command it shares, when it has any: `hide the sidebar (⌘B)`. */
+/** The close of a view in the main pane: back to the skyline. */
+const CLOSE_HOME = `<button class="icon-btn" data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">${ICON.close}</button>`
+
 const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabel(board.keys, id)})` : what)
 
 /** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
 function movesHtml(c) {
   const to = neighbours(board, c.id, heed)
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">✕</button>` : ''
+  const dismiss = wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
   const move = (m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
@@ -924,10 +913,10 @@ const paneTabsHtml = (c, pane) => {
 const shownTabHtml = (c, s, on) => {
   const from = shownFrom(c.lineage, s)
   return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} data-tip="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
-  `<span class="shown-name">${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-  (on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">↗</span>` : '') +
+  `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
+  (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
   (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
-  `<span class="unshow" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">×</span></button>`
+  `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
 }
 
 const shownPane = (s) => `shown:${s.target}`
@@ -1346,7 +1335,7 @@ function render() {
 
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
-  `<button class="side-toggle" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">»</button>
+  `<button class="icon-btn" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">${ICON.sidebar}</button>
   ${waiting ? `<span class="count ${loudest(waitsOnYou())}" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrder(board).map((c) => {
     const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
@@ -1359,7 +1348,6 @@ function paintKeys() {
   $('keys-open').setAttribute('aria-keyshortcuts', keyshortcuts(board.keys, 'help'))
   $('side-hide').dataset.tip = withKeys('hide the sidebar', 'sidebar')
   $('side-hide').setAttribute('aria-keyshortcuts', keyshortcuts(board.keys, 'sidebar'))
-  $('side-hide').querySelector('small').textContent = keysLabel(board.keys, 'sidebar')
 }
 
 /** Under this width the sidebar is a rail, and the sidebar key opens it over the main pane until something opens there. */
@@ -1500,6 +1488,8 @@ function paintSettings() {
   if (again) $('settings').querySelector(again)?.focus()
 }
 $('settings-open').innerHTML = ICON.settings
+$('keys-open').innerHTML = ICON.help
+$('side-hide').innerHTML = ICON.sidebar
 placeOnOpen($('settings'), () => $('settings-open'))
 $('settings').addEventListener('beforetoggle', (e) => e.newState === 'open' && paintSettings())
 $('settings').addEventListener('click', async (e) => {
@@ -1703,9 +1693,9 @@ function openShelf(project, n, file) {
   $('main').classList.add('shelf')
   $('shelf-view').style.cssText = paint(project)
   const own = { html: `/run/${project}/${n}`, url: entry.url, renderer: entry.renderer && rendererUrl(entry.renderer) }[shelfKind(entry)]
-  const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">↗ new tab</a>` : ''
+  const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">${ICON.remote} new tab</a>` : ''
   $('shelf-head').innerHTML = `<span class="label">${esc(entry.label)}</span><span class="dim">${esc(f.name)} · ${esc(shelfSource(entry))}</span>
-    <span class="actions">${tab}<button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
+    <span class="actions">${tab}${CLOSE_HOME}</span>`
   $('shelf-body').innerHTML = ''
   render()
   if (shelfKind(entry) === 'html') showPage(shelfUrl(project, n, shelfPage(entry)))
@@ -1878,7 +1868,7 @@ function openArchive(project) {
   $('archive-view').style.cssText = paint(project)
   $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
-    <span class="actions"><small class="dim" id="archive-count"></small><button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
+    <span class="actions"><small class="dim" id="archive-count"></small>${CLOSE_HOME}</span>`
   render()
   $('archive-filter').focus()
 }
@@ -1935,7 +1925,7 @@ function draftHeadHtml() {
       ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" data-tip="start a new session on this prompt">Start session</button>' : ''}
       ${targets().length ? '<button data-draft-act="transfer" data-tip="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
-      <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`
+      ${CLOSE_HOME}</span>`
   $('draft-note').innerHTML = d.conflict !== undefined
     ? `<span>Someone else changed this draft while you were editing it.</span>
       <button data-draft-act="reload">Take theirs</button><button data-draft-act="keep">Keep mine</button>`
@@ -2128,9 +2118,9 @@ function drawItem() {
   const by = item.keptBy ? ` · kept by <a href="#${item.keptBy.session}" data-tip="go to the worker that kept it">${esc(item.keptBy.callsign)}</a>` : ''
   repaint($('item-head'), `<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
     <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
-    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">↗ new tab</a>
+    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">${ICON.remote} new tab</a>
       <button class="danger" data-item-act="delete">Delete</button>
-      <button data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">✕</button></span>`)
+      ${CLOSE_HOME}</span>`)
   if (itemOpen.drawn !== item.modifiedAt) showItemBody(c, item)
 }
 
@@ -2184,24 +2174,24 @@ const shellWhere = (sh) => {
   return `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
 }
 
-const shellAddHtml = () => shellPlaces(board.floors).length ? '<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" data-tip="new shell: pick a directory">+</button>' : ''
+const shellAddHtml = () => shellPlaces(board.floors).length ? `<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button>` : ''
 
 /** The directories a new shell can start in, the floor in view first, each floor under its name. */
 function shellPickHtml() {
   const places = shellPlaces(board.floors, floorInView())
   return [...new Set(places.map((p) => p.project))].map((project) => `<div class="pick-floor eyebrow" style="${paint(project)}">${esc(floorOf(project).name)}</div>` +
-    places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" data-tip="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>⎇ ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
+    places.filter((p) => p.project === project).map((p) => `<button data-shell-project="${esc(p.project)}" data-shell-dir="${esc(p.dir)}" data-tip="${esc(p.dir)}">${esc(p.name)}${p.worktree ? ` <small>${ICON.branch} ${esc(p.worktree)}</small>` : ''}</button>`).join('')).join('')
 }
 $('shell-pick').addEventListener('toggle', (e) => e.newState === 'open' && ($('shell-pick').innerHTML = shellPickHtml()))
 placeOnOpen($('shell-pick'), () => $('tabs').querySelector('.tab-add'))
 
 function renderDock() {
   if (!board.termsUp) return ($('tabs').innerHTML = `<span>shells: ${esc(whyNot(board, 'shell'))}</span>`)
-  if (!board.shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · + starts one in a floor's directory</span>`)
+  if (!board.shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · ${ICON.plus} starts one in a floor's directory</span>`)
   $('tabs').innerHTML = shellAddHtml() + [...board.shells].sort(byStart).map((sh) =>
     `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" data-tip="${esc(sh.cwd)}">
       <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
-      <span class="x" data-kill-shell="${sh.id}" aria-hidden="true" data-tip="kill this shell">×</span></button>`).join('')
+      <span class="icon-btn" data-kill-shell="${sh.id}" aria-hidden="true" data-tip="kill this shell">${ICON.close}</span></button>`).join('')
 }
 
 function openShell(id) {

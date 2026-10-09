@@ -325,7 +325,7 @@ const countsHtml = (added: number, removed: number) => `<span class="add">+${add
  * it again (`again`, its data attribute). Any renderer's own reads draw it too.
  */
 export const failedHtml = (what: string, message: string, again: string) =>
-  `<div class="read-failed" role="alert"><p>couldn't read ${esc(what)}: ${esc(message)}</p><button ${again}><span aria-hidden="true">↻</span> Read again</button></div>`
+  `<div class="read-failed" role="alert"><p>couldn't read ${esc(what)}: ${esc(message)}</p><button ${again}>${ICON.resume} Read again</button></div>`
 
 /** Where work that no longer goes on stands, said once at the top of a panel: nothing beside it takes a note. */
 function settledHtml(state: CheckoutState, checkout: string) {
@@ -345,7 +345,7 @@ export function changesHtml(v: ChangesView) {
   if (settled && !files.length) return `<div class="changes-panel">${settled}</div>`
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read><span aria-hidden="true">↻</span> Read again</button></div>`
+      <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read>${ICON.resume} Read again</button></div>`
   return `<div class="changes-panel">${settled}${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: v.noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
 }
 
@@ -362,11 +362,11 @@ function fileHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   const folded = isFolded(v.read, v.folds, repo, f)
   const dir = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/') + 1) : ''
   return `<section class="file ${viewed ? 'viewed' : ''} ${folded ? 'folded' : ''}" data-file="${key}">
-    <header data-fold="${key}"><button class="caret" data-fold="${key}" aria-expanded="${!folded}" aria-label="${esc(f.path)}">▾</button><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
+    <header data-fold="${key}"><button class="icon-btn caret" data-fold="${key}" aria-expanded="${!folded}" aria-label="${esc(f.path)}">${ICON.caret}</button><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
       <span class="path">${f.from ? `<i>${esc(f.from)} → </i>` : ''}<i>${esc(dir)}</i>${esc(f.path.slice(dir.length))}</span>
       ${f.change === 'deleted' ? '' : fileButtonsHtml(`${repo.dir}/${f.path}`)}
       <span class="n">${f.added + f.removed ? countsHtml(f.added, f.removed) : ''}</span>
-      <button class="viewed-box" role="checkbox" aria-checked="${viewed}" data-viewed="${key}"><span class="box">${viewed ? '✓' : ''}</span>Viewed</button></header>
+      <button class="viewed-box" role="checkbox" aria-checked="${viewed}" data-viewed="${key}"><span class="box">${viewed ? ICON.check : ''}</span>Viewed</button></header>
     ${folded ? '' : `<div class="body">${fileBodyHtml(v, repo, f)}</div>`}</section>`
 }
 
@@ -426,7 +426,7 @@ function sendHtml(v: ThreadView) {
     <select data-send-pick aria-label="send to another worker" data-tip="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
 }
 
-const composerHtml = (v: ThreadView) => `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" data-tip="not an answer">×</button></div>` : ''}
+const composerHtml = (v: ThreadView) => `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button class="icon-btn" data-reply-clear aria-label="not an answer" data-tip="not an answer">${ICON.close}</button></div>` : ''}
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
       <div class="actions"><button class="primary" data-note-add>Add note</button></div></div>`
 
@@ -595,7 +595,7 @@ export function statsHtml(v: StatsView) {
     return `<button class="${t.id === v.scope ? 'on' : ''}" aria-pressed="${t.id === v.scope}" data-stats-scope="${esc(t.id)}">${project ? `<i style="background:${seriesColor(project)}"></i>` : ''}${esc(t.label)}</button>`
   }).join('')
   const ranges = RANGES.map(([r, label]) => `<button class="${r === v.range ? 'on' : ''}" aria-pressed="${r === v.range}" data-stats-range="${r}">${label}</button>`).join('')
-  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button data-stats-read aria-label="read again" data-tip="read again">↻</button></div></div>`
+  const head = `<div class="stats-head"><div class="scopes">${tabs}</div><div class="ranges">${ranges}<button class="icon-btn" data-stats-read aria-label="read again" data-tip="read again">${ICON.resume}</button></div></div>`
   if (!v.stats) return `<div class="stats-panel">${head}${v.failed ? failedHtml('the stats', v.failed, 'data-stats-read') : '<p class="none">reading the stats…</p>'}</div>`
   const st = v.stats
   const all = v.scope === STATS_ALL
@@ -719,8 +719,7 @@ export const panelsCss = `
 .shown-tab { display: inline-grid; grid-auto-flow: column; grid-template-columns: minmax(0, max-content); align-items: center; overflow: hidden; white-space: nowrap; }
 .shown-tab > .shown-name { min-width: 0; max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
 .file-acts { display: inline-flex; gap: var(--sp-2xs); flex: none; }
-.file-act { width: 22px; height: 20px; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); color: var(--faint); cursor: pointer; }
-.file-act svg { width: 12px; height: 12px; }
+.file-act { min-width: var(--control); min-height: var(--control); display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); cursor: pointer; }
 .file-act:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .reviews-panel .anchor .where .file-acts { margin-left: auto; }
 .changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }
@@ -736,16 +735,16 @@ export const panelsCss = `
 .changes-panel .file > header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); cursor: pointer;
   background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; font-size: var(--fs-m); }
 .changes-panel .file.folded > header { border-radius: var(--radius); }
-.changes-panel .file > header .caret { width: 10px; padding: 0; border: 0; background: none; font: inherit; color: var(--faint); }
-.changes-panel .file.folded > header .caret { transform: rotate(-90deg); }
+.changes-panel .file.folded > header .caret .icon { rotate: -90deg; }
 .changes-panel .file > header .mark { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs); border-radius: var(--radius-s); color: var(--panel); background: var(--muted); }
 .changes-panel .file > header .mark.added { background: var(--added); } .changes-panel .file > header .mark.deleted { background: var(--removed); }
 .changes-panel .file > header .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-s); }
 .changes-panel .file > header .path i { color: var(--faint); font-style: normal; }
 .changes-panel .file > header .n { font: var(--fs-s) var(--mono); white-space: nowrap; }
 .changes-panel .file.viewed > header .path { color: var(--muted); }
-.changes-panel .viewed-box { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); font-size: var(--fs-s); background: none; }
-.changes-panel .viewed-box .box { display: grid; place-items: center; width: 1.1em; height: 1.1em; border: 1.5px solid var(--muted); border-radius: var(--radius-s); font: 700 var(--fs-xs)/1 var(--ui); }
+.changes-panel .viewed-box { display: flex; align-items: center; gap: var(--sp-s); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); background: none; }
+.changes-panel .viewed-box .box { display: grid; place-items: center; width: 1.1em; height: 1.1em; border: 1.5px solid var(--muted); border-radius: var(--radius-s); }
+.changes-panel .viewed-box .box .icon { width: .8em; height: .8em; }
 .changes-panel .viewed-box[aria-checked="true"] .box { background: var(--ink); border-color: var(--ink); color: var(--panel); }
 .changes-panel .file .body { overflow-x: auto; border-top: 1px solid var(--line); }
 .changes-panel .file .body .none { padding: var(--sp-xs) var(--sp-l); }
@@ -786,7 +785,7 @@ export const panelsCss = `
 .reviews-panel .note > header button.re { margin-left: 0; padding: 0; border: none; background: none; }
 .reviews-panel .reviews-head button.tag { border: none; font-weight: 400; }
 .reviews-panel .note > header .new-mark { padding: 0 var(--sp-s); border-radius: var(--radius-pill); font-weight: 700; color: var(--on-needs); background: var(--needs); }
-.reviews-panel .note > header button { margin-left: auto; padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; background: none; }
+.reviews-panel .note > header button { margin-left: auto; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; background: none; }
 .reviews-panel .note .body { font-size: var(--fs-l); line-height: 1.5; }
 .reviews-panel .anchor { margin: var(--sp-s) 0; border: 1px solid var(--line); border-radius: var(--radius); }
 .reviews-panel .anchor .where { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m); background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; }
@@ -799,7 +798,6 @@ export const panelsCss = `
 .reviews-panel .anchor pre .plus { background: var(--added-wash); } .reviews-panel .anchor pre .minus { background: var(--removed-wash); }
 .reviews-panel .anchor pre .plus .m, .reviews-panel .anchor pre .minus .m { color: var(--ink); }
 ${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer { max-width: 980px; margin-top: var(--sp-xl); }
-.reviews-panel .composer .re-chip button { padding: 0 var(--sp-s); }
 .stats-panel { font: var(--fs-m)/1.4 var(--ui); color: var(--ink); }
 .stats-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .read-failed { margin: var(--sp-s) 0; padding: var(--sp-m) var(--sp-l); border-left: 3px solid var(--broken); display: flex; align-items: center; gap: var(--sp-l); flex-wrap: wrap; }
@@ -807,7 +805,7 @@ ${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer {
 .stats-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-l) 0 var(--sp-m); }
 .stats-head .scopes, .stats-head .ranges { display: flex; flex-wrap: wrap; gap: var(--sp-xs); }
 .stats-head .ranges { margin-left: auto; }
-.stats-head button { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-2xs) var(--sp-m); font: var(--fs-s) var(--ui); color: var(--muted); background: none;
+.stats-head button:not(.icon-btn) { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-2xs) var(--sp-m); font: var(--fs-s) var(--ui); color: var(--muted); background: none;
   border: 1px solid var(--line); border-radius: var(--radius-pill); cursor: pointer; }
 .stats-head button.on { color: var(--panel); background: var(--ink); border-color: var(--ink); }
 .stats-head button i { width: 8px; height: 8px; border-radius: var(--radius-s); }

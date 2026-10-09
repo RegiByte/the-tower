@@ -102,10 +102,11 @@ export const deleteAsk = (c: Pick<FloorCollection, 'label'>, item: FloorItem, ti
 
 /** The rows' and trays' look, from the design's tokens. */
 export const itemsCss = `
-.kept-tray { padding: var(--sp-m) var(--sp-2xs) 0; }
+.kept-tray { padding: var(--sp-m) 0 0; }
 .kept-head { display: flex; align-items: center; gap: var(--sp-2xs); padding: 0 var(--sp-2xs) 0 var(--sp-m); }
 .kept-head > :first-child { margin-left: auto; }
-.kept-head button { background: none; border: none; padding: 0 var(--sp-s); color: var(--faint); font: 400 var(--fs-xl) var(--ui); }
+.kept-head button { display: grid; place-items: center; min-width: var(--control); min-height: var(--control); background: none; border: none; padding: 0; color: var(--muted); }
+.kept-head button .icon { width: var(--icon-m); height: var(--icon-m); }
 .kept-head button:hover { color: var(--ink); }
 .kept-about { padding: var(--sp-2xs) var(--sp-m) var(--sp-xs); color: var(--faint); font-size: var(--fs-xs); line-height: 1.35; }
 .kept-empty { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }

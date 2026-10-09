@@ -182,6 +182,15 @@ export const space = { '2xs': '2px', xs: '4px', s: '6px', m: '8px', l: '12px', x
 /** Corners: `radius` for panels and controls, `radiusS` for small marks (a key, a window), `radiusPill` for pills. */
 export const shape = { radius: '4px', radiusS: '2px', radiusPill: '999px' }
 
+/**
+ * Controls: `control`, the least height and width of a small control, the 24 px target WCAG 2.5.8 asks for; a row of
+ * controls shares it. `selected`, the ring inside an ink border that marks the selected card or tab, wherever it is.
+ */
+export const controls = { control: '24px', selected: 'inset 0 0 0 1px var(--ink)' }
+
+/** Icon sizes, as `--icon-<step>`, in rem so they follow the text: `s` beside words, `m` alone in a control. */
+export const iconSize = { s: '.75rem', m: '1rem' }
+
 /** Overpass draws `·` with almost no advance, so it eats the space after it: the next face in the stack draws it. */
 const OVERPASS_RANGE = 'U+0000-00B6, U+00B8-10FFFF'
 
@@ -310,8 +319,15 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
  * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
  * `pressing` in `/press.js`) a bar sweeps along its foot in its text colour, which stays at full contrast.
+ * An `.icon` (icons.ts) sits on the text beside it; an `.icon-btn` is a control that is only an icon, every close
+ * included: at least `--control` square, quiet until hovered.
  */
 const COMPONENTS = `
+.icon { width: var(--icon-s); height: var(--icon-s); flex: none; vertical-align: -.125em; }
+.icon-btn { display: inline-grid; place-items: center; min-width: var(--control); min-height: var(--control); padding: 0; border: 1px solid transparent; border-radius: var(--radius);
+  background: none; color: var(--muted); cursor: pointer; }
+.icon-btn .icon { width: var(--icon-m); height: var(--icon-m); }
+.icon-btn:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
@@ -421,7 +437,7 @@ export function designCss(): string {
       `@font-face { font-family: '${family}'; font-weight: ${weight}; font-style: ${style}; font-display: block; src: url(fonts/${file}) format('woff2');${range ? ` unicode-range: ${range};` : ''}${metrics ? ` ${metrics}` : ''} }`,
   )
   const mixes = Object.fromEntries(Object.entries(projectMix).map(([name, percent]) => [`p${name[0].toUpperCase()}${name.slice(1)}Mix`, `${percent}%`]))
-  const shared = { ...type, ...shape, termFg: ANSI.foreground, ...mixes }
+  const shared = { ...type, ...shape, ...controls, termFg: ANSI.foreground, ...mixes }
   const scheme = (name: Scheme) => `color-scheme: ${name};\n  ${variables(palettes[name])}`
   const [more, moreDark] = [variables(moreContrast('light')), variables(moreContrast('dark'))]
   const steps = (prefix: string, scale: Record<string, string>) => Object.entries(scale).map(([step, value]) => `--${prefix}-${step}: ${value};`).join('\n  ')
@@ -431,6 +447,7 @@ export function designCss(): string {
   ${variables(shared)}
   ${steps('fs', size)}
   ${steps('sp', space)}
+  ${steps('icon', iconSize)}
   ${scheme('light')}
 }
 @media (prefers-color-scheme: dark) {

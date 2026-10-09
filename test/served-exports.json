@@ -42,6 +42,7 @@
       "--broken-text",
       "--c",
       "--c-text",
+      "--control",
       "--deco",
       "--display",
       "--enamel",
@@ -54,6 +55,8 @@
       "--fs-s",
       "--fs-xl",
       "--fs-xs",
+      "--icon-m",
+      "--icon-s",
       "--ink",
       "--line",
       "--line-strong",
@@ -86,6 +89,7 @@
       "--removed",
       "--removed-gutter",
       "--removed-wash",
+      "--selected",
       "--shadow",
       "--shadow-pop",
       "--sp-2xl",
@@ -119,6 +123,8 @@
       ".draft",
       ".eyebrow",
       ".fields",
+      ".icon",
+      ".icon-btn",
       ".if-main",
       ".if-new",
       ".if-worktree",
@@ -147,9 +153,11 @@
       ".working"
     ],
     "/design.js": [
+      "controls",
       "designCss",
       "documentCss",
       "fonts",
+      "iconSize",
       "mixOklab",
       "onAttention",
       "palettes",
@@ -337,9 +345,11 @@
       "worktreeRisk"
     ],
     "/icons.js": [
+      "GIST_ICON",
       "ICON",
       "SHELF_ICON",
-      "originIcon"
+      "originIcon",
+      "withIcons"
     ],
     "/reviews.js": [
       "REVIEWS",

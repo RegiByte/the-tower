@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other: a warm toy world under
@@ -104,12 +104,34 @@ draws with almost no advance, so the next face in the stack draws it.
   - *Reflow* (the tower page): the sidebar is `20rem` (at most 38% of the width) and under 900 px a rail, opened over
     the main pane by the sidebar key or its » until a worker is picked; when space is short the whole sidebar scrolls,
     its header with it. The worker bar wraps: the callsign and pill keep their row, the actions move below.
+- **Icons, controls and selection** (2026-10-08). Some fifteen Unicode glyphs stood for icons beside the SVG set
+  (`✎ ⎇ ◇ ▤ ⌫ ⌂ ↻ ▾ ✕ × ⓘ « ? ↗`, a shelf entry's `▣ ▤ ◳ ↗ ◰`); none is in the shipped subsets, so each came from a
+  fallback face at its own weight, size and baseline. Close was drawn three ways, a row of controls mixed 17, 19 and
+  23 px heights, several targets were under WCAG 2.5.8's 24 px, and selected cards and tabs were marked four ways.
+  - *One icon set* ([`ICON`](ref:hub/src/shared/icons.ts#ICON)): every mark a control or a row draws is an SVG on a
+    16 unit grid in `currentColor`, `class="icon"` and hidden from assistive tech, the control naming itself with
+    `aria-label` and `data-tip`. `SHELF_ICON` and `GIST_ICON` (a gist's mark by its kind) are drawn from it. Shared
+    words keep their text marks (`⎇ tower/odin-07`, a gist's `❯`): tooltips, notifications and the CLI read them as
+    text, and a DOM renderer draws them as icons where it draws the words
+    ([`withIcons`](ref:hub/src/shared/icons.ts#withIcons)). Arrows inside prose and counts (`80×24`) stay text.
+  - *Two icon sizes* ([`iconSize`](ref:hub/src/shared/design.ts#iconSize), `--icon-s` 12 px beside words, `--icon-m`
+    16 px alone in a control), in rem so icons follow the Text size as text does.
+  - *One control size* ([`controls`](ref:hub/src/shared/design.ts#controls), `--control`, 24 px): the least height of
+    every small control in a row (tabs, moves, trays, a row's buttons) and the least square of an icon-only one. An
+    `.icon-btn` in `design.css` is that control, quiet until hovered; every close is one, with `ICON.close`.
+  - *One selected look* for cards and tabs (`--selected`): an ink border with a 1 px ink ring inside it, so a
+    selected card keeps its attention edge and gains no frame outside it. Rows in a list keep their own idiom (a
+    wash with the project's edge), and segmented choices theirs (an ink fill).
+  - New served names, an addition (API 1.22): `controls` and `iconSize` in `/design.js`, `GIST_ICON` and `withIcons`
+    in `/icons.js`, new keys of `ICON`, and `.icon`, `.icon-btn`, `--control`, `--selected` and `--icon-*` in
+    `/design.css`. `SHELF_ICON`'s values are SVG now, where they were one character.
 
 **Alternatives considered.** Paper & Ink alone (charming beside the 3D, noisy in dense lists, reads as
 agent-office); Plant Floor, after Satisfactory (handsome but the most generic); a Sims skin (EA trade dress);
 keeping the old dark theme warmer (doesn't fix generic). Following the clock for the scheme: the UI would change under you mid-session.
 Spacing in rem: the whole page would grow with the Text size like a zoom, and a fixed-width sidebar would hold less;
-zoom already does that. Steps named by their px value (`--sp-8`): clear to read, but they lie the day the scale
+zoom already does that. Icon sizes in px: at 200% text a 13 px icon sat beside 26 px words. Restyling the glyphs in place
+(a face for symbols): one more font to ship, and the marks still differ per glyph. Steps named by their px value (`--sp-8`): clear to read, but they lie the day the scale
 changes. Shrinking Overpass with `size-adjust`: centres it but changes every sign's size; `text-box: trim-both`
 isn't in every browser the tower runs in.
 Tower 3D's world following the scheme too: every canvas label would repaint on a toggle, and a sign in the

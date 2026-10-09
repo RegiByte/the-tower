@@ -27,7 +27,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   and what to ask before deleting one ([[collection-trays]]).
 - `reviews.ts`: the thread format, its parse and append, anchors and their state against the current diff, the
   prompts that start a reviewer and send notes ([[review-round]], [[review-threads]]).
-- `icons.ts`: the inline SVG every renderer draws for the same things, the settings gear and the scheme icons among them.
+- `icons.ts`: the inline SVG every renderer draws for the same things, every icon a control or a row draws among them (close, info, help, the sidebar, resume, a caret, a branch, a thread, a shelf entry's kind, a gist's kind); `withIcons` draws the text marks shared words carry (`⎇`, `◇`, `▤`) as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by
   `wirePrefs`) as pure views, its stylesheet and the data attributes a renderer wires ([[settings-and-tips]], [[viewer-prefs]]).
 - `prefs.ts`: the viewer's appearance record `tower.prefs` keeps, its defaults, and whether to move less (`reducedMotion`) ([[viewer-prefs]]).

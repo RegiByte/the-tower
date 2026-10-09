@@ -30,6 +30,13 @@ Commit messages hold the detail.
   callsign, beside the user's prompts and Claude's answers, in both renderers and in `tower agent`; they count toward
   `brief.pairs` (API 1.21: a turn of `/conversations/<id>` gains `from`). Stats' "from workers" no longer counts a
   subagent's hand-back.
+- The tower page's icons are one SVG set (API 1.22): the glyphs that stood for icons (✎ ⎇ ◇ ▤ ⌫ ⌂ ↻ ▾ ✕ ⓘ « ?, a
+  shelf entry's kind) came from fallback fonts at their own weights and baselines. Every close is one control, every
+  small control is at least 24 px (WCAG 2.5.8), a selected card or tab is one look (an ink border and ring), and the
+  panels' gutters are 16 px. Icons grow with the Text size. `/icons.js` adds `GIST_ICON`, `withIcons` and new `ICON`
+  keys, and `SHELF_ICON`'s values are SVG; `/design.js` adds `controls` and `iconSize`; `/design.css` adds `.icon`,
+  `.icon-btn`, `--control`, `--selected` and `--icon-s`/`--icon-m`. The shared Changes, Reviews and Stats panels draw
+  the same icons in Tower 3D.
 
 ## v1.2.0
 
