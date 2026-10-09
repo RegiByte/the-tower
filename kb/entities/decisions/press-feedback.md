@@ -11,6 +11,7 @@
     "hub/src/shared/press.ts#pressing",
     "hub/src/shared/press.ts#identityOf",
     "hub/src/shared/toasts.ts#toaster",
+    "hub/src/shared/toasts.ts#sameToast",
     "hub/src/shared/toasts.ts#toastsCss",
     "hub/src/shared/design.ts#designCss",
     "hub/src/shared/drafts.ts#discard",
@@ -48,8 +49,12 @@ them, and nothing it needs lives in the tower page.
   stands still. Inactive controls are outside WCAG's contrast rule, and the bar adds no colour pair to `tool:contrast`.
 - [`toaster(element)`](ref:hub/src/shared/toasts.ts#toaster) makes an element the page's toast stack, a polite live
   region: up to four at once, the oldest leaving first, 4 s each or 8 s with an action, none leaving while the pointer
-  or focus is on the stack, the same words again moving to the end. An action is one button (`{ label, run }`) that
-  closes its toast and runs.
+  or focus is on the stack. A toast told again while the same one shows
+  ([`sameToast`](ref:hub/src/shared/toasts.ts#sameToast): the same words and the same action's label) is merged into
+  it: it moves to the end with its time anew, its action the newest, and counts the times (`×2`), so pressing a key
+  that finds nothing leaves one toast. The stack is one column as wide as its widest toast, so edges, counts and
+  actions line up in place of each toast centring on its own. An action is one button (`{ label, run }`) that closes
+  its toast and runs.
 - Kill still asks, with what killing costs (`KILL_COST`): it ends a turn in flight, which no resume brings back. Once
   killed, its toast offers Resume, the dead card's own `calls.resume`, read when pressed from the board or, once the
   board has left it out, from its floor's archive ([[board-archive]]): no renderer builds a call.
@@ -70,6 +75,9 @@ them, and nothing it needs lives in the tower page.
   back a draft deleted elsewhere. Putting back is its own verb, asked for by name.
 - *`disabled` while in flight*: the focused button loses focus, and the keyboard lands at the page's start.
 - *Busy as a pulse of the whole button*: its words would fade below AA while it pulses.
+- *Identical by words alone*: "Deleted X" with Undo and a plain "Deleted X" would merge, and one would lose or gain a
+  button. *A count with the first toast's place kept*: the newest would not be last, and the stack reads oldest first.
+- *A stack aligned on one edge, each toast its own width*: a ragged right edge, with the actions at different places.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
 **Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb (API 1.17), and

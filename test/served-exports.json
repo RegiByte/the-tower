@@ -491,8 +491,10 @@
       "ACTION_TOAST_MS",
       "TOAST_MAX",
       "TOAST_MS",
+      "sameToast",
       "toaster",
-      "toastsCss"
+      "toastsCss",
+      "toldTimes"
     ]
   }
 }
