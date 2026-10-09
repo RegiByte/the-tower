@@ -95,9 +95,12 @@ export type ChangesScope = 'all' | 'uncommitted' | (string & {})
 export const changesPath = (id: string, scope: ChangesScope) => `changes/${id}${scope === 'all' ? '' : `?scope=${scope}`}`
 /** A scope that compares one commit: its lines aren't the working tree's, which notes anchor to, so none are picked. */
 export const isCommitScope = (scope: ChangesScope) => scope !== 'all' && scope !== 'uncommitted'
-/** The scope still there to show: a commit no repo lists any more (rebased, amended) falls back to `all`. */
+/**
+ * The scope still there to show: `all` once no repo has commits since its base (they landed, or were reset away: the
+ * picker isn't drawn, and all is what isn't committed), or once no repo lists the commit (rebased, amended).
+ */
 export const liveScope = (repos: RepoChanges[], scope: ChangesScope): ChangesScope =>
-  !isCommitScope(scope) || repos.some((r) => r.commits.some((c) => c.sha === scope)) ? scope : 'all'
+  repos.some((r) => r.commits.length) && (!isCommitScope(scope) || repos.some((r) => r.commits.some((c) => c.sha === scope))) ? scope : 'all'
 /**
  * Where a repo's marks are kept in `tower.store`, apart for each scope it shows: a file's diff differs between them,
  * and a commit's marks hold for good, as the commit does.
