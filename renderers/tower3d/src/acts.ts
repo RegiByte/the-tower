@@ -287,7 +287,7 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
     const f = board.floors.find((f) => f.id === a.id)
     if (!f) return []
     const spawn: Offer = { verb: 'spawn', label: 'new session' }
-    const shell: Offer = { verb: 'shell', label: `shell in ${base(f.hub)}` }
+    const shell: Offer = { verb: 'shell', label: 'new shell in…' }
     return [
       { verb: 'use', label: 'dirs, shells, archive' },
       ...(heldWhy(board, scene.lost, 'spawn') || can(f, 'spawn') ? [holding(board, scene, 'spawn', spawn)] : []),

@@ -12,7 +12,7 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, type DaemonVerb } from './cards.ts'
@@ -39,7 +39,7 @@ import { closeTerm, mountTerm, watchPanelSize } from './term.ts'
 import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
 import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
@@ -429,6 +429,7 @@ function renderPanel() {
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
   if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan, held)
+  if (panel.kind === 'shell-pick') keepingFocus($('shell-pick'), () => ($('shell-pick').innerHTML = shellPickHtml(s.plan, board, panel.first, held)))
   if (panel.kind === 'drawer') {
     const f = board.floors.find((f) => f.id === panel.project)
     const d = drawersAt(panel.project)?.[panel.n]
@@ -568,8 +569,19 @@ function travel(level: number, spot: Standing, then: () => void) {
 }
 
 function closeSide() {
-  if (s.panel?.kind === 'floor' || s.panel?.kind === 'archive' || s.panel?.kind === 'directory' || s.panel?.kind === 'elevator' || s.panel?.kind === 'drawer') s.panel = undefined
+  if (s.panel?.kind === 'floor' || s.panel?.kind === 'archive' || s.panel?.kind === 'directory' || s.panel?.kind === 'elevator' || s.panel?.kind === 'drawer' || s.panel?.kind === 'shell-pick') s.panel = undefined
   show('side', false)
+  show('shell-pick', false)
+}
+
+/** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
+function openShellPick(first: string) {
+  closePanels()
+  s.panel = { kind: 'shell-pick', first }
+  renderPanel()
+  show('shell-pick', true)
+  unlock()
+  $('shell-pick').querySelector<HTMLElement>('[data-shell-dir]')?.focus()
 }
 
 /** Back to walking: the terminal closes and the camera returns to your eyes. */
@@ -1018,7 +1030,7 @@ const RUN: ByKind<unknown, [Verb]> = {
     if (verb === 'use') return openSide({ kind: 'floor', id: a.id, tray: undefined })
     const f = s.board!.floors.find((f) => f.id === a.id)!
     if (verb === 'spawn') return openSpawn(f.id)
-    if (verb === 'shell') return spawnShell(f.calls.shell!, f.hub)
+    if (verb === 'shell') return openShellPick(f.id)
     return offered(f.calls.editor!, { dir: f.hub })
   },
   shelf: (a) => openShelf(a.project, a.n),
@@ -2231,7 +2243,7 @@ $('side').addEventListener('click', async (e) => {
   if (d.resume) return resume(JSON.parse(d.resume))
   if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
   if (d.reapPid) return pressing(el, () => reapProcess(d.reapPid!))
-  if (d.shellDir && s.panel?.kind === 'floor') return spawnShell(floorOf(s.panel.id).calls.shell!, d.shellDir)
+  if (d.shellDir) return pressing(el, () => spawnShell(floorOf(d.shellProject!).calls.shell!, d.shellDir!))
   if (d.wtCall) return pressing(el, () => offered(JSON.parse(d.wtCall!)))
   if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
   if (d.tidy !== undefined && s.panel?.kind === 'floor') {
@@ -2267,10 +2279,28 @@ async function killShell(sh: Board['shells'][number]) {
   if (await call('shell/kill', { id: sh.id })) toast(`Killed the shell in ${shellWhere(floorOf(sh.project), sh)}`)
 }
 
+/** A new shell in `cwd`: you walk to its kiosk once the board shows it. Answers whether it started. */
 async function spawnShell(c: Call<'shell/spawn'>, cwd: string) {
   const reply = await offered(c, { cwd })
   if (reply?.t === 'spawned') s.pendingShell = reply.id
+  return reply?.t === 'spawned'
 }
+
+$('shell-pick').addEventListener('click', async (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('button')
+  if (!el) return
+  if (el.dataset.act === 'close') return (closeSide(), lock())
+  const { shellProject, shellDir } = el.dataset
+  if (shellDir && (await pressing(el, () => spawnShell(floorOf(shellProject!).calls.shell!, shellDir)))) (closeSide(), lock())
+})
+/** Up and down move between the picker's places. */
+$('shell-pick').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+  e.preventDefault()
+  const places = [...$('shell-pick').querySelectorAll<HTMLElement>('[data-shell-dir]')]
+  const at = places.indexOf(document.activeElement as HTMLElement)
+  places[(at + (e.key === 'ArrowDown' ? 1 : places.length - 1)) % places.length]?.focus()
+})
 
 /** A new worker from the form's values. Answers its session id once it started. */
 const hireWorker = async (project: string, form: SpawnForm) => spawnedId(await offered(...spawnCall(floorOf(project), form)))

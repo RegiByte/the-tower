@@ -36,6 +36,9 @@ Commit messages hold the detail.
   showing the page's own question in its tip, a toast after killing a shell, and ending one leftover process at once,
   as the page does. `/cards.js` adds the questions both renderers ask (`sendHomeAsk`, `reapAsk`, `killShellAsk`,
   `shellWhere`, `tidyRowAsk`, `tidyAllAsk`).
+- Tower 3D picks where a new shell starts: T at a floor's console opens every floor's hub, repos and worktrees
+  (`shellPlaces`), that floor's first, picked with the arrows and Enter or the mouse; you are taken to the new shell's
+  kiosk, on its own floor. The floor panel's shell buttons come from the same places.
 
 ## v1.3.0
 

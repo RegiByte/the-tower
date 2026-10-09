@@ -101,6 +101,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 
 #elevator { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); width: 260px; padding: var(--sp-l); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-xs); }
 #elevator h3, .section { margin: 0 0 var(--sp-2xs); }
+#shell-pick { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); width: 300px; max-height: calc(100vh - 120px); overflow: auto; }
+#shell-pick .sign { margin-top: var(--sp-m); }
+#shell-pick .pick { display: flex; align-items: center; gap: var(--sp-xs); width: 100%; padding: var(--sp-xs) var(--sp-m); border: none; background: none; text-align: left; font-weight: 400; color: var(--ink); }
+#shell-pick .pick:hover, #shell-pick .pick:focus-visible { background: var(--panel-2); }
+#shell-pick .pick small { margin-left: auto; color: var(--faint); font: var(--fs-xs) var(--mono); }
 .lift-row { display: flex; align-items: center; gap: var(--sp-m); width: 100%; padding: var(--sp-xs) var(--sp-m); text-align: left; padding-left: var(--sp-l);
   background: color-mix(in oklab, var(--p) var(--p-plate-mix), var(--panel)); border-color: color-mix(in oklab, var(--p) var(--p-plate-edge-mix), var(--panel));
   color: color-mix(in oklab, var(--p) var(--p-plate-text-mix), var(--ink)); box-shadow: inset 5px 0 0 var(--p); }
@@ -273,6 +278,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
 <div id="compass"></div>
 <div id="prompt" class="glass hidden"></div>
 <div id="elevator" class="glass hidden"></div>
+<div id="shell-pick" class="glass side hidden" role="dialog" aria-label="new shell in"></div>
 <div id="rail">
   <div id="side" class="glass side hidden"></div>
   <div id="fps" class="glass hidden">… fps</div>
@@ -309,7 +315,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
     <div class="keys">
       <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>walk · <kbd>⇧</kbd> run · mouse to look</span>
       <span><kbd>E</kbd> / click</span><span>use what you look at: a desk, a video wall tile, a shell, the console, a book, a TV or the big screen</span>
-      <span><kbd>F</kbd> <kbd>Q</kbd> <kbd>G</kbd> <kbd>T</kbd> <kbd>C</kbd></span><span>what else it offers, listed bottom right: go on, brief, new session, a worker's review thread (a shell at the console), your editor</span>
+      <span><kbd>F</kbd> <kbd>Q</kbd> <kbd>G</kbd> <kbd>T</kbd> <kbd>C</kbd></span><span>what else it offers, listed bottom right: go on, brief, new session, a worker's review thread (at the console, a new shell: pick where it starts), your editor</span>
       <span><kbd>Y</kbd></span><span>hire a reviewer for a worker: it sits beside it with a notebook, and leaves notes on its thread</span>
       <span>hold <kbd>X</kbd> <kbd>Z</kbd></span><span>send home or kill, reap: held until the ring fills</span>
       <span>wheel</span><span>mark another verb, click to run it</span>

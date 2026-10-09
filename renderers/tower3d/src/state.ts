@@ -50,6 +50,8 @@ export type Panel =
   | { kind: 'picture'; id: string; target: string }
   | { kind: 'directory' }
   | { kind: 'elevator' }
+  /** Where a new shell can start, picked at a floor's console: that floor's places first. */
+  | { kind: 'shell-pick'; first: string }
   | { kind: 'tv'; n: number }
   /**
    * A worker's logbook in the reader, for a worker with no desk (a guest, an archived folder): its card as read, its

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/ui.ts#shellPickHtml"]
 }
 ---
 **Problem.** The tower page drew trays only for `drafts` and the review threads. Any other collection a floor
@@ -66,5 +66,6 @@ were. Tower 3D lists every collection that holds items as a tray in its floor pa
 games on a fixture): a draft's row opens its editor, a game's its cabinet, any other item the reader, drawn by its
 `itemKind` (text through `itemTextHtml` in a frame where nothing runs, html framed with no API, an image shown), with
 Delete on a second press. Its spawn dialog keeps a prompt closed without starting with `keepUnsent`, in the draft it was
-opened on when there is one. It doesn't use `shellPlaces`: its shells start from the floor panel's own dir and
-worktree rows and at the console, one floor at a time, with no picker across floors.
+opened on when there is one. Its shells start from `shellPlaces` too: T at a floor's console opens a picker of every
+floor's places, that floor's first and the rest under their signs, and the floor panel's dir and worktree rows draw
+their shell buttons from the same places, one floor's.

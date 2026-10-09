@@ -10,7 +10,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -465,18 +465,44 @@ const tidyPanelHtml = (f: Floor, armed: (key: string) => boolean) =>
     return tidyRowHtml(r, askingButton(sure, `${sure ? '' : 'class="icon-btn" '}data-tidy-call="${esc(call)}" aria-label="${esc(`${r.does}: ${r.what}`)}"`, ICON.tidy, `only this: ${r.does}`, tidyRowAsk(r)))
   }).join('')
 
+/** A shell started in `place`, a floor panel's icon; held back with why while the terms daemon can't start one. */
+const shellButton = (place: ShellPlace | undefined, label: string, held: HeldWhy) =>
+  held('shell') ? heldButton(held('shell')!, 'icon-btn', label, ICON.shell)
+    : place ? `<button class="icon-btn" ${shellAttrs(place)} aria-label="${esc(label)}" data-tip="new shell in ${esc(place.dir)}">${ICON.shell}</button>` : ''
+
+const shellAttrs = (place: ShellPlace) => `data-shell-project="${esc(place.project)}" data-shell-dir="${esc(place.dir)}"`
+
+/**
+ * Where a new shell can start (`shellPlaces`): every floor's hub, repos and worktrees under its sign, `first`'s floor
+ * ahead of the rest. The shell stands at a kiosk on its floor.
+ */
+export function shellPickHtml(p: Plan, board: Board, first: string, held: HeldWhy) {
+  const places = shellPlaces(board.floors, first)
+  const why = held('shell')
+  const floors = [...new Set(places.map((pl) => pl.project))].map((project) => {
+    const l = p.levels.find((l) => l.kind === 'floor' && l.floor.id === project)!
+    const hub = board.floors.find((f) => f.id === project)!.hub
+    const rows = places.filter((pl) => pl.project === project).map((pl) => {
+      const inner = `${pl.worktree ? ICON.branch : pl.dir === hub ? ICON.hub : ICON.repo} ${esc(pl.name)}${pl.worktree ? ` <small>${esc(pl.worktree)}</small>` : ''}`
+      return why ? heldButton(why, 'pick', `new shell in ${pl.dir}`, inner) : `<button class="pick" ${shellAttrs(pl)} data-tip="${esc(pl.dir)}">${inner}</button>`
+    })
+    return sign(levelKey(l), l.name, tint(l)) + rows.join('')
+  })
+  return `<div class="side-title"><h2>New shell</h2>${closeButton}</div>${floors.join('') || '<div class="past">no floor starts shells now</div>'}`
+}
+
 /** A verb on a worktree or kept branch, its call on the button. */
 const wtVerb = (thing: { calls: Record<string, unknown> }, verb: keyof typeof WORKTREE_VERB_NAME) =>
   `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}">${WORKTREE_VERB_NAME[verb]}</button>`
 
 /** The floor's worktrees and kept branches, each with the verbs the board offers on it. */
-const worktreesHtml = (f: Floor, held: HeldWhy) => [
+const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy) => [
   ...f.worktrees.map((w) => {
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
       <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.filter((v) => v !== 'discard').map((v) => wtVerb(w, v)).join('')}
-      ${w.state === 'lost' ? '' : held('shell') ? heldButton(held('shell')!, 'icon-btn', `new shell in ${w.name}`, ICON.shell) : can(f, 'shell') ? `<button class="icon-btn" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+      ${w.state === 'lost' ? '' : shellButton(places.find((pl) => pl.worktree === w.name), `new shell in ${w.name}`, held)}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
   ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
@@ -511,8 +537,9 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
 export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, tray: string | undefined) {
+  const places = shellPlaces([f])
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? ICON.repo : ICON.hub} ${esc(base(dir))}</span>
-    ${held('shell') ? heldButton(held('shell')!, 'icon-btn', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button class="icon-btn" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${shellButton(places.find((pl) => pl.dir === dir), `new shell in ${base(dir)}`, held)}
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
   const shelf = (f.shelf ?? []).map((entry, n) => {
@@ -545,7 +572,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     ${running && `<div class="section eyebrow">Running</div>${running}`}
     ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}${askingButton(armed(`tidy ${f.id}`), 'class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, wallNow()))}` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, held)}` : ''}
+    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held)}` : ''}
     ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded.id === DRAFTS ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
 }
 
