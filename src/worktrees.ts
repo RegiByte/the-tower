@@ -34,7 +34,7 @@ import {
   type TreeRead,
   type WorktreeState,
 } from './bridge/worktrees.ts'
-import { checkout, git, gitWith, GitTimeout, run } from './git.ts'
+import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { worktreeBrief, type WorktreeBrief } from './shared/launch.ts'
 import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreeName, worktreePath, WORKTREES_DIR, type Project } from './shared/model.ts'
@@ -288,7 +288,7 @@ export const nameIsFree = async (dirs: string[], name: string, branch: string): 
 /** Git talking to origin: one longer than FETCH_TIMEOUT_MS throws `offline`. */
 const fromOrigin = (dir: string, args: string[]) =>
   run(dir, args, FETCH_TIMEOUT_MS).catch((err) => {
-    throw err instanceof GitTimeout ? new WorktreeError('offline', err.message) : err
+    throw err instanceof GitTimeout ? new WorktreeError('offline', `origin didn't answer git ${args[0]} in ${dir} within ${FETCH_TIMEOUT_MS / 1000}s`) : err
   })
 
 const fetchNow = async (dir: string, prune: boolean) => {
@@ -458,7 +458,7 @@ const makeNow = async (name: string, branch: string, plan: (Planned & { start: S
       step = 'exclude .worktrees/'
       await excludeWorktrees(dir)
       step = 'worktree add'
-      await checkout(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, start.commit])
+      await wholeTree(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, start.commit])
       made.push({ dir, path: tree, branch, baseCommit: start.commit })
       step = 'record the base'
       await record(dir, branch, { ...start.record, name })
@@ -565,7 +565,7 @@ export const rollback = (made: Made[]) => writingConfig(() => undo(made))
 
 const undo = async (made: Made[]) => {
   for (const { dir, path: tree, branch, baseCommit } of made) {
-    await git(dir, ['worktree', 'remove', '--force', tree])
+    await wholeTree(dir, ['worktree', 'remove', '--force', tree])
     if (baseCommit !== undefined) await deleteAt(dir, branch, baseCommit)
   }
 }
@@ -587,7 +587,7 @@ const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupant
  * Git's record of a worktree whose folder is gone, cleared for this one worktree alone: `git worktree prune` would clear
  * every lost worktree's, and with it the only sign that they are lost. With no folder, `--force` has nothing to lose.
  */
-const forgetLost = (dir: string, tree: string) => git(dir, ['worktree', 'remove', '--force', tree])
+const forgetLost = (dir: string, tree: string) => wholeTree(dir, ['worktree', 'remove', '--force', tree])
 
 /** A repo's branch as a read found it: `head`, the commit it was at; `base`, recorded when the tower cut it. */
 type Read = { dir: string; branch?: string; head?: string; base?: string }
@@ -601,8 +601,11 @@ type Landed = Read & Pick<Exposure, 'absorbed' | 'carried'>
 const deleteAt = async (dir: string, branch: string, head: string): Promise<string | undefined> => {
   const r = await run(dir, ['update-ref', '-d', `refs/heads/${branch}`, head])
   if (r.code !== 0) return `${branch} in ${dir}: kept, it moved since it was read (${r.stderr.trim()})`
-  await git(dir, ['config', '--remove-section', `branch.${branch}`])
+  if (await ask(dir, ['config', '--get-regexp', `^branch\\.${regexQuoted(branch)}\\.`])) await git(dir, ['config', '--remove-section', `branch.${branch}`])
 }
+
+/** `text` matched literally in a regular expression. */
+const regexQuoted = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
  * Deletes each repo's branch the tower cut, still at its head as read; returns why each other one was kept. A branch
@@ -630,7 +633,7 @@ const deleteLanded = (repos: Landed[]) => deleteBranches(repos.filter((r) => r.a
  * Returns why each branch it didn't delete was kept.
  */
 const removeTree = async (tree: FloorWorktree) => {
-  for (const repo of tree.repos) await git(repo.dir, ['worktree', 'remove', repo.path])
+  for (const repo of tree.repos) await wholeTree(repo.dir, ['worktree', 'remove', repo.path])
   return (tree.state === 'carried' ? deleteLanded : deleteAbsorbed)(tree.repos)
 }
 
@@ -671,7 +674,7 @@ export const discardable = async (project: Project, projectId: string, name: str
 
 /** Each repo's worktree removed with `--force`, and its branch deleted at the head `discardable` read, once noted. */
 export const discard = async (name: string, tips: Tip[]) => {
-  for (const t of tips) await git(t.dir, ['worktree', 'remove', '--force', worktreePath(t.dir, name)])
+  for (const t of tips) await wholeTree(t.dir, ['worktree', 'remove', '--force', worktreePath(t.dir, name)])
   return deleteBranches(tips)
 }
 
@@ -684,7 +687,7 @@ export const recutWorktree = async (project: Project, projectId: string, links: 
   const plans = await Promise.all(lost.map(async (r) => ({ ...r, links: await linksIn(r.dir, links) })))
   for (const r of plans) {
     await forgetLost(r.dir, r.path)
-    await checkout(r.dir, ['worktree', 'add', r.path, r.branch!])
+    await wholeTree(r.dir, ['worktree', 'add', r.path, r.branch!])
     await furnish(r.dir, r.path, r.links)
   }
 }
@@ -724,11 +727,11 @@ export const recutBranch = async (project: Project, projectId: string, links: Re
         at = dir
         await excludeWorktrees(dir)
         if (base) {
-          await checkout(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, base])
+          await wholeTree(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, base])
           made.push({ dir, path: tree, branch, baseCommit: await resolve(dir, `${base}^{commit}`) })
           await record(dir, branch, { base, name })
         } else {
-          await checkout(dir, ['worktree', 'add', tree, branch])
+          await wholeTree(dir, ['worktree', 'add', tree, branch])
           made.push({ dir, path: tree, branch })
           await record(dir, branch, { name })
         }

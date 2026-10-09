@@ -35,7 +35,8 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   maps them back to the config's spelling of each dir. Every git call runs with the user's config that would change
   a read set back to git's default ([`PINNED`](ref:hub/src/git.ts#PINNED)): under `status.showUntrackedFiles=no`
   a worktree holding only new files read clean, and `worktree remove` deleted them. Every git call is stopped past
-  a timeout ([`exec`](ref:hub/src/git.ts#exec): 60 s, 10 min for a checkout, 10 s for a fetch) with its process group,
+  a timeout ([`exec`](ref:hub/src/git.ts#exec): 60 s; 10 min for a call writing or deleting a whole worktree, `worktree add` and
+  `remove`; 10 s for a fetch) with its process group,
   the hooks and fsmonitor it started included, and fails naming the command: a hook that hung once held the config
   writers' chain, and with it every cut and branch delete on every floor, until the tower restarted.
 - **Absorbed** is content, not ancestry: `git merge-tree --write-tree <base> <br>` equals the base's tree. It is

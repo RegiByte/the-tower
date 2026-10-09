@@ -15,8 +15,8 @@ const PINNED = ['-c', 'status.showUntrackedFiles=normal', '-c', 'log.showSignatu
 
 /** How long a git call runs before it is stopped. */
 const GIT_TIMEOUT_MS = 60_000
-/** How long a checkout runs before it is stopped: it writes every file and runs the repo's hooks (LFS, husky). */
-const CHECKOUT_TIMEOUT_MS = 10 * 60_000
+/** How long a call writing or deleting a whole worktree runs before it is stopped: every file, ignored ones and hooks (LFS, husky) included. */
+const TREE_TIMEOUT_MS = 10 * 60_000
 
 export type Run = { stdout: string; stderr: string; code: number }
 
@@ -51,7 +51,7 @@ const exec = (dir: string, args: string[], timeout: number, env: NodeJS.ProcessE
     child.on('close', (code, signal) => {
       clearTimeout(timer)
       if (timedOut)
-        return reject(new GitTimeout(`git ${args.slice(0, 2).join(' ')} in ${dir} took over ${timeout / 1000}s and was stopped: a hook or an fsmonitor of the repo may hang; run it there by hand to see`))
+        return reject(new GitTimeout(`git ${args.slice(0, 2).join(' ')} in ${dir} took over ${timeout / 1000}s and was stopped: a hook or an fsmonitor of the repo may hang, or its disk is slow; run it there by hand to see`))
       if (code === null) return reject(new Error(`git ${args.join(' ')} in ${dir} ended on ${signal}`))
       resolve({ stdout, stderr, code })
     })
@@ -68,8 +68,8 @@ const succeeded = (dir: string, args: string[], r: Run) => {
 /** Git that must succeed, with `env` added to its environment: a failure throws with its stderr. */
 export const gitWith = (env: NodeJS.ProcessEnv) => async (dir: string, args: string[]): Promise<string> => succeeded(dir, args, await exec(dir, args, GIT_TIMEOUT_MS, env))
 
-/** A checkout (`worktree add`, `checkout`) that must succeed, given CHECKOUT_TIMEOUT_MS. */
-export const checkout = async (dir: string, args: string[]): Promise<string> => succeeded(dir, args, await run(dir, args, CHECKOUT_TIMEOUT_MS))
+/** Git writing or deleting a whole worktree (`worktree add`, `worktree remove`, `checkout`) that must succeed, given TREE_TIMEOUT_MS. */
+export const wholeTree = async (dir: string, args: string[]): Promise<string> => succeeded(dir, args, await run(dir, args, TREE_TIMEOUT_MS))
 
 /** Git that must succeed: a failure throws with its stderr. */
 export const git = gitWith({})
