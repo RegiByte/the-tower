@@ -20,11 +20,12 @@ const idleSince = (c: Card) => Math.max(c.enteredAt, c.typedAt ?? 0)
 
 /**
  * Its worktree's work has landed: in every repo nothing uncommitted and the branch absorbed into its base, a fork with no
- * commits of its own included. A worker in a main checkout has no work of its own to land.
+ * commits of its own included, or carried there as copies: a killed hire resumes, and its worktree is then removed by
+ * its own press. A worker in a main checkout has no work of its own to land.
  */
 const landed = (c: Card, worktrees: FloorWorktree[]) => {
   const tree = c.worktree && worktrees.find((w) => w.name === c.worktree!.name)
-  return tree !== undefined && tree.repos.every((r) => r.present && r.dirty === 0 && r.absorbed)
+  return tree !== undefined && tree.repos.every((r) => r.present && r.dirty === 0 && (r.absorbed || r.carried))
 }
 
 /**

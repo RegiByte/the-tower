@@ -4,8 +4,8 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "web-tower",
-  "reviewed": "2026-10-08",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#tidy", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
+  "reviewed": "2026-10-09",
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#tidy", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
 }
 ---
 `src/worktrees.ts` is the only code that runs git for the tower; the tower server calls it
@@ -24,11 +24,13 @@
   gets the links' sources as directories of its own ([`linkedSources`](ref:hub/src/worktrees.ts#linkedSources)),
   so writing through a link asks no permission.
 - **Read.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads a repo's worktrees and branches (every 5 s
-  through the live system, never mirrored): each one's state and whether it is [[absorbed]] or a
-  [[kept-branch]].
+  through the live system, never mirrored): each one's state and whether it is [[absorbed]], [[carried]] or a
+  [[kept-branch]]. [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch
+  (`GET /landing`).
 - **Tidy.** [`tidy`](ref:hub/src/worktrees.ts#tidy) removes the worktrees and kept branches the floor's Tidy listed,
   refusing before it touches any once one is no longer `removable` or absorbed, after one fetch ([[tidy]]), so unmerged or uncommitted work is never lost; it runs only when
-  the user asks. Threads of landed
+  the user asks. Work that never landed goes only by [`discardable`](ref:hub/src/worktrees.ts#discardable) and
+  `discard`, its tips noted on its thread first ([[discard]]). Threads of landed
   checkouts are filed by the server after it, as review history ([[review-threads]]).
 - **Changes.** `src/changes.ts`: [`changesIn`](ref:hub/src/changes.ts#changesIn) is what `/changes/<id>`
   serves: for each repo of a session, the diff since the ref its work is counted from

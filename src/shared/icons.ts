@@ -38,6 +38,7 @@ export const ICON = {
   back: stroke('<path d="m10 4-4 4 4 4"/>', 1.6),
   check: stroke('<path d="m3.5 8.5 3 3 6-7"/>', 2),
   warn: stroke('<path d="M7.1 2.6a1 1 0 0 1 1.8 0l5.4 9.9a1 1 0 0 1-.9 1.5H2.6a1 1 0 0 1-.9-1.5z"/><path d="M8 6.3v3.2"/><circle cx="8" cy="11.6" r=".5" fill="currentColor"/>'),
+  diff: stroke('<path d="M5 2.5v6M2 5.5h6M2 12.5h6"/><path d="M11 2.5v11M9 11.5l2 2 2-2"/>'),
   compact: stroke('<path d="M3 4h10M3 8h10M3 12h10"/>'),
   answer: stroke('<path d="M3.5 2.5v5a2.5 2.5 0 0 0 2.5 2.5h7"/><path d="m10.5 7.5 2.5 2.5-2.5 2.5"/>', 1.4),
   prompt: stroke('<path d="m5.5 3.5 4.5 4.5-4.5 4.5"/>', 1.8),

@@ -467,7 +467,7 @@ const worktreesHtml = (f: Floor, held: HeldWhy) => [
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
-      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.map((v) => wtVerb(w, v)).join('')}
+      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.filter((v) => v !== 'discard').map((v) => wtVerb(w, v)).join('')}
       ${w.state === 'lost' ? '' : held('shell') ? heldButton(held('shell')!, 'icon-btn', `new shell in ${w.name}`, ICON.shell) : can(f, 'shell') ? `<button class="icon-btn" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),

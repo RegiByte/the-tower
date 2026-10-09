@@ -174,6 +174,11 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 dialog h2.legend-head { margin-top: var(--sp-2xl); }
 .keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
+dialog#landing { width: min(960px, 94vw); }
+.landing h3 { margin: var(--sp-l) 0 var(--sp-s); font-size: var(--fs-m); }
+.landing h3 small, .landing p { color: var(--faint); font-weight: 400; }
+.landing-edit { margin-bottom: var(--sp-l); }
+.landing pre { margin: var(--sp-s) 0 0; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-s)/1.45 var(--mono); }
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
 .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -417,6 +422,13 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
     <div class="actions"><small>hover a button for what it does</small><button value="">Close</button></div>
   </form>
 </dialog>
+<dialog id="landing" aria-labelledby="landing-title">
+  <form method="dialog">
+    <h2 id="landing-title">What landing changed</h2>
+    <div class="landing" id="landing-body"></div>
+    <div class="actions"><small>git range-diff of each commit and the copy that landed</small><button value="">Close</button></div>
+  </form>
+</dialog>
 <div id="toasts"></div>
 <div class="sr-only" id="announce" role="status"></div>
 <div class="board-error" id="board-error" role="alert"></div>
@@ -424,7 +436,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, matchesWords, archiveKey, pastCount, pastOf, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -602,23 +614,30 @@ const dirHtml = (f, dir, hub) =>
 
 /** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
 const WORKTREE_ASK = {
-  remove: (name) => `Remove the worktree ${name} in every repo?\n\nIts branch is deleted where it is absorbed into its base; refused when work would be lost.`,
+  remove: (name) => `Remove the worktree ${name} in every repo?\n\nIts branch is deleted where it is absorbed into its base, or landed there as copies; refused when work would be lost.`,
   prune: (name) => `Forget the lost worktree ${name}?\n\nIts branch is deleted where it is absorbed into its base.`,
   delete: (name) => `Delete the kept branch ${name} in every repo where it is absorbed into its base?`,
 }
 const WORKTREE_DONE = { recut: 'recut', prune: 'forgot', remove: 'removed', delete: 'deleted' }
 
 /** A verb on a worktree or kept branch, its call on the button. */
-const wtVerbHtml = (thing, verb) => `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}">${WORKTREE_VERB_NAME[verb]}</button>`
+const wtVerbHtml = (thing, verb) => verb === 'discard'
+  ? `<button class="danger" data-discard="${esc(JSON.stringify(thing.calls.discard))}" data-wt-name="${esc(thing.name)}" data-tip="throw its work away: each tip is noted on its review thread first">${WORKTREE_VERB_NAME[verb]}</button>`
+  : `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}">${WORKTREE_VERB_NAME[verb]}</button>`
+
+/** A button that opens what landing changed on a carried branch. */
+const landingButtonHtml = (landing) =>
+  `<button class="icon-btn" data-landing="${esc(JSON.stringify(landing))}" aria-label="what landing changed on ${esc(landing.branch)}" data-tip="what landing changed: git range-diff of each edited commit and its copy">${ICON.diff}</button>`
 
 const worktreeHtml = (f, w) => {
   const risk = worktreeRisk(w)
   const where = w.repos[0].path
-  const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
+  const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.state === 'carried' ? carriedLine(w.repos) : '', w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
   const workers = workersIn(f, w.name)
   const resumable = workers.find((c) => c.calls.resume)
   return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
+    ${w.state === 'carried' ? landingButtonHtml({ project: f.id, branch: worktreeBranch(w) }) : ''}
     ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(resumable.calls.resume))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
     ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
     ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
@@ -629,7 +648,7 @@ const worktreeHtml = (f, w) => {
 
 const keptBranchHtml = (b) =>
   `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}">
-    <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
+    <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${b.carried ? landingButtonHtml({ project: f.id, branch: b.name }) : ''}${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
 
 /** The floor's worktrees and the branches the tower kept. */
 const worktreesHtml = (f) => `<div class="worktrees">
@@ -652,10 +671,19 @@ const threadsHtml = (f) => {
 /** The threads Tidy filed in the floor's reviews collection, the one filed last first. */
 const landedOf = (f) => landedThreads(f.collections.find((c) => c.id === REVIEWS)?.items ?? [])
 
-/** Everything the floor's Tidy would do, listed before the press, which applies the list as shown. */
+/**
+ * Everything the floor's Tidy would do, listed before the press, which applies the list as shown; then what landed
+ * edited, each removed by its own press only.
+ */
 const tidyHtml = (f) => `<div class="worktrees">
-    <div class="drafts-head eyebrow">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" data-tip="do all of it, as listed">Tidy all</button></div>
-    ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}</div>`
+    ${can(f, 'tidy') ? `<div class="drafts-head eyebrow">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" data-tip="do all of it, as listed">Tidy all</button></div>
+    ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}` : ''}
+    ${editedRows(f).length ? `<div class="drafts-head eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${editedRows(f).map(editedRowHtml).join('')}` : ''}</div>`
+
+/** A worktree or kept branch that landed edited: what landing changed, and a press that removes only it. */
+const editedRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>
+    ${landingButtonHtml(r.landing)}
+    <button class="icon-btn" data-wt-call="${esc(JSON.stringify(r.call))}" data-wt-verb="${r.call[0] === 'branch/delete' ? 'delete' : 'remove'}" data-wt-name="${esc(r.what.replace(/^⎇ /, ''))}" aria-label="${esc(`remove ${r.what}`)}" data-tip="remove only this, after looking at what landing changed">${ICON.tidy}</button></div>`
 
 /** One thing Tidy would do, with a button that does only it. */
 const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>
@@ -700,7 +728,8 @@ function traysHtml(f) {
   const threads = f.threads.length
   const landed = landedOf(f).length
   const kept = keptCollections(f)
-  const tidy = can(f, 'tidy')
+  const edited = editedRows(f).length
+  const tidy = can(f, 'tidy') || edited > 0
   const stranded = strandedOf(f).length
   const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" data-tip="${title}">${label}</button>`
   const trays = [
@@ -710,7 +739,7 @@ function traysHtml(f) {
     ...kept.map((c) => tray(`kept-${c.id}`, `${ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(c.description ?? `items kept in ${c.label}`))),
     stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${ICON.resume} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker the host stopped or lost: asked first, listing them">${ICON.resume} resume all <b>${stranded}</b> stranded</button>`),
     past && `<button class="tray ${archiveOpen?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${archiveOpen?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${ICON.archive} <b>${past}</b> archived</button>`,
-    tidy && tray('tidy', `${ICON.tidy} ${esc(tidyLine(f.tidy))}`, 'what Tidy would do: unfold it to see the list before you press'),
+    tidy && tray('tidy', `${ICON.tidy} ${esc(can(f, 'tidy') ? tidyLine(f.tidy) : 'Tidy')}${edited ? `, ${edited} landed edited` : ''}`, 'what Tidy would do: unfold it to see the list before you press'),
   ].filter(Boolean)
   if (!trays.length) return ''
   return `<div class="trays">${trays.join('')}</div>
@@ -2423,6 +2452,16 @@ document.addEventListener('click', (e) => {
   if (draftAct === 'transfer') return openTransfer()
   if (draftAct === 'delete') return deleteDraft()
   if (draftAct === 'reload' || draftAct === 'keep') return settleConflict(draftAct === 'reload')
+  const landingOf = e.target.closest('[data-landing-of]')
+  if (landingOf) return told(pressing(landingOf, () => tower.landing({ project: findCard(selected).project, branch: landingOf.dataset.landingOf }))).then((l) => l && showLanding(l))
+  const landing = e.target.closest('[data-landing]')
+  if (landing) return told(pressing(landing, () => tower.landing(JSON.parse(landing.dataset.landing)))).then((l) => l && showLanding(l))
+  const discarding = e.target.closest('[data-discard]')
+  if (discarding) {
+    const w = board.floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(w.calls.discard) === discarding.dataset.discard)
+    if (!w || !confirm(discardAsk(w))) return
+    return told(pressing(discarding, () => tower.run(w.calls.discard, { author: board.user.name }))).then((r) => r && toast(discardedLine(r)))
+  }
   const wtCall = e.target.closest('[data-wt-call]')
   if (wtCall) {
     const { wtVerb: verb, wtName: name } = wtCall.dataset
@@ -2615,7 +2654,14 @@ async function applyTermFont() {
 tower.onScheme(applyScheme)
 tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendPrefs(), sendScheme(), drawSettings()))
 
-const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open
+
+function showLanding(l) {
+  $('landing-title').textContent = `What landing changed on ${l.branch}`
+  $('landing-body').innerHTML = landingHtml(l)
+  $('landing').showModal()
+  $('landing').scrollTop = 0
+}
 
 function showKeys() {
   $('keys-list').innerHTML = keymapSheetHtml(board.keys)

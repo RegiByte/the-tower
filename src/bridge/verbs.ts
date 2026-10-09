@@ -9,7 +9,7 @@ import { reviewPrompt } from '../shared/reviews.ts'
 import type { SessionRef } from './chains.ts'
 import type { Status } from './status.ts'
 import type { TidyPlan } from './board.ts'
-import type { WorktreeState } from './worktrees.ts'
+import type { FloorWorktreeRepo, WorktreeState } from './worktrees.ts'
 
 /**
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
@@ -33,9 +33,13 @@ export type ResourceVerb = 'reap'
  * threads, leftover processes and idle workers.
  */
 export type FloorVerb = 'spawn' | 'cut' | 'shell' | 'editor' | 'tidy'
-/** `recut` restores a lost worktree's folders from its branch, `prune` forgets them; `remove` is offered only when nothing would be lost. */
-export type WorktreeVerb = 'recut' | 'prune' | 'remove'
-/** Offered only on a branch absorbed into its base. */
+/**
+ * `recut` restores a lost worktree's folders from its branch, `prune` forgets them; `remove` is offered only when nothing
+ * would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named
+ * on the checkout's review thread first.
+ */
+export type WorktreeVerb = 'recut' | 'prune' | 'remove' | 'discard'
+/** `delete` is offered only on a branch absorbed into its base, or carried there as copies. */
 export type BranchVerb = 'recut' | 'delete'
 
 const LIVE: ReadonlySet<Status> = new Set(['booting', 'blocked', 'idle', 'working', 'needs_input', 'watching', 'done', 'failed'])
@@ -84,8 +88,9 @@ const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable
   ...(tidyable ? ['tidy' as const] : []),
 ]
 
-/** A worktree in use, or with work only it holds, offers nothing: removing work at risk is done by hand, in a shell. */
-const worktreeVerbs = (state: WorktreeState): WorktreeVerb[] => (state === 'lost' ? ['recut', 'prune'] : state === 'removable' ? ['remove'] : [])
+/** A worktree in use offers nothing. Work at risk is discarded only on a floor keeping review threads, where its tips are noted. */
+const worktreeVerbs = (state: WorktreeState, keepsThreads: boolean): WorktreeVerb[] =>
+  state === 'lost' ? ['recut', 'prune'] : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && keepsThreads ? ['discard'] : []
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
@@ -96,7 +101,8 @@ export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
 /** `spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none. */
 export type FloorCalls = { spawn?: Call<'spawn'>; cut?: Call<'spawn'>; shell?: Call<'shell/spawn'>; editor?: Call<'open'>; tidy?: Call<'tidy'> }
-export type WorktreeCalls = { recut?: Call<'worktree/recut'>; prune?: Call<'worktree/prune'>; remove?: Call<'worktree/remove'> }
+/** `discard` carries what each repo held as shown, refused once it moved; it takes the author of its note. */
+export type WorktreeCalls = { recut?: Call<'worktree/recut'>; prune?: Call<'worktree/prune'>; remove?: Call<'worktree/remove'>; discard?: Call<'worktree/discard'> }
 export type BranchCalls = { recut?: Call<'branch/recut'>; delete?: Call<'branch/delete'> }
 
 type Offers<V extends string, C> = { verbs: V[]; calls: C }
@@ -170,20 +176,22 @@ export const floorOffers = (project: string, hostUp: boolean, termsUp: boolean, 
   }
 }
 
-export const worktreeOffers = (project: string, name: string, state: WorktreeState): Offers<WorktreeVerb, WorktreeCalls> => {
-  const verbs = worktreeVerbs(state)
+export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], keepsThreads: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
+  const verbs = worktreeVerbs(state, keepsThreads)
   return {
     verbs,
     calls: callsOf(verbs, {
       recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
       prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],
       remove: (): Call<'worktree/remove'> => ['worktree/remove', { project, name }],
+      discard: (): Call<'worktree/discard'> => ['worktree/discard', { project, name, held: repos.map(({ dir, head, dirty }) => ({ dir, head: head!, dirty })) }],
     }),
   }
 }
 
-export const branchOffers = (project: string, name: string, absorbed: boolean): Offers<BranchVerb, BranchCalls> => {
-  const verbs: BranchVerb[] = absorbed ? ['recut', 'delete'] : ['recut']
+/** `landed`: absorbed or carried in every repo that has it. */
+export const branchOffers = (project: string, name: string, landed: boolean): Offers<BranchVerb, BranchCalls> => {
+  const verbs: BranchVerb[] = landed ? ['recut', 'delete'] : ['recut']
   return {
     verbs,
     calls: callsOf(verbs, {

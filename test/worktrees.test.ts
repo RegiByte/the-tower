@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { commonBases, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
+import { carriedOf, commonBases, copiesOf, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
 
 const HUB = '/w/lab'
 const API = '/w/lab-api'
@@ -11,7 +11,7 @@ const tree = (dir: string, name: string, over: Partial<TreeRead> = {}): TreeRead
 const repo = (dir: string, trees: TreeRead[], kept: Extract<RepoRead, { git: true }>['kept'] = [], bases = ['origin/main']): RepoRead => ({ dir, git: true, bases, main: { dirty: 0, ahead: 0 }, trees, kept })
 
 const states = (reads: RepoRead[], occupants: { id: string; cwd: string }[] = []) =>
-  floorWorktrees('lab', reads, occupants).map((w) => [w.name, w.state, w.verbs])
+  floorWorktrees('lab', reads, occupants, true).map((w) => [w.name, w.state, w.verbs])
 
 test('git worktree list --porcelain: bare, detached and prunable entries', () => {
   const out = [
@@ -50,8 +50,8 @@ test('tower records: a fork keeps its snapshot and the checkout it was forked fr
 
 test('a squash-merged branch looks unpushed but is absorbed: removable, not at risk', () => {
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { unpushed: 2, absorbed: true })])]), [['a', 'removable', ['remove']]])
-  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { unpushed: 2 })])]), [['a', 'at-risk', []]])
-  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { dirty: 1, absorbed: true })])]), [['a', 'at-risk', []]])
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { unpushed: 2 })])]), [['a', 'at-risk', ['discard']]])
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { dirty: 1, absorbed: true })])]), [['a', 'at-risk', ['discard']]])
 })
 
 test('state in priority order: live, then lost, then at risk, then removable', () => {
@@ -61,12 +61,12 @@ test('state in priority order: live, then lost, then at risk, then removable', (
 })
 
 test('one repo at risk puts the whole name at risk', () => {
-  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a')]), repo(API, [tree(API, 'a', { unpushed: 1 })])]), [['a', 'at-risk', []]])
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a')]), repo(API, [tree(API, 'a', { unpushed: 1 })])]), [['a', 'at-risk', ['discard']]])
 })
 
 test('a session counts inside its worktree and below it, never in a worktree sharing its prefix', () => {
   const reads = [repo(HUB, [tree(HUB, 'sub1'), tree(HUB, 'sub10')])]
-  const w = floorWorktrees('lab', reads, [{ id: 's1', cwd: `${HUB}/.worktrees/sub10/src` }, { id: 'sh', cwd: HUB }])
+  const w = floorWorktrees('lab', reads, [{ id: 's1', cwd: `${HUB}/.worktrees/sub10/src` }, { id: 'sh', cwd: HUB }], true)
   assert.deepEqual(w.map((x) => [x.name, x.state, x.sessions]), [['sub1', 'removable', []], ['sub10', 'live', ['s1']]])
 })
 
@@ -82,4 +82,33 @@ test('a cut can start from the origin branches every repo has, in the hub order;
   const reads = [repo(HUB, [], [], ['origin/main', 'origin/tower/arch-v2', 'origin/x']), repo(API, [], [], ['origin/x', 'origin/main'])]
   assert.deepEqual(commonBases(reads), ['origin/main', 'origin/x'])
   assert.deepEqual(commonBases([...reads, { dir: '/w/notes', git: false }]), [])
+})
+
+test('carried: each branch commit without an equal patch has a copy by author and date, committed no earlier', () => {
+  const mark = (side: '<' | '>' | '=', commit: string, committed: number, made = 'A <a@a> 100 +0000 fix') => ({ side, commit, committed, made })
+  assert.deepEqual(copiesOf([mark('<', 'c1', 300), mark('>', 'b1', 200), mark('=', 'b2', 200, 'A <a@a> 101 +0000 fix')]), [{ commit: 'b1', copy: 'c1' }])
+  assert.equal(copiesOf([mark('<', 'c1', 300), mark('>', 'b1', 400)]), undefined, 'amended on the branch after its older version landed')
+  assert.equal(copiesOf([mark('<', 'c1', 300, 'B <b@b> 100 +0000 fix'), mark('>', 'b1', 200)]), undefined, 'another author')
+  assert.equal(copiesOf([mark('<', 'c1', 300, 'A <a@a> 100 +0000 other'), mark('>', 'b1', 200)]), undefined, 'another subject in the same second')
+  assert.equal(copiesOf([mark('<', 'c1', 300), mark('>', 'b1', 200), mark('>', 'b2', 200)]), undefined, 'one copy stands for one commit')
+  assert.deepEqual(carriedOf([mark('<', 'c1', 300), mark('>', 'b1', 200)], 3), { commits: 3, edited: 1 })
+})
+
+test('a clean worktree whose work landed only as copies is carried: removed on its own, never by Tidy', () => {
+  const carried = { unpushed: 2, carried: { commits: 2, edited: 1 } }
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', carried)])]), [['a', 'carried', ['remove']]])
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { ...carried, dirty: 1 })])]), [['a', 'at-risk', ['discard']]])
+  assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', carried)]), repo(API, [tree(API, 'a', { unpushed: 1 })])]), [['a', 'at-risk', ['discard']]])
+  assert.deepEqual(floorWorktrees('lab', [repo(HUB, [tree(HUB, 'a', { unpushed: 1 })])], [], false)[0].verbs, [], 'discard notes on a thread: none on a floor keeping none')
+})
+
+test('discard carries what each repo held as shown', () => {
+  const [w] = floorWorktrees('lab', [repo(HUB, [tree(HUB, 'a', { dirty: 2 })]), repo(API, [tree(API, 'a', { head: 'def' })])], [], true)
+  assert.deepEqual(w.calls.discard, ['worktree/discard', { project: 'lab', name: 'a', held: [{ dir: HUB, head: 'abc', dirty: 2 }, { dir: API, head: 'def', dirty: 0 }] }])
+})
+
+test('a kept branch carried in every repo that has it is deletable on its own, and never absorbed', () => {
+  const kept = (over: object) => [{ branch: 'tower/k', base: 'origin/main', unpushed: 1, absorbed: false, risk: [], ...over }]
+  const [b] = floorBranches('lab', [repo(HUB, [], kept({ carried: { commits: 1, edited: 1 } })), repo(API, [], kept({ absorbed: true }))])
+  assert.deepEqual([b.absorbed, b.carried, b.verbs], [false, true, ['recut', 'delete']])
 })

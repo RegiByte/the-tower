@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.25'
+export const API_VERSION = '1.26'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -171,8 +171,30 @@ export const VERBS = {
     reply: ok,
   },
   'worktree/remove': {
-    input: z.object(worktree).describe('Remove a worktree in every repo, and delete its branch where it is absorbed into its base; refused when work would be lost.'),
+    input: z
+      .object(worktree)
+      .describe(
+        'Remove a worktree in every repo, and delete its branch where it is absorbed into its base or carried there as copies (`landing` shows what landing changed); refused when work would be lost.',
+      ),
     reply: ok,
+  },
+  'worktree/discard': {
+    input: z
+      .object({
+        ...worktree,
+        author: z.string().regex(AUTHOR).describe("Who discards, signing the note: the user's name (`board.user.name`), or a worker's callsign."),
+        held: z
+          .array(z.object({ dir: absolute, head: z.string().min(1), dirty: z.int().nonnegative() }))
+          .describe("Each repo's worktree as the board showed it: its HEAD and its count of uncommitted files. Refused when any moved."),
+      })
+      .describe(
+        "Throw away a worktree whose work never landed (`at-risk`), in every repo: first a note on its checkout's review thread names each repo's branch and tip (uncommitted files committed on top, on no branch), recoverable with `git branch <name> <tip>` until git collects it; then each worktree is removed with force, its branch deleted, and the thread filed. Only on a floor keeping review threads.",
+      ),
+    reply: z.object({
+      t: z.literal('discarded'),
+      tips: z.array(z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })).describe('What each repo held, now on no branch.'),
+      thread: z.string().describe('The filed thread, its note naming the tips.'),
+    }),
   },
   'branch/recut': {
     input: z.object({ project: id, name: z.string().min(1) }).describe(
@@ -181,7 +203,7 @@ export const VERBS = {
     reply: ok,
   },
   'branch/delete': {
-    input: z.object({ project: id, name: z.string().min(1) }).describe('Delete a kept branch in every repo where it is absorbed into its base.'),
+    input: z.object({ project: id, name: z.string().min(1) }).describe('Delete a kept branch in every repo where it is absorbed into its base, or carried there as copies.'),
     reply: ok,
   },
   tidy: {
@@ -232,6 +254,11 @@ export const QUERIES = {
       project: id.optional().describe("Only this project's sessions."),
     })
     .describe("Stats over every session's log and what landed on each project's default branches: summaries, series, hours of the day and the weekly budget, per project and for all."),
+  landing: z
+    .object({ project: id, branch: z.string().min(1).describe('A branch of a worktree or a kept branch, `carried` on the board.') })
+    .describe(
+      "What landing changed: in each of the project's repos holding the branch, each of its commits that landed as an edited copy, with the copy and `git range-diff` between them.",
+    ),
 }
 
 export type Query = keyof typeof QUERIES

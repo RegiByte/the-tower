@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## Unreleased
+
+- Work that landed edited, and work thrown away on purpose (API 1.26, additions only). A branch whose commits landed as
+  cherry-picked, amended, renumbered or conflict-resolved copies is `carried`: every commit missing from its base has
+  a copy there with the same author, author date and subject, committed no earlier (one amended on the branch after it
+  landed stays at risk). Such a worktree reads `carried` ("landed, edited"), a kept branch `carried: true`, each with
+  `carried: {commits, edited}` per repo; each is removed by its own `remove` or `delete`, never by Tidy all, after a
+  look at `GET /landing?project&branch` (`tower.landing`): each edited commit, its copy and `git range-diff`. The
+  card's `checkoutState` counts it as landed, with `edited` and `branch`. A new verb, `worktree/discard`, throws away
+  an `at-risk` worktree as shown (`held`: each repo's head and uncommitted count, refused once either moved): its tips
+  (uncommitted files committed on top) are noted on its review thread, recoverable with `git branch` until git
+  collects them, then it is removed with force, its branches deleted and its thread filed. The tower page draws
+  both; Tower 3D hides `discard` until it draws it.
+
 ## v1.3.0
 
 Follow-ups to v1.2.0: work that has landed says so, other workers' messages show in the brief, one icon set for both

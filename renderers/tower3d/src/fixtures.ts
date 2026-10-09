@@ -167,7 +167,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
     if (w.landed === undefined || w.worktree === undefined) return []
     const path = `/work/${f.id}/.worktrees/${w.worktree}`
     const repo = { dir: `/work/${f.id}`, path, branch: `tower/${w.worktree}`, present: true, dirty: 0, unpushed: w.landed ? 0 : 2, absorbed: w.landed, risk: [], atRisk: false }
-    return [{ name: w.worktree, repos: [repo], sessions: [idOf(f.id, n)], state: 'live' as const, ...worktreeOffers(f.id, w.worktree, 'live') }]
+    return [{ name: w.worktree, repos: [repo], sessions: [idOf(f.id, n)], state: 'live' as const, ...worktreeOffers(f.id, w.worktree, 'live', [repo], true) }]
   })
 
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */

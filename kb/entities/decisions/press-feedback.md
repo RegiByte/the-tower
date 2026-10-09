@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/src/shared/press.ts#pressing",
     "hub/src/shared/press.ts#identityOf",
@@ -44,7 +44,7 @@ them, and nothing it needs lives in the tower page.
   connected only while something is in flight), and the same call drawn elsewhere (a card's ↻ and the bar's Resume)
   is busy alike. A press of a busy control is ignored. A control that names nothing fails loudly, since it would mark
   every button. Bar buttons name whom they act on (`data-of="<id>"`). The tower page presses through it for resume,
-  review, kill, send home, let go, resume all (one press over every resume, busy to the last reply), tidy (all and per row), the worktree verbs, ending leftovers, notes and sending them, shells
+  review, kill, send home, let go, resume all (one press over every resume, busy to the last reply), tidy (all and per row), the worktree verbs (discard as a destructive press, [[discard]]), what landing changed, ending leftovers, notes and sending them, shells
   and the editor.
 - The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/cards.ts#spawnFormHtml), both renderers) stays open while
   its Start is pressed: Start is busy until the spawn answers, Esc and Cancel wait for it, the form closes on a new

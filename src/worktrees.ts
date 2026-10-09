@@ -1,31 +1,39 @@
 /**
  * The tower's worktrees, through git: reading them, cutting a name's worktree in every repo of a project, restoring a
- * lost one, and removing what would lose nothing. Git is the only store; what its output means is decided in
+ * lost one, removing what would lose nothing or landed edited, and discarding what never landed. Git is the only store; what its output means is decided in
  * `src/bridge/worktrees.ts`.
  *
  * Every verb fetches first and re-checks what it was offered on: the board is up to 5 s old, and its remote refs as
- * old as the last fetch. Verbs at once in a repo share its fetch (`fetchOrigin`). Nothing here throws work away: removal runs without `--force`, a branch is deleted only when
- * it is absorbed into its base, and a branch is rolled back only when it was cut in the same request and is still at
- * its base.
+ * old as the last fetch. Verbs at once in a repo share its fetch (`fetchOrigin`). Only `discard` throws work away, as
+ * shown and once its tips are noted: removal runs without `--force`, a branch is deleted only when it is absorbed into
+ * its base or carried there, and a branch is rolled back only when it was cut in the same request and is still at its
+ * base.
  */
 import { execFile } from 'node:child_process'
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import {
+  carriedOf,
+  copiesOf,
   floorBranches,
   floorWorktrees,
   parseTowerRecords,
   parseWorktreeList,
   towerTreeName,
   type BranchRead,
+  type Exposure,
+  type Mark,
   type FloorBranch,
   type FloorWorktree,
+  type LandingRead,
   type Occupant,
   type RepoRead,
   type MainRead,
+  type Tip,
   type TowerRecord,
   type TreeRead,
+  type WorktreeState,
 } from './bridge/worktrees.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { withoutParentSession } from './shared/env.ts'
@@ -104,31 +112,48 @@ const mergesToNothing = async (dir: string, rev: string, base: string, baseTree:
 }
 
 /**
- * Every commit of `rev` missing from `base` has an equal patch (`git patch-id`) in `base`: landed as a rebased or
- * cherry-picked copy. A merge commit has no patch-id, so a branch holding one is not landed this way.
+ * Every commit of `rev` missing from `base` and every commit only `base` has, marked (`Mark`): `=` an equal patch
+ * (`git patch-id`) on the other side. A merge commit has no patch-id, so it is never `=`.
  */
-const landedAsCopies = async (dir: string, rev: string, base: string): Promise<boolean> =>
-  lines(await git(dir, ['rev-list', '--cherry-mark', '--right-only', `${base}...${rev}`])).every((l) => l.startsWith('='))
+const marksOf = async (dir: string, rev: string, base: string): Promise<Mark[]> =>
+  lines(await git(dir, ['log', '--left-right', '--cherry-mark', '--date=raw', '--format=%m%x00%H%x00%ct%x00%an <%ae> %ad %s', `${base}...${rev}`])).map((l) => {
+    const [side, commit, committed, made] = l.split('\0')
+    return { side: side as Mark['side'], commit, committed: Number(committed), made }
+  })
 
-/** Absorbed checks by `dir`, `rev`'s commit and `base`'s commit: a pair of commits always gives the same answer. */
-const absorbedChecks = new Map<string, boolean>()
-/** Absorbed checks kept before they are all forgotten: every new commit on a base makes new pairs. */
-const ABSORBED_CHECKS = 1024
+/** The commits of `rev` missing from `base`. */
+const missingFrom = async (dir: string, rev: string, base: string) => Number(await git(dir, ['rev-list', '--count', `${base}..${rev}`]))
+
+/** Whether `rev` is in `base`: `absorbed` exactly, or `carried` there as copies, some edited. */
+type Landing = Pick<Exposure, 'absorbed' | 'carried'>
+
+/** Landings by `dir`, `rev`'s commit and `base`'s commit: a pair of commits always gives the same answer. */
+const landings = new Map<string, Landing>()
+/** Landings kept before they are all forgotten: every new commit on a base makes new pairs. */
+const LANDINGS = 1024
 
 /**
- * `rev`'s changes are already in `base`: merging it would change nothing, or each of its commits landed there as an
- * equal patch. No base is not absorbed.
+ * `rev`'s changes are already in `base`: absorbed when merging it would change nothing, or each of its commits landed
+ * there as an equal patch; else carried when each landed as an equal patch or a copy (`copiesOf`). No base is neither.
  */
-const absorbed = async (dir: string, rev: string, base: string | undefined): Promise<boolean> => {
+const landing = async (dir: string, rev: string, base: string | undefined): Promise<Landing> => {
   const baseTree = base && (await resolve(dir, `${base}^{tree}`))
-  if (!baseTree) return false
+  if (!baseTree) return { absorbed: false }
   const key = `${dir}\0${(await git(dir, ['rev-parse', `${rev}^{commit}`, `${base}^{commit}`])).trim()}`
-  const known = absorbedChecks.get(key)
-  if (known !== undefined) return known
-  const answer = (await mergesToNothing(dir, rev, base, baseTree)) || (await landedAsCopies(dir, rev, base))
-  if (absorbedChecks.size >= ABSORBED_CHECKS) absorbedChecks.clear()
-  absorbedChecks.set(key, answer)
+  const known = landings.get(key)
+  if (known) return known
+  const answer = await landingNow(dir, rev, base, baseTree)
+  if (landings.size >= LANDINGS) landings.clear()
+  landings.set(key, answer)
   return answer
+}
+
+const landingNow = async (dir: string, rev: string, base: string, baseTree: string): Promise<Landing> => {
+  if (await mergesToNothing(dir, rev, base, baseTree)) return { absorbed: true }
+  const marks = await marksOf(dir, rev, base)
+  if (!marks.some((m) => m.side === '>')) return { absorbed: true }
+  const carried = carriedOf(marks, await missingFrom(dir, rev, base))
+  return carried ? { absorbed: false, carried } : { absorbed: false }
 }
 
 /**
@@ -151,7 +176,7 @@ const unpushedOf = async (dir: string, rev: string, known: string[]) => {
  */
 const exposureOf = async (dir: string, rev: string, { fork }: TowerRecord, against: string | undefined) => {
   const unpushed = await unpushedOf(dir, rev, fork ? [fork] : [])
-  return { unpushed, absorbed: (fork !== undefined && unpushed.count === 0) || (await absorbed(dir, rev, against)) }
+  return { unpushed, ...(fork !== undefined && unpushed.count === 0 ? { absorbed: true } : await landing(dir, rev, against)) }
 }
 
 /**
@@ -169,7 +194,7 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
   const against = await againstOf(dir, record.base, originHead)
   const present = !entry.prunable
   const status = present ? lines(await git(entry.path, ['status', '--porcelain'])) : []
-  const exposure = entry.head ? await exposureOf(dir, entry.head, record, against) : { unpushed: { count: 0, named: [] }, absorbed: false }
+  const exposure = entry.head ? await exposureOf(dir, entry.head, record, against) : { unpushed: { count: 0, named: [] as string[] }, absorbed: false }
   return {
     name,
     path: entry.path,
@@ -182,6 +207,7 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
     unpushed: exposure.unpushed.count,
     against,
     absorbed: exposure.absorbed,
+    ...(exposure.carried && { carried: exposure.carried }),
     own: entry.branch ? await ownCommits(dir, entry.branch) : undefined,
     risk: [...status.slice(0, RISK_LINES), ...exposure.unpushed.named],
   }
@@ -189,8 +215,8 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
 
 const branchRead = async (dir: string, branch: string, record: TowerRecord & { base: string }, originHead: string | undefined): Promise<BranchRead> => {
   const against = await againstOf(dir, record.base, originHead)
-  const { unpushed, absorbed } = await exposureOf(dir, `refs/heads/${branch}`, record, against)
-  return { branch, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, own: await ownCommits(dir, branch), risk: unpushed.named }
+  const { unpushed, absorbed, carried } = await exposureOf(dir, `refs/heads/${branch}`, record, against)
+  return { branch, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, ...(carried && { carried }), own: await ownCommits(dir, branch), risk: unpushed.named }
 }
 
 /** The branch checked out in `dir`'s upstream, `origin/<x>`; `undefined` on a detached HEAD or a branch tracking nothing. */
@@ -567,17 +593,17 @@ const undo = async (made: Made[]) => {
   }
 }
 
-/** The project's worktree `name` after a fetch, in the state `expected`, else a refusal that says why not. */
-const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupants: Occupant[], expected: FloorWorktree['state']): FloorWorktree => {
-  const tree = floorWorktrees(projectId, reads, occupants).find((w) => w.name === name)
+/** The project's worktree `name` after a fetch, in one of the states `expected`, else a refusal that says why not. */
+const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupants: Occupant[], expected: WorktreeState[]): FloorWorktree => {
+  const tree = floorWorktrees(projectId, reads, occupants, false).find((w) => w.name === name)
   if (!tree) throw new WorktreeError('not_found', `"${projectId}" has no worktree "${name}"`)
-  if (tree.state === expected) return tree
+  if (expected.includes(tree.state)) return tree
   if (tree.state === 'at-risk') {
     const why = tree.repos.filter((r) => r.atRisk).map((r) => `${r.dir}: ${r.dirty} uncommitted, ${r.unpushed} unpushed (${r.risk.join('; ')})`)
     throw new WorktreeError('would_lose', `"${name}" holds work found nowhere else. ${why.join('. ')}`)
   }
   if (tree.state === 'live') throw new WorktreeError('refused', `"${name}" is in use by ${tree.sessions.join(', ')}`)
-  throw new WorktreeError('refused', `"${name}" is ${tree.state}, not ${expected}`)
+  throw new WorktreeError('refused', `"${name}" is ${tree.state}, not ${expected.join(' or ')}`)
 }
 
 /**
@@ -586,30 +612,69 @@ const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupant
  */
 const forgetLost = (dir: string, tree: string) => git(dir, ['worktree', 'remove', '--force', tree])
 
-/** Deletes the branch of each repo where it's absorbed: the work is in its base. Others are kept. */
-const deleteAbsorbed = (repos: { dir: string; branch?: string; absorbed: boolean }[]) =>
+type Landed = { dir: string; branch?: string } & Pick<Exposure, 'absorbed' | 'carried'>
+
+/** Deletes each repo's branch. */
+const deleteBranches = (repos: { dir: string; branch?: string }[]) =>
   writingConfig(async () => {
-    for (const { dir, branch, absorbed } of repos) if (branch && absorbed) await git(dir, ['branch', '-D', branch])
+    for (const { dir, branch } of repos) if (branch) await git(dir, ['branch', '-D', branch])
   })
+
+/** Deletes the branch of each repo where it's absorbed: the work is in its base. Others are kept. */
+const deleteAbsorbed = (repos: Landed[]) => deleteBranches(repos.filter((r) => r.absorbed))
+
+/** Deletes the branch of each repo where it's absorbed or carried: the work is in its base, maybe edited. Others are kept. */
+const deleteLanded = (repos: Landed[]) => deleteBranches(repos.filter((r) => r.absorbed || r.carried))
 
 /** Without `--force`: git's own guard runs again. Ignored files go with it; a link goes, never what it points to. */
 const removeTree = async (tree: FloorWorktree) => {
   for (const repo of tree.repos) await git(repo.dir, ['worktree', 'remove', repo.path])
-  await deleteAbsorbed(tree.repos)
+  await (tree.state === 'carried' ? deleteLanded : deleteAbsorbed)(tree.repos)
 }
 
+/** A worktree that would lose nothing, or whose work landed as copies: the press is one per worktree, never Tidy's. */
 export const removeWorktree = async (project: Project, projectId: string, name: string, occupants: Occupant[]) =>
-  removeTree(worktreeIn(await fetchedReads(project, true), projectId, name, occupants, 'removable'))
+  removeTree(worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['removable', 'carried']))
 
 export const pruneWorktree = async (project: Project, projectId: string, name: string, occupants: Occupant[]) => {
-  const lost = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, 'lost').repos.filter((r) => !r.present)
+  const lost = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['lost']).repos.filter((r) => !r.present)
   for (const r of lost) await forgetLost(r.dir, r.path)
   await deleteAbsorbed(lost)
 }
 
+/** What a repo's worktree held as the board showed it: its HEAD and its count of uncommitted files. */
+export type Held = { dir: string; head: string; dirty: number }
+
+/**
+ * The at-risk worktree `name` after a fetch, each repo as `held` says the board showed it, with what each holds as a
+ * tip: its HEAD, or a snapshot of it with its uncommitted files (`snapshot`), on no branch. Refused when any moved.
+ */
+export const discardable = async (project: Project, projectId: string, name: string, occupants: Occupant[], held: Held[]): Promise<Tip[]> => {
+  const tree = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['at-risk'])
+  const moved = tree.repos.filter((r) => !held.some((h) => h.dir === r.dir && h.head === r.head && h.dirty === r.dirty))
+  if (moved.length || held.length !== tree.repos.length)
+    throw new WorktreeError('refused', `"${name}" moved since it was shown: ${moved.map((r) => `${r.dir} is at ${r.head?.slice(0, 7)} with ${r.dirty} uncommitted`).join(', ') || 'its repos changed'}`)
+  return Promise.all(
+    tree.repos.map(async (r) => ({
+      dir: r.dir,
+      branch: r.branch,
+      head: r.head!,
+      dirty: r.dirty,
+      tip: r.dirty ? await snapshot(r.path, `Uncommitted work of ${name}, discarded`) : r.head!,
+      unpushed: lines(await git(r.dir, ['log', '--format=%h %s', r.head!, '--not', '--remotes'])),
+    })),
+  )
+}
+
+/** Each repo's worktree removed with `--force`, and its branch deleted: what `discardable` read, once noted. */
+export const discard = async (name: string, tips: Tip[]) => {
+  for (const t of tips) await git(t.dir, ['worktree', 'remove', '--force', worktreePath(t.dir, name)])
+  await deleteBranches(tips)
+}
+
 /** The lost folders of `name` checked out again from their branches, then furnished as a cut would. */
 export const recutWorktree = async (project: Project, projectId: string, links: Record<string, string>, name: string, occupants: Occupant[]) => {
-  const tree = worktreeIn(await fetchedReads(project, false), projectId, name, occupants, 'lost')
+  const tree = worktreeIn(await fetchedReads(project, false), projectId, name, occupants, ['lost'])
   const lost = tree.repos.filter((r) => !r.present)
   const detached = lost.find((r) => !r.branch)
   if (detached) throw new WorktreeError('refused', `${detached.path} was on a detached HEAD: there is no branch to recut it from`)
@@ -676,8 +741,8 @@ export const recutBranch = async (project: Project, projectId: string, links: Re
 export const deleteBranch = async (project: Project, projectId: string, name: string) => {
   const branch = floorBranches(projectId, await fetchedReads(project, true)).find((b) => b.name === name)
   if (!branch) throw new WorktreeError('not_found', `"${projectId}" keeps no branch "${name}"`)
-  if (!branch.repos.some((r) => r.absorbed)) throw new WorktreeError('would_lose', `"${name}" isn't absorbed into its base in any repo`)
-  await deleteAbsorbed(branch.repos.map((r) => ({ ...r, branch: name })))
+  if (!branch.repos.some((r) => r.absorbed || r.carried)) throw new WorktreeError('would_lose', `"${name}" isn't absorbed into its base, or carried there, in any repo`)
+  await deleteLanded(branch.repos.map((r) => ({ ...r, branch: name })))
 }
 
 /**
@@ -686,7 +751,7 @@ export const deleteBranch = async (project: Project, projectId: string, name: st
  */
 export const tidy = async (project: Project, projectId: string, occupants: Occupant[], named: { worktrees: string[]; branches: string[] }) => {
   const reads = await fetchedReads(project, true)
-  const removable = floorWorktrees(projectId, reads, occupants).filter((w) => w.state === 'removable')
+  const removable = floorWorktrees(projectId, reads, occupants, false).filter((w) => w.state === 'removable')
   const absorbed = floorBranches(projectId, reads).filter((b) => b.absorbed)
   const gone = [
     ...named.worktrees.filter((name) => !removable.some((w) => w.name === name)).map((name) => `worktree ${name}`),
@@ -696,4 +761,31 @@ export const tidy = async (project: Project, projectId: string, occupants: Occup
   for (const tree of removable.filter((w) => named.worktrees.includes(w.name))) await removeTree(tree)
   for (const branch of absorbed.filter((b) => named.branches.includes(b.name))) await deleteAbsorbed(branch.repos.map((r) => ({ ...r, branch: branch.name })))
   return { removed: named.worktrees, deleted: named.branches }
+}
+
+/**
+ * What landing changed on `branch`, in each of the project's repos holding it: each commit that landed as an edited
+ * copy in its base (`copiesOf`), with `git range-diff` between the two.
+ */
+export const landingOf = async (project: Project, branch: string): Promise<LandingRead> => {
+  const repos = await Promise.all(
+    projectDirs(project).map(async (dir) => {
+      if (!(await isRepo(dir)) || !(await resolve(dir, `refs/heads/${branch}`))) return []
+      const base = (await run(dir, ['config', '--get', `branch.${branch}.towerBase`])).stdout.trim()
+      const against = await againstOf(dir, base || undefined, await originHeadOf(dir))
+      if (!against) return []
+      const copies = copiesOf(await marksOf(dir, `refs/heads/${branch}`, against)) ?? []
+      const edits = await Promise.all(
+        copies.map(async ({ commit, copy }) => ({
+          commit,
+          copy,
+          subject: (await git(dir, ['log', '-1', '--format=%s', commit])).trim(),
+          rangeDiff: await git(dir, ['range-diff', '--no-color', '--creation-factor=999', `${commit}^!`, `${copy}^!`]),
+        })),
+      )
+      return [{ dir, against, edits }]
+    }),
+  )
+  if (!repos.flat().length) throw new WorktreeError('not_found', `No repo of the project holds a branch "${branch}" with a base`)
+  return { branch, repos: repos.flat() }
 }

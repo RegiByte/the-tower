@@ -1,7 +1,7 @@
 import type { Attention, Board, Card, Floor, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
-import type { FloorWorktree, WorktreeState } from '../bridge/worktrees.ts'
+import type { Exposure, FloorWorktree, LandingRead, WorktreeState } from '../bridge/worktrees.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
@@ -638,10 +638,10 @@ export const detailsOf = (c: Card): [string, string][] =>
     ['left running', c.resources.map((r) => `${r.pid}${r.ports.map((p) => ` :${p}`).join('')}${r.orphan ? ' orphan' : ''} · ${commandName(r.command)}`).join('\n')],
   ] as [string, string][]).filter(([, value]) => value)
 
-export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', 'at-risk': 'unsaved work', removable: 'removable' }
+export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', 'at-risk': 'unsaved work', carried: 'landed, edited', removable: 'removable' }
 
 /** The verbs on worktrees and kept branches, as buttons say them. */
-export const WORKTREE_VERB_NAME = { recut: 'recut', prune: 'forget', remove: 'remove', delete: 'delete' } as const
+export const WORKTREE_VERB_NAME = { recut: 'recut', prune: 'forget', remove: 'remove', delete: 'delete', discard: 'discard' } as const
 
 /** The branch of a worktree, as its hub repo (or its first) has it checked out. */
 export const worktreeBranch = (w: FloorWorktree) => w.repos[0].branch ?? 'detached'
@@ -650,13 +650,76 @@ export const worktreeBranch = (w: FloorWorktree) => w.repos[0].branch ?? 'detach
 export const worktreeRisk = (w: FloorWorktree): string[] =>
   w.repos.filter((r) => r.atRisk).map((r) => `${base(r.dir)}: ${r.dirty} uncommitted, ${r.unpushed} unpushed${r.risk.length ? ` (${r.risk.join('; ')})` : ''}`)
 
+/**
+ * How work landed as copies, summed over the repos that carry it: `3 on origin/main, 1 edited when it landed`. Each
+ * edited copy is a different patch from the branch's commit (`tower.landing` shows how).
+ */
+export const carriedLine = (repos: Pick<Exposure, 'absorbed' | 'carried' | 'against'>[]) => {
+  const carried = repos.filter((r) => !r.absorbed && r.carried)
+  const commits = carried.reduce((n, r) => n + r.carried!.commits, 0)
+  const edited = carried.reduce((n, r) => n + r.carried!.edited, 0)
+  const on = [...new Set(carried.map((r) => r.against))].join(', ')
+  return `${commits} on ${on}, ${edited} edited when ${edited === 1 ? 'it' : 'they'} landed`
+}
+
+/**
+ * A worktree or kept branch whose work landed as copies, some edited: what it is, how it landed, the `landing` read
+ * that shows what landing changed, and the call that removes it. Never in Tidy's plan: each goes by its own press.
+ */
+export type EditedRow = { what: string; does: string; title: string; landing: { project: string; branch: string }; call: Call<'worktree/remove'> | Call<'branch/delete'> }
+
+/** An edited landing in a few words: `remove · 1 of 2 edited`. */
+const editedDoes = (repos: Pick<Exposure, 'absorbed' | 'carried'>[]) => {
+  const carried = repos.filter((r) => !r.absorbed && r.carried).map((r) => r.carried!)
+  return `remove · ${carried.reduce((n, c) => n + c.edited, 0)} of ${carried.reduce((n, c) => n + c.commits, 0)} edited`
+}
+
+export const editedRows = (f: Floor): EditedRow[] => [
+  ...f.worktrees
+    .filter((w) => w.state === 'carried')
+    .map((w) => ({
+      what: `⎇ ${w.name}`,
+      does: editedDoes(w.repos),
+      title: `${carriedLine(w.repos)}: what landing changed is lost from the branch once the worktree is removed`,
+      landing: { project: f.id, branch: worktreeBranch(w) },
+      call: w.calls.remove!,
+    })),
+  ...f.branches
+    .filter((b) => b.carried)
+    .map((b) => ({
+      what: `⎇ ${b.name}`,
+      does: editedDoes(b.repos),
+      title: `a kept branch, ${carriedLine(b.repos)}: what landing changed is lost once it is deleted`,
+      landing: { project: f.id, branch: b.name },
+      call: b.calls.delete!,
+    })),
+]
+
+/** What landing changed, as html: per repo, each commit landed edited with its copy, and `git range-diff` between them. */
+export const landingHtml = (l: LandingRead) =>
+  l.repos
+    .map(
+      (r) => `<section class="landing-repo"><h3>${esc(base(r.dir))} <small>on ${esc(r.against)}</small></h3>${
+        r.edits.map((e) => `<div class="landing-edit"><div><b>${esc(e.subject)}</b> <code>${e.commit.slice(0, 7)}</code> → <code>${e.copy.slice(0, 7)}</code></div><pre>${esc(e.rangeDiff)}</pre></div>`).join('') || '<p>nothing edited</p>'
+      }</section>`,
+    )
+    .join('')
+
+/** What a discard asks before it runs: what it throws away, and that its tips are noted. */
+export const discardAsk = (w: FloorWorktree) =>
+  `Discard ${w.name}? Its work never landed:\n\n${worktreeRisk(w).join('\n')}\n\nIts worktrees are removed with force and its branches deleted. Each tip, uncommitted files included, is noted on its review thread first, recoverable with git branch until git collects it.`
+
+/** What a discard did, in a line: `discarded tower/x at a4cf18c`. */
+export const discardedLine = (r: Replies['worktree/discard']) =>
+  `discarded ${r.tips.map((t) => `${t.branch ?? base(t.dir)} at ${t.tip.slice(0, 7)}`).join(', ')}: tips noted on ${r.thread}`
+
 /** Per repo whose recorded base is gone on origin: what its absorbed check ran against instead. */
 export const goneBases = (repos: { dir: string; base?: string; against?: string }[]): string[] =>
   repos.filter((r) => r.base && r.against !== r.base).map((r) => `${base(r.dir)}: ${r.base} is gone on origin, checked against ${r.against ?? 'nothing: origin has no default'}`)
 
 /** A kept branch's repos, one line each: its base, what only it holds, and whether its work is in. */
 export const keptBranchLines = (b: Floor['branches'][number]): string[] => [
-  ...b.repos.map((r) => `${base(r.dir)}: from ${r.base}, ${r.unpushed} unpushed${r.absorbed ? ', absorbed' : ''}`),
+  ...b.repos.map((r) => `${base(r.dir)}: from ${r.base}, ${r.unpushed} unpushed${r.absorbed ? ', absorbed' : r.carried ? `, ${carriedLine([r])}` : ''}`),
   ...goneBases(b.repos),
 ]
 

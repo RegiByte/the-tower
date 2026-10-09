@@ -15,6 +15,7 @@
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
  *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
+ *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now (src/changes.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
  *                                        branches, read from git now (src/bridge/stats.ts), the query by its schema
@@ -38,6 +39,7 @@
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?} | /resume {id, conversation} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
+ *        | /worktree/discard {project, name, author, held}
  *        | /branch/recut {project, name} | /branch/delete {project, name} | /tidy {project}   the tower's worktrees and kept branches, through git
  *   POST /shell/spawn {project, cwd} | /shell/keys {id, data} | /shell/resize {id, cols, rows} | /shell/kill {id}
  *        relayed to the terms daemon
@@ -68,9 +70,10 @@ import { readLanded } from '../landed.ts'
 import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, readItem, restoreItem, writeItem } from '../collections.ts'
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
+import { discardNote } from '../bridge/worktrees.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
 import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
-import { briefFor, cut, deleteBranch, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
+import { briefFor, cut, deleteBranch, discard, discardable, fork, landingOf, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { configPath, projectCollectionsPath, systemPaths } from '../shared/paths.ts'
 import { attachShell } from '../shared/client.ts'
 import { HOST_PROTOCOL, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
@@ -215,6 +218,21 @@ const BUCKET_MS = { hour: 3_600_000, day: DAY_MS }
 const MAX_BUCKETS = 2400
 
 /** By default, the day `to` falls in and the six whole local days before it. */
+/** What landing changed on a branch of a project, read from git now. */
+async function landingRead(res: http.ServerResponse, search: string) {
+  const query = QUERIES.landing.safeParse(Object.fromEntries(new URLSearchParams(search)))
+  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+  const project = readConfig().projects[query.data.project]
+  if (!project) return fail(res, 'not_found', `No project "${query.data.project}"`)
+  try {
+    const landing = await landingOf(project, query.data.branch)
+    res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(landing))
+  } catch (err) {
+    if (!(err instanceof WorktreeError)) throw err
+    fail(res, err.code, err.message)
+  }
+}
+
 async function statsRead(res: http.ServerResponse, search: string) {
   const query = QUERIES.stats.safeParse(Object.fromEntries(new URLSearchParams(search)))
   if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
@@ -784,6 +802,22 @@ const appendReview = ({ project, checkout, author, re, anchors, body }: RouteInp
     return { t: 'appended', id, n, modifiedAt }
   })
 
+/**
+ * A worktree whose work never landed, thrown away as the board showed it: its tips noted on its thread before anything
+ * goes, then each repo's worktree removed with force and its branch deleted, and the thread filed.
+ */
+const discardWorktree = ({ project, name, author, held }: RouteInput['worktree/discard']) =>
+  onWorktrees(project, async (p) => {
+    if (!isDeclared(project, REVIEWS)) return apiError('refused', `"${project}" keeps no review threads, where a discard notes what it threw away`)
+    const tips = await discardable(p, project, name, occupants(), held)
+    const noted = appendReview({ project, checkout: name, author, anchors: [], body: discardNote(name, tips) })
+    if (noted.t === 'error') return noted
+    await discard(name, tips)
+    const thread = landedThreadId(name, new Date())
+    renameItem(paths, project, REVIEWS, threadId(name), thread)
+    return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), thread }
+  })
+
 const pruneKey = (p: Prune) => (p.t === 'reap' ? `reap ${p.id} ${p.pid}` : `kill ${p.id}`)
 
 /** What of the listed plan the floor's Tidy no longer lists: the processes, workers and landed threads, as read now. `callsign`: a session id's. */
@@ -873,6 +907,7 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
     onWorktrees(project, async (p, config) => (await recutWorktree(p, project, worktreesConfig(config, project).links, name, occupants()), OK)),
   'worktree/prune': ({ project, name }) => onWorktrees(project, async (p) => (await pruneWorktree(p, project, name, occupants()), OK)),
   'worktree/remove': ({ project, name }) => onWorktrees(project, async (p) => (await removeWorktree(p, project, name, occupants()), OK)),
+  'worktree/discard': discardWorktree,
   'branch/recut': ({ project, name }) =>
     onWorktrees(project, async (p, config) => (await recutBranch(p, project, worktreesConfig(config, project).links, name), OK)),
   'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => (await deleteBranch(p, project, name), OK)),
@@ -963,6 +998,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   const rendering = /^\/r\/([\w-]+)(?:\/(.*))?$/.exec(pathname)
   if (req.method === 'GET' && rendering) return rendered(res, rendering[1], rendering[2] === undefined ? undefined : decodeURIComponent(rendering[2]), query)
   if (req.method === 'GET' && pathname === '/stats') return statsRead(res, search ?? '')
+  if (req.method === 'GET' && pathname === '/landing') return landingRead(res, search ?? '')
   const ran = /^\/run\/([\w-]+)\/(\d+)(?:\/(.+))?$/.exec(pathname)
   if (req.method === 'GET' && ran) return run(res, ran[1], Number(ran[2]), ran[3] && decodeURIComponent(ran[3]), query)
   const item = /^\/collection\/([\w-]+)\/([\w-]+)\/([^/]+)$/.exec(pathname)

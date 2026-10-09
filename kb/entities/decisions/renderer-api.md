@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "supersedes": "shelf-page-contract",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/renderers/page/index.html"]
 }
 ---
@@ -56,11 +56,12 @@ own, full screen. [[tower3d]] is a full-parity renderer.
 item (`collection/<project>/<collection>/<item>`, listed on the board) too, and a file a worker showed
 (`shown/<id>/<path>`, on its card), and what a worker changed in its repos (`changes/<id>`, [[changes-view]]), and stats over every log
 (`stats?from&to&bucket&project`, `tower.stats(query)`: a read whose query has a schema, listed at `/schema` under
-`reads`, [[stats]]), and a project's review threads, live and landed, as history (`reviews/<project>`, [[review-threads]]). `text` reads any of them as text and `blob` as a `Blob` of its type,
+`reads`, [[stats]]), what landing changed on a carried branch (`landing?project&branch`, `tower.landing(query)`, [[carried]]), and a project's review threads, live and landed, as history (`reviews/<project>`, [[review-threads]]). `text` reads any of them as text and `blob` as a `Blob` of its type,
 which is how a framed renderer draws an image in WebGL ([[blob-reads]]). `collection/create | write | delete`
 change items and `submit` types a prompt into a worker's composer ([[collections]]); `review/append` appends a note
 to a checkout's review thread, and `/reviews.js` serves the threads' format to renderers ([[review-threads]]); `spawn {cut}`,
-`worktree/recut | prune | remove`, `branch/delete` and `tidy` cut and tidy worktrees ([[tower-cuts-worktrees]]); each verb's reply and its
+`worktree/recut | prune | remove`, `branch/delete` and `tidy` cut and tidy worktrees ([[tower-cuts-worktrees]]), and
+`worktree/discard` throws away work that never landed ([[discard]]); each verb's reply and its
 errors are in [[renderer-api-contract]].
 `remember`/`recall` keep one value per page in the viewer's browser (where a walker stood): a framed page's
 own storage throws at its opaque origin, so the framing tower keeps it, per shelf entry.

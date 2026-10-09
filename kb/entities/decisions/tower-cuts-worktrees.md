@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The tower cuts a worktree per worker, and tidies them by hand",
-  "summary": "The tower cuts one git worktree per name in every repo of a project, inside each repo at .worktrees/<name>, and a session in one gets only those worktrees as its directories; git is read every 5 s, never mirrored, and removal is a manual Tidy that never loses unmerged or uncommitted work.",
+  "summary": "The tower cuts one git worktree per name in every repo of a project, inside each repo at .worktrees/<name>, and a session in one gets only those worktrees as its directories; git is read every 5 s, never mirrored, and removal is a manual Tidy that never loses unmerged or uncommitted work; work that never landed goes only by a deliberate discard that notes its tips first.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
   "supersedes": "worktrees-are-claudes",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
@@ -30,7 +30,8 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   list, status, unpushed commits, `branch.<br>.towerBase`, origin's branches) without fetching; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
   state: `live` (a worker on duty in it, running or stranded until resumed or let go, or a shell; [[tidy]]), `lost` (a folder gone), `at-risk` (uncommitted files, or commits
-  on no remote that aren't **absorbed**), else `removable`. Git prints resolved paths (`/private/tmp`), so the read
+  on no remote that aren't **absorbed** or [[carried]]), `carried` (clean, its work landed only as copies, some
+  edited: removed by its own `remove`), else `removable`. Git prints resolved paths (`/private/tmp`), so the read
   maps them back to the config's spelling of each dir.
 - **Absorbed** is content, not ancestry: `git merge-tree --write-tree <base> <br>` equals the base's tree. It is
   true after a merge, rebase or squash, with no GitHub. The base is the one recorded at the cut, or origin's
@@ -39,9 +40,11 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   A branch landed as a rebased or cherry-picked copy is absorbed too, whenever merging it would still change the base
   (the base changed those lines again, or reverted them): every commit `git rev-list --cherry-mark --right-only <base>...<br>` lists is marked `=`, an
   equal `git patch-id` in the base. A merge commit has no patch-id and keeps the branch at risk, and so does a copy
-  landed with conflicts resolved (a different patch-id): it is removed by hand. The answer is cached per pair of
+  landed with conflicts resolved (a different patch-id): it is [[carried]] when every such commit has a copy made alike,
+  else removed by hand or discarded ([[discard]]). The answer is cached per pair of
   commits (at most 1024, then forgotten), since git is read every 5 s. No fuzzy matching (similar subjects, most hunks): a wrong absorbed deletes
-  work.
+  work. [[carried]] matches by what git keeps of a commit's making (author, author date, subject), never by
+  similar content, and is never deleted in bulk.
 - **The cut** ([`cut`](ref:hub/src/worktrees.ts#cut), offered through `spawn {cut}`,
   [`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)): preflight every repo (a repo with an origin, a valid and free
   branch, a free path, each `worktrees.links` key ignored and untracked), fetch (10 s, else `offline`; verbs at
@@ -88,7 +91,8 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
 - **Tidy is manual** ([`tidy`](ref:hub/src/worktrees.ts#tidy)): after a fetch, every `removable` name its list
   named is removed (refused, before anything, when one no longer is: [[tidy]])
   without `--force` and its branch deleted where absorbed; an unmerged branch is kept and listed as a kept branch.
-  There is no force verb: throwing work away is done in a shell. Tidy then files the review thread of every checkout
+  A carried worktree is removed by its own `remove`, its branch deleted where carried. Work at risk is thrown away
+  only by `worktree/discard`, which notes each repo's tip on the review thread first ([[discard]]). Tidy then files the review thread of every checkout
   whose work has landed ([[review-threads]]). A cut refuses the name `main`, which names the main checkouts' thread.
   A kept branch comes back with `branch/recut`
   ([`recutBranch`](ref:hub/src/worktrees.ts#recutBranch)) under the name it was cut under, so its workers resume.

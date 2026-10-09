@@ -8,6 +8,7 @@
  */
 import type { Board, Card } from '../bridge/board.ts'
 import type { Stats } from '../bridge/stats.ts'
+import type { LandingRead } from '../bridge/worktrees.ts'
 import type { Brief } from '../bridge/turns.ts'
 import type { ReviewHistory } from '../bridge/reviews.ts'
 import type { RepoChanges } from '../changes.ts'
@@ -33,6 +34,8 @@ export type Reads = {
   'reviews/<project>': ReviewHistory
   /** Stats over every session's log, `stats?from&to&bucket&project` (`Queries['stats']`, parsed by its schema). */
   stats: Stats
+  /** What landing changed on a carried branch, `landing?project&branch` (`Queries['landing']`): each commit landed edited, its copy and `git range-diff`. */
+  landing: LandingRead
   /** Every renderer the tower serves at `/r/<name>/`, built-ins first, and `default`, the name of the one `/` opens. */
   renderers: { default: string; renderers: Renderer[] }
   /** The web page of each project directory's origin remote, by directory. */

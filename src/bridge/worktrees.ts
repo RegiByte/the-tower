@@ -58,16 +58,64 @@ export const parseTowerRecords = (out: string): Map<string, TowerRecord> => {
 /**
  * Whether work could be lost here: `dirty` uncommitted files (tracked or not), `unpushed` commits on no remote. A
  * branch is `absorbed` when merging it into `against` would change nothing (merged, rebased or squashed in), or each of
- * its commits is in `against` as an equal patch.
+ * its commits is in `against` as an equal patch. It is `carried` when it isn't absorbed but each of its commits is in
+ * `against` as an equal patch or as a copy (`carriedOf`), some of them edited when they landed.
  * `against` is its recorded base, or origin's default once that base is gone; `undefined` when there is neither.
  * `risk` names a few of the files and commits, for people.
  */
-export type Exposure = { dirty: number; unpushed: number; absorbed: boolean; against?: string; risk: string[] }
+export type Exposure = { dirty: number; unpushed: number; absorbed: boolean; carried?: Carried; against?: string; risk: string[] }
+
+/** A branch landed as copies: `commits` of it are in its base, `edited` of them a different patch from the branch's. */
+export type Carried = { commits: number; edited: number }
+
+/**
+ * A commit of `git log --left-right --cherry-mark <base>...<branch>`: `side` `<` only in the base, `>` only in the
+ * branch, `=` an equal patch on the other side. `made`: its author ident and date, which git keeps through cherry-pick,
+ * rebase and amend, and its subject: every worker commits as the user, often within the same second. `committed`: its
+ * committer date, epoch seconds.
+ */
+export type Mark = { side: '<' | '>' | '='; commit: string; committed: number; made: string }
+
+/**
+ * What landing changed on a branch: per repo holding it, the base it landed on and each commit that landed edited, with
+ * its copy and `git range-diff` between them.
+ */
+export type LandingRead = { branch: string; repos: { dir: string; against: string; edits: (Copy & { subject: string; rangeDiff: string })[] }[] }
+
+/** A branch commit and the copy of it its base holds. */
+export type Copy = { commit: string; copy: string }
+
+/**
+ * Each branch commit without an equal patch in the base, paired with a base commit made alike (author, date and subject)
+ * and committed no earlier than it, one copy per commit; `undefined` when any has none. A commit amended on the branch after
+ * an older version of it landed is committed later than that copy, so it stays unlanded.
+ */
+export const copiesOf = (marks: Mark[]): Copy[] | undefined => {
+  const copies = marks.filter((m) => m.side === '<')
+  const taken = new Set<string>()
+  const pairs: Copy[] = []
+  for (const m of marks.filter((m) => m.side === '>')) {
+    const copy = copies.find((c) => !taken.has(c.commit) && c.made === m.made && c.committed >= m.committed)
+    if (!copy) return undefined
+    taken.add(copy.commit)
+    pairs.push({ commit: m.commit, copy: copy.commit })
+  }
+  return pairs
+}
+
+/** `marks` as `Carried`; `undefined` when a commit has no copy. `commits`: the branch's commits missing from the base. */
+export const carriedOf = (marks: Mark[], commits: number): Carried | undefined => {
+  const pairs = copiesOf(marks)
+  return pairs && { commits, edited: pairs.length }
+}
 
 /** The commits its branch gained since it was cut (its reflog's first entry); `undefined` once git no longer says. */
 export type Cut = { own?: number }
 
-export const atRisk = ({ dirty, unpushed, absorbed }: Exposure) => dirty > 0 || (unpushed > 0 && !absorbed)
+export const atRisk = ({ dirty, unpushed, absorbed, carried }: Exposure) => dirty > 0 || (unpushed > 0 && !absorbed && !carried)
+
+/** Its unpushed work is in its base only as copies, some of them edited: nothing uncommitted, and not absorbed. */
+export const isCarried = ({ dirty, unpushed, absorbed, carried }: Exposure) => dirty === 0 && unpushed > 0 && !absorbed && carried !== undefined
 
 /**
  * One of the tower's worktrees in one repo. `present`: its folder exists; a missing one is git's `prunable`. `from`: the
@@ -87,7 +135,8 @@ export type RepoRead = { dir: string; git: false } | { dir: string; git: true; b
 /** The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without one). */
 export type MainRead = { dirty: number; ahead: number }
 
-export type WorktreeState = 'live' | 'lost' | 'at-risk' | 'removable'
+/** `carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy. */
+export type WorktreeState = 'live' | 'lost' | 'at-risk' | 'carried' | 'removable'
 
 /** `atRisk`: work only this repo's worktree holds; its `risk` names it. */
 export type FloorWorktreeRepo = Omit<TreeRead, 'name'> & { dir: string; atRisk: boolean }
@@ -107,6 +156,8 @@ export type FloorBranch = {
   repos: (Omit<BranchRead, 'branch'> & { dir: string })[]
   /** Absorbed in every repo that has it: deleting it loses nothing. */
   absorbed: boolean
+  /** Not absorbed, but absorbed or carried in every repo that has it: deleted by its own `delete`, never by Tidy. */
+  carried: boolean
   verbs: BranchVerb[]
   calls: BranchCalls
 }
@@ -121,20 +172,21 @@ const stateOf = (repos: FloorWorktreeRepo[], sessions: string[]): WorktreeState 
   if (sessions.length) return 'live'
   if (repos.some((r) => !r.present)) return 'lost'
   if (repos.some((r) => r.atRisk)) return 'at-risk'
+  if (repos.some(isCarried)) return 'carried'
   return 'removable'
 }
 
 const gitReads = (reads: RepoRead[]) => reads.filter((r): r is Extract<RepoRead, { git: true }> => r.git)
 
 /** One entry per name, across the project's repos, in name order. */
-export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Occupant[]): FloorWorktree[] => {
+export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Occupant[], keepsThreads: boolean): FloorWorktree[] => {
   const repos = gitReads(reads).flatMap(({ dir, trees }) => trees.map(({ name, ...tree }) => ({ name, repo: { dir, ...tree, atRisk: atRisk(tree) } })))
   const names = [...new Set(repos.map((r) => r.name))].sort()
   return names.map((name) => {
     const own = repos.filter((r) => r.name === name).map((r) => r.repo)
     const sessions = occupants.filter((o) => own.some((r) => inside(o.cwd, r.path))).map((o) => o.id)
     const state = stateOf(own, sessions)
-    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state) }
+    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state, own, keepsThreads) }
   })
 }
 
@@ -145,7 +197,8 @@ export const floorBranches = (project: string, reads: RepoRead[]): FloorBranch[]
   return names.map((name) => {
     const repos = kept.filter((k) => k.branch === name).map((k) => k.repo)
     const absorbed = repos.every((r) => r.absorbed)
-    return { name, repos, absorbed, ...branchOffers(project, name, absorbed) }
+    const carried = !absorbed && repos.every((r) => r.absorbed || r.carried)
+    return { name, repos, absorbed, carried, ...branchOffers(project, name, absorbed || carried) }
   })
 }
 
@@ -169,3 +222,20 @@ export const treeAt = (reads: RepoRead[], cwd: string): TreeRead | undefined =>
   gitReads(reads)
     .flatMap((r) => r.trees)
     .find((t) => t.path === cwd)
+
+/**
+ * What a discarded worktree held in one repo: its branch, its `head`, and its `tip`, the head itself or a commit of its
+ * `dirty` uncommitted files on top of it; `unpushed` names the commits of it on no remote.
+ */
+export type Tip = { dir: string; branch?: string; tip: string; head: string; dirty: number; unpushed: string[] }
+
+/** The note a discard leaves on the checkout's thread: what each repo held, and how to get it back while git keeps it. */
+export const discardNote = (name: string, tips: Tip[]): string =>
+  [
+    `Discarded the worktree ${name}: its work never landed. Its branches are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: \`git branch <name> <tip>\`.`,
+    '',
+    ...tips.flatMap((t) => [
+      `- \`${t.dir}\`: ${t.branch ? `branch \`${t.branch}\`` : 'a detached HEAD'}, tip \`${t.tip}\`${t.dirty ? ` (${t.dirty} uncommitted ${t.dirty === 1 ? 'file' : 'files'} committed on top of \`${t.head}\`)` : ''}`,
+      ...t.unpushed.map((c) => `  - ${c}`),
+    ]),
+  ].join('\n')

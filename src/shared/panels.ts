@@ -8,6 +8,7 @@
  *
  *   Changes
  *   data-changes-read          read the worker's Changes again
+ *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
  *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current
  *   data-file="<key>"          a file's section, by `fileKey`
  *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
@@ -339,7 +340,7 @@ function settledHtml(state: CheckoutState, checkout: string) {
     ? `<b>Worktree removed</b>: the folders of ${esc(checkout)} are gone, and nothing says its work landed.`
     : state.empty
       ? `<b>Nothing to land</b>: ${esc(checkout)} made no commits of its own${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
-      : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}</b>: the work of ${esc(checkout)} is in its base${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
+      : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}${state.edited ? `, ${state.edited} edited` : ''}</b>: the work of ${esc(checkout)} is in its base${state.edited ? `, ${state.edited === 1 ? 'one commit' : `${state.edited} commits`} changed on the way${state.branch ? ` (<button data-landing-of="${esc(state.branch)}">what landing changed</button>)` : ''}` : ''}${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
   return `<p class="settled" role="status">${said} Notes on it would reach nobody.</p>`
 }
 
@@ -732,6 +733,7 @@ export const panelsCss = `
 .changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }
 .changes-panel .none, .reviews-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .changes-panel .settled, .reviews-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
+.settled [data-landing-of] { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }
 .changes-panel code, .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 .changes-head { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-xs); color: var(--muted); font-size: var(--fs-m); }
 .changes-head b { color: var(--ink); font-variant-numeric: tabular-nums; }

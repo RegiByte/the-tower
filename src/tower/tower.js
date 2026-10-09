@@ -17,6 +17,9 @@
  *                                                   and again when `board.archiveAt` or the floor's `archived` moves
  *   await tower.stats({ from, to, bucket, project })  stats over every session's log (`/stats`): every field optional,
  *                                                   times in epoch ms, `bucket` 'hour' or 'day'; the last seven local days by day
+ *   await tower.landing({ project, branch })         what landing changed on a worktree's or kept branch's `branch` (`/landing`), when
+ *                                                   the board says it is carried: per repo, each commit landed edited, its copy and
+ *                                                   `git range-diff` between them
  *   await tower.renderer()                          this page's renderer, when it is served as one at `/r/<name>/`, on its own or framed
  *                                                   on a shelf: { name, root, entry, available, settings }, `settings` what the
  *                                                   config keeps for it; null for any other page
@@ -364,6 +367,7 @@
     conversations: (session) => api.get(`conversations/${encodeURIComponent(session)}`),
     archive: (project) => api.get(`archive/${encodeURIComponent(project)}`),
     renderer: async () => (served === 'r' ? (await api.get('renderers')).renderers.find((r) => r.name === servedAs) ?? null : null),
+    landing: (query) => api.get(`landing?${new URLSearchParams(query)}`),
     stats: (query = {}) => api.get(`stats?${new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined))}`),
     get: api.get,
     text: api.text,

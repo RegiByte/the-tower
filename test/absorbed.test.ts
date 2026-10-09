@@ -69,6 +69,64 @@ test('a kept branch is absorbed only when its every commit landed on its base as
       Object.fromEntries(read.kept.map((k) => [k.branch, k.absorbed])),
       { copied: true, resolved: false, unlanded: false, merged: false },
     )
+    assert.deepEqual(
+      Object.fromEntries(read.kept.map((k) => [k.branch, k.carried])),
+      { copied: undefined, resolved: { commits: 1, edited: 1 }, unlanded: undefined, merged: undefined },
+    )
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('a branch is carried when its commits landed edited, never when amended on the branch after they landed', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'tower-carried-'))
+  let clock = 1_800_000_000
+  const at = () => `@${clock++} +0000`
+  const git = (...args: string[]) => {
+    const now = at()
+    return execFileSync('git', ['-C', dir, ...args], { env: { ...process.env, ...IDENTITY, GIT_AUTHOR_DATE: now, GIT_COMMITTER_DATE: now }, stdio: 'pipe' }).toString()
+  }
+  const lander = (...args: string[]) => execFileSync('git', ['-C', dir, ...args], { env: { ...process.env, ...IDENTITY, GIT_COMMITTER_DATE: at() }, stdio: 'pipe' }).toString()
+  const write = (file: string, text: string) => writeFileSync(path.join(dir, file), text)
+  try {
+    git('init', '-q', '-b', 'main')
+    write('f', 'a\n')
+    git('add', 'f')
+    git('commit', '-qm', 'init')
+
+    git('checkout', '-qb', 'edited')
+    write('g', 'one\n')
+    git('add', 'g')
+    git('commit', '-qm', 'g')
+    write('h', 'two\n')
+    git('add', 'h')
+    git('commit', '-qm', 'h')
+    git('checkout', '-q', 'main')
+    lander('cherry-pick', 'edited~1')
+    lander('cherry-pick', 'edited')
+    write('h', 'two, as landed\n')
+    lander('commit', '-qa', '--amend', '--no-edit')
+
+    git('checkout', '-qb', 'amended', 'main~2')
+    write('k', 'first\n')
+    git('add', 'k')
+    git('commit', '-qm', 'k')
+    git('checkout', '-q', 'main')
+    lander('cherry-pick', 'amended')
+    write('k', 'first, as landed\n')
+    lander('commit', '-qa', '--amend', '--no-edit')
+    git('checkout', '-q', 'amended')
+    write('k', 'second\n')
+    lander('commit', '-qa', '--amend', '--no-edit')
+
+    git('checkout', '-q', 'main')
+    for (const branch of ['edited', 'amended']) git('config', `branch.${branch}.towerbase`, 'main')
+    const read = await readRepo(dir)
+    assert.ok(read.git)
+    assert.deepEqual(
+      Object.fromEntries(read.kept.map((k) => [k.branch, [k.absorbed, k.carried]])),
+      { edited: [false, { commits: 2, edited: 1 }], amended: [false, undefined] },
+    )
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

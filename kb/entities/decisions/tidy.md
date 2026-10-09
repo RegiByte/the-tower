@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -24,6 +24,7 @@
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/cards.ts#tidyLine",
     "hub/src/shared/cards.ts#tidyRows",
+    "hub/src/shared/cards.ts#editedRows",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
     "hub/renderers/tower3d/src/cards.ts#landedRow",
@@ -90,6 +91,12 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows) gives each row the call that
   applies only it, the floor's plan cut down to that one item (one worker, one process, one worktree, one branch, one
   thread; the old logs together, as their one row). Applied and refused by the same checks as the whole.
+- *Landed edited* ([[carried]]): a worktree whose work is in its base only as copies, some edited, is never in the
+  plan, so Tidy all never removes it, and `tidy` refuses it. [`editedRows`](ref:hub/src/shared/cards.ts#editedRows)
+  lists each such worktree and kept branch with its `remove` or `delete` call and its `landing` read; the tower page
+  draws them under the plan in the Tidy tray ("landed edited", `remove · 1 of 2 edited`), each with what landing
+  changed and its own press. A finished hire whose worktree is carried counts as landed for its kill
+  ([`landed`](ref:hub/src/bridge/prunable.ts#landed)): the kill resumes.
 - Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/cards.ts#tidyLine), "Tidy: 4 leftovers, 2 finished
   hires"; [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)). The tower page folds it into a tray under the floor
   that unfolds the list with the press; its Tidy all button and each row's own ⌫ are confirmed before they run, the whole list named in the first. Tower 3D lists it in the floor panel, each row

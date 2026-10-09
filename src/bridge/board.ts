@@ -561,7 +561,7 @@ const withCheckouts = (
   threadFiles: { project: string; id: string }[],
 ): Card[] => {
   const occupants = occupantsOf(cards, shells)
-  const floors = new Map(Object.entries(config.projects).map(([id, project]) => [id, floorGit(id, project, repos, occupants)]))
+  const floors = new Map(Object.entries(config.projects).map(([id, project]) => [id, floorGit(config, id, project, repos, occupants)]))
   return cards.map((c) => {
     const floor = floors.get(c.project)
     const stateOf = (checkout: string): CheckoutState => {
@@ -588,9 +588,9 @@ const withCheckouts = (
 }
 
 /** A floor's worktrees and kept branches as git reads them, `read` `undefined` until every dir of it was read once. */
-const floorGit = (projectId: string, project: Project, repos: Map<string, RepoRead>, occupants: Occupant[]) => {
+const floorGit = (config: Config, projectId: string, project: Project, repos: Map<string, RepoRead>, occupants: Occupant[]) => {
   const read = projectReads(projectDirs(project), repos)
-  return { read, worktrees: floorWorktrees(projectId, read ?? [], occupants), branches: floorBranches(projectId, read ?? []) }
+  return { read, worktrees: floorWorktrees(projectId, read ?? [], occupants, keepsThreads(config, projectId)), branches: floorBranches(projectId, read ?? []) }
 }
 
 /**
@@ -677,7 +677,7 @@ export const board = (
     keys: configuredKeys(config),
     config: paths.config,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, ...project }]) => {
-      const { read, worktrees, branches } = floorGit(id, project, repos, occupants)
+      const { read, worktrees, branches } = floorGit(config, id, project, repos, occupants)
       const bases = commonBases(read ?? [])
       const floorCards = cards.filter((c) => c.project === id)
       const present = floorCards.filter(kept)
