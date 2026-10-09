@@ -620,7 +620,7 @@ switch (verb) {
   }
   default:
     throw new CliError(
-      `Unknown command "${verb ?? ''}". The user's: init, doctor, config check, up, down, update, spawn, resume, submit, kill, live, ls, ps, reap, screen, attach. A worker's: whoami, agents [--all], agent <CALLSIGN>, show <file|url> [title], open <url> [title], reveal <path>, edit <path> [line], keep [<collection> [file] [name <words>]], kept [collection], read <tag|id>, thread [checkout], note [on <checkout>] [re n<k>] [repo:path:lines …], send <CALLSIGN>, review <CALLSIGN> [tell], hire [<tag|id>] […], home <CALLSIGN>, let-go <CALLSIGN>, api [name]`,
+      `Unknown command "${verb ?? ''}". The user's: init, doctor, config check, up, down, update, spawn, resume, submit, kill, live, ls, ps, reap, screen, attach, app. A worker's: whoami, agents [--all], agent <CALLSIGN>, show <file|url> [title], open <url> [title], reveal <path>, edit <path> [line], keep [<collection> [file] [name <words>]], kept [collection], read <tag|id>, thread [checkout], note [on <checkout>] [re n<k>] [repo:path:lines …], send <CALLSIGN>, review <CALLSIGN> [tell], hire [<tag|id>] […], home <CALLSIGN>, let-go <CALLSIGN>, api [name]`,
       'the tower:handbook skill says what each is for',
     )
 }

@@ -4,4 +4,5 @@ spikes/**/out/
 src/mod/.claude-plugin/types/
 src/mod/tsconfig.json
 renderers/*/out/
+apps/*/out/
 __pycache__/

@@ -26,10 +26,13 @@
  *   tower reap [id]              end what <id> left running, or what every session no longer live left running
  *   tower screen <id> [seconds]  the session's screen, now or at a moment, rebuilt from its log
  *   tower attach <id>            sit at the session: its live screen, your keyboard. Ctrl-] detaches
+ *   tower app                    open the tower as a Mac app, built from this checkout on first use or when its source
+ *                                changed (`src/app.ts`); the browser stays the default
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
+import { openApp } from './app.ts'
 import { attach } from './attach.ts'
 import { CliError, reported } from './cli-error.ts'
 import { checkConfigFile, CONFIG_DOCS, problemLines } from './config-check.ts'
@@ -232,6 +235,9 @@ const main = async (): Promise<void> => {
       console.log(rows.join('\n'))
       break
     }
+    case 'app':
+      console.log(await openApp(paths))
+      break
     case 'config': {
       if (id !== 'check') throw new CliError('Usage: tower config check', 'it checks the config as the tower reads it, and changes nothing')
       if (!existsSync(paths.config)) throw new CliError(`No config at ${paths.config}`, 'tower init [hub] [repos...]: a first project from a directory')

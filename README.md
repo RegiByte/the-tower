@@ -46,11 +46,16 @@ tower update                         # move to the newest release, restart the t
 tower init [hub] [repos...]          # write a first config, never over one
 tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt>]
 tower ls | live | ps | reap [id] | resume <id> | submit <id> <text> | kill <id> | screen <id> [t] | attach <id>
+tower app                            # open the tower as a Mac app (built on first use; needs xcode-select --install)
 ```
 
 The host owns every session and the terms daemon every shell: stopping either ends them (sessions can be resumed).
 The tower is only a view of them, restarted freely with `tower down tower && tower up tower`. Releases are tags
 `vX.Y.Z`, each with an entry in `CHANGELOG.md` saying what it asks of you.
+
+The browser is the default; `tower app` is the same tower in a window of its own. It starts the system as `tower up`
+does when you open it, and quitting it leaves the system running. Built from your checkout, it stays yours: drag
+`apps/macos/out/Tower.app` to the Dock to keep it there.
 
 ## Use
 

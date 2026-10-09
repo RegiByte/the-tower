@@ -2,10 +2,10 @@
 {
   "type": "container",
   "name": "tower",
-  "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach, beside the workers' verbs of the same command.",
+  "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/cli.ts", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/docs/config.md"],
+  "refs": ["hub/src/cli.ts", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill, live over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
@@ -31,7 +31,8 @@ running tower first and folds only when none answers ([[resume]]).
 `tower attach` puts the terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `tower down`
 stops the daemons `tower up` started ([[bring-up]]); both take daemons by name. `tower init` writes a first config
 and `tower doctor` checks what the tower needs, one fix for each failure ([[setup]]). `tower update` moves the
-checkout to the newest release and restarts the tower, never the host ([[releases]]).
+checkout to the newest release and restarts the tower, never the host ([[releases]]). `tower app` builds the
+Mac app from this checkout when its source changed and opens it, a window over the tower ([[macos-app]]).
 
 `tower config check` reads the config as the tower does
 ([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, the shape of each
