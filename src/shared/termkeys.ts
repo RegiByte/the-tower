@@ -44,10 +44,10 @@ export const naturalKey = (e: TermKey): string | undefined => {
 const deadKeys = () => {
   let composed = false
   return (e: KeyboardEvent): string | undefined => {
-    if (e.type === 'keydown' && e.key === 'Dead') composed = e.isComposing
-    if (e.key.length < 2 || /^[A-Z][A-Za-z0-9]*$/.test(e.key) || e.ctrlKey || e.metaKey) return undefined
-    const text = composed ? [...e.key].slice(1).join('') : e.key
-    if (e.type === 'keydown') composed = false
+    const chars = [...e.key]
+    const both = chars.length > 1 && !/^[A-Z][A-Za-z0-9]*$/.test(e.key) && !e.ctrlKey && !e.metaKey
+    const text = both ? (composed ? chars.slice(1).join('') : e.key) : undefined
+    if (e.type === 'keydown') composed = e.key === 'Dead' && e.isComposing
     return text
   }
 }

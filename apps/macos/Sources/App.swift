@@ -182,6 +182,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     return url.scheme == home.scheme && url.host == home.host && url.port == home.port
   }
 
+  /** The address of a window opened with none yet. */
+  func isBlank(_ url: URL) -> Bool { url.absoluteString.isEmpty || url.absoluteString == "about:blank" }
+
   /** Opens a link that leaves the tower in the default browser, as a tab's `_blank` would. */
   func openOutside(_ url: URL) {
     if ["http", "https", "mailto"].contains(url.scheme ?? "") { NSWorkspace.shared.open(url) }
@@ -189,8 +192,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
     guard let url = action.request.url else { return decisionHandler(.allow) }
-    if blanks.contains(webView), ["http", "https"].contains(url.scheme ?? "") {
-      NSWorkspace.shared.open(url)
+    if blanks.contains(webView), !isBlank(url) {
+      openOutside(url)
       blanks.remove(webView)
       return decisionHandler(.cancel)
     }
@@ -212,8 +215,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
    * links do this), gets a web view that never shows, until its first navigation that has one.
    */
   func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-    if let url = action.request.url, ["http", "https"].contains(url.scheme ?? "") {
-      NSWorkspace.shared.open(url)
+    if let url = action.request.url, !isBlank(url) {
+      openOutside(url)
       return nil
     }
     let blank = WKWebView(frame: .zero, configuration: configuration)
