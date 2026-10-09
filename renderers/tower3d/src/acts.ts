@@ -3,9 +3,9 @@ import { draftItem } from '../../../src/shared/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { base, can, current, defaultWhere, findCard, landedRow, pictureOf, sendTargets, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
-import { drawerLabel, drawersAt } from './archive.ts'
+import { HOST_MEANS, base, can, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTargets, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
+import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
 import type { CatName } from './life.ts'
 
@@ -20,7 +20,7 @@ export type Act =
   | { kind: 'drawer'; project: string; n: number }
   /** A checkout's slot in its floor's pigeonhole: its review thread. */
   | { kind: 'thread'; project: string; checkout: string }
-  /** A free workstation; the open one is where the floor's next worker sits. */
+  /** A free workstation; the open one is where the floor's next worker sits, lit while the floor can spawn. */
   | { kind: 'station'; project: string; n: number; open: boolean }
   | { kind: 'tile'; id: string }
   /** A worker's second monitor: what it last showed you. */
@@ -98,24 +98,37 @@ export const HOLD_MS = 1200
 /** How full a hold started at `start` is at `now`, 0 to 1: it runs at 1. */
 export const holdFill = (start: number, now: number) => Math.min(1, (now - start) / HOLD_MS)
 
-export type Offer = { verb: Verb; label: string }
+/** `whyNot`: the verb is offered but held back, a daemon it needs down or the tower lost; the prompt says why. */
+export type Offer = { verb: Verb; label: string; whyNot?: string }
 
 /** A draft taken off its corkboard, in your hand until handed over or put back. */
 export type Held = { project: string; id: string }
 /** The held draft with its title, as its text shows it now, and its tag. */
 export type Carried = Held & { title: string; tag: string }
 
-/** What the building around you is doing, and what you carry, for the verbs that depend on them. */
-export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames }
+/**
+ * What the building around you is doing, and what you carry, for the verbs that depend on them. `lost`: the tower
+ * stopped answering, so the board on show can't say a daemon verb would run.
+ */
+export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames; lost: boolean }
+
+/** Why a daemon verb can't run now: the tower lost (`lost`), or a daemon it needs down (`whyNot`). */
+export const heldWhy = (board: Board, lost: boolean, verb: DaemonVerb) => (lost ? HOST_MEANS.unknown : whyNot(board, verb))
+
+/** `offer` held back with its reason while `heldWhy` holds its verb. */
+const holding = (board: Board, scene: Scene, verb: DaemonVerb, offer: Offer): Offer => {
+  const why = heldWhy(board, scene.lost, verb)
+  return why ? { ...offer, whyNot: why } : offer
+}
 
 const quoted = (title: string) => `“${title.length > 28 ? `${title.slice(0, 27)}…` : title}”`
 
 const callsignOf = (board: Board, id: string | undefined) => (id && findCard(board, id)?.callsign) ?? 'its resume'
 
 /** A worker's continuation: resumed here, or followed to whoever resumed it. */
-const goOn = (c: Card): Offer[] =>
+const goOn = (board: Board, scene: Scene, c: Card): Offer[] =>
   can(c, 'goto') ? [{ verb: 'goto', label: `go to ${current(c)!.resumedBy!.callsign}` }]
-    : can(c, 'resume') ? [{ verb: 'resume', label: 'resume' }] : []
+    : can(c, 'resume') ? [holding(board, scene, 'resume', { verb: 'resume', label: 'resume' })] : []
 
 const floorOf = (board: Board, project: string) => board.floors.find((f) => f.id === project)
 
@@ -150,16 +163,16 @@ const homeLabel = (board: Board, c: Card) => {
  * A worker at its desk or on the wall: a running one is driven first; a stopped one is resumed first, and can still
  * be looked at, its last screen read-only.
  */
-const workerOffers = (board: Board, c: Card, drive: string): Offer[] => {
+const workerOffers = (board: Board, scene: Scene, c: Card, drive: string): Offer[] => {
   const look: Offer = { verb: 'use', label: c.live ? drive : 'see its last screen' }
   const rest: Offer[] = [
     ...(can(c, 'brief') ? [{ verb: 'brief' as const, label: 'logbook' }] : []),
     ...threadOffer(board, c),
-    ...(can(c, 'review') ? [{ verb: 'review' as const, label: 'hire a reviewer' }] : []),
+    ...(can(c, 'review') ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
     ...(can(c, 'reap') ? [{ verb: 'reap' as const, label: `reap ${c.resources.length} leftover${c.resources.length === 1 ? '' : 's'}` }] : []),
     ...(can(c, 'send-home') || can(c, 'kill') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
   ]
-  return c.live ? [look, ...goOn(c), ...rest] : [...goOn(c), look, ...rest]
+  return c.live ? [look, ...goOn(board, scene, c), ...rest] : [...goOn(board, scene, c), look, ...rest]
 }
 
 /** One act kind, by its `kind`. */
@@ -178,7 +191,7 @@ const handTo = (c: Card, scene: Scene): Offer[] =>
 const workerAt = (drive: string) => (a: { id: string }, board: Board, scene: Scene): Offer[] => {
   const c = findCard(board, a.id)
   if (!c) return []
-  const [first, ...rest] = workerOffers(board, c, drive)
+  const [first, ...rest] = workerOffers(board, scene, c, drive)
   return [first, ...handTo(c, scene), ...rest]
 }
 
@@ -215,7 +228,10 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
   },
   station(a, board, scene) {
     const f = board.floors.find((f) => f.id === a.project)
-    if (!a.open || !f || !can(f, 'spawn')) return []
+    if (!a.open || !f) return []
+    const why = heldWhy(board, scene.lost, 'spawn')
+    if (why) return [{ verb: 'use', label: 'hire a worker', whyNot: why }]
+    if (!can(f, 'spawn')) return []
     const note = scene.carrying
     const where = defaultWhere(f) === 'new' ? 'in a worktree of its own' : 'in the main checkout'
     return [
@@ -261,18 +277,20 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
       { verb: 'use', label: 'the list, at the console' },
     ]
   },
-  guest(a, board) {
+  guest(a, board, scene) {
     const c = findCard(board, a.id)
-    return c ? [...goOn(c), ...(can(c, 'brief') ? [{ verb: 'brief' as const, label: 'logbook' }] : [])] : []
+    return c ? [...goOn(board, scene, c), ...(can(c, 'brief') ? [{ verb: 'brief' as const, label: 'logbook' }] : [])] : []
   },
   shell: (a, board) => (board.shells.some((s) => s.id === a.id) ? [{ verb: 'use', label: 'use' }, { verb: 'kill', label: 'kill' }] : []),
-  floor(a, board) {
+  floor(a, board, scene) {
     const f = board.floors.find((f) => f.id === a.id)
     if (!f) return []
+    const spawn: Offer = { verb: 'spawn', label: 'new session' }
+    const shell: Offer = { verb: 'shell', label: `shell in ${base(f.hub)}` }
     return [
       { verb: 'use', label: 'dirs, shells, archive' },
-      ...(can(f, 'spawn') ? [{ verb: 'spawn' as const, label: 'new session' }] : []),
-      ...(can(f, 'shell') ? [{ verb: 'shell' as const, label: `shell in ${base(f.hub)}` }] : []),
+      ...(heldWhy(board, scene.lost, 'spawn') || can(f, 'spawn') ? [holding(board, scene, 'spawn', spawn)] : []),
+      ...(heldWhy(board, scene.lost, 'shell') || can(f, 'shell') ? [holding(board, scene, 'shell', shell)] : []),
       ...(can(f, 'editor') ? [{ verb: 'editor' as const, label: `${base(f.hub)} in your editor` }] : []),
     ]
   },

@@ -79,6 +79,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 #prompt .offers { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); padding-top: var(--sp-s); border-top: 1px solid var(--line); }
 #prompt .offer { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs); border-radius: var(--radius); color: var(--muted); font-size: var(--fs-s); font-weight: 700; }
 #prompt .offer.on { background: var(--sunk); box-shadow: inset 2px 0 0 var(--ink); color: var(--ink); }
+#prompt .offer.held-back > * { opacity: .55; }
+#prompt .offer small { display: block; font-weight: 400; }
 #prompt .left { display: grid; gap: 1px; font-size: var(--fs-xs); color: var(--muted); }
 #prompt .left code { font: var(--fs-xs)/1.4 var(--mono); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #prompt kbd.held { background: conic-gradient(var(--needs) calc(var(--hold, 0) * 1turn), var(--ink) 0); }

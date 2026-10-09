@@ -7,7 +7,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -215,10 +215,13 @@ function aimedHead(act: Act, board: Board, cats: CatNames) {
   return `<div class="head"><span class="call">Elevator</span></div><div class="meta">or press a floor's number</div>`
 }
 
-/** Each verb on its key, the one a click runs marked; held verbs show a ring that fills while held. */
+/**
+ * Each verb on its key, the one a click runs marked; held verbs show a ring that fills while held, and a verb held
+ * back fades with why.
+ */
 const offersHtml = (offers: Offer[], marked: number) =>
-  offers.map((o, i) => `<div class="offer${i === marked ? ' on' : ''}" data-verb="${o.verb}">
-    <kbd${HELD.has(o.verb) ? ' class="held"' : ''}>${KEY[o.verb]}</kbd><span>${HELD.has(o.verb) ? 'hold · ' : ''}${esc(o.label)}</span></div>`).join('')
+  offers.map((o, i) => `<div class="offer${i === marked ? ' on' : ''}${o.whyNot ? ' held-back' : ''}" data-verb="${o.verb}">
+    <kbd${HELD.has(o.verb) ? ' class="held"' : ''}>${KEY[o.verb]}</kbd><span>${HELD.has(o.verb) ? 'hold · ' : ''}${esc(o.label)}${o.whyNot ? `<small>${esc(o.whyNot)}</small>` : ''}</span></div>`).join('')
 
 /** The aimed thing and what it offers, each verb on its own key. Empty for a thing gone from the board. */
 export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames) {
@@ -242,8 +245,15 @@ export const levelForKey = (p: Plan, code: string) => {
   return digit !== undefined && Number(digit) < p.levels.length - 1 ? Number(digit) : undefined
 }
 
+/** Why a daemon verb is held back now, `undefined` while it can run (`heldWhy`). */
+export type HeldWhy = (verb: DaemonVerb) => string | undefined
+
+/** A button for a daemon verb held back: drawn, inert, its tip saying why. */
+const heldButton = (why: string, cls: string, label: string, inner: string) =>
+  `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(why)}">${inner}</button>`
+
 /** A worker's desk head: who and where, a glance at its context and cost, and what can be done with it. */
-export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: string) => boolean, framed: boolean) {
+export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: string) => boolean, held: HeldWhy, framed: boolean) {
   const ctx = c.context
   const stats = [
     ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
@@ -252,7 +262,7 @@ export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: str
   ].filter(Boolean).join('')
   const acts = [
     `<button class="info" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">ⓘ</button>`,
-    can(c, 'resume') && `<button class="primary" data-act="resume">↻ Resume</button>`,
+    can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', '↻ Resume') : `<button class="primary" data-act="resume">↻ Resume</button>`),
     can(c, 'reap') && `<button data-act="reap" data-tip="${esc(c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'))}">${armed(`reap ${c.id}`) ? 'sure?' : `reap ${c.resources.length}`}</button>`,
     framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
     (can(c, 'send-home') || can(c, 'kill')) && `<button data-act="kill" class="danger" data-tip="${esc(`ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`)}">${armed(`kill ${c.id}`) ? 'sure?' : 'Send home'}</button>`,
@@ -448,34 +458,40 @@ const wtVerb = (thing: { calls: Record<string, unknown> }, verb: keyof typeof WO
   `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}">${WORKTREE_VERB_NAME[verb]}</button>`
 
 /** The floor's worktrees and kept branches, each with the verbs the board offers on it. */
-const worktreesHtml = (f: Floor) => [
+const worktreesHtml = (f: Floor, held: HeldWhy) => [
   ...f.worktrees.map((w) => {
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
       <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.map((v) => wtVerb(w, v)).join('')}
-      ${w.state !== 'lost' && can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+      ${w.state === 'lost' ? '' : held('shell') ? heldButton(held('shell')!, 'ic', `new shell in ${w.name}`, ICON.shell) : can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
   ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
-const pastHtml = (board: Board, c: Card) =>
+const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
   `<div class="past"><span class="call">${esc(c.callsign)}</span> · ${new Date(c.startedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
     ${c.unresumable ? `· <span class="unresumable" data-tip="${esc(UNRESUMABLE_TITLE[c.unresumable])}">${UNRESUMABLE_NAME[c.unresumable]}</span>` : ''}
     <button data-logbook="${esc(c.id)}" data-tip="its logbook and last screen">logbook</button>
     ${c.conversations.map((conv) => `<div class="conv"><span>${esc(plain(conv.answer ?? conv.prompt ?? conv.id))}</span>${
       can(conv, 'goto') ? `<button data-desk="${esc(conv.resumedBy!.id)}">→ ${esc(conv.resumedBy!.callsign)}</button>`
-        : can(conv, 'resume') ? `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}">↻</button>` : ''}</div>`).join('')}</div>`
+        : !can(conv, 'resume') ? ''
+        : held('resume') ? heldButton(held('resume')!, '', 'resume this conversation', '↻')
+        : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation">↻</button>`}</div>`).join('')}</div>`
+
+/** A floor's + new session, held back with why while it can't run. */
+const spawnButton = (f: Floor, held: HeldWhy) =>
+  held('spawn') ? heldButton(held('spawn')!, 'wide', 'new session', '+ new session') : can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''
 
 /**
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, worktreesOpen: boolean) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, worktreesOpen: boolean) {
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? '·' : '⌂'} ${esc(base(dir))}</span>
-    ${can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${held('shell') ? heldButton(held('shell')!, 'ic', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
     ${can(f, 'editor') ? `<button class="ic" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="ic" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
   const shelf = (f.shelf ?? []).map((entry, n) => {
@@ -501,11 +517,11 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     <div class="section eyebrow">Dirs</div>${dirs}
     ${shelf && `<div class="section eyebrow">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
     <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
-    ${can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''}
+    ${spawnButton(f, held)}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
     ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}<button class="wide" data-tidy data-tip="do all of it, as listed">${armed(`tidy ${f.id}`) ? 'sure? tidy all of it' : 'tidy all'}</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${worktreesOpen && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f)}` : ''}`
+    ${worktreesOpen && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, held)}` : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */
@@ -516,18 +532,18 @@ export const archiveSideHtml = (f: Floor) =>
     <div class="archive" id="archive-list"></div>`
 
 /** A floor's past workers that match `words`, the newest first, and how many of how many; `archive` once read. */
-export function archiveListHtml(board: Board, f: Floor, archive: Card[] | undefined, words: string[]) {
+export function archiveListHtml(board: Board, f: Floor, archive: Card[] | undefined, words: string[], held: HeldWhy) {
   if (!archive) return { count: `${pastCount(f)} workers`, html: '<div class="past"><i>reading the archive…</i></div>' }
   const past = pastOf(f, archive)
   const shown = past.filter((c) => matchesWords(c, words))
   return {
     count: shown.length === past.length ? `${past.length} workers` : `${shown.length} of ${past.length}`,
-    html: shown.map((c) => pastHtml(board, c)).join('') || '<div class="past"><i>no past worker matches</i></div>',
+    html: shown.map((c) => pastHtml(board, c, held)).join('') || '<div class="past"><i>no past worker matches</i></div>',
   }
 }
 
 /** Every floor and who's on it: a click takes you there. */
-export function directoryHtml(p: Plan) {
+export function directoryHtml(p: Plan, held: HeldWhy) {
   const floors = p.levels.filter((l) => l.kind === 'floor').reverse()
   const body = floors.map((l) => {
     const waits = l.desks.filter((d) => d.card.waiting).length
@@ -536,7 +552,7 @@ export function directoryHtml(p: Plan) {
       <div class="cards">${workerCards(l.desks.map((d) => d.card))}
       ${l.kiosks.map((k) => `<div class="sess" data-shell="${esc(k.shell.id)}"><div class="top">${swatch(tint(l))}<span class="call">shell · ${esc(base(k.shell.cwd))}</span>
         <span class="st">${esc(k.shell.activity)}</span></div></div>`).join('')}</div>
-      <button class="wide" data-spawn="${esc(l.floor.id)}">+ new session</button>`
+      ${spawnButton(l.floor, held)}`
   }).join('')
   const legend = (['needs', 'ready', 'working', 'quiet', 'broken'] as const).map((a) => `<span class="chip ${a}"><span class="lamp"></span>${a === 'needs' ? 'needs you' : a}</span>`).join('')
   const roof = p.levels.at(-1)!
@@ -553,10 +569,10 @@ const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it ha
 const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${keptBy.callsign}` : '')
 
 /** The draft editor's head: whose draft and how it stands, and what can be done with it. */
-export function draftHeadHtml(f: Floor, d: Draft, armed: boolean, carrying: boolean) {
+export function draftHeadHtml(f: Floor, d: Draft, armed: boolean, held: HeldWhy, carrying: boolean) {
   const acts = [
     d.id && !carrying && `<button data-act="carry" data-tip="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
-    can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
+    held('spawn') ? heldButton(held('spawn')!, 'primary', 'Start session', 'Start session') : can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
     `<button data-act="delete" class="danger">${armed ? 'sure?' : 'Delete'}</button>`,
     `<button data-act="close" aria-label="back to walking" data-tip="back to walking (Esc)">✕</button>`,
   ].filter(Boolean).join('')

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { discard as discardDraft, discardItem, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
-import { HELD, byKind, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, heldWhy, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import type { CheckoutState, FloorThread } from '../../../src/bridge/reviews.ts'
 import type { NoteCalls } from '../../../src/bridge/verbs.ts'
@@ -14,7 +14,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -126,6 +126,8 @@ const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => t
 
 /** Destructive buttons ask on their own label and act on a second click: a shelf page may not open `confirm()`. */
 const ARM_MS = 3000
+/** Why a daemon verb is held back now, for the panels' buttons. */
+const held = (verb: DaemonVerb) => heldWhy(s.board!, s.lost, verb)
 const isArmed = (key: string) => s.armed?.key === key && Date.now() < s.armed.until
 function confirmed(key: string) {
   if (isArmed(key)) return (s.armed = undefined, true)
@@ -280,10 +282,13 @@ function onBoardError(err: Error & { code: string }) {
   $('board-error').querySelector('b')!.textContent = boardErrorTitle(err.code)
   $('board-error').querySelector('span')!.textContent = err.message
   show('board-error', true)
+  s.lost = err.code === 'disconnected'
+  renderPanel()
 }
 
 function onBoard(next: Board, at: ShelfSelf | undefined) {
   show('board-error', false)
+  s.lost = false
   const { began } = transitions(s.board, next)
   s.boards++
   s.board = next
@@ -383,7 +388,7 @@ function renderPanel() {
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
     if (!c) return unfocus()
-    $('desk-head').innerHTML = deskHeadHtml(c, board.floors.find((f) => f.id === c.project), isArmed, tower.framed)
+    $('desk-head').innerHTML = deskHeadHtml(c, board.floors.find((f) => f.id === c.project), isArmed, held, tower.framed)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
     if (s.deskTab === 'reviews') drawThread($('desk-reviews'), deskThread(c))
     if (s.deskTab === 'changes') drawChanges(c)
@@ -406,17 +411,17 @@ function renderPanel() {
     const id = panel.id
     const f = board.floors.find((f) => f.id === id)
     if (!f) return closeSide()
-    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, isArmed, panel.worktrees)
+    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, isArmed, held, panel.worktrees)
   }
   if (panel.kind === 'archive') {
     const f = board.floors.find((f) => f.id === panel.id)
     if (!f) return closeSide()
     if (!$('side').querySelector(`[data-archive-of="${CSS.escape(f.id)}"]`)) $('side').innerHTML = archiveSideHtml(f)
-    const { count, html } = archiveListHtml(board, f, archiveOf(f.id), panel.words)
+    const { count, html } = archiveListHtml(board, f, archiveOf(f.id), panel.words, held)
     $('archive-count').textContent = count
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
-  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan)
+  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan, held)
   if (panel.kind === 'drawer') {
     const f = board.floors.find((f) => f.id === panel.project)
     const d = drawersAt(panel.project)?.[panel.n]
@@ -436,7 +441,7 @@ function renderPanel() {
     const d = s.draft!
     const f = board.floors.find((f) => f.id === d.project)
     if (!f || !draftsOf(f)) return dropDraftPanel()
-    $('draft-head').innerHTML = draftHeadHtml(f, d, isArmed(`draft ${d.id}`), Boolean(s.carrying))
+    $('draft-head').innerHTML = draftHeadHtml(f, d, isArmed(`draft ${d.id}`), held, Boolean(s.carrying))
     $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
     show('draft-note', d.conflict !== undefined)
   }
@@ -957,6 +962,8 @@ const RUN: ByKind<unknown, [Verb]> = {
 }
 
 function run(a: Act, verb: Verb) {
+  const held = s.offers.find((o) => o.verb === verb)?.whyNot
+  if (held) return toast(held)
   if (verb === 'next') return nextWaiting()
   if (verb === 'overview') return overview()
   if (verb === 'stop') return endShare()
@@ -1143,7 +1150,7 @@ function showPrompt(a: Act | undefined, at?: { x: number; y: number }) {
   $('crosshair').classList.toggle('on', Boolean(a) && s.view === 'walk')
   const which = JSON.stringify(a ?? null)
   if (which !== s.offersOfAimed) (s.offersOfAimed = which, s.marked = 0, s.hold = undefined)
-  s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames }) : []
+  s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost }) : []
   s.marked = Math.min(s.marked, Math.max(0, s.offers.length - 1))
   const key = a ? `${which}|${JSON.stringify(s.offers)}|${s.marked}|${Math.floor(s.simNow / 1000)}` : ''
   if (key !== promptKey) {

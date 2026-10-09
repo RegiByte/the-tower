@@ -94,13 +94,14 @@ export const DESKS: Layer<DeskAt, Desk> = {
   },
 }
 
-type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean }
+/** `open`: where the floor's next worker sits; `lit` while the floor can spawn. */
+type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean; lit: boolean }
 
 /** Every free workstation, by floor and number. The open one is lit while its floor can spawn. */
 export const STATIONS: Layer<StationAt, Station> = {
   slots: (p) => floors(p).flatMap((level) => level.free.map((slot) => {
-    const open = slot === openStation(level) && can(level.floor, 'spawn')
-    return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open }] as [string, StationAt]
+    const open = slot === openStation(level)
+    return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
   })),
   level: (at) => at.level,
   make(at) {
@@ -108,8 +109,8 @@ export const STATIONS: Layer<StationAt, Station> = {
     STATIONS.keep(station, at)
     return station
   },
-  keep(station, { slot, y, project, open }) {
-    syncStation(station, open)
+  keep(station, { slot, y, project, open, lit }) {
+    syncStation(station, lit)
     act(station.group, { kind: 'station', project, n: slot.n, open }, [])
     station.group.position.set(slot.x, y, slot.z)
     return true

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-08",
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/cards.ts#whyNot", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
 }
 ---
 **Problem.** Each object in Tower 3D did one thing on E. Everything else (brief, resume, reap, kill, spawn, a
@@ -45,7 +45,13 @@ moving.
 - A worker with [[leftover]]s lists them in its card (pid, listening ports, orphaned or not, command), so
   "reap" says what it would end. Each floor's Running board lists every leftover on the floor, a row each: held Z
   ends that process alone, F goes to its worker's desk while it is on duty. Its head, while the floor's Tidy lists
-  anything, is the floor's `tidy`: E opens the list at the console, held Z applies it ([[tidy]]).
+  anything, is the floor's `tidy`: E opens the list at the console, held Z applies it ([[tidy]]). A finished hire's
+  row is its own `landed`: held Z kills that hire alone, by its Tidy row's call.
+- A verb that needs a daemon (spawn, a shell, resume, a reviewer) stays listed while the daemon is down or the
+  tower is lost, faded, with why under it ([`heldWhy`](ref:hub/renderers/tower3d/src/acts.ts#heldWhy): `whyNot`,
+  or the host unknown while lost); its key says why in a toast and runs nothing. The open workstation is still the
+  floor's next one, unlit, and offers "hire a worker" held the same way. The panels draw those verbs' buttons inert,
+  why on their tip, as the tower page does.
 - A stopped worker offers resume first, then a read-only look at its last screen (the server marks a
   snapshot `exited` whenever the host no longer runs the session), then its brief.
 

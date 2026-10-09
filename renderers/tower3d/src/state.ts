@@ -72,6 +72,8 @@ export type WallItem = { key: string; wall: VideoWall }
 export type State = {
   /** The board as last received, its plan, and the shelf entry this page is, when it is one. */
   board: Board | undefined
+  /** The tower stopped answering: the board on show is how it stood, and daemon verbs are held back. */
+  lost: boolean
   plan: Plan
   self: ShelfSelf | undefined
   /** No board has been built yet. */
@@ -213,7 +215,7 @@ export type State = {
 const NO_PLAN: Plan = { width: 0, depth: 0, roomDepth: 0, levels: [] }
 
 export const s: State = {
-  board: undefined, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
+  board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   heed: { dismissed: new Set(), visited: new Set() }, ring: 'once', briefMarkdown: 'rendered', rungAt: 0, waitedAt: 0, lastStatus: new Map(),
