@@ -268,7 +268,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
 #fps { padding: var(--sp-xs) var(--sp-l); font: 700 var(--fs-xs)/1.4 var(--mono); font-variant-numeric: tabular-nums; pointer-events: none; }
 #board-error { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); max-width: min(620px, 90vw); padding: var(--sp-l) var(--sp-xl); border-left: 4px solid var(--broken); z-index: 9; }
 #board-error b { display: block; margin-bottom: var(--sp-xs); font: 800 var(--fs-m)/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
-#toast { position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%); max-width: 468px; padding: var(--sp-m) var(--sp-xl); border-left: 4px solid var(--broken); z-index: 9; }
+#toasts { bottom: 48px; max-width: min(468px, 90vw); }
 </style>
 </head>
 <body>
@@ -334,7 +334,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
 <div id="watch" class="glass hidden"><b>THE BIG SCREEN</b><small>Esc or click the scene to step back</small>
   <button data-act="stop" class="danger">stop sharing</button><button data-act="close">✕</button></div>
 <div id="fade"></div>
-<div id="toast" class="glass hidden"></div>
+<div id="toasts"></div>
 <div id="board-error" class="glass hidden" role="alert"><b>The tower can't build the board</b><span></span></div>
 
 <script src="tower3d.js"></script>

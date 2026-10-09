@@ -569,11 +569,11 @@ const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it ha
 const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${keptBy.callsign}` : '')
 
 /** The draft editor's head: whose draft and how it stands, and what can be done with it. */
-export function draftHeadHtml(f: Floor, d: Draft, armed: boolean, held: HeldWhy, carrying: boolean) {
+export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boolean) {
   const acts = [
     d.id && !carrying && `<button data-act="carry" data-tip="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
     held('spawn') ? heldButton(held('spawn')!, 'primary', 'Start session', 'Start session') : can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
-    `<button data-act="delete" class="danger">${armed ? 'sure?' : 'Delete'}</button>`,
+    `<button data-act="delete" class="danger" data-tip="delete it now: the toast offers Undo">Delete</button>`,
     `<button data-act="close" aria-label="back to walking" data-tip="back to walking (Esc)">✕</button>`,
   ].filter(Boolean).join('')
   const item = d.id ? draftItem([f], f.id, d.id) : undefined

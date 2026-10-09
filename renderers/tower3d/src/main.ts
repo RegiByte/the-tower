@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { discard as discardDraft, discardItem, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
+import { discard as discardDraft, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
-import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import type { CheckoutState, FloorThread } from '../../../src/bridge/reviews.ts'
 import type { NoteCalls } from '../../../src/bridge/verbs.ts'
@@ -10,6 +10,7 @@ import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessio
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
+import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
@@ -45,7 +46,7 @@ import { random } from './random.ts'
 import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { reducedMotion } from '../../../src/shared/prefs.ts'
-import { FIXTURE, fixtureBoards, readConversations } from './fixtures.ts'
+import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtures.ts'
 import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
 import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile } from './layers.ts'
@@ -66,7 +67,7 @@ const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
  */
 const onAppearance = (fn: () => void) => (tower.onScheme(() => tower.prefs.get().scheme || fn()), tower.prefs.on(fn))
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss }))
 watchTips(document)
 
 const directory = boardFace(640, 480)
@@ -110,13 +111,8 @@ const here = () => s.plan.levels[s.me.level]
 const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
 const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
-let toastTimer: ReturnType<typeof setTimeout>
-function toast(msg: string) {
-  $('toast').textContent = msg
-  show('toast', true)
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => show('toast', false), 4000)
-}
+/** Tells what just happened, with an action that follows it up when given (`/toasts.js`). */
+const toast = toaster($('toasts'))
 
 const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Parameters<typeof tower.call<K>>[1]) =>
   tower.call(verb, body).catch((err: Error) => (toast(err.message), undefined))
@@ -445,7 +441,7 @@ function renderPanel() {
     const d = s.draft!
     const f = board.floors.find((f) => f.id === d.project)
     if (!f || !draftsOf(f)) return dropDraftPanel()
-    $('draft-head').innerHTML = draftHeadHtml(f, d, isArmed(`draft ${d.id}`), held, Boolean(s.carrying))
+    $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying))
     $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
     show('draft-note', d.conflict !== undefined)
   }
@@ -864,6 +860,18 @@ function goShell(id: string) {
   travel(level.index, { x: k.x + 1.9, z: k.z, yaw: -Math.PI / 2 }, () => focusShell(id))
 }
 
+/** A draft deleted, said with an Undo that puts its file back under its id. */
+function deleted(gone: Deleted | undefined) {
+  if (gone) toast(`Deleted “${titleOf(gone.text)}” from Drafts`, { label: 'Undo', run: () => undoDelete(gone) })
+}
+const undoDelete = (gone: Deleted) => restoreDraft(draftIo, gone).then(() => toast(`“${titleOf(gone.text)}” is back in Drafts`), (err: Error) => toast(err.message))
+
+/** A draft pinned on its corkboard thrown away, what it held read first so Undo can put it back. */
+async function throwAway(project: string, id: string) {
+  const text = await readDraft(draftIo, project, id).catch((err: Error) => (toast(err.message), undefined))
+  if (text !== undefined && (await discardItem(draftIo, project, id))) deleted({ project, id, text })
+}
+
 /** Out of the elevator on a level, facing its floor. */
 function goLevel(index: number) {
   if (s.view === 'overview') leaveOverview()
@@ -871,9 +879,18 @@ function goLevel(index: number) {
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, lock)
 }
 
-/** Ends a worker, with its crew that runs when it is in one, the deepest first. */
+/** Ends a worker, with its crew that runs when it is in one, the deepest first; the toast offers its resume. */
 async function sendHome(c: Card) {
-  for (const call of c.calls['send-home'] ?? [c.calls.kill!]) await offered(call)
+  const crew = sentHome(floorOf(c.project).cards, c)
+  for (const call of c.calls['send-home'] ?? [c.calls.kill!]) if (!(await offered(call))) return
+  toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, { label: 'Resume', run: () => resumeSentHome(c) })
+}
+
+/** A worker sent home, resumed from the board or its floor's archive, read again. */
+async function resumeSentHome(c: Card) {
+  const dead = findCard(s.board!, c.id) ?? (await readArchive(s.board!, c.project).catch((err: Error) => (toast(err.message), [])))?.find((d) => d.id === c.id)
+  if (!dead?.calls.resume) return toast(`${c.callsign} can't be resumed now`)
+  resume(dead.calls.resume)
 }
 
 /** A worker's verbs, wherever it stands: at its desk, on the wall, as a guest on the roof. */
@@ -953,7 +970,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   note(a, verb) {
     if (verb === 'use') return carry(a.project, a.id)
     if (verb === 'brief') return openNote(a.project, a.id)
-    return discardItem(draftIo, a.project, a.id)
+    return throwAway(a.project, a.id)
   },
   arcade: (a) => openGame(a.project, a.id),
   cat: (a, verb) => (verb === 'use' ? startPet(a.name) : a.watching && goDesk(a.watching)),
@@ -2406,7 +2423,7 @@ $('draft-head').addEventListener('click', async (e) => {
   if (!what || !d) return
   if (what === 'close') return (closeDraftPanel(), lock())
   if (what === 'carry') return d.conflict !== undefined ? toast('Settle the change made on disk first') : (closeDraftPanel(), carry(d.project, d.id!), lock())
-  if (what === 'delete') return confirmed(`draft ${d.id}`) && (dropDraftPanel(), discardDraft(draftIo, d))
+  if (what === 'delete') return (dropDraftPanel(), lock(), save(draftIo, d), deleted(await discardDraft(draftIo, d)))
   if (what !== 'start') return
   clearTimeout(saveTimer)
   const text = await sendable(draftIo, d)

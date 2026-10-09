@@ -13,6 +13,7 @@
     "hub/src/shared/toasts.ts#toaster",
     "hub/src/shared/toasts.ts#sameToast",
     "hub/src/shared/toasts.ts#toastsCss",
+    "hub/renderers/tower3d/src/main.ts#sendHome",
     "hub/src/shared/design.ts#designCss",
     "hub/src/shared/drafts.ts#discard",
     "hub/src/shared/drafts.ts#restore",
@@ -87,5 +88,8 @@ them, and nothing it needs lives in the tower page.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
 **Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb (API 1.17), and
-`discard` in `/drafts.js` now answers what it deleted. Tower 3D keeps its own single toast and its two-press confirm
-for now; it can adopt both modules over the same calls.
+`discard` in `/drafts.js` now answers what it deleted. Tower 3D draws its toasts through `/toasts.js` too, raised
+above its HUD: sending a worker home (its hold, or the desk's second press) toasts with Resume, read from the board
+or its floor's archive, and a draft deleted from its editor or thrown away from the corkboard (held X, its text read
+first) toasts with Undo through `restore`; the editor's Delete no longer asks. It keeps its second-press confirm for
+the other destructive buttons and has not adopted `/press.js`.
