@@ -4,7 +4,7 @@
   "name": "Leftovers after a kill",
   "summary": "Processes a session started can outlive it (servers, nohup'd or detached jobs); they are found by the TOWER_SESSION_ID they inherited, listed by tower ps and on the card, and ended by reap.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#parseProcesses", "hub/src/machine.ts#resourcesOf", "hub/src/machine.ts#reap", "hub/src/tower/server.ts#reapSession", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts", "hub/src/bridge/prunable.ts#prunable"]
 }
 ---

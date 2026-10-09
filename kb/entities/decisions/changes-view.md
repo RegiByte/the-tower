@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/test/diff.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>: each of the session's repos with its files and hunks" }
@@ -36,8 +36,8 @@ and haven't read while the agent keeps working.
   the file reopens. A viewed file folds; the viewer can unfold it (or fold any other) for this page only.
 
 - **Landed or gone** (2026-10-08). Once a worker's work no longer goes on (`card.checkoutState`, [[review-threads]]),
-  its Changes say so in place of an empty diff: "Landed on `<base>`" (with when its thread was filed), or "Worktree
-  removed". A diff git still reads (a squash leaves one against the old merge-base) is shown under that line, its lines
+  its Changes say so in place of an empty diff: "Landed on `<base>`" (with when its thread was filed, and for work
+  [[carried]] "N edited" with a link to what landing changed, `data-landing-of`), or "Worktree removed". A diff git still reads (a squash leaves one against the old merge-base) is shown under that line, its lines
   no longer pickable: picking is drawn only while the card offers `note` ([[board-verbs]]).
 
 **Alternatives considered.**

@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/protocol.ts#sessionKeys", "hub/src/tower/server.ts#HANDLERS", "hub/src/attach.ts"]
 }
 ---

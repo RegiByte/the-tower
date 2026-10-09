@@ -4,7 +4,7 @@
   "name": "Waiting on you",
   "summary": "A session held by a screen (blocked) or a question (needs_input), or holding an answer or failure that nobody has typed into the session since it arrived, unless the answer is a hire's to its running hirer's prompt; on the board, one wait per such session, in the order to go to them.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/bridge/status.ts#waitsOnSomeone", "hub/src/bridge/board.ts#attentionOf", "hub/src/bridge/board.ts#waitingOrder", "hub/src/shared/cards.ts#transitions", "hub/src/shared/cards.ts#nextWait", "hub/src/shared/cards.ts#heededWaits"]
 }
 ---

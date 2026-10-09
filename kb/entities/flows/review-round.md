@@ -4,7 +4,7 @@
   "name": "Review round",
   "summary": "One review end to end: a worker (or the user) hires a reviewer in a fork of the author's checkout, the reviewer leaves notes on the checkout's thread, delivers a pointer to them, and the author answers each note on the same thread.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
   "refs": ["hub/src/directory.ts#cardNamed", "hub/src/directory.ts#postToHost", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md"]
 }

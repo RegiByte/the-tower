@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/src/bridge/reviews.ts#checkoutState",
     "hub/src/bridge/reviews.ts#filedThreadOf",
@@ -71,7 +71,8 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
 - *Delivery: `submit` into a worker the user picks* (default: the one most recently active in the checkout),
   pointing at the thread (`tower thread`). Sending a few notes and "go read the new ones" are the same call.
 - *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once every
-  branch of that name is absorbed (a recut branch keeps its name, so the thread survives a recut), and `main`'s
+  branch of that name is absorbed (a recut branch keeps its name, so the thread survives a recut; a [[carried]] one
+  once its worktree is removed by its own press; a discarded one at once, after the note naming its tips, [[discard]]), and `main`'s
   once its diff is empty: it takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId) gives
   it (`odin-42@2026-10-07-1530.md`), is no floor's thread from then on, and the checkout's name is free for a
   thread about new work (`main`'s and a reused worktree name's would otherwise carry old notes, counted unseen by

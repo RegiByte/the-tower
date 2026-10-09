@@ -4,7 +4,7 @@
   "name": "Session lifecycle",
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/server.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/server.ts#spawnCut"]
 }

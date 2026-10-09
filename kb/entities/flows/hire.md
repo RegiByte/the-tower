@@ -4,7 +4,7 @@
   "name": "Hire",
   "summary": "A worker starts another on a prompt with tower hire: the floor's hiring limits are checked, the worker is spawned through the renderer API, and who hired whom is logged as a fact the board turns into the new card's hiredBy.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
   "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#postToHost", "hub/src/directory.ts#hiredLines", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/cards.ts#spawnDefaults", "hub/src/shared/cards.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
 }

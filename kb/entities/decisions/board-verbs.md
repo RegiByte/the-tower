@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/bridge/verbs.ts#noteOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
@@ -44,8 +44,9 @@ a fixed order, the first being the thing's primary verb.
   terms daemon is up, `editor` always, `tidy` while the floor's Tidy lists anything, its call carrying the list ([[tidy]]). Spawn, shell
   and editor apply to every dir of the floor and to its worktrees.
 - Each of a floor's `worktrees` ([`worktreeVerbs`](ref:hub/src/bridge/verbs.ts#worktreeVerbs)): `recut` and `prune`
-  when `lost`, `remove` when `removable`, nothing when `live` or `at-risk`. Each kept branch
-  ([`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)): `recut` always, `delete` once [[absorbed]]. The states, and each
+  when `lost`, `remove` when `removable` or `carried`, `discard` when `at-risk` on a floor keeping review threads
+  ([[discard]]), nothing when `live`. Each kept branch
+  ([`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)): `recut` always, `delete` once [[absorbed]] or [[carried]]. The states, and each
   repo's `atRisk`, are decided in the fold ([[tower-cuts-worktrees]]).
 - Each verb that is a request of the renderer API comes with its call
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings): `calls.resume` is
