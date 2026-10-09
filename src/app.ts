@@ -1,9 +1,9 @@
 /**
  * `tower app`: the tower as a Mac app, opt-in beside the browser (decision `macos-app`). Builds `apps/macos` into
  * `apps/macos/out/` with the Swift compiler when its sources changed since the last build, renders its icon from
- * `apps/macos/icon.svg` with Quick Look when that changed, writes the checkout and the
- * config it serves into its Info.plist, signs it for this machine alone, and opens it. The app is a window over the
- * tower's routes and holds no capability of its own (`apps/macos/Sources`).
+ * `apps/macos/icon.svg` with Quick Look when that changed, writes the config it serves into its Info.plist, signs it
+ * for this machine alone, and opens it. The app is a window over the tower's routes, started apart from it (`tower
+ * up`), and holds no capability or process of its own (`apps/macos/Sources`).
  */
 
 import { execFile } from 'node:child_process'
@@ -37,7 +37,6 @@ const infoPlist = (name: string, config: string): string => {
     CFBundlePackageType: 'APPL',
     LSMinimumSystemVersion: '14.0',
     NSHighResolutionCapable: 'true',
-    TowerCheckout: REPO,
     TowerConfig: config,
   }
   const entries = Object.entries(keys).map(([key, value]) => `  <key>${key}</key>\n  ${value === 'true' ? '<true/>' : `<string>${escapeXml(value)}</string>`}`)

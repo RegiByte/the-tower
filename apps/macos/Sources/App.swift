@@ -28,6 +28,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
   var home: URL?
   var titleWatch: NSKeyValueObservation?
   var attention: Attention!
+  /** Whether `start` is waiting for the tower to answer. */
+  var waiting = false
   let renderersMenu = NSMenu(title: "Renderer")
   /** Windows the page opened with no address yet (`createWebViewWith`), held until they are given one. */
   var blanks = Set<WKWebView>()
@@ -59,29 +61,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     start()
   }
 
-  /** Brings the tower up off the main thread, then opens its default renderer, or says why it couldn't. */
+  /** Opens the tower's default renderer once the tower answers, saying meanwhile how to start it; asks every 2 seconds. */
   func start() {
-    showStatus("Starting the tower", detail: "tower up, for \(tower.config)", retry: false)
-    DispatchQueue.global().async {
-      let result = Result { try startTower(self.tower) }
-      DispatchQueue.main.async {
-        switch result {
-        case .success(let url):
-          self.home = url
-          self.web.load(URLRequest(url: url))
-          self.loadRenderers()
-          self.attention.start(home: url)
-        case .failure(let failure as StartFailure):
-          self.showStatus(failure.title, detail: failure.detail, retry: true)
-        case .failure(let error):
-          self.showStatus("The tower didn't start", detail: String(describing: error), retry: true)
-        }
+    guard !waiting else { return }
+    waiting = true
+    waitForTower(said: false)
+  }
+
+  private func waitForTower(said: Bool) {
+    let url: URL
+    do { url = try tower.url() } catch {
+      waiting = false
+      return showStatus("Tower can't read its config", detail: "\(tower.config)\n\n\(error.localizedDescription)\n\n⌘R reads it again.")
+    }
+    ask(url) { up in
+      if up {
+        self.waiting = false
+        return self.open(url)
       }
+      if !said {
+        self.showStatus("Waiting for the tower", detail: "Nothing answers at \(url.absoluteString). Start it from a terminal, and this window opens it:\n\n  \(self.tower.upCommand)")
+      }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.waitForTower(said: true) }
     }
   }
 
-  /** A page of the app's own: a title, the detail as preformatted text, and a Retry link when asked. */
-  func showStatus(_ title: String, detail: String, retry: Bool) {
+  private func open(_ url: URL) {
+    home = url
+    web.load(URLRequest(url: url))
+    loadRenderers()
+    attention.start(home: url)
+  }
+
+  /** A page of the app's own: a title and the detail as preformatted text. */
+  func showStatus(_ title: String, detail: String) {
     let escape = { (s: String) in s.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;") }
     web.loadHTMLString("""
       <!doctype html><meta charset="utf-8"><title>Tower</title>
@@ -94,7 +107,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         a { color: var(--link) }
       </style>
       <h1>\(escape(title))</h1>
-      \(retry ? "<p><a href=\"tower-app:retry\">Retry</a></p>" : "")
       <pre>\(escape(detail))</pre>
       """, baseURL: nil)
   }
@@ -197,11 +209,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
       blanks.remove(webView)
       return decisionHandler(.cancel)
     }
-    if url.scheme == "tower-app" {
-      // Only the app's own status page, shown while the tower has no address, offers Retry.
-      if url.absoluteString == "tower-app:retry", home == nil { start() }
-      return decisionHandler(.cancel)
-    }
     // Frames inside the page (shelf pages, served at origins of their own) go where the page sends them.
     let mainFrame = action.targetFrame?.isMainFrame ?? true
     if mainFrame, ["http", "https"].contains(url.scheme ?? ""), !isTower(url) {
@@ -227,14 +234,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
   }
 
   func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-    guard let home else { return }
+    guard home != nil else { return }
     // A load replaced by a newer one (two clicks, ⌘R twice) fails as cancelled, or interrupted in WebKit's terms.
     let code = (error as NSError).code
     if ((error as NSError).domain == NSURLErrorDomain && code == NSURLErrorCancelled) || ((error as NSError).domain == "WebKitErrorDomain" && code == 102) { return }
     let failed = (error as NSError).userInfo[NSURLErrorFailingURLErrorKey] as? URL
     if let failed, !isTower(failed) { return }
     self.home = nil
-    showStatus("The tower doesn't answer", detail: "\(home.absoluteString): \(error.localizedDescription)\n\nRetry runs tower up again.", retry: true)
+    start()
   }
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {

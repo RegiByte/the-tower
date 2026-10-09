@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The tower as a Mac app",
-  "summary": "tower app builds apps/macos (Swift, a WKWebView) from the checkout it runs in and opens it: a window of its own over the tower's address that brings the system up with the user's login shell environment, and who waits on you as a Dock badge, notifications and a menu bar list, read and worded by the shared modules. Opt-in: the browser stays the default, and the app holds no capability of its own.",
+  "summary": "tower app builds apps/macos (Swift, a WKWebView) from the checkout it runs in and opens it: a window of its own over the address of a tower started apart from it (`tower up` in a terminal), and who waits on you as a Dock badge, notifications and a menu bar list, read and worded by the shared modules. Opt-in: the browser stays the default, and the app holds no capability or process of its own.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Start.swift#startTower", "hub/apps/macos/Sources/Start.swift#loginEnvironment", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
+  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
 }
 ---
 **Problem.** The tower lives in a browser tab, one among many: no Dock icon or window of its own, and it is gone with
@@ -24,12 +24,14 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   origin's page) opening in the default browser, a window opened with no address and given one after (xterm's
   links) too. Frames inside the page (shelf pages at origins of their own) go where
   the page sends them.
-- **Bringing the system up** ([`startTower`](ref:hub/apps/macos/Sources/Start.swift#startTower)): `tower up` with
-  `TOWER_CONFIG` set to the config the build serves, then the config's `port`. An app started from the Dock has
-  launchd's bare environment, so `tower` runs with the user's login shell environment
-  ([`loginEnvironment`](ref:hub/apps/macos/Sources/Start.swift#loginEnvironment)), the one a terminal would give it:
-  node on the PATH (nvm, Homebrew) and the locale, which a host it starts passes on to every session. A failure
-  shows `tower up`'s and `tower doctor`'s output in the window, with Retry.
+- **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
+  app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
+  answers. Until then the window says what starts it from a terminal (`tower up`, with `TOWER_CONFIG` when the config
+  isn't the default) and asks every 2 seconds; a load of the tower that fails waits the same way. macOS holds
+  whatever starts a daemon responsible for its access to protected folders (Documents, Desktop, Downloads), and every
+  Claude and shell under it, and takes an ad hoc signed build whose binary changed for a new app: daemons the app
+  started asked again in its name after each such rebuild (seen on a sandbox). Started from a terminal, they stay
+  the terminal's.
 - **Keys** ([`TowerWebView`](ref:hub/apps/macos/Sources/App.swift#TowerWebView)): ⌘Q, ⌘W, ⌘H and ⌘M are the app's;
   every other key goes to the page first, so the keymap ([[keymap]]) works as in a tab and a key it doesn't take
   reaches the menus (⌘R reloads, ⌘0/⌘+/⌘− zoom, ⌥⌘I the Web Inspector). The View menu's Renderer lists the renderers
@@ -61,7 +63,7 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
 **Alternatives considered.**
 
 - *Safari's Add to Dock.* Free and close: a Dock icon, a window, a badge from `navigator.setAppBadge`. Rejected as the
-  answer, not as an option: it can't start the system or keep a menu bar item.
+  answer, not as an option: it can't keep a menu bar item.
 - *The waits read natively, from `/board` in Swift.* Rejected: the words (`statusName`, `gistLine`) and the dismissals
   would be written twice, and drift from the tower page's.
 - *The page's own `Notification`s, granted through WebKit's private delegate.* Rejected: private API, and only the
@@ -70,15 +72,16 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   would tie the tower to a window.
 - *Tauri.* Rejected: the same WKWebView, behind Rust.
 - *Signed and notarized releases.* Deferred: the app is built where it runs, from the checkout.
+- *The app starting the system* (`tower up` in the user's login shell environment, as the app first did). Rejected:
+  the daemons, and every session under them, would ask for protected folders in the app's name, again after each
+  rebuild, and the app would control processes it is only one way to show. Kept apart, the app is one more way to
+  run the UI.
 - *Daemons that own their access to protected folders*, through the private call terminals use to disclaim
-  responsibility for their children, or a signing certificate the user keeps. Deferred: documented for now, below.
+  responsibility for their children, or a signing certificate the user keeps. Not needed while the app starts
+  nothing.
 
 **Impact.** Nothing changes for a user who doesn't run `tower app`: the browser stays the default, `tower doctor`
 doesn't ask for Swift, and the core gains no dependency. The API, the log and the host are untouched. In the window
 `Notification.permission` stays `default`, so the tower page's own notifications stay off there and the app's are the
 only ones; it asks macOS to notify on first launch. On macOS 26 a crowded menu bar can hide the item behind the
-notch. macOS holds the process that starts a daemon responsible for the daemon's access to protected folders
-(Documents, Desktop, Downloads), and every Claude and shell under it: a daemon the app's `tower up` starts asks in the
-app's name, and an ad hoc signed build whose binary changed is a new app, so the grant is asked again after such a
-rebuild, and a session's first read there waits on the prompt. A daemon started from a terminal stays the terminal's,
-whatever the app does; `tower up` starts only the daemons that aren't running.
+notch. Opening the app starts nothing: with the system down, the window waits for `tower up`.

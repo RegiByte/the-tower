@@ -98,12 +98,12 @@ final class Attention: NSObject, WKScriptMessageHandler, UNUserNotificationCente
   private func restartWhenBack() {
     guard let home, !awaitingTower else { return }
     awaitingTower = true
-    URLSession.shared.dataTask(with: home.appendingPathComponent("renderers")) { _, response, _ in
-      DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+    ask(home) { up in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
         self.awaitingTower = false
-        if (response as? HTTPURLResponse)?.statusCode == 200 { self.start(home: home) } else { self.restartWhenBack() }
+        if up { self.start(home: home) } else { self.restartWhenBack() }
       }
-    }.resume()
+    }
   }
 
   func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
