@@ -32,7 +32,7 @@ any other site are refused.
 A viewer that stops reading (a suspended tab, a frozen web view) costs the tower a bounded amount: a board client
 still reading an earlier board is sent the newest once it has, the boards between skipped
 ([`sendBoard`](ref:hub/src/tower/server.ts#sendBoard)); a screen, shell or mux connection, whose bytes can't be
-skipped, is closed once 4 MB wait for it ([`sse`](ref:hub/src/tower/server.ts#sse)), and its client reconnects and
+skipped, is closed once what waits for it hasn't drained in 30 s, or past 64 MB ([`sse`](ref:hub/src/tower/server.ts#sse)): a burst, such as every monitor's snapshot written at once on one mux, drains well within both, and its client reconnects and
 starts again from a snapshot (`tower.js` re-watches every stream on a new mux). A stream that fails to open answers its
 watch with the failure and leaves nothing behind on the mux.
 

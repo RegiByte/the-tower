@@ -167,15 +167,28 @@ const boardClients = new Set<http.ServerResponse>()
 let published = ''
 
 /**
- * A viewer that stops reading (a suspended tab, a frozen web view) is closed once this much waits for it: a stream's
- * bytes can't be skipped, and its client reconnects and starts again from a snapshot.
+ * A viewer that stops reading (a suspended tab, a frozen web view) is closed once it has read nothing of what waits
+ * for it this long, or once this much waits: a stream's bytes can't be skipped, and its client reconnects and starts
+ * again from a snapshot. A burst (every monitor's snapshot on one connection) can wait for a moment, well under both.
  */
-const MAX_BEHIND = 4 * 1024 * 1024
+const STALL_MS = 30_000
+const MAX_BEHIND = 64 * 1024 * 1024
+
+/** Each stream response with writes waiting, and the timer that closes it unless they drain first. */
+const stalls = new Map<http.ServerResponse, NodeJS.Timeout>()
+
+const unstall = (res: http.ServerResponse) => {
+  clearTimeout(stalls.get(res))
+  stalls.delete(res)
+}
 
 const sse = (res: http.ServerResponse, data: unknown) => {
   if (res.writableEnded || res.destroyed) return
   res.write(`data: ${JSON.stringify(data)}\n\n`)
-  if (res.writableLength > MAX_BEHIND) res.destroy()
+  if (res.writableLength > MAX_BEHIND) return void res.destroy()
+  if (!res.writableNeedDrain || stalls.has(res)) return
+  stalls.set(res, setTimeout(() => res.destroy(), STALL_MS))
+  res.once('drain', () => unstall(res))
 }
 
 const readConfig = (): Config => readConfigFile(paths.config)
@@ -394,7 +407,8 @@ async function terminalStream(id: string, send: (msg: TerminalMsg) => void): Pro
 
 const shellStream = (id: string, send: (msg: ShellStream) => void): Stop => attachShell(paths.terms, id, send)
 
-const openSse = (res: http.ServerResponse) => res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
+const openSse = (res: http.ServerResponse) =>
+  res.on('close', () => unstall(res)).writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
 
 async function streamScreen(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
   if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
