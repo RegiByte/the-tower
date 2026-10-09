@@ -982,7 +982,7 @@ function renderShown(c, s) {
   if (s.kind === 'link') return ($('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`, showLink(c, s))
   if (/\.(png|jpe?g|gif|webp|svg)$/i.test(s.target)) return ($('shown').innerHTML = `<img src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`)
   if (/\.(mp4|webm)$/i.test(s.target)) return ($('shown').innerHTML = `<video controls autoplay src="${esc(shownHref(s))}"></video>`)
-  if (!s.target.endsWith('.md')) return ($('shown').innerHTML = `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" src="${esc(shownHref(s))}"></iframe>`)
+  if (!s.target.endsWith('.md')) return ($('shown').innerHTML = `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`)
   $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
   told(tower.text(shownHref(s).slice(1))).then((md) => {
     if (md === undefined || shownDrawn !== key) return
@@ -1716,7 +1716,7 @@ function openShelf(project, n, file) {
 /** A page framed with the relay, at an opaque origin: an `html` entry's, or a declared renderer's. */
 function showPage(url) {
   const { token } = pairPage()
-  $('shelf-body').innerHTML = `<iframe id="shelf-page" class="page" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" src="${esc(url)}?tower=${token}"></iframe>`
+  $('shelf-body').innerHTML = `<iframe id="shelf-page" class="page" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" allow="clipboard-write" src="${esc(url)}?tower=${token}"></iframe>`
   $('shelf-page').addEventListener('load', onPageLoad)
 }
 
@@ -2142,7 +2142,7 @@ async function showItemBody(c, item) {
   opened.drawn = item.modifiedAt
   const kind = itemKind(item.id)
   const url = `/${itemPath(opened.project, c.id, item.id)}`
-  if (kind === 'html') return ($('item-body').innerHTML = `<iframe class="page" title="${esc(item.tag)}" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" src="${esc(url)}?v=${item.modifiedAt}"></iframe>`)
+  if (kind === 'html') return ($('item-body').innerHTML = `<iframe class="page" title="${esc(item.tag)}" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" allow="clipboard-write" src="${esc(url)}?v=${item.modifiedAt}"></iframe>`)
   if (kind === 'image') return ($('item-body').innerHTML = `<div class="item-image"><img src="${esc(url)}?v=${item.modifiedAt}" alt="${esc(item.tag)}"></div>`)
   if (!readsText(kind)) return ($('item-body').innerHTML = `<div class="shelf-empty">the tower shows no ${esc(item.id.split('.').pop())} file<br><br>reveal it in Finder or open it in your editor ${fileButtonsHtml(itemFile(c, item.id))}</div>`)
   const text = await tower.text(url.slice(1)).catch((err) => {

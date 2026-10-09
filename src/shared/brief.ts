@@ -46,6 +46,16 @@ export const shownFrom = (lineage: LineageSession[], s: Pick<CardShown, 'session
   return lineage.length > 1 && i >= 0 ? { mark: `s${i + 1}`, label: sessionLabel(i + 1, lineage.length, lineage[i].startedAt) } : undefined
 }
 
+/**
+ * Whether a worker's session `n` (from 1) was a resume given no prompt of its own: its conversations hold only the turns
+ * it resumed, and its last screen reprints them. A session's own turns are its latest, so a brief's last turns show them.
+ */
+export const resumedIdle = (briefs: Brief[], session: Pick<BriefSession, 'id' | 'startedAt'>, n: number) =>
+  n > 1 && briefs.every((b) => b.session.id !== session.id || b.turns.every((t) => t.startedAt < session.startedAt))
+
+/** What a viewer reads beside a `resumedIdle` session: `mark` short, `means` in full. */
+export const RESUMED_IDLE = { mark: 'resumed, no new turns', means: 'resumed but never given a prompt: its conversation and last screen are those of the session it resumed' }
+
 /** How a viewer reads prompts and answers: markdown rendered, or the text as written. */
 export type BriefMarkdown = 'rendered' | 'raw'
 export const BRIEF_MARKDOWNS: BriefMarkdown[] = ['rendered', 'raw']
@@ -141,11 +151,12 @@ export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), 
   if (!current) return '<div class="brief-view"><p class="none">no conversation yet</p></div>'
   const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working }
   const label = (p: BriefPart) => esc(sessionLabel(p.n, p.of, p.session.startedAt))
+  const idle = (p: BriefPart) => resumedIdle(briefs, p.session, p.n) ? ` · <span class="idle" data-tip="${esc(RESUMED_IDLE.means)}">${RESUMED_IDLE.mark}</span>` : ''
   return `<div class="brief-view">${markdownBar(markdown)}
     ${earlier.length ? '<h3 class="eyebrow">earlier sessions</h3>' : ''}
     ${earlier.toReversed().map((p) => `<details class="brief-session" data-brief-session="${esc(p.session.id)}"${open.has(p.session.id) ? ' open' : ''}>
-      <summary class="eyebrow">${label(p)} · ${plural(p.threads.length, 'conversation')}</summary>${conversationsHtml(p, parts, () => undefined, d)}</details>`).join('')}
-    ${earlier.length ? `<h3 class="brief-session-head">${label(current)} · this session</h3>` : ''}
+      <summary class="eyebrow">${label(p)} · ${plural(p.threads.length, 'conversation')}${idle(p)}</summary>${conversationsHtml(p, parts, () => undefined, d)}</details>`).join('')}
+    ${earlier.length ? `<h3 class="brief-session-head">${label(current)} · this session${idle(current)}</h3>` : ''}
     ${conversationsHtml(current, parts, promptBy, d)}</div>`
 }
 
@@ -182,4 +193,5 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .more .hide, .brief-view .more:has(input:checked) .show { display: none; } .brief-view .more:has(input:checked) .hide { display: inline; }
 .brief-view .brief-session { margin: .3em 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 0 var(--sp-l); }
 .brief-view .brief-session[open] { padding-bottom: var(--sp-s); }
-.brief-view .brief-session > summary { cursor: pointer; padding: var(--sp-m) 0; line-height: 1.4; }`
+.brief-view .brief-session > summary { cursor: pointer; padding: var(--sp-m) 0; line-height: 1.4; }
+.brief-view .idle { color: var(--faint); font-style: italic; }`

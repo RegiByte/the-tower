@@ -216,10 +216,13 @@ button.wide { width: 100%; }
 .logbook-sessions button.on { background: var(--ink); border-color: var(--ink); color: var(--panel); }
 .logbook-sessions .live { color: var(--ready-text); }
 .logbook-sessions button.on.live { color: var(--panel); }
-#doc-body[data-logbook] { display: grid; grid-template-rows: minmax(0, 55%) minmax(0, 1fr); gap: var(--sp-l); padding: 0 var(--sp-l) var(--sp-l); }
-.logbook-shot { position: relative; min-height: 0; display: flex; }
+.logbook-sessions button.idle:not(.on) { color: var(--faint); font-style: italic; }
+#doc-body[data-logbook] { flex-direction: column; }
+.logbook-shot { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 var(--sp-l) var(--sp-l); }
+.logbook-shot .logbook-sessions { margin: 0 0 var(--sp-m); }
+.logbook-frame { position: relative; flex: 1; min-height: 0; display: flex; }
 .logbook-screen { flex: 1; min-width: 0; padding: var(--sp-s); border-radius: var(--radius); background: var(--enamel); overflow: hidden; }
-.logbook-text { min-height: 0; overflow-y: auto; padding: 0 var(--sp-xs); }
+.logbook-text { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-l); }
 .drawer-list { flex: none; display: grid; gap: var(--sp-m); }
 .drawer-list .past { cursor: pointer; }
 #desk-shown { position: absolute; inset: 0 12px 12px; display: flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); }

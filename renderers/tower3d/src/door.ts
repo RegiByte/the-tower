@@ -163,7 +163,7 @@ export function installDoor(e: Engine) {
   }
 
   const panelOf = (): DoorState['panel'] => {
-    if (s.panel?.kind === 'logbook') return { kind: s.panel.kind, id: s.panel.card.id, on: s.panel.on, read: s.panel.threads !== undefined }
+    if (s.panel?.kind === 'logbook') return { kind: s.panel.kind, id: s.panel.card.id, tab: s.panel.tab, on: s.panel.on, read: s.panel.threads !== undefined }
     if (s.panel?.kind === 'draft') return { kind: s.panel.kind, project: s.draft?.project, id: s.draft?.id }
     if (s.panel?.kind === 'desk') return { ...s.panel, tab: s.deskTab, ...(s.replay?.id === s.panel.id && { replay: s.replay.session }) }
     return s.panel

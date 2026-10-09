@@ -22,7 +22,7 @@ import type { Pigeonhole } from './pigeonhole.ts'
 import type { Filing } from './filing.ts'
 import type { LinePick, StatsRange } from '../../../src/shared/panels.ts'
 import type { Anchor } from '../../../src/shared/reviews.ts'
-import type { DeskTab } from './ui.ts'
+import type { DeskTab, LogbookTab } from './ui.ts'
 import { STATS_ALL } from '../../../src/shared/panels.ts'
 import type { Walker } from './walker.ts'
 import type { World } from './world.ts'
@@ -51,9 +51,9 @@ export type Panel =
   | { kind: 'tv'; n: number }
   /**
    * A worker's logbook in the reader, for a worker with no desk (a guest, an archived folder): its card as read, its
-   * conversations once read, and the session whose last screen it shows.
+   * conversations once read, the tab it shows, and the session whose last screen the Screen tab shows.
    */
-  | { kind: 'logbook'; card: Card; threads: Threads | undefined; on: string }
+  | { kind: 'logbook'; card: Card; threads: Threads | undefined; tab: LogbookTab; on: string }
   /** A pulled drawer of a floor's filing cabinet, its folders listed beside the world. */
   | { kind: 'drawer'; project: string; n: number }
   /** The draft editor, on `State.draft`. */

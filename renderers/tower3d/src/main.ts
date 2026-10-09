@@ -35,7 +35,7 @@ import { closeTerm, mountTerm, watchPanelSize } from './term.ts'
 import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
-import { activityHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookHeadHtml, logbookHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml } from './ui.ts'
+import { activityHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf } from '../../../src/shared/keymap.ts'
 import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
@@ -423,7 +423,11 @@ function renderPanel() {
   if (panel.kind === 'logbook') {
     const c = findCard(board, panel.card.id) ?? panel.card
     $('doc-head').innerHTML = logbookHeadHtml(c, board.floors.find((f) => f.id === c.project))
-    $('logbook-text').innerHTML = logbookHtml(c, panel.threads, briefLook($('logbook-text')), panel.on)
+    $('logbook-tabs').innerHTML = logbookTabsHtml(panel.tab)
+    show('logbook-shot', panel.tab === 'screen')
+    show('logbook-text', panel.tab === 'brief')
+    $('logbook-sessions').innerHTML = sessionsHtml(c, panel.on, panel.threads)
+    $('logbook-text').innerHTML = logbookBriefHtml(c, panel.threads, briefLook($('logbook-text')))
   }
   if (panel.kind === 'draft') {
     const d = s.draft!
@@ -558,7 +562,7 @@ function unfocus() {
 }
 
 function closeDoc() {
-  if (s.panel?.kind === 'logbook') closeTerm($('logbook-screen'))
+  if (s.panel?.kind === 'logbook' && s.panel.tab === 'screen') closeTerm($('logbook-screen'))
   show('doc', false)
   $('doc-body').innerHTML = ''
   delete $('doc-body').dataset.thread
@@ -1944,24 +1948,36 @@ setInterval(() => {
 onReviews(renderPanel, (err) => toast(err.message))
 
 /**
- * The logbook of a worker with no desk in the reader, on its own session's last screen: its conversations as soon as
- * they are read.
+ * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the
+ * bottom; the Screen tab replays its sessions' last screens, its own session's first.
  */
 function openLogbook(c: Card) {
   closeSide()
   unfocus()
   closeDraftPanel()
   closeDoc()
-  s.panel = { kind: 'logbook', card: c, threads: undefined, on: c.id }
+  s.panel = { kind: 'logbook', card: c, threads: undefined, tab: 'brief', on: c.id }
   $('doc-body').dataset.logbook = ''
-  $('doc-body').innerHTML = '<div class="logbook-shot"><div class="logbook-screen" id="logbook-screen"></div><div class="stamp" id="logbook-stamp"></div></div><div class="logbook-text" id="logbook-text"></div>'
+  $('doc-body').innerHTML = `<div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="logbook-tabs"></span></div>
+    <div class="logbook-shot" id="logbook-shot"><div id="logbook-sessions"></div><div class="logbook-frame"><div class="logbook-screen" id="logbook-screen"></div><div class="stamp" id="logbook-stamp"></div></div></div>
+    <div class="logbook-text" id="logbook-text"></div>`
   show('doc', true)
   unlock()
   show('paused', false)
-  showLogbookScreen(c, c.id)
   renderPanel()
   const panel = s.panel
   threadsOf(c.id).then((threads) => s.panel === panel && ((panel.threads = threads), renderPanel(), ($('logbook-text').scrollTop = $('logbook-text').scrollHeight)))
+}
+
+/** The reader's tab: the Screen tab's terminal runs only while it shows. */
+function logbookTab(tab: LogbookTab) {
+  const panel = s.panel
+  if (panel?.kind !== 'logbook' || panel.tab === tab) return
+  panel.tab = tab
+  if (tab === 'screen') showLogbookScreen(panel.card, panel.on)
+  else closeTerm($('logbook-screen'))
+  renderPanel()
+  if (tab === 'brief') $('logbook-text').scrollTop = $('logbook-text').scrollHeight
 }
 
 /** The reader's screen: a session's last screen from its log, read-only, stamped. */
@@ -2011,6 +2027,8 @@ $('game-head').addEventListener('click', (e) => {
 $('doc-body').addEventListener('click', (e) => {
   if (s.panel?.kind === 'picture') return openOut(e)
   if (s.panel?.kind === 'logbook') {
+    const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]')?.dataset.tab
+    if (tab) return logbookTab(tab as LogbookTab)
     const session = (e.target as HTMLElement).closest<HTMLElement>('[data-replay]')?.dataset.replay
     if (!session) return
     s.panel.on = session

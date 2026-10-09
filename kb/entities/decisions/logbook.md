@@ -11,6 +11,9 @@
     "hub/renderers/tower3d/src/desk.ts#dressBinder",
     "hub/renderers/tower3d/src/desk.ts#monitorOf",
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
+    "hub/renderers/tower3d/src/ui.ts#sessionsHtml",
+    "hub/renderers/tower3d/src/ui.ts#logbookTabsHtml",
+    "hub/renderers/tower3d/src/main.ts#logbookTab",
     "hub/renderers/tower3d/src/ui.ts#stampHtml",
     "hub/renderers/tower3d/src/ui.ts#drawerSideHtml",
     "hub/renderers/tower3d/src/main.ts#replay",
@@ -72,13 +75,26 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   drawers, the last holding every older day too. E on a drawer pulls it out
   ([`poseFiling`](ref:hub/renderers/tower3d/src/filing.ts#poseFiling)), its folders standing in it with callsign
   tabs, and lists them beside the world ([`drawerSideHtml`](ref:hub/renderers/tower3d/src/ui.ts#drawerSideHtml)); a
-  folder opens the worker's logbook in the reader ([`openLogbook`](ref:hub/renderers/tower3d/src/main.ts#openLogbook)):
-  its last screen above, the session chips and brief below. A guest's Q and the archive panel's rows open the same
-  reader.
+  folder opens the worker's logbook in the reader ([`openLogbook`](ref:hub/renderers/tower3d/src/main.ts#openLogbook))
+  on two tabs, each the whole panel ([`logbookTabsHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookTabsHtml)):
+  **Screen**, the session chips over a session's last screen, its own first, and **Logbook**, the brief, which it
+  opens on. A guest's Q and the archive panel's rows open the same reader.
 - **Checked by frames**: the `logbook` fixture board (binders of one to nine sessions, eight archived workers over
   five days, conversations read from the fixture cards by
   [`readConversations`](ref:hub/renderers/tower3d/src/fixtures.ts#readConversations)), and the walk's binder, logbook,
   replay, drawer and folder stages on every board that has them.
+
+*The reader's tabs and empty resumes* (2026-10-08). The reader stacked the screen over the brief in one grid,
+55% and the rest: a long answer shown in full squeezed the screen to a strip while the brief kept its half. It now
+shows one at a time ([`logbookTab`](ref:hub/renderers/tower3d/src/main.ts#logbookTab)), the tabs drawn as the desk
+panel's, and opens on the Logbook: what someone opening a past worker reads first is what it was asked and answered;
+the screen is the evidence beside it. The Screen tab's terminal is mounted only while it shows. A resume given no
+prompt of its own showed the same last screen as the session it resumed (Claude reprints the conversation on
+resume), so the two chips read as duplicates: such a session's chip says "resumed, no new turns", with why in its
+tip ([`sessionsHtml`](ref:hub/renderers/tower3d/src/ui.ts#sessionsHtml), from the shared
+[`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle), [[brief-turns]]), on the desk's Logbook tab too. The tabs
+are not on the keymap: Tower 3D's desk tabs aren't either (the keymap's `pane-*` commands are the tower page's
+alone), and the two should join it together.
 
 **Measured** (synthetic logs of 120×40 redraws, sandbox tower, 2026-10-07): the first snapshot of `screen/<id>` takes
 about 140 ms for a 5 MB log and 0.75–0.9 s for a 50 MB one, on every open; the real logs average 3.9 MB, the largest

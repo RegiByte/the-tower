@@ -3,7 +3,7 @@ import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import { fileButtonsHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
-import { briefHtml as lineageBriefHtml, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
+import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
@@ -309,6 +309,13 @@ const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boo
 
 const TAB_NAME = { screen: 'Terminal', brief: 'Logbook', changes: 'Changes', reviews: 'Reviews' } as const
 
+/** The reader's views of a worker with no desk: a session's last screen, replayed, and its logbook. */
+export type LogbookTab = 'screen' | 'brief'
+const LOGBOOK_TAB_NAME: Record<LogbookTab, string> = { screen: 'Screen', brief: 'Logbook' }
+
+export const logbookTabsHtml = (tab: LogbookTab) =>
+  (['screen', 'brief'] as const).map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${LOGBOOK_TAB_NAME[t]}</button>`).join('')
+
 /** The Reviews tab's tally: the notes new to the worker, else how many its thread holds. */
 const reviewsTally = (c: Card, f: Floor) => {
   const notes = f.threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
@@ -344,7 +351,7 @@ export function shownHtml(callsign: string, s: Shown, root: string, md?: string)
   if (isImage(s)) return `<img class="doc-image" src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`
   if (isVideo(s)) return `<video class="doc-video" controls autoplay src="${esc(shownHref(s))}"></video>`
   if (isMarkdown(s)) return md === undefined ? '' : `<iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(md, shownHref(s), root))}"></iframe>`
-  return `<iframe class="doc-frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" src="${esc(shownHref(s))}"></iframe>`
+  return `<iframe class="doc-frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`
 }
 
 /** Above the terminal while the worker asks you something, or a screen holds it: who, and what it asks. */
@@ -368,17 +375,24 @@ const briefHtml = (c: Card, threads: Brief[], look: BriefLook) =>
 /**
  * A worker's sessions, oldest first, each a button that shows its screen (`data-replay`, its id); a running worker's
  * own session is "● live" (an empty `data-replay`). `on`: the session whose screen is shown, undefined for the live one.
+ * A resume given no prompt of its own says so once its conversations are read (`threads`): its screen repeats the last.
  */
-const sessionsHtml = (c: Card, on: string | undefined) =>
+export const sessionsHtml = (c: Card, on: string | undefined, threads: Brief[] | undefined) =>
   `<div class="logbook-sessions">${c.lineage.map((l, i) => {
     const live = c.live && l.id === c.id
-    const label = live ? '● live' : `s${i + 1} · ${sessionWhen(l.startedAt)}`
-    return `<button class="${[live && 'live', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(live ? 'back to the live screen' : `the last screen of ${sessionLabel(i + 1, c.lineage.length, l.startedAt)}`)}">${esc(label)}</button>`
+    const idle = !live && threads !== undefined && resumedIdle(threads, l, i + 1)
+    const label = live ? '● live' : `s${i + 1} · ${sessionWhen(l.startedAt)}${idle ? ` · ${RESUMED_IDLE.mark}` : ''}`
+    const tip = live ? 'back to the live screen' : `the last screen of ${sessionLabel(i + 1, c.lineage.length, l.startedAt)}${idle ? `, ${RESUMED_IDLE.means}` : ''}`
+    return `<button class="${[live && 'live', idle && 'idle', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(tip)}">${esc(label)}</button>`
   }).join('')}</div>`
 
-/** The logbook: the worker's sessions to replay, over its conversations by session; `threads` undefined while they are read. */
+/** A worker's conversations by session; `threads` undefined while they are read. */
+export const logbookBriefHtml = (c: Card, threads: Brief[] | undefined, look: BriefLook) =>
+  threads ? briefHtml(c, threads, look) : '<p><i>reading the logbook…</i></p>'
+
+/** The logbook: the worker's sessions to replay, over its conversations by session. */
 export const logbookHtml = (c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined) =>
-  sessionsHtml(c, on) + (threads ? briefHtml(c, threads, look) : '<p><i>reading the logbook…</i></p>')
+  sessionsHtml(c, on, threads) + logbookBriefHtml(c, threads, look)
 
 /** "REPLAY · Oct 6, 21:40": a past session's screen, with the way back to the live one when there is one. */
 export const stampHtml = (startedAt: number, back: boolean) =>
@@ -578,7 +592,7 @@ export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, 
 
 /** A shelf entry's body: a page in a frame, or a markdown collection's files beside the open one, rendered without scripts. */
 export function docHtml(doc: { frame: string } | { files: string[]; file?: string; text: string; url: string }, root: string) {
-  if ('frame' in doc) return `<iframe class="doc-frame" src="${esc(doc.frame)}"></iframe>`
+  if ('frame' in doc) return `<iframe class="doc-frame" src="${esc(doc.frame)}" allow="clipboard-write"></iframe>`
   const list = doc.files.map((f) => `<button class="doc-file${f === doc.file ? ' on' : ''}" data-file="${esc(f)}"${f === doc.file ? ' aria-current="true"' : ''} data-tip="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</button>`).join('')
   return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, root))}"></iframe>`
 }

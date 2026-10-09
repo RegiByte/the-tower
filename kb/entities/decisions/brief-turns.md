@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/turns.ts#turnsByConversation", "hub/src/bridge/turns.ts#lastTurns", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/turns.ts#BriefSession", "hub/src/bridge/board.ts#LineageSession", "hub/src/shared/brief.ts#briefParts", "hub/src/shared/brief.ts#briefHtml", "hub/src/shared/brief.ts#shownFrom", "hub/src/shared/brief.ts#briefCss", "hub/src/shared/brief.ts#openFolds", "hub/src/shared/model.ts#briefConfig", "hub/src/tower/server.ts#conversations", "hub/src/directory.ts#threadLines", "hub/test/turns.test.ts"],
+  "refs": ["hub/src/bridge/turns.ts#turnsByConversation", "hub/src/bridge/turns.ts#lastTurns", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/turns.ts#BriefSession", "hub/src/bridge/board.ts#LineageSession", "hub/src/shared/brief.ts#briefParts", "hub/src/shared/brief.ts#briefHtml", "hub/src/shared/brief.ts#shownFrom", "hub/src/shared/brief.ts#resumedIdle", "hub/src/shared/brief.ts#briefCss", "hub/src/shared/brief.ts#openFolds", "hub/src/shared/model.ts#briefConfig", "hub/src/tower/server.ts#conversations", "hub/src/directory.ts#threadLines", "hub/test/turns.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "reads", "carries": "the session logs of a conversation's resume chain, on each GET /conversations/<id>" },
     { "to": "system-root", "verb": "reads", "carries": "config.json's brief.pairs, project over top level over 2" }
@@ -61,6 +61,12 @@ one the next resumed), so a session's place, "session 2 of 3", is counted from t
 - *Showings say their session.* `card.lineage` ([`LineageSession`](ref:hub/src/bridge/board.ts#LineageSession), oldest
   first) lists the sessions a worker ran as; [`shownFrom`](ref:hub/src/shared/brief.ts#shownFrom) marks a showing's tab
   `s1` with the full label in its title, while the worker has run as more than one.
+- *A resume that added nothing says so* (2026-10-08, API 1.19). A session resumed and never given a prompt holds
+  only the turns it resumed, and its last screen reprints them, so it reads as a copy of the session before.
+  [`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle) tells it from the brief alone: a session after the first
+  whose turns all began before it did (a session's own turns are its latest, so the brief's last turns show them).
+  `briefHtml` marks its label "resumed, no new turns" (`RESUMED_IDLE`, with why in a tip), and Tower 3D's session
+  chips say the same ([[logbook]]).
 - `tower agent` prints the current session's conversations in full and one line per earlier session.
 - The tower memoizes each log for one read: a lineage brief reads every session's log once.
 - *Alternatives.* A `worker` view on the board (settled against with the user, 2026-10-07: the bridge derives the

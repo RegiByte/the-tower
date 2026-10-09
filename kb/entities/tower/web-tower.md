@@ -28,6 +28,13 @@ deleted. A prompt typed into the dialog that closes without starting, or whose s
 opened on. A session the page
 starts opens once the board carries its card: the host answers before the tower has read the new log.
 
+*The clipboard in frames* (2026-10-08). A frame that runs a floor's own page is sandboxed at an opaque origin, where
+the browser's permissions policy blocks the Clipboard API unless the frame grants it: the shelf frame of an `html` or
+`renderer` entry, an `html` item and a shown file each carry `allow="clipboard-write"` (a `url` frame already had
+`clipboard-read; clipboard-write`), so a copy button inside, such as Tower 3D's on a logbook's prompts and answers,
+works framed as it does top-level. Tower 3D grants the same on its own frames of shelf pages and shown files, so the
+grant carries through when it is itself framed. Reading the clipboard stays with `url` frames.
+
 *Reflow* (2026-10-08). The page holds at 200% zoom and at the largest Text size: under 900 px the sidebar is the rail
 and the sidebar key (or ») opens it over the main pane until a worker is picked; the worker bar wraps rather than
 clipping its callsign ([[design-system]]).

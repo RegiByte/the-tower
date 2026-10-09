@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## Unreleased
+
+- Tower 3D's logbook reader shows the last screen and the logbook on two tabs, each the whole panel, opening on the
+  logbook; a long answer shown in full no longer squeezes the screen.
+- A resumed session given no prompt of its own is marked "resumed, no new turns" in the brief and on Tower 3D's
+  session chips (API 1.19: `/brief.js` adds `resumedIdle` and `RESUMED_IDLE`).
+- Copy works inside framed pages: the tower page's shelf frame (an `html` or `renderer` entry), `html` items and shown
+  files allow `clipboard-write`, as do Tower 3D's frames of shelf pages and shown files.
+
 ## v1.2.0
 
 The second polish pass on the tower page, on the user's decisions from the first: a keymap, a chat brief, your own
