@@ -4,8 +4,8 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
   "in": "bridge",
-  "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
+  "reviewed": "2026-10-09",
+  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -39,6 +39,11 @@ or one event at a time as it is tailed:
   of its text, never the text. [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries) joins every send to the
   session that logged the same text as received, nearest in time, so `card.sent` names the recipient's callsign
   whatever the address was: a name, or a reply's `uds:/tmp/cc-socks/<pid>.sock`, which nothing else ties to a session.
+  A message is received as a prompt wrapping the text as sent (`<cross-session-message from-name="…">`), read by
+  [`delivered`](ref:hub/src/bridge/messages.ts#delivered); [`receipts`](ref:hub/src/bridge/messages.ts#receipts) is the
+  same join from the receiving side, which names the sender of a worker's message in its brief ([[brief-turns]]).
+  A prompt of Claude's peer origin without that wrapper is a subagent's hand-back, counted under `prompts` as
+  `hand-back`.
 - [`conversationsAfter`](ref:hub/src/bridge/conversation.ts#conversationsAfter) and
   [`threads`](ref:hub/src/bridge/chains.ts#threads): each conversation with its latest prompt and answer, linked
   to the sessions it was resumed from and by ([[resume]]). [`briefOf`](ref:hub/src/bridge/turns.ts#briefOf) gathers

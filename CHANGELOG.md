@@ -26,6 +26,10 @@ Commit messages hold the detail.
   Both renderers draw the note forms only when offered: a landed worker's Reviews read its thread, filed or not, under a
   line saying it landed, and its Changes say "Landed on <base>" or "Worktree removed" instead of an empty diff.
   `POST /review/append` still takes any checkout. `/panels.js` adds `threadItemFiles`.
+- A worker's brief shows what other workers sent it by `SendMessage` as their own bubbles, named by the sender's
+  callsign, beside the user's prompts and Claude's answers, in both renderers and in `tower agent`; they count toward
+  `brief.pairs` (API 1.21: a turn of `/conversations/<id>` gains `from`). Stats' "from workers" no longer counts a
+  subagent's hand-back.
 
 ## v1.2.0
 

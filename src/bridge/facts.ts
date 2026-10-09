@@ -1,6 +1,7 @@
 import type { LogEvent, SessionHeader, SessionLog } from '../shared/model.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { isTyped } from './input.ts'
+import { delivered } from './messages.ts'
 import { BOOTING, nextState, type SessionState } from './status.ts'
 
 export type RateLimit = { kind: string; percentUsed: number; resetsAt?: string }
@@ -79,7 +80,7 @@ export type Facts = {
   waits: [at: number, seconds: number][]
   /** When the main loop last stopped, in seconds since the session's start, until its next turn starts. */
   stoppedAt?: number
-  /** Each prompt submitted, at its time (epoch ms), by who it came from (`composer` is the user, `peer` another worker). */
+  /** Each prompt submitted, at its time (epoch ms), by who it came from (`composer` is the user, `peer` another worker, `hand-back` a subagent). */
   prompts: [at: number, origin: string][]
   /** When Claude showed the user a permission dialog (epoch ms): a check settled without one is not an ask. */
   asks: number[]
@@ -155,8 +156,8 @@ export const digestOf = (text: string): number => {
   return h >>> 0
 }
 
-/** A received message is delivered as a prompt wrapping the text as sent. */
-const DELIVERY = /^<cross-session-message [^>]*>\n([\s\S]*)\n<\/cross-session-message>$/
+/** Claude gives a subagent's hand-back a peer's origin: only a message from another Claude session is a peer's. */
+const promptOrigin = (kind: string, text: string) => (kind === 'peer' && !delivered(text) ? 'hand-back' : kind)
 
 const PAGE = /\.html$/
 
@@ -185,7 +186,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     }
     case 'prompt.submit': {
       const { kind } = hook.origin as { kind: string }
-      const prompted = { ...facts, prompts: [...facts.prompts, [at, kind] as [number, string]] }
+      const prompted = { ...facts, prompts: [...facts.prompts, [at, promptOrigin(kind, String(hook.text))] as [number, string]] }
       return facts.stoppedAt === undefined || !USER_ORIGINS.has(kind)
         ? prompted
         : { ...prompted, waits: [...facts.waits, [at, t - facts.stoppedAt]], stoppedAt: undefined }
@@ -200,8 +201,8 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     case 'session.send':
       return { ...facts, sent: [...facts.sent, [at, String(hook.to), digestOf(String(hook.text))]] }
     case 'session.receive': {
-      const text = DELIVERY.exec(String(hook.text))?.[1]
-      return text === undefined ? facts : { ...facts, received: [...facts.received, [at, digestOf(text)]] }
+      const message = delivered(String(hook.text))
+      return message ? { ...facts, received: [...facts.received, [at, digestOf(message.text)]] } : facts
     }
     case 'PermissionRequest':
       return { ...facts, asks: [...facts.asks, at] }

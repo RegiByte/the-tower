@@ -201,7 +201,12 @@ const readThreads = async (id: string): Promise<Brief[]> => {
 const threadLines = (thread: Brief, promptBy: string | undefined): string[] => [
   `Conversation ${thread.id}${thread.resumedBy ? ` (continued by ${thread.resumedBy.callsign}, session ${thread.resumedBy.id})` : ''}`,
   ...(thread.turns.length
-    ? thread.turns.toReversed().flatMap((turn, i) => [`${GIST_MARK.prompt} ${i === 0 ? 'Latest prompt' : 'Earlier prompt'} from ${i === 0 && promptBy ? `${promptBy}, which hired it` : 'the user'}:`, turn.prompt, `${GIST_MARK.answer} ${i === 0 ? 'Latest answer' : 'Answer'}:`, turn.answer ?? '(working on it)'])
+    ? thread.turns.toReversed().flatMap((turn, i, turns) => [
+        `${GIST_MARK.prompt} ${i === 0 ? 'Latest prompt' : 'Earlier prompt'} from ${turn.from ? `${turn.from.callsign}, another worker` : promptBy && turn === turns.find((t) => !t.from) ? `${promptBy}, which hired it` : 'the user'}:`,
+        turn.prompt,
+        `${GIST_MARK.answer} ${i === 0 ? 'Latest answer' : 'Answer'}:`,
+        turn.answer ?? '(working on it)',
+      ])
     : ['(no prompt yet)']),
 ]
 

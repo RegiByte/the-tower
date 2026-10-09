@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
@@ -47,7 +47,8 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   `PostToolUse` body.
 - *A pure reduction.* [`stats`](ref:hub/src/bridge/stats.ts#stats)`(sessions, {from, to, bucket})` gives per
   project and for all: summaries (sessions started, sessions that ran a turn, resumes, spend, tokens by model,
-  agent-hours, turns, prompts by origin, subagents, asks, failures, and the spread (min, p50, avg, p90, max) of waits,
+  agent-hours, turns, prompts by origin (`peer` only a message from another Claude session, a subagent's hand-back
+  `hand-back`), subagents, asks, failures, and the spread (min, p50, avg, p90, max) of waits,
   turn durations and active minutes per session), series per local hour or day, spend and turns by hour of day, and
   concurrency: [`overlap`](ref:hub/src/bridge/stats.ts#overlap) sweeps every main-loop turn span cut to the window (and
   to each bucket) for the wall time anyone worked (`busyHours`), the workers working at once on average over it

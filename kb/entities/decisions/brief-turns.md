@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/turns.ts#turnsByConversation", "hub/src/bridge/turns.ts#lastTurns", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/turns.ts#BriefSession", "hub/src/bridge/board.ts#LineageSession", "hub/src/shared/brief.ts#briefParts", "hub/src/shared/brief.ts#briefHtml", "hub/src/shared/brief.ts#shownFrom", "hub/src/shared/brief.ts#resumedIdle", "hub/src/shared/brief.ts#briefCss", "hub/src/shared/brief.ts#openFolds", "hub/src/shared/model.ts#briefConfig", "hub/src/tower/server.ts#conversations", "hub/src/directory.ts#threadLines", "hub/test/turns.test.ts"],
+  "reviewed": "2026-10-09",
+  "refs": ["hub/src/bridge/turns.ts#turnsByConversation", "hub/src/bridge/turns.ts#lastTurns", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/turns.ts#BriefSession", "hub/src/bridge/turns.ts#PeerFrom", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/src/bridge/board.ts#LineageSession", "hub/src/shared/brief.ts#briefParts", "hub/src/shared/brief.ts#briefHtml", "hub/src/shared/brief.ts#shownFrom", "hub/src/shared/brief.ts#resumedIdle", "hub/src/shared/brief.ts#briefCss", "hub/src/shared/brief.ts#openFolds", "hub/src/shared/model.ts#briefConfig", "hub/src/tower/server.ts#conversations", "hub/src/directory.ts#threadLines", "hub/test/turns.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "reads", "carries": "the session logs of a conversation's resume chain, on each GET /conversations/<id>" },
     { "to": "system-root", "verb": "reads", "carries": "config.json's brief.pairs, project over top level over 2" }
@@ -24,7 +24,7 @@ the useful window.
 
 **Decision.** `GET /conversations/<id>` serves each conversation with `turns`: the last `brief.pairs` (config, the
 project's over the top level's, default 2) turns, oldest first, each a user prompt (`prompt.submit` of the user's
-own origins) with the latest main-loop `turn.complete` answer until the next prompt, and when the prompt was given
+own origins) or a message another worker sent (`from`, below), with the latest main-loop `turn.complete` answer until the next prompt, and when the prompt was given
 (`startedAt`) and the answer (`answeredAt`, that `turn.complete`'s time); a turn with no answer is still being worked
 on. They are read from the log by [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation),
 and a resumed conversation continues from its source session's log, read only while the count falls short. Every
@@ -67,7 +67,20 @@ one the next resumed), so a session's place, "session 2 of 3", is counted from t
   whose turns all began before it did (a session's own turns are its latest, so the brief's last turns show them).
   `briefHtml` marks its label "resumed, no new turns" (`RESUMED_IDLE`, with why in a tip), and Tower 3D's session
   chips say the same ([[logbook]]).
-- `tower agent` prints the current session's conversations in full and one line per earlier session.
+- *Workers' messages are turns* (2026-10-09, API 1.21). A hired worker's later instructions, and every report a
+  coordinator receives, arrive by Claude's `SendMessage` and were invisible in the brief. A turn also opens on a
+  `prompt.submit` of peer origin whose text is a delivery from another Claude session
+  ([`delivered`](ref:hub/src/bridge/messages.ts#delivered): `<cross-session-message from-name="…">`, unwrapped to the
+  text as sent), and carries `from` ([`PeerFrom`](ref:hub/src/bridge/turns.ts#PeerFrom)): the sending session and
+  its worker's callsign, found by [`receipts`](ref:hub/src/bridge/messages.ts#receipts) (the latest receipt of its
+  text before Claude took it), else only the callsign the wrapper names. Its time is when Claude took it, which follows
+  its arrival by minutes when the worker was busy: the answer that follows is to it. Peer turns count toward
+  `brief.pairs` like any other (the user's call, 2026-10-09: a predictable count; a coordinator whose instruction
+  scrolls out raises `pairs`). Task notifications, idle notices and subagent hand-backs open no turn: they are not
+  words from a worker. A conversation's `prompt`, on the board and cards, stays the user's. Fixtures
+  `peer-sender` and `peer-receiver`: two Haiku workers, a ping and its pong.
+- `tower agent` prints the current session's conversations in full and one line per earlier session, a worker's
+  message as "from <callsign>, another worker".
 - The tower memoizes each log for one read: a lineage brief reads every session's log once.
 - *Alternatives.* A `worker` view on the board (settled against with the user, 2026-10-07: the bridge derives the
   lineage). Dropping the turns a resumed conversation reaches back for when the session they came from is in the

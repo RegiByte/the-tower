@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/src/shared/brief.ts#briefHtml",
     "hub/src/shared/brief.ts#briefCss",
@@ -67,7 +67,13 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
   words shown in full ([`expandedSaid`](ref:hub/src/shared/brief.ts#expandedSaid)).
 - *D5, when Claude answered.* A turn carries `answeredAt`, the time of the `turn.complete` that set its answer
   ([`Turn`](ref:hub/src/bridge/turns.ts#Turn)), read from the log like the rest of it. Prompts from peers (a hired
-  worker's later instructions by `SendMessage`) as their own kind of bubble are deferred: they change what a turn is.
+  worker's later instructions by `SendMessage`) were deferred here, since they change what a turn is; they came on
+  2026-10-09 (below).
+- *Workers' messages* (2026-10-09, API 1.21). A turn another worker opened (`turn.from`, [[brief-turns]]) is a third
+  kind of bubble, `.bubble.peer`: on the prompt side, headed by the sender's callsign and when Claude took it
+  ("BEOWULF-38 · 21:24"), in a neutral tint with a dashed edge, so it reads apart from the user's accent prompts and
+  Claude's answers in both schemes (its words measured by `npm run tool:contrast`). Copy and fold as any prompt. The
+  hirer's name (`promptBy`) goes on the latest prompt from the user's side, past any messages after it.
 - *D6, folds.* A prompt or answer over 1,500 characters or 30 lines is folded to its start with a "show all" that is a
   checkbox and CSS alone; the brief's latest answer never folds. The thresholds are constants.
 - *D7, notes.* A review note's body is drawn through `markdownHtml` in the shared Reviews panel

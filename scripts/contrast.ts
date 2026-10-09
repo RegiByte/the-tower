@@ -33,6 +33,7 @@ const PAIRS: Pair[] = [
   ...on(['muted'], ['sunk'], 'text', 'the settings segmented control'),
   ...on(['ink'], ['sunk'], 'text', 'inline code and table heads in rendered words'),
   ...on(['ink', 'muted'], [mix('accent', 12, 'panel')], 'text', 'a prompt in the brief'),
+  ...on(['ink', 'muted'], [mix('ink', 6, 'panel')], 'text', 'a worker’s message in the brief'),
   ...on(['muted'], ['addedWash', 'removedWash'], 'text', "a diff line's +/- sign"),
   ...on(['muted'], ['addedGutter', 'removedGutter', mix('accent', 10, 'panel')], 'text', 'diff line numbers, hunk headers'),
   ...on(['accent'], ['panel', 'panel2'], 'text', 'links, a note’s re'),
