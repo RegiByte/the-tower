@@ -13,7 +13,7 @@ import path from 'node:path'
 import * as pty from '@lydell/node-pty'
 import { sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type ModEvent, type SessionHeader } from '../shared/model.ts'
 import { configPath, sessionLogPath, systemPaths } from '../shared/paths.ts'
-import { frame, HOST_PROTOCOL, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { frame, HOST_PROTOCOL, jsonObject, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { endsLine, firstLine } from '../shared/log-file.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { elapsed, hookFact, sessionArgv, sessionEnv } from './session.ts'
@@ -129,12 +129,14 @@ function handle(msg: ToHost): FromHost {
       return { t: 'ok' }
     case 'live':
       return { t: 'live', ids: [...live.keys()], protocol: HOST_PROTOCOL }
+    default:
+      throw new Error(`Unknown message "${(msg as { t: unknown }).t}": this host speaks protocol ${HOST_PROTOCOL}`)
   }
 }
 
 const reply = (line: string): FromHost => {
   try {
-    return handle(JSON.parse(line))
+    return handle(jsonObject(line) as ToHost)
   } catch (err) {
     return { t: 'error', message: (err as Error).message }
   }
@@ -158,9 +160,9 @@ const hooks = http.createServer((req, res) => {
     }
     let input: ClaudeHookInput | ModEvent
     try {
-      input = JSON.parse(body)
-    } catch {
-      res.writeHead(400).end()
+      input = jsonObject(body) as ClaudeHookInput | ModEvent
+    } catch (err) {
+      res.writeHead(400, { 'content-type': 'text/plain' }).end((err as Error).message)
       return
     }
     append(s, [now(s), 'h', hookFact(input)])

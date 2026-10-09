@@ -14,7 +14,7 @@ import { serializer, type Terminal } from '../bridge/screen.ts'
 import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import { sessionDirs, type Config } from '../shared/model.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
-import { frame, onLines } from '../shared/protocol.ts'
+import { frame, jsonObject, onLines } from '../shared/protocol.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { SHELL_SCROLLBACK, type FromTerms, type Shell, type ShellStream, type ToTerms } from '../shared/terms.ts'
 
@@ -103,6 +103,8 @@ function handle(msg: Exclude<ToTerms, { t: 'attach' }>): FromTerms {
       return { t: 'ok' }
     case 'list':
       return { t: 'shells', shells: [...shells.values()].map(listed) }
+    default:
+      throw new Error(`Unknown message "${(msg as { t: unknown }).t}"`)
   }
 }
 
@@ -139,7 +141,7 @@ const control = net.createServer((sock) => {
   onLines(sock, (line) => {
     let msg: ToTerms
     try {
-      msg = JSON.parse(line)
+      msg = jsonObject(line) as ToTerms
     } catch (err) {
       return sock.write(frame({ t: 'error', message: (err as Error).message } satisfies FromTerms))
     }

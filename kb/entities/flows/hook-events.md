@@ -4,7 +4,7 @@
   "name": "Hook events",
   "summary": "How what Claude does inside a session reaches its log: classic hooks over curl and mod events over fetch, both declared by the tower mod, both into the host's hooks socket.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "involves": ["claude-code", "tower-mod", "host-daemon", "system-root", "log-reductions"],
   "refs": ["hub/src/mod/hooks/hooks.json", "hub/src/mod/hooks/register.js#forward", "hub/src/host/main.ts#hooks", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy"]
 }
@@ -41,4 +41,4 @@ sequenceDiagram
   interrupts and failures, its `turn.step` carries model, effort and the text Claude showed the user that
   step, and its `session.measure` carries context, cost and rate limits. Claude's conversation id comes only from classic hooks (`session_id`).
 - **Failure.** A post that fails makes the hook exit non-zero; Claude reports it without blocking the
-  session. A post for a session the host does not run gets 404.
+  session. A post for a session the host does not run gets 404, one whose body isn't a JSON object 400.

@@ -33,6 +33,13 @@ export type FromHost =
 
 export const frame = (msg: object): string => `${JSON.stringify(msg)}\n`
 
+/** Text read as a JSON object; any other JSON value is refused, saying what it was. */
+export const jsonObject = (text: string): object => {
+  const value: unknown = JSON.parse(text)
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) return value
+  throw new Error(`Expected a JSON object, got ${Array.isArray(value) ? 'an array' : value === null ? 'null' : typeof value}`)
+}
+
 /** Calls `onLine` with each complete newline-delimited line received on `sock`. */
 export const onLines = (sock: net.Socket, onLine: (line: string) => void): void => {
   let buffered = ''
