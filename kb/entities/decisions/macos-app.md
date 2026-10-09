@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-09",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/app.ts#openApp", "hub/src/cli.ts", "hub/apps/macos/Sources/Start.swift#startTower", "hub/apps/macos/Sources/Start.swift#loginEnvironment", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
+  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Start.swift#startTower", "hub/apps/macos/Sources/Start.swift#loginEnvironment", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
 }
 ---
 **Problem.** The tower lives in a browser tab, one among many: no Dock icon or window of its own, and it is gone with
@@ -49,7 +49,9 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   tower and every session running, as closing a tab does.
 - **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
   than the build, writes the checkout and the config into the bundle's `Info.plist` (so the app needs no setting),
-  signs it ad hoc for this machine, and opens it. One app per system: the default config's is `Tower.app`, another's is
+  signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, the tower page's skyline at
+  dusk, rendered into the bundle's `AppIcon.icns` with Quick Look, `sips` and `iconutil` when it changed: drawn full
+  bleed, since macOS 26 masks an app icon into its own shape and puts one that brings a shape of its own on a plate. One app per system: the default config's is `Tower.app`, another's is
   named after its system root (`Tower (tower-sandbox).app`), each with a bundle id of its own. All of it under the
   git-ignored `apps/macos/out/`.
 
