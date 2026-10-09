@@ -4,6 +4,7 @@ import { nextState, readsOutput, type SessionState } from './bridge/status.ts'
 import type { LogEvent, SessionHeader, SessionLog } from './shared/model.ts'
 import { firstLine } from './shared/log-file.ts'
 import { sessionLogPath, type SystemPaths } from './shared/paths.ts'
+import { logged, watchedLoudly } from './logged.ts'
 
 const READ_CHUNK = 64 * 1024
 
@@ -200,7 +201,7 @@ export const tailLog = (logPath: string, offset: number, filter: EventFilter, on
   let partial: Buffer = Buffer.alloc(0)
   let closed = false
 
-  const drain = () => {
+  const drain = logged(`tail of ${logPath}`, () => {
     if (closed) return
     const chunks: Buffer[] = [partial]
     const buf = Buffer.alloc(READ_CHUNK)
@@ -211,9 +212,9 @@ export const tailLog = (logPath: string, offset: number, filter: EventFilter, on
     const { lines, rest } = completeLines(Buffer.concat(chunks))
     partial = rest
     for (const event of eventsIn(lines, filter)) if (!closed) onEvent(event)
-  }
+  })
 
-  const watcher = watch(logPath, drain)
+  const watcher = watchedLoudly(watch(logPath, drain), logPath)
   queueMicrotask(drain)
   return () => {
     if (closed) return

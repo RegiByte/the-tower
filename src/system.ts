@@ -19,6 +19,7 @@ import type { Shell } from './shared/terms.ts'
 import type { LogFile } from './bridge/retention.ts'
 import { factEvents, isArchived, logFilesIn, logIdOf, tailLog } from './tail.ts'
 import { readRepo } from './worktrees.ts'
+import { logged, loggedRead, watchedLoudly } from './logged.ts'
 
 const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
@@ -197,44 +198,48 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
    */
   let rescanTimer: NodeJS.Timeout | undefined
   const scheduleRescan = () => {
-    rescanTimer ??= setTimeout(() => {
-      rescanTimer = undefined
-      const next = scanCollections(paths)
-      if (asJson(next) === asJson(items)) return
-      items = next
-      threads = threadsIn(paths, items, threads)
-      onChange()
-    }, RESCAN_DEBOUNCE_MS)
+    rescanTimer ??= setTimeout(
+      logged('collections', () => {
+        rescanTimer = undefined
+        const next = scanCollections(paths)
+        if (asJson(next) === asJson(items)) return
+        items = next
+        threads = threadsIn(paths, items, threads)
+        onChange()
+      }),
+      RESCAN_DEBOUNCE_MS,
+    )
   }
 
-  const refreshLive = async () => {
+  /** Every read below that fails keeps its last read, and the failure goes to the tower's log: the next poll reads again. */
+  const refreshLive = loggedRead('host', async () => {
     const next = await hostLive(paths)
     if (asJson(next) === asJson(live)) return
     live = next
     onChange()
-  }
+  })
 
-  const refreshShells = async () => {
+  const refreshShells = loggedRead('terms daemon', async () => {
     const next = await termsShells(paths)
     if (asJson(next) === asJson(shells)) return
     shells = next
     onChange()
-  }
+  })
 
-  const refreshRunning = serially(async () => {
+  const refreshRunning = serially(loggedRead('processes', async () => {
     const scan = await scanProcesses()
     const next = { running: await resourcesIn(scan), peers: peersIn(scan) }
     if (asJson(next) === asJson({ running, peers })) return
     running = next.running
     peers = next.peers
     onChange()
-  })
+  }))
 
   /**
    * A dir git fails to read keeps its last read, and the failure goes to the tower's log. A config the tower can't
    * read keeps every last read: the board says what to fix.
    */
-  const refreshRepos = serially(async () => {
+  const refreshRepos = serially(loggedRead('git', async () => {
     let config: Config
     try {
       config = readConfig(paths.config)
@@ -254,7 +259,7 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     if (asJson(next) === asJson(repos)) return
     repos = next
     onChange()
-  })
+  }))
 
   /** The machine is read only while someone observes it: a scan of every process and every repo's git costs about 0.6 s. */
   let observers = 0
@@ -275,15 +280,21 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
   }
 
   trackNew()
-  watch(paths.sessions, (_, file) => {
-    if (file && logFilesIn([file]).length) refoldGrown(file)
-    trackNew()
-  })
+  watchedLoudly(
+    watch(
+      paths.sessions,
+      logged('sessions', (_: string, file: string | null) => {
+        if (file && logFilesIn([file]).length) refoldGrown(file)
+        trackNew()
+      }),
+    ),
+    paths.sessions,
+  )
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)
-  watch(paths.collections, { recursive: true }, scheduleRescan)
-  watch(path.dirname(paths.config), (_, file) => file === path.basename(paths.config) && onChange())
+  watchedLoudly(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
+  watchedLoudly(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
   await refreshShells()
   setInterval(refreshLive, LIVE_POLL_MS)

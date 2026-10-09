@@ -5,7 +5,7 @@
   "summary": "watchSystem: every session log folded and tailed, every collection's items, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
   "in": "bridge",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/worktrees.ts#readRepo"],
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, read to its last full line from its checkpoint on, then tailed while the session runs; collections/ rescanned on any change" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, each log's checkpoint, moved on by every fold that read past it" },
@@ -55,3 +55,8 @@ the terms daemon is down, which renderers show as such.
 without fetching, every command with `--no-optional-locks` so a read never takes the index lock a worker's git needs.
 One read runs at a time (a refresh asked during one runs once more after it, [`serially`](ref:hub/src/system.ts#serially), as the process scan does); a dir git fails to read keeps its last
 read and the failure is logged ([[tower-cuts-worktrees]]).
+
+No poll or watch can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails (the host, the terms
+daemon, the process scan, git) keeps its last read and says why in the tower's log, and the next poll reads again; a
+watcher's callback (the sessions directory, a log's tail, the collections' rescan, the config) that throws is logged
+and runs again on the next change; a watcher that fails says in the log what is no longer watched.
