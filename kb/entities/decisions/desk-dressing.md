@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#PROPS",

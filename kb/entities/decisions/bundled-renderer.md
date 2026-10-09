@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts"]
 }
 ---
