@@ -630,7 +630,7 @@ export function statsHtml(v: StatsView) {
     tileHtml('commits landed', `${sum.git.commits}`, `${plural(sum.git.merges, 'merge')} · ${branchNote(sum.git.repos)}`),
     tileHtml('lines changed', `<span class="add">+${count(sum.git.added)}</span> <span class="del">−${count(sum.git.removed)}</span>`, 'on the default branches'),
     ...(budget ? [tileHtml('left this week', budget.usdLeft === undefined ? '–' : `≈ ${usd(budget.usdLeft)}`,
-      `${budget.percentUsed}% used${budget.usdPerPercent === undefined ? '' : ` · ${usd(budget.usdPerPercent)} per 1%`}${budget.pace ? ` · ${paceWords(budget.pace, Date.now()).map(esc).join(' · ')}` : ''}`)] : []),
+      `${budget.percentUsed}% used${budget.usdPerPercent === undefined ? '' : ` · ${usd(budget.usdPerPercent)} per 1%`}${budget.pace ? `<br>${paceWords(budget.pace, Date.now()).map(esc).join('<br>')}` : ''}`)] : []),
   ].join('')
   const per = hourly ? 'per hour' : 'per day'
   const hoursOfDay = Array.from({ length: 24 }, (_, h) => ({ label: hourOf(h), title: `${hourOf(h)} to ${hourOf((h + 1) % 24)}` }))

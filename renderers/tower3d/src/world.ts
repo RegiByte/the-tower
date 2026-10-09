@@ -370,8 +370,8 @@ export function paintStatsBoard(face: World['statsBoard'], today: Today) {
   })
   if (today.budget?.pace) {
     g.fillStyle = WORLD.muted
-    g.font = `400 20px ${type.ui}`
-    g.fillText(paceWords(today.budget.pace, wallNow()).join(' · '), 28, 128 + rows.length * 66 - 30)
+    g.font = `400 19px ${type.ui}`
+    g.fillText(paceWords(today.budget.pace, wallNow()).join(' · '), 28, 128 + (rows.length - 1) * 66 + 24)
   }
   g.fillStyle = WORLD.faint
   g.font = `400 20px ${type.ui}`
