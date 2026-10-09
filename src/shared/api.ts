@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.35'
+export const API_VERSION = '1.36'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -250,6 +250,14 @@ export const VERBS = {
  * verbs. Times are epoch ms.
  */
 export const QUERIES = {
+  'changes/<id>': z
+    .object({
+      scope: z
+        .union([z.enum(['all', 'uncommitted']), z.string().regex(/^[0-9a-f]{7,40}$/, 'a commit hash')])
+        .default('all')
+        .describe("`all`: everything since the branch's base; `uncommitted`: only what isn't committed (since `HEAD`); a commit of the repo's `commits`: that commit's own changes."),
+    })
+    .describe("What changed in each of the session's repos, as git reads it now, with the commits since each repo's base."),
   stats: z
     .object({
       from: z.coerce.number().int().optional().describe("The window's start; the local day's start six days before `to` when left out."),

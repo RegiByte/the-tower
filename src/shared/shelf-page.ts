@@ -28,7 +28,7 @@ export type Reads = {
   'conversations/<id>': Brief[]
   /** A project's cards the board leaves out (`onBoard`), newest first: the same cards, read again when `board.archiveAt` or the floor's `archived` moves. */
   'archive/<project>': Card[]
-  /** What changed in each of the session's repos, as git reads it now. */
+  /** What changed in each of the session's repos, as git reads it now, `changes/<id>?scope` (`Queries['changes/<id>']`): all since the base, uncommitted, or one commit. */
   'changes/<id>': RepoChanges[]
   /** A project's review threads, live and landed (Tidy files a landed one as `<checkout>@<time>.md`), and each author's notes, replies and verdicts. */
   'reviews/<project>': ReviewHistory

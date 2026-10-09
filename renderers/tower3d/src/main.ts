@@ -5,7 +5,7 @@ import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, o
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import type { CheckoutState, FloorThread } from '../../../src/bridge/reviews.ts'
 import type { NoteCalls } from '../../../src/bridge/verbs.ts'
-import { changesFailed, changesOf, markViewed, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead, type ThreadAt } from './reviews.ts'
+import { changesFailed, changesOf, compare, markViewed, scopeOf, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead, type ThreadAt } from './reviews.ts'
 import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
@@ -1884,7 +1884,7 @@ function threadView(at: ShownThread): ThreadView {
   const worker = workerIn(f, checkout)
   return {
     checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: threadOf(s.board!, at), failed: threadFailed(s.board!, at),
-    reader: worker?.onDuty ? worker : undefined, changes: worker && changesOf(worker.id)?.repos, targets: sendTargets(f, checkout),
+    reader: worker?.onDuty ? worker : undefined, changes: worker && scopeOf(worker.id) === 'all' ? changesOf(worker.id)?.repos : undefined, targets: sendTargets(f, checkout),
     target: sendTarget(project, checkout), re: s.noteRe, user: s.board!.user.name, files: threadItemFiles(f, checkout, at.id), state: at.state, noting: noting(at),
   }
 }
@@ -1906,7 +1906,7 @@ function drawChanges(c: Card) {
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, deskThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.diffLayout }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, deskThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.diffLayout, scope: scopeOf(c.id) }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -1935,7 +1935,7 @@ function toggleFold(key: string) {
 
 function toggleViewed(read: ChangesRead, key: string) {
   const [repo, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
-  markViewed(read, repo.dir, marksToggled(read.viewed, repo, f))
+  markViewed(read, repo, marksToggled(read.viewed, repo, f))
   s.folds.delete(key)
   keepingFileTop($('desk-changes'), key, renderPanel)
 }
@@ -1962,7 +1962,8 @@ function openChanges(id: string, jump: Anchor | undefined) {
   show('desk-brief', false)
   show('desk-reviews', false)
   closeShown()
-  readChanges(id, wallNow())
+  if (jump && scopeOf(id) !== 'all') compare(id, 'all', wallNow())
+  else readChanges(id, wallNow())
   show('desk-changes', true)
   renderPanel()
 }
@@ -2067,6 +2068,13 @@ for (const id of ['desk-reviews', 'doc-body']) {
     if (at && noting(at)) addNote(at)
   })
 }
+$('desk-changes').addEventListener('change', (e) => {
+  const el = e.target as HTMLSelectElement
+  if (s.panel?.kind !== 'desk' || !el.matches('[data-changes-scope]')) return
+  s.pick = undefined
+  compare(s.panel.id, el.value, wallNow())
+  renderPanel()
+})
 $('desk-changes').addEventListener('click', (e) => {
   if (s.panel?.kind !== 'desk') return
   const el = e.target as HTMLElement

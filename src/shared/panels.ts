@@ -9,6 +9,8 @@
  *   Changes
  *   data-changes-read          read the worker's Changes again
  *   data-changes-layout="<l>"  draw diffs unified or split side by side (`DIFF_LAYOUTS`), the viewer's, kept under `DIFF_LAYOUT_KEY`
+ *   data-changes-scope         what to compare (a select, drawn while the repos have commits since their base): its value
+ *                              is a scope, `all`, `uncommitted` or a commit's hash; read again at `changesPath`
  *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
  *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current
  *   data-file="<key>"          a file's section, by `fileKey`
@@ -84,6 +86,24 @@ export function fileCall(target: Element): Call<'reveal' | 'edit'> | undefined {
   return ['edit', line ? { path: edit.dataset.edit!, line: Number(line) } : { path: edit.dataset.edit! }]
 }
 
+/**
+ * What the Changes compare, the `scope` of `changes/<id>`: everything since the base, what isn't committed, or a
+ * commit's hash, that commit's own changes. Each repo says which it shows (`RepoChanges.shows`).
+ */
+export type ChangesScope = 'all' | 'uncommitted' | (string & {})
+/** The read of a worker's Changes under a scope. */
+export const changesPath = (id: string, scope: ChangesScope) => `changes/${id}${scope === 'all' ? '' : `?scope=${scope}`}`
+/** A scope that compares one commit: its lines aren't the working tree's, which notes anchor to, so none are picked. */
+export const isCommitScope = (scope: ChangesScope) => scope !== 'all' && scope !== 'uncommitted'
+/** The scope still there to show: a commit no repo lists any more (rebased, amended) falls back to `all`. */
+export const liveScope = (repos: RepoChanges[], scope: ChangesScope): ChangesScope =>
+  !isCommitScope(scope) || repos.some((r) => r.commits.some((c) => c.sha === scope)) ? scope : 'all'
+/**
+ * Where a repo's marks are kept in `tower.store`, apart for each scope it shows: a file's diff differs between them,
+ * and a commit's marks hold for good, as the commit does.
+ */
+export const viewedKey = (repo: Pick<RepoChanges, 'dir' | 'shows'>) => `viewed:${repo.dir}${repo.shows === 'all' ? '' : `@${repo.shows}`}`
+
 /** Each repo dir's marks: a file's path → the hash of the diff it was viewed at. */
 export type Viewed = Record<string, Record<string, string>>
 /** A worker's Changes as last read, at `at` (ms), with the viewer's marks. */
@@ -100,11 +120,12 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
  * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
  * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop. `state`: where
  * the worker's own checkout stands (`card.checkoutState`); `noting`: the worker offers `note`, so lines can be picked.
- * `layout`: each file's diff as one column of lines, or its old side and new side by side.
+ * `layout`: each file's diff as one column of lines, or its old side and new side by side. `scope`: what the read
+ * compares, the picker's choice; on a commit no lines are picked or marked noted.
  */
 export type ChangesView = {
   read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string
-  state: CheckoutState; noting: boolean; layout: DiffLayout
+  state: CheckoutState; noting: boolean; layout: DiffLayout; scope: ChangesScope
 }
 
 /** How the Changes panel draws a file's diff: one column of lines, or the old side and the new side by side. */
@@ -164,7 +185,7 @@ export const viewedCount = (read: ChangesRead) => {
   return { viewed: files.filter(([repo, f]) => isViewed(read.viewed, repo, f)).length, files: files.length }
 }
 
-/** A repo's marks with `f`'s flipped, keeping only files still changed: what to store under `viewed:<dir>`. */
+/** A repo's marks with `f`'s flipped, keeping only files still changed: what to store under its `viewedKey`. */
 export function marksToggled(viewed: Viewed, repo: RepoChanges, f: DiffFile): Record<string, string> {
   const marks = { ...viewed[repo.dir] }
   if (isViewed(viewed, repo, f)) delete marks[f.path]
@@ -412,14 +433,40 @@ export function changesHtml(v: ChangesView) {
   const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span data-since="${read.at}"></span> ago</span>${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
-  return `<div class="changes-panel">${settled}${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: v.noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
+      <span>read <span data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
+  const noting = v.noting && !isCommitScope(v.scope)
+  const repos = isCommitScope(v.scope) ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
+  return `<div class="changes-panel">${settled}${head}${repos.map((repo) => repoHtml({ ...v, read, noting, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
+}
+
+/**
+ * The picker of what to compare: all since the base, what isn't committed, or one of the commits since the base, newest
+ * first (each under its repo's name when more than one repo has some). Drawn only while there are commits: without
+ * them, all is what isn't committed.
+ */
+function scopeHtml(repos: RepoChanges[], scope: ChangesScope) {
+  const withCommits = repos.filter((r) => r.commits.length)
+  if (!withCommits.length) return ''
+  const option = (value: string, label: string, tip?: string) =>
+    `<option value="${esc(value)}" ${value === scope ? 'selected' : ''}${tip ? ` title="${esc(tip)}"` : ''}>${esc(label)}</option>`
+  const commits = withCommits.map((r) => `<optgroup label="${esc(withCommits.length > 1 ? `${repoName(r.dir)}: commits` : 'commits')}">${
+    r.commits.map((c) => option(c.sha, `${c.sha.slice(0, 7)} ${c.subject}`, c.at)).join('')}</optgroup>`).join('')
+  return `<select class="scope" data-changes-scope aria-label="compare" data-tip="what to compare: all since the base, what isn't committed, or one commit">${
+    option('all', 'All changes')}${option('uncommitted', 'Uncommitted')}${commits}</select>`
 }
 
 type ReadView = ChangesView & { read: ChangesRead }
 
+/** What a repo's files are counted from, as its head says it. */
+function repoSince(repo: RepoChanges) {
+  if (repo.shows === 'uncommitted') return '<span>uncommitted, since</span><code>HEAD</code>'
+  if (repo.shows === 'all') return `<span>since</span><code>${esc(repo.against)}</code>${repo.against === 'HEAD' ? '' : `<code>${esc(repo.since.slice(0, 7))}</code>`}`
+  const commit = repo.commits.find((c) => c.sha === repo.shows)!
+  return `<span>commit</span><code>${esc(commit.sha.slice(0, 7))}</code><span class="subject">${esc(commit.subject)}</span>`
+}
+
 const repoHtml = (v: ReadView, repo: RepoChanges) =>
-  `<div class="repo-head"><b class="eyebrow">${esc(repoName(repo.dir))}</b><span>since</span><code>${esc(repo.against)}</code>${repo.against === 'HEAD' ? '' : `<code>${esc(repo.since.slice(0, 7))}</code>`}</div>` +
+  `<div class="repo-head"><b class="eyebrow">${esc(repoName(repo.dir))}</b>${repoSince(repo)}</div>` +
   (repo.files.map((f) => fileHtml(v, repo, f)).join('') || '<p class="none">no changes</p>') +
   (repo.more ? `<p class="none">${repo.more} more untracked files not shown</p>` : '')
 
@@ -850,8 +897,11 @@ export const panelsCss = `
 .changes-head .seg button:hover { color: var(--ink); }
 .changes-head .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
 .changes-head > button { margin-left: 0; }
+.changes-head select.scope { max-width: 280px; margin-left: auto; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+.changes-head select.scope + .seg { margin-left: 0; }
 .changes-panel .repo-head { display: flex; align-items: baseline; gap: var(--sp-m); margin: var(--sp-xl) 0 var(--sp-s); font: var(--fs-s)/1.4 var(--ui); color: var(--muted); }
 .changes-panel .repo-head b { color: var(--ink); }
+.changes-panel .repo-head .subject { min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
 .changes-panel .file { margin: 0 0 var(--sp-m); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); scroll-margin-top: var(--changes-head-h); }
 .changes-panel .file > header { position: sticky; top: var(--changes-head-h); z-index: 1; display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); cursor: pointer;
   background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; font-size: var(--fs-m); }

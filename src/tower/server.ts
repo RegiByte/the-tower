@@ -16,7 +16,7 @@
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
  *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
- *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now (src/changes.ts)
+ *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
  *                                        branches, read from git now (src/bridge/stats.ts), the query by its schema
  *   GET  /shell/<id>    SSE: a snapshot of the shell's screen, then its output, from the terms daemon
@@ -204,13 +204,16 @@ function conversations(res: http.ServerResponse, id: string) {
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logOf, pairs, callsignsOf(config))))
 }
 
-async function changes(res: http.ServerResponse, id: string) {
+async function changes(res: http.ServerResponse, id: string, search: string | undefined) {
+  const query = QUERIES['changes/<id>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
+  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+  const { scope } = query.data
   const session = system.session(id)
   if (!session) return fail(res, 'not_found', `No session "${id}"`)
   const { project, cwd } = session.header
   const config = readConfig()
   if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(await changesIn(sessionDirs(config.projects[project], cwd))))
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })))
 }
 
 const DAY_MS = 86_400_000
@@ -1019,8 +1022,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (req.method === 'GET' && held) return conversations(res, held)
   const reviewed = /^\/reviews\/([\w-]+)$/.exec(url)?.[1]
   if (req.method === 'GET' && reviewed) return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(reviewHistory(system.threads().filter((t) => t.project === reviewed))))
-  const changed = /^\/changes\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && changed) return changes(res, changed)
+  const changed = /^\/changes\/([\w-]+)(?:\?(.*))?$/.exec(url)
+  if (req.method === 'GET' && changed) return changes(res, changed[1], changed[2])
   const screen = /^\/screen\/([\w-]+)$/.exec(url)?.[1]
   if (req.method === 'GET' && screen) return streamScreen(screen, req, res)
   const shell = /^\/shell\/([\w-]+)$/.exec(url)?.[1]

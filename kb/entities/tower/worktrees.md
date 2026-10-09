@@ -35,5 +35,6 @@
 - **Changes.** `src/changes.ts`: [`changesIn`](ref:hub/src/changes.ts#changesIn) is what `/changes/<id>`
   serves: for each repo of a session, the diff since the ref its work is counted from
   ([`againstFor`](ref:hub/src/worktrees.ts#againstFor): the tower's base in a worktree, else the upstream,
-  else `HEAD`), staged, unstaged and untracked files together, parsed by the bridge's diff parser. Git is read
+  else `HEAD`), staged, unstaged and untracked files together, parsed by the bridge's diff parser, with the commits
+  since that ref; `?scope=uncommitted` narrows it to the diff since `HEAD`, `?scope=<commit>` to one of those commits. Git is read
   on every request, never kept; the viewed marks are the viewer's ([[changes-view]]).
