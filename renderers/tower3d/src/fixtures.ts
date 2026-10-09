@@ -413,7 +413,7 @@ Before this lands: who still reads \`LEGACY_FLAGS\`?
 /** What the author's Changes read gives: its quoted lines still there at the lines quoted, the config line since renamed. */
 const AUTHOR_CHANGES: RepoChanges[] = [
   {
-    dir: '/work/lab-api/.worktrees/retry-budget', against: 'origin/main', since: '3f2a9c1e', more: 0,
+    dir: '/work/lab-api/.worktrees/retry-budget', against: 'origin/main', since: '3f2a9c1e', commits: [], shows: 'all', more: 0,
     files: [
       { path: 'src/scheduler.ts', change: 'modified', binary: false, added: 5, removed: 1, hash: 'a1', hunks: [
         { old: 1, new: 1, heading: '', lines: [" import { run } from './run.ts'", "+import { bucketFor } from './bucket.ts'", " import type { Job } from './job.ts'"] },
@@ -436,7 +436,7 @@ const AUTHOR_CHANGES: RepoChanges[] = [
     ],
   },
   {
-    dir: '/work/lab/.worktrees/retry-budget', against: 'origin/main', since: '9b0c44d2', more: 0,
+    dir: '/work/lab/.worktrees/retry-budget', against: 'origin/main', since: '9b0c44d2', commits: [], shows: 'all', more: 0,
     files: [{ path: 'README.md', change: 'modified', binary: false, added: 2, removed: 0, hash: 'e5', hunks: [{ old: 3, new: 3, heading: '', lines: [
       ' Run it with `npm start`.', '+', '+Retries are budgeted per minute: `RETRIES_PER_MINUTE` in `src/config.ts`.',
     ] }] }],

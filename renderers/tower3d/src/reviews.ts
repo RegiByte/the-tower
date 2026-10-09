@@ -1,5 +1,5 @@
 import type { RepoChanges } from '../../../src/changes.ts'
-import type { ChangesRead as Read } from '../../../src/shared/panels.ts'
+import { changesPath, liveScope, viewedKey, type ChangesRead as Read, type ChangesScope } from '../../../src/shared/panels.ts'
 import { REVIEWS, parseThread, type ReviewThread } from '../../../src/shared/reviews.ts'
 import { tower, type Board } from './api.ts'
 import { FIXTURE, FIXTURE_CHANGES, FIXTURE_THREADS } from './fixtures.ts'
@@ -77,36 +77,44 @@ export const rereadThread = (at: ThreadAt) => threads.delete(keyOf(at))
 export const threadRead = (board: Board, at: ThreadAt): Promise<ReviewThread> =>
   entryOf(board, at)?.read ?? Promise.resolve(emptyThread(at.checkout))
 
-/** A worker's Changes as last read, with each repo's viewed marks (path → the hash it was marked at), by repo dir. */
-export type ChangesRead = Read & { id: string }
+/** A worker's Changes as last read under `scope`, with each repo's viewed marks (path → the hash it was marked at), by repo dir. */
+export type ChangesRead = Read & { id: string; scope: ChangesScope }
 
 const changes = new Map<string, ChangesRead>()
-export const changesOf = (id: string) => changes.get(id)
+/** What each worker's Changes compare, by its id: all since the base until the viewer picks another. */
+const scopes = new Map<string, ChangesScope>()
+export const scopeOf = (id: string): ChangesScope => scopes.get(id) ?? 'all'
+/** A worker's Changes as last read under the scope it compares now. */
+export const changesOf = (id: string) => (changes.get(id)?.scope === scopeOf(id) ? changes.get(id) : undefined)
+/** Compares a worker's Changes under another scope, read now. */
+export const compare = (id: string, scope: ChangesScope, now: number) => (scopes.set(id, scope), readChanges(id, now))
 /** Why a worker's Changes couldn't be read, by its id, while none is held. */
 const changesFailures = new Map<string, string>()
 export const changesFailed = (id: string) => (changes.has(id) ? undefined : changesFailures.get(id))
 
-const readRepos = (id: string): Promise<RepoChanges[]> =>
-  FIXTURE === undefined ? (tower.get as (path: string) => Promise<RepoChanges[]>)(`changes/${id}`) : Promise.resolve(FIXTURE_CHANGES[id] ?? [])
+const readRepos = (id: string, scope: ChangesScope): Promise<RepoChanges[]> =>
+  FIXTURE === undefined ? (tower.get as (path: string) => Promise<RepoChanges[]>)(changesPath(id, scope)) : Promise.resolve(FIXTURE_CHANGES[id] ?? [])
 
-const readViewed = (dir: string) => (FIXTURE === undefined ? tower.store.get(`viewed:${dir}`) : Promise.resolve(undefined)) as Promise<Record<string, string> | undefined>
+const readViewed = (repo: RepoChanges) => (FIXTURE === undefined ? tower.store.get(viewedKey(repo)) : Promise.resolve(undefined)) as Promise<Record<string, string> | undefined>
 
 /** Reads a worker's Changes now, with the viewed marks every renderer in this browser keeps. */
-export async function readChanges(id: string, now: number) {
-  const repos = await readRepos(id).catch((err: Error) => {
+export async function readChanges(id: string, now: number): Promise<void> {
+  const scope = scopeOf(id)
+  const repos = await readRepos(id, scope).catch((err: Error) => {
     if (changes.has(id)) return void failed(err)
     changesFailures.set(id, err.message)
     arrived()
   })
-  if (!repos) return
+  if (!repos || scopeOf(id) !== scope) return
   changesFailures.delete(id)
-  const marks = await Promise.all(repos.map((r) => readViewed(r.dir)))
-  changes.set(id, { id, repos, at: now, viewed: Object.fromEntries(repos.map((r, i) => [r.dir, marks[i] ?? {}])) })
+  if (liveScope(repos, scope) !== scope) return compare(id, 'all', now)
+  const marks = await Promise.all(repos.map(readViewed))
+  changes.set(id, { id, scope, repos, at: now, viewed: Object.fromEntries(repos.map((r, i) => [r.dir, marks[i] ?? {}])) })
   arrived()
 }
 
 /** Keeps a repo's viewed marks, for the read it was marked on and every renderer in this browser; a fixture board keeps them in the page. */
-export function markViewed(read: ChangesRead, dir: string, marks: Record<string, string>) {
-  read.viewed[dir] = marks
-  if (FIXTURE === undefined) tower.store.set(`viewed:${dir}`, marks)
+export function markViewed(read: ChangesRead, repo: RepoChanges, marks: Record<string, string>) {
+  read.viewed[repo.dir] = marks
+  if (FIXTURE === undefined) tower.store.set(viewedKey(repo), marks)
 }

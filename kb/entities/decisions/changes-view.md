@@ -7,9 +7,9 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
   "links": [
-    { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>: each of the session's repos with its files and hunks" }
+    { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
 }
 ---
@@ -78,6 +78,26 @@ word changed (`x = foo` → `x = bar`) reads as rewritten and is not marked. The
 on the page's thread, so it is bounded: it gives up past half a pair's tokens changed, or past 100 (`WORDS_EDITS`),
 and the pair is left unmarked. Unbounded, 200 rewritten lines of 1000 characters took 5 s; bounded, 150 ms. In the
 same history an edited line changed a median of 9 tokens, and 2 of 2419 more than 100.
+
+**Compare (2026-10-09).** All since the base is the whole of the work; a reviewer often wants a slice of it. The read
+takes a `scope` (`QUERIES['changes/<id>']`): `all` (the default, as above), `uncommitted` (the working tree since
+`HEAD`, untracked files with it: what the worker hasn't committed yet), or a commit's hash, that commit's own diff
+against its first parent. Each repo carries `commits`, the commits since its base newest first (up to 200), whatever
+the scope, and `shows`, which it drew; a hash that isn't one of a repo's `commits` shows nothing there, so no ref
+but those reaches git. The panel's head has the picker (`data-changes-scope`: All changes, Uncommitted, then each
+commit, under its repo's name when more than one repo has some), drawn only while some repo has commits since its
+base: in a worktree that has committed, or a main checkout with unpushed commits, the same two places the base
+already counts from. Without commits, all *is* uncommitted, so there is nothing to choose. The choice is the
+viewer's for that worker, kept in the renderer's memory: a worker opens on All, and a commit no repo lists any
+more (rebased, amended) falls back to it ([`liveScope`](ref:hub/src/shared/panels.ts#liveScope)).
+- **Marks per scope.** A file's diff differs between scopes, so each keeps its own marks
+  ([`viewedKey`](ref:hub/src/shared/panels.ts#viewedKey): `viewed:<dir>` for all, `viewed:<dir>@uncommitted`,
+  `viewed:<dir>@<commit>`). One key for all would let a commit's marks prune or overwrite all's. A commit's marks
+  hold for good, as the commit does.
+- **No notes on a commit.** Notes anchor to line numbers of the working tree ([[review-threads]]); a commit's new side
+  is the file as it was then. On a commit, no lines are picked and none are marked noted, and an anchor opened from
+  Reviews switches back to All. Uncommitted's new side is the working tree, so it picks and marks as All does. The
+  Reviews panel reads anchor states from an All read only.
 
 **Impact.** The tower page has a Changes pane beside Terminal and Brief, and Tower 3D the same view at a desk, with a viewed/total tally on its tab.
 It is the surface review threads anchor notes to: its line numbers pick lines for a note, one by a click or a range

@@ -437,7 +437,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -1009,8 +1009,17 @@ let changesPoll
 /** Files the viewer folded or unfolded against what their viewed mark says, by `fileKey`; this page only. */
 const folds = new Set()
 
-/** The marks of a repo are shared by every renderer in this browser, through `tower.store`. */
-const viewedKey = (dir) => `viewed:${dir}`
+/** What the selected worker's Changes compare (`ChangesScope`), all since the base until the viewer picks another; a new worker starts on all. */
+let changesScope = { id: undefined, scope: 'all' }
+const scopeOf = (id) => (changesScope.id === id ? changesScope.scope : 'all')
+
+function compare(id, scope) {
+  changesScope = { id, scope }
+  pick = undefined
+  render()
+  return readChanges(id)
+}
+
 const fileAt = (key) => changedFiles(changes.repos).find(([repo, f]) => fileKey(repo, f) === key)
 
 function followChanges(c) {
@@ -1029,15 +1038,18 @@ function followChanges(c) {
 let changesFailed
 
 async function readChanges(id) {
-  const repos = await tower.get(`changes/${id}`).catch((err) => {
+  const scope = scopeOf(id)
+  const repos = await tower.get(changesPath(id, scope)).catch((err) => {
     if (changes?.id === id) return void (lostAt || toast(err.message))
     changesFailed = { id, message: err.message }
     render()
   })
-  if (!repos || changesPoll?.id !== id) return
+  if (!repos || changesPoll?.id !== id || scopeOf(id) !== scope) return
   changesFailed = undefined
-  const marks = await Promise.all(repos.map((repo) => tower.store.get(viewedKey(repo.dir))))
-  changes = { id, repos, at: Date.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
+  if (liveScope(repos, scope) !== scope) return compare(id, 'all')
+  /** The marks of a repo are shared by every renderer in this browser, through `tower.store`. */
+  const marks = await Promise.all(repos.map((repo) => tower.store.get(viewedKey(repo))))
+  changes = { id, scope, repos, at: Date.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
   render()
 }
 
@@ -1051,7 +1063,7 @@ const changesTally = (c) => {
 function toggleViewed(key) {
   const [repo, f] = fileAt(key)
   changes.viewed[repo.dir] = marksToggled(changes.viewed, repo, f)
-  tower.store.set(viewedKey(repo.dir), changes.viewed[repo.dir])
+  tower.store.set(viewedKey(repo), changes.viewed[repo.dir])
   folds.delete(key)
   keepingFileTop($('changes'), key, render)
 }
@@ -1075,12 +1087,13 @@ let diffLayout = (await tower.store.get(DIFF_LAYOUT_KEY)) ?? 'unified'
 
 function drawChanges() {
   const c = findCard(selected)
-  const read = changes?.id === c.id ? changes : undefined
+  const scope = scopeOf(c.id)
+  const read = changes?.id === c.id && changes.scope === scope ? changes : undefined
   const live = read && livePick(read, pick)
   if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) pick = live
   const failed = read || changesFailed?.id !== c.id ? undefined : changesFailed.message
-  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout }), { 'pick-text': pickText })
+  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout, scope }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && read) jumpToAnchor()
@@ -1167,7 +1180,7 @@ function sendNotes(button, c) {
 }
 
 const threadView = (c) => ({
-  checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), failed: threadOf(c) ? undefined : review?.failed, reader: c, changes: changes?.id === c.id ? changes.repos : undefined,
+  checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), failed: threadOf(c) ? undefined : review?.failed, reader: c, changes: changes?.id === c.id && changes.scope === 'all' ? changes.repos : undefined,
   targets: sendTargets(floorOf(c.project), threadCheckoutOf(c)), target: sendTarget(c), re: noteRe, user: board.user.name,
   files: threadItemFiles(floorOf(c.project), threadCheckoutOf(c), threadItem(c)?.id ?? threadId(threadCheckoutOf(c))), state: c.threadState, noting: can(c, 'note'),
 })
@@ -1186,6 +1199,7 @@ let jump
 function showAnchor(value) {
   jump = anchorOf(threadOf(findCard(selected)), value)
   showPane('changes')
+  if (scopeOf(selected) !== 'all') compare(selected, 'all')
 }
 
 function jumpToAnchor() {
@@ -2567,6 +2581,8 @@ document.addEventListener('click', (e) => {
 $('home').onclick = goHome
 
 document.addEventListener('change', (e) => {
+  const scope = e.target.closest('[data-changes-scope]')?.value
+  if (scope) return compare(selected, scope)
   const picker = e.target.closest('[data-send-pick]')
   if (!picker) return
   const c = findCard(selected)

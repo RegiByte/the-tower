@@ -73,8 +73,8 @@ const file = (path: string, lines: string[]): DiffFile => ({
 })
 
 const repos: RepoChanges[] = [
-  { dir: '/w/lab', against: 'origin/main', since: 'a', more: 0, files: [file('README.md', [' # lab', ' ', '-Run it with `npm start`.', '+Run it with ``npm run dev``, or:', '+```sh'])] },
-  { dir: '/w/lab-api/.worktrees/odin-42', against: 'origin/main', since: 'b', more: 0, files: [file('config.ts', ['+export const port = 4000', '+export const host = process.env.HOST'])] },
+  { dir: '/w/lab', against: 'origin/main', since: 'a', commits: [], shows: 'all', more: 0, files: [file('README.md', [' # lab', ' ', '-Run it with `npm start`.', '+Run it with ``npm run dev``, or:', '+```sh'])] },
+  { dir: '/w/lab-api/.worktrees/odin-42', against: 'origin/main', since: 'b', commits: [], shows: 'all', more: 0, files: [file('config.ts', ['+export const port = 4000', '+export const host = process.env.HOST'])] },
 ]
 
 test('anchors in the diff: the quoted lines as they were, changed since, or gone from it', () => {
