@@ -71,7 +71,7 @@ test('a session counts inside its worktree and below it, never in a worktree sha
 })
 
 test('kept branches: recut always, deletable only when absorbed in every repo that has it', () => {
-  const kept = (absorbed: boolean) => [{ branch: 'tower/k', base: 'origin/main', unpushed: 1, absorbed, risk: [] }]
+  const kept = (absorbed: boolean) => [{ branch: 'tower/k', head: 'abc', base: 'origin/main', unpushed: 1, absorbed, risk: [] }]
   const both = floorBranches('lab', [repo(HUB, [], kept(true)), repo(API, [], kept(true))])
   const one = floorBranches('lab', [repo(HUB, [], kept(true)), repo(API, [], kept(false))])
   assert.deepEqual([both[0].absorbed, both[0].verbs, both[0].calls.delete], [true, ['recut', 'delete'], ['branch/delete', { project: 'lab', name: 'tower/k' }]])
@@ -108,7 +108,7 @@ test('discard carries what each repo held as shown', () => {
 })
 
 test('a kept branch carried in every repo that has it is deletable on its own, and never absorbed', () => {
-  const kept = (over: object) => [{ branch: 'tower/k', base: 'origin/main', unpushed: 1, absorbed: false, risk: [], ...over }]
+  const kept = (over: object) => [{ branch: 'tower/k', head: 'abc', base: 'origin/main', unpushed: 1, absorbed: false, risk: [], ...over }]
   const [b] = floorBranches('lab', [repo(HUB, [], kept({ carried: { commits: 1, edited: 1 } })), repo(API, [], kept({ absorbed: true }))])
   assert.deepEqual([b.absorbed, b.carried, b.verbs], [false, true, ['recut', 'delete']])
 })

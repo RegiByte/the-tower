@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.36'
+export const API_VERSION = '1.37'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -24,6 +24,9 @@ export const ITEM_EXT = /^[a-z0-9]+$/i
 const item = { project: id, collection: id }
 
 const ok = z.object({ t: z.literal('ok') })
+
+/** `ok`, naming each branch the verb didn't delete, with why: it moved since the read, so its new commits stay. */
+const okKept = ok.extend({ kept: z.array(z.string()).optional().describe("Each branch kept instead of deleted, with why (`<branch> in <dir>: kept, …`).") })
 const spawned = z.object({ t: z.literal('spawned'), id: z.string() })
 /** An item's version: its modification time in whole milliseconds, as the board shows it. */
 const modifiedAt = z.int().nonnegative()
@@ -172,7 +175,7 @@ export const VERBS = {
   },
   'worktree/prune': {
     input: z.object(worktree).describe("Forget a lost worktree, and delete its branch where it is absorbed into its base."),
-    reply: ok,
+    reply: okKept,
   },
   'worktree/remove': {
     input: z
@@ -180,7 +183,7 @@ export const VERBS = {
       .describe(
         'Remove a worktree in every repo, and delete its branch where it is absorbed into its base or carried there as copies (`landing` shows what landing changed); refused when work would be lost.',
       ),
-    reply: ok,
+    reply: okKept,
   },
   'worktree/discard': {
     input: z
@@ -198,6 +201,7 @@ export const VERBS = {
       t: z.literal('discarded'),
       tips: z.array(z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })).describe('What each repo held, now on no branch.'),
       thread: z.string().describe('The filed thread, its note naming the tips.'),
+      kept: z.array(z.string()).optional().describe("Each branch kept instead of deleted, with why (`<branch> in <dir>: kept, …`)."),
     }),
   },
   'branch/recut': {
@@ -208,7 +212,7 @@ export const VERBS = {
   },
   'branch/delete': {
     input: z.object({ project: id, name: z.string().min(1) }).describe('Delete a kept branch in every repo where it is absorbed into its base, or carried there as copies.'),
-    reply: ok,
+    reply: okKept,
   },
   tidy: {
     input: z
@@ -239,7 +243,7 @@ export const VERBS = {
       threads: z.array(z.string()),
       reaped: z.array(z.int()),
       killed: z.array(z.string()),
-      skipped: z.array(z.string()).describe('Workers left alive: no longer idle when their turn came, or their kill failed, each with why.'),
+      skipped: z.array(z.string()).describe('Branches kept instead of deleted, and workers left alive: no longer idle when their turn came, or their kill failed, each with why.'),
       archived: z.array(z.string()).describe('The sessions whose logs were archived.'),
     }),
   },

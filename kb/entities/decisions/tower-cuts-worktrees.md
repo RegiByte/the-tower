@@ -8,7 +8,7 @@
   "date": "2026-10-05",
   "supersedes": "worktrees-are-claudes",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
 **Problem.** Every worker on a floor ran in the same checkout: workers interleaved edits, tested each other's
@@ -93,6 +93,11 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
 - **Tidy is manual** ([`tidy`](ref:hub/src/worktrees.ts#tidy)): after a fetch, every `removable` name its list
   named is removed (refused, before anything, when one no longer is: [[tidy]])
   without `--force` and its branch deleted where absorbed; an unmerged branch is kept and listed as a kept branch.
+  Every branch delete (Tidy, `remove`, `prune`, `branch/delete`, discard, a rollback) is
+  [`deleteAt`](ref:hub/src/worktrees.ts#deleteAt): `git update-ref -d refs/heads/<b> <head as read>`, then its
+  `branch.<b>` config, so git refuses once the branch moved after the read (a commit from an editor, a hook or another
+  tool between the fetch's read and the delete) and the branch is kept, named in the reply's `kept` (Tidy's
+  `skipped`). `branch -D` deleted whatever the branch held by then.
   A carried worktree is removed by its own `remove`, its branch deleted where carried. Work at risk is thrown away
   only by `worktree/discard`, which notes each repo's tip on the review thread first ([[discard]]). Tidy then files the review thread of every checkout
   whose work has landed ([[review-threads]]). A cut refuses the name `main`, which names the main checkouts' thread.
@@ -105,7 +110,8 @@ sticks. `git branch -d` as the merged test: misses squash merges and deletes pus
 GitHub: a prescriptive integration. Removing on exit: removal waits until a kill is a fact in a log. Copying shared
 folders: they diverge. A global `git worktree prune` in the cut: erases other names' `lost`.
 
-**Impact.** A host change (`sessionDirs`). API v8: `spawn.cut`, verbs `worktree/recut | prune | remove`,
+**Impact.** API 1.37: `kept` on the replies of `worktree/remove`, `worktree/prune`, `branch/delete` and
+`worktree/discard`, and `head` on each repo of a kept branch. A host change (`sessionDirs`). API v8: `spawn.cut`, verbs `worktree/recut | prune | remove`,
 `branch/recut`, `branch/delete`, `tidy`, errors `exists`, `would_lose`, `lost`, `offline`, `worktree_failed`. The board gains
 `floor.worktrees`, `floor.branches`, `floor.bases`, `floor.branchPrefix`, `floor.cutByDefault` and `card.worktree` ([[board-verbs]]).
 Config gains `worktrees: { branchPrefix, links, cutByDefault }`, top level and per project. No new stored state.

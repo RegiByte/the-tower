@@ -1549,6 +1549,9 @@
               "own": {
                 "type": "number"
               },
+              "head": {
+                "type": "string"
+              },
               "base": {
                 "type": "string"
               },
@@ -1560,6 +1563,7 @@
               "absorbed",
               "base",
               "dir",
+              "head",
               "risk",
               "unpushed"
             ]

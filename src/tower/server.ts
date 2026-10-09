@@ -571,6 +571,9 @@ type Answer = { t: string } | ApiError
 
 const OK = { t: 'ok' } as const
 
+/** The branches a verb kept, each with why, when it kept any. */
+const keptOf = (kept: string[]) => (kept.length ? { kept } : {})
+
 /** A daemon that answers no refuses; one that doesn't answer is unavailable. */
 async function daemon(ask: () => Promise<FromHost | FromTerms>): Promise<Answer> {
   try {
@@ -850,10 +853,10 @@ const discardWorktree = ({ project, name, author, held }: RouteInput['worktree/d
     const tips = await discardable(p, project, name, occupants(), held)
     const noted = appendReview({ project, checkout: name, author, anchors: [], body: discardNote(name, tips) })
     if (noted.t === 'error') return noted
-    await discard(name, tips)
+    const kept = await discard(name, tips)
     const thread = landedThreadId(name, new Date())
     renameItem(paths, project, REVIEWS, threadId(name), thread)
-    return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), thread }
+    return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), thread, ...keptOf(kept) }
   })
 
 const pruneKey = (p: Prune) => (p.t === 'reap' ? `reap ${p.id} ${p.pid}` : `kill ${p.id}`)
@@ -880,14 +883,14 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
       const callsign = callsignsOf(readConfig())
       const gone = movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign)
       if (gone.length) return apiError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
-      const git = plan.worktrees.length || plan.branches.length ? await tidy(project, projectId, occupants(), plan) : { removed: [], deleted: [] }
+      const git = plan.worktrees.length || plan.branches.length ? await tidy(project, projectId, occupants(), plan) : { removed: [], deleted: [], kept: [] }
       const now = new Date()
       for (const checkout of plan.threads) renameItem(paths, projectId, REVIEWS, threadId(checkout), landedThreadId(checkout, now))
       const reaps = plan.prune.flatMap((p) => (p.t === 'reap' ? [p] : []))
       const reaped = reap(system.running().filter((r) => reaps.some((p) => p.id === r.session && p.pid === r.pid)))
       void system.refreshRunning()
       const killed: string[] = []
-      const skipped: string[] = []
+      const skipped = git.kept.map((why) => `branch ${why}`)
       for (const p of plan.prune) {
         if (p.t !== 'kill') continue
         if (movedOn({ ...plan, threads: [], prune: [p], logs: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
@@ -944,12 +947,12 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
   'collection/delete': ({ project, collection, id }) => toItem(project, collection, id, () => (deleteItem(paths, project, collection, id), OK)),
   'worktree/recut': ({ project, name }) =>
     onWorktrees(project, async (p, config) => (await recutWorktree(p, project, worktreesConfig(config, project).links, name, occupants()), OK)),
-  'worktree/prune': ({ project, name }) => onWorktrees(project, async (p) => (await pruneWorktree(p, project, name, occupants()), OK)),
-  'worktree/remove': ({ project, name }) => onWorktrees(project, async (p) => (await removeWorktree(p, project, name, occupants()), OK)),
+  'worktree/prune': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await pruneWorktree(p, project, name, occupants())) })),
+  'worktree/remove': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await removeWorktree(p, project, name, occupants())) })),
   'worktree/discard': discardWorktree,
   'branch/recut': ({ project, name }) =>
     onWorktrees(project, async (p, config) => (await recutBranch(p, project, worktreesConfig(config, project).links, name), OK)),
-  'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => (await deleteBranch(p, project, name), OK)),
+  'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
   tidy: ({ project, plan }) => tidyProject(project, plan),
   'review/append': appendReview,
   'mux/watch': muxWatch,

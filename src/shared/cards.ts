@@ -803,7 +803,10 @@ export const discardAsk = (w: FloorWorktree) =>
 
 /** What a discard did, in a line: `discarded tower/x at a4cf18c`. */
 export const discardedLine = (r: Replies['worktree/discard']) =>
-  `discarded ${r.tips.map((t) => `${t.branch ?? base(t.dir)} at ${t.tip.slice(0, 7)}`).join(', ')}: tips noted on ${r.thread}`
+  `discarded ${r.tips.map((t) => `${t.branch ?? base(t.dir)} at ${t.tip.slice(0, 7)}`).join(', ')}: tips noted on ${r.thread}${keptLine(r)}`
+
+/** The branches a worktree or branch verb kept, each with why, to follow its line: `; tower/x in /repo: kept, …`. */
+export const keptLine = (r: { t: string; kept?: string[] }) => (r.kept?.length ? `; ${r.kept.join('; ')}` : '')
 
 /** Per repo whose recorded base is gone on origin: what its absorbed check ran against instead. */
 export const goneBases = (repos: { dir: string; base?: string; against?: string }[]): string[] =>

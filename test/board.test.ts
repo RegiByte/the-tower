@@ -471,7 +471,7 @@ test('a card says where its checkout’s work stands, and offers a note on its t
   assert.deepEqual(said(cardOf(running, reads([tree]))), [{ is: 'live' }, { is: 'live' }, true])
   assert.deepEqual(said(cardOf(inTree, reads([{ ...tree, present: false }]))), [{ is: 'gone' }, { is: 'gone' }, false])
   assert.deepEqual(said(cardOf(inTree, reads([]))), [{ is: 'gone' }, { is: 'gone' }, false])
-  const branch = (absorbed: boolean): BranchRead => ({ branch: 'tower/odin-42', base: 'origin/main', tree: 'odin-42', unpushed: 1, absorbed, risk: [] })
+  const branch = (absorbed: boolean): BranchRead => ({ branch: 'tower/odin-42', head: 'abc', base: 'origin/main', tree: 'odin-42', unpushed: 1, absorbed, risk: [] })
   assert.deepEqual(cardOf(inTree, reads([], [branch(true)])).checkoutState, { is: 'landed', on: 'origin/main' })
   assert.deepEqual(cardOf(inTree, reads([], [branch(false)])).checkoutState, { is: 'gone' })
   assert.deepEqual(cardOf(inTree, reads([], [{ ...branch(true), own: 0 }])).checkoutState, { is: 'landed', on: 'origin/main', empty: true })

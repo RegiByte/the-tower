@@ -123,8 +123,11 @@ export const isCarried = ({ dirty, unpushed, absorbed, carried }: Exposure) => d
  */
 export type TreeRead = Exposure & Cut & { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; present: boolean }
 
-/** A branch the tower cut that no worktree has checked out. `tree`: the worktree name it was cut under, when recorded. */
-export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; base: string; tree?: string }
+/**
+ * A branch the tower cut that no worktree has checked out. `head`: its commit as read; `tree`: the worktree name it was
+ * cut under, when recorded.
+ */
+export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head: string; base: string; tree?: string }
 
 /**
  * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `bases`: origin's

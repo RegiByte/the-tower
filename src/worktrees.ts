@@ -6,8 +6,8 @@
  * Every verb fetches first and re-checks what it was offered on: the board is up to 5 s old, and its remote refs as
  * old as the last fetch. Verbs at once in a repo share its fetch (`fetchOrigin`). Only `discard` throws work away, as
  * shown and once its tips are noted: removal runs without `--force`, a branch is deleted only when it is absorbed into
- * its base or carried there, and a branch is rolled back only when it was cut in the same request and is still at its
- * base.
+ * its base or carried there, and a branch is rolled back only when it was cut in the same request. A branch is deleted
+ * only while it is still at the commit the read judged; one that moved is kept and named in the verb's `kept`.
  */
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -185,8 +185,9 @@ const treeRead = async (dir: string, name: string, entry: ReturnType<typeof pars
 
 const branchRead = async (dir: string, branch: string, record: TowerRecord & { base: string }, originHead: string | undefined): Promise<BranchRead> => {
   const against = await againstOf(dir, record.base, originHead)
-  const { unpushed, absorbed, carried } = await exposureOf(dir, `refs/heads/${branch}`, record, against)
-  return { branch, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, ...(carried && { carried }), own: await ownCommits(dir, branch), risk: unpushed.named }
+  const head = (await git(dir, ['rev-parse', `refs/heads/${branch}`])).trim()
+  const { unpushed, absorbed, carried } = await exposureOf(dir, head, record, against)
+  return { branch, head, base: record.base, tree: record.name, against, unpushed: unpushed.count, absorbed, ...(carried && { carried }), own: await ownCommits(dir, branch), risk: unpushed.named }
 }
 
 /** The branch checked out in `dir`'s upstream, `origin/<x>`; `undefined` on a detached HEAD or a branch tracking nothing. */
@@ -565,7 +566,7 @@ export const rollback = (made: Made[]) => writingConfig(() => undo(made))
 const undo = async (made: Made[]) => {
   for (const { dir, path: tree, branch, baseCommit } of made) {
     await git(dir, ['worktree', 'remove', '--force', tree])
-    if (baseCommit !== undefined && (await resolve(dir, `refs/heads/${branch}`)) === baseCommit) await git(dir, ['branch', '-D', branch])
+    if (baseCommit !== undefined) await deleteAt(dir, branch, baseCommit)
   }
 }
 
@@ -588,12 +589,31 @@ const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupant
  */
 const forgetLost = (dir: string, tree: string) => git(dir, ['worktree', 'remove', '--force', tree])
 
-type Landed = { dir: string; branch?: string } & Pick<Exposure, 'absorbed' | 'carried'>
+/** A repo's branch as a read found it: `head`, the commit it was at. */
+type Read = { dir: string; branch?: string; head?: string }
 
-/** Deletes each repo's branch. */
-const deleteBranches = (repos: { dir: string; branch?: string }[]) =>
+type Landed = Read & Pick<Exposure, 'absorbed' | 'carried'>
+
+/**
+ * `branch` deleted with its config only while it is still at `head`, the commit the read judged: git refuses once it
+ * moved, so a commit made since stays. Returns why it was kept, when it was.
+ */
+const deleteAt = async (dir: string, branch: string, head: string): Promise<string | undefined> => {
+  const r = await run(dir, ['update-ref', '-d', `refs/heads/${branch}`, head])
+  if (r.code !== 0) return `${branch} in ${dir}: kept, it moved since it was read (${r.stderr.trim()})`
+  await git(dir, ['config', '--remove-section', `branch.${branch}`])
+}
+
+/** Deletes each repo's branch still at its head as read; returns why each other one was kept. */
+const deleteBranches = (repos: Read[]) =>
   writingConfig(async () => {
-    for (const { dir, branch } of repos) if (branch) await git(dir, ['branch', '-D', branch])
+    const kept: string[] = []
+    for (const { dir, branch, head } of repos) {
+      if (!branch) continue
+      const why = await deleteAt(dir, branch, head!)
+      if (why) kept.push(why)
+    }
+    return kept
   })
 
 /** Deletes the branch of each repo where it's absorbed: the work is in its base. Others are kept. */
@@ -602,10 +622,13 @@ const deleteAbsorbed = (repos: Landed[]) => deleteBranches(repos.filter((r) => r
 /** Deletes the branch of each repo where it's absorbed or carried: the work is in its base, maybe edited. Others are kept. */
 const deleteLanded = (repos: Landed[]) => deleteBranches(repos.filter((r) => r.absorbed || r.carried))
 
-/** Without `--force`: git's own guard runs again. Ignored files go with it; a link goes, never what it points to. */
+/**
+ * Without `--force`: git's own guard runs again. Ignored files go with it; a link goes, never what it points to.
+ * Returns why each branch it didn't delete was kept.
+ */
 const removeTree = async (tree: FloorWorktree) => {
   for (const repo of tree.repos) await git(repo.dir, ['worktree', 'remove', repo.path])
-  await (tree.state === 'carried' ? deleteLanded : deleteAbsorbed)(tree.repos)
+  return (tree.state === 'carried' ? deleteLanded : deleteAbsorbed)(tree.repos)
 }
 
 /** A worktree that would lose nothing, or whose work landed as copies: the press is one per worktree, never Tidy's. */
@@ -615,7 +638,7 @@ export const removeWorktree = async (project: Project, projectId: string, name: 
 export const pruneWorktree = async (project: Project, projectId: string, name: string, occupants: Occupant[]) => {
   const lost = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['lost']).repos.filter((r) => !r.present)
   for (const r of lost) await forgetLost(r.dir, r.path)
-  await deleteAbsorbed(lost)
+  return deleteAbsorbed(lost)
 }
 
 /** What a repo's worktree held as the board showed it: its HEAD and its count of uncommitted files. */
@@ -642,10 +665,10 @@ export const discardable = async (project: Project, projectId: string, name: str
   )
 }
 
-/** Each repo's worktree removed with `--force`, and its branch deleted: what `discardable` read, once noted. */
+/** Each repo's worktree removed with `--force`, and its branch deleted at the head `discardable` read, once noted. */
 export const discard = async (name: string, tips: Tip[]) => {
   for (const t of tips) await git(t.dir, ['worktree', 'remove', '--force', worktreePath(t.dir, name)])
-  await deleteBranches(tips)
+  return deleteBranches(tips)
 }
 
 /** The lost folders of `name` checked out again from their branches, then furnished as a cut would. */
@@ -718,7 +741,7 @@ export const deleteBranch = async (project: Project, projectId: string, name: st
   const branch = floorBranches(projectId, await fetchedReads(project, true)).find((b) => b.name === name)
   if (!branch) throw new WorktreeError('not_found', `"${projectId}" keeps no branch "${name}"`)
   if (!branch.repos.some((r) => r.absorbed || r.carried)) throw new WorktreeError('would_lose', `"${name}" isn't absorbed into its base, or carried there, in any repo`)
-  await deleteLanded(branch.repos.map((r) => ({ ...r, branch: name })))
+  return deleteLanded(branch.repos.map((r) => ({ ...r, branch: name })))
 }
 
 /**
@@ -734,9 +757,10 @@ export const tidy = async (project: Project, projectId: string, occupants: Occup
     ...named.branches.filter((name) => !absorbed.some((b) => b.name === name)).map((name) => `branch ${name}`),
   ]
   if (gone.length) throw new WorktreeError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
-  for (const tree of removable.filter((w) => named.worktrees.includes(w.name))) await removeTree(tree)
-  for (const branch of absorbed.filter((b) => named.branches.includes(b.name))) await deleteAbsorbed(branch.repos.map((r) => ({ ...r, branch: branch.name })))
-  return { removed: named.worktrees, deleted: named.branches }
+  const kept: string[] = []
+  for (const tree of removable.filter((w) => named.worktrees.includes(w.name))) kept.push(...(await removeTree(tree)))
+  for (const branch of absorbed.filter((b) => named.branches.includes(b.name))) kept.push(...(await deleteAbsorbed(branch.repos.map((r) => ({ ...r, branch: branch.name })))))
+  return { removed: named.worktrees, deleted: named.branches, kept }
 }
 
 /**

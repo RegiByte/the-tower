@@ -86,7 +86,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   qualifies, like `collection/write` on a stale version. It applies only what is listed, in order: worktrees and
   branches, threads filed, processes reaped (SIGTERM), workers killed through the host, old logs archived. Each worker is checked again
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, or whose kill fails, is left alive
-  and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done.
+  and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done. A branch
+  that moved since git's read is kept the same way, named in `skipped` (see [[tower-cuts-worktrees]]).
 - Time alone makes a worker stuck, so the tower republishes the board every minute; an unchanged board is not sent.
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows) gives each row the call that
   applies only it, the floor's plan cut down to that one item (one worker, one process, one worktree, one branch, one
