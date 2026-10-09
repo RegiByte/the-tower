@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/index.html#run", "hub/renderers/page/index.html#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
+  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/index.html#run", "hub/renderers/page/index.html#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
 }
 ---
 **Problem.** The keys lived in five places: `MOVE_KEYS` in `cards.ts`, `NATURAL_KEYS` in `termkeys.ts`, the page's
@@ -38,7 +38,11 @@ hand-edited file, checked like every other key, and reach every renderer the way
 - `board.keys`: every command's chords, canonical, recomputed when the config changes. Renderers match keydowns with
   [`commandOf`](ref:hub/src/shared/keymap.ts#commandOf)`(board.keys, e, focus)` and map ids to handlers; a terminal
   takes [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap), which sends a natural key's bytes and
-  hands any other command to the renderer, the key going on to xterm when the renderer did nothing with it.
+  hands any other command to the renderer, the key going on to xterm when the renderer did nothing with it. Before
+  any of that it types what WebKit (Safari, Tower.app's WKWebView) reports as one keydown: a dead key and the key
+  after it that didn't compose with it ([`deadKeys`](ref:hub/src/shared/termkeys.ts#deadKeys), `'s` on a Brazilian
+  or US International layout), of which xterm types only the first character. A window being typed into has already
+  typed the dead key through its composition, so only the rest goes; Chrome composes both and never sends such a key.
 - Words come from the same data: [`keymapSheetHtml`](ref:hub/src/shared/keymap.ts#keymapSheetHtml) is the `?`
   sheet, grouped, saying where each chord works; `keysLabel` and `chordLabel` name chords (`⌥↓`);
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
