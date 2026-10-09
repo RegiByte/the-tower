@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.12.0
+
+Changes compares one slice of a worker's work, and every pull request is checked. It asks nothing of you: no host
+restart, no config change. The renderer API moves to 1.36, an addition. Restart the tower (`tower down tower && tower
+up tower`) and rebuild Tower 3D (`npm run tower3d`) where it is built. Thanks to Carlos Bonetti (#5).
+
+- Changes has a compare picker in its head, on the tower page and on Tower 3D's desk panel: All changes since the
+  base (as before), Uncommitted, or one commit since the base, newest first. It shows while a repo has commits since
+  its base. Viewed marks are kept per scope; notes are picked on All and Uncommitted, never on a commit.
+- `GET /changes/<id>?scope=all|uncommitted|<commit>`: each repo carries its `commits` since the base and `shows`,
+  the scope it drew.
+- CI runs on every pull request and on main: the release's checks, then a clean tree and `kb verify`. The served
+  modules' test now fails on any change to `test/served-exports.json` instead of rewriting it; `npm run
+  served:update` writes it.
+
 ## v1.11.2
 
 Tower 3D takes the mouse in Tower.app. It asks nothing of you: no host restart, no config change, no API change, and
