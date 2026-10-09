@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#settingsArgs", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/launch.ts#newSessionId", "hub/src/host/main.ts#spawnSession", "hub/src/mod/hooks/hooks.json"]
 }
 ---

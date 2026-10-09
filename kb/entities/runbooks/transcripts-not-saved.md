@@ -4,7 +4,7 @@
   "name": "Transcripts not saved",
   "summary": "A Claude started with a parent Claude session's variables believes it is a child session and saves no transcript, so its conversations cannot be resumed; the scrub in env.ts is what prevents it.",
   "in": "host",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
 }
 ---

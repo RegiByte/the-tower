@@ -4,7 +4,7 @@
   "name": "Data model",
   "summary": "The shared types and pure builders: projects and config, the session header and log events, the host and terms protocols, and spawn/resume requests.",
   "in": "bridge",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
 }
 ---
