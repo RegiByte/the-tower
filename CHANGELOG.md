@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.6.0
+
+The Changes panel draws a diff side by side, and its head stays put while the diff scrolls. It asks nothing of you:
+no host restart, no config change (API 1.31 → 1.32, additions only). Restart the tower (`tower down tower && tower up
+tower`) and rebuild Tower 3D (`npm run tower3d`) where it is built.
+
+- Unified · Split, in both renderers (PR #1 by @CarlosBonetti, the first from outside). A segmented control in the
+  Changes head (`data-changes-layout`) draws each file's diff as one column or with the old side on the left and the
+  new on the right: a context line on both sides, each run of removed lines beside the run of added lines after it,
+  long lines wrapped so the sides stay aligned. The choice is kept in `tower.store` under `changes.layout`, Unified
+  until one is made. Picking lines to note, the note box and anchors work the same in split: a drag or ⇧-click from
+  one side to the other picks the rows between them in unified order.
+- The Changes head with the layout and Read again sticks to the top while the diff scrolls, each file's header just
+  below it, and an anchor's jump to a file no longer lands under the head.
+- `/panels.js` serves `DiffLayout`'s names (`DIFF_LAYOUTS`, `DIFF_LAYOUT_KEY`, `DIFF_LAYOUT_LABEL`,
+  `DIFF_LAYOUT_MEANS`) and `splitRows`, a file's rows side by side as indexes into `fileRows` (API 1.32);
+  `changesHtml` takes a `layout`.
+
 ## v1.5.0
 
 The stats tell the user's prompts from the workers', the weekly budget says whether today's spending lasts, and
