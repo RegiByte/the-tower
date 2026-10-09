@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.13.0
+
+The tower's git can't lose your work. It asks nothing of you: no host restart, no config change. The renderer API
+moves to 1.37, an addition. Restart the tower (`tower down tower && tower up tower`) and rebuild Tower 3D (`npm run
+tower3d`) where it is built.
+
+- New files count as uncommitted whatever your git config says: with `status.showUntrackedFiles=no`, a worktree
+  holding only new files read clean, and Tidy or Remove deleted them. Every git call the tower makes now pins the
+  config that changes what it reads.
+- A branch is deleted only at the commit the tower judged it by: one that moved since (a commit made in between) is
+  kept, and the reply names it. Remove, Prune, Delete and Discard answer `kept`, and Tidy lists such branches as
+  skipped; both renderers say so in their toast.
+- The tower deletes only branches it cut (a `towerBase` record). A worktree made by hand under `.worktrees/` loses
+  only its folder, never its branch.
+- Every git call stops past a timeout (60 s; 10 min for writing or removing a whole worktree), its hooks with it: a
+  hung hook or fsmonitor fails one verb and names it, instead of holding every verb on every floor.
+
 ## v1.12.0
 
 Changes compares one slice of a worker's work, and every pull request is checked. It asks nothing of you: no host
