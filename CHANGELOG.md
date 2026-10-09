@@ -12,6 +12,30 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.5.0
+
+The stats tell the user's prompts from the workers', the weekly budget says whether today's spending lasts, and
+agents can read the board's shape from `tower api`. It asks nothing of you: no host restart, no config change (API
+1.28 → 1.31, additions only). Restart the tower (`tower down tower && tower up tower`), and run `npm ci` in a checkout
+you develop in (a new dev dependency).
+
+- A prompt a worker types through the tower is the worker's (API 1.31). `submit` and `spawn` take `by`, the requesting
+  worker's session id; the tower appends a `tower.prompt` fact to the target's log before the prompt reaches it, and
+  the fold counts that prompt as from workers (`peer`), answering no wait. `tower hire`, `tower review` and `tower send`
+  pass it, so a hire's brief and a pointer to review notes no longer count as the user's prompts or waits. The card
+  still shows a hired worker's brief as its prompt. Logs before this release keep their counts. The Stats panel's
+  "prompts from you" adds the user's prompts per commit landed.
+- The weekly budget's pace (API 1.29): `budget.pace` on `/stats` and `board.today`, `{perDay, runsOutAt?}`: the even
+  daily spend that lasts until the reset, and when today's rate runs out what is left, only when that comes first
+  (today's rate measured over an hour at least). The Stats panel's "left this week" and Tower 3D's Today board and roof
+  draw it (`paceWords` in `/cards.js`).
+- The board in `tower api` (API 1.30). `/schema` gains `streams`: `board` with how to read one event and its message
+  (`{v, board}`) as a JSON Schema generated from the board's types and their docs (`src/shared/board.schema.json`,
+  `npm run schema:board`, held by a test), and one line each for the screen, terminal, shell and mux streams.
+  `tower api` lists them; `tower api board` prints the board's.
+- The handbook says mechanical hires (landing, kb verify, cleanups, a changelog, a change fully specified) go to
+  `model sonnet`.
+
 ## v1.4.1
 
 A fix to v1.4.0's archive. It asks nothing of you: no host restart, no config change, no API change.
