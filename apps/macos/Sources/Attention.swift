@@ -13,6 +13,8 @@ struct Wait {
   let id: String
   let title: String
   let body: String
+  /** The body on one short line, for a menu. */
+  let line: String
 }
 
 /**
@@ -32,7 +34,9 @@ private let ATTENTION_PAGE = """
       const waits = heededWaits(board, { dismissed }).map((w) => {
         const c = findCard(board, w.id)
         const gist = gistLine(c)
-        return { key: w.key, id: w.id, title: `${c.callsign} · ${statusName(c)}`, body: `${c.project}${gist ? ': ' + gist : ''}` }
+        const body = `${c.project}${gist ? ': ' + gist : ''}`
+        const flat = body.replace(/\\s+/g, ' ').trim()
+        return { key: w.key, id: w.id, title: `${c.callsign} · ${statusName(c)}`, body, line: flat.length > 64 ? flat.slice(0, 63) + '…' : flat }
       })
       webkit.messageHandlers.attention.postMessage({
         waits,
@@ -85,7 +89,7 @@ final class Attention: NSObject, WKScriptMessageHandler, UNUserNotificationCente
 
   func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
     guard let body = message.body as? [String: Any], let list = body["waits"] as? [[String: String]] else { return }
-    waits = list.map { Wait(key: $0["key"]!, id: $0["id"]!, title: $0["title"]!, body: $0["body"]!) }
+    waits = list.map { Wait(key: $0["key"]!, id: $0["id"]!, title: $0["title"]!, body: $0["body"]!, line: $0["line"]!) }
     let began = Set(body["began"] as? [String] ?? [])
     let ended = body["ended"] as? [String] ?? []
     UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ended)
@@ -115,7 +119,7 @@ final class Attention: NSObject, WKScriptMessageHandler, UNUserNotificationCente
       item.target = self
       item.representedObject = wait.id
       item.toolTip = wait.body
-      if #available(macOS 14.4, *) { item.subtitle = wait.body }
+      if #available(macOS 14.4, *) { item.subtitle = wait.line }
     }
     menu.addItem(.separator())
     menu.addItem(withTitle: "Open Tower", action: #selector(AppDelegate.showTower), keyEquivalent: "")
