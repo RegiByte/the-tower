@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.10.0
+
+Marking a file Viewed in the Changes view keeps your place. It asks nothing of you: no host restart, no config change
+(API 1.34 → 1.35, additions only). Restart the tower (`tower down tower && tower up tower`) and rebuild Tower 3D
+(`npm run tower3d`) where it is built. Thanks to Carlos Bonetti (#3).
+
+- Marking a file Viewed, or folding it by its caret, while you read inside its diff (its header stuck under the
+  panel's head) scrolls back to that file's header, so the next file follows right below. The scroll used to stay
+  put, leaving you as far past the next file as the fold took away. A file whose header was not stuck does not move.
+  Both renderers.
+- `/panels.js` serves `keepingFileTop(el, key, write)`, for a renderer's own Changes panel (API 1.35).
+
 ## v1.9.0
 
 **host restart.** Sessions and shells no longer inherit the terminal `tower up` was run from. No config change, no
