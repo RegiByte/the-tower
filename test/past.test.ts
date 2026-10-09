@@ -9,11 +9,11 @@ const card = (id: string, startedAt: number, more: Partial<Card> = {}): Card =>
 
 const floor = (cards: Card[]) => ({ cards }) as Floor
 
-/** Crews as indented lines, in the order they are drawn: each crew above the worker it reports to. */
+/** Crews as indented lines, in the order they are drawn: each worker with its crew under it. */
 const lines = (crews: PastCrew[], depth = 0): string[] =>
-  crews.flatMap(({ card, crew }) => [...lines(crew, depth + 1), `${'  '.repeat(depth)}${card.callsign}`])
+  crews.flatMap(({ card, crew }) => [`${'  '.repeat(depth)}${card.callsign}`, ...lines(crew, depth + 1)])
 
-test('the archive goes by crew: hires above the worker they report to, crews and siblings by their latest start, the newest first', () => {
+test('the archive goes by crew: hires under the worker they report to in the order they were hired, crews by their latest start, the newest first', () => {
   const lead = card('lead', 10)
   const a = card('a', 20, { reportsTo: 'lead' })
   const b = card('b', 30, { reportsTo: 'lead' })
@@ -21,7 +21,7 @@ test('the archive goes by crew: hires above the worker they report to, crews and
   const solo = card('solo', 35)
   const old = card('old', 5)
   const crews = pastCrews(floor([b, old]), [lead, a, a1, solo])
-  assert.deepEqual(lines(crews), ['    A1', '  A', '  B', 'LEAD', 'SOLO', 'OLD'])
+  assert.deepEqual(lines(crews), ['LEAD', '  A', '    A1', '  B', 'SOLO', 'OLD'])
   assert.equal(pastSize(crews), 6)
 })
 
@@ -30,7 +30,7 @@ test("a hire whose hirer is not past heads its own crew; a worker's earlier live
   const first = card('lead', 10, { continuedBy: { id: 'lead-2', callsign: 'LEAD' } })
   const second = card('lead-2', 30, { callsign: 'LEAD' })
   const theirs = card('theirs', 25, { reportsTo: 'lead-2' })
-  assert.deepEqual(lines(pastCrews(floor([]), [hire, first, second, theirs])), ['  THEIRS', 'LEAD', 'LEAD', 'HIRE'])
+  assert.deepEqual(lines(pastCrews(floor([]), [hire, first, second, theirs])), ['LEAD', '  THEIRS', 'LEAD', 'HIRE'])
 })
 
 test('a filter keeps the crew order: a matching hire of a worker that does not match takes its place', () => {
@@ -41,5 +41,5 @@ test('a filter keeps the crew order: a matching hire of a worker that does not m
   assert.deepEqual(lines(pastMatching(crews, ['a1'])), ['A1'])
   assert.deepEqual(lines(pastMatching(crews, ['prompt'])), lines(crews))
   const lifted = pastMatching(crews, ['a'])
-  assert.deepEqual(lines(lifted), ['  A1', 'A'])
+  assert.deepEqual(lines(lifted), ['A', '  A1'])
 })

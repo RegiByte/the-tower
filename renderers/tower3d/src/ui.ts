@@ -609,9 +609,9 @@ export const archiveSideHtml = (f: Floor) =>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
     <div class="archive" id="archive-list"></div>`
 
-/** Past workers by crew (`pastCrews`), each crew drawn above the worker it reports to. */
+/** Past workers by crew (`pastCrews`), each worker with its crew under it. */
 const pastCrewsHtml = (board: Board, crews: PastCrew[], held: HeldWhy): string =>
-  crews.map(({ card, crew }) => (crew.length ? `<div class="crew">${pastCrewsHtml(board, crew, held)}</div>` : '') + pastHtml(board, card, held)).join('')
+  crews.map(({ card, crew }) => pastHtml(board, card, held) + (crew.length ? `<div class="crew">${pastCrewsHtml(board, crew, held)}</div>` : '')).join('')
 
 /** A floor's past workers that match `words`, by crew, and how many of how many; `archive` once read. */
 export function archiveListHtml(board: Board, f: Floor, read: ArchiveRead | undefined, words: string[], held: HeldWhy) {

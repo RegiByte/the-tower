@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.4.1
+
+A fix to v1.4.0's archive. It asks nothing of you: no host restart, no config change, no API change.
+
+- A floor's archive reads its crews head first, in both renderers: a worker, then its hires and reviewers indented
+  under it in the order they were hired, as a crew on duty reads. v1.4.0 drew each crew above the worker it reports
+  to, so an indent seemed to belong to the row above it and a reviewer to the worker before its author. Crews still go
+  by their latest start, the newest first.
+
 ## v1.4.0
 
 Work that landed edited no longer reads as at risk, work that never landed can be thrown away on purpose, the archive

@@ -1895,9 +1895,9 @@ function leaveArchive() {
 }
 
 let archiveDrawn = ''
-/** Past workers by crew (`pastCrews`), each crew drawn above the worker it reports to. */
+/** Past workers by crew (`pastCrews`), each worker with its crew under it. */
 const pastCrewsHtml = (crews) =>
-  crews.map(({ card, crew }) => (crew.length ? `<div class="crew">${pastCrewsHtml(crew)}</div>` : '') + pastHtml(card)).join('')
+  crews.map(({ card, crew }) => pastHtml(card) + (crew.length ? `<div class="crew">${pastCrewsHtml(crew)}</div>` : '')).join('')
 
 /** By crew, each worker with every conversation it held and the way to resume or reach it. */
 function drawArchive() {
