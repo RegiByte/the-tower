@@ -74,6 +74,19 @@ shells (PTY) ◀──────▶ terms ◀──terms.sock──▶ rendere
 
 `kb/` holds the project's working theory: systems, flows, decisions and terms, each backed by refs into the code (schema: `.claude/skills/kb/SCHEMA.md`). Before changing a part of the system, read its entity (`node .claude/skills/kb/tool/kb.mjs tree`, then the file). A change that alters something an entity claims (a seam, a flow, the log format, a protocol message, a decision) updates that entity in the same commit, sets its `reviewed`, and re-renders (`kb.mjs render` writes `kb/dist/tower.html`, on the tower's shelf). `/kb verify` for a full check; `/kb build` to document something new.
 
+## Contributing
+
+A pull request is checked by CI (`.github/workflows/ci.yml`); run the same before pushing, and leave the tree as committed:
+
+- `npm run typecheck`, `npm test`, `npm run tower3d`, and `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed. `git status` is clean after them (CI fails on a file they add or rewrite).
+- `node .claude/skills/kb/tool/kb.mjs verify`. A change that contradicts a kb entity updates it in the same commit (Knowledge base, above).
+- A served module's exports change: `npm run served:update`. A board shape change: `npm run schema:board`. An addition moves `API_VERSION`'s minor, in the PR. A removal or rename is an API major with a CHANGELOG line (decision `renderer-api-contract`).
+- `CHANGELOG.md`, tags and releases are the maintainer's: leave them.
+- One concern per commit. Check renderers on the sandbox (Code, above); a UI change carries screenshots in the PR body, and says what was and wasn't run (Tower 3D, say).
+- A host change kills running sessions when the host restarts: say so in the PR.
+
+Writing a renderer or a config: `docs/extending.md`, `docs/config.md`.
+
 ## Who's who
 
 - **The user** is whoever runs this checkout. Code, docs, tests and the kb say "the user" and name no one.
