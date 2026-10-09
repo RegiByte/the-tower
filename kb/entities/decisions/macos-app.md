@@ -70,9 +70,15 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   would tie the tower to a window.
 - *Tauri.* Rejected: the same WKWebView, behind Rust.
 - *Signed and notarized releases.* Deferred: the app is built where it runs, from the checkout.
+- *Daemons that own their access to protected folders*, through the private call terminals use to disclaim
+  responsibility for their children, or a signing certificate the user keeps. Deferred: documented for now, below.
 
 **Impact.** Nothing changes for a user who doesn't run `tower app`: the browser stays the default, `tower doctor`
 doesn't ask for Swift, and the core gains no dependency. The API, the log and the host are untouched. In the window
 `Notification.permission` stays `default`, so the tower page's own notifications stay off there and the app's are the
 only ones; it asks macOS to notify on first launch. On macOS 26 a crowded menu bar can hide the item behind the
-notch.
+notch. macOS holds the process that starts a daemon responsible for the daemon's access to protected folders
+(Documents, Desktop, Downloads), and every Claude and shell under it: a daemon the app's `tower up` starts asks in the
+app's name, and an ad hoc signed build whose binary changed is a new app, so the grant is asked again after such a
+rebuild, and a session's first read there waits on the prompt. A daemon started from a terminal stays the terminal's,
+whatever the app does; `tower up` starts only the daemons that aren't running.

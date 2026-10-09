@@ -58,7 +58,9 @@ The tower is only a view of them, restarted freely with `tower down tower && tow
 The browser is the default; `tower app` is the same tower in a window of its own. It starts the system as `tower up`
 does when you open it, shows who waits on you on its Dock icon, in notifications and in the menu bar, and quitting
 it leaves the system running. Built from your checkout, it stays yours: drag
-`apps/macos/out/Tower.app` to the Dock to keep it there.
+`apps/macos/out/Tower.app` to the Dock to keep it there. macOS holds whatever starts a daemon responsible for its
+access to protected folders (Documents, Desktop, Downloads), and takes each rebuild of the app for a new app: if your
+repos live there, run `tower up` from a terminal first, and the app only shows the system it finds running.
 
 ## Use
 
