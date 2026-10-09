@@ -5,7 +5,7 @@
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "web-tower",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
+  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -28,6 +28,13 @@ are open on the session, so a renderer claims the PTY size on open only as the s
 client observes the machine while it holds the board ([[live-system]]). Screens and shells stream on their own routes or
 multiplexed on one connection per client ([`openMux`](ref:hub/src/tower/server.ts#openMux)). Requests from
 any other site are refused.
+
+A viewer that stops reading (a suspended tab, a frozen web view) costs the tower a bounded amount: a board client
+still reading an earlier board is sent the newest once it has, the boards between skipped
+([`sendBoard`](ref:hub/src/tower/server.ts#sendBoard)); a screen, shell or mux connection, whose bytes can't be
+skipped, is closed once 4 MB wait for it ([`sse`](ref:hub/src/tower/server.ts#sse)), and its client reconnects and
+starts again from a snapshot (`tower.js` re-watches every stream on a new mux). A stream that fails to open answers its
+watch with the failure and leaves nothing behind on the mux.
 
 Renderers are served at [`/r/<name>/`](ref:hub/src/tower/server.ts#rendered): the entry, or any file below the
 renderer's root, at the tower's origin and unsandboxed, since the user declared them. `/` redirects to the configured

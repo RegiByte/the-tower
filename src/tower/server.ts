@@ -166,7 +166,17 @@ const boardClients = new Set<http.ServerResponse>()
 /** The board every client holds. */
 let published = ''
 
-const sse = (res: http.ServerResponse, data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`)
+/**
+ * A viewer that stops reading (a suspended tab, a frozen web view) is closed once this much waits for it: a stream's
+ * bytes can't be skipped, and its client reconnects and starts again from a snapshot.
+ */
+const MAX_BEHIND = 4 * 1024 * 1024
+
+const sse = (res: http.ServerResponse, data: unknown) => {
+  if (res.writableEnded || res.destroyed) return
+  res.write(`data: ${JSON.stringify(data)}\n\n`)
+  if (res.writableLength > MAX_BEHIND) res.destroy()
+}
 
 const readConfig = (): Config => readConfigFile(paths.config)
 
@@ -285,7 +295,21 @@ const publish = () => {
   const next = currentBoard()
   if (next === published) return
   published = next
-  for (const res of boardClients) res.write(`data: ${next}\n\n`)
+  for (const res of boardClients) sendBoard(res)
+}
+
+/** Board clients still reading a board sent earlier: each is sent the newest once it has, the ones between skipped. */
+const behind = new Set<http.ServerResponse>()
+
+const sendBoard = (res: http.ServerResponse) => {
+  if (res.destroyed) return
+  if (!res.writableNeedDrain) return void res.write(`data: ${published}\n\n`)
+  if (behind.has(res)) return
+  behind.add(res)
+  res.once('drain', () => {
+    behind.delete(res)
+    sendBoard(res)
+  })
 }
 
 let publishTimer: NodeJS.Timeout | undefined
@@ -306,6 +330,7 @@ async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse) 
   req.on('close', () => {
     gone = true
     boardClients.delete(res)
+    behind.delete(res)
     void observing.then((release) => release())
   })
   await observing
