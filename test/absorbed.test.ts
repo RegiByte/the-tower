@@ -131,3 +131,20 @@ test('a branch is carried when its commits landed edited, never when amended on 
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test("a new file reads uncommitted whatever the user's status.showUntrackedFiles", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'tower-untracked-'))
+  const git = (...args: string[]) => execFileSync('git', ['-C', dir, ...args], { env: { ...process.env, ...IDENTITY }, stdio: 'pipe' }).toString()
+  try {
+    git('init', '-q', '-b', 'main')
+    git('commit', '-q', '--allow-empty', '-m', 'init')
+    git('worktree', 'add', '-q', '-b', 'tower/x', '.worktrees/x')
+    git('config', 'status.showUntrackedFiles', 'no')
+    writeFileSync(path.join(dir, '.worktrees/x/new'), 'work\n')
+    const read = await readRepo(dir)
+    assert.ok(read.git)
+    assert.equal(read.trees.find((t) => t.name === 'x')!.dirty, 1)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
