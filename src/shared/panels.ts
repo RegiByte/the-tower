@@ -619,13 +619,14 @@ export function statsHtml(v: StatsView) {
   const every = Math.max(1, Math.ceil(places.length / (hourly ? 6 : 7)))
   const budget = all && st.budget
   const prompts = (origin: string) => sum.prompts[origin] ?? 0
+  const yours = prompts('composer') + prompts('bridge')
   const tiles = [
     tileHtml('spent', usd(sum.spend), sum.turns ? `${usd(sum.spend / sum.turns)} a turn` : ''),
     tileHtml('agent-hours', hours(sum.agentHours), `${plural(sum.turns, 'turn')} · ${hours(sum.busyHours)} with anyone working`),
     tileHtml('working at once', sum.atOnce ? sum.atOnce.toFixed(1) : '–', `on average while anyone works · peak ${shown.peak.turns}`),
     tileHtml('waiting on you', sum.waits.n ? duration(sum.waits.p50) : '–', sum.waits.n ? `median of ${sum.waits.n} · p90 ${duration(sum.waits.p90)}` : 'no answered waits'),
     tileHtml('sessions worked', `${sum.worked}`, `${sum.sessions} started · ${plural(sum.resumes, 'resume')}`),
-    tileHtml('prompts from you', `${prompts('composer') + prompts('bridge')}`, `${prompts('peer')} from workers · ${plural(sum.subagents, 'subagent')}`),
+    tileHtml('prompts from you', `${yours}`, [sum.git.commits ? `${(yours / sum.git.commits).toFixed(1)} a commit landed` : '', `${prompts('peer')} from workers`, plural(sum.subagents, 'subagent')].filter(Boolean).join(' · ')),
     tileHtml('asked permission', `${sum.asks}`, `${plural(sum.failures, 'tool failure')}`),
     tileHtml('commits landed', `${sum.git.commits}`, `${plural(sum.git.merges, 'merge')} · ${branchNote(sum.git.repos)}`),
     tileHtml('lines changed', `<span class="add">+${count(sum.git.added)}</span> <span class="del">−${count(sum.git.removed)}</span>`, 'on the default branches'),

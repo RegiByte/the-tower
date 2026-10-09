@@ -43,7 +43,8 @@ or one event at a time as it is tailed:
   [`delivered`](ref:hub/src/bridge/messages.ts#delivered); [`receipts`](ref:hub/src/bridge/messages.ts#receipts) is the
   same join from the receiving side, which names the sender of a worker's message in its brief ([[brief-turns]]).
   A prompt of Claude's peer origin without that wrapper is a subagent's hand-back, counted under `prompts` as
-  `hand-back`.
+  `hand-back`. A prompt a worker typed through the tower (`submit` or `spawn` with `by`) reaches Claude as the
+  composer's: the `tower.prompt` fact before it makes it `peer`, and it answers no wait ([[worker-prompts]]).
 - [`conversationsAfter`](ref:hub/src/bridge/conversation.ts#conversationsAfter) and
   [`threads`](ref:hub/src/bridge/chains.ts#threads): each conversation with its latest prompt and answer, linked
   to the sessions it was resumed from and by ([[resume]]). [`briefOf`](ref:hub/src/bridge/turns.ts#briefOf) gathers

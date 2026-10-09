@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.30'
+export const API_VERSION = '1.31'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -33,6 +33,9 @@ const written = z.object({ t: z.literal('written'), modifiedAt })
 const worktreeName = z.string().regex(WORKTREE_NAME)
 const worktree = { project: id, name: worktreeName }
 const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
+const by = id
+  .optional()
+  .describe("The worker that makes the request, by session id: the prompt it types is counted as that worker's, not the user's. Left out, the user makes it.")
 const cutName = {
   name: worktreeName.optional().describe("The worktrees' folder name; the new worker's callsign, lowercased, when left out."),
   branch: z.string().min(1).optional().describe("The new branch; the project's branch prefix and the name when left out."),
@@ -65,6 +68,7 @@ export const VERBS = {
         cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),
         cut: cut.optional(),
         ...launch,
+        by,
       })
       .refine((s) => s.cwd === undefined || s.cut === undefined, { message: 'A spawn takes `cwd` or `cut`, not both', path: ['cut'] })
       .meta({ not: { required: ['cwd', 'cut'] } })
@@ -82,7 +86,7 @@ export const VERBS = {
     reply: ok,
   },
   submit: {
-    input: z.object({ id, text: z.string() }).describe("Type a prompt into the session's composer, after whatever it holds, and submit it, as the user would."),
+    input: z.object({ id, text: z.string(), by }).describe("Type a prompt into the session's composer, after whatever it holds, and submit it, as the user would."),
     reply: ok,
   },
   resize: { input: z.object({ id, ...size }).describe("Resize the session's PTY; whoever resizes it owns its size."), reply: ok },

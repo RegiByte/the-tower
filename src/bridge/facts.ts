@@ -80,8 +80,13 @@ export type Facts = {
   waits: [at: number, seconds: number][]
   /** When the main loop last stopped, in seconds since the session's start, until its next turn starts. */
   stoppedAt?: number
-  /** Each prompt submitted, at its time (epoch ms), by who it came from (`composer` is the user, `peer` another worker, `hand-back` a subagent). */
+  /**
+   * Each prompt submitted, at its time (epoch ms), by who it came from (`composer` is the user, `peer` another worker,
+   * `hand-back` a subagent). A worker typing through the tower types in the composer: its prompt is `peer`.
+   */
   prompts: [at: number, origin: string][]
+  /** The worker the next prompt typed in the composer comes from (`tower.prompt`), until it arrives. */
+  promptedBy?: string
   /** When Claude showed the user a permission dialog (epoch ms): a check settled without one is not an ask. */
   asks: number[]
   /** When a tool call failed (epoch ms). */
@@ -113,6 +118,9 @@ export const initialFacts = (header: SessionHeader): Facts => ({
 
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
+
+/** The fact the tower appends before a worker's prompt reaches a session through its composer (`submit`, `spawn` with `by`). */
+export const PROMPTED_BY = 'tower.prompt'
 
 /** The board is pushed on every change: a few short lines per worker. */
 const SAYS_KEPT = 3
@@ -186,8 +194,10 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     }
     case 'prompt.submit': {
       const { kind } = hook.origin as { kind: string }
-      const prompted = { ...facts, prompts: [...facts.prompts, [at, promptOrigin(kind, String(hook.text))] as [number, string]] }
-      return facts.stoppedAt === undefined || !USER_ORIGINS.has(kind)
+      const byWorker = facts.promptedBy !== undefined && USER_ORIGINS.has(kind)
+      const origin = byWorker ? 'peer' : promptOrigin(kind, String(hook.text))
+      const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy }
+      return facts.stoppedAt === undefined || !USER_ORIGINS.has(origin)
         ? prompted
         : { ...prompted, waits: [...facts.waits, [at, t - facts.stoppedAt]], stoppedAt: undefined }
     }
@@ -236,6 +246,8 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, claude: String(hook.version) }
     case 'tower.hire':
       return { ...facts, hired: [...facts.hired, String(hook.id)] }
+    case PROMPTED_BY:
+      return { ...facts, promptedBy: String(hook.by) }
     default:
       return facts
   }

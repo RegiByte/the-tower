@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { factsOf, type Session } from '../src/bridge/facts.ts'
+import { factsOf, PROMPTED_BY, type Session } from '../src/bridge/facts.ts'
+import { conversationsOf } from '../src/bridge/conversation.ts'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { extensionOf, landed as landing, parseLog, type RepoLanded } from '../src/bridge/landed.ts'
@@ -124,4 +125,16 @@ test('the weekly budget pace: the even daily spend to the reset, and when today\
   assert.deepEqual(pace(left, { since: day, spend: 50 }, now), { perDay: 200, runsOutAt: undefined })
   assert.deepEqual(pace(left, { since: day, spend: 200 }, now), { perDay: 200, runsOutAt: now + 20 * 3600_000 })
   assert.equal(pace({ resetsAt, usdLeft: undefined }, { since: day, spend: 200 }, now), undefined)
+})
+
+test("a prompt a worker typed through the tower is the worker's: it answers no wait, and the mark is spent on it", () => {
+  const log = fixture('tool-turn')
+  const at = log.events.findIndex((e) => e[0] === 39.495)
+  const marked = { ...log, events: [...log.events.slice(0, at), [39.4, 'h', { hook_event_name: PROMPTED_BY, by: 'hirer' }], ...log.events.slice(at)] as typeof log.events }
+  const facts = factsOf(marked)
+  assert.deepEqual(facts.prompts.map(([, origin]) => origin), ['composer', 'peer'])
+  assert.deepEqual(facts.waits, [])
+  assert.equal(facts.promptedBy, undefined)
+  assert.deepEqual(factsOf(log).waits.map(([, seconds]) => +seconds.toFixed(3)), [21.197])
+  assert.equal(conversationsOf(marked).at(-1)?.prompt, conversationsOf(log).at(-1)?.prompt)
 })

@@ -36,14 +36,14 @@
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
- *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?} | /resume {id, conversation} | /keys {id, data}
+ *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?} | /resume {id, conversation} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
  *        | /worktree/discard {project, name, author, held}
  *        | /branch/recut {project, name} | /branch/delete {project, name} | /tidy {project}   the tower's worktrees and kept branches, through git
  *   POST /shell/spawn {project, cwd} | /shell/keys {id, data} | /shell/resize {id, cols, rows} | /shell/kill {id}
  *        relayed to the terms daemon
- *   POST /submit {id, text}   type a prompt into a session's composer and submit it
+ *   POST /submit {id, text, by?}   type a prompt into a session's composer and submit it
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
@@ -63,7 +63,7 @@ import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
 import { snapshot } from '../bridge/screen.ts'
-import { LET_GO } from '../bridge/facts.ts'
+import { LET_GO, PROMPTED_BY } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
@@ -88,7 +88,7 @@ import type { Prune } from '../bridge/prunable.ts'
 import { bucketStart, stats, weeklyBudget } from '../bridge/stats.ts'
 import type { Resource } from '../bridge/resources.ts'
 import type { BoardMsg, Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
-import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Route, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { z } from 'zod'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { designCss, fonts } from '../shared/design.ts'
@@ -607,6 +607,29 @@ const letGo = (id: string) =>
       : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
   })
 
+/** The worker a prompt comes from is named in the session's log before the prompt reaches it: the user's prompts are the rest. */
+const promptedBy = (id: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } })
+
+const fromWorker = (by: string | undefined, act: () => Answer | Promise<Answer>) =>
+  by === undefined || system.session(by) ? act() : apiError('not_found', `No session "${by}"`)
+
+const submit = (id: string, text: string, by: string | undefined) =>
+  withSession(id, () =>
+    fromWorker(by, async () => {
+      const named = by ? await promptedBy(id, by) : OK
+      return named.t === 'error' ? named : daemon(() => submitText(paths, id, text))
+    }),
+  )
+
+/** A worker spawned on a prompt by another: its first prompt is that worker's. */
+const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | undefined, by: string | undefined) =>
+  fromWorker(by, async () => {
+    const answer = await spawning()
+    if (answer.t !== 'spawned' || !prompt || !by) return answer
+    const named = await promptedBy((answer as Replies['spawn']).id, by)
+    return named.t === 'error' ? named : answer
+  })
+
 /** A worktree with a folder gone, in any repo, can't be worked in until it is recut. */
 const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
   const name = worktreeName(project, cwd)
@@ -880,14 +903,15 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
   })
 
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
-  spawn: ({ project, cwd, cut, model, effort, prompt }) => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })),
+  spawn: ({ project, cwd, cut, model, effort, prompt, by }) =>
+    spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by),
   resume: ({ id, conversation }) => resume(id, conversation),
   keys: ({ id, data }) =>
     withSession(id, () => {
       const keys = sessionKeys(data)
       return keys ? host({ t: 'write', id, data: keys }) : OK
     }),
-  submit: ({ id, text }) => withSession(id, () => daemon(() => submitText(paths, id, text))),
+  submit: ({ id, text, by }) => submit(id, text, by),
   resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
   kill: ({ id }) => withSession(id, () => host({ t: 'kill', id })),
   'let-go': ({ id }) => letGo(id),

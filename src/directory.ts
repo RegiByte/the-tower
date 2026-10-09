@@ -560,7 +560,7 @@ switch (verb) {
     if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
     const tell = rest[0] === 'tell'
     const [verbName, body] = author.calls.review
-    const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell) })
+    const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me })
     await postToHost(me, { hook_event_name: 'tower.hire', id: hired.id })
     console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
     break
@@ -579,7 +579,7 @@ switch (verb) {
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
     const form = { ...spawnDefaults(floor, prompt), ...hire.fields }
     const [[verbName, body], given] = spawnCall(floor, form)
-    const reply = await command<Replies['spawn']>(verbName, { ...body, ...given })
+    const reply = await command<Replies['spawn']>(verbName, { ...body, ...given, by: me })
     await postToHost(me, { hook_event_name: 'tower.hire', id: reply.id })
     console.log(hiredLines(board, floor, reply, form).join('\n'))
     break
@@ -614,7 +614,7 @@ switch (verb) {
     const text = await readThread(board.floors.find((f) => f.id === target.project)!, target.checkout)
     if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
     const notes = unseenBy(parseThread(text), target.callsign).map((m) => m.n)
-    await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes) })
+    await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes), by: me })
     console.log(`Sent ${target.callsign} a pointer to ${notes.length ? notes.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.`)
     break
   }
