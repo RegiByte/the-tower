@@ -1,0 +1,26 @@
+# Every pull request, and main, gets the checks a release gets (release.yml), then proves they left the tree as committed
+# and the knowledge base consistent.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run tower3d
+      - name: Tower.app's Swift sources compile
+        run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
+      - name: Tests and builds left every committed file as it was
+        run: git diff --exit-code
+      - name: The knowledge base verifies
+        run: node .claude/skills/kb/tool/kb.mjs verify
