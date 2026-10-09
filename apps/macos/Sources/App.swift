@@ -276,6 +276,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     alert.beginSheetModal(for: window) { completionHandler($0 == .alertFirstButtonReturn ? field.stringValue : nil) }
   }
 
+  /**
+   * Pointer lock (Tower 3D's mouse-look) for the window's page and its frames. WebKit denies it to a page unless the
+   * UI delegate grants it through this private method, and words every denial as the window lacking focus.
+   */
+  @objc(_webViewDidRequestPointerLock:completionHandler:)
+  func webViewDidRequestPointerLock(_ webView: WKWebView, completionHandler: @escaping (Bool) -> Void) {
+    completionHandler(webView === web)
+  }
+
   // MARK: Menus
 
   func mainMenu() -> NSMenu {

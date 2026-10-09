@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-09",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
+  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/cards.ts#transitions"]
 }
 ---
 **Problem.** The tower lives in a browser tab, one among many: no Dock icon or window of its own, and it is gone with
@@ -22,8 +22,11 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   does in a tab it does in the window; the app adds only what a browser gives a page and a WKWebView doesn't:
   `alert`/`confirm`/`prompt` as sheets, and links that leave the tower (`_blank`, `window.open`, `tower open`, an
   origin's page) opening in the default browser, a window opened with no address and given one after (xterm's
-  links) too. Frames inside the page (shelf pages at origins of their own) go where
-  the page sends them.
+  links) too; and pointer lock (Tower 3D's mouse-look), for the window's page and its frames
+  ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)). WebKit denies
+  pointer lock unless the UI delegate grants it through a private method, the one way an embedder can, and words
+  every denial as "Pointer lock requires the window to have focus". Frames inside the page (shelf pages at origins of
+  their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
   answers. Until then the window says what starts it from a terminal (`tower up`, with `TOWER_CONFIG` when the config
@@ -67,7 +70,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
 - *The waits read natively, from `/board` in Swift.* Rejected: the words (`statusName`, `gistLine`) and the dismissals
   would be written twice, and drift from the tower page's.
 - *The page's own `Notification`s, granted through WebKit's private delegate.* Rejected: private API, and only the
-  page that is open would notify; the badge and the menu bar need the board apart from it anyway.
+  page that is open would notify; the badge and the menu bar need the board apart from it anyway. Pointer lock is
+  granted through the same kind of private delegate method because it has no public one and nothing else gives it.
 - *Electron.* Rejected: about 85 MB of Chromium for a page WebKit already draws, and running the tower in its process
   would tie the tower to a window.
 - *Tauri.* Rejected: the same WKWebView, behind Rust.
