@@ -397,6 +397,7 @@
       "statsHtml",
       "statsQuery",
       "threadFiles",
+      "threadItemFiles",
       "usd",
       "viewedCount",
       "watchPickDrag"

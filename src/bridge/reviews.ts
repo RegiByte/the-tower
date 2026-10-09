@@ -5,6 +5,7 @@
 import { MAIN_CHECKOUT } from '../shared/model.ts'
 import { checkoutOfId, landedOfId, verdictOf, type Message, type ReviewThread, type Verdict } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
+import { noteOffers, type NoteCalls, type NoteVerb } from './verbs.ts'
 import type { FloorBranch, FloorWorktree, RepoRead } from './worktrees.ts'
 
 /**
@@ -13,18 +14,72 @@ import type { FloorBranch, FloorWorktree, RepoRead } from './worktrees.ts'
  * absorbed into its base; `main`'s when no worker runs there and every main checkout is clean and level with its
  * upstream.
  */
-export type FloorThread = { checkout: string; id: string; tag: string; messages: number; last?: Pick<Message, 'author' | 'at' | 'n'>; landed: boolean }
+export type FloorThread = {
+  checkout: string; id: string; tag: string; messages: number; last?: Pick<Message, 'author' | 'at' | 'n'>; landed: boolean
+  /** Where its checkout's work stands: a note is offered only while it is live. */
+  state: CheckoutState
+  verbs: NoteVerb[]
+  calls: NoteCalls
+}
+
+/** A thread Tidy filed: its item's id and tag, and when it was filed, as a message heading writes a time. */
+export type FiledThread = { id: string; tag: string; at: string }
+
+/**
+ * Where a checkout's work stands. `live`: work can go on there, so a note on it reaches someone. `landed`: its work is in
+ * its base, `on` naming that base while git still holds the worktree or a branch cut under its name, and `filed` once
+ * Tidy filed its thread. `gone`: its worktree is gone, and nothing says its work landed. The main checkouts are always live.
+ */
+export type CheckoutState = { is: 'live' } | { is: 'landed'; on?: string; filed?: FiledThread } | { is: 'gone' }
+
+/** No worktree of the name is in use or holds work, and every branch cut under it is absorbed into its base. */
+const worktreeLanded = (tree: FloorWorktree | undefined, cutUnder: FloorBranch['repos']) =>
+  (!tree || (tree.state === 'removable' && tree.repos.every((r) => r.absorbed))) && cutUnder.every((r) => r.absorbed)
+
+const cutUnderOf = (checkout: string, branches: FloorBranch[]) => branches.flatMap((b) => b.repos.filter((r) => r.tree === checkout))
 
 const landed = (checkout: string, reads: RepoRead[] | undefined, worktrees: FloorWorktree[], branches: FloorBranch[], mainInUse: boolean): boolean => {
   if (!reads) return false
   if (checkout === MAIN_CHECKOUT) return !mainInUse && reads.every((r) => !r.git || (r.main.dirty === 0 && r.main.ahead === 0))
-  const tree = worktrees.find((w) => w.name === checkout)
-  const cutUnder = branches.flatMap((b) => b.repos.filter((r) => r.tree === checkout))
-  return (!tree || (tree.state === 'removable' && tree.repos.every((r) => r.absorbed))) && cutUnder.every((r) => r.absorbed)
+  return worktreeLanded(worktrees.find((w) => w.name === checkout), cutUnderOf(checkout, branches))
 }
+
+/**
+ * A checkout's `CheckoutState`, by what git reads of the floor (`reads`, `undefined` until all are read, when every
+ * checkout is live) and the thread Tidy filed for this work, if any. A worktree whose folder is missing is gone.
+ */
+export const checkoutState = (
+  checkout: string,
+  reads: RepoRead[] | undefined,
+  worktrees: FloorWorktree[],
+  branches: FloorBranch[],
+  filed: FiledThread | undefined,
+): CheckoutState => {
+  if (checkout === MAIN_CHECKOUT || !reads) return { is: 'live' }
+  const tree = worktrees.find((w) => w.name === checkout)
+  const cutUnder = cutUnderOf(checkout, branches)
+  const base = tree?.repos[0] ?? cutUnder[0]
+  const on = base && (base.against ?? base.base)
+  const landedHere = { is: 'landed' as const, ...(on && { on }), ...(filed && { filed }) }
+  if (tree) return worktreeLanded(tree, cutUnder) ? landedHere : tree.state === 'lost' ? { is: 'gone' } : { is: 'live' }
+  return (cutUnder.length && worktreeLanded(tree, cutUnder)) || filed ? landedHere : { is: 'gone' }
+}
+
+/**
+ * The thread Tidy filed for work in `checkout` begun at `startedAt` (as a message heading writes a time): the first filed after it, since a
+ * worktree's name can be cut again for new work once its thread is filed. `files`: the project's thread files by item id.
+ */
+export const filedThreadOf = (files: { id: string }[], checkout: string, startedAt: string): FiledThread | undefined =>
+  files
+    .flatMap(({ id }) => {
+      const filed = landedOfId(id)
+      return filed && filed.checkout === checkout && filed.landed >= startedAt ? [{ id, tag: tagOf(id), at: filed.landed }] : []
+    })
+    .sort((a, b) => a.at.localeCompare(b.at))[0]
 
 /** `files`: the project's thread files by item id. `reads`: its dirs' git, `undefined` until all are read. */
 export const floorThreads = (
+  project: string,
   files: { id: string; thread: ReviewThread }[],
   reads: RepoRead[] | undefined,
   worktrees: FloorWorktree[],
@@ -35,6 +90,7 @@ export const floorThreads = (
     const checkout = checkoutOfId(id)
     if (checkout === undefined) return []
     const last = thread.messages.at(-1)
+    const state = checkoutState(checkout, reads, worktrees, branches, undefined)
     return [
       {
         checkout,
@@ -43,6 +99,8 @@ export const floorThreads = (
         messages: thread.messages.length,
         last: last && { author: last.author, at: last.at, n: last.n },
         landed: landed(checkout, reads, worktrees, branches, mainInUse),
+        state,
+        ...noteOffers(project, checkout, state.is === 'live'),
       },
     ]
   })

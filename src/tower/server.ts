@@ -186,7 +186,7 @@ function archive(res: http.ServerResponse, project: string) {
   const config = readConfig()
   if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
   const now = Date.now()
-  const cards = allCards(config, system.sessions(), system.live(), system.running(), system.peers(), system.threads(), system.repos(), now)
+  const cards = allCards(config, system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(cards, project, now)))
 }
 

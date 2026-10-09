@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
+  "refs": ["hub/src/bridge/verbs.ts#noteOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) was decided inside each renderer:
@@ -27,7 +27,10 @@ a fixed order, the first being the thing's primary verb.
   not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout is there and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone, live or not, is `card.worktree.gone`, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
   [[leftover]]s, live or not; `send-home` on a worker in a crew while any of it runs, its call a list of kills, the
   deepest first ([[crews]]); `let-go` while it is stranded and on duty, its latest conversation not yet resumed
-  ([[let-go]]).
+  ([[let-go]]); `note` while its floor keeps review threads and the work its thread is about goes on
+  (`card.threadState` live, [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState)), its call
+  `['review/append', { project, checkout }]` ([`noteOffers`](ref:hub/src/bridge/verbs.ts#noteOffers), [[review-threads]]).
+- Each of a floor's `threads` offers `note` the same way, by its own `state`.
 - Each of a card's `resources`, a process it left running
   ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)): `reap`, always, its call
   `['reap/process', { id, pid }]`, which the tower refuses for a pid that isn't one of that session's leftovers.

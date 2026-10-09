@@ -20,6 +20,12 @@ Commit messages hold the detail.
   session chips (API 1.19: `/brief.js` adds `resumedIdle` and `RESUMED_IDLE`).
 - Copy works inside framed pages: the tower page's shelf frame (an `html` or `renderer` entry), `html` items and shown
   files allow `clipboard-write`, as do Tower 3D's frames of shelf pages and shown files.
+- Reviews and Changes on landed work (API 1.20): each card says where its checkout's work stands
+  (`checkoutState`: `live`, `landed` on its base, or `gone` with its worktree), and where its review thread's does
+  (`threadState`, with the thread Tidy filed); the card and each floor thread offer `note` only while that work goes on.
+  Both renderers draw the note forms only when offered: a landed worker's Reviews read its thread, filed or not, under a
+  line saying it landed, and its Changes say "Landed on <base>" or "Worktree removed" instead of an empty diff.
+  `POST /review/append` still takes any checkout. `/panels.js` adds `threadItemFiles`.
 
 ## v1.2.0
 

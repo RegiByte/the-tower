@@ -441,7 +441,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { ICON, SHELF_ICON, originIcon } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -1070,7 +1070,7 @@ function drawChanges() {
   if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) pick = live
   const failed = read || changesFailed?.id !== c.id ? undefined : changesFailed.message
-  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name }), { 'pick-text': pickText })
+  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note') }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && read) jumpToAnchor()
@@ -1089,7 +1089,8 @@ watchPickDrag($('changes'), {
 
 const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
 const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
-const threadItem = (c) => reviewsOf(floorOf(c.project))?.items.find((i) => i.id === threadId(threadCheckoutOf(c)))
+/** The thread the worker's Reviews show: the one Tidy filed once its work landed, else its checkout's. */
+const threadItem = (c) => reviewsOf(floorOf(c.project))?.items.find((i) => i.id === (c.threadState.filed?.id ?? threadId(threadCheckoutOf(c))))
 
 /** The thread of the selected worker's checkout as last read: read again whenever its file's version moves on the board. */
 let review
@@ -1097,10 +1098,10 @@ let review
 function followThread(c) {
   const checkout = threadCheckoutOf(c)
   const item = threadItem(c)
-  const key = `${c.project}/${checkout}@${item?.modifiedAt ?? 'none'}`
+  const key = `${c.project}/${item?.id ?? checkout}@${item?.modifiedAt ?? 'none'}`
   if (review?.key === key) return
-  const same = review?.project === c.project && review.checkout === checkout
-  review = { key, project: c.project, checkout, thread: !item ? { checkout, messages: [] } : same ? review.thread : undefined }
+  const same = review?.project === c.project && review.checkout === checkout && review.item === item?.id
+  review = { key, project: c.project, checkout, item: item?.id, thread: !item ? { checkout, messages: [] } : same ? review.thread : undefined }
   if (!item) return
   tower.text(`collection/${c.project}/${REVIEWS}/${encodeURIComponent(item.id)}`).then(
     (text) => review?.key === key && ((review.thread = parseThread(text)), (review.failed = undefined), render()),
@@ -1108,7 +1109,7 @@ function followThread(c) {
   )
 }
 
-const threadOf = (c) => (review?.project === c.project && review.checkout === threadCheckoutOf(c) ? review.thread : undefined)
+const threadOf = (c) => (review?.project === c.project && review.checkout === threadCheckoutOf(c) && review.item === threadItem(c)?.id ? review.thread : undefined)
 
 /** What the worker hasn't seen of its checkout's thread, else how many notes it holds. */
 const reviewsTally = (c) => {
@@ -1117,7 +1118,7 @@ const reviewsTally = (c) => {
 }
 
 async function addNote(button, c, fields) {
-  const reply = await told(pressing(button, () => tower.call('review/append', { project: c.project, checkout: threadCheckoutOf(c), author: board.user.name, ...fields })))
+  const reply = await told(pressing(button, () => tower.run(c.calls.note, { author: board.user.name, ...fields })))
   if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
   return reply
 }
@@ -1158,7 +1159,7 @@ function sendNotes(button, c) {
 const threadView = (c) => ({
   checkout: threadCheckoutOf(c), tag: threadItem(c)?.tag, thread: threadOf(c), failed: threadOf(c) ? undefined : review?.failed, reader: c, changes: changes?.id === c.id ? changes.repos : undefined,
   targets: sendTargets(floorOf(c.project), threadCheckoutOf(c)), target: sendTarget(c), re: noteRe, user: board.user.name,
-  files: threadFiles(floorOf(c.project), threadCheckoutOf(c)),
+  files: threadItemFiles(floorOf(c.project), threadCheckoutOf(c), threadItem(c)?.id ?? threadId(threadCheckoutOf(c))), state: c.threadState, noting: can(c, 'note'),
 })
 
 const drawReviews = (c) => drawPanel($('reviews'), reviewsHtml(threadView(c)), { 'note-text': noteDrafts.get(draftKey(c)) ?? '' })

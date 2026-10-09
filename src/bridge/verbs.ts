@@ -15,9 +15,15 @@ import type { WorktreeState } from './worktrees.ts'
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
  * ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a
- * stranded worker off duty, its conversation left resumable.
+ * stranded worker off duty, its conversation left resumable; `note` adds a note to the review thread about its work
+ * (`NoteVerb`).
  */
-export type CardVerb = 'drive' | 'submit' | 'resume' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home'
+export type CardVerb = 'drive' | 'submit' | 'resume' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
+/**
+ * `note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on
+ * work that landed, or whose worktree is gone, reaches nobody. The API still takes one there.
+ */
+export type NoteVerb = 'note'
 export type ConversationVerb = 'resume' | 'goto'
 /** A process a session left running can always be ended on its own. */
 export type ResourceVerb = 'reap'
@@ -83,7 +89,9 @@ const worktreeVerbs = (state: WorktreeState): WorktreeVerb[] => (state === 'lost
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
-export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[] }
+/** `note` takes the author and what the note says. */
+export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
+export type NoteCalls = { note?: Call<'review/append'> }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
 /** `spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none. */
@@ -135,6 +143,10 @@ export const sendHomeOffer = (crew: { id: string; status: Status }[], inCrew: bo
     ? { verbs: ['send-home'], calls: { 'send-home': running.map(({ id }): Call<'kill'> => ['kill', { id }]) } }
     : { verbs: [], calls: {} }
 }
+
+/** `live`: the checkout's work goes on, on a floor that keeps review threads. */
+export const noteOffers = (project: string, checkout: string, live: boolean): Offers<NoteVerb, NoteCalls> =>
+  live ? { verbs: ['note'], calls: { note: ['review/append', { project, checkout }] } } : { verbs: [], calls: {} }
 
 export const resourceOffers = (session: string, pid: number): Offers<ResourceVerb, ResourceCalls> => ({
   verbs: ['reap'],

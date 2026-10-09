@@ -1,7 +1,7 @@
 import type { Keys } from '../shared/keymap.ts'
 import { MAIN_CHECKOUT, inProject, projectCollections, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
-import { reviewedIn, REVIEWS, threadId, unseenBy, type ReviewThread } from '../shared/reviews.ts'
+import { reviewedIn, REVIEWS, stamp, threadId, unseenBy, type ReviewThread } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
 import { crewOf, current, threadCheckoutOf, workerNamed } from '../shared/cards.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
@@ -22,6 +22,7 @@ import {
   conversationOffers,
   floorOffers,
   isLive,
+  noteOffers,
   resourceOffers,
   sendHomeOffer,
   type CardCalls,
@@ -33,7 +34,7 @@ import {
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
-import { floorThreads, type FloorThread } from './reviews.ts'
+import { checkoutState, filedThreadOf, floorThreads, type CheckoutState, type FloorThread } from './reviews.ts'
 import { deliveries, type Delivery } from './messages.ts'
 import { commonBases, floorBranches, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 
@@ -98,6 +99,13 @@ export type Card = {
   reportsTo?: string
   /** The checkout it works in: its worktree's name, or `main`. */
   checkout: string
+  /** Where the work in its checkout stands: what its Changes are. */
+  checkoutState: CheckoutState
+  /**
+   * Where the work its review thread is about stands (`threadCheckoutOf`: a reviewer's is its author's), with the thread
+   * Tidy filed once it landed. The card offers `note` while it is live.
+   */
+  threadState: CheckoutState
   /** The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen (after its own last one); none without a thread. */
   unseen?: number
   status: Status
@@ -340,7 +348,7 @@ const card = (
   callsignOf: (id: string) => string,
   now: number,
   nameOf: (s: Session) => string,
-): Card => {
+): Unplaced => {
   const { header, facts } = session
   const worker = lineage(session, (s) => continued.get(s))
   const callsign = nameOf(session)
@@ -426,6 +434,9 @@ const card = (
   }
 }
 
+/** A card before the worktrees are read for who is in them: what its checkouts' states are folded from. */
+type Unplaced = Omit<Card, 'checkoutState' | 'threadState'>
+
 /** How many of a floor's last showings its gallery holds. */
 const GALLERY_SHOWINGS = 12
 
@@ -498,7 +509,7 @@ const collectionsOf = (config: Config, projectId: string, root: string, items: C
  * Who is in a worktree: the workers on duty, running or stranded until resumed or let go, and the shells. A stranded
  * worker resumes in its folder, so its worktree is held for it.
  */
-export const occupantsOf = (cards: Card[], shells: Shell[] | undefined): Occupant[] => [
+export const occupantsOf = (cards: Pick<Card, 'id' | 'cwd' | 'onDuty'>[], shells: Shell[] | undefined): Occupant[] => [
   ...cards.filter((c) => c.onDuty).map(({ id, cwd }) => ({ id, cwd })),
   ...(shells ?? []).map(({ id, cwd }) => ({ id, cwd })),
 ]
@@ -535,8 +546,43 @@ export const archiveAtOf = (cards: Card[], archived: Card[]) => {
 const keepsThreads = (config: Config, projectId: string) => Object.hasOwn(config.projects, projectId) && Object.hasOwn(projectCollections(config, projectId), REVIEWS)
 
 /**
+ * Each card with where its checkout's work stands and where its thread's does (`checkoutState`), and `note` while the
+ * latter goes on on a floor keeping threads. Who is in a worktree is folded from the cards on duty and the shells, as
+ * the board's floors fold it. `threadFiles`: the review thread files of floors keeping threads.
+ */
+const withCheckouts = (
+  config: Config,
+  cards: Unplaced[],
+  shells: Shell[] | undefined,
+  repos: Map<string, RepoRead>,
+  threadFiles: { project: string; id: string }[],
+): Card[] => {
+  const occupants = occupantsOf(cards, shells)
+  const floors = new Map(Object.entries(config.projects).map(([id, project]) => [id, floorGit(id, project, repos, occupants)]))
+  return cards.map((c) => {
+    const floor = floors.get(c.project)
+    const stateOf = (checkout: string): CheckoutState => {
+      if (!floor) return { is: 'gone' }
+      const filed = filedThreadOf(threadFiles.filter((t) => t.project === c.project), checkout, stamp(new Date(c.startedAt)))
+      return checkoutState(checkout, floor.read, floor.worktrees, floor.branches, filed)
+    }
+    const threadCheckout = threadCheckoutOf(c)
+    const threadState = stateOf(threadCheckout)
+    const note = noteOffers(c.project, threadCheckout, keepsThreads(config, c.project) && threadState.is === 'live')
+    return { ...c, checkoutState: stateOf(c.checkout), threadState, verbs: [...c.verbs, ...note.verbs], calls: { ...c.calls, ...note.calls } }
+  })
+}
+
+/** A floor's worktrees and kept branches as git reads them, `read` `undefined` until every dir of it was read once. */
+const floorGit = (projectId: string, project: Project, repos: Map<string, RepoRead>, occupants: Occupant[]) => {
+  const read = projectReads(projectDirs(project), repos)
+  return { read, worktrees: floorWorktrees(projectId, read ?? [], occupants), branches: floorBranches(projectId, read ?? []) }
+}
+
+/**
  * Every session's card, archived or not: what the board and the archive are cut from. `repos`: what git says in each
- * project dir (`src/worktrees.ts`), by dir. `threads`: every review thread file, parsed. `now`: epoch ms.
+ * project dir (`src/worktrees.ts`), by dir. `shells`: the terms daemon's, which hold a worktree in use as a session
+ * does. `threads`: every review thread file, parsed. `now`: epoch ms.
  */
 export const allCards = (
   config: Config,
@@ -544,6 +590,7 @@ export const allCards = (
   host: HostLive | undefined,
   running: Resource[],
   peers: Peer[],
+  shells: Shell[] | undefined,
   threads: { project: string; id: string; thread: ReviewThread }[],
   repos: Map<string, RepoRead>,
   now: number,
@@ -563,7 +610,7 @@ export const allCards = (
   const callsignOf = (id: string) => nameOf(byId.get(id)!)
   const projectRead = (p: Project | undefined) => p && projectReads(projectDirs(p), repos)
   const unresumableOf = ({ project, cwd }: Session['header']) => unresumableAt(config.projects[project], cwd, projectRead(config.projects[project]))
-  return withSeats(withCrews(sessions.map((s) =>
+  const placed = sessions.map((s) =>
     card(
       s,
       sessions,
@@ -581,7 +628,8 @@ export const allCards = (
       now,
       nameOf,
     ),
-  )))
+  )
+  return withSeats(withCrews(withCheckouts(config, placed, shells, repos, threadFiles)))
 }
 
 /**
@@ -605,7 +653,7 @@ export const board = (
 ): Board => {
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
-  const cards = allCards(config, sessions, host, running, peers, threads, repos, now)
+  const cards = allCards(config, sessions, host, running, peers, shells, threads, repos, now)
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
@@ -615,15 +663,12 @@ export const board = (
     keys: configuredKeys(config),
     config: paths.config,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, ...project }]) => {
-      const read = projectReads(projectDirs(project), repos)
-      const floorReads = read ?? []
-      const worktrees = floorWorktrees(id, floorReads, occupants)
-      const branches = floorBranches(id, floorReads)
-      const bases = commonBases(floorReads)
+      const { read, worktrees, branches } = floorGit(id, project, repos, occupants)
+      const bases = commonBases(read ?? [])
       const floorCards = cards.filter((c) => c.project === id)
       const present = floorCards.filter(kept)
       const mainInUse = floorCards.some((c) => c.live && c.checkout === MAIN_CHECKOUT)
-      const floorThreadsNow = floorThreads(threadFiles.filter((t) => t.project === id), read, worktrees, branches, mainInUse)
+      const floorThreadsNow = floorThreads(id, threadFiles.filter((t) => t.project === id), read, worktrees, branches, mainInUse)
       const tidy: TidyPlan = {
         worktrees: worktrees.filter((w) => w.state === 'removable').map((w) => w.name),
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),

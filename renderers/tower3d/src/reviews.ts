@@ -1,6 +1,6 @@
 import type { RepoChanges } from '../../../src/changes.ts'
 import type { ChangesRead as Read } from '../../../src/shared/panels.ts'
-import { REVIEWS, parseThread, threadId, type ReviewThread } from '../../../src/shared/reviews.ts'
+import { REVIEWS, parseThread, type ReviewThread } from '../../../src/shared/reviews.ts'
 import { tower, type Board } from './api.ts'
 import { FIXTURE, FIXTURE_CHANGES, FIXTURE_THREADS } from './fixtures.ts'
 
@@ -15,23 +15,31 @@ let failed = (_: Error) => {}
 /** Runs `then` whenever a thread or a Changes read arrives, `fail` when one can't be read. */
 export const onReviews = (then: () => void, fail: (err: Error) => void) => ((arrived = then), (failed = fail))
 
-const threadText = (project: string, checkout: string): Promise<string> =>
-  FIXTURE === undefined ? tower.text(`collection/${project}/${REVIEWS}/${encodeURIComponent(threadId(checkout))}`) : Promise.resolve(FIXTURE_THREADS[`${project}/${checkout}`] ?? '')
+/**
+ * A thread as a panel reads it: its checkout, and its item's id in the floor's `reviews`, the checkout's own file or,
+ * once its work landed, the one Tidy filed.
+ */
+export type ThreadAt = { project: string; checkout: string; id: string }
 
-/** Each thread as last read, by `<project>/<checkout>`: the version of its file it was read at, the read, and why it failed. */
+const threadText = ({ project, checkout, id }: ThreadAt): Promise<string> =>
+  FIXTURE === undefined ? tower.text(`collection/${project}/${REVIEWS}/${encodeURIComponent(id)}`) : Promise.resolve(FIXTURE_THREADS[`${project}/${checkout}`] ?? '')
+
+/** Each thread as last read, by `<project>/<id>`: the version of its file it was read at, the read, and why it failed. */
 type ThreadEntry = { at: number; thread?: ReviewThread; failed?: string; read: Promise<ReviewThread> }
 const threads = new Map<string, ThreadEntry>()
 
 const emptyThread = (checkout: string): ReviewThread => ({ checkout, messages: [] })
 
+const keyOf = ({ project, id }: ThreadAt) => `${project}/${id}`
+
 /** The thread's entry for the version of its file the board names, read anew when the file moved on. */
-function entryOf(board: Board, project: string, checkout: string) {
-  const item = board.floors.find((f) => f.id === project)?.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === threadId(checkout))
+function entryOf(board: Board, at: ThreadAt) {
+  const item = board.floors.find((f) => f.id === at.project)?.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)
   if (!item) return undefined
-  const key = `${project}/${checkout}`
+  const key = keyOf(at)
   const had = threads.get(key)
   if (had?.at === item.modifiedAt) return had
-  const read = threadText(project, checkout).then(parseThread)
+  const read = threadText(at).then(parseThread)
   const entry: ThreadEntry = { at: item.modifiedAt, thread: had?.thread, read }
   threads.set(key, entry)
   read.then((thread) => {
@@ -48,26 +56,26 @@ function entryOf(board: Board, project: string, checkout: string) {
 }
 
 /**
- * A checkout's thread: empty while it has no file, `undefined` until its file is first read. A file the board says
- * moved on is read again; until it arrives, the thread as it was.
+ * A thread: empty while it has no file, `undefined` until its file is first read. A file the board says moved on is
+ * read again; until it arrives, the thread as it was.
  */
-export const threadOf = (board: Board, project: string, checkout: string): ReviewThread | undefined => {
-  const entry = entryOf(board, project, checkout)
-  return entry ? entry.thread : emptyThread(checkout)
+export const threadOf = (board: Board, at: ThreadAt): ReviewThread | undefined => {
+  const entry = entryOf(board, at)
+  return entry ? entry.thread : emptyThread(at.checkout)
 }
 
-/** Why a checkout's thread couldn't be read, while none is held. */
-export const threadFailed = (board: Board, project: string, checkout: string) => {
-  const entry = entryOf(board, project, checkout)
+/** Why a thread couldn't be read, while none is held. */
+export const threadFailed = (board: Board, at: ThreadAt) => {
+  const entry = entryOf(board, at)
   return entry?.thread ? undefined : entry?.failed
 }
 
-/** Forgets a checkout's thread, to read it again on the next draw. */
-export const rereadThread = (project: string, checkout: string) => threads.delete(`${project}/${checkout}`)
+/** Forgets a thread, to read it again on the next draw. */
+export const rereadThread = (at: ThreadAt) => threads.delete(keyOf(at))
 
-/** A checkout's thread as its file reads at the version the board names, once read. */
-export const threadRead = (board: Board, project: string, checkout: string): Promise<ReviewThread> =>
-  entryOf(board, project, checkout)?.read ?? Promise.resolve(emptyThread(checkout))
+/** A thread as its file reads at the version the board names, once read. */
+export const threadRead = (board: Board, at: ThreadAt): Promise<ReviewThread> =>
+  entryOf(board, at)?.read ?? Promise.resolve(emptyThread(at.checkout))
 
 /** A worker's Changes as last read, with each repo's viewed marks (path → the hash it was marked at), by repo dir. */
 export type ChangesRead = Read & { id: string }

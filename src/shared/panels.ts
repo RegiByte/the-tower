@@ -43,6 +43,7 @@
  *   data-tip="<text>"          a bar's readout, shown by the renderer's tooltip (`watchTips`, src/shared/tips.ts)
  */
 import type { RepoChanges } from '../changes.ts'
+import type { CheckoutState } from '../bridge/reviews.ts'
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import type { Call } from './api.ts'
@@ -86,9 +87,13 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
  * The Changes panel: `folds` are the files folded or unfolded against what their viewed mark says, by `fileKey`;
  * `thread` is the thread whose anchors mark lines, `checkout` the one a note on picked lines is added to, `user` the
  * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
- * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop.
+ * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop. `state`: where
+ * the worker's own checkout stands (`card.checkoutState`); `noting`: the worker offers `note`, so lines can be picked.
  */
-export type ChangesView = { read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string }
+export type ChangesView = {
+  read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string
+  state: CheckoutState; noting: boolean
+}
 
 /** A worker as the Reviews panel names it. */
 type Worker = { id: string; callsign: string; checkout: string }
@@ -97,22 +102,28 @@ type Worker = { id: string; callsign: string; checkout: string }
  * The Reviews panel: `reader` is the worker whose notes new to it are marked; `changes` what its anchors are looked
  * for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
  * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
- * of the thread failed, drawn while none is read.
+ * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (`card.threadState`, or a
+ * floor thread's `state`); `noting`: the card or floor thread offers `note`, so the composer, replies and Send are drawn.
  */
 export type ThreadView = {
   checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
   changes: RepoChanges[] | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
-  files: ThreadFiles
+  files: ThreadFiles; state: CheckoutState; noting: boolean
 }
 
 /** Where a checkout's thread is kept (none when its floor keeps no threads), and the dirs its anchors' repos are. */
 export type ThreadFiles = { thread: string | undefined; dirs: string[] }
 
-/** A checkout's `ThreadFiles`, from its floor on the board. */
-export const threadFiles = (floor: { hub: string; repos: string[]; collections: { id: string; dir: string }[] }, checkout: string): ThreadFiles => {
+type ThreadFloor = { hub: string; repos: string[]; collections: { id: string; dir: string }[] }
+
+/** The `ThreadFiles` of a checkout's thread kept as item `id` (its own file, or the one Tidy filed), from its floor on the board. */
+export const threadItemFiles = (floor: ThreadFloor, checkout: string, id: string): ThreadFiles => {
   const reviews = floor.collections.find((c) => c.id === REVIEWS)
-  return { thread: reviews && `${reviews.dir}/${threadId(checkout)}`, dirs: checkoutDirs(floor, checkout) }
+  return { thread: reviews && `${reviews.dir}/${id}`, dirs: checkoutDirs(floor, checkout) }
 }
+
+/** A checkout's `ThreadFiles`, from its floor on the board. */
+export const threadFiles = (floor: ThreadFloor, checkout: string): ThreadFiles => threadItemFiles(floor, checkout, threadId(checkout))
 
 /** A row of a file's diff: a hunk's heading, or a line with its numbers on the old side and now. */
 export type Row = { hunk: Hunk } | { cls: 'plus' | 'minus' | 'eof' | ''; old?: number; now?: number; line: string; hunk?: undefined }
@@ -316,15 +327,26 @@ const countsHtml = (added: number, removed: number) => `<span class="add">+${add
 export const failedHtml = (what: string, message: string, again: string) =>
   `<div class="read-failed" role="alert"><p>couldn't read ${esc(what)}: ${esc(message)}</p><button ${again}><span aria-hidden="true">↻</span> Read again</button></div>`
 
+/** Where work that no longer goes on stands, said once at the top of a panel: nothing beside it takes a note. */
+function settledHtml(state: CheckoutState, checkout: string) {
+  if (state.is === 'live') return ''
+  const said = state.is === 'gone'
+    ? `<b>Worktree removed</b>: the folders of ${esc(checkout)} are gone, and nothing says its work landed.`
+    : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}</b>: the work of ${esc(checkout)} is in its base${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
+  return `<p class="settled" role="status">${said} Notes on it would reach nobody.</p>`
+}
+
 /** What changed in a worker's repos: each repo since what it counts from, each file with its diff, folded once viewed. */
 export function changesHtml(v: ChangesView) {
   const read = v.read
-  if (!read) return `<div class="changes-panel">${v.failed ? failedHtml('what changed', v.failed, 'data-changes-read') : '<p class="none">reading what changed…</p>'}</div>`
+  const settled = settledHtml(v.state, v.checkout)
+  if (!read) return `<div class="changes-panel">${settled}${v.failed ? failedHtml('what changed', v.failed, 'data-changes-read') : '<p class="none">reading what changed…</p>'}</div>`
   const files = changedFiles(read.repos)
+  if (settled && !files.length) return `<div class="changes-panel">${settled}</div>`
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
       <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read><span aria-hidden="true">↻</span> Read again</button></div>`
-  return `<div class="changes-panel">${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: livePick(read, v.pick) }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
+  return `<div class="changes-panel">${settled}${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: v.noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
 }
 
 type ReadView = ChangesView & { read: ChangesRead }
@@ -360,8 +382,9 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
     if (r.hunk) return `<tr class="hunk"><td colspan="3">@@ −${r.hunk.old} +${r.hunk.new} @@ ${esc(r.hunk.heading)}</td></tr>`
     const on = range && i >= range[0] && i <= range[1]
     const marks = r.now === undefined ? undefined : noted.get(r.now)
-    const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' ? '' : `data-pick="${esc(key)}|${i}"`} data-tip="${
-      notes ? `noted in ${notes.map((n) => `n${n}`).join(', ')}; ` : ''}click to note on this line, drag or ⇧-click for more">${n ?? ''}</td>`
+    const tips = (notes: number[] | undefined) => [...(notes ? [`noted in ${notes.map((n) => `n${n}`).join(', ')}`] : []), ...(v.noting ? ['click to note on this line, drag or ⇧-click for more'] : [])].join('; ')
+    const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.noting ? '' : `data-pick="${esc(key)}|${i}"`} ${
+      tips(notes) ? `data-tip="${tips(notes)}"` : ''}>${n ?? ''}</td>`
     const line = `<tr class="${r.cls} ${on ? 'picked' : ''}">${ln(r.old, undefined)}${ln(r.now, marks)}<td><span class="m">${esc(r.line[0])}</span>${code[i]}</td></tr>`
     return on && i === range[1] && !v.picking ? line + noteBoxHtml(v) : line
   })
@@ -394,7 +417,7 @@ function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
 
 const noteHtml = (v: ThreadView, m: Message, fresh: boolean) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''}" data-note="${m.n}">
   <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<button class="re" data-to-note="${m.re}">re n${m.re}</button>` : ''}${
-    fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}<button data-reply="${m.n}">reply</button></header>
+    fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}${v.noting ? `<button data-reply="${m.n}">reply</button>` : ''}</header>
   ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body md">${markdownHtml(m.body)}</div>` : ''}</article>`
 
 function sendHtml(v: ThreadView) {
@@ -403,17 +426,24 @@ function sendHtml(v: ThreadView) {
     <select data-send-pick aria-label="send to another worker" data-tip="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
 }
 
-/** A checkout's thread: notes with their quotes marked as the Changes find them, Send, and a composer for a note on the whole work. */
-export function reviewsHtml(v: ThreadView) {
-  if (!v.thread) return `<div class="reviews-panel">${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
-  const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
-  return `<div class="reviews-panel"><div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<button class="tag" data-copy="${esc(v.tag)}" data-tip="copy its tag">${esc(v.tag)}</button>` : ''}${
-      v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
-      <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${sendHtml(v)}</div>` +
-    (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
-    `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" data-tip="not an answer">×</button></div>` : ''}
+const composerHtml = (v: ThreadView) => `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button data-reply-clear aria-label="not an answer" data-tip="not an answer">×</button></div>` : ''}
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
-      <div class="actions"><button class="primary" data-note-add>Add note</button></div></div></div>`
+      <div class="actions"><button class="primary" data-note-add>Add note</button></div></div>`
+
+/**
+ * A checkout's thread: notes with their quotes marked as the Changes find them, and, while a note is offered, Send and a
+ * composer for a note on the whole work. Once the work no longer goes on, the thread is read only, under a line saying why.
+ */
+export function reviewsHtml(v: ThreadView) {
+  const settled = settledHtml(v.state, v.checkout)
+  if (!v.thread) return `<div class="reviews-panel">${settled}${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
+  if (settled && !v.thread.messages.length) return `<div class="reviews-panel">${settled}<p class="none">${esc(v.checkout)} has no review thread.</p></div>`
+  const unseen = new Set(v.reader ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
+  return `<div class="reviews-panel">${settled}<div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<button class="tag" data-copy="${esc(v.tag)}" data-tip="copy its tag">${esc(v.tag)}</button>` : ''}${
+      v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
+      <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${v.noting ? sendHtml(v) : ''}</div>` +
+    (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
+    (v.noting ? composerHtml(v) : '') + '</div>'
 }
 
 /** The Stats panel's tab that covers every project. */
@@ -695,6 +725,7 @@ export const panelsCss = `
 .reviews-panel .anchor .where .file-acts { margin-left: auto; }
 .changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }
 .changes-panel .none, .reviews-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
+.changes-panel .settled, .reviews-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
 .changes-panel code, .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 .changes-head { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-xs); color: var(--muted); font-size: var(--fs-m); }
 .changes-head b { color: var(--ink); font-variant-numeric: tabular-nums; }

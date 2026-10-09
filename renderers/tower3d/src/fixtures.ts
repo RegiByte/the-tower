@@ -8,7 +8,7 @@ import { DRAFTS } from '../../../src/shared/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
-import { cardOffers, conversationOffers, floorOffers, isLive, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
+import { cardOffers, conversationOffers, floorOffers, isLive, noteOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
@@ -95,6 +95,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const awaitsResume = stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy
   return {
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
+    checkoutState: { is: 'live' }, threadState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
     status: f.status, blocked: f.blocked, live, waiting,
@@ -140,17 +141,22 @@ const reviewsCollection = (project: string, threads: Record<string, string>, now
   items: Object.entries(threads).map(([checkout, text], n) => ({ id: threadId(checkout), tag: tagOf(threadId(checkout)), size: text.length, modifiedAt: now - n * MIN })),
 }]
 
-/** A floor's threads as the board lists them, and each card with what of its checkout's thread is new to it. */
+/**
+ * A floor's threads as the board lists them, and each card with what of its checkout's thread is new to it; on a floor
+ * keeping threads, every checkout's work goes on, so each offers a note.
+ */
 function withThreads(f: FloorFacts, cards: Card[]): Pick<Floor, 'threads' | 'cards'> {
   const parsed = Object.entries(f.threads ?? {}).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
+  const notes = (checkout: string) => noteOffers(f.id, checkout, f.threads !== undefined)
   return {
     threads: parsed.map(({ checkout, thread }) => ({
-      checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false,
+      checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const }, ...notes(checkout),
       last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
     })),
     cards: cards.map((c) => {
       const thread = parsed.find((t) => t.checkout === threadCheckoutOf(c))?.thread
-      return thread ? { ...c, unseen: unseenBy(thread, c.callsign).length } : c
+      const note = notes(threadCheckoutOf(c))
+      return { ...c, verbs: [...c.verbs, ...note.verbs], calls: { ...c.calls, ...note.calls }, ...(thread && { unseen: unseenBy(thread, c.callsign).length }) }
     }),
   }
 }
