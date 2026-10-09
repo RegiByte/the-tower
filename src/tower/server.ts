@@ -353,7 +353,10 @@ async function terminalStream(id: string, send: (msg: TerminalMsg) => void): Pro
     if (terminals.get(id) === 1) terminals.delete(id)
     else terminals.set(id, terminals.get(id)! - 1)
   }
-  const stop = await screenStream(id, (msg) => send(msg.t === 'snapshot' ? { ...msg, terminals: others } : msg))
+  const stop = await screenStream(id, (msg) => send(msg.t === 'snapshot' ? { ...msg, terminals: others } : msg)).catch((err) => {
+    close()
+    throw err
+  })
   if (!stop) {
     close()
     return
@@ -422,7 +425,8 @@ async function muxWatch({ mux: muxId, key, path }: RouteInput['mux/watch']): Pro
   if (!mux) return apiError('not_found', `No mux "${muxId}"`)
   void mux.streams.get(key)?.then((stop) => stop?.())
   const stream = streamAt(path, (data) => sse(mux.res, { key, data }))
-  mux.streams.set(key, stream)
+  /** A stream that fails to open answers its watch with the failure, and the mux holds it as one with nothing to stop. */
+  mux.streams.set(key, stream.catch(() => undefined))
   if (!(await stream)) return apiError('not_found', `Nothing streams at "${path}"`)
   return OK
 }
