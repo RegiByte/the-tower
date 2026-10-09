@@ -15,7 +15,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, type DaemonVerb } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -1641,7 +1641,7 @@ $('paused').addEventListener('click', (e) => {
 
 const typing = () => {
   const el = document.activeElement
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || ($('spawn') as HTMLDialogElement).open
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || ($('spawn') as HTMLDialogElement).open || ($('landing') as HTMLDialogElement).open
 }
 /** The aimed thing's verb on a key, by `KeyboardEvent.code`. */
 const offerOnKey = (code: string) => (s.aimed && (captured() || s.view === 'overview') ? offerForKey(s.offers, code) : undefined)
@@ -2244,7 +2244,16 @@ $('side').addEventListener('click', async (e) => {
   if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
   if (d.reapPid) return pressing(el, () => reapProcess(d.reapPid!))
   if (d.shellDir) return pressing(el, () => spawnShell(floorOf(d.shellProject!).calls.shell!, d.shellDir!))
-  if (d.wtCall) return pressing(el, () => offered(JSON.parse(d.wtCall!)))
+  if (d.wtCall) {
+    const verb = d.wtVerb as keyof typeof WORKTREE_DONE
+    if (WORKTREE_ASK[verb] && !confirmed(`wt ${d.wtCall}`)) return
+    return pressing(el, () => worktreeVerb(JSON.parse(d.wtCall!), `${WORKTREE_DONE[verb]} ${d.wtName}`))
+  }
+  if (d.discard) {
+    const w = s.board.floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(w.calls.discard) === d.discard)
+    return w && confirmed(`wt ${d.discard}`) && pressing(el, () => discardWorktree(w.calls.discard!))
+  }
+  if (d.landing) return pressing(el, () => showLanding(JSON.parse(d.landing!)))
   if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
   if (d.tidy !== undefined && s.panel?.kind === 'floor') {
     const f = floorOf(s.panel.id)
@@ -2261,6 +2270,33 @@ $('side').addEventListener('input', (e) => {
   if (el.id !== 'archive-filter' || s.panel?.kind !== 'archive') return
   s.panel.words = wordsOf(el.value)
   renderPanel()
+})
+
+async function worktreeVerb(c: Call<'worktree/recut' | 'worktree/prune' | 'worktree/remove' | 'branch/delete'>, done: string) {
+  if (await offered(c)) toast(done)
+}
+
+/** An at-risk worktree's work thrown away, signed with the user's name on the review thread its tips are noted on. */
+async function discardWorktree(c: Call<'worktree/discard'>) {
+  const reply = await offered(c, { author: s.board!.user.name })
+  if (reply) toast(discardedLine(reply))
+}
+
+/** What landing changed on a carried branch, in a dialog over whatever is open. */
+async function showLanding(query: { project: string; branch: string }) {
+  const read = await tower.landing(query).catch((err: Error) => (toast(err.message), undefined))
+  if (!read) return
+  $('landing-title').textContent = `What landing changed on ${read.branch}`
+  $('landing-body').innerHTML = landingHtml(read)
+  ;($('landing') as HTMLDialogElement).showModal()
+  $('landing').scrollTop = 0
+}
+
+/** The settled line's "what landing changed", in a desk's Changes and Reviews and in a thread read away from any desk. */
+document.addEventListener('click', (e) => {
+  const of = (e.target as Element).closest<HTMLElement>('[data-landing-of]')
+  const project = s.panel?.kind === 'desk' ? findCard(s.board!, s.panel.id)?.project : s.panel?.kind === 'thread' ? s.panel.project : undefined
+  if (of && project) pressing(of, () => showLanding({ project, branch: of.dataset.landingOf! }))
 })
 
 async function tidy(c: Call<'tidy'>) {

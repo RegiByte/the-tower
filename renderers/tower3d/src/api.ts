@@ -1,6 +1,7 @@
 import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait } from '../../../src/bridge/board.ts'
 import type { Brief } from '../../../src/bridge/turns.ts'
 import type { Stats, StatsQuery } from '../../../src/bridge/stats.ts'
+import type { LandingRead } from '../../../src/bridge/worktrees.ts'
 import type { Status } from '../../../src/bridge/status.ts'
 import type { API_VERSION, Call, Replies, Verb, Verbs } from '../../../src/shared/api.ts'
 import type { Renderer } from '../../../src/shared/model.ts'
@@ -30,6 +31,8 @@ export type Tower = {
   /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */
   renderer(): Promise<Renderer | null>
   stats(query?: Partial<StatsQuery & { project: string }>): Promise<Stats>
+  /** What landing changed on a carried branch: each commit landed edited, its copy and `git range-diff`. */
+  landing(query: { project: string; branch: string }): Promise<LandingRead>
   get<K extends keyof Reads>(path: K): Promise<Reads[K]>
   text(path: string): Promise<string>
   blob(path: string): Promise<Blob>

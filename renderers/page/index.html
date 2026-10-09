@@ -176,10 +176,6 @@ dialog h2.legend-head { margin-top: var(--sp-2xl); }
 .keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
 dialog#landing { width: min(960px, 94vw); }
-.landing h3 { margin: var(--sp-l) 0 var(--sp-s); font-size: var(--fs-m); }
-.landing h3 small, .landing p { color: var(--faint); font-weight: 400; }
-.landing-edit { margin-bottom: var(--sp-l); }
-.landing pre { margin: var(--sp-s) 0 0; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-s)/1.45 var(--mono); }
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
 .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -437,7 +433,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -613,13 +609,6 @@ const dirHtml = (f, dir, hub) =>
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
 
-/** What a worktree verb asks before it runs, and what it says once done, by the name of the worktree or kept branch. */
-const WORKTREE_ASK = {
-  remove: (name) => `Remove the worktree ${name} in every repo?\n\nIts branch is deleted where it is absorbed into its base, or landed there as copies; refused when work would be lost.`,
-  prune: (name) => `Forget the lost worktree ${name}?\n\nIts branch is deleted where it is absorbed into its base.`,
-  delete: (name) => `Delete the kept branch ${name} in every repo where it is absorbed into its base?`,
-}
-const WORKTREE_DONE = { recut: 'recut', prune: 'forgot', remove: 'removed', delete: 'deleted' }
 
 /** A verb on a worktree or kept branch, its call on the button. */
 const wtVerbHtml = (thing, verb) => verb === 'discard'
@@ -688,7 +677,7 @@ const editedRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span c
 
 /** One thing Tidy would do, with a button that does only it. */
 const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>
-    <button class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(`${r.what}: ${r.does}?\n\n${r.title}`)}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">${ICON.tidy}</button></div>`
+    <button class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(tidyRowAsk(r))}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">${ICON.tidy}</button></div>`
 
 
 const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
@@ -2469,8 +2458,7 @@ document.addEventListener('click', (e) => {
   const tidy = e.target.closest('[data-tidy]')
   if (tidy) {
     const f = floorOf(tidy.dataset.tidy)
-    const rows = tidyRows(f, Date.now()).map((r) => `${r.what}: ${r.does}`).join('\n')
-    return confirm(`${tidyLine(f.tidy)}\n\n${rows}\n\nDo all of it?`) && told(pressing(tidy, () => tower.run(f.calls.tidy))).then((r) => r && toast(tidiedLine(r)))
+    return confirm(tidyAllAsk(f, Date.now())) && told(pressing(tidy, () => tower.run(f.calls.tidy))).then((r) => r && toast(tidiedLine(r)))
   }
   const picked = e.target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)

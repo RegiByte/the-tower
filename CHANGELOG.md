@@ -24,13 +24,14 @@ Commit messages hold the detail.
   an `at-risk` worktree as shown (`held`: each repo's head and uncommitted count, refused once either moved): its tips
   (uncommitted files committed on top) are noted on its review thread, recoverable with `git branch` until git
   collects them, then it is removed with force, its branches deleted and its thread filed. The tower page draws
-  both; Tower 3D hides `discard` until it draws it.
+  both, and Tower 3D does too.
 - A floor's archive goes by crew (API 1.27): in both renderers a coordinator's hires are listed above it, indented a
   step per depth, crews by their latest start, the newest first, and a worker's earlier lives after its latest. A filter
   keeps the order. `/cards.js` adds `pastCrews`, `pastMatching` and `pastSize`. Tower 3D's archive list no longer runs
   past its panel.
-- Tower 3D lets a stranded worker go: Let go beside Resume in its desk panel, X held at its desk in the world, and a
-  floor panel's "resume all N stranded", each asked first the way the page asks. `/cards.js` adds `letGoAsk`,
+- Tower 3D catches up with the page in this entry and the three below (API 1.28, additions to `/cards.js` only). It lets a
+  stranded worker go: Let go beside Resume in its desk panel, X held at its desk in the world, and a floor panel's
+  "resume all N stranded", each asked first the way the page asks. `/cards.js` adds `letGoAsk`,
   `letGoneLine`, `resumeAllAsk` and `resumeStranded`, the words and the loop both renderers share.
 - Tower 3D's destructive buttons press through `/press.js`: busy until the tower answers, the second press's "sure?"
   showing the page's own question in its tip, a toast after killing a shell, and ending one leftover process at once,
@@ -39,6 +40,12 @@ Commit messages hold the detail.
 - Tower 3D picks where a new shell starts: T at a floor's console opens every floor's hub, repos and worktrees
   (`shellPlaces`), that floor's first, picked with the arrows and Enter or the mouse; you are taken to the new shell's
   kiosk, on its own floor. The floor panel's shell buttons come from the same places.
+- Tower 3D draws work that landed edited and work thrown away: a carried worktree or kept branch reads "landed,
+  edited" with what landing changed (`tower.landing`, in a dialog, also from the settled line of Changes and Reviews),
+  and the floor panel lists them under "landed edited", each removed on its own; an at-risk worktree offers discard,
+  asked with `discardAsk` and signed with your name. Its worktree verbs now ask the page's questions: `/cards.js`
+  serves `WORKTREE_ASK` and `WORKTREE_DONE`, and the page's Tidy asks through `tidyRowAsk` and `tidyAllAsk`. The
+  landing dialog's look moves into `panelsCss`.
 
 ## v1.3.0
 

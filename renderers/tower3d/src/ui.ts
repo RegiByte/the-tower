@@ -10,9 +10,9 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
-import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
+import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
 import { noteTitle } from './notes.ts'
@@ -451,8 +451,8 @@ const runningHtml = (f: Floor) =>
     can(r, 'reap') ? `<button data-reap-pid="${esc(card.id)} ${r.pid}" data-tip="end ${r.pid}">end</button>` : ''}</div>`).join('')
 
 /** One thing the floor's Tidy would do, with `button` after it. */
-const tidyRowHtml = (r: TidyRow, button: string) =>
-  `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${esc(r.what)}</b></span><span class="st">${esc(r.does)}</span>${button}</div>`
+const tidyRowHtml = (r: Pick<TidyRow, 'what' | 'does' | 'title'>, button: string) =>
+  `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>${button}</div>`
 
 /** Everything the floor's Tidy would do, a row each. */
 const tidyListHtml = (f: Floor) => tidyRows(f, wallNow()).map((r) => tidyRowHtml(r, '')).join('')
@@ -492,20 +492,44 @@ export function shellPickHtml(p: Plan, board: Board, first: string, held: HeldWh
 }
 
 /** A verb on a worktree or kept branch, its call on the button. */
-const wtVerb = (thing: { calls: Record<string, unknown> }, verb: keyof typeof WORKTREE_VERB_NAME) =>
-  `<button data-wt-call="${esc(JSON.stringify(thing.calls[verb]))}">${WORKTREE_VERB_NAME[verb]}</button>`
+const wtVerb = (thing: { name: string; calls: Record<string, unknown> }, verb: Exclude<keyof typeof WORKTREE_VERB_NAME, 'discard'>, armed: (key: string) => boolean) => {
+  const call = JSON.stringify(thing.calls[verb])
+  const attrs = `data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}"`
+  const ask = WORKTREE_ASK[verb]
+  return ask ? askingButton(armed(`wt ${call}`), attrs, WORKTREE_VERB_NAME[verb], `${WORKTREE_VERB_NAME[verb]} ${thing.name}`, ask(thing.name)) : `<button ${attrs}>${WORKTREE_VERB_NAME[verb]}</button>`
+}
+
+/** Throwing away an at-risk worktree's work, asked first with what it loses (`discardAsk`). */
+const discardButton = (w: Floor['worktrees'][number], armed: (key: string) => boolean) => {
+  const call = JSON.stringify(w.calls.discard)
+  return askingButton(armed(`wt ${call}`), `class="danger" data-discard="${esc(call)}"`, WORKTREE_VERB_NAME.discard, 'throw its work away: each tip is noted on its review thread first', discardAsk(w))
+}
+
+/** Opens what landing changed on a carried branch: `git range-diff` of each edited commit and its copy. */
+const landingButton = (landing: EditedRow['landing']) =>
+  `<button class="icon-btn" data-landing="${esc(JSON.stringify(landing))}" aria-label="what landing changed on ${esc(landing.branch)}" data-tip="what landing changed: git range-diff of each edited commit and its copy">${ICON.diff}</button>`
+
+/** A worktree or kept branch that landed edited: what landing changed, and a press that removes only it, asked first. */
+const editedRowHtml = (r: EditedRow, armed: (key: string) => boolean) => {
+  const call = JSON.stringify(r.call)
+  const verb = r.call[0] === 'branch/delete' ? 'delete' : 'remove'
+  const name = r.what.replace(/^⎇ /, '')
+  const sure = armed(`wt ${call}`)
+  return tidyRowHtml(r, landingButton(r.landing) + askingButton(sure, `${sure ? '' : 'class="icon-btn" '}data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(name)}" aria-label="${esc(`${verb} ${name}`)}"`, ICON.tidy, 'remove only this, after looking at what landing changed', WORKTREE_ASK[verb]!(name)))
+}
 
 /** The floor's worktrees and kept branches, each with the verbs the board offers on it. */
-const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy) => [
+const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy, armed: (key: string) => boolean) => [
   ...f.worktrees.map((w) => {
-    const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
+    const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos), ...(w.state === 'carried' ? [carriedLine(w.repos)] : [])].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
-      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.filter((v) => v !== 'discard').map((v) => wtVerb(w, v)).join('')}
+      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.state === 'carried' ? landingButton({ project: f.id, branch: worktreeBranch(w) }) : ''}${w.verbs.map((v) => (v === 'discard' ? discardButton(w, armed) : wtVerb(w, v, armed))).join('')}
       ${w.state === 'lost' ? '' : shellButton(places.find((pl) => pl.worktree === w.name), `new shell in ${w.name}`, held)}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
-  ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
+  ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${
+    b.carried ? landingButton({ project: f.id, branch: b.name }) : ''}${b.verbs.map((v) => wtVerb(b, v, armed)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
@@ -538,6 +562,7 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  */
 export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, tray: string | undefined) {
   const places = shellPlaces([f])
+  const edited = editedRows(f)
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? ICON.repo : ICON.hub} ${esc(base(dir))}</span>
     ${shellButton(places.find((pl) => pl.dir === dir), `new shell in ${base(dir)}`, held)}
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
@@ -571,8 +596,9 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     ${resumeAllButton(f, armed, held)}${spawnButton(f, held)}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
     ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}${askingButton(armed(`tidy ${f.id}`), 'class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, wallNow()))}` : ''}
+    ${edited.length ? `<div class="section eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${edited.map((r) => editedRowHtml(r, armed)).join('')}` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held)}` : ''}
+    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held, armed)}` : ''}
     ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded.id === DRAFTS ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
 }
 

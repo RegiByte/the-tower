@@ -733,6 +733,10 @@ export const panelsCss = `
 .changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }
 .changes-panel .none, .reviews-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .changes-panel .settled, .reviews-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
+.landing h3 { margin: var(--sp-l) 0 var(--sp-s); font-size: var(--fs-m); }
+.landing h3 small, .landing p { color: var(--faint); font-weight: 400; }
+.landing-edit { margin-bottom: var(--sp-l); }
+.landing pre { margin: var(--sp-s) 0 0; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-s)/1.45 var(--mono); }
 .settled [data-landing-of] { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }
 .changes-panel code, .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 .changes-head { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-xs); color: var(--muted); font-size: var(--fs-m); }

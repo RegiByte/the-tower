@@ -262,7 +262,11 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
 .doc-image, .doc-video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
 
 #spawn { padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); width: fit-content; max-width: none; max-height: none; box-shadow: var(--shadow); }
-#spawn::backdrop { background: #0d121180; }
+#spawn::backdrop, #landing::backdrop { background: #0d121180; }
+#landing { width: min(960px, 94vw); max-height: 86vh; padding: var(--sp-xl); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+#landing h2 { margin: 0; font: 800 var(--fs-m)/1.2 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+#landing .actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-m); margin-top: var(--sp-xl); color: var(--faint); font-size: var(--fs-s); }
+#landing .actions small { margin-right: auto; }
 
 #fade { position: fixed; inset: 0; background: var(--enamel); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
 #fade.on { opacity: 1; }
@@ -333,6 +337,13 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
   </div>
 </div>
 <dialog id="spawn"></dialog>
+<dialog id="landing" aria-labelledby="landing-title">
+  <form method="dialog">
+    <h2 id="landing-title">What landing changed</h2>
+    <div class="landing" id="landing-body"></div>
+    <div class="actions"><small>git range-diff of each commit and the copy that landed</small><button value="">Close</button></div>
+  </form>
+</dialog>
 <div id="watch" class="glass hidden"><b>THE BIG SCREEN</b><small>Esc or click the scene to step back</small>
   <button data-act="stop" class="danger">stop sharing</button><button class="icon-btn" id="watch-close" data-act="close" aria-label="step back" data-tip="step back (Esc)"></button></div>
 <div id="fade"></div>

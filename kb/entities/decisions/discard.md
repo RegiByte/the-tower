@@ -57,4 +57,4 @@ thread ([[review-threads]]).
 
 **Impact.** API 1.26: verb `worktree/discard {project, name, author, held}` replying `{tips, thread}`;
 `WorktreeVerb` gains `discard`, `WorktreeCalls.discard`. Removal can now lose work, by this verb alone. Tower 3D
-hides it until it draws it. No host change.
+draws it too (2026-10-09), asked on a second press with `discardAsk` and signed with the user's name. No host change.

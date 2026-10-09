@@ -65,8 +65,11 @@ wall between the back glass and the door, lists every process the floor's worker
 ports, orphan, command): held Z on a row ends that one process, F goes to its worker's desk; a hire whose work landed
 is a row too, its own `landed` act, held Z killing only it through its Tidy row's call; past the rows that fit,
 the floor panel lists them all, each ended at once, and lists Tidy's rows, each with a ⌫ that applies only
-that row and Tidy all, both asked first. A panel button that ends something (send home, reap, let go, kill a shell,
-Tidy, delete a kept item) asks on a second click, the page's question in its tip, and is busy until the tower
+that row and Tidy all, both asked first. Work that landed edited ([[carried]]) is listed apart under "landed edited", each row
+removed on its own after a look at what landing changed (`tower.landing`, a dialog over the panel, also opened from
+the settled line of a desk's Changes and Reviews or a thread), and an at-risk worktree offers discard ([[discard]]).
+A panel button that ends something (send home, reap, let go, kill a shell, Tidy, a worktree's remove, forget,
+delete or discard, delete a kept item) asks on a second click, the page's question in its tip, and is busy until the tower
 answers ([[press-feedback]]). The mouse wheel marks a verb and a click runs it.
 [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives each thing's offers from the board on
 every frame. A stopped worker's desk offers resume first, and sitting there shows its last screen read-only. A worker the host

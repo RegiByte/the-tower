@@ -247,6 +247,8 @@
       "WAITING_MEANS",
       "WAITING_NAME",
       "WAIT_SAID",
+      "WORKTREE_ASK",
+      "WORKTREE_DONE",
       "WORKTREE_STATE_NAME",
       "WORKTREE_VERB_NAME",
       "ago",

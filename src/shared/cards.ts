@@ -715,6 +715,16 @@ export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in us
 /** The verbs on worktrees and kept branches, as buttons say them. */
 export const WORKTREE_VERB_NAME = { recut: 'recut', prune: 'forget', remove: 'remove', delete: 'delete', discard: 'discard' } as const
 
+/** What a worktree verb asks before it runs, by the name of the worktree or kept branch; a verb absent asks nothing. */
+export const WORKTREE_ASK: Partial<Record<keyof typeof WORKTREE_VERB_NAME, (name: string) => string>> = {
+  remove: (name) => `Remove the worktree ${name} in every repo?\n\nIts branch is deleted where it is absorbed into its base, or landed there as copies; refused when work would be lost.`,
+  prune: (name) => `Forget the lost worktree ${name}?\n\nIts branch is deleted where it is absorbed into its base.`,
+  delete: (name) => `Delete the kept branch ${name} in every repo where it is absorbed into its base?`,
+}
+
+/** What a worktree verb did, said before the name of the worktree or kept branch. */
+export const WORKTREE_DONE = { recut: 'recut', prune: 'forgot', remove: 'removed', delete: 'deleted' } as const
+
 /** The branch of a worktree, as its hub repo (or its first) has it checked out. */
 export const worktreeBranch = (w: FloorWorktree) => w.repos[0].branch ?? 'detached'
 
