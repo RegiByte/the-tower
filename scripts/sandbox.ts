@@ -49,16 +49,17 @@ process.env.TOWER_CONFIG = CONFIG
 
 /**
  * A session that prints a line, reports the newest tested Claude release and one saved conversation with a prompt and an answer as Claude's hooks and mod
- * would (or continues the one `--resume` names), and waits to be killed: Claude's flags land in `$@`.
+ * would (or continues the one `--resume` names, on the prompt after `--` when one is given), and waits to be killed: Claude's flags land in `$@`.
  */
 const SESSION = String.raw`post() { curl -sS -m 2 --unix-socket "$TOWER_HOOKS_SOCKET" -H 'content-type: application/json' --data-binary "$1" "http://host/hooks/$TOWER_SESSION_ID" >/dev/null; }
-conv=$(uuidgen | tr A-Z a-z); source=startup
-while [ $# -gt 0 ]; do [ "$1" = --resume ] && conv=$2 && source=resume; shift; done
+conv=$(uuidgen | tr A-Z a-z); source=startup; prompt='Say hello from the sandbox.'
+while [ $# -gt 0 ]; do [ "$1" = --resume ] && conv=$2 && source=resume; [ "$1" = -- ] && prompt=$2; shift; done
+prompt=$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "$prompt")
 printf "sandbox session %s in %s\n" "$$" "$PWD"
 post '{"hook_event_name":"tower.claude","version":"${CLAUDE_TESTED.highest}"}'
 post '{"hook_event_name":"SessionStart","source":"'$source'","session_id":"'$conv'"}'
-post '{"hook_event_name":"UserPromptSubmit","session_id":"'$conv'","prompt":"Say hello from the sandbox."}'
-post '{"hook_event_name":"prompt.submit","origin":{"kind":"composer"},"text":"Say hello from **the sandbox**."}'
+post '{"hook_event_name":"UserPromptSubmit","session_id":"'$conv'","prompt":'"$prompt"'}'
+post '{"hook_event_name":"prompt.submit","origin":{"kind":"composer"},"text":'"$prompt"'}'
 post '{"hook_event_name":"turn.complete","answer":"Hello from the sandbox, session '$$'.\n\n- a list\n- of things"}'
 while :; do sleep 3600; done`
 
