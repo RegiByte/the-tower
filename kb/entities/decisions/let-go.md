@@ -50,7 +50,8 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   ([`endsLine`](ref:hub/src/shared/log-file.ts#endsLine)). It refuses a log that is archived, unknown, or still
   flushing its exit. A stranded id never runs again (a resume is a new session), so
   nothing else writes that file. `HOST_PROTOCOL` is 2, and `POST /let-go` refuses with `unavailable` and the
-  restart to do while the running host is older.
+  restart to do while the running host is older ([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as a
+  worker's prompt does).
 - The bridge folds it as `letGoAt` without counting it as Claude heard from. The card carries `letGoAt`, is off duty
   and frees its seat at that moment. Its status reads "let go, resumable", and it keeps `resume` in the archive.
   The `let-go` verb is offered while the card is stranded, on duty and not yet resumed. It is a

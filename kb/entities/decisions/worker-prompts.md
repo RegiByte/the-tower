@@ -10,6 +10,7 @@
   "refs": [
     "hub/src/bridge/facts.ts#PROMPTED_BY",
     "hub/src/bridge/facts.ts#factsAfter",
+    "hub/src/tower/server.ts#factRefused",
     "hub/src/tower/server.ts#promptedBy",
     "hub/src/tower/server.ts#submit",
     "hub/src/tower/server.ts#spawnedBy",
@@ -36,7 +37,9 @@ from you" were hire briefs alone, so every attention number overstated the user'
 anything happens). With it, [`promptedBy`](ref:hub/src/tower/server.ts#promptedBy) has the host append
 `{"hook_event_name":"tower.prompt","by":<id>}` to the target's log, through the host's `fact` request, before the
 text is typed; for a spawn, right after it starts, only when it has a prompt (Claude takes over a second to read its
-first). [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps the mark as `promptedBy` until the next
+first). The host takes `fact` from protocol 2 on: while an older host runs, a `submit` or a spawn with a prompt and
+`by` refuses with `unavailable` and the restart to do, before it types or spawns anything
+([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as `let-go` refuses). [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps the mark as `promptedBy` until the next
 `prompt.submit` of a user origin, counts that prompt as `peer` and lets its wait go unanswered, and spends the mark.
 The conversation's prompt is untouched: a hired worker's card still shows its brief. The `tower` CLI passes its own
 session id on `hire`, `review` and `send`; the user's page and the user's CLI pass none, so their prompts stay the

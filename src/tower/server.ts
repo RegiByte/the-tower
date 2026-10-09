@@ -76,7 +76,7 @@ import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outs
 import { briefFor, cut, deleteBranch, discard, discardable, fork, landingOf, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { configPath, projectCollectionsPath, systemPaths } from '../shared/paths.ts'
 import { attachShell } from '../shared/client.ts'
-import { HOST_PROTOCOL, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
 import { everyEvent, logFileOf, readLog, screenEvents, tailLog } from '../tail.ts'
@@ -603,15 +603,24 @@ async function terms(msg: ToTerms): Promise<Answer> {
 const withSession = (id: string, act: () => Answer | Promise<Answer>) =>
   system.session(id) ? act() : apiError('not_found', `No session "${id}"`)
 
-/**
- * Only a card that offers `let-go` is let go: stranded, on duty, its latest conversation not yet resumed. The fact is
- * appended by the host, which takes it from `HOST_PROTOCOL` 2 on.
- */
+/** The host protocol that first takes `fact`. */
+const FACT_PROTOCOL = 2
+
+/** Why the running host can't append a `tower.*` fact, so a verb that needs one refuses before it does anything. */
+const factRefused = (doing: string): ApiError | undefined => {
+  const live = system.live()
+  if (!live) return undefined
+  const protocol = live.protocol ?? 0
+  return protocol < FACT_PROTOCOL
+    ? apiError('unavailable', `The running host is too old to ${doing} (protocol ${protocol}, this tower needs ${FACT_PROTOCOL}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
+    : undefined
+}
+
+/** Only a card that offers `let-go` is let go: stranded, on duty, its latest conversation not yet resumed. */
 const letGo = (id: string) =>
   withSession(id, () => {
-    const live = system.live()
-    if (live && (live.protocol ?? 0) < HOST_PROTOCOL)
-      return apiError('unavailable', `The running host is too old to let a worker go (protocol ${live.protocol ?? 0}, this tower needs ${HOST_PROTOCOL}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
+    const refused = factRefused('let a worker go')
+    if (refused) return refused
     return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && c.verbs.includes('let-go')))
       ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
       : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
@@ -620,13 +629,15 @@ const letGo = (id: string) =>
 /** The worker a prompt comes from is named in the session's log before the prompt reaches it: the user's prompts are the rest. */
 const promptedBy = (id: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } })
 
+const PROMPT_FROM_WORKER = 'name the worker a prompt comes from'
+
 const fromWorker = (by: string | undefined, act: () => Answer | Promise<Answer>) =>
   by === undefined || system.session(by) ? act() : apiError('not_found', `No session "${by}"`)
 
 const submit = (id: string, text: string, by: string | undefined) =>
   withSession(id, () =>
     fromWorker(by, async () => {
-      const named = by ? await promptedBy(id, by) : OK
+      const named = by ? (factRefused(PROMPT_FROM_WORKER) ?? (await promptedBy(id, by))) : OK
       return named.t === 'error' ? named : daemon(() => submitText(paths, id, text))
     }),
   )
@@ -634,6 +645,8 @@ const submit = (id: string, text: string, by: string | undefined) =>
 /** A worker spawned on a prompt by another: its first prompt is that worker's. */
 const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | undefined, by: string | undefined) =>
   fromWorker(by, async () => {
+    const refused = prompt && by ? factRefused(PROMPT_FROM_WORKER) : undefined
+    if (refused) return refused
     const answer = await spawning()
     if (answer.t !== 'spawned' || !prompt || !by) return answer
     const named = await promptedBy((answer as Replies['spawn']).id, by)
