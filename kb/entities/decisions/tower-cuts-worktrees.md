@@ -8,7 +8,7 @@
   "date": "2026-10-05",
   "supersedes": "worktrees-are-claudes",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
 **Problem.** Every worker on a floor ran in the same checkout: workers interleaved edits, tested each other's
@@ -29,7 +29,7 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
 - **Read, never stored.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads each project dir's git (worktree
   list, status, unpushed commits, `branch.<br>.towerBase`, origin's branches) without fetching; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
-  state: `live` (a running session or shell in it), `lost` (a folder gone), `at-risk` (uncommitted files, or commits
+  state: `live` (a worker on duty in it, running or stranded until resumed or let go, or a shell; [[tidy]]), `lost` (a folder gone), `at-risk` (uncommitted files, or commits
   on no remote that aren't **absorbed**), else `removable`. Git prints resolved paths (`/private/tmp`), so the read
   maps them back to the config's spelling of each dir.
 - **Absorbed** is content, not ancestry: `git merge-tree --write-tree <base> <br>` equals the base's tree. It is

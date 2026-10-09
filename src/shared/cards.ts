@@ -725,7 +725,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm): string {
     v.where === 'new'
       ? [v.name.trim() ? `new worktree <b>${esc(v.name.trim())}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, v.name))}`, `from ${esc(v.base || f.bases[0])}`, `in ${esc(repos)}`]
       : v.where === 'worktree' && joined
-        ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} at work in it` : 'nobody else in it']
+        ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} on duty in it` : 'nobody else in it']
         : [`main checkout of <b>${esc(base(v.checkout))}</b>`, 'shared with you and every worker there']
   const claude = [v.model || "Claude's model", v.effort ? `${v.effort} effort` : "Claude's effort", v.prompt.trim() ? 'starts on the prompt' : 'starts idle']
   return [...place, ...claude.map(esc)].map((fact) => `<span>${fact}</span>`).join('')
@@ -770,7 +770,7 @@ export function spawnFormHtml(f: Floor, { sign, draft }: { sign: string; draft?:
         <label class="wide">${labelHtml('From')}<select name="base">${f.bases.map((b, i) => `<option value="${i ? esc(b) : ''}">${esc(b)}${i ? '' : " · origin's default"}</option>`).join('')}</select></label>
       </div>
       <fieldset class="if-worktree picks">${worktrees.map((w, i) => `<label class="pick"><input type="radio" name="worktree" value="${esc(w.repos[0].path)}"${i ? '' : ' checked'}>
-        <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length ? `${w.sessions.length} at work` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
+        <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
       <fieldset class="if-main picks">${repos.map((dir, i) => `<label class="pick"><input type="radio" name="checkout" value="${esc(dir)}"${i ? '' : ' checked'}>
         <b>${esc(base(dir))}</b><span>${i ? "its own CLAUDE.md, not the hub's" : 'the hub: its CLAUDE.md and skills'}</span></label>`).join('')}</fieldset>
       <div class="fields">

@@ -494,9 +494,12 @@ const collectionsOf = (config: Config, projectId: string, root: string, items: C
       .map((i) => ({ id: i.id, tag: tagOf(i.id), size: i.size, modifiedAt: i.modifiedAt, keptBy: keptBy.get(itemKey(i.project, i.collection, i.id)) })),
   }))
 
-/** Who is in a worktree: the running sessions and shells. */
+/**
+ * Who is in a worktree: the workers on duty, running or stranded until resumed or let go, and the shells. A stranded
+ * worker resumes in its folder, so its worktree is held for it.
+ */
 export const occupantsOf = (cards: Card[], shells: Shell[] | undefined): Occupant[] => [
-  ...cards.filter((c) => c.live).map(({ id, cwd }) => ({ id, cwd })),
+  ...cards.filter((c) => c.onDuty).map(({ id, cwd }) => ({ id, cwd })),
   ...(shells ?? []).map(({ id, cwd }) => ({ id, cwd })),
 ]
 

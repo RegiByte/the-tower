@@ -14,6 +14,7 @@
     "hub/src/bridge/prunable.ts#landed",
     "hub/src/bridge/prunable.ts#STUCK_MS",
     "hub/src/bridge/board.ts#TidyPlan",
+    "hub/src/bridge/board.ts#occupantsOf",
     "hub/src/bridge/board.ts#board",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/verbs.ts#floorOffers",
@@ -25,7 +26,8 @@
     "hub/src/shared/cards.ts#tidyRows",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
-    "hub/test/prunable.test.ts"
+    "hub/test/prunable.test.ts",
+    "hub/test/board.test.ts"
   ]
 }
 ---
@@ -62,6 +64,13 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
     someone types into it (a hirer's message isn't typing). The answer stays in its log and the brief, and a kill
     resumes, so the row says "answer unread" and the hire goes.
 
+- A worktree is offered only while nobody holds it: a worker on duty holds the worktree it works in
+  ([`occupantsOf`](ref:hub/src/bridge/board.ts#occupantsOf)), running or stranded by the host until it is resumed or
+  let go, since its resume starts in that folder and fails once it is gone. Its state reads `live` ("in use"), and
+  Tidy, a row's call and `worktree/remove` all fold the same occupants, so no path removes it. A worker let go
+  ([[let-go]]) is off duty and holds nothing, like one killed: both stay resumable from the archive only while their
+  folder is there. A stranded worker whose folder is already gone holds nothing either (its resume is refused,
+  `unresumable: 'gone'`), so the worktree reads `lost` and can be recut or forgotten.
 - *Stuck*: [`isStuck`](ref:hub/src/bridge/prunable.ts#isStuck), `working` with no hook or mod event for
   [`STUCK_MS`](ref:hub/src/bridge/prunable.ts#STUCK_MS) (20 min), read from a new fact, `heardAt`
   ([`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter)): `Card.stuck`, and the status word reads "stuck". Output
@@ -89,6 +98,9 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   the list at the console, held Z applies it), finished hires are rows, and what Tidy ends is edged in amber.
 
 **Alternatives considered.**
+- *A let-go worker still holding its worktree*: let go means off duty without resuming, the stranded worker's
+  send-home, and a worker sent home holds nothing. Holding for every resumable worker would keep every worktree ever
+  worked in, since every past worker stays resumable.
 - *A second verb* (`prune`) beside the worktree `tidy`: two buttons that each clean half of a floor. One list says
   everything that would go.
 - *Recomputing on the server and applying whatever qualifies at the press*: the user would approve one list and get
@@ -109,6 +121,6 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - *Tidying on a timer*: whoever ended a worker must be a fact in a log, and the tower writes no logs. Designed when
   wanted.
 
-**Impact.** API 1.4: a `tidyRows` row carries `call`, and `POST /tidy` takes any part of the plan. API v13: `floor.tidy`, `Card.stuck`, `typedAt`, `heardAt`; `tidy` takes the plan and its reply adds
+**Impact.** A stranded worker's worktree reads `live` until it is resumed or let go, no API change. API 1.4: a `tidyRows` row carries `call`, and `POST /tidy` takes any part of the plan. API v13: `floor.tidy`, `Card.stuck`, `typedAt`, `heardAt`; `tidy` takes the plan and its reply adds
 `reaped`, `killed` and `skipped`. The worktrees and threads trays lost their own tidy buttons. No host change. A `tidy` fixture
 board in Tower 3D and the frames walk.

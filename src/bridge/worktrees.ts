@@ -92,7 +92,7 @@ export type FloorWorktreeRepo = Omit<TreeRead, 'name'> & { dir: string; atRisk: 
 export type FloorWorktree = {
   name: string
   repos: FloorWorktreeRepo[]
-  /** The live sessions and shells whose cwd is inside any of its paths. */
+  /** The workers on duty and the shells whose cwd is inside any of its paths. */
   sessions: string[]
   state: WorktreeState
   verbs: WorktreeVerb[]
@@ -108,7 +108,7 @@ export type FloorBranch = {
   calls: BranchCalls
 }
 
-/** A running session or shell, by the directory it runs in. */
+/** A worker on duty or a shell, by the directory it runs in. */
 export type Occupant = { id: string; cwd: string }
 
 const inside = (cwd: string, path: string) => cwd === path || cwd.startsWith(`${path}/`)
