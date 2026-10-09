@@ -29,6 +29,10 @@
     "hub/src/worktrees.ts#ownCommits",
     "hub/renderers/page/index.html",
     "hub/src/shared/cards.ts#sendTargets",
+    "hub/src/shared/cards.ts#sendTarget",
+    "hub/src/shared/panels.ts#threadViewOf",
+    "hub/src/shared/panels.ts#cardThread",
+    "hub/src/shared/panels.ts#floorThread",
     "hub/src/shared/cards.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
@@ -159,8 +163,9 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   Send to the worker most recently active in the checkout, or one picked; a sidebar tray of threads by checkout
   beside their tags, with Tidy. Bodies are drawn through `markdownHtml`, raw HTML escaped, so nothing a worker wrote
   runs in the page ([[chat-brief]]).
-- *Shared by both renderers* ([`cards.ts`](ref:hub/src/shared/cards.ts#sendTargets)): who Send reaches (`sendTargets`: the
-  workers at their composer in the checkout, the most recently active first, then the floor's others), the worker a
+- *Shared by both renderers* ([`cards.ts`](ref:hub/src/shared/cards.ts#sendTargets)): who Send may reach (`sendTargets`: the
+  workers at their composer in the checkout, the most recently active first, then the floor's others) and reaches
+  ([`sendTarget`](ref:hub/src/shared/cards.ts#sendTarget): the viewer's pick, else the first in the checkout), the worker a
   thread opens on (`workerIn`), the thread a worker's work belongs to (`threadCheckoutOf`: its author's for a
   reviewer). Renderers sign the user's notes with `board.user.name` and Send names the sender `THE_USER` ([[the-user]]).
 - *Tower 3D (2026-10-06, SADDIE-61)*: notes new to a worker lie as a stack of papers in front of its mouse with a
@@ -170,7 +175,7 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   its label orange while the worker on duty there has notes it hasn't seen; T opens the thread at that worker's desk,
   or in a reader when nobody works there now, and H sends. The desk panel gains a Reviews tab
   ([`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml)): the thread as the tower page draws it, quotes
-  marked `changed since` against the Changes of whoever works in the checkout, Send with its picker, and a composer
+  marked `changed since` against the Changes of the desk's worker, Send with its picker, and a composer
   with reply. Once the work no longer goes on, both renderers draw the thread read only (no composer, reply or Send,
   no line picking in Changes) under a line saying it landed, and when its thread was filed, or that its worktree was
   removed; a gone checkout with no thread says it has none. An anchor opens the desk's Changes tab scrolled to its line ([[changes-view]]), and lines picked there
@@ -178,6 +183,16 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
 - *One view in both renderers* ([[shared-panels]]): the tower page and Tower 3D draw Changes and Reviews through the
   same module and wire the same data attributes. The thread is read once per version of its file ([`reviews.ts`](ref:hub/renderers/tower3d/src/reviews.ts)),
   and Send waits for it, so the pointer names the notes.
+- *New is relative to whose view is open* (2026-10-09, BIT-58, API 1.38). A thread belongs to its author's checkout, but
+  author and reviewer iterate on it: in the reviewer's view the author's notes since the reviewer's last one are new, and
+  in the author's view the reviewer's. The reader is the worker whose view it is: a card's tab in the tower page, a desk
+  panel in Tower 3D (the author's desk, or its reviewer's notebook beside it); a thread opened where no worker's view is
+  (the pigeonhole) reads as the worker on duty in its checkout, else nobody. Tower 3D read every thread as the worker in
+  its checkout, so a reviewer's desk marked what was new to its author. The rule is in shared code:
+  [`cardThread`](ref:hub/src/shared/panels.ts#cardThread) and [`floorThread`](ref:hub/src/shared/panels.ts#floorThread)
+  give the place a thread is opened from with its reader, and [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf)
+  builds the Reviews panel's view from it, the board and what the viewer holds (the thread as read, the reader's
+  Changes, its Send pick, the note it answers). Anchors are looked for in the reader's Changes.
 
 **Impact.** A `reviews` collection, the `review/append` verb, `tower thread` / `tower note` in the mod with a
 Reviews section in the tower skill, board fields `floor.threads`, `card.checkout`, `card.unseen`, a Reviews tab and

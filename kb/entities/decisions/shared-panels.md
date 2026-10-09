@@ -11,6 +11,7 @@
     "hub/src/shared/panels.ts",
     "hub/src/shared/panels.ts#changesHtml",
     "hub/src/shared/panels.ts#reviewsHtml",
+    "hub/src/shared/panels.ts#threadViewOf",
     "hub/src/shared/panels.ts#statsHtml",
     "hub/src/shared/panels.ts#statsQuery",
     "hub/src/shared/panels.ts#drawPanel",
@@ -77,6 +78,10 @@ panels are the same view in both renderers. Only where they sit, their state and
   place of "reading…": [`failedHtml`](ref:hub/src/shared/panels.ts#failedHtml) names what couldn't be read and why,
   with Read again (`data-changes-read`, `data-thread-read`, `data-stats-read`). A failure over a read already held
   leaves it drawn and toasts. The tower page draws its archive and shelf reads with the same `failedHtml`.
+- *One view model of a thread.* Both renderers build the Reviews panel's view with
+  [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf), from the place it is opened (`cardThread`, a worker's
+  view, read as that worker; `floorThread`, read as the worker on duty in the checkout) and what the viewer holds: the
+  thread as read, the reader's Changes, its Send pick and the note it answers ([[review-threads]]).
 - *What stays per renderer is wiring, not html.* Copying a tag, scrolling to `re n…` and toasts are each
   renderer's handlers on the same attributes. The page re-reads Changes while its pane is open and when a turn
   ends; Tower 3D every 30 s while either tab is open. A note picked in Tower 3D goes to the thread its Reviews tab
