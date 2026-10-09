@@ -437,7 +437,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -1070,6 +1070,8 @@ let picking = false
 let pickText = ''
 let pickFresh = false
 const dropPick = () => ((pick = undefined), (pickText = ''))
+/** How the Changes pane draws a diff, unified or split, kept in `tower.store` for every renderer. */
+let diffLayout = (await tower.store.get(DIFF_LAYOUT_KEY)) ?? 'unified'
 
 function drawChanges() {
   const c = findCard(selected)
@@ -1078,7 +1080,7 @@ function drawChanges() {
   if (read && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) pick = live
   const failed = read || changesFailed?.id !== c.id ? undefined : changesFailed.message
-  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note') }), { 'pick-text': pickText })
+  drawPanel($('changes'), changesHtml({ read, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && read) jumpToAnchor()
@@ -2507,6 +2509,8 @@ document.addEventListener('click', (e) => {
   if (viewed) return toggleViewed(viewed)
   const fold = e.target.closest('[data-fold]')?.dataset.fold
   if (fold) return toggleFold(fold)
+  const layout = e.target.closest('[data-changes-layout]')?.dataset.changesLayout
+  if (layout) return ((diffLayout = layout), tower.store.set(DIFF_LAYOUT_KEY, layout), drawChanges())
   if (e.target.closest('[data-changes-read]')) return ((changesFailed = undefined), render(), readChanges(selected))
   const open = e.target.closest('[data-open]')
   if (open) return told(pressing(open, () => tower.run(floorOf(open.dataset.openProject).calls.editor, { dir: open.dataset.open })))

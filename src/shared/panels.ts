@@ -8,6 +8,7 @@
  *
  *   Changes
  *   data-changes-read          read the worker's Changes again
+ *   data-changes-layout="<l>"  draw diffs unified or split side by side (`DIFF_LAYOUTS`), the viewer's, kept under `DIFF_LAYOUT_KEY`
  *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
  *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current
  *   data-file="<key>"          a file's section, by `fileKey`
@@ -95,10 +96,22 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
  * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
  * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop. `state`: where
  * the worker's own checkout stands (`card.checkoutState`); `noting`: the worker offers `note`, so lines can be picked.
+ * `layout`: each file's diff as one column of lines, or its old side and new side by side.
  */
 export type ChangesView = {
   read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string
-  state: CheckoutState; noting: boolean
+  state: CheckoutState; noting: boolean; layout: DiffLayout
+}
+
+/** How the Changes panel draws a file's diff: one column of lines, or the old side and the new side by side. */
+export type DiffLayout = 'unified' | 'split'
+export const DIFF_LAYOUTS: DiffLayout[] = ['unified', 'split']
+/** Where a viewer's layout is kept in `tower.store`; `unified` while none is. */
+export const DIFF_LAYOUT_KEY = 'changes.layout'
+export const DIFF_LAYOUT_LABEL: Record<DiffLayout, string> = { unified: 'Unified', split: 'Split' }
+export const DIFF_LAYOUT_MEANS: Record<DiffLayout, string> = {
+  unified: 'each diff as one column: removed lines above the lines added in their place',
+  split: 'each diff side by side: the old file on the left, the new on the right',
 }
 
 /** A worker as the Reviews panel names it. */
@@ -170,6 +183,35 @@ export function fileRows(f: DiffFile): Row[] {
       return { cls: '', old: old++, now: now++, line }
     })]
   })
+}
+
+/**
+ * A file's rows side by side, as indexes into `fileRows`: a hunk's heading across both sides, a context line on both,
+ * and each run of removed lines beside the run of added lines that follows it, the shorter run's side left empty. A
+ * no-newline marker stays on the side of the line it follows.
+ */
+export type SplitRow = { hunk: number } | { old?: number; now?: number; hunk?: undefined }
+
+export function splitRows(rows: Row[]): SplitRow[] {
+  const out: SplitRow[] = []
+  let olds: number[] = []
+  let nows: number[] = []
+  const flush = () => {
+    for (let k = 0; k < Math.max(olds.length, nows.length); k++) out.push({ old: olds[k], now: nows[k] })
+    olds = []
+    nows = []
+  }
+  rows.forEach((r, i) => {
+    const before = rows[i - 1]
+    if (r.hunk) return flush(), void out.push({ hunk: i })
+    if (r.cls === 'minus' || (r.cls === 'eof' && !before?.hunk && before?.cls === 'minus')) {
+      if (nows.length) flush()
+      olds.push(i)
+    } else if (r.cls === 'plus' || (r.cls === 'eof' && !before?.hunk && before?.cls === 'plus')) nows.push(i)
+    else flush(), out.push({ old: i, now: i })
+  })
+  flush()
+  return out
 }
 
 export const pickRange = (pick: LinePick) => [Math.min(pick.from, pick.to), Math.max(pick.from, pick.to)] as const
@@ -352,8 +394,10 @@ export function changesHtml(v: ChangesView) {
   const files = changedFiles(read.repos)
   if (settled && !files.length) return `<div class="changes-panel">${settled}</div>`
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
+  const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
+    `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span data-since="${read.at}"></span> ago</span><button data-changes-read>${ICON.resume} Read again</button></div>`
+      <span>read <span data-since="${read.at}"></span> ago</span>${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
   return `<div class="changes-panel">${settled}${head}${read.repos.map((repo) => repoHtml({ ...v, read, pick: v.noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
 }
 
@@ -386,6 +430,7 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   const range = v.pick?.key === key ? pickRange(v.pick) : undefined
   const noted = notedLines(v.thread, repo, f)
   const code = rowCode(f)
+  if (v.layout === 'split') return splitBodyHtml(v, key, f, range, noted, code)
   const rows = fileRows(f).map((r, i) => {
     if (r.hunk) return `<tr class="hunk"><td colspan="3">@@ −${r.hunk.old} +${r.hunk.new} @@ ${esc(r.hunk.heading)}</td></tr>`
     const on = range && i >= range[0] && i <= range[1]
@@ -399,7 +444,34 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   return `<table>${rows.join('')}</table>`
 }
 
-const noteBoxHtml = (v: ReadView) => `<tr class="note-row"><td colspan="3"><div class="note-box">
+/** A file's diff side by side: each side's line numbers pick lines as the unified table's do, by the same rows. */
+function splitBodyHtml(v: ReadView, key: string, f: DiffFile, range: readonly [number, number] | undefined, noted: Map<number, number[]>, code: string[]) {
+  const rows = fileRows(f)
+  const on = (i: number | undefined) => i !== undefined && !!range && i >= range[0] && i <= range[1]
+  const side = (i: number | undefined, n: 'old' | 'now') => {
+    if (i === undefined) return '<td class="ln empty"></td><td class="code empty"></td>'
+    const r = rows[i] as Exclude<Row, { hunk: Hunk }>
+    const notes = n === 'now' && r.now !== undefined ? noted.get(r.now) : undefined
+    const tip = [...(notes ? [`noted in ${notes.map((x) => `n${x}`).join(', ')}`] : []), ...(v.noting ? ['click to note on this line, drag or ⇧-click for more'] : [])].join('; ')
+    const cls = `${r.cls} ${on(i) ? 'picked' : ''}`
+    return `<td class="ln ${cls} ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.noting ? '' : `data-pick="${esc(key)}|${i}"`} ${tip ? `data-tip="${tip}"` : ''}>${r[n] ?? ''}</td>` +
+      `<td class="code ${cls}"><span class="m">${esc(r.line[0])}</span>${code[i]}</td>`
+  }
+  const pairs = splitRows(rows)
+  // The box goes under the last pair holding a picked line: a pick ending on an added line may hold removed lines below it.
+  const boxAt = range ? pairs.findLastIndex((s) => s.hunk === undefined && (on(s.old) || on(s.now))) : -1
+  const html = pairs.map((s, k) => {
+    if (s.hunk !== undefined) {
+      const h = (rows[s.hunk] as { hunk: Hunk }).hunk
+      return `<tr class="hunk"><td colspan="4">@@ −${h.old} +${h.new} @@ ${esc(h.heading)}</td></tr>`
+    }
+    const line = `<tr>${side(s.old, 'old')}${side(s.now, 'now')}</tr>`
+    return k === boxAt && !v.picking ? line + noteBoxHtml(v, 4) : line
+  })
+  return `<table class="split"><colgroup><col class="ln"><col><col class="ln"><col></colgroup>${html.join('')}</table>`
+}
+
+const noteBoxHtml = (v: ReadView, cols = 3) => `<tr class="note-row"><td colspan="${cols}"><div class="note-box">
     <div class="where"><code>${esc(anchorWhere(pickAnchor(v.read.repos, v.pick!)))}</code><span>on the thread of <b>${esc(v.checkout)}</b>, as ${esc(v.user)}</span></div>
     <textarea data-pick-text placeholder="a note on these lines (⌘⏎ adds it, Esc cancels)"></textarea>
     <div class="actions"><button class="primary" data-pick-add>Add note</button><button data-pick-cancel>Cancel</button><span class="hint">drag across line numbers or ⇧-click one to extend, within a hunk</span></div>
@@ -740,13 +812,20 @@ export const panelsCss = `
 .landing pre { margin: var(--sp-s) 0 0; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-s)/1.45 var(--mono); }
 .settled [data-landing-of] { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }
 .changes-panel code, .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
-.changes-head { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-xs); color: var(--muted); font-size: var(--fs-m); }
+/* The head stays at the top while the diff scrolls under it, each file's header stuck just below it. */
+.changes-panel { --changes-head-h: 3rem; }
+.changes-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: var(--sp-l); height: var(--changes-head-h); box-sizing: border-box;
+  padding: var(--sp-xs) 0 0; color: var(--muted); font-size: var(--fs-m); background: var(--panel); }
 .changes-head b { color: var(--ink); font-variant-numeric: tabular-nums; }
-.changes-head button { margin-left: auto; }
+.changes-head .seg { display: flex; gap: var(--sp-2xs); margin-left: auto; padding: var(--sp-2xs); border-radius: var(--radius); background: var(--sunk); }
+.changes-head .seg button { margin: 0; padding: var(--sp-2xs) var(--sp-m); border: 0; border-radius: var(--radius); background: none; color: var(--muted); font: 700 var(--fs-s)/1.3 var(--ui); cursor: pointer; }
+.changes-head .seg button:hover { color: var(--ink); }
+.changes-head .seg button.on { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px #0003; }
+.changes-head > button { margin-left: 0; }
 .changes-panel .repo-head { display: flex; align-items: baseline; gap: var(--sp-m); margin: var(--sp-xl) 0 var(--sp-s); font: var(--fs-s)/1.4 var(--ui); color: var(--muted); }
 .changes-panel .repo-head b { color: var(--ink); }
-.changes-panel .file { margin: 0 0 var(--sp-m); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.changes-panel .file > header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); cursor: pointer;
+.changes-panel .file { margin: 0 0 var(--sp-m); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); scroll-margin-top: var(--changes-head-h); }
+.changes-panel .file > header { position: sticky; top: var(--changes-head-h); z-index: 1; display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); cursor: pointer;
   background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; font-size: var(--fs-m); }
 .changes-panel .file.folded > header { border-radius: var(--radius); }
 .changes-panel .file.folded > header .caret .icon { rotate: -90deg; }
@@ -776,6 +855,18 @@ export const panelsCss = `
 .changes-panel .file td.ln.noted { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 var(--accent); }
 .changes-panel .file tr.picked td { background: color-mix(in oklab, var(--accent) 20%, var(--panel)); }
 .changes-panel .file tr.note-row td { padding: 0; white-space: normal; }
+.changes-panel .file table.split { table-layout: fixed; }
+.changes-panel .file table.split col.ln { width: 6ch; }
+.changes-panel .file table.split td.code { white-space: pre-wrap; overflow-wrap: anywhere; padding-left: calc(2ch + var(--sp-m)); text-indent: -2ch; }
+.changes-panel .file table.split td.ln { width: auto; min-width: 0; }
+.changes-panel .file table.split td.ln + td.code + td.ln { border-left: 1px solid var(--line); }
+.changes-panel .file table.split td.empty { background: var(--sunk); }
+.changes-panel .file table.split td.plus { background: var(--added-wash); } .changes-panel .file table.split td.minus { background: var(--removed-wash); }
+.changes-panel .file table.split td.ln.plus { background: var(--added-gutter); } .changes-panel .file table.split td.ln.minus { background: var(--removed-gutter); }
+.changes-panel .file table.split td.ln.plus, .changes-panel .file table.split td.ln.minus, .changes-panel .file table.split td.plus .m, .changes-panel .file table.split td.minus .m { color: var(--ink); }
+.changes-panel .file table.split td.eof { color: var(--faint); font-style: italic; }
+.changes-panel .file table.split td.picked { background: color-mix(in oklab, var(--accent) 20%, var(--panel)); }
+.changes-panel .file table.split td.ln[data-pick]:hover { color: var(--ink); background: color-mix(in oklab, var(--accent) 22%, var(--panel)); }
 .changes-panel .note-box { margin: var(--sp-s) var(--sp-l) var(--sp-l); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); font: var(--fs-m)/1.4 var(--ui); }
 .changes-panel .note-box .where, .reviews-panel .composer .re-chip { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
 .changes-panel .note-box textarea, .reviews-panel .composer textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);

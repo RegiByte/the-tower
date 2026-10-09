@@ -400,6 +400,10 @@
       "verdictOf"
     ],
     "/panels.js": [
+      "DIFF_LAYOUTS",
+      "DIFF_LAYOUT_KEY",
+      "DIFF_LAYOUT_LABEL",
+      "DIFF_LAYOUT_MEANS",
       "STATS_ALL",
       "anchorOf",
       "anchorSpot",
@@ -427,6 +431,7 @@
       "picked",
       "reviewsHtml",
       "spanned",
+      "splitRows",
       "spotSelector",
       "statsHtml",
       "statsQuery",

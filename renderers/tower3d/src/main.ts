@@ -12,7 +12,7 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type DiffLayout, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, landingHtml, type DaemonVerb } from './cards.ts'
@@ -1096,10 +1096,11 @@ function tickRing() {
 /** Your dismissals and ring setting, as all your renderers keep them in `tower.store`: another may have changed them. */
 function readHeed() {
   if (FIXTURE !== undefined) return
-  Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY), tower.store.get(BRIEF_MARKDOWN_KEY)]).then(([dismissed, ring, markdown]) => {
+  Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY), tower.store.get(BRIEF_MARKDOWN_KEY), tower.store.get(DIFF_LAYOUT_KEY)]).then(([dismissed, ring, markdown, layout]) => {
     s.heed = { ...s.heed, dismissed: new Set((dismissed as string[] | null) ?? []) }
     s.ring = (ring as Ring | null) ?? 'once'
     s.briefMarkdown = (markdown as BriefMarkdown | null) ?? 'rendered'
+    s.diffLayout = (layout as DiffLayout | null) ?? 'unified'
     renderHud()
   })
 }
@@ -1905,7 +1906,7 @@ function drawChanges(c: Card) {
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, deskThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note') }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, deskThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.diffLayout }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -2072,6 +2073,8 @@ $('desk-changes').addEventListener('click', (e) => {
   const c = findCard(s.board!, s.panel.id)!
   const read = changesOf(c.id)
   if (el.closest('[data-changes-read]')) return (readChanges(c.id, wallNow()), renderPanel())
+  const layout = el.closest<HTMLElement>('[data-changes-layout]')?.dataset.changesLayout as DiffLayout | undefined
+  if (layout) return ((s.diffLayout = layout), FIXTURE === undefined && tower.store.set(DIFF_LAYOUT_KEY, layout), renderPanel())
   if (!read) return
   const viewed = el.closest<HTMLElement>('[data-viewed]')?.dataset.viewed
   if (viewed) return toggleViewed(read, viewed)

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/test/diff.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>: each of the session's repos with its files and hunks" }
   ]
@@ -56,6 +56,15 @@ panels ([[shared-panels]]): hunks, folds, Viewed (written to `tower.store`, so e
 line picking, the note box and noted lines. In both, each hunk's code is syntax-coloured on the diff's washes, and each
 file opens in Finder or the user's editor ([[open-files]]). It is read on open, every 30 s while it or the Reviews tab is open, and on
 ↻. A review anchor opens it scrolled to its line.
+
+**Split (2026-10-09).** A diff draws unified (one column, removals above the lines added in their place) or split
+(the old side on the left, the new on the right), the viewer's choice from Unified · Split in the panel's head
+(`data-changes-layout`), kept with `tower.store` under `changes.layout`, so every renderer opens on the last one chosen.
+[`splitRows`](ref:hub/src/shared/panels.ts#splitRows) lays a file's rows side by side as indexes into `fileRows`: a
+context line on both sides, each run of removed lines beside the run of added lines after it, the shorter side
+empty. Each cell keeps its row's index, so picking, the note box and anchors are the unified ones, unchanged; a
+drag from one side to the other picks the rows between them in unified order. Long lines wrap in split, where
+scrolling a half alone would part the sides. The head with the layout stays at the top while the diff scrolls, each file's header stuck just below it.
 
 **Impact.** The tower page has a Changes pane beside Terminal and Brief, and Tower 3D the same view at a desk, with a viewed/total tally on its tab.
 It is the surface review threads anchor notes to: its line numbers pick lines for a note, one by a click or a range
