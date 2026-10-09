@@ -73,8 +73,8 @@ delete or discard, delete a kept item) asks on a second click, the page's questi
 answers ([[press-feedback]]). The mouse wheel marks a verb and a click runs it.
 [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives each thing's offers from the board on
 every frame. A stopped worker's desk offers resume first, and sitting there shows its last screen read-only. A worker the host
-stranded has Let go beside Resume in its desk panel, and its floor panel resumes all of the floor's stranded at once
-([[let-go]]).
+stranded has Let go beside Resume in its desk panel, Carry on first when it was cut off mid-turn ([[carry-on]]), and its
+floor panel resumes all of the floor's stranded at once ([[let-go]]).
 Beside every worker's keyboard lies its logbook, a binder as thick as the sessions it ran as; E on it opens the desk
 panel's Logbook tab where you stand, and a past session there replays its last screen, sepia and stamped, in the panel
 and on the desk's monitor ([[logbook]]).

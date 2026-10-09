@@ -23,7 +23,8 @@ Sims' objects advertise their interactions.
 a fixed order, the first being the thing's primary verb.
 - A card is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive)) while its PTY runs. Its verbs
   ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)): `drive` and `kill` while live; its latest
-  conversation's `resume` or `goto`; `submit` while at Claude's composer (idle, working, done or failed:
+  conversation's `resume` or `goto`; `carry-on` beside `resume` while it awaits one and the host cut it off mid-turn
+  (`card.cutOff`), its call a `resume` on the [[carry-on]] prompt; `submit` while at Claude's composer (idle, working, done or failed:
   not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout's work goes on (`card.checkoutState` live: a landed or gone checkout has nothing to review) and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone, live or not, is `card.worktree.gone`, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
   [[leftover]]s, live or not; `send-home` on a worker in a crew while any of it runs, its call a list of kills, the
   deepest first ([[crews]]); `let-go` while it is stranded and on duty, its latest conversation not yet resumed

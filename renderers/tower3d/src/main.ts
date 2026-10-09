@@ -2186,6 +2186,7 @@ $('desk-head').addEventListener('click', (e) => {
   const c = findCard(board, panel.id)!
   if (what === 'tower') return tower.ui('select', { id: c.id })
   if (what === 'resume') return resume(c.calls.resume!)
+  if (what === 'carry-on') return resume(c.calls['carry-on']!)
   if (what === 'kill') return confirmed(`kill ${c.id}`) && pressing(button!, () => sendHome(c))
   if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
   if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => offered(c.calls.reap!))

@@ -5,6 +5,7 @@
  * within the renderer and have none.
  */
 import type { Call } from '../shared/api.ts'
+import { CARRY_ON } from '../shared/launch.ts'
 import { reviewPrompt } from '../shared/reviews.ts'
 import type { SessionRef } from './chains.ts'
 import type { Status } from './status.ts'
@@ -15,10 +16,11 @@ import type { FloorWorktreeRepo, WorktreeState } from './worktrees.ts'
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
  * ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a
- * stranded worker off duty, its conversation left resumable; `note` adds a note to the review thread about its work
+ * stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a
+ * prompt telling it so; `note` adds a note to the review thread about its work
  * (`NoteVerb`).
  */
-export type CardVerb = 'drive' | 'submit' | 'resume' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
+export type CardVerb = 'drive' | 'submit' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
 /**
  * `note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on
  * work that landed, or whose worktree is gone, reaches nobody. The API still takes one there.
@@ -63,14 +65,15 @@ const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: Session
  */
 export type ReviewTarget = { project: string; checkout: string; callsign: string }
 
-/** `awaitsResume`: stranded, on duty until its latest conversation is resumed or it is let go. */
-const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined, awaitsResume: boolean): CardVerb[] => {
+/** `awaitsResume`: stranded, on duty until its latest conversation is resumed or it is let go. `cutOff`: stranded mid-turn. */
+const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
     ...(live ? ['drive' as const] : []),
     ...(AT_COMPOSER.has(status) ? ['submit' as const] : []),
     ...(latest ? conversationVerbs(live, resumable, latest.resumedBy) : []),
+    ...(awaitsResume && cutOff ? ['carry-on' as const] : []),
     ...(conversations.length > 0 ? ['brief' as const] : []),
     ...(conversations.length > 0 && review ? ['review' as const] : []),
     ...(leftovers > 0 ? ['reap' as const] : []),
@@ -95,7 +98,7 @@ const worktreeVerbs = (state: WorktreeState, keepsThreads: boolean): WorktreeVer
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
 /** `note` takes the author and what the note says. */
-export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
+export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
 export type NoteCalls = { note?: Call<'review/append'> }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
@@ -124,13 +127,15 @@ export const cardOffers = (
   leftovers: number,
   review: ReviewTarget | undefined,
   awaitsResume: boolean,
+  cutOff: boolean,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, resumable, conversations, leftovers, review, awaitsResume)
+  const verbs = cardVerbs(status, resumable, conversations, leftovers, review, awaitsResume, cutOff)
   return {
     verbs,
     calls: callsOf(verbs, {
       submit: (): Call<'submit'> => ['submit', { id }],
       resume: (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id }],
+      'carry-on': (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id, prompt: CARRY_ON }],
       review: (): Call<'spawn'> => ['spawn', { project: review!.project, cut: { from: review!.checkout }, prompt: reviewPrompt(review!.callsign, false) }],
       reap: (): Call<'reap'> => ['reap', { id }],
       kill: (): Call<'kill'> => ['kill', { id }],

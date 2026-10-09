@@ -75,11 +75,15 @@ const launchArgs = ({ model, effort, prompt }: Launch, user: string | undefined,
 /** The prompt a session was started with, read back from its argv. */
 export const launchPrompt = (argv: string[]): string | undefined => (argv.at(-2) === '--' ? argv.at(-1) : undefined)
 
+/** What a worker the host cut off mid-turn is told as it resumes (a card's `carry-on`). */
+export const CARRY_ON = "You were cut off mid-turn when the tower's host stopped. Carry on where you left off."
+
 /** `conversation` is Claude's session id. Claude files conversations by directory: resume in the same cwd. */
-const resumeArgs = (conversation: string, user: string | undefined, worktree: WorktreeBrief | undefined): string[] => [
+const resumeArgs = (conversation: string, prompt: string | undefined, user: string | undefined, worktree: WorktreeBrief | undefined): string[] => [
   ...briefArgs(user, worktree),
   '--resume',
   conversation,
+  ...(prompt ? ['--', prompt] : []),
 ]
 
 /** Sortable by start time, readable in a directory listing: `20260930-141203-a1b2`. */
@@ -125,13 +129,14 @@ export const spawnRequest = (id: string, name: string, project: string, cwd: str
 
 /**
  * A resume continues a session's conversation in the directory it ran in, under the same project, as session `id`.
- * `name`: the callsign of the worker it carries on, or its own on a fork (`resumeName`). `dirs`: as for a spawn.
+ * `prompt`: Claude's first prompt in it, as a spawn's. `name`: the callsign of the worker it carries on, or its own on a
+ * fork (`resumeName`). `dirs`: as for a spawn.
  */
-export const resumeRequest = ({ project, cwd }: SessionHeader, conversation: string, id: string, name: string, dirs: string[], user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
+export const resumeRequest = ({ project, cwd }: SessionHeader, conversation: string, prompt: string | undefined, id: string, name: string, dirs: string[], user: string | undefined, worktree: WorktreeBrief | undefined, kept: string, plugins: string[]): ToHost => ({
   t: 'spawn',
   id,
   project,
   cwd,
-  args: [...nameArgs(name), ...settingsArgs(dirs), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...resumeArgs(conversation, user, worktree)],
+  args: [...nameArgs(name), ...settingsArgs(dirs), ...keptArgs(kept), ...linkArgs(worktree), ...pluginArgs(plugins), ...resumeArgs(conversation, prompt, user, worktree)],
   ...SPAWN_SIZE,
 })

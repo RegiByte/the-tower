@@ -113,6 +113,9 @@ export const nextState = (state: SessionState, event: LogEvent): SessionState =>
 export const waitsOnSomeone = ({ status, since }: SessionState, typedAt: number | undefined): boolean =>
   status === 'blocked' || status === 'needs_input' || ((status === 'done' || status === 'failed') && (typedAt === undefined || typedAt < since))
 
+/** The main loop's turn started and hasn't ended: Claude works on it, compacts inside it, or asks the user about it. */
+export const isMidTurn = (status: Status): boolean => status === 'working' || status === 'needs_input'
+
 /** A session that never logged its exit is alive only if the host still runs it. */
 export const withLiveness = (state: SessionState, id: string, live: Set<string>): SessionState => {
   if (state.status === 'exited' || live.has(id)) return state

@@ -31,7 +31,8 @@ or one event at a time as it is tailed:
   current tool (its label clipped to 280 characters, like each of `says`: a Bash heredoc runs to kilobytes), what
   Claude told the user between tool calls this turn (`says`, its latest few steps), model,
   effort, the release of Claude it runs (`claude`, from `tower.claude`), the main loop's finished turns (`turns`: each `Stop`; an interrupt or a failure raises none), the [[conversation]]s held, what the worker showed (`shown`, from `tower.show`: [[agent-show]]), what it kept (`kept`, from `tower.keep`: [[agent-keep]]), when someone
-  last typed, `hostStopped`, and the timed facts stats reduce ([[stats]]): `spend` per cost reading, `tokens` per
+  last typed, `hostStopped` and `exitedFrom` (the status it exited from, which says a turn was cut short:
+  [[carry-on]]), and the timed facts stats reduce ([[stats]]): `spend` per cost reading, `tokens` per
   model step, `turnSpans`, `waits` on the user, `prompts` by origin, `asks`, `failures`, `spawns` and each rate
   limit's readings where they moved. [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces them over a window. Also
   `pages`: each html file the worker wrote (`Write`, subagents' too), which the card carries with whether the worker
@@ -71,7 +72,7 @@ or one event at a time as it is tailed:
   floors of cards (status, `live`, waiting, attention (`watching` is `quiet`), `callsign`, `shown` and `turns` across the sessions the worker ran as
   ([`lineage`](ref:hub/src/bridge/chains.ts#lineage)), `continuedBy` and each conversation's `resumes`/`resumedBy` as `{id, callsign, startedAt}`, `peer`, `onDuty`, `seat` ([[workstations]]), `hiredBy` ([[hiring-limits]]), `reportsTo` ([[crews]]),
   `checkout`, `reviews` and `unseen` ([[reviewer]], [[review-threads]]), `checkoutState` and `threadState` (live, landed or gone, [[review-threads]]), `unresumable` (why a past worker can't be
-  resumed where it ran, [[resume]]), facts, conversation excerpts and
+  resumed where it ran, [[resume]]), `stranded` and `cutOff` (stranded mid-turn, [[carry-on]]), facts, conversation excerpts and
   the verbs each card, conversation and floor offers, see [[board-verbs]]), who waits on you in the order to go
   to them as waits ([`waitingOrder`](ref:hub/src/bridge/board.ts#waitingOrder): `{id, key: id@since, reason, since,
   detail}`, a screen first, then a question, a failure, an answer, each reason by the longest wait; [[waiting-on-you]],

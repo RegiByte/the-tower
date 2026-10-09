@@ -562,6 +562,10 @@
           "type": "boolean",
           "description": "Ended by the host stopping or dying, while nobody meant it to end."
         },
+        "cutOff": {
+          "type": "boolean",
+          "description": "Stranded mid-turn: the host stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold doesn't know where the turn stood. Its `carry-on` resumes it on a prompt telling Claude so (`CARRY_ON`)."
+        },
         "letGoAt": {
           "type": "number",
           "description": "When the user let it go, stranded (epoch ms): off duty, its conversation still resumable from the archive."
@@ -627,6 +631,7 @@
         "pages",
         "sent",
         "stranded",
+        "cutOff",
         "conversations",
         "onDuty",
         "verbs",
@@ -1081,6 +1086,7 @@
         "drive",
         "submit",
         "resume",
+        "carry-on",
         "goto",
         "brief",
         "review",
@@ -1090,7 +1096,7 @@
         "send-home",
         "note"
       ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a stranded worker off duty, its conversation left resumable; `note` adds a note to the review thread about its work (`NoteVerb`)."
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
     },
     "CardCalls": {
       "type": "object",
@@ -1111,6 +1117,21 @@
           "maxItems": 2
         },
         "resume": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "resume"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "carry-on": {
           "type": "array",
           "minItems": 2,
           "items": [

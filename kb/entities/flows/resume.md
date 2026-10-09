@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-09",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/cli.ts#resumeThroughTower", "hub/src/cli.ts#resumeAtHost", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/cli.ts#resumeThroughTower", "hub/src/cli.ts#resumeAtHost", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
 }
 ---
 ```mermaid
@@ -19,9 +19,9 @@ sequenceDiagram
   participant R as [[system-root]]
   O->>T: GET /conversations/<id>
   T->>F: briefOf(session): every saved conversation of its worker's sessions, latest prompt and answer, last turns
-  O->>T: resume {id, conversation}
+  O->>T: resume {id, conversation, prompt?}
   T->>T: refuse unless the session saved that conversation and no running session is in it, and as lost if its worktree is gone
-  T->>H: spawn {new id, same project, same cwd, args: --name <worker's callsign> --resume <conversation>}
+  T->>H: spawn {new id, same project, same cwd, args: --name <worker's callsign> --resume <conversation> [-- <prompt>]}
   H->>C: new PTY
   H->>R: new sessions/<id>.jsonl
   C->>H: SessionStart {source: resume, session_id: <conversation>}
@@ -64,5 +64,7 @@ sequenceDiagram
   showings ([[agent-show]]), and the source's card names it `continuedBy` (`{id, callsign}`). A resume of an earlier conversation
   (one before a `/clear`) forks a new worker. The resume runs Claude under the name that follows
   ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), so its peer name stays the callsign.
-- **Mid-turn cut-offs** resume idle: the user says "continue". `tower resume <id>` resumes the latest saved
-  conversation.
+- **A prompt rides along.** `resume` takes an optional `prompt`, Claude's first in the new session, passed after
+  `--` as a spawn's is: Claude takes it once it starts, so nothing waits for the session to be ready. A worker the host
+  cut off mid-turn offers `carry-on`, a resume on a prompt telling it so ([[carry-on]]); without one it resumes idle.
+  `tower resume <id> [--carry-on]` resumes the latest saved conversation.

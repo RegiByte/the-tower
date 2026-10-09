@@ -16,8 +16,10 @@
  *                                when the host needs a restart, never restart it
  *   tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]
  *                                start a session (in the project's hub by default), print its id
- *   tower resume <id>            start a session that continues <id>'s conversation, print its id; through the
- *                                tower's resume queue while it runs, else straight to the host
+ *   tower resume <id> [--carry-on]
+ *                                start a session that continues <id>'s conversation, print its id; through the
+ *                                tower's resume queue while it runs, else straight to the host. --carry-on tells
+ *                                Claude it was cut off mid-turn by the host and to carry on (a card's `carry-on`)
  *   tower submit <id> <text...>  type a prompt and submit it
  *   tower kill <id>
  *   tower live                   ids of running sessions
@@ -49,7 +51,7 @@ import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
 import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
-import { newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
+import { CARRY_ON, newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
 import { briefFor } from './worktrees.ts'
 import { configPath, projectCollectionsPath, systemPaths } from './shared/paths.ts'
 import { everyEvent, logFileOf, logFilesIn, readLog } from './tail.ts'
@@ -115,16 +117,16 @@ const print = (reply: FromHost) => {
  * A resume asked of the tower, which runs resumes one at a time and refuses a conversation a running session holds;
  * undefined when no tower answers.
  */
-const resumeThroughTower = async (id: string, conversation: string): Promise<FromHost | undefined> => {
+const resumeThroughTower = async (id: string, conversation: string, prompt: string | undefined): Promise<FromHost | undefined> => {
   const tower = towerUrl(readConfig(paths.config))
-  const res = await fetch(`${tower}/resume`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify({ id, conversation }) }).catch((err) => {
+  const res = await fetch(`${tower}/resume`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify({ id, conversation, prompt }) }).catch((err) => {
     if (err.cause?.code === 'ECONNREFUSED') return undefined
     throw err
   })
   return res && res.json()
 }
 
-const resumeAtHost = async (log: SessionLog, conversation: string): Promise<FromHost> => {
+const resumeAtHost = async (log: SessionLog, conversation: string, prompt: string | undefined): Promise<FromHost> => {
   const id = log.header.id
   const sessions = readSessions()
   const source = sessions.find((s) => s.header.id === id)!
@@ -134,7 +136,7 @@ const resumeAtHost = async (log: SessionLog, conversation: string): Promise<From
   const heir = newSessionId()
   const project = config.projects[log.header.project]
   const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
-  return request(resumeRequest(log.header, conversation, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
+  return request(resumeRequest(log.header, conversation, prompt, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
 }
 
 const [command, id, ...rest] = process.argv.slice(2)
@@ -185,10 +187,12 @@ const main = async (): Promise<void> => {
       break
     }
     case 'resume': {
+      const { values } = parseArgs({ args: rest, options: { 'carry-on': { type: 'boolean' } } })
+      const prompt = values['carry-on'] ? CARRY_ON : undefined
       const log = readSessionLog(id)
       const conversation = latestSaved(conversationsOf(log))
       if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
-      print((await resumeThroughTower(log.header.id, conversation.id)) ?? (await resumeAtHost(log, conversation.id)))
+      print((await resumeThroughTower(log.header.id, conversation.id, prompt)) ?? (await resumeAtHost(log, conversation.id, prompt)))
       break
     }
     case 'submit':

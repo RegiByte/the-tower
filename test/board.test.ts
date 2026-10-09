@@ -9,6 +9,7 @@ import type { Config, SessionLog } from '../src/shared/model.ts'
 import type { BranchRead, RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL, type HostLive } from '../src/shared/protocol.ts'
 import { tagOf } from '../src/shared/tags.ts'
+import { CARRY_ON } from '../src/shared/launch.ts'
 import type { ReviewThread } from '../src/shared/reviews.ts'
 import { fixture } from './replay.ts'
 
@@ -193,7 +194,7 @@ test('verbs: a live session is driven and killed, takes a prompt at its composer
   assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'kill'])
   assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
-  assert.deepEqual(at(140, []).verbs, ['resume', 'brief', 'let-go'])
+  assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
 })
 
 test('let go: a stranded worker leaves duty for the archive on the tower.letGo the host appends, its conversation still resumable', () => {
@@ -207,6 +208,18 @@ test('let go: a stranded worker leaves duty for the archive on the tower.letGo t
   assert.equal(letGo.letGoAt, log.header.startedAt + 150_000)
   assert.deepEqual(letGo.verbs, ['resume', 'brief'])
   assert.equal(letGo.heardAt, stranded.heardAt)
+})
+
+test('carry on: a worker the host stopped mid-turn is cut off, and offers a resume on a prompt telling it so; one stopped after its turn is not', () => {
+  const midTurn = homed(fixture('host-stopped-mid-turn'))
+  const [cut, done] = cardsOf([midTurn, homed(fixture('host-stopped-done'))])
+  assert.deepEqual([cut.status, cut.stranded, cut.cutOff, statusName(cut)], ['exited', true, true, 'stopped mid-turn, resumable'])
+  assert.deepEqual(cut.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  assert.deepEqual(cut.calls['carry-on'], ['resume', { id: midTurn.header.id, conversation: 'dd49802c-3de0-416f-ac89-3711b7f03bb4', prompt: CARRY_ON }])
+  assert.deepEqual([done.status, done.stranded, done.cutOff, statusName(done)], ['exited', true, false, 'stopped, resumable'])
+  assert.deepEqual(done.verbs, ['resume', 'brief', 'let-go'])
+  const [letGo] = cardsOf([{ ...midTurn, events: [...midTurn.events, [20, 'h', { hook_event_name: 'tower.letGo' }]] }])
+  assert.deepEqual([letGo.cutOff, letGo.verbs], [true, ['resume', 'brief']])
 })
 
 test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs", () => {

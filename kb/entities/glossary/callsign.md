@@ -4,7 +4,7 @@
   "name": "Callsign",
   "summary": "A worker's name in every renderer and its Claude peer name (ODIN-07): a name from the config's callsigns (CALLSIGNS when it names none) chosen by rendezvous hashing over the id of the worker's first session, and a number from that id's own hash; a resume that continues a worker keeps its callsign. The order of the list doesn't matter; adding a name renames only the sessions that pick it (about 1 in n+1 to a list of n), removing one only the sessions that held it, and replacing the list renames everyone.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/callsign.ts#callsigns", "hub/src/shared/callsign.ts#CALLSIGNS", "hub/src/shared/callsign.ts#CALLSIGN_NAME", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#workerName", "hub/src/shared/callsign.ts#nameOf", "hub/src/shared/launch.ts#spawnRequest"]
 }
 ---

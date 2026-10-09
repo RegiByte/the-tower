@@ -46,6 +46,8 @@ type Facts = {
   resumes?: string
   resumedBy?: string
   hostStopped?: boolean
+  /** Stranded mid-turn. */
+  cutOff?: boolean
   leftovers?: Omit<Card['resources'][number], 'verbs' | 'calls'>[]
   /** What it showed you, `ago` minutes since. */
   shown?: (Omit<Card['shown'][number], 'at' | 'session'> & { ago: number })[]
@@ -91,6 +93,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     ...conversationOffers(id, `${id}-conversation`, live, !f.unresumable, resumedBy),
   }]
   const stranded = f.status === 'lost' || f.hostStopped === true
+  const cutOff = stranded && f.cutOff === true
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
   const awaitsResume = stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy
   return {
@@ -103,9 +106,9 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)) } }),
     attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
-    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, unresumable: f.unresumable, conversations,
+    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, cutOff, unresumable: f.unresumable, conversations,
     onDuty: live || awaitsResume,
-    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined, awaitsResume),
+    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined, awaitsResume, cutOff),
   }
 }
 
@@ -283,7 +286,7 @@ function busyFloors(now: number, later = false): FloorFacts[] {
       id: 'beta', name: 'beta-with-a-rather-long-project-name', color: '#7fb069',
       workers: [
         { status: 'failed', waiting: true, prompt: 'Deploy the preview', answer: undefined, ago: 15 },
-        { status: 'lost', prompt: 'Long build', answer: undefined, hostStopped: true, ago: 200 },
+        { status: 'lost', prompt: 'Long build', answer: undefined, hostStopped: true, cutOff: true, ago: 200 },
         { status: 'done', prompt: 'Rename the module', answer: LONG, turns: 6, ago: 50,
           leftovers: [{ pid: 4242, command: 'node server.js --port 5173', ports: [5173], orphan: true }, { pid: 4243, command: 'esbuild --watch', ports: [], orphan: false }] },
         { status: 'working', prompt: 'Profile the hot path', tool: 'Read', says: ['Reading the board build to see where the time goes.'], ago: 12,

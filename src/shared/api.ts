@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.37'
+export const API_VERSION = '1.38'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -81,7 +81,9 @@ export const VERBS = {
     reply: spawned.extend({ cut: cutReply.optional() }),
   },
   resume: {
-    input: z.object({ id, conversation: id }).describe('Continue a conversation Claude saved in the session, as a new session.'),
+    input: z
+      .object({ id, conversation: id, prompt: z.string().optional().describe("Claude's first prompt in the new session, as it starts: a card's `carry-on` passes one.") })
+      .describe('Continue a conversation Claude saved in the session, as a new session.'),
     reply: spawned,
   },
   keys: {

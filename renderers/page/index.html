@@ -433,7 +433,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -540,12 +540,15 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · ')))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
-    ${can(c, 'resume') ? `<div class="act">${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act">${carryOnHtml(c, 'carry on')}${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
 }
 
 /** Let a stranded worker go, asked first. */
 const letGoHtml = (c, label) => !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go="${c.id}" data-tip="${esc(`let ${callsign(c.id)} go: ${LET_GO_MEANS}`)}">${label}</button>`
+
+/** Resume a worker the host cut off mid-turn, telling it so. */
+const carryOnHtml = (c, label, cls = '') => !can(c, 'carry-on') ? '' : heldWhy('carry-on') ? heldHtml('carry-on', label, `${ICON.resume} ${label}`, cls) : `<button class="${cls}" data-resume="${esc(JSON.stringify(c.calls['carry-on']))}" data-tip="${esc(`${callsign(c.id)} was cut off mid-turn: ${CARRY_ON_MEANS}`)}">${ICON.resume} ${label}</button>`
 
 /** A worker and everyone under it. */
 const wholeCrewHtml = (cards, c) => {
@@ -830,7 +833,8 @@ function barHtml(c) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
   repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
-    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} Resume</button>`}
+    ${carryOnHtml(c, 'Carry on', 'primary')}
+    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, can(c, 'carry-on') ? '' : 'primary') : `<button class="${can(c, 'carry-on') ? '' : 'primary'}" data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} Resume</button>`}
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}

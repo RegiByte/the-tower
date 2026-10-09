@@ -12,7 +12,7 @@ import { continuations, lineage, namer, threads, type SessionRef, type Thread } 
 import { latestRateLimits, type RateLimit, type Session, type Shown } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
-import { waitsOnSomeone, withLiveness, type Status } from './status.ts'
+import { isMidTurn, waitsOnSomeone, withLiveness, type Status } from './status.ts'
 import type { BlockedKind } from './blocked.ts'
 import { isStuck, prunable, type Prune } from './prunable.ts'
 import { oldLogs, type LogFile, type OldLog } from './retention.ts'
@@ -169,6 +169,12 @@ export type Card = {
   sent: CardSent[]
   /** Ended by the host stopping or dying, while nobody meant it to end. */
   stranded: boolean
+  /**
+   * Stranded mid-turn: the host stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold
+   * doesn't know where the turn stood. Its `carry-on`
+   * resumes it on a prompt telling Claude so (`CARRY_ON`).
+   */
+  cutOff: boolean
   /** When the user let it go, stranded (epoch ms): off duty, its conversation still resumable from the archive. */
   letGoAt?: number
   /** Not running, holding a conversation nobody resumed, which can't be resumed where it ran: why. */
@@ -362,6 +368,7 @@ const card = (
   const thread = threadOf(threadCheckoutOf({ reviews, worktree, checkout }))
   const state = withLiveness(facts.state, header.id, liveIds)
   const stranded = state.status === 'lost' || facts.hostStopped === true
+  const cutOff = stranded && !facts.broken && isMidTurn(facts.exitedFrom ?? facts.state.status)
   const waiting = !facts.broken && waitsOnSomeone(state, facts.typedAt)
   const live = isLive(state.status)
   const held = threads(session, sessions, nameOf)
@@ -428,12 +435,13 @@ const card = (
       .map(([at, path]) => ({ path, at, shown: shown.some((s) => s.target === path) })),
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     stranded,
+    cutOff,
     letGoAt,
     unresumable,
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
     onDuty: live || awaitsResume,
-    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume),
+    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume, cutOff),
   }
 }
 

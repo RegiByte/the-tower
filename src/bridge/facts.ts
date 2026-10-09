@@ -2,7 +2,7 @@ import type { LogEvent, SessionHeader } from '../shared/model.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { isTyped } from './input.ts'
 import { delivered } from './messages.ts'
-import { BOOTING, nextState, type SessionState } from './status.ts'
+import { BOOTING, nextState, type SessionState, type Status } from './status.ts'
 
 export type RateLimit = { kind: string; percentUsed: number; resetsAt?: string }
 
@@ -58,6 +58,8 @@ export type Facts = {
   /** When Claude last raised a hook or a mod event, its subagents' included. */
   heardAt?: number
   hostStopped?: boolean
+  /** The status the session was in when it exited: a turn the exit cut short reads `working` or `needs_input`. */
+  exitedFrom?: Status
   /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
   letGoAt?: number
   /**
@@ -274,7 +276,7 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
     conversations: conversationsAfter(facts.conversations, event),
   }
   if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0] } : next
-  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped }
+  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitedFrom: facts.state.status }
   if (event[1] === 'r') {
     const [cols, rows] = event[2].split('x').map(Number)
     return { ...next, cols, rows }

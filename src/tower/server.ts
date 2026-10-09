@@ -36,7 +36,7 @@
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
- *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?} | /resume {id, conversation} | /keys {id, data}
+ *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?} | /resume {id, conversation, prompt?} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
  *        | /worktree/discard {project, name, author, held}
@@ -720,13 +720,13 @@ const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
  * the next one reads it.
  */
 let resuming: Promise<unknown> = Promise.resolve()
-const resume = (id: string, conversation: string): Promise<Answer> => {
-  const run = resuming.then(() => resumeOnce(id, conversation))
+const resume = (id: string, conversation: string, prompt: string | undefined): Promise<Answer> => {
+  const run = resuming.then(() => resumeOnce(id, conversation, prompt))
   resuming = run.catch(() => undefined)
   return run
 }
 
-const resumeOnce = (id: string, conversation: string) =>
+const resumeOnce = (id: string, conversation: string, prompt: string | undefined) =>
   withSession(id, async () => {
     const source = system.session(id)!
     const held = source.facts.conversations.find((c) => c.id === conversation)
@@ -742,7 +742,7 @@ const resumeOnce = (id: string, conversation: string) =>
     if (lost) return lost
     const heir = newSessionId()
     const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
-    const answer = await host(resumeRequest(source.header, conversation, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
+    const answer = await host(resumeRequest(source.header, conversation, prompt, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
     if (answer.t === 'spawned') await system.tracked(heir, TRACK_TIMEOUT_MS)
     return answer
   })
@@ -982,7 +982,7 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
   spawn: ({ project, cwd, cut, model, effort, prompt, by }) =>
     spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by),
-  resume: ({ id, conversation }) => resume(id, conversation),
+  resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
   keys: ({ id, data }) =>
     withSession(id, () => {
       const keys = sessionKeys(data)

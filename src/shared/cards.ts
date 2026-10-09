@@ -63,10 +63,10 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
 
 /**
  * A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says,
- * until the user lets it go.
+ * until the user lets it go, `mid-turn` when the host cut it off (`cutOff`).
  */
 export const statusName = (c: Card) =>
-  c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}${c.cutOff ? ' mid-turn' : ''}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
@@ -223,14 +223,20 @@ export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's a
 export const letGoAsk = (c: Card) => `Let ${c.callsign} go?\n\nIt goes ${LET_GO_MEANS}.`
 export const letGoneLine = (c: Card) => `Let ${c.callsign} go: it is in the archive`
 
-/** What a renderer asks before resuming every stranded worker of a floor (`strandedOf`), naming each. */
-export const resumeAllAsk = (f: Floor, stranded: Card[]) =>
-  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)}`).join('\n')}`
+/** What carrying on does, said where a renderer offers a cut-off worker's `carry-on`. */
+export const CARRY_ON_MEANS = 'resume it on a prompt that tells it the host cut it off mid-turn, and to carry on where it left off'
 
-/** Resumes each of `stranded` in turn through `run`, past any that fails; answers what to tell the user. */
+/** How a stranded worker is resumed with the rest of its floor: carried on when cut off mid-turn, else plainly. */
+const resumeCallOf = (c: Card) => c.calls['carry-on'] ?? c.calls.resume!
+
+/** What a renderer asks before resuming every stranded worker of a floor (`strandedOf`), naming each and how it resumes. */
+export const resumeAllAsk = (f: Floor, stranded: Card[]) =>
+  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)} · ${c.calls['carry-on'] ? 'carry on' : 'resume'}`).join('\n')}`
+
+/** Resumes each of `stranded` in turn through `run`, past any that fails, carrying on the cut-off; answers what to tell the user. */
 export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) => Promise<unknown>) {
   const failed: string[] = []
-  for (const c of stranded) await run(c.calls.resume!).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
+  for (const c of stranded) await run(resumeCallOf(c)).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
   return failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`
 }
 
@@ -521,7 +527,7 @@ export const HOST_MEANS: Record<HostState, string> = {
 export { CLAUDE_UNTESTED }
 
 /** The daemons a verb needs running: the host holds every session's terminal, the terms daemon every shell. */
-const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', review: 'host', 'let-go': 'host', shell: 'terms' } as const
+const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', 'carry-on': 'host', review: 'host', 'let-go': 'host', shell: 'terms' } as const
 export type DaemonVerb = keyof typeof NEEDS
 const DOWN = { host: 'the host is down: tower up starts it', terms: 'the terms daemon is down: tower up starts it' } as const
 

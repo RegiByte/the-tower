@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "rejected",
   "date": "2026-10-04",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/launch.ts#Launch"]
 }
 ---
