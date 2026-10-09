@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.13.1
+
+The tower stays up through rare failures. It asks nothing of you: no host restart, no config change, no API change.
+Restart the tower (`tower down tower && tower up tower`); its first start refolds every log's checkpoint once.
+
+- A screen or shell that fails to open answers the viewer with an error; it used to end the tower moments later.
+- A poll or a watcher that fails says so in `tower.log` and runs again on the next tick or change. A watch of the
+  sessions, collections or config directory that fails ends the tower with the reason, instead of serving a board
+  that no longer moves.
+- A reply from the host or the terms daemon that isn't JSON fails that one request.
+- A prompt from a worker (`tower hire`, `send`, `review`) on a host too old to record who sent it is refused before
+  anything is typed.
+- A log line that isn't JSON (a write cut short) marks its session broken, as decision `broken-logs` says; it used to
+  end the tower, and again on every start.
+- A viewer that stops reading (a suspended tab, a frozen web view) is closed after 30 s of reading nothing, or once
+  64 MB wait for it, and reconnects from fresh snapshots; a board viewer behind is sent the newest board. The tower
+  used to queue everything for it, without limit.
+
 ## v1.13.0
 
 The tower's git can't lose your work. It asks nothing of you: no host restart, no config change. The renderer API
