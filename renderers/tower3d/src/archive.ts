@@ -10,23 +10,33 @@ import { FILING } from './layout.ts'
 
 const dayOf = (at: number) => new Date(at).setHours(0, 0, 0, 0)
 
-/** Each floor's archive (`GET /archive/<project>`): the `archiveKey` it was read at, and its cards once read. */
-const archives = new Map<string, { key: string; cards?: Card[] }>()
+/**
+ * Each floor's archive (`GET /archive/<project>`): the `archiveKey` it was read at, its cards once read, and why its
+ * read failed while none were read before.
+ */
+export type ArchiveRead = { key: string; cards?: Card[]; failed?: string }
+const archives = new Map<string, ArchiveRead>()
 
 /**
- * Reads again every floor's archive that moved since it was read, keeping the cards read before until the new ones
- * land; a read a later one overtook is dropped. `arrived` runs as each lands.
+ * Reads a floor's archive, keeping the cards read before until the new ones land; a read a later one overtook is
+ * dropped. `changed` runs as it lands, or fails with nothing read before; `failed` when it fails over cards read.
  */
-export function readArchives(board: Board, arrived: () => void, failed: (err: Error) => void) {
-  for (const f of board.floors) {
-    const key = archiveKey(board, f)
-    const known = archives.get(f.id)
-    if (known?.key === key) continue
-    const reading = { key, cards: known?.cards }
-    archives.set(f.id, reading)
-    readArchive(board, f.id).then((cards) => archives.get(f.id) === reading && ((reading.cards = cards), arrived()), failed)
-  }
+export function readFloorArchive(board: Board, project: string, changed: () => void, failed: (err: Error) => void) {
+  const reading: ArchiveRead = { key: archiveKey(board, board.floors.find((f) => f.id === project)!), cards: archives.get(project)?.cards }
+  archives.set(project, reading)
+  readArchive(board, project).then(
+    (cards) => archives.get(project) === reading && ((reading.cards = cards), changed()),
+    (err: Error) => archives.get(project) === reading && (reading.cards ? failed(err) : ((reading.failed = err.message), changed())),
+  )
 }
+
+/** Reads again every floor's archive that moved since it was read (`readFloorArchive`). */
+export function readArchives(board: Board, changed: () => void, failed: (err: Error) => void) {
+  for (const f of board.floors) if (archives.get(f.id)?.key !== archiveKey(board, f)) readFloorArchive(board, f.id, changed, failed)
+}
+
+/** A floor's archive as read so far. */
+export const archiveRead = (project: string) => archives.get(project)
 
 /** A floor's archive, once read. */
 export const archiveOf = (project: string) => archives.get(project)?.cards

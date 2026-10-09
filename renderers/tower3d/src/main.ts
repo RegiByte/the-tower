@@ -46,7 +46,7 @@ import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { reducedMotion } from '../../../src/shared/prefs.ts'
 import { FIXTURE, fixtureBoards, readConversations } from './fixtures.ts'
-import { archiveOf, drawersAt, readArchives } from './archive.ts'
+import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
 import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
@@ -213,7 +213,9 @@ function dressReplays() {
   screensAt = { ...screensAt, plan: undefined }
 }
 
-/** An archive read landed: the cabinets file it, and a panel listing it shows it. */
+const archiveFailed = (err: Error) => toast(`The archive can't be read: ${err.message}`)
+
+/** An archive read landed or failed: the cabinets file it, and a panel listing it shows it. */
 function archiveArrived() {
   reconcile(FILINGS, s.filings, s.plan, discard)
   renderPanel()
@@ -309,7 +311,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   reconcile(RUNNING, s.running, s.plan, discard)
   reconcile(PIGEONHOLES, s.pigeonholes, s.plan, discard)
   reconcile(FILINGS, s.filings, s.plan, discard)
-  readArchives(next, archiveArrived, (err) => toast(`The archive can't be read: ${err.message}`))
+  readArchives(next, archiveArrived, archiveFailed)
   dressAllPapers()
   reconcile(DANCE, s.dance, s.plan, discard)
   reconcile(GUESTS, s.guests, s.plan, discard)
@@ -417,7 +419,7 @@ function renderPanel() {
     const f = board.floors.find((f) => f.id === panel.id)
     if (!f) return closeSide()
     if (!$('side').querySelector(`[data-archive-of="${CSS.escape(f.id)}"]`)) $('side').innerHTML = archiveSideHtml(f)
-    const { count, html } = archiveListHtml(board, f, archiveOf(f.id), panel.words, held)
+    const { count, html } = archiveListHtml(board, f, archiveRead(f.id), panel.words, held)
     $('archive-count').textContent = count
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
@@ -2121,6 +2123,7 @@ $('side').addEventListener('click', async (e) => {
   if (d.worktrees !== undefined && s.panel?.kind === 'floor') return (s.panel.worktrees = !s.panel.worktrees, renderPanel())
   if (d.archive !== undefined && s.panel?.kind === 'floor') return (openSide({ kind: 'archive', id: s.panel.id, words: [] }), $('archive-filter').focus())
   if (d.floor !== undefined && s.panel?.kind === 'archive') return openSide({ kind: 'floor', id: s.panel.id, worktrees: false })
+  if (d.archiveRead !== undefined && s.panel?.kind === 'archive') return (readFloorArchive(s.board, s.panel.id, archiveArrived, archiveFailed), renderPanel())
 })
 $('side').addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement

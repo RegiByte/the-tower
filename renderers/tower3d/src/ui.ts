@@ -1,10 +1,10 @@
 import { documentCss } from '../../../src/shared/design.ts'
 import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
+import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
-import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
+import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, matchesWords, pastCount, pastOf, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
@@ -532,9 +532,9 @@ export const archiveSideHtml = (f: Floor) =>
     <div class="archive" id="archive-list"></div>`
 
 /** A floor's past workers that match `words`, the newest first, and how many of how many; `archive` once read. */
-export function archiveListHtml(board: Board, f: Floor, archive: Card[] | undefined, words: string[], held: HeldWhy) {
-  if (!archive) return { count: `${pastCount(f)} workers`, html: '<div class="past"><i>reading the archive…</i></div>' }
-  const past = pastOf(f, archive)
+export function archiveListHtml(board: Board, f: Floor, read: ArchiveRead | undefined, words: string[], held: HeldWhy) {
+  if (!read?.cards) return { count: `${pastCount(f)} workers`, html: read?.failed ? failedHtml('the archive', read.failed, 'data-archive-read') : '<div class="past"><i>reading the archive…</i></div>' }
+  const past = pastOf(f, read.cards)
   const shown = past.filter((c) => matchesWords(c, words))
   return {
     count: shown.length === past.length ? `${past.length} workers` : `${shown.length} of ${past.length}`,
