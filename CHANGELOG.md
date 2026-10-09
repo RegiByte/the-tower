@@ -28,6 +28,9 @@ Commit messages hold the detail.
   and `tower review` runs, only while the worker's checkout is live; `card.unseen` leaves out threads on landed work.
   Both renderers draw the note forms only when offered: a landed worker's Reviews read its thread, filed or not, under a
   line saying it landed, and its Changes say "Landed on <base>" or "Worktree removed" instead of an empty diff.
+- Tower 3D's HUD, panel heads and floor panel draw the shared SVG icons where they drew Unicode glyphs (✕ ⓘ ⎇ ↗ ↻ ⌂
+  ▤ ‹ ♪ ●): every close is an `.icon-btn` with `ICON.close`, icon-only controls are named and at least `--control`
+  (API 1.25: `ICON` adds `back`, `music` and `silent`).
   `POST /review/append` still takes any checkout. `/panels.js` adds `threadItemFiles`.
 - A worker's brief shows what other workers sent it by `SendMessage` as their own bubbles, named by the sender's
   callsign, beside the user's prompts and Claude's answers, in both renderers and in `tower agent`; they count toward

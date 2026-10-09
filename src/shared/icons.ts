@@ -35,6 +35,7 @@ export const ICON = {
   resume: stroke('<path d="M13 8a5 5 0 1 1-1.5-3.6"/><path d="M12 1.8v3H9"/>', 1.4),
   plus: stroke('<path d="M8 3v10M3 8h10"/>', 1.6),
   caret: stroke('<path d="m4 6 4 4 4-4"/>', 1.6),
+  back: stroke('<path d="m10 4-4 4 4 4"/>', 1.6),
   check: stroke('<path d="m3.5 8.5 3 3 6-7"/>', 2),
   warn: stroke('<path d="M7.1 2.6a1 1 0 0 1 1.8 0l5.4 9.9a1 1 0 0 1-.9 1.5H2.6a1 1 0 0 1-.9-1.5z"/><path d="M8 6.3v3.2"/><circle cx="8" cy="11.6" r=".5" fill="currentColor"/>'),
   compact: stroke('<path d="M3 4h10M3 8h10M3 12h10"/>'),
@@ -43,6 +44,8 @@ export const ICON = {
   page: stroke('<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 5.5h13"/>'),
   doc: stroke('<path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3M5.5 8h5M5.5 10.5h5"/>'),
   globe: stroke('<circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c-3.2 3.4-3.2 9 0 12.4M8 1.8c3.2 3.4 3.2 9 0 12.4"/>'),
+  music: stroke('<path d="M6 12V3.2l7-1.4v8.7"/><circle cx="4.2" cy="12" r="1.8" fill="currentColor"/><circle cx="11.2" cy="10.5" r="1.8" fill="currentColor"/>'),
+  silent: stroke('<path d="M6 12V3.2l7-1.4v8.7"/><circle cx="4.2" cy="12" r="1.8" fill="currentColor"/><circle cx="11.2" cy="10.5" r="1.8" fill="currentColor"/><path d="m1.5 1.5 13 13"/>'),
   tower: stroke('<path d="M4 14.5V2.5h8v12M2.5 14.5h11"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M6 11h1M9 11h1"/>', 1.4),
 }
 

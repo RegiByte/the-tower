@@ -54,8 +54,8 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
   const state = hostState(board)
   const host = `<span class="hud-host ${HOST_ATTENTION[state]}" data-tip="${esc(HOST_MEANS[state])}"><span class="lamp"></span>${state === 'up' ? '' : HOST_NAME[state]}</span>`
-  const tune = `<button class="hud-music${music ? ' on' : ''}" data-music aria-label="music" aria-pressed="${music}" data-tip="music ${music ? 'on' : 'off'} (B)">${music ? '♪' : '♪̸'}</button>`
-  const gear = `<button class="hud-music hud-settings" popovertarget="settings" aria-label="settings" data-tip="settings: sound and theme">${ICON.settings}</button>`
+  const tune = `<button class="icon-btn hud-music${music ? ' on' : ''}" data-music aria-label="music" aria-pressed="${music}" data-tip="music ${music ? 'on' : 'off'} (B)">${music ? ICON.music : ICON.silent}</button>`
+  const gear = `<button class="icon-btn" popovertarget="settings" aria-label="settings" data-tip="settings: sound and theme">${ICON.settings}</button>`
   const tally = (['ready', 'working', 'quiet', 'broken'] as const).filter((a) => count(a))
     .map((a) => `<span class="${a}" data-tip="${esc(`${count(a)} ${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b></span>`)
   const shells = board.shells.length ? [`<span data-tip="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
@@ -78,7 +78,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
     ${limits.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf].join('')}</span>` : ''}
     ${fresh ? `<button class="chip hud-shown" data-shown data-tip="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
-    ${sharing ? '<button class="chip hud-share" data-stop-share data-tip="stop sharing the big screen">■ stop sharing</button>' : ''}`
+    ${sharing ? '<button class="chip hud-share" data-stop-share data-tip="stop sharing the big screen">stop sharing</button>' : ''}`
 }
 
 const LEFT_SHOWN = 4
@@ -255,6 +255,9 @@ export type HeldWhy = (verb: DaemonVerb) => string | undefined
 const heldButton = (why: string, cls: string, label: string, inner: string) =>
   `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(why)}">${inner}</button>`
 
+/** A panel's close: back to walking, or the panel beside the world shut. */
+const closeButton = `<button class="icon-btn x" data-act="close" aria-label="close" data-tip="close">${ICON.close}</button>`
+
 /** A worker's desk head: who and where, a glance at its context and cost, and what can be done with it. */
 export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: string) => boolean, held: HeldWhy, framed: boolean) {
   const ctx = c.context
@@ -264,12 +267,12 @@ export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: str
     claudeFlagHtml(c),
   ].filter(Boolean).join('')
   const acts = [
-    `<button class="info" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">ⓘ</button>`,
-    can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', '↻ Resume') : `<button class="primary" data-act="resume">↻ Resume</button>`),
+    `<button class="icon-btn" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">${ICON.info}</button>`,
+    can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', `${ICON.resume} Resume`) : `<button class="primary" data-act="resume">${ICON.resume} Resume</button>`),
     can(c, 'reap') && `<button data-act="reap" data-tip="${esc(c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'))}">${armed(`reap ${c.id}`) ? 'sure?' : `reap ${c.resources.length}`}</button>`,
-    framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
+    framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
     (can(c, 'send-home') || can(c, 'kill')) && `<button data-act="kill" class="danger" data-tip="${esc(`ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`)}">${armed(`kill ${c.id}`) ? 'sure?' : 'Send home'}</button>`,
-    `<button data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">✕</button>`,
+    `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
   return `<span class="call">${esc(c.callsign)}</span>${pill(c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floor))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
@@ -298,11 +301,11 @@ export function detailsHtml(board: Board, c: Card) {
 const MOVE_TITLE: Record<Move, string> = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
 const MOVE_COMMAND: Record<Move, string> = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
-/** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
+/** The workers each move key goes to from `c`, named before you go, and a close for `c`'s own wait while you heed it. */
 export function movesHtml(board: Board, c: Card, heed: Heed) {
   const to = neighbours(board, c.id, heed)
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="move dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">✕</button>` : ''
+  const dismiss = wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
   return dismiss + (['prev', 'next', 'waiting'] as const).map((m) => {
     const card = to[m]
     if (!card || card.id === c.id) return ''
@@ -317,12 +320,12 @@ export function movesHtml(board: Board, c: Card, heed: Heed) {
 export type DeskTab = 'screen' | 'brief' | 'changes' | 'reviews' | `shown:${string}`
 export const shownTab = (s: Shown): DeskTab => `shown:${s.target}`
 
-/** A showing's tab: a dot while you have yet to open it, ↗ on the open one to take it to a browser tab. */
+/** A showing's tab: a dot while you have yet to open it, an outward arrow on the open one to take it to a browser tab. */
 const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean) => {
   const from = shownFrom(c.lineage, s)
   return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" data-tip="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
-    `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-    `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" data-tip="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileSpansHtml(s.target) : ''}</button>`
+    `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
+    `${on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : ''}${on && s.kind === 'file' ? fileSpansHtml(s.target) : ''}</button>`
 }
 
 const TAB_NAME = { screen: 'Terminal', brief: 'Logbook', changes: 'Changes', reviews: 'Reviews' } as const
@@ -350,11 +353,11 @@ const keepsReviews = (f: Floor) => f.collections.some((col) => col.id === REVIEW
 
 /** A thread read away from any desk: nobody works in its checkout now. */
 export const statsHeadHtml = () =>
-  `<span class="call">Stats</span><span class="meta">every floor, from the logs</span><span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
+  `<span class="call">Stats</span><span class="meta">every floor, from the logs</span><span class="acts">${closeButton}</span>`
 
 export const threadHeadHtml = (f: Floor, checkout: string) =>
   `${swatch(f.color ?? NO_BAND)}<span class="call">Thread</span><span class="meta">${esc(f.name)} · ${esc(checkout)} · nobody works there now</span>
-    <span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
+    <span class="acts">${closeButton}</span>`
 
 /**
  * A showing in the desk panel: a file framed from the tower, sandboxed; a web page framed at its address; markdown
@@ -364,7 +367,7 @@ export function shownHtml(callsign: string, s: Shown, root: string, md?: string)
   if (s.kind === 'url') return `<iframe class="doc-frame" src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`
   if (s.kind === 'link') {
     return `<div class="shown-link"><small>${esc(callsign)} asks you to open</small><h2>${esc(shownTitle(s))}</h2>
-      <code>${esc(s.target)}</code><button class="primary" data-out="${esc(s.target)}">Open ↗</button></div>`
+      <code>${esc(s.target)}</code><button class="primary" data-out="${esc(s.target)}">${ICON.remote} Open</button></div>`
   }
   if (isImage(s)) return `<img class="doc-image" src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`
   if (isVideo(s)) return `<video class="doc-video" controls autoplay src="${esc(shownHref(s))}"></video>`
@@ -380,7 +383,7 @@ export const askHtml = (c: Card) =>
 export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolean) {
   return `${swatch(floor?.color ?? NO_BAND)}<span class="call">Shell</span>
     <span class="meta" data-tip="${esc(sh.activity)}">${esc(floor?.name ?? sh.project)}/${esc(base(sh.cwd))} · ${esc(sh.activity)}</span>
-    <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button><button data-act="close" aria-label="close">✕</button></span>`
+    <span class="acts"><button data-act="shell-kill" class="danger">${armed ? 'sure?' : 'Kill'}</button>${closeButton}</span>`
 }
 
 /** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`) and how they read its words. */
@@ -392,16 +395,16 @@ const briefHtml = (c: Card, threads: Brief[], look: BriefLook) =>
 
 /**
  * A worker's sessions, oldest first, each a button that shows its screen (`data-replay`, its id); a running worker's
- * own session is "● live" (an empty `data-replay`). `on`: the session whose screen is shown, undefined for the live one.
+ * own session is "live" behind a ready lamp (an empty `data-replay`). `on`: the session whose screen is shown, undefined for the live one.
  * A resume given no prompt of its own says so once its conversations are read (`threads`): its screen repeats the last.
  */
 export const sessionsHtml = (c: Card, on: string | undefined, threads: Brief[] | undefined) =>
   `<div class="logbook-sessions">${c.lineage.map((l, i) => {
     const live = c.live && l.id === c.id
     const idle = !live && threads !== undefined && resumedIdle(threads, l, i + 1)
-    const label = live ? '● live' : `s${i + 1} · ${sessionWhen(l.startedAt)}${idle ? ` · ${RESUMED_IDLE.mark}` : ''}`
+    const label = live ? '<span class="lamp ready"></span> live' : esc(`s${i + 1} · ${sessionWhen(l.startedAt)}${idle ? ` · ${RESUMED_IDLE.mark}` : ''}`)
     const tip = live ? 'back to the live screen' : `the last screen of ${sessionLabel(i + 1, c.lineage.length, l.startedAt)}${idle ? `, ${RESUMED_IDLE.means}` : ''}`
-    return `<button class="${[live && 'live', idle && 'idle', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(tip)}">${esc(label)}</button>`
+    return `<button class="${[live && 'live', idle && 'idle', (live ? on === undefined : on === l.id) && 'on'].filter(Boolean).join(' ')}" data-replay="${live ? '' : esc(l.id)}" data-tip="${esc(tip)}">${label}</button>`
   }).join('')}</div>`
 
 /** A worker's conversations by session; `threads` undefined while they are read. */
@@ -414,12 +417,12 @@ export const logbookHtml = (c: Card, threads: Brief[] | undefined, look: BriefLo
 
 /** "REPLAY · Oct 6, 21:40": a past session's screen, with the way back to the live one when there is one. */
 export const stampHtml = (startedAt: number, back: boolean) =>
-  `<span>Replay · ${esc(sessionWhen(startedAt))}</span>${back ? '<button data-replay="">● live <kbd>Esc</kbd></button>' : ''}`
+  `<span>Replay · ${esc(sessionWhen(startedAt))}</span>${back ? `<button data-replay=""><span class="lamp ready"></span> live <kbd>Esc</kbd></button>` : ''}`
 
 /** A worker with no desk in the reader: its callsign, where and when it worked. */
 export const logbookHeadHtml = (c: Card, f: Floor | undefined) =>
   `${swatch(f?.color ?? NO_BAND)}<span class="call">${esc(c.callsign)}</span><span class="meta">logbook · ${esc(f?.name ?? c.project)} · ${c.lineage.length} session${c.lineage.length === 1 ? '' : 's'} · ${esc(statusName(c))}</span>
-    <span class="acts"><button data-act="close" aria-label="close">✕</button></span>`
+    <span class="acts">${closeButton}</span>`
 
 /** A pulled drawer beside the world: its day's workers, each a folder whose logbook opens in the reader. */
 export const drawerSideHtml = (f: Floor, d: Drawer) =>
@@ -432,8 +435,6 @@ export const drawerSideHtml = (f: Floor, d: Drawer) =>
 const workerCards = (cards: Card[]) =>
   cards.map((c) => `<div class="sess ${lampOf(c)}" data-desk="${esc(c.id)}"><div class="top"><span class="lamp"></span><span class="call">${esc(c.callsign)}</span>
     <span class="st">${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span></div>${gistLine(c) ? `<div class="line">${esc(gistLine(c))}</div>` : ''}</div>`).join('')
-
-const closeButton = '<button class="x" data-act="close" aria-label="close">✕</button>'
 
 /** Every process the floor's workers left running, each with its own reap. */
 const runningHtml = (f: Floor, armed: (key: string) => boolean) =>
@@ -465,12 +466,12 @@ const worktreesHtml = (f: Floor, held: HeldWhy) => [
   ...f.worktrees.map((w) => {
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos)].join('\n')
     const where = w.repos[0].path
-    return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ⎇ ${esc(worktreeBranch(w))}</span>
+    return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
       <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.verbs.map((v) => wtVerb(w, v)).join('')}
-      ${w.state === 'lost' ? '' : held('shell') ? heldButton(held('shell')!, 'ic', `new shell in ${w.name}`, ICON.shell) : can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
-      ${w.state !== 'lost' && can(f, 'editor') ? `<button class="ic" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
+      ${w.state === 'lost' ? '' : held('shell') ? heldButton(held('shell')!, 'icon-btn', `new shell in ${w.name}`, ICON.shell) : can(f, 'shell') ? `<button class="icon-btn" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+      ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
-  ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">⎇ ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
+  ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : 'kept'}</span>${b.verbs.map((v) => wtVerb(b, v)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
@@ -481,22 +482,22 @@ const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
     ${c.conversations.map((conv) => `<div class="conv"><span>${esc(plain(conv.answer ?? conv.prompt ?? conv.id))}</span>${
       can(conv, 'goto') ? `<button data-desk="${esc(conv.resumedBy!.id)}">→ ${esc(conv.resumedBy!.callsign)}</button>`
         : !can(conv, 'resume') ? ''
-        : held('resume') ? heldButton(held('resume')!, '', 'resume this conversation', '↻')
-        : `<button data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation">↻</button>`}</div>`).join('')}</div>`
+        : held('resume') ? heldButton(held('resume')!, 'icon-btn', 'resume this conversation', ICON.resume)
+        : `<button class="icon-btn" data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
 
 /** A floor's + new session, held back with why while it can't run. */
 const spawnButton = (f: Floor, held: HeldWhy) =>
-  held('spawn') ? heldButton(held('spawn')!, 'wide', 'new session', '+ new session') : can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">+ new session</button>` : ''
+  held('spawn') ? heldButton(held('spawn')!, 'wide', 'new session', `${ICON.plus} new session`) : can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">${ICON.plus} new session</button>` : ''
 
 /**
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
 export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, tray: string | undefined) {
-  const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? '·' : '⌂'} ${esc(base(dir))}</span>
-    ${held('shell') ? heldButton(held('shell')!, 'ic', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
-    ${can(f, 'editor') ? `<button class="ic" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
-    ${origins[dir] ? `<a class="ic" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
+  const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? ICON.repo : ICON.hub} ${esc(base(dir))}</span>
+    ${held('shell') ? heldButton(held('shell')!, 'icon-btn', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button class="icon-btn" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
+    ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}</div>`).join('')
   const shelf = (f.shelf ?? []).map((entry, n) => {
     if ('link' in entry) return `<a href="${esc(entry.link)}" target="_blank" rel="noreferrer">${SHELF_ICON.link} ${esc(entry.label)}</a>`
     const glyph = SHELF_ICON[shelfKind(entry)]
@@ -515,9 +516,9 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
   const kept = f.collections.filter((c) => c.items.length)
   const unfolded = kept.find((c) => c.id === tray)
   const trays = [
-    trees && `<button class="tray${tray === 'worktrees' ? ' on' : ''}" data-tray="worktrees" aria-expanded="${tray === 'worktrees'}" data-tip="worktrees and the branches the tower kept">⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
+    trees && `<button class="tray${tray === 'worktrees' ? ' on' : ''}" data-tray="worktrees" aria-expanded="${tray === 'worktrees'}" data-tip="worktrees and the branches the tower kept">${ICON.branch} <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
     ...kept.map((c) => `<button class="tray${tray === c.id ? ' on' : ''}" data-tray="${esc(c.id)}" aria-expanded="${tray === c.id}" data-tip="${esc(c.description ?? `items kept in ${c.label}`)}">${c.id === DRAFTS ? ICON.draft : ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}</button>`),
-    past && `<button class="tray" data-archive data-tip="past workers and their conversations">▤ <b>${past}</b> archived ›</button>`,
+    past && `<button class="tray" data-archive data-tip="past workers and their conversations">${ICON.archive} <b>${past}</b> archived</button>`,
   ].filter(Boolean).join('')
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
     <div class="section eyebrow">Dirs</div>${dirs}
@@ -533,7 +534,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */
 export const archiveSideHtml = (f: Floor) =>
-  `<div class="side-title" data-archive-of="${esc(f.id)}"><button class="back" data-floor aria-label="back to the floor" data-tip="back to the floor">‹</button><h2>Archive</h2>${closeButton}</div>
+  `<div class="side-title" data-archive-of="${esc(f.id)}"><button class="icon-btn back" data-floor aria-label="back to the floor" data-tip="back to the floor">${ICON.back}</button><h2>Archive</h2>${closeButton}</div>
     <div class="meta">${esc(f.name)} · <span id="archive-count"></span></div>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
     <div class="archive" id="archive-list"></div>`
@@ -581,19 +582,19 @@ export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boole
     d.id && !carrying && `<button data-act="carry" data-tip="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
     held('spawn') ? heldButton(held('spawn')!, 'primary', 'Start session', 'Start session') : can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
     `<button data-act="delete" class="danger" data-tip="delete it now: the toast offers Undo">Delete</button>`,
-    `<button data-act="close" aria-label="back to walking" data-tip="back to walking (Esc)">✕</button>`,
+    `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (Esc)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
   const item = d.id ? draftItem([f], f.id, d.id) : undefined
   return `${swatch(f.color ?? NO_BAND)}<span class="call">Draft</span><span class="meta">${item ? `${esc(item.tag)} · ` : ''}${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${keptByText(item?.keptBy)}</span>${
     item ? fileButtonsHtml(`${draftsOf(f)!.dir}/${item.id}`) : ''}<span class="acts">${acts}</span>`
 }
 
-/** A game's panel head: its title and keeper, ↗ to play it in a browser tab, and ✕, the way out while the game holds the keys. */
+/** A game's panel head: its title and keeper, a way to play it in a browser tab, and close, the way out while the game holds the keys. */
 export function gameHeadHtml(f: Floor, project: string, id: string) {
   const item = gameItem([f], project, id)!
   const acts = [
-    `<button data-out="/${esc(gamePath(project, id))}" aria-label="play it in a browser tab" data-tip="play it in a browser tab">↗</button>`,
-    `<button data-act="close" aria-label="back to walking" data-tip="back to walking: the game holds the keys, so Esc stays with it">✕</button>`,
+    `<button class="icon-btn" data-out="/${esc(gamePath(project, id))}" aria-label="play it in a browser tab" data-tip="play it in a browser tab">${ICON.remote}</button>`,
+    `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking: the game holds the keys, so Esc stays with it">${ICON.close}</button>`,
   ].join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(gameTitle(project, item))}</span>
     <span class="meta">${esc(item.tag)} · ${esc(f.name)}${keptByText(item.keptBy)}</span><span class="acts">${acts}</span>`
@@ -609,8 +610,8 @@ export const draftNoteHtml = `<span>Someone else changed this draft while you we
 export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
   const where = shelfSource(entry)
   const acts = [
-    framed && `<button data-act="tower" data-tip="open in the tower's own view">tower ↗</button>`,
-    `<button data-act="close" aria-label="close">✕</button>`,
+    framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
+    closeButton,
   ].filter(Boolean).join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(entry.label)}</span>
     <span class="meta" data-tip="${esc(where)}">${esc(f.name)} · ${esc(where)}</span><span class="acts">${acts}</span>`
@@ -621,7 +622,7 @@ export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, titl
   const acts = [
     `<button data-out="/${esc(itemPath(f.id, c.id, item.id))}" data-tip="open it on its own">${ICON.remote} new tab</button>`,
     `<button data-act="delete" class="danger" data-tip="the file is deleted for good">${armed ? 'sure?' : 'Delete'}</button>`,
-    `<button class="icon-btn" data-act="close" aria-label="close">${ICON.close}</button>`,
+    closeButton,
   ].join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(c.label)}</span>
     <span class="meta" data-tip="${esc(itemFile(c, item.id))}">${esc(item.tag)} · ${esc(f.name)} · ${esc(title)}${esc(keptByText(item.keptBy))} · changed ${ago(wallNow() - item.modifiedAt)} ago</span><span class="acts">${acts}</span>`
@@ -643,13 +644,13 @@ export const keptTextHtml = (item: FloorItem, text: string, root: string) =>
   `<iframe class="doc-frame" title="${esc(item.tag)}" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(`<!doctype html><html ${root}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
     <style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`)}"></iframe>`
 
-/** A gallery picture in the reader: who showed it and when, its way to the worker's desk while on duty, and ↗. */
+/** A gallery picture in the reader: who showed it and when, its way to the worker's desk while on duty, and to a browser tab. */
 export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, color: string) {
   const acts = [
     onDuty && `<button data-act="desk" data-tip="to its desk, on this showing's tab">at ${esc(worker.callsign)}'s desk</button>`,
     sh.kind === 'file' && fileButtonsHtml(sh.target),
-    sh.kind !== 'link' && `<button data-out="${esc(shownHref(sh))}" aria-label="open in a browser tab" data-tip="open in a browser tab">↗</button>`,
-    `<button data-act="close" aria-label="close">✕</button>`,
+    sh.kind !== 'link' && `<button class="icon-btn" data-out="${esc(shownHref(sh))}" aria-label="open in a browser tab" data-tip="open in a browser tab">${ICON.remote}</button>`,
+    closeButton,
   ].filter(Boolean).join('')
   const meta = `${worker.callsign} showed ${sh.target} · ${ago(wallNow() - sh.at)} ago`
   return `${swatch(color)}<span class="call">${esc(shownTitle(sh))}</span>

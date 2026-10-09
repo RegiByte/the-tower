@@ -1108,6 +1108,7 @@ function paintSettings() {
 }
 placeOnOpen(settingsEl, () => settingsBy)
 document.querySelector('.paused-settings')!.innerHTML = `${ICON.settings}Settings`
+$('watch-close').innerHTML = ICON.close
 settingsEl.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && paintSettings())
 document.addEventListener('click', (e) => (settingsBy = (e.target as Element).closest('[popovertarget="settings"]') ?? settingsBy), true)
 settingsEl.addEventListener('click', (e) => {

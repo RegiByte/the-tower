@@ -125,6 +125,10 @@ draws with almost no advance, so the next face in the stack draws it.
   - New served names, an addition (API 1.22): `controls` and `iconSize` in `/design.js`, `GIST_ICON` and `withIcons`
     in `/icons.js`, new keys of `ICON`, and `.icon`, `.icon-btn`, `--control`, `--selected` and `--icon-*` in
     `/design.css`. `SHELF_ICON`'s values are SVG now, where they were one character.
+  - *Tower 3D follows* (API 1.25): its HUD, panel heads, floor panel, archive and logbook draw the same icons
+    ([`ui.ts`](ref:hub/renderers/tower3d/src/ui.ts)), every close one `.icon-btn` with `ICON.close`; `ICON` adds
+    `back`, `music` and `silent` for its archive's way back and the music toggle. What it paints into textures
+    (monitors, signs, pictures) keeps its own text.
 
 **Alternatives considered.** Paper & Ink alone (charming beside the 3D, noisy in dense lists, reads as
 agent-office); Plant Floor, after Satisfactory (handsome but the most generic); a Sims skin (EA trade dress);
