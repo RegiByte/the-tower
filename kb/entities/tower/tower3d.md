@@ -99,7 +99,8 @@ waits.
 **The control room** ([`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)), in each floor's
 back-left corner:
 - A video wall with a live tile per worker on duty, framed in its status. E opens the terminal in place.
-- The console, which opens the floor panel (dirs, new shell, archive, spawn).
+- The console, which opens the floor panel (dirs, new shell, archive, spawn, and a tray per collection holding items,
+  [[collection-trays]]: a draft opens in its editor, a game at its cabinet, any other item in the reader).
 - The floor's shells on a bench.
 - The shelf: a bookcase per markdown collection or markdown item (a book per file, E reads it), a TV per
   `html`/`url`/`renderer` entry or other item ([[shelf-items]]), a poster per `link`. A page never opens itself (`self` from the board). An `html` entry opens in a frame

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { discard as discardDraft, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
+import { DRAFTS, discard as discardDraft, discardItem, keepUnsent, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
@@ -12,10 +12,10 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, type DaemonVerb } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -39,7 +39,7 @@ import { closeTerm, mountTerm, watchPanelSize } from './term.ts'
 import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
-import { activityHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
 import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
@@ -53,7 +53,10 @@ import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, R
 import { fitPicture, placePicture } from './gallery.ts'
 import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
-import { gameItem } from './games.ts'
+import { GAMES, gameItem } from './games.ts'
+import { keptText, keptTitle, onKeptTitles, pruneKeptTitles } from './kept.ts'
+import { itemKind, itemPath, itemsCss, keptOf, readsText } from '../../../src/shared/items.ts'
+import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } from './stage.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, fall, jump, look, walk, type Walker } from './walker.ts'
@@ -67,7 +70,7 @@ const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
  */
 const onAppearance = (fn: () => void) => (tower.onScheme(() => tower.prefs.get().scheme || fn()), tower.prefs.on(fn))
 
-document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss }))
+document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss }))
 watchTips(document)
 
 const directory = boardFace(640, 480)
@@ -317,6 +320,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   dressSides()
   noticeShown(next)
   pruneNoteTitles(next.floors)
+  pruneKeptTitles(next.floors)
   syncNotes()
   pruneGameTitles(next.floors)
   syncCabinets()
@@ -411,7 +415,7 @@ function renderPanel() {
     const id = panel.id
     const f = board.floors.find((f) => f.id === id)
     if (!f) return closeSide()
-    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, isArmed, held, panel.worktrees)
+    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, isArmed, held, panel.tray)
   }
   if (panel.kind === 'archive') {
     const f = board.floors.find((f) => f.id === panel.id)
@@ -477,6 +481,14 @@ function renderPanel() {
     const entry = f?.shelf?.[panel.n]
     if (!f || !entry) return closeDoc()
     $('doc-head').innerHTML = docHeadHtml(f, entry, tower.framed)
+  }
+  if (panel.kind === 'kept') {
+    const f = board.floors.find((f) => f.id === panel.project)
+    const c = f?.collections.find((c) => c.id === panel.collection)
+    const item = c?.items.find((i) => i.id === panel.id)
+    if (!f || !c || !item) return (closeDoc(), toast('The item was deleted'))
+    $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item), isArmed(`kept ${panel.id}`))
+    if (panel.drawn !== item.modifiedAt) drawKept(panel, c, item)
   }
 }
 
@@ -578,7 +590,7 @@ function closeDoc() {
   delete $('doc-body').dataset.stats
   delete $('doc-body').dataset.logbook
   clearInterval(statsPoll)
-  if (s.panel?.kind === 'doc' || s.panel?.kind === 'picture' || s.panel?.kind === 'thread' || s.panel?.kind === 'stats' || s.panel?.kind === 'logbook') s.panel = undefined
+  if (s.panel?.kind === 'doc' || s.panel?.kind === 'kept' || s.panel?.kind === 'picture' || s.panel?.kind === 'thread' || s.panel?.kind === 'stats' || s.panel?.kind === 'logbook') s.panel = undefined
 }
 
 /** The Stats panel is read again every minute while it is open. */
@@ -685,6 +697,39 @@ async function openShelf(project: string, n: number, file?: string) {
   $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? '') }, tower.prefs.attributes())
 }
 onAppearance(() => s.panel?.kind === 'doc' && s.panel.file && openShelf(s.panel.project, s.panel.n, s.panel.file))
+
+/** Opens a kept item where it lives: a draft in its editor, a game at its cabinet, anything else in the reader. */
+function openKept(k: { project: string; collection: string; id: string }) {
+  if (k.collection === DRAFTS) return openNote(k.project, k.id)
+  if (k.collection === GAMES) return openGame(k.project, k.id)
+  closePanels()
+  s.panel = { kind: 'kept', ...k, drawn: undefined }
+  unlock()
+  show('paused', false)
+  show('doc', true)
+  renderPanel()
+}
+
+/** The item's body, drawn again only when the item changes; a text read that fails says so with Read again. */
+async function drawKept(panel: Extract<Panel, { kind: 'kept' }>, c: FloorCollection, item: FloorItem) {
+  panel.drawn = item.modifiedAt
+  if (!readsText(itemKind(item.id))) return ($('doc-body').innerHTML = keptFileHtml(c, item, `/${itemPath(panel.project, c.id, item.id)}`))
+  const text = await keptText(panel.project, c.id, item.id).catch((err: Error) => {
+    if (s.panel === panel) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
+  })
+  if (text === undefined || s.panel !== panel || panel.drawn !== item.modifiedAt) return
+  $('doc-body').innerHTML = keptTextHtml(item, text, tower.prefs.attributes())
+}
+onAppearance(() => s.panel?.kind === 'kept' && ((s.panel.drawn = undefined), renderPanel()))
+
+/** Deleting is the user's, asked on a second press: the reader closes before the file goes. */
+async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
+  const c = floorOf(panel.project).collections.find((c) => c.id === panel.collection)!
+  const item = c.items.find((i) => i.id === panel.id)!
+  closeDoc()
+  lock()
+  if (await call('collection/delete', { project: panel.project, collection: panel.collection, id: panel.id })) toast(`Deleted ${item.tag} from ${c.label}`)
+}
 
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
 async function openPicture(id: string, target: string) {
@@ -944,9 +989,9 @@ const RUN: ByKind<unknown, [Verb]> = {
     return verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)
   },
   guest: (a, verb) => verb !== 'use' && runOnWorker(a, verb),
-  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, worktrees: false }) : tidy(floorOf(a.project).calls.tidy!)),
+  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, tray: undefined }) : tidy(floorOf(a.project).calls.tidy!)),
   landed(a, verb) {
-    if (verb === 'use') return openSide({ kind: 'floor', id: a.project, worktrees: false })
+    if (verb === 'use') return openSide({ kind: 'floor', id: a.project, tray: undefined })
     if (verb === 'goto') return goDesk(a.id)
     const row = landedRow(floorOf(a.project), a.id, wallNow())
     return row && tidy(row.call)
@@ -958,7 +1003,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   },
   shell: (a, verb) => (verb === 'use' ? goShell(a.id) : call('shell/kill', { id: a.id })),
   floor(a, verb) {
-    if (verb === 'use') return openSide({ kind: 'floor', id: a.id, worktrees: false })
+    if (verb === 'use') return openSide({ kind: 'floor', id: a.id, tray: undefined })
     const f = s.board!.floors.find((f) => f.id === a.id)!
     if (verb === 'spawn') return openSpawn(f.id)
     if (verb === 'shell') return spawnShell(f.calls.shell!, f.hub)
@@ -1255,7 +1300,7 @@ function frame(now: number) {
 }
 
 /** A panel that hides the world: while it is open the scene isn't drawn, and the canvas keeps its last frame. */
-const covered = () => s.panel?.kind === 'desk' || s.panel?.kind === 'shell' || s.panel?.kind === 'doc' || s.panel?.kind === 'picture' || s.panel?.kind === 'logbook'
+const covered = () => s.panel?.kind === 'desk' || s.panel?.kind === 'shell' || s.panel?.kind === 'doc' || s.panel?.kind === 'kept' || s.panel?.kind === 'picture' || s.panel?.kind === 'logbook'
 
 function render() {
   if (s.board && s.world) paintScreens(s.simNow, screenDistance)
@@ -2116,6 +2161,11 @@ $('doc-head').addEventListener('click', (e) => {
     if (what === 'desk') return goShown(s.panel.id, s.panel.target)
   }
   if (s.panel?.kind === 'stats' && what === 'close') return (closeDoc(), lock())
+  if (s.panel?.kind === 'kept') {
+    if (openOut(e)) return
+    if (what === 'close') return (closeDoc(), lock())
+    if (what === 'delete') return confirmed(`kept ${s.panel.id}`) && deleteKept(s.panel)
+  }
   if (s.panel?.kind !== 'doc') return
   if (what === 'close') return (closeDoc(), lock())
   if (what === 'tower') return tower.ui('shelf', { project: s.panel.project, n: s.panel.n })
@@ -2126,6 +2176,7 @@ $('game-head').addEventListener('click', (e) => {
 })
 $('doc-body').addEventListener('click', (e) => {
   if (s.panel?.kind === 'picture') return openOut(e)
+  if (s.panel?.kind === 'kept' && (e.target as HTMLElement).closest('[data-kept-read]')) return ((s.panel.drawn = undefined), renderPanel())
   if (s.panel?.kind === 'logbook') {
     const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]')?.dataset.tab
     if (tab) return logbookTab(tab as LogbookTab)
@@ -2166,9 +2217,10 @@ $('side').addEventListener('click', async (e) => {
   if (d.wtCall) return offered(JSON.parse(d.wtCall))
   if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && tidy(JSON.parse(d.tidyCall))
   if (d.tidy !== undefined && s.panel?.kind === 'floor') return confirmed(`tidy ${s.panel.id}`) && tidy(floorOf(s.panel.id).calls.tidy!)
-  if (d.worktrees !== undefined && s.panel?.kind === 'floor') return (s.panel.worktrees = !s.panel.worktrees, renderPanel())
+  if (d.tray && s.panel?.kind === 'floor') return ((s.panel.tray = s.panel.tray === d.tray ? undefined : d.tray), renderPanel())
+  if (d.kept && s.panel?.kind === 'floor') return openKept(keptOf(d.kept))
   if (d.archive !== undefined && s.panel?.kind === 'floor') return (openSide({ kind: 'archive', id: s.panel.id, words: [] }), $('archive-filter').focus())
-  if (d.floor !== undefined && s.panel?.kind === 'archive') return openSide({ kind: 'floor', id: s.panel.id, worktrees: false })
+  if (d.floor !== undefined && s.panel?.kind === 'archive') return openSide({ kind: 'floor', id: s.panel.id, tray: undefined })
   if (d.archiveRead !== undefined && s.panel?.kind === 'archive') return (readFloorArchive(s.board, s.panel.id, archiveArrived, archiveFailed), renderPanel())
 })
 $('side').addEventListener('input', (e) => {
@@ -2238,7 +2290,8 @@ function drop() {
 }
 
 const syncNotes = () => s.board && reconcile(NOTES, s.notes, s.plan, discard)
-onTitles(syncNotes)
+onTitles(() => (syncNotes(), renderPanel()))
+onKeptTitles(renderPanel)
 
 const syncCabinets = () => s.board && reconcile(CABINETS, s.cabinets, s.plan, discard)
 onGameTitles(() => (syncCabinets(), renderPanel()))
@@ -2343,10 +2396,22 @@ async function openSpawnOnNote(project: string, note: Held) {
   if (text !== undefined) openSpawn(project, { note, text })
 }
 
-spawn.addEventListener('close', async () => {
+spawn.addEventListener('close', () => {
   showPaused()
+  const note = spawnNote
   spawnNote = undefined
+  if (spawn.returnValue !== 'start') keepSpawnPrompt(spawn.dataset.project!, note, spawnField<HTMLTextAreaElement>('prompt').value)
 })
+
+/** A prompt typed into the form that closed without starting a worker is kept in the floor's drafts, or in the draft the form was opened on (`note`). */
+async function keepSpawnPrompt(project: string, note: Held | undefined, text: string) {
+  const f = floorOf(project)
+  if (!draftsOf(f)) return
+  const item = note && draftItem(s.board!.floors, note.project, note.id)
+  const from = item && (await openDraft(draftIo, note.project, item).catch((err: Error) => (toast(err.message), undefined)))
+  const kept = await keepUnsent(draftIo, project, from, text)
+  if (kept) toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id!)})`)
+}
 
 /** The draft editor beside the world: saved as you type, on leaving, and before it is carried or sent. */
 const AUTOSAVE_MS = 800

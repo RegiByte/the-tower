@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-08",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html"]
 }
 ---
 **Problem.** The tower page drew trays only for `drafts` and the review threads. Any other collection a floor
@@ -61,6 +61,10 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
 
 **Impact.** API 1.10: `/items.js` is served; `keepUnsent` in `/drafts.js`, `shellPlaces` in `/cards.js` and
 `landedThreads` in `/reviews.js` are new exports. Nothing in the core changed: the board, verbs and reads are as they
-were. Tower 3D would adopt it by listing a floor's other collections with `collectionTrayHtml` in a panel (or as
-objects of its own, titled by `keptTitles`), reading an item through `itemKind` and `itemTextHtml`, keeping the
-new-worker prompt with `keepUnsent` in its desk's form, and offering `shellPlaces` where it starts a shell.
+were. Tower 3D lists every collection that holds items as a tray in its floor panel (`collectionTrayHtml`, titled by
+`keptTitles` through [`keptText`](ref:hub/renderers/tower3d/src/kept.ts#keptText), a fixture board's own drafts and
+games on a fixture): a draft's row opens its editor, a game's its cabinet, any other item the reader, drawn by its
+`itemKind` (text through `itemTextHtml` in a frame where nothing runs, html framed with no API, an image shown), with
+Delete on a second press. Its spawn dialog keeps a prompt closed without starting with `keepUnsent`, in the draft it was
+opened on when there is one. It doesn't use `shellPlaces`: its shells start from the floor panel's own dir and
+worktree rows and at the console, one floor at a time, with no picker across floors.

@@ -39,11 +39,13 @@ export type GamePanel = { kind: 'game'; project: string; id: string; x: number }
 export type Panel =
   | { kind: 'desk'; id: string }
   | { kind: 'shell'; id: string }
-  /** A floor's panel, its worktrees unfolded or not. */
-  | { kind: 'floor'; id: string; worktrees: boolean }
+  /** A floor's panel, with the tray unfolded under it: `worktrees`, a collection's id, or none. */
+  | { kind: 'floor'; id: string; tray: string | undefined }
   /** A floor's past workers, filtered by `words`. */
   | { kind: 'archive'; id: string; words: string[] }
   | { kind: 'doc'; project: string; n: number; file?: string }
+  /** An item of any collection in the reader; `drawn`: the `modifiedAt` its body was drawn from. */
+  | { kind: 'kept'; project: string; collection: string; id: string; drawn: number | undefined }
   /** A gallery's picture in the reader, by its worker and target. */
   | { kind: 'picture'; id: string; target: string }
   | { kind: 'directory' }

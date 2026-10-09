@@ -1,5 +1,8 @@
 import { documentCss } from '../../../src/shared/design.ts'
-import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
+import { DRAFTS, draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
+import { collectionTrayHtml, itemFile, itemKind, itemPath, itemsCss, itemTextHtml } from '../../../src/shared/items.ts'
+import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
+import { keptTitle } from './kept.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
@@ -489,7 +492,7 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, worktreesOpen: boolean) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, tray: string | undefined) {
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? '·' : '⌂'} ${esc(base(dir))}</span>
     ${held('shell') ? heldButton(held('shell')!, 'ic', `new shell in ${base(dir)}`, ICON.shell) : can(f, 'shell') ? `<button class="ic" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
     ${can(f, 'editor') ? `<button class="ic" data-open="${esc(dir)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
@@ -509,8 +512,11 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
   const level = board.floors.indexOf(f) + 1
   const trees = f.worktrees.length + f.branches.length
   const atRisk = risky(f)
+  const kept = f.collections.filter((c) => c.items.length)
+  const unfolded = kept.find((c) => c.id === tray)
   const trays = [
-    trees && `<button class="tray${worktreesOpen ? ' on' : ''}" data-worktrees data-tip="worktrees and the branches the tower kept">⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
+    trees && `<button class="tray${tray === 'worktrees' ? ' on' : ''}" data-tray="worktrees" aria-expanded="${tray === 'worktrees'}" data-tip="worktrees and the branches the tower kept">⎇ <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
+    ...kept.map((c) => `<button class="tray${tray === c.id ? ' on' : ''}" data-tray="${esc(c.id)}" aria-expanded="${tray === c.id}" data-tip="${esc(c.description ?? `items kept in ${c.label}`)}">${c.id === DRAFTS ? ICON.draft : ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}</button>`),
     past && `<button class="tray" data-archive data-tip="past workers and their conversations">▤ <b>${past}</b> archived ›</button>`,
   ].filter(Boolean).join('')
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
@@ -521,7 +527,8 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     ${running && `<div class="section eyebrow">Running</div>${running}`}
     ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}<button class="wide" data-tidy data-tip="do all of it, as listed">${armed(`tidy ${f.id}`) ? 'sure? tidy all of it' : 'tidy all'}</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${worktreesOpen && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, held)}` : ''}`
+    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, held)}` : ''}
+    ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded.id === DRAFTS ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */
@@ -608,6 +615,33 @@ export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(entry.label)}</span>
     <span class="meta" data-tip="${esc(where)}">${esc(f.name)} · ${esc(where)}</span><span class="acts">${acts}</span>`
 }
+
+/** A kept item's head in the reader: its collection, tag, floor, title, keeper and age; a new tab, Delete, close. */
+export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, title: string, armed: boolean) {
+  const acts = [
+    `<button data-out="/${esc(itemPath(f.id, c.id, item.id))}" data-tip="open it on its own">${ICON.remote} new tab</button>`,
+    `<button data-act="delete" class="danger" data-tip="the file is deleted for good">${armed ? 'sure?' : 'Delete'}</button>`,
+    `<button class="icon-btn" data-act="close" aria-label="close">${ICON.close}</button>`,
+  ].join('')
+  return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(c.label)}</span>
+    <span class="meta" data-tip="${esc(itemFile(c, item.id))}">${esc(item.tag)} · ${esc(f.name)} · ${esc(title)}${esc(keptByText(item.keptBy))} · changed ${ago(wallNow() - item.modifiedAt)} ago</span><span class="acts">${acts}</span>`
+}
+
+/**
+ * A kept item whose text isn't read to show it: an html item framed at an origin of its own with no API, an image
+ * shown, any other file left to Finder and the editor.
+ */
+export function keptFileHtml(c: FloorCollection, item: FloorItem, url: string) {
+  const kind = itemKind(item.id)
+  if (kind === 'html') return `<iframe class="doc-frame" title="${esc(item.tag)}" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" allow="clipboard-write" src="${esc(url)}?v=${item.modifiedAt}"></iframe>`
+  if (kind === 'image') return `<div class="kept-image"><img src="${esc(url)}?v=${item.modifiedAt}" alt="${esc(item.tag)}"></div>`
+  return `<div class="kept-none">the tower shows no ${esc(item.id.split('.').pop()!)} file: reveal it in Finder or open it in your editor ${fileButtonsHtml(itemFile(c, item.id))}</div>`
+}
+
+/** A markdown or text item, in a frame where nothing runs, its root's attributes `root` (`tower.prefs.attributes`). */
+export const keptTextHtml = (item: FloorItem, text: string, root: string) =>
+  `<iframe class="doc-frame" title="${esc(item.tag)}" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(`<!doctype html><html ${root}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
+    <style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`)}"></iframe>`
 
 /** A gallery picture in the reader: who showed it and when, its way to the worker's desk while on duty, and ↗. */
 export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, color: string) {
