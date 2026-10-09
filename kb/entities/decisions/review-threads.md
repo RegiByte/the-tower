@@ -183,7 +183,7 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
 - *One view in both renderers* ([[shared-panels]]): the tower page and Tower 3D draw Changes and Reviews through the
   same module and wire the same data attributes. The thread is read once per version of its file ([`reviews.ts`](ref:hub/renderers/tower3d/src/reviews.ts)),
   and Send waits for it, so the pointer names the notes.
-- *New is relative to whose view is open* (2026-10-09, BIT-58, API 1.38). A thread belongs to its author's checkout, but
+- *New is relative to whose view is open* (2026-10-09, BIT-58, API 1.39). A thread belongs to its author's checkout, but
   author and reviewer iterate on it: in the reviewer's view the author's notes since the reviewer's last one are new, and
   in the author's view the reviewer's. The reader is the worker whose view it is: a card's tab in the tower page, a desk
   panel in Tower 3D (the author's desk, or its reviewer's notebook beside it); a thread opened where no worker's view is
