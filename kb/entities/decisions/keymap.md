@@ -50,9 +50,12 @@ hand-edited file, checked like every other key, and reach every renderer the way
   ⌥3 types `#` on a British layout, ⌥2 `€` on several European ones, and a default must not eat a printable
   character in Claude's prompt or a note. A character chord and a key chord that are one key on a US layout (`?`,
   `Shift+Slash`) warn: the check can't know the layout.
-- Tower 3D reads the moves and `leave-terminal` from `board.keys`, in the world and at a desk's terminal. Its walk
-  keys (WASD, H, M, P, …) stay its own; its panes, the `?` sheet and `aria-keyshortcuts` would come from the same
-  calls.
+- Tower 3D reads the moves, `leave-terminal`, the panes and the fields' commands from `board.keys`, in the world,
+  at a desk and in its terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)): `pane-*` picks
+  a desk's tab (Terminal focused, Logbook, Changes, Reviews) or the logbook reader's Screen and Logbook; `submit`,
+  `save-draft` and `cancel-pick` drive its spawn dialog, draft and note form. Its pause card lists its own walk keys
+  (WASD, H, M, P, …) and under them `keymapSheetHtml` over every command it runs (all but the page's `home`,
+  `sidebar` and `help`).
 
 **Alternatives considered.**
 

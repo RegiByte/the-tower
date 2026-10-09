@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { discard as discardDraft, discardItem, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
-import { HELD, byKind, heldWhy, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import type { CheckoutState, FloorThread } from '../../../src/bridge/reviews.ts'
 import type { NoteCalls } from '../../../src/bridge/verbs.ts'
@@ -39,7 +39,7 @@ import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, docHeadHtml, statsHeadHtml, docHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { commandOf } from '../../../src/shared/keymap.ts'
+import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
 import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
@@ -291,6 +291,8 @@ function onBoardError(err: Error & { code: string }) {
 function onBoard(next: Board, at: ShelfSelf | undefined) {
   show('board-error', false)
   s.lost = false
+  const sheet = keymapSheetHtml(sheetKeys(next.keys))
+  if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
   const { began } = transitions(s.board, next)
   s.boards++
   s.board = next
@@ -1057,9 +1059,35 @@ tower.prefs.on(() => drawSettings())
 
 const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'next', 'next-waiting': 'waiting' }
 
+/** The keymap's commands only the tower page has (its skyline, sidebar and ? sheet): left out of the building's sheet. */
+const PAGE_ONLY = new Set(['home', 'sidebar', 'help'])
+const sheetKeys = (keys: Keys): Keys => Object.fromEntries(Object.entries(keys).filter(([id]) => !PAGE_ONLY.has(id)))
+
+const PANE_OF: Record<string, 'screen' | 'brief' | 'changes' | 'reviews'> = { 'pane-terminal': 'screen', 'pane-brief': 'brief', 'pane-changes': 'changes', 'pane-reviews': 'reviews' }
+
+/**
+ * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
+ * and Logbook. Answers whether the panel has that pane.
+ */
+function toPane(pane: (typeof PANE_OF)[string]) {
+  const panel = s.panel
+  if (panel?.kind === 'logbook') return pane === 'screen' || pane === 'brief' ? (logbookTab(pane), true) : false
+  if (panel?.kind !== 'desk') return false
+  const c = findCard(s.board!, panel.id)!
+  if (pane === 'reviews' && !keepsThreads(s.board!, c.project)) return false
+  if (pane === 'screen') return (openScreen(), $('desk-screen').querySelector('textarea')?.focus(), true)
+  const typingInto = document.activeElement as HTMLElement | null
+  typingInto?.blur()
+  if (pane === 'brief') openBrief(c.id)
+  else if (pane === 'changes') openChanges(c.id, undefined)
+  else openReviews(c.id)
+  return true
+}
+
 /** The keymap's commands the building shares with every renderer, from anywhere: walking, at a desk, in its terminal. */
 function runCommand(id: string, e: KeyboardEvent) {
   if (MOVE_OF[id]) return (e.repeat || goMove(MOVE_OF[id]), true)
+  if (PANE_OF[id]) return toPane(PANE_OF[id])
   if (id === 'leave-terminal') return ((document.activeElement as HTMLElement | null)?.blur(), true)
   return false
 }
@@ -1983,8 +2011,9 @@ $('desk-changes').addEventListener('input', (e) => {
 $('desk-changes').addEventListener('keydown', (e) => {
   const el = e.target as HTMLElement
   if (!el.matches('[data-pick-text]') || s.panel?.kind !== 'desk') return
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) return (e.preventDefault(), addPicked(findCard(s.board!, s.panel.id)!))
-  if (e.key === 'Escape') (e.preventDefault(), dropPick(), renderPanel())
+  const id = commandOf(s.board!.keys, e, 'field')
+  if (id === 'submit') return (e.preventDefault(), addPicked(findCard(s.board!, s.panel.id)!))
+  if (id === 'cancel-pick') (e.preventDefault(), dropPick(), renderPanel())
 })
 setInterval(() => {
   if (s.panel?.kind === 'desk' && s.deskTab === 'changes') showSince($('desk-changes'))
@@ -2289,7 +2318,7 @@ async function startSpawn(button: HTMLElement) {
   if (note) await sent(note)
 }
 spawn.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) spawn.querySelector<HTMLElement>('[data-close=start]')!.click()
+  if (commandOf(s.board!.keys, e, 'field') === 'submit') spawn.querySelector<HTMLElement>('[data-close=start]')!.click()
 })
 
 async function openSpawnOnNote(project: string, note: Held) {
@@ -2368,7 +2397,7 @@ draftText.addEventListener('input', () => {
 })
 draftText.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') return (closeDraftPanel(), lock())
-  if ((e.metaKey || e.ctrlKey) && e.key === 's') (e.preventDefault(), saveDraft())
+  if (commandOf(s.board!.keys, e, 'field') === 'save-draft') (e.preventDefault(), saveDraft())
 })
 
 $('draft-head').addEventListener('click', async (e) => {

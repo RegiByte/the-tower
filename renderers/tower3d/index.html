@@ -91,6 +91,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 #paused p { color: var(--muted); margin: var(--sp-m) 0 var(--sp-xl); text-align: center; }
 #paused .keys { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-m) var(--sp-xl); color: var(--muted); }
 #paused .keys kbd { margin-right: var(--sp-2xs); }
+#paused #keys-sheet { margin-top: var(--sp-xl); }
+#paused .keys > .chords { white-space: nowrap; }
+#paused .keys > h3 { grid-column: 1 / -1; margin: var(--sp-l) 0 0; }
+#paused .keys > h3:first-child { margin-top: 0; }
 #paused .renderers { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--sp-s) var(--sp-l); margin: calc(-1 * var(--sp-s)) 0 var(--sp-xl); padding-bottom: var(--sp-l); border-bottom: 1px solid var(--line); color: var(--muted); }
 #paused .renderers:empty { display: none; }
 #paused .renderers > span:first-child { font: 800 var(--fs-xs)/1 var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
@@ -315,8 +319,6 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
       <span>wheel</span><span>mark another verb, click to run it</span>
       <span><kbd>Space</kbd></span><span>jump</span>
       <span><kbd>0</kbd>–<kbd>9</kbd> <kbd>R</kbd></span><span>go to a floor (0 the lobby, R the roof): a ride from inside the elevator, a jump cut anywhere else</span>
-      <span><kbd>⌥↑</kbd> <kbd>⌥↓</kbd></span><span>previous or next worker on duty, at its desk: the top floor first, each floor's by start. Works at a desk's terminal too</span>
-      <span><kbd>⌥J</kbd> · <kbd>N</kbd></span><span>next worker waiting on you: a question first, then whoever has waited longest</span>
       <span><kbd>V</kbd></span><span>look at the newest thing a worker showed you</span>
       <span><kbd>M</kbd></span><span>building directory: every floor and desk</span>
       <span><kbd>H</kbd></span><span>the whole tower from outside; on a worker, a note or the open desk, hand over what you carry or the review notes</span>
@@ -325,6 +327,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
       <span><kbd>Esc</kbd></span><span>let go of the mouse</span>
       <span><kbd>P</kbd></span><span>let go of the mouse without this card, the view held as it is: for a screenshot</span>
     </div>
+    <div class="keys" id="keys-sheet"></div>
   </div>
 </div>
 <dialog id="spawn"></dialog>
