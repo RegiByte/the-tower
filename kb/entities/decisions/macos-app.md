@@ -21,7 +21,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   loads, at the tower's own origin, so the server's checks on a `POST`'s origin pass unchanged. Whatever a renderer
   does in a tab it does in the window; the app adds only what a browser gives a page and a WKWebView doesn't:
   `alert`/`confirm`/`prompt` as sheets, and links that leave the tower (`_blank`, `window.open`, `tower open`, an
-  origin's page) opening in the default browser. Frames inside the page (shelf pages at origins of their own) go where
+  origin's page) opening in the default browser, a window opened with no address and given one after (xterm's
+  links) too. Frames inside the page (shelf pages at origins of their own) go where
   the page sends them.
 - **Bringing the system up** ([`startTower`](ref:hub/apps/macos/Sources/Start.swift#startTower)): `tower up` with
   `TOWER_CONFIG` set to the config the build serves, then the config's `port`. An app started from the Dock has

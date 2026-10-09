@@ -29,6 +29,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
   var titleWatch: NSKeyValueObservation?
   var attention: Attention!
   let renderersMenu = NSMenu(title: "Renderer")
+  /** Windows the page opened with no address yet (`createWebViewWith`), held until they are given one. */
+  var blanks = Set<WKWebView>()
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.mainMenu = mainMenu()
@@ -187,6 +189,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
     guard let url = action.request.url else { return decisionHandler(.allow) }
+    if blanks.contains(webView), ["http", "https"].contains(url.scheme ?? "") {
+      NSWorkspace.shared.open(url)
+      blanks.remove(webView)
+      return decisionHandler(.cancel)
+    }
     if url.scheme == "tower-app" {
       if url.absoluteString == "tower-app:retry" { start() }
       return decisionHandler(.cancel)
@@ -200,15 +207,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     decisionHandler(.allow)
   }
 
+  /**
+   * A new window's address goes to the default browser. `window.open()` with none, given its address after (xterm's
+   * links do this), gets a web view that never shows, until its first navigation that has one.
+   */
   func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-    if let url = action.request.url {
-      if isTower(url) { NSWorkspace.shared.open(url) } else { openOutside(url) }
+    if let url = action.request.url, ["http", "https"].contains(url.scheme ?? "") {
+      NSWorkspace.shared.open(url)
+      return nil
     }
-    return nil
+    let blank = WKWebView(frame: .zero, configuration: configuration)
+    blank.navigationDelegate = self
+    blanks.insert(blank)
+    return blank
   }
 
   func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
     guard let home else { return }
+    // A load replaced by a newer one (two clicks, ⌘R twice) fails as cancelled, or interrupted in WebKit's terms.
+    let code = (error as NSError).code
+    if ((error as NSError).domain == NSURLErrorDomain && code == NSURLErrorCancelled) || ((error as NSError).domain == "WebKitErrorDomain" && code == 102) { return }
     let failed = (error as NSError).userInfo[NSURLErrorFailingURLErrorKey] as? URL
     if let failed, !isTower(failed) { return }
     self.home = nil

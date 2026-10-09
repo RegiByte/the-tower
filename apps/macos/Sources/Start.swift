@@ -28,21 +28,28 @@ struct Ran {
   let output: String
 }
 
-/** Runs a program to its end, its stdout and stderr together; a `limit` in seconds ends it early. */
+/**
+ * Runs a program to its end, its stdout and stderr together; a `limit` in seconds ends it early. The output goes to a
+ * file, read once the program ends: something it left in the background (a login shell's update check) may hold the
+ * output open for good, and a pipe would wait for it.
+ */
 func run(_ executable: String, _ arguments: [String], env: [String: String]? = nil, limit: TimeInterval? = nil) throws -> Ran {
   let process = Process()
   process.executableURL = URL(fileURLWithPath: executable)
   process.arguments = arguments
   if let env { process.environment = env }
-  let pipe = Pipe()
-  process.standardOutput = pipe
-  process.standardError = pipe
+  let file = FileManager.default.temporaryDirectory.appendingPathComponent("tower-app-\(UUID().uuidString).out")
+  FileManager.default.createFile(atPath: file.path, contents: nil)
+  defer { try? FileManager.default.removeItem(at: file) }
+  let out = try FileHandle(forWritingTo: file)
+  process.standardOutput = out
+  process.standardError = out
   process.standardInput = FileHandle.nullDevice
   try process.run()
+  try out.close()
   if let limit { DispatchQueue.global().asyncAfter(deadline: .now() + limit) { if process.isRunning { process.terminate() } } }
-  let data = pipe.fileHandleForReading.readDataToEndOfFile()
   process.waitUntilExit()
-  return Ran(status: process.terminationStatus, output: String(decoding: data, as: UTF8.self))
+  return Ran(status: process.terminationStatus, output: String(decoding: try Data(contentsOf: file), as: UTF8.self))
 }
 
 struct StartFailure: Error {
