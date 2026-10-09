@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.11.1
+
+Tower.app starts nothing. It asks nothing of you: no host restart, no config change, no API change, and the tower
+needs no restart. If you use the app, quit it (⌘Q) and run `tower app` again.
+
+- Start the system from a terminal with `tower up`, as without the app; then `tower app` shows it. Opened with the
+  system down, the window says what to run and opens the tower by itself once it answers. Started by the app, the
+  daemons and every session under them asked macOS for Documents, Desktop and Downloads in the app's name, again
+  after each rebuild; started from a terminal, they stay the terminal's.
+
 ## v1.11.0
 
 The tower as a Mac app, opt-in beside the browser, and typing an apostrophe on a dead-key layout in Safari. It asks
