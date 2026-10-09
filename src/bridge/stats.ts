@@ -87,7 +87,8 @@ export type WeeklyBudget = {
 }
 
 /**
- * Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset, and
+ * Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset (all of
+ * it in the reset's last day), and
  * `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset.
  */
 export type Pace = { perDay: number; runsOutAt?: number }
@@ -275,7 +276,7 @@ export const weeklyBudget = (sessions: Session[], now: number): WeeklyBudget | u
 export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { since: number; spend: number }, now: number): Pace | undefined => {
   if (budget.usdLeft === undefined) return undefined
   const resetsAt = Date.parse(budget.resetsAt)
-  const perDay = budget.usdLeft / ((resetsAt - now) / DAY)
+  const perDay = budget.usdLeft / (Math.max(resetsAt - now, DAY) / DAY)
   const perMs = day.spend / Math.max(now - day.since, MIN_RATE_WINDOW)
   const runsOutAt = perMs > 0 ? now + budget.usdLeft / perMs : undefined
   return { perDay, runsOutAt: runsOutAt !== undefined && runsOutAt < resetsAt ? runsOutAt : undefined }

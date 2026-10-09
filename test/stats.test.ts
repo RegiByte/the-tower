@@ -125,6 +125,7 @@ test('the weekly budget pace: the even daily spend to the reset, and when today\
   assert.deepEqual(pace(left, { since: day, spend: 50 }, now), { perDay: 200, runsOutAt: undefined })
   assert.deepEqual(pace(left, { since: day, spend: 200 }, now), { perDay: 200, runsOutAt: now + 20 * 3600_000 })
   assert.equal(pace({ resetsAt, usdLeft: undefined }, { since: day, spend: 200 }, now), undefined)
+  assert.equal(pace({ resetsAt: new Date(now + 1800_000).toISOString(), usdLeft: 400 }, { since: day, spend: 0 }, now)?.perDay, 400)
 })
 
 test("a prompt a worker typed through the tower is the worker's: it answers no wait, and the mark is spent on it", () => {

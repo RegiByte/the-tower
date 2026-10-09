@@ -2197,7 +2197,7 @@
         "perDay"
       ],
       "additionalProperties": false,
-      "description": "Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset, and `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset."
+      "description": "Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset (all of it in the reset's last day), and `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset."
     },
     "BoardError": {
       "type": "object",
