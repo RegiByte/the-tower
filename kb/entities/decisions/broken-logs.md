@@ -19,7 +19,7 @@
     "hub/src/shared/cards.ts#statusTitle",
     "hub/src/shared/cards.ts#gistOf",
     "hub/src/cli.ts",
-    "hub/src/host/main.ts",
+    "hub/src/host/main.ts#appendFact",
     "hub/test/board.test.ts",
     "hub/test/fixtures/stop-without-tasks.jsonl",
     "hub/test/checkpoints.test.ts",
@@ -91,5 +91,7 @@ output line past the session's start costs nothing. After a break the filter kee
 stops at the break before what came in the same append, so the log is folded again from its checkpoint
 ([`watchSystem`](ref:hub/src/system.ts#watchSystem)). The screen and every-event readers skip the line: a screen has
 no facts to break, and a brief reads hooks. [`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) folds a
-fixture with a torn hook line and a let-go appended, from a checkpoint before them and from the start. Repairing the
-fragment where it is written (the host cutting back to the last newline before it appends) waits for a host restart.
+fixture with a torn hook line and a let-go appended, from a checkpoint before them and from the start. The writer no
+longer makes such a line: before it appends a fact to a log it doesn't run, the host cuts an unfinished last line back
+to the log's whole lines ([`appendFact`](ref:hub/src/host/main.ts#appendFact), [[let-go]]), so the fold's tolerance
+covers the logs an earlier host extended and any other line no reader can follow.

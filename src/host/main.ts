@@ -6,7 +6,7 @@
  *
  * Sessions live exactly as long as this process.
  */
-import { appendFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, type WriteStream } from 'node:fs'
+import { appendFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, truncateSync, type WriteStream } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import path from 'node:path'
@@ -14,7 +14,7 @@ import * as pty from '@lydell/node-pty'
 import { sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type ModEvent, type SessionHeader } from '../shared/model.ts'
 import { configPath, sessionLogPath, systemPaths } from '../shared/paths.ts'
 import { frame, HOST_PROTOCOL, jsonObject, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { endsLine, firstLine } from '../shared/log-file.ts'
+import { firstLine, wholeLinesLength } from '../shared/log-file.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { elapsed, hookFact, sessionArgv, sessionEnv } from './session.ts'
 
@@ -90,8 +90,8 @@ function spawnSession({ id, project: projectId, cwd, args, cols, rows }: Extract
 
 /**
  * A `tower.*` fact about a session: a running one's goes where its output does, any other's is appended to its log,
- * once the host that ran it, this one or an earlier one, has closed it, on a line of its own after a last line a host
- * that died left unfinished.
+ * once the host that ran it, this one or an earlier one, has closed it. A last line a host that died left unfinished
+ * is cut first: it holds no fact, and the fact appended after it would make it a whole line that isn't JSON.
  */
 function appendFact(id: string, fact: ModEvent) {
   if (!fact.hook_event_name.startsWith('tower.')) throw new Error(`Only tower.* facts are appended, not "${fact.hook_event_name}"`)
@@ -102,7 +102,8 @@ function appendFact(id: string, fact: ModEvent) {
   if ([...ending].some((log) => log.path === file)) throw new Error(`Session "${id}" is still writing its exit`)
   const header: SessionHeader = JSON.parse(firstLine(file)!.toString('utf8'))
   const event: LogEvent = [elapsed(header.startedAt, Date.now()), 'h', fact]
-  appendFileSync(file, `${endsLine(file) ? '' : '\n'}${JSON.stringify(event)}\n`)
+  truncateSync(file, wholeLinesLength(file))
+  appendFileSync(file, `${JSON.stringify(event)}\n`)
 }
 
 function handle(msg: ToHost): FromHost {

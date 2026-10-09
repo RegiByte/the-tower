@@ -20,12 +20,18 @@ export const firstLine = (file: string): Buffer | undefined => {
   }
 }
 
-/** Whether a non-empty file's last byte is a newline: a writer that died mid-line leaves one without. */
-export const endsLine = (file: string): boolean => {
+/** How many bytes of a file its whole lines take: a writer that died mid-line leaves an unfinished one after them. */
+export const wholeLinesLength = (file: string): number => {
   const fd = openSync(file, 'r')
   try {
-    const last = Buffer.alloc(1)
-    return readSync(fd, last, 0, 1, Math.max(0, fstatSync(fd).size - 1)) === 1 && last[0] === 0x0a
+    const buf = Buffer.alloc(READ_CHUNK)
+    for (let end = fstatSync(fd).size; end > 0; end -= READ_CHUNK) {
+      const start = Math.max(0, end - READ_CHUNK)
+      const n = readSync(fd, buf, 0, end - start, start)
+      const last = buf.subarray(0, n).lastIndexOf(0x0a)
+      if (last !== -1) return start + last + 1
+    }
+    return 0
   } finally {
     closeSync(fd)
   }
