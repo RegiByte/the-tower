@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.7.0
+
+The Changes panel marks the words an edited line changed, as GitHub does. It asks nothing of you: no host restart, no
+config change (API 1.32 → 1.33, additions only). Run `npm ci` (a new dependency, `diff`), restart the tower
+(`tower down tower && tower up tower`) and rebuild Tower 3D (`npm run tower3d`) where it is built.
+
+- Word marks, in both layouts and both renderers (PR #2 by @CarlosBonetti). Each removed line and the added line
+  `splitRows` sets beside it are diffed by token with jsdiff (`diff` 9, BSD-3), and the changed words are marked over
+  the syntax colours. A pair sharing less than half its characters (`WORDS_ALIKE`) reads as rewritten, and lines over
+  1000 characters (`WORDS_LONGEST`) as data: neither is marked. The diff gives up past `WORDS_EDITS` tokens changed,
+  so a large rewrite costs little.
+- New tokens `addedWord` and `removedWord` in both schemes; a few syntax colours moved one step and the dark line
+  washes are slightly darker, every pair still at AA.
+- `/panels.js` serves `wordRanges`, `markRanges`, `WORDS_ALIKE`, `WORDS_EDITS` and `WORDS_LONGEST` (API 1.33).
+
 ## v1.6.0
 
 The Changes panel draws a diff side by side, and its head stays put while the diff scrolls. It asks nothing of you:
