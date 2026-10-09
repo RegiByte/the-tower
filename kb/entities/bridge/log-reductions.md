@@ -53,7 +53,8 @@ or one event at a time as it is tailed:
   and never kept ([[brief-turns]]).
 - [`waitsOnSomeone`](ref:hub/src/bridge/status.ts#waitsOnSomeone): see [[waiting-on-you]].
 - [`snapshot`](ref:hub/src/bridge/screen.ts#snapshot) and [`screenAt`](ref:hub/src/bridge/screen.ts#screenAt):
-  replay `o` and `r` events into a headless xterm to redraw a screen now or at any moment. An ended session's
+  replay `o` and `r` events into a headless xterm to redraw a screen now or at any moment, waiting for it to parse every
+  few MB of output (xterm throws away writes past ~50 MB unparsed), so a log of any size replays whole. An ended session's
   snapshot is its last frame ([`lastFrame`](ref:hub/src/bridge/screen.ts#lastFrame)): the log cut just before
   Claude's last exit from the alternate screen (`?1049l`, found in the output joined across events, so an escape
   split between two `o` events or sharing one with other bytes cuts at its first byte), which would leave the empty

@@ -56,14 +56,29 @@ export function lastFrame(log: SessionLog): SessionLog {
 const terminalFor = ({ header }: SessionLog): Terminal =>
   new headless.Terminal({ cols: header.cols, rows: header.rows, allowProposedApi: true })
 
+/**
+ * How much output a replay writes before waiting for xterm to parse it: xterm throws away writes once ~50 MB wait
+ * unparsed, so a log with more output than that replays in bounded steps.
+ */
+const REPLAY_CHUNK = 4 * 1024 * 1024
+
 /** Replays the log's output and resizes up to `until` seconds into `term`. */
 async function replayInto(term: Terminal, { events }: SessionLog, until: number): Promise<void> {
+  let unparsed = 0
   for (const event of events) {
     if (event[0] > until) break
-    if (event[1] === 'o') term.write(event[2])
+    if (event[1] === 'o') {
+      term.write(event[2])
+      unparsed += event[2].length
+      if (unparsed >= REPLAY_CHUNK) {
+        await flushed(term)
+        unparsed = 0
+      }
+    }
     if (event[1] === 'r') {
       const [cols, rows] = event[2].split('x').map(Number)
       await flushed(term)
+      unparsed = 0
       term.resize(cols, rows)
     }
   }
