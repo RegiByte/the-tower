@@ -1,5 +1,6 @@
 # Every pull request, and main, gets the checks a release gets (release.yml), then proves they left the tree as committed
-# and the knowledge base consistent.
+# and the knowledge base consistent. If main moves between a PR's event and its run, kb verify says HEAD does not contain
+# origin/main: re-run once GitHub has recomputed the merge.
 name: ci
 on:
   pull_request:
@@ -22,7 +23,7 @@ jobs:
       - run: npm run tower3d
       - name: Tower.app's Swift sources compile
         run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
-      - name: Tests and builds left every committed file as it was
-        run: git diff --exit-code
+      - name: Tests and builds added and rewrote no file
+        run: test -z "$(git status --porcelain)" || { git status; git diff; exit 1; }
       - name: The knowledge base verifies
         run: node .claude/skills/kb/tool/kb.mjs verify
