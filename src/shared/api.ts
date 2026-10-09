@@ -253,7 +253,7 @@ export const QUERIES = {
   'changes/<id>': z
     .object({
       scope: z
-        .union([z.enum(['all', 'uncommitted']), z.string().regex(/^[0-9a-f]{7,40}$/, 'a commit hash')])
+        .union([z.enum(['all', 'uncommitted']), z.string().regex(/^[0-9a-f]{7,64}$/, 'a commit hash')])
         .default('all')
         .describe("`all`: everything since the branch's base; `uncommitted`: only what isn't committed (since `HEAD`); a commit of the repo's `commits`: that commit's own changes."),
     })

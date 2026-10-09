@@ -88,8 +88,8 @@ but those reaches git. The panel's head has the picker (`data-changes-scope`: Al
 commit, under its repo's name when more than one repo has some), drawn only while some repo has commits since its
 base: in a worktree that has committed, or a main checkout with unpushed commits, the same two places the base
 already counts from. Without commits, all *is* uncommitted, so there is nothing to choose. The choice is the
-viewer's for that worker, kept in the renderer's memory: a worker opens on All, and a commit no repo lists any
-more (rebased, amended) falls back to it ([`liveScope`](ref:hub/src/shared/panels.ts#liveScope)).
+viewer's for that worker, kept in the renderer's memory: a worker opens on All, and falls back to it once no repo
+has commits (they landed or were reset away, and the picker with them) or no repo lists the chosen commit (rebased, amended) ([`liveScope`](ref:hub/src/shared/panels.ts#liveScope)).
 - **Marks per scope.** A file's diff differs between scopes, so each keeps its own marks
   ([`viewedKey`](ref:hub/src/shared/panels.ts#viewedKey): `viewed:<dir>` for all, `viewed:<dir>@uncommitted`,
   `viewed:<dir>@<commit>`). One key for all would let a commit's marks prune or overwrite all's. A commit's marks
