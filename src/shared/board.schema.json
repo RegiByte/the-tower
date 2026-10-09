@@ -9,7 +9,7 @@
           "properties": {
             "v": {
               "type": "string",
-              "const": "1.30"
+              "description": "The API version (`major.minor`): `tower api` prints it."
             },
             "board": {
               "$ref": "#/definitions/Board"
@@ -26,7 +26,7 @@
           "properties": {
             "v": {
               "type": "string",
-              "const": "1.30"
+              "description": "The API version (`major.minor`): `tower api` prints it."
             },
             "error": {
               "$ref": "#/definitions/BoardError"

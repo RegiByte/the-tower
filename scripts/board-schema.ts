@@ -44,6 +44,8 @@ export const boardSchemaText = (): string => {
   const program = createProgram(config)
   const parser = createParser(program, config, (mutable) => mutable.addNodeParser(callParser))
   const schema = new SchemaGenerator(program, parser, createFormatter(config), config).createSchema('BoardMsg')
+  const message = schema.definitions!.BoardMsg as { anyOf: { properties: { v: object } }[] }
+  for (const { properties } of message.anyOf) properties.v = { type: 'string', description: 'The API version (`major.minor`): `tower api` prints it.' }
   return JSON.stringify(schema, null, 2) + '\n'
 }
 
