@@ -45,6 +45,7 @@ const PAIRS: Pair[] = [
     on([`on${a[0].toUpperCase()}${a.slice(1)}` as Token], [a], 'text', `a ${a} pill, chip or tag`),
   ),
   ...on(['synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['panel', 'addedWash', 'removedWash'], 'text', 'code syntax'),
+  ...on(['ink', 'synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['addedWord', 'removedWord'], 'text', "the words an edited line changed"),
   ...on(['lineStrong'], ['panel', 'panel2'], 'ui', "a form field's edge"),
   ...on(['accent'], ['panel', 'panel2'], 'ui', 'the focus ring'),
   ...on(['brokenText'], ['panel2'], 'ui', 'an invalid field'),

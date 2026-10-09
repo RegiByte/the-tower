@@ -66,7 +66,10 @@ draws with almost no advance, so the next face in the stack draws it.
   its numbers. The first version mixed 16% of `added` into panel, and on parchment a mid-tone mixed into a mid-tone
   read as mud. Code's syntax has eight `syn*` colours per scheme (keyword, string, number, comment, title, type,
   attribute, regexp), each chosen to keep 4.5:1 on panel and on both washes (comments in light 4.6:1 at worst), ink
-  staying the default; [[shared-panels]] maps highlight.js classes onto them.
+  staying the default; [[shared-panels]] maps highlight.js classes onto them. `addedWord` and `removedWord` (2026-10-09)
+  are a deeper shade of each wash behind the words an edited line changed ([[changes-view]]): the syntax colours keep
+  4.5:1 on them too, which bounds how deep they go, most of all in dark, and moved a few `syn*` colours a step (light
+  number, comment, type and attribute darker; dark keyword, number, comment and regexp lighter).
 - **Contrast** (2026-10-08). Every pair the renderers draw reaches WCAG AA in both schemes: 4.5:1 for text, 3:1 for a
   form field's edge and a focus ring. `faint`, a text tier that measured 2.1 to 2.8:1, was two roles: it is now text
   at 4.5:1 or more on wall, panel and panel-2, with `muted` darkened (light) or brightened (dark) to about 7:1 on panel

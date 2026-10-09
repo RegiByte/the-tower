@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>: each of the session's repos with its files and hunks" }
   ]
@@ -65,6 +65,15 @@ context line on both sides, each run of removed lines beside the run of added li
 empty. Each cell keeps its row's index, so picking, the note box and anchors are the unified ones, unchanged; a
 drag from one side to the other picks the rows between them in unified order. Long lines wrap in split, where
 scrolling a half alone would part the sides. The head with the layout stays at the top while the diff scrolls, each file's header stuck just below it.
+
+**Words (2026-10-09).** An edited line has the words it changed marked, as GitHub does, in both layouts. The pairs are
+`splitRows`' (a removed line beside the added line after it); an unpaired line has none.
+[`wordRanges`](ref:hub/src/shared/words.ts#wordRanges) diffs a pair by token (a word of letters, digits, `_` and `$`,
+a run of whitespace, any other character alone) with jsdiff's `diffArrays`, and gives each side's changed characters,
+changed tokens apart only by whitespace joined. A pair sharing less than half its characters (whitespace aside,
+`WORDS_ALIKE`) was rewritten, and a line over 1000 characters (`WORDS_LONGEST`) is data or minified: neither is
+marked. On this repo's last 300 commits, pairs under half alike were mostly rewrites and those above mostly edits,
+and 99% of edited lines are under 650 characters.
 
 **Impact.** The tower page has a Changes pane beside Terminal and Brief, and Tower 3D the same view at a desk, with a viewed/total tally on its tab.
 It is the surface review threads anchor notes to: its line numbers pick lines for a note, one by a click or a range

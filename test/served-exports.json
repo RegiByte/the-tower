@@ -38,6 +38,7 @@
       "--added",
       "--added-gutter",
       "--added-wash",
+      "--added-word",
       "--backdrop",
       "--broken",
       "--broken-text",
@@ -90,6 +91,7 @@
       "--removed",
       "--removed-gutter",
       "--removed-wash",
+      "--removed-word",
       "--selected",
       "--shadow",
       "--shadow-pop",
@@ -405,6 +407,8 @@
       "DIFF_LAYOUT_LABEL",
       "DIFF_LAYOUT_MEANS",
       "STATS_ALL",
+      "WORDS_ALIKE",
+      "WORDS_LONGEST",
       "anchorOf",
       "anchorSpot",
       "anchorWhere",
@@ -423,6 +427,7 @@
       "isViewed",
       "keepingFocus",
       "livePick",
+      "markRanges",
       "marksToggled",
       "notedLines",
       "panelsCss",
@@ -439,7 +444,8 @@
       "threadItemFiles",
       "usd",
       "viewedCount",
-      "watchPickDrag"
+      "watchPickDrag",
+      "wordRanges"
     ],
     "/brief.js": [
       "BRIEF_MARKDOWNS",

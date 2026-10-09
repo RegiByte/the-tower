@@ -21,6 +21,7 @@
     "hub/src/shared/panels.ts#rowCode",
     "hub/src/shared/panels.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
+    "hub/src/shared/words.ts#markRanges",
     "hub/src/tower/server.ts#design",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/main.ts#drawChanges",
@@ -107,6 +108,18 @@ block comment or a template string is highlighted as code, since a hunk carries 
   dependency-free and returns html the views already speak.
 - *Highlighting each line alone*: a line out of its file loses multi-line strings and comments, and costs a call
   per line.
+
+*Words* (2026-10-09). The words an edited line changed ([[changes-view]]) are laid over its highlighted html by
+[`markRanges`](ref:hub/src/shared/words.ts#markRanges): it counts the text's characters (an entity is one), and wraps
+each range in a `<mark class="word">` that closes before any tag and opens again after it, so a mark lives inside the
+syntax spans and the colours and the shade both show. `rowCode` does it as it highlights, so it is kept with the
+highlight by file and diff hash. The shade is `--added-word` or `--removed-word` by the row's side ([[design-system]]).
+jsdiff (npm `diff`, BSD-3, synchronous, ESM with its types) is bundled like highlight.js: some 9 kB to `/panels.js`,
+unminified, and 4.5 kB to Tower 3D's minified bundle. `wordRanges` and `markRanges` are served from `/panels.js`.
+- *diff-match-patch or fast-diff*: both diff characters, which marks fragments of words; diff-match-patch is
+  unmaintained and ships no ESM or types.
+- *jsdiff's `diffWordsWithSpace`*: its words are prose's, so `$el` splits after its `$`; a tokenizer of our own over
+  `diffArrays` reads code.
 
 *Stats* ([`statsHtml`](ref:hub/src/shared/panels.ts#statsHtml), [[stats]]) came later on the same terms. The view
 model is the last `/stats` read over a range (`today` by hour, `week` or `month` by day, as

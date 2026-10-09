@@ -54,8 +54,11 @@ import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
 import { markdownHtml } from './markdown.ts'
+import { markRanges, wordRanges } from './words.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 import { identityOf } from './press.ts'
+
+export { markRanges, wordRanges, WORDS_ALIKE, WORDS_LONGEST, type CharRange } from './words.ts'
 
 /** The Finder and editor controls of a file, each opened by `open`, which names the element and its role. */
 const fileActsHtml = (open: string, close: string, path: string, line?: number) => {
@@ -346,7 +349,8 @@ const HIGHLIGHTED_KEPT = 500
 
 /**
  * Each row's code as html with its syntax marked, aligned with `fileRows` (a hunk heading's is empty). Each hunk is
- * highlighted as two texts, the old side and the new, so a line reads in the code it stood in.
+ * highlighted as two texts, the old side and the new, so a line reads in the code it stood in. A removed line and the
+ * added line `splitRows` sets beside it have the words they changed marked over the syntax (`wordRanges`).
  */
 function rowCode(f: DiffFile): string[] {
   const id = `${f.path}\n${f.hash}`
@@ -360,6 +364,16 @@ function rowCode(f: DiffFile): string[] {
     let n = 0
     return ['', ...h.lines.map((l) => (l[0] === '+' ? now[n++] : l[0] === '-' ? old[o++] : l[0] === '\\' ? esc(l.slice(1)) : (o++, now[n++])))]
   })
+  const rows = fileRows(f)
+  for (const s of splitRows(rows)) {
+    if (s.hunk !== undefined || s.old === undefined || s.now === undefined) continue
+    const [was, is] = [rows[s.old], rows[s.now]] as Exclude<Row, { hunk: Hunk }>[]
+    if (was.cls !== 'minus' || is.cls !== 'plus') continue
+    const words = wordRanges(was.line.slice(1), is.line.slice(1))
+    if (!words) continue
+    code[s.old] = markRanges(code[s.old], words.old, 'word')
+    code[s.now] = markRanges(code[s.now], words.now, 'word')
+  }
   highlighted.set(id, code)
   if (highlighted.size > HIGHLIGHTED_KEPT) highlighted.delete(highlighted.keys().next().value!)
   return code
@@ -849,6 +863,8 @@ export const panelsCss = `
 .changes-panel .file tr.plus td { background: var(--added-wash); } .changes-panel .file tr.minus td { background: var(--removed-wash); }
 .changes-panel .file tr.plus td.ln { background: var(--added-gutter); } .changes-panel .file tr.minus td.ln { background: var(--removed-gutter); }
 .changes-panel .file tr.plus td.ln, .changes-panel .file tr.minus td.ln, .changes-panel .file tr.plus td .m, .changes-panel .file tr.minus td .m { color: var(--ink); }
+.changes-panel .file :is(tr.plus, td.plus) mark.word { background: var(--added-word); color: inherit; border-radius: 2px; }
+.changes-panel .file :is(tr.minus, td.minus) mark.word { background: var(--removed-word); color: inherit; border-radius: 2px; }
 .changes-panel .file tr.eof td { color: var(--faint); font-style: italic; }
 .changes-panel .file td.ln[data-pick] { cursor: pointer; }
 .changes-panel .file td.ln[data-pick]:hover { color: var(--ink); background: color-mix(in oklab, var(--accent) 22%, var(--panel)); }

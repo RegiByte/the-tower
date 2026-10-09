@@ -10,7 +10,8 @@
  * board's `Attention`, so `palettes[scheme][card.attention]` is a card's colour, as a fill; its `<attention>Text` is the
  * same hue readable as text on paper, and its `on<Attention>` the text set on it. `added` and `removed` mark a diff's
  * lines: as text and marks on paper, and as a `wash` behind an added or removed line's code, a deeper `gutter` behind
- * its numbers. The `syn*` colours mark code's syntax, each readable on paper and on both washes. `npm run
+ * its numbers and a deeper `word` behind the words an edited line changed. The `syn*` colours mark code's syntax, each
+ * readable on paper, on both washes and on both words. `npm run
  * tool:contrast` measures every pair the renderers draw.
  */
 export const palettes = {
@@ -49,13 +50,15 @@ export const palettes = {
     removedWash: '#f3d2c6',
     addedGutter: '#b9d8a2',
     removedGutter: '#ebb9a9',
+    addedWord: '#b4d79a',
+    removedWord: '#ecbdad',
     synKeyword: '#7e2f83',
     synString: '#245c35',
-    synNumber: '#8a420e',
-    synComment: '#635d4b',
+    synNumber: '#853e06',
+    synComment: '#585240',
     synTitle: '#17507a',
-    synType: '#6b4f00',
-    synAttr: '#255d70',
+    synType: '#6a4e00',
+    synAttr: '#20596c',
     synRegexp: '#912a50',
     shadow: '0 1px 0 #0000000d, 0 6px 16px -10px #28322f66',
     shadowPop: '0 20px 50px -20px #1d262988',
@@ -96,14 +99,16 @@ export const palettes = {
     removedWash: '#4a2e2c',
     addedGutter: '#304f36',
     removedGutter: '#663a36',
-    synKeyword: '#dba8e8',
+    addedWord: '#2e5236',
+    removedWord: '#5a302d',
+    synKeyword: '#ddaaea',
     synString: '#acd58f',
-    synNumber: '#f0ab73',
-    synComment: '#aea792',
+    synNumber: '#f2ad75',
+    synComment: '#c1baa4',
     synTitle: '#8ec7ec',
     synType: '#e8c67f',
     synAttr: '#8fc3d6',
-    synRegexp: '#f39ab2',
+    synRegexp: '#fca2ba',
     shadow: '0 1px 0 #00000033, 0 6px 16px -10px #000000aa',
     shadowPop: '0 20px 50px -20px #000000cc',
     backdrop: '#0000008c',
