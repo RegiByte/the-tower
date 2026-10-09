@@ -51,8 +51,11 @@ import type { RepoChanges } from '../changes.ts'
 import type { CheckoutState } from '../bridge/reviews.ts'
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
+import type { Board, Card, Floor } from '../bridge/board.ts'
+import type { FloorThread } from '../bridge/reviews.ts'
+import type { NoteCalls } from '../bridge/verbs.ts'
 import type { Call } from './api.ts'
-import { esc, noun, paceWords, plural } from './cards.ts'
+import { esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, workerIn } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
@@ -146,7 +149,7 @@ export const DIFF_LAYOUT_MEANS: Record<DiffLayout, string> = {
 type Worker = { id: string; callsign: string; checkout: string }
 
 /**
- * The Reviews panel: `reader` is the worker whose notes new to it are marked while the work goes on; `changes` what its
+ * The Reviews panel: `reader` is the worker whose view it is, its notes new to it marked while the work goes on; `changes` what its
  * anchors are looked for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
  * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
  * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (`card.threadState`, or a
@@ -171,6 +174,46 @@ export const threadItemFiles = (floor: ThreadFloor, checkout: string, id: string
 
 /** A checkout's `ThreadFiles`, from its floor on the board. */
 export const threadFiles = (floor: ThreadFloor, checkout: string): ThreadFiles => threadItemFiles(floor, checkout, threadId(checkout))
+
+/**
+ * A thread as a place opens it: its checkout, its item `id`, where its work stands, the offers its note is written with,
+ * and its `reader`, the worker whose view it is. A thread belongs to its author's checkout, but what is new in it depends
+ * on whose view is open: an author and its reviewer each read the other's notes since their own last one as new.
+ */
+export type ThreadPlace = {
+  project: string; checkout: string; id: string; state: CheckoutState; offers: { verbs: readonly string[]; calls: NoteCalls }; reader: Card | undefined
+}
+
+/** The thread a worker's view (its card, tab or desk) shows, read as that worker: its work's, or the one Tidy filed once it landed. */
+export const cardThread = (c: Card): ThreadPlace => {
+  const checkout = threadCheckoutOf(c)
+  const filed = c.threadState.is === 'landed' ? c.threadState.filed : undefined
+  return { project: c.project, checkout, id: filed?.id ?? threadId(checkout), state: c.threadState, offers: c, reader: c }
+}
+
+/** A floor's thread opened where no worker's view is (a list of the floor's threads), read as the worker on duty in its checkout. */
+export const floorThread = (f: Floor, t: FloorThread): ThreadPlace => {
+  const worker = workerIn(f, t.checkout)
+  return { project: f.id, checkout: t.checkout, id: t.id, state: t.state, offers: t, reader: worker?.onDuty ? worker : undefined }
+}
+
+/**
+ * What the viewer holds of a thread: the thread as last read (`failed`, why that read failed), the reader's Changes,
+ * the worker it picked to send to, and the note its composer answers.
+ */
+export type ThreadViewer = {
+  thread: ReviewThread | undefined; failed: string | undefined; changes: RepoChanges[] | undefined; picked: string | undefined; re: number | undefined
+}
+
+/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds. */
+export function threadViewOf(board: Board, at: ThreadPlace, viewer: ThreadViewer): ThreadView {
+  const f = board.floors.find((f) => f.id === at.project)!
+  return {
+    checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
+    reader: at.reader, changes: viewer.changes, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
+    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.offers.verbs.includes('note'),
+  }
+}
 
 /** A row of a file's diff: a hunk's heading, or a line with its numbers on the old side and now. */
 export type Row = { hunk: Hunk } | { cls: 'plus' | 'minus' | 'eof' | ''; old?: number; now?: number; line: string; hunk?: undefined }

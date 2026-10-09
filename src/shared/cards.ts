@@ -679,6 +679,12 @@ export const sendTargets = (f: Floor, checkout: string) => {
   ]
 }
 
+/** Who Send reaches on a checkout's thread: the worker the viewer `picked`, else the most recently active in the checkout. */
+export const sendTarget = (f: Floor, checkout: string, picked: string | undefined) => {
+  const targets = sendTargets(f, checkout)
+  return targets.find((t) => t.id === picked) ?? targets.find((t) => t.checkout === checkout)
+}
+
 /** How many hires deep a worker stands: its hirer's depth and one; a worker nobody hired stands at 0. */
 export const hireDepth = (cards: Card[], c: Card): number => {
   const hirer = c.hiredBy && cards.find((h) => h.id === c.hiredBy!.session)

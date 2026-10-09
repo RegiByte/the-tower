@@ -3,7 +3,7 @@ import { draftItem } from '../../../src/shared/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { HOST_MEANS, base, can, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTargets, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
+import { HOST_MEANS, base, can, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
@@ -145,12 +145,6 @@ const threadOffer = (board: Board, c: Card): Offer[] => {
   return [{ verb: 'thread', label: c.unseen ? `read ${notes(c.unseen)} new to it` : 'review thread' }]
 }
 
-/** Who Send reaches on a checkout's thread unless the viewer picks: the worker most recently active there, at its composer. */
-export const sendTargetOf = (board: Board, project: string, checkout: string) => {
-  const f = floorOf(board, project)
-  return f && sendTargets(f, checkout).find((c) => c.checkout === checkout)
-}
-
 /** Those X sends home: the worker's crew that runs when it is in one (`send-home`), else the worker. */
 export const sentHome = (cards: Card[], c: Card): Card[] => (c.calls['send-home'] ?? [c.calls.kill!]).map(([, { id }]) => cards.find((h) => h.id === id)!)
 
@@ -219,9 +213,10 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
     return d ? [{ verb: 'use', label: `pull out ${drawerLabel(d)}: ${d.folders.length} worker${d.folders.length === 1 ? '' : 's'}` }] : []
   },
   thread(a, board) {
-    const t = floorOf(board, a.project)?.threads.find((t) => t.checkout === a.checkout)
+    const f = floorOf(board, a.project)
+    const t = f?.threads.find((t) => t.checkout === a.checkout)
     if (!t) return []
-    const to = sendTargetOf(board, a.project, a.checkout)
+    const to = sendTarget(f!, a.checkout, undefined)
     return [
       { verb: 'thread', label: `read the thread of ${a.checkout}: ${notes(t.messages)}` },
       ...(to?.unseen ? [{ verb: 'send' as const, label: `send ${notes(to.unseen)} new to ${to.callsign}` }] : []),
