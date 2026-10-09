@@ -85,7 +85,7 @@ what went wrong.
   [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name with the API major it was
   written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major hasn't
   moved, saying what to do (keep the name, as a deprecated alias if need be, or move the major and write the CHANGELOG
-  line), and otherwise writes the list anew, so an addition shows in the diff without failing. Customizing is a
+  line), and on any other difference fails too, so an addition is a deliberate `npm run served:update` and shows in the diff. Customizing is a
   copy of a renderer outside the checkout with the user's own layer on top, and there is no plugin API: the state is
   outside the tower, the API does the work, and the modules are a convenience over it. [`docs/extending.md`](ref:hub/docs/extending.md)
   is the user's guide to it.

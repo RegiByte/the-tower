@@ -30,6 +30,7 @@
     "typecheck": "tsc -p . && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
     "test": "node --import tsx --test test/*.test.ts",
     "tool:contrast": "tsx scripts/contrast.ts",
+    "served:update": "UPDATE_SERVED=1 node --import tsx --test test/served.test.ts",
     "schema:board": "tsx scripts/board-schema.ts"
   },
   "dependencies": {

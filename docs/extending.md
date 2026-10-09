@@ -278,7 +278,7 @@ They are part of the API's contract. Removing or renaming an export, a `tower` m
 major, with a line in `CHANGELOG.md` saying what to use instead; adding one is a minor. They change, versioned and
 announced, but are not frozen. A name on its way out stays, marked `@deprecated` in its source with what replaces it
 (`RING_MARK` and `RING_NAME` in `/cards.js`), until a major removes it. `test/served-exports.json` lists every name they serve today, and `npm test` holds the
-tower to it.
+tower to it: any difference fails, and `npm run served:update` rewrites the list for a change you meant (commit it).
 
 The tower also serves the libraries its own page uses (`/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/marked.js`) at
 the version it depends on. Those are the libraries' APIs, outside the contract: vendor your own copy when you need

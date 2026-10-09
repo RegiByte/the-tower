@@ -56,4 +56,4 @@ own and hands it in. `panels.ts` keeps only a cache of highlighted files, by the
 
 Their exports are part of the renderer API's contract ([[renderer-api-contract]]): a renderer kept apart from the
 checkout imports them, so removing or renaming one is an API major. `test/served-exports.json` lists every name served,
-and `test/served.test.ts` holds the modules to it.
+and `test/served.test.ts` holds the modules to it: any difference fails, and `npm run served:update` rewrites the list.

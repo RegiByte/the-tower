@@ -7,10 +7,16 @@ import { API_VERSION } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
 import { bundled, MODULES, towerClient } from '../src/tower/served.ts'
 
+/**
+ * Holds what the tower serves to `test/served-exports.json`: a removal without a major, or any other difference from the
+ * list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now; commit it.
+ */
+
 /** What renderers may build on, by URL, as of the API major it was written at. */
 type Served = { major: number; served: Record<string, string[]> }
 
 const LIST = path.join(import.meta.dirname, 'served-exports.json')
+const UPDATE = 'npm run served:update'
 
 /** `window.tower`'s members, a namespace's as `store.get`, read by running `/tower.js` in a page of its own at `/r/test/`. */
 function towerMembers(): string[] {
@@ -59,10 +65,11 @@ test('the served modules keep every export renderers may import, until the API m
         ...gone,
         'A renderer kept outside this checkout breaks on each. Either keep the name (an alias of what replaces it, marked',
         '@deprecated, will do), or move the major of API_VERSION in src/shared/api.ts and add a CHANGELOG line saying what to',
-        'use instead (decision renderer-api-contract). This test then writes the new list.',
+        `use instead (decision renderer-api-contract). Then \`${UPDATE}\` writes the new list.`,
       ].join('\n'),
     )
   }
   const written = `${JSON.stringify({ major, served: now } satisfies Served, null, 2)}\n`
-  if (readFileSync(LIST, 'utf8') !== written) writeFileSync(LIST, written)
+  if (process.env.UPDATE_SERVED) return writeFileSync(LIST, written)
+  assert.equal(readFileSync(LIST, 'utf8'), written, `${path.relative(process.cwd(), LIST)} is stale: what the tower serves changed. Run \`${UPDATE}\` and commit it.`)
 })
