@@ -8,7 +8,7 @@
   "date": "2026-10-05",
   "supersedes": "worktrees-are-claudes",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
 **Problem.** Every worker on a floor ran in the same checkout: workers interleaved edits, tested each other's
@@ -34,7 +34,10 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   edited: removed by its own `remove`), else `removable`. Git prints resolved paths (`/private/tmp`), so the read
   maps them back to the config's spelling of each dir. Every git call runs with the user's config that would change
   a read set back to git's default ([`PINNED`](ref:hub/src/git.ts#PINNED)): under `status.showUntrackedFiles=no`
-  a worktree holding only new files read clean, and `worktree remove` deleted them.
+  a worktree holding only new files read clean, and `worktree remove` deleted them. Every git call is stopped past
+  a timeout ([`exec`](ref:hub/src/git.ts#exec): 60 s, 10 min for a checkout, 10 s for a fetch) with its process group,
+  the hooks and fsmonitor it started included, and fails naming the command: a hook that hung once held the config
+  writers' chain, and with it every cut and branch delete on every floor, until the tower restarted.
 - **Absorbed** is content, not ancestry: `git merge-tree --write-tree <base> <br>` equals the base's tree. It is
   true after a merge, rebase or squash, with no GitHub. The base is the one recorded at the cut, or origin's
   default once origin deleted it ([`againstOf`](ref:hub/src/worktrees.ts#againstOf)): an integration branch's work

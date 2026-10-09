@@ -13,7 +13,7 @@ import { towerPort } from './shared/model.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import { readConfig } from './system.ts'
 import { withoutParentSession } from './shared/env.ts'
-import { git, run } from './git.ts'
+import { checkout, git, run } from './git.ts'
 import { CliError } from './cli-error.ts'
 
 const RELEASE = 'v*.*.*'
@@ -62,7 +62,7 @@ export async function update(paths: SystemPaths): Promise<void> {
   const tower3d = existsSync(path.join(REPO, 'renderers', 'tower3d', 'out'))
   if (towerUp) console.log(`tower: ${await bringDown(tower)}`)
   try {
-    await git(REPO, ['checkout', '--quiet', newest])
+    await checkout(REPO, ['checkout', '--quiet', newest])
     console.log(`checked out ${newest}`)
     npm('ci')
     if (tower3d) npm('run', 'tower3d')

@@ -34,7 +34,7 @@ import {
   type TreeRead,
   type WorktreeState,
 } from './bridge/worktrees.ts'
-import { git, gitWith, GitTimeout, run } from './git.ts'
+import { checkout, git, gitWith, GitTimeout, run } from './git.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { worktreeBrief, type WorktreeBrief } from './shared/launch.ts'
 import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreeName, worktreePath, WORKTREES_DIR, type Project } from './shared/model.ts'
@@ -458,7 +458,7 @@ const makeNow = async (name: string, branch: string, plan: (Planned & { start: S
       step = 'exclude .worktrees/'
       await excludeWorktrees(dir)
       step = 'worktree add'
-      await git(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, start.commit])
+      await checkout(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, start.commit])
       made.push({ dir, path: tree, branch, baseCommit: start.commit })
       step = 'record the base'
       await record(dir, branch, { ...start.record, name })
@@ -684,7 +684,7 @@ export const recutWorktree = async (project: Project, projectId: string, links: 
   const plans = await Promise.all(lost.map(async (r) => ({ ...r, links: await linksIn(r.dir, links) })))
   for (const r of plans) {
     await forgetLost(r.dir, r.path)
-    await git(r.dir, ['worktree', 'add', r.path, r.branch!])
+    await checkout(r.dir, ['worktree', 'add', r.path, r.branch!])
     await furnish(r.dir, r.path, r.links)
   }
 }
@@ -724,11 +724,11 @@ export const recutBranch = async (project: Project, projectId: string, links: Re
         at = dir
         await excludeWorktrees(dir)
         if (base) {
-          await git(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, base])
+          await checkout(dir, ['worktree', 'add', '--no-track', '-b', branch, tree, base])
           made.push({ dir, path: tree, branch, baseCommit: await resolve(dir, `${base}^{commit}`) })
           await record(dir, branch, { base, name })
         } else {
-          await git(dir, ['worktree', 'add', tree, branch])
+          await checkout(dir, ['worktree', 'add', tree, branch])
           made.push({ dir, path: tree, branch })
           await record(dir, branch, { name })
         }
