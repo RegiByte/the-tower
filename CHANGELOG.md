@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.14.0
+
+Screens open at once. It asks nothing of you: no host restart, no config change, no API change. Restart the tower
+(`tower down tower && tower up tower`).
+
+- A running session's screen is one live mirror in the tower, shared by everyone watching it: the first viewer builds
+  it from the log, later viewers are sent its screen in milliseconds instead of a replay of the whole log, and it is
+  kept 30 s after its last viewer leaves, so switching back or reconnecting finds it built. Tower 3D, which opens a
+  screen per monitor, reloads in a few milliseconds where it took about a second on a busy floor. Nothing is stored.
+- A session with more than ~50 MB of output opens its screen: its replay used to be cut short by the terminal.
+
 ## v1.13.1
 
 The tower stays up through rare failures. It asks nothing of you: no host restart, no config change, no API change.
