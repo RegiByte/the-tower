@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.11.0
+
+The tower as a Mac app, opt-in beside the browser, and typing an apostrophe on a dead-key layout in Safari. It asks
+nothing of you: no host restart, no config change, no API change. Restart the tower (`tower down tower && tower up
+tower`) and rebuild Tower 3D (`npm run tower3d`) where it is built. Thanks to Carlos Bonetti (#4).
+
+- `tower app` builds `apps/macos` from your checkout (it needs the Swift compiler: `xcode-select --install`) and
+  opens it: the tower in a window of its own, which starts the system as `tower up` does and shows who waits on you
+  on its Dock icon, in notifications and in the menu bar, in the tower page's words and less the waits you
+  dismissed. Quitting it leaves the system running. A sandbox's config gets an app of its own. The browser stays
+  the default and nothing changes if you never run it.
+- macOS holds whatever starts the daemons responsible for their access to Documents, Desktop and Downloads, and
+  takes a rebuilt app for a new one, so it asks again after each rebuild. If your repos live there, run `tower up`
+  from a terminal first: the app then shows the system it finds, and the grants stay the terminal's.
+- In Safari (and the app), on a layout whose apostrophe is a dead key (Brazilian, US International), `user's` typed
+  into a terminal arrived as `user'`: WebKit reports the dead key and the next one as a single key. Both renderers
+  and the docked shells now type both. Chrome was never affected.
+- The release checks that the app's Swift sources compile.
+
 ## v1.10.0
 
 Marking a file Viewed in the Changes view keeps your place. It asks nothing of you: no host restart, no config change
