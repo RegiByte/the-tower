@@ -48,7 +48,7 @@ import type { CheckoutState } from '../bridge/reviews.ts'
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import type { Call } from './api.ts'
-import { esc, noun, plural } from './cards.ts'
+import { esc, noun, paceWords, plural } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
@@ -630,7 +630,7 @@ export function statsHtml(v: StatsView) {
     tileHtml('commits landed', `${sum.git.commits}`, `${plural(sum.git.merges, 'merge')} · ${branchNote(sum.git.repos)}`),
     tileHtml('lines changed', `<span class="add">+${count(sum.git.added)}</span> <span class="del">−${count(sum.git.removed)}</span>`, 'on the default branches'),
     ...(budget ? [tileHtml('left this week', budget.usdLeft === undefined ? '–' : `≈ ${usd(budget.usdLeft)}`,
-      `${budget.percentUsed}% used${budget.usdPerPercent === undefined ? '' : ` · ${usd(budget.usdPerPercent)} per 1%`}`)] : []),
+      `${budget.percentUsed}% used${budget.usdPerPercent === undefined ? '' : ` · ${usd(budget.usdPerPercent)} per 1%`}${budget.pace ? ` · ${paceWords(budget.pace, Date.now()).map(esc).join(' · ')}` : ''}`)] : []),
   ].join('')
   const per = hourly ? 'per hour' : 'per day'
   const hoursOfDay = Array.from({ length: 24 }, (_, h) => ({ label: hourOf(h), title: `${hourOf(h)} to ${hourOf((h + 1) % 24)}` }))

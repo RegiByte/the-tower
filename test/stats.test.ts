@@ -4,7 +4,7 @@ import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { extensionOf, landed as landing, parseLog, type RepoLanded } from '../src/bridge/landed.ts'
-import { bucketStart, stats, today, weeklyBudget } from '../src/bridge/stats.ts'
+import { bucketStart, pace, stats, today, weeklyBudget } from '../src/bridge/stats.ts'
 import { fixture } from './replay.ts'
 
 const session = (name: string): Session => {
@@ -113,4 +113,15 @@ test('what landed, per project and for all: a repo read twice counts once, each 
   assert.deepEqual(s.all.series.commits, expected)
   assert.equal(s.all.series.added.reduce((a, n) => a + n, 0), 6)
   assert.equal(stats([], { a: [repo] }, { from: from + 86400_000 * 3, to: from + 86400_000 * 4, bucket: 'day' }).all.summary.git.commits, 0)
+})
+
+test('the weekly budget pace: the even daily spend to the reset, and when today\'s rate runs it out', () => {
+  const day = Date.parse('2026-10-08T00:00:00Z')
+  const now = day + 10 * 3600_000
+  const resetsAt = new Date(now + 2 * 86400_000).toISOString()
+  const left = { resetsAt, usdLeft: 400 }
+  assert.deepEqual(pace(left, { since: day, spend: 0 }, now), { perDay: 200, runsOutAt: undefined })
+  assert.deepEqual(pace(left, { since: day, spend: 50 }, now), { perDay: 200, runsOutAt: undefined })
+  assert.deepEqual(pace(left, { since: day, spend: 200 }, now), { perDay: 200, runsOutAt: now + 20 * 3600_000 })
+  assert.equal(pace({ resetsAt, usdLeft: undefined }, { since: day, spend: 200 }, now), undefined)
 })

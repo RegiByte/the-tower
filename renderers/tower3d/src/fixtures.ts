@@ -312,7 +312,7 @@ const busyBoard = (floors: FloorFacts[], now: number): Board =>
     rateLimitsAt: now - 3 * MIN,
     today: {
       since: now - 15 * 60 * MIN, spend: 84.6, agentHours: 5.2, waits: { n: 23, p50: 260 },
-      budget: { percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString(), since: now - 4 * 24 * 60 * MIN, spent: 310, usdPerPercent: 14.1, usdLeft: 1029.3 },
+      budget: { percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString(), since: now - 4 * 24 * 60 * MIN, spent: 310, usdPerPercent: 14.1, usdLeft: 1029.3, pace: { perDay: 343.1, runsOutAt: now + 40 * 60 * MIN } },
     },
     shells: [SHELL('alpha', 0, 'npm run dev', now), SHELL('alpha', 1, 'user@host:~/work/alpha', now), SHELL('gamma', 0, 'vim README.md', now)],
   })

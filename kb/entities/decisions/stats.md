@@ -12,6 +12,7 @@
     "hub/src/bridge/stats.ts#stats",
     "hub/src/bridge/stats.ts#overlap",
     "hub/src/bridge/stats.ts#weeklyBudget",
+    "hub/src/bridge/stats.ts#pace",
     "hub/src/bridge/stats.ts#today",
     "hub/src/shared/api.ts#QUERIES",
     "hub/src/tower/server.ts#statsRead",
@@ -56,7 +57,10 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   are not workers and are not counted. [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
   every session's readings (it is the account's, so `/stats?project=` filters the stats and never the budget): over the window it is in, the spend from its first reading to the
   latest where it moved, divided by the percent it climbed, is what 1% buys; the percent left times that is "$ left
-  this week".
+  this week". Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
+  even daily spend that spends what is left at the reset, and `runsOutAt`, when what is left runs out at today's rate
+  (today's spend over the hours since the day began, at least one), only when that is before the reset. Both are
+  absent while what is left is unknown.
 - *What landed, from git's own records.* Per project only: for each of a project's dirs (its hub and `repos`),
   [`readLanded`](ref:hub/src/landed.ts#readLanded) walks the first parents of `origin/HEAD` over the window (as of the
   last fetch) with `--diff-merges=first-parent --numstat`, and [`parseLog`](ref:hub/src/bridge/landed.ts#parseLog)
@@ -73,7 +77,7 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES) served at `/schema` under `reads`, defaults the
   last seven local days by day, and refuses windows over 2400 buckets. `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
-  waits answered (count and p50), the day's start and the weekly budget. The roof draws them live beside the rate
+  waits answered (count and p50), the day's start and the weekly budget with its pace. The roof draws them live beside the rate
   limits. They move only with readings, turns and prompts, which already change the board, so they add no pushes; a
   day that turns while nothing happens shows yesterday's until the next event, which `today.since` tells.
 

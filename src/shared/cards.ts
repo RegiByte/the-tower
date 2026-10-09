@@ -597,6 +597,10 @@ export const span = (ms: number) => {
   return `${Math.floor(m / (24 * 60))}d`
 }
 
+/** The budget's pace in words: what to spend a day to last, and when it runs out at today's rate, if before the reset. */
+export const paceWords = (pace: { perDay: number; runsOutAt?: number }, now: number) =>
+  [`≈ $${Math.round(pace.perDay).toLocaleString('en-US')}/day to last`, ...(pace.runsOutAt === undefined ? [] : [`at today's rate, out by ${clockAt(pace.runsOutAt, now)}`])]
+
 /** A moment on the wall clock: `22:00` today, `Sun 22:00` another day. */
 export const clockAt = (at: number, now: number) => {
   const time = new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })

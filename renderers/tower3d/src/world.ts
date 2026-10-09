@@ -7,7 +7,7 @@ import { duration, hours, usd } from '../../../src/shared/panels.ts'
 import { WEEKLY } from '../../../src/bridge/stats.ts'
 import { buildCork } from './cork.ts'
 import { buildWall } from './gallery.ts'
-import { WORLD, clockAt, weekElapsed } from './cards.ts'
+import { WORLD, clockAt, paceWords, weekElapsed } from './cards.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
 import { act } from './acts.ts'
@@ -304,7 +304,7 @@ function limitColumns(p: Plan, limits: RateLimit[], today: Today) {
     const elapsed = weekElapsed(r, now)
     if (elapsed !== undefined) g.add(block(1.52, 0.06, 1.52, glowing('#fff'), x, 0.2 + 0.15 + height(elapsed), z))
     const resets = r.resetsAt ? `\nresets ${clockAt(Date.parse(r.resetsAt), now)}` : ''
-    const left = r.kind === WEEKLY && today.budget?.usdLeft !== undefined ? `\n≈ ${usd(today.budget.usdLeft)} left` : ''
+    const left = r.kind === WEEKLY && today.budget?.usdLeft !== undefined ? `\n≈ ${usd(today.budget.usdLeft)} left${today.budget.pace ? `\n${paceWords(today.budget.pace, now).join('\n')}` : ''}` : ''
     const tag = sprite(`${r.kind.replaceAll('_', ' ')} ${r.percentUsed}%${resets}${left}`, 0.42, { color: r.percentUsed > 85 ? '#fff' : WORLD.enamel, bg: color, px: 44 })
     tag.position.set(x, 4.6, z)
     g.add(tag)
@@ -368,6 +368,11 @@ export function paintStatsBoard(face: World['statsBoard'], today: Today) {
     g.font = `400 24px ${type.ui}`
     g.fillText(label, 250, y)
   })
+  if (today.budget?.pace) {
+    g.fillStyle = WORLD.muted
+    g.font = `400 20px ${type.ui}`
+    g.fillText(paceWords(today.budget.pace, wallNow()).join(' · '), 28, 128 + rows.length * 66 - 30)
+  }
   g.fillStyle = WORLD.faint
   g.font = `400 20px ${type.ui}`
   g.fillText("E · every floor's stats", 28, H - 22)

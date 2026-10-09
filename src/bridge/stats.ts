@@ -76,7 +76,25 @@ export type ScopeStats = {
  * its percent moved, what was spent and how far the percent climbed, so what 1% buys and what the percent left buys
  * at that rate. The rate is unknown until the percent has climbed.
  */
-export type WeeklyBudget = { percentUsed: number; resetsAt: string; since: number; spent: number; usdPerPercent?: number; usdLeft?: number }
+export type WeeklyBudget = {
+  percentUsed: number
+  resetsAt: string
+  since: number
+  spent: number
+  usdPerPercent?: number
+  usdLeft?: number
+  pace?: Pace
+}
+
+/**
+ * Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset, and
+ * `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset.
+ */
+export type Pace = { perDay: number; runsOutAt?: number }
+
+const DAY = 86400_000
+const HOUR = 3600_000
+const MIN_RATE_WINDOW = HOUR
 
 export type Stats = StatsQuery & {
   /** Each bucket's start, epoch ms. */
@@ -243,7 +261,24 @@ export const weeklyBudget = (sessions: Session[], now: number): WeeklyBudget | u
   const spent = sum(sessions.flatMap((s) => s.facts.spend.filter(([t]) => t >= first[0] && t <= at).map(([, usd]) => usd)))
   const climbed = percentUsed - first[1]
   const usdPerPercent = climbed > 0 ? spent / climbed : undefined
-  return { percentUsed, resetsAt, since: first[0], spent, usdPerPercent, usdLeft: usdPerPercent && (100 - percentUsed) * usdPerPercent }
+  const usdLeft = usdPerPercent && (100 - percentUsed) * usdPerPercent
+  const from = bucketStart(now, 'day')
+  const daySpend = sum(sessions.flatMap((s) => s.facts.spend.filter(([t]) => t >= from && t <= now).map(([, usd]) => usd)))
+  const budget = { percentUsed, resetsAt, since: first[0], spent, usdPerPercent, usdLeft }
+  return { ...budget, pace: pace(budget, { since: from, spend: daySpend }, now) }
+}
+
+/**
+ * The pace of the weekly budget at `now`, from today's spend since the day's start. Today's rate is measured over at
+ * least an hour, so the first minutes of a day do not extrapolate. None while what is left is unknown.
+ */
+export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { since: number; spend: number }, now: number): Pace | undefined => {
+  if (budget.usdLeft === undefined) return undefined
+  const resetsAt = Date.parse(budget.resetsAt)
+  const perDay = budget.usdLeft / ((resetsAt - now) / DAY)
+  const perMs = day.spend / Math.max(now - day.since, MIN_RATE_WINDOW)
+  const runsOutAt = perMs > 0 ? now + budget.usdLeft / perMs : undefined
+  return { perDay, runsOutAt: runsOutAt !== undefined && runsOutAt < resetsAt ? runsOutAt : undefined }
 }
 
 /**
