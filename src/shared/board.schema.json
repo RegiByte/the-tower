@@ -2169,6 +2169,9 @@
         },
         "usdLeft": {
           "type": "number"
+        },
+        "pace": {
+          "$ref": "#/definitions/Pace"
         }
       },
       "required": [
@@ -2179,6 +2182,22 @@
       ],
       "additionalProperties": false,
       "description": "The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where its percent moved, what was spent and how far the percent climbed, so what 1% buys and what the percent left buys at that rate. The rate is unknown until the percent has climbed."
+    },
+    "Pace": {
+      "type": "object",
+      "properties": {
+        "perDay": {
+          "type": "number"
+        },
+        "runsOutAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "perDay"
+      ],
+      "additionalProperties": false,
+      "description": "Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset, and `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset."
     },
     "BoardError": {
       "type": "object",
