@@ -62,7 +62,6 @@ import { heldBy, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
-import { snapshot } from '../bridge/screen.ts'
 import { LET_GO, PROMPTED_BY } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
@@ -79,7 +78,7 @@ import { attachShell } from '../shared/client.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
-import { everyEvent, logFileOf, readLog, screenEvents } from '../tail.ts'
+import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { archiveLog } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
@@ -95,7 +94,7 @@ import { designCss, fonts } from '../shared/design.ts'
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
-import { screenMirrors } from './screens.ts'
+import { lastFrames, screenMirrors } from './screens.ts'
 
 const PUBLISH_DEBOUNCE_MS = 150
 /** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
@@ -363,6 +362,11 @@ const MIRROR_GRACE_MS = 30_000
 
 const mirrors = screenMirrors((id) => logFileOf(paths, id), MIRROR_GRACE_MS)
 
+/** How many ended sessions' last frames are kept; a frame is a few KB. */
+const LAST_FRAMES_KEPT = 500
+
+const lastFrameOf = lastFrames((id) => logFileOf(paths, id), LAST_FRAMES_KEPT)
+
 /**
  * A snapshot of the session's screen, then its output as the host logs it; a session no longer running has only
  * its snapshot, its last frame. `undefined` for a session nobody logged.
@@ -384,7 +388,7 @@ async function screenStream(id: string, send: (msg: ScreenMsg) => void): Promise
     })
     if (stop) return stop
   }
-  sendSnapshot(await snapshot(readLog(logFileOf(paths, id), screenEvents).log), !running)
+  sendSnapshot(await lastFrameOf.frame(id), !running)
   return () => {}
 }
 

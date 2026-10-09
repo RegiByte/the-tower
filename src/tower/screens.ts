@@ -1,6 +1,6 @@
-import { mirrorOf, type Mirror } from '../bridge/screen.ts'
+import { mirrorOf, snapshot, type Mirror } from '../bridge/screen.ts'
 import type { LogEvent } from '../shared/model.ts'
-import { readLog, screenEvents, tailLog } from '../tail.ts'
+import { logSize, readLog, screenEvents, tailLog } from '../tail.ts'
 
 /** What a viewer of a screen is sent: the snapshot once, then each `o`, `r` and `x` event as it is logged. */
 export type ScreenViewer = { snapshot: (data: string) => void; event: (event: LogEvent) => void }
@@ -85,4 +85,44 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
   }
 
   return { watch }
+}
+
+/**
+ * The last frames of sessions whose log holds their exit, kept in memory: such a log never changes again, so its
+ * snapshot is computed once per log size (a rewritten log differs in size or is archived) and the least recently opened
+ * is dropped past `maxEntries`. Opens of one session in flight share one computation, and a log without an exit, or a
+ * computation that failed, is not kept.
+ */
+export function lastFrames(logPathOf: (id: string) => string, maxEntries: number) {
+  type Frame = { data: string; final: boolean }
+  const entries = new Map<string, { size: number; frame: Promise<Frame> }>()
+
+  const compute = async (logPath: string): Promise<Frame> => {
+    const { log } = readLog(logPath, screenEvents)
+    return { data: await snapshot(log), final: log.events.some((event) => event[1] === 'x') }
+  }
+
+  const frame = async (id: string): Promise<string> => {
+    const logPath = logPathOf(id)
+    const size = logSize(logPath)
+    const existing = entries.get(id)
+    if (existing?.size === size) {
+      entries.delete(id)
+      entries.set(id, existing)
+      return (await existing.frame).data
+    }
+    const entry = { size, frame: compute(logPath) }
+    entries.set(id, entry)
+    const forget = () => {
+      if (entries.get(id) === entry) entries.delete(id)
+    }
+    entry.frame.then((f) => f.final || forget(), forget)
+    for (const oldest of entries.keys()) {
+      if (entries.size <= maxEntries) break
+      entries.delete(oldest)
+    }
+    return (await entry.frame).data
+  }
+
+  return { frame }
 }
