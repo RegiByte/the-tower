@@ -53,6 +53,8 @@ The host owns every session and the terms daemon every shell: stopping either en
 The tower is only a view of them, restarted freely with `tower down tower && tower up tower`. Releases are tags
 `vX.Y.Z`, each with an entry in `CHANGELOG.md` saying what it asks of you.
 
+<img src="docs/tower-app.png" width="96" align="right" alt="Tower.app's icon: two floors of the tower at dusk, one window working and one waiting on you">
+
 The browser is the default; `tower app` is the same tower in a window of its own. It starts the system as `tower up`
 does when you open it, shows who waits on you on its Dock icon, in notifications and in the menu bar, and quitting
 it leaves the system running. Built from your checkout, it stays yours: drag
