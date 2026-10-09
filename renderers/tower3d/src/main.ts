@@ -15,7 +15,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, type DaemonVerb } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, strandedOf, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -129,7 +129,7 @@ const ARM_MS = 3000
 const held = (verb: DaemonVerb) => heldWhy(s.board!, s.lost, verb)
 const isArmed = (key: string) => s.armed?.key === key && Date.now() < s.armed.until
 function confirmed(key: string) {
-  if (isArmed(key)) return (s.armed = undefined, true)
+  if (isArmed(key)) return (s.armed = undefined, renderPanel(), true)
   s.armed = { key, until: Date.now() + ARM_MS }
   setTimeout(renderPanel, ARM_MS)
   renderPanel()
@@ -931,6 +931,14 @@ async function sendHome(c: Card) {
   toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, { label: 'Resume', run: () => resumeSentHome(c) })
 }
 
+/** A stranded worker off duty, its conversation left in the floor's archive to resume. */
+async function letWorkerGo(c: Card) {
+  if (await offered(c.calls['let-go']!)) toast(letGoneLine(c))
+}
+
+/** Every stranded worker of a floor resumed, one after another. */
+const resumeAll = async (f: Floor) => toast(await resumeStranded(strandedOf(f), tower.run))
+
 /** A worker sent home, resumed from the board or its floor's archive, read again. */
 async function resumeSentHome(c: Card) {
   const dead = findCard(s.board!, c.id) ?? (await readArchive(s.board!, c.project).catch((err: Error) => (toast(err.message), [])))?.find((d) => d.id === c.id)
@@ -945,6 +953,7 @@ function runOnWorker(a: ActOf<'desk' | 'tile' | 'guest'>, verb: Verb) {
   if (verb === 'resume') return resume(c.calls.resume!)
   if (verb === 'goto') return goDesk(current(c)!.resumedBy!.id)
   if (verb === 'kill') return sendHome(c)
+  if (verb === 'let-go') return letWorkerGo(c)
   if (verb === 'review') return offered(c.calls.review!)
   if (verb === 'reap') return offered(c.calls.reap!)
   if (verb === 'hand') return handOver(c.calls.submit!)
@@ -2141,7 +2150,8 @@ async function resume(c: Call<'resume'>) {
 }
 
 $('desk-head').addEventListener('click', (e) => {
-  const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act
+  const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
+  const what = button?.dataset.act
   const { board, panel } = s
   if (!what || !board || !panel) return
   if (what === 'close') return (unfocus(), lock())
@@ -2151,6 +2161,7 @@ $('desk-head').addEventListener('click', (e) => {
   if (what === 'tower') return tower.ui('select', { id: c.id })
   if (what === 'resume') return resume(c.calls.resume!)
   if (what === 'kill') return confirmed(`kill ${c.id}`) && sendHome(c)
+  if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
   if (what === 'reap') return confirmed(`reap ${c.id}`) && offered(c.calls.reap!)
 })
 
@@ -2213,6 +2224,7 @@ $('side').addEventListener('click', async (e) => {
   if (d.open && s.panel?.kind === 'floor') return offered(floorOf(s.panel.id).calls.editor!, { dir: d.open })
   if (d.shelf && s.panel?.kind === 'floor') return tower.ui('shelf', { project: s.panel.id, n: Number(d.shelf) })
   if (d.resume) return resume(JSON.parse(d.resume))
+  if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
   if (d.reapPid) return reapProcess(d.reapPid)
   if (d.shellDir && s.panel?.kind === 'floor') return spawnShell(floorOf(s.panel.id).calls.shell!, d.shellDir)
   if (d.wtCall) return offered(JSON.parse(d.wtCall))

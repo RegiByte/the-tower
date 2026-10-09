@@ -20,6 +20,9 @@
     "hub/src/system.ts#watchSystem",
     "hub/src/tower/server.ts#letGo",
     "hub/src/shared/cards.ts#strandedOf",
+    "hub/src/shared/cards.ts#resumeStranded",
+    "hub/renderers/tower3d/src/main.ts#letWorkerGo",
+    "hub/renderers/tower3d/src/acts.ts#HELD",
     "hub/src/directory.ts",
     "hub/test/board.test.ts"
   ],
@@ -56,7 +59,10 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   folded again from its checkpoint when the sessions directory reports it. A broken session folds nothing past
   its break but this fact ([`afterBreak`](ref:hub/src/tail.ts#afterBreak)), so it can be let go too.
 - "Resume all N" on a floor is composed in the renderer from the stranded cards' `calls.resume`
-  ([`strandedOf`](ref:hub/src/shared/cards.ts#strandedOf)), asked first with the list.
+  ([`strandedOf`](ref:hub/src/shared/cards.ts#strandedOf), run in turn by
+  [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded)), asked first with the list. Both renderers offer
+  let go and resume all, asking in the same words (`letGoAsk`, `resumeAllAsk`): the tower page on the card, the bar and
+  the floor's trays; Tower 3D in the desk panel beside Resume, as X held at the desk, and in the floor panel.
 
 **Alternatives considered.**
 - The tower appends to the stranded log itself. It needs no host restart and has no race, but it makes a second

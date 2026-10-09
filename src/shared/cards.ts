@@ -213,6 +213,21 @@ export const strandedOf = (f: Floor) => f.cards.filter((c) => c.calls['let-go'] 
 /** What letting a stranded worker go means, said before it is done. */
 export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's archive, where its conversation can still be resumed"
 
+/** What a renderer asks before letting a worker go, and tells once it is done. */
+export const letGoAsk = (c: Card) => `Let ${c.callsign} go?\n\nIt goes ${LET_GO_MEANS}.`
+export const letGoneLine = (c: Card) => `Let ${c.callsign} go: it is in the archive`
+
+/** What a renderer asks before resuming every stranded worker of a floor (`strandedOf`), naming each. */
+export const resumeAllAsk = (f: Floor, stranded: Card[]) =>
+  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)}`).join('\n')}`
+
+/** Resumes each of `stranded` in turn through `run`, past any that fails; answers what to tell the user. */
+export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) => Promise<unknown>) {
+  const failed: string[] = []
+  for (const c of stranded) await run(c.calls.resume!).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
+  return failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`
+}
+
 /** How many past workers a floor has, its archive's among them, before the archive is read. */
 export const pastCount = (f: Floor) => f.cards.filter((c) => !c.onDuty).length + f.archived
 

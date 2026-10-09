@@ -29,6 +29,9 @@ Commit messages hold the detail.
   step per depth, crews by their latest start, the newest first, and a worker's earlier lives after its latest. A filter
   keeps the order. `/cards.js` adds `pastCrews`, `pastMatching` and `pastSize`. Tower 3D's archive list no longer runs
   past its panel.
+- Tower 3D lets a stranded worker go: Let go beside Resume in its desk panel, X held at its desk in the world, and a
+  floor panel's "resume all N stranded", each asked first the way the page asks. `/cards.js` adds `letGoAsk`,
+  `letGoneLine`, `resumeAllAsk` and `resumeStranded`, the words and the loop both renderers share.
 
 ## v1.3.0
 

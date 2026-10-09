@@ -10,7 +10,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type Carried, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, current, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -255,6 +255,13 @@ export type HeldWhy = (verb: DaemonVerb) => string | undefined
 const heldButton = (why: string, cls: string, label: string, inner: string) =>
   `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(why)}">${inner}</button>`
 
+/**
+ * A button that asks before it acts: its first press arms it, showing "sure?" with the question as its tip, and a
+ * second press within a few seconds acts. A shelf page may not open `confirm()`.
+ */
+const askingButton = (armed: boolean, attrs: string, label: string, tip: string, ask: string) =>
+  `<button ${attrs} data-tip="${esc(armed ? ask : tip)}">${armed ? 'sure?' : label}</button>`
+
 /** A panel's close: back to walking, or the panel beside the world shut. */
 const closeButton = `<button class="icon-btn x" data-act="close" aria-label="close" data-tip="close">${ICON.close}</button>`
 
@@ -269,6 +276,7 @@ export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: str
   const acts = [
     `<button class="icon-btn" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">${ICON.info}</button>`,
     can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', `${ICON.resume} Resume`) : `<button class="primary" data-act="resume">${ICON.resume} Resume</button>`),
+    can(c, 'let-go') && (held('let-go') ? heldButton(held('let-go')!, '', 'Let go', 'Let go') : askingButton(armed(`let-go ${c.id}`), 'data-act="let-go"', 'Let go', `let ${c.callsign} go: ${LET_GO_MEANS}`, letGoAsk(c))),
     can(c, 'reap') && `<button data-act="reap" data-tip="${esc(c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'))}">${armed(`reap ${c.id}`) ? 'sure?' : `reap ${c.resources.length}`}</button>`,
     framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
     (can(c, 'send-home') || can(c, 'kill')) && `<button data-act="kill" class="danger" data-tip="${esc(`ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`)}">${armed(`kill ${c.id}`) ? 'sure?' : 'Send home'}</button>`,
@@ -485,6 +493,15 @@ const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
         : held('resume') ? heldButton(held('resume')!, 'icon-btn', 'resume this conversation', ICON.resume)
         : `<button class="icon-btn" data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
 
+/** Resumes every worker the host stopped or lost on a floor, asked first with their names. */
+const resumeAllButton = (f: Floor, armed: (key: string) => boolean, held: HeldWhy) => {
+  const stranded = strandedOf(f)
+  if (!stranded.length) return ''
+  const label = `${ICON.resume} resume all <b>${stranded.length}</b> stranded`
+  return held('resume') ? heldButton(held('resume')!, 'wide', `resume all ${stranded.length} stranded`, label)
+    : askingButton(armed(`resume-all ${f.id}`), `class="wide" data-resume-all="${esc(f.id)}"`, label, 'resume every worker the host stopped or lost', resumeAllAsk(f, stranded))
+}
+
 /** A floor's + new session, held back with why while it can't run. */
 const spawnButton = (f: Floor, held: HeldWhy) =>
   held('spawn') ? heldButton(held('spawn')!, 'wide', 'new session', `${ICON.plus} new session`) : can(f, 'spawn') ? `<button class="wide" data-spawn="${esc(f.id)}">${ICON.plus} new session</button>` : ''
@@ -524,7 +541,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     <div class="section eyebrow">Dirs</div>${dirs}
     ${shelf && `<div class="section eyebrow">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
     <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
-    ${spawnButton(f, held)}
+    ${resumeAllButton(f, armed, held)}${spawnButton(f, held)}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
     ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy))}</div>${tidyPanelHtml(f, armed)}<button class="wide" data-tidy data-tip="do all of it, as listed">${armed(`tidy ${f.id}`) ? 'sure? tidy all of it' : 'tidy all'}</button>` : ''}
     ${trays && `<div class="trays">${trays}</div>`}

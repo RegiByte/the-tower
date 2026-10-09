@@ -59,7 +59,7 @@ over, so it shows only where the hands do (not in the overview). Whatever you ai
 it offers in the bottom-right corner, each verb on its own key ([[verb-prompts]]): E uses it (sit, open
 here, read, watch, open its panel), F goes on (resume, go to whoever resumed it, next waiting), Q looks
 closer (logbook, overview), G spawns, T opens a shell, C opens the user's editor, and held X or Z ends something (send
-home, kill, stop sharing; reap) once its ring fills. A worker's card lists what it left running, and each floor's
+home, kill, let a stranded worker go, stop sharing; reap) once its ring fills. A worker's card lists what it left running, and each floor's
 Running board ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)), on the control room's outer
 wall between the back glass and the door, lists every process the floor's workers left running (worker, pid,
 ports, orphan, command): held Z on a row ends that one process, F goes to its worker's desk; a hire whose work landed
@@ -67,7 +67,9 @@ is a row too, its own `landed` act, held Z killing only it through its Tidy row'
 the floor panel lists them all, each ended on a second click, and lists Tidy's rows, each with a ⌫ that applies only
 that row and Tidy all, both on a second click. The mouse wheel marks a verb and a click runs it.
 [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives each thing's offers from the board on
-every frame. A stopped worker's desk offers resume first, and sitting there shows its last screen read-only.
+every frame. A stopped worker's desk offers resume first, and sitting there shows its last screen read-only. A worker the host
+stranded has Let go beside Resume in its desk panel, and its floor panel resumes all of the floor's stranded at once
+([[let-go]]).
 Beside every worker's keyboard lies its logbook, a binder as thick as the sessions it ran as; E on it opens the desk
 panel's Logbook tab where you stand, and a past session there replays its last screen, sepia and stamped, in the panel
 and on the desk's monitor ([[logbook]]).

@@ -80,7 +80,7 @@ export const reachOf = (a: Act) => (a.kind === 'tile' ? 9 : a.kind === 'tv' ? 12
  * What can be done to an aimed thing. `use` is the thing's own action (sit, read, watch, open its panel); the rest
  * are the board's verbs for what it stands for, plus the building's own (`next`, `overview`, `stop`).
  */
-export type Verb = 'use' | 'resume' | 'goto' | 'next' | 'brief' | 'overview' | 'review' | 'thread' | 'spawn' | 'shell' | 'editor' | 'kill' | 'stop' | 'reap' | 'hand' | 'send'
+export type Verb = 'use' | 'resume' | 'goto' | 'next' | 'brief' | 'overview' | 'review' | 'thread' | 'spawn' | 'shell' | 'editor' | 'kill' | 'let-go' | 'stop' | 'reap' | 'hand' | 'send'
 
 /**
  * Each verb's key, the same on every object, grouped by meaning: E use, F go on, Q look closer, Y hire a reviewer, T a
@@ -89,11 +89,11 @@ export type Verb = 'use' | 'resume' | 'goto' | 'next' | 'brief' | 'overview' | '
  * overview, while a carried note or review notes can be handed over).
  */
 export const KEY: Record<Verb, string> = {
-  use: 'E', resume: 'F', goto: 'F', next: 'F', brief: 'Q', overview: 'Q', review: 'Y', thread: 'T', spawn: 'G', shell: 'T', editor: 'C', kill: 'X', stop: 'X', reap: 'Z', hand: 'H', send: 'H',
+  use: 'E', resume: 'F', goto: 'F', next: 'F', brief: 'Q', overview: 'Q', review: 'Y', thread: 'T', spawn: 'G', shell: 'T', editor: 'C', kill: 'X', 'let-go': 'X', stop: 'X', reap: 'Z', hand: 'H', send: 'H',
 }
 
 /** Verbs that end something run only once their key or the mouse button is held: the hold is the confirmation. */
-export const HELD: ReadonlySet<Verb> = new Set(['kill', 'stop', 'reap'])
+export const HELD: ReadonlySet<Verb> = new Set(['kill', 'let-go', 'stop', 'reap'])
 export const HOLD_MS = 1200
 /** How full a hold started at `start` is at `now`, 0 to 1: it runs at 1. */
 export const holdFill = (start: number, now: number) => Math.min(1, (now - start) / HOLD_MS)
@@ -171,6 +171,7 @@ const workerOffers = (board: Board, scene: Scene, c: Card, drive: string): Offer
     ...(can(c, 'review') ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
     ...(can(c, 'reap') ? [{ verb: 'reap' as const, label: `reap ${c.resources.length} leftover${c.resources.length === 1 ? '' : 's'}` }] : []),
     ...(can(c, 'send-home') || can(c, 'kill') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
+    ...(can(c, 'let-go') ? [holding(board, scene, 'let-go', { verb: 'let-go', label: 'let go' })] : []),
   ]
   return c.live ? [look, ...goOn(board, scene, c), ...rest] : [...goOn(board, scene, c), look, ...rest]
 }
