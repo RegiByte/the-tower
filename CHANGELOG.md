@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.15.1
+
+A review thread's new notes are new to whoever's view you're looking at. It asks nothing of you: no host restart, no
+config change. The renderer API moves to 1.39, an addition. Restart the tower (`tower down tower && tower up tower`)
+and rebuild Tower 3D (`npm run tower3d`) where it is built.
+
+- An author and its reviewer take turns on one thread: in the reviewer's view, the author's notes since the
+  reviewer's last are new; in the author's, the reviewer's are. Tower 3D's reviewer desk marked what was new to the
+  author; it now reads as the reviewer, as the tower page does. The floor's pigeonhole reads as the worker on duty in
+  that checkout. Tower 3D's Reviews tab finds anchors in the desk worker's own Changes.
+- Both renderers build the Reviews view with one shared builder (`threadViewOf`, `cardThread`, `floorThread` in
+  `/panels.js`; `sendTarget` in `/cards.js`).
+
 ## v1.15.0
 
 **Host restart.** Workers the host cut off carry on, and the host and terms daemons never die on bad input. No config
