@@ -32,8 +32,9 @@ Bad input costs a request, never the host: a control line that isn't a JSON obje
 ([`jsonObject`](ref:hub/src/shared/protocol.ts#jsonObject)), a message of a `t` it doesn't know, or one whose
 handling throws is answered `error` with the reason, and the host keeps serving every session.
 
-Every `write` and `resize` is logged before it reaches the PTY, so the log replays exactly what the session
-saw. Sessions live as long as this process: SIGINT, SIGTERM or SIGHUP kills each PTY and logs its exit with
+Every `write` and `resize` is logged once the PTY took it, in the same tick, before any output it causes, so the log
+replays exactly what the session saw; one the PTY refuses (data that isn't a string, a size that isn't positive) is
+answered `error` and never logged. Sessions live as long as this process: SIGINT, SIGTERM or SIGHUP kills each PTY and logs its exit with
 `hostStopped`, and the host exits only once every log has flushed its last line. A log behind its disk by more than 1 MB pauses its session's PTY until it drains, so
 output waits in the PTY (and Claude slows down) instead of growing the host's memory; input, resizes and hooks
 are always appended. A log that fails to write

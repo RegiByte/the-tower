@@ -109,16 +109,17 @@ function handle(msg: ToHost): FromHost {
   switch (msg.t) {
     case 'spawn':
       return { t: 'spawned', id: spawnSession(msg) }
+    /** The PTY refuses malformed input by throwing; what it took is logged in the same tick, before any output it causes. */
     case 'write': {
       const s = liveSession(msg.id)
-      append(s, [now(s), 'i', msg.data])
       s.proc.write(msg.data)
+      append(s, [now(s), 'i', msg.data])
       return { t: 'ok' }
     }
     case 'resize': {
       const s = liveSession(msg.id)
-      append(s, [now(s), 'r', `${msg.cols}x${msg.rows}`])
       s.proc.resize(msg.cols, msg.rows)
+      append(s, [now(s), 'r', `${msg.cols}x${msg.rows}`])
       return { t: 'ok' }
     }
     case 'kill':
