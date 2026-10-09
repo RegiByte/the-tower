@@ -13,7 +13,7 @@ import { towerPort } from './shared/model.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import { readConfig } from './system.ts'
 import { withoutParentSession } from './shared/env.ts'
-import { git, run } from './worktrees.ts'
+import { git, run } from './git.ts'
 import { CliError } from './cli-error.ts'
 
 const RELEASE = 'v*.*.*'

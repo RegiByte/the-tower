@@ -1,6 +1,7 @@
 /** What landed on each repo's default branch, read from git when asked: nothing is kept. */
 import { LANDED_ARGS, landed, parseLog, type RepoLanded } from './bridge/landed.ts'
-import { git, isRepo, originHeadOf } from './worktrees.ts'
+import { git } from './git.ts'
+import { isRepo, originHeadOf } from './worktrees.ts'
 
 /**
  * The landings on the repo's origin/HEAD whose time falls in [from, to), as of the last fetch; a merge counts the

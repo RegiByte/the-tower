@@ -5,7 +5,8 @@
  * since the base. Files outside the repos aren't seen. Git is read on every request, never kept.
  */
 import { parseDiff, type DiffFile } from './bridge/diff.ts'
-import { againstFor, git, isRepo, run } from './worktrees.ts'
+import { git, run } from './git.ts'
+import { againstFor, isRepo } from './worktrees.ts'
 
 /** Untracked files diffed one by one past this many would be a forgotten ignore rule, not work. */
 const MAX_UNTRACKED = 300

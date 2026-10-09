@@ -9,7 +9,6 @@
  * its base or carried there, and a branch is rolled back only when it was cut in the same request and is still at its
  * base.
  */
-import { execFile } from 'node:child_process'
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -35,8 +34,8 @@ import {
   type TreeRead,
   type WorktreeState,
 } from './bridge/worktrees.ts'
+import { git, gitWith, GitTimeout, run } from './git.ts'
 import type { ErrorCode } from './shared/api.ts'
-import { withoutParentSession } from './shared/env.ts'
 import { worktreeBrief, type WorktreeBrief } from './shared/launch.ts'
 import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreeName, worktreePath, WORKTREES_DIR, type Project } from './shared/model.ts'
 
@@ -54,35 +53,6 @@ export class WorktreeError extends Error {
     super(message)
   }
 }
-
-type Run = { stdout: string; stderr: string; code: number }
-
-const exec = (dir: string, args: string[], timeout: number | undefined, env: NodeJS.ProcessEnv): Promise<Run> =>
-  new Promise((resolve, reject) => {
-    execFile(
-      'git',
-      ['-C', dir, '--no-optional-locks', ...args],
-      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout, env: { ...withoutParentSession(process.env), GIT_TERMINAL_PROMPT: '0', ...env } },
-      (err, stdout, stderr) => {
-        if (err?.killed) return reject(new WorktreeError('offline', `git ${args[0]} in ${dir} took over ${timeout! / 1000}s`))
-        if (err && typeof err.code !== 'number') return reject(err)
-        resolve({ stdout, stderr, code: err ? (err.code as number) : 0 })
-      },
-    )
-  })
-
-/** Git with no prompt for credentials, its exit code returned for the caller to read; a timeout throws `offline`. */
-export const run = (dir: string, args: string[], timeout?: number): Promise<Run> => exec(dir, args, timeout, {})
-
-/** Git that must succeed, with `env` added to its environment: a failure throws with its stderr. */
-const gitWith = (env: NodeJS.ProcessEnv) => async (dir: string, args: string[]): Promise<string> => {
-  const r = await exec(dir, args, undefined, env)
-  if (r.code !== 0) throw new Error(`git ${args.join(' ')} in ${dir}: ${r.stderr.trim()}`)
-  return r.stdout
-}
-
-/** Git that must succeed: a failure throws with its stderr. */
-export const git = gitWith({})
 
 /** Git that answers yes (0) or no (1). */
 const ask = async (dir: string, args: string[]): Promise<boolean> => {
@@ -314,8 +284,14 @@ export const nameIsFree = async (dirs: string[], name: string, branch: string): 
   return free.every(Boolean)
 }
 
+/** Git talking to origin: one longer than FETCH_TIMEOUT_MS throws `offline`. */
+const fromOrigin = (dir: string, args: string[]) =>
+  run(dir, args, FETCH_TIMEOUT_MS).catch((err) => {
+    throw err instanceof GitTimeout ? new WorktreeError('offline', err.message) : err
+  })
+
 const fetchNow = async (dir: string, prune: boolean) => {
-  const r = await run(dir, ['fetch', ...(prune ? ['--prune'] : []), 'origin'], FETCH_TIMEOUT_MS)
+  const r = await fromOrigin(dir, ['fetch', ...(prune ? ['--prune'] : []), 'origin'])
   if (r.code !== 0) throw new WorktreeError('offline', `Couldn't fetch origin in ${dir}: ${r.stderr.trim()}`)
 }
 
@@ -432,7 +408,7 @@ export type CutResult = { name: string; branch: string; made: Made[]; bases: { d
 
 /** Origin's default branch, set from origin when the clone never recorded it. */
 const defaultBase = async (dir: string): Promise<string | undefined> =>
-  (await originHeadOf(dir)) ?? ((await run(dir, ['remote', 'set-head', 'origin', '--auto'], FETCH_TIMEOUT_MS)).code === 0 ? originHeadOf(dir) : undefined)
+  (await originHeadOf(dir)) ?? ((await fromOrigin(dir, ['remote', 'set-head', 'origin', '--auto'])).code === 0 ? originHeadOf(dir) : undefined)
 
 /** A new worktree's place in one repo, checked free, and the links it gets. */
 type Planned = { dir: string; path: string; links: [string, string][] }
