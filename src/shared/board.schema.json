@@ -1,0 +1,2225 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/BoardMsg",
+  "definitions": {
+    "BoardMsg": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "string",
+              "const": "1.30"
+            },
+            "board": {
+              "$ref": "#/definitions/Board"
+            }
+          },
+          "required": [
+            "v",
+            "board"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "string",
+              "const": "1.30"
+            },
+            "error": {
+              "$ref": "#/definitions/BoardError"
+            }
+          },
+          "required": [
+            "v",
+            "error"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can."
+    },
+    "Board": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "description": "The person running the tower: `name` signs the notes renderers write for them (`user.name` in the config)."
+        },
+        "config": {
+          "type": "string",
+          "description": "The config file's path: the system root, where the logs and collections are, is its directory."
+        },
+        "keys": {
+          "$ref": "#/definitions/Keys",
+          "description": "Every command's chords by id, the config's `keys` over the keymap's defaults (`/keymap.js`)."
+        },
+        "floors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Floor"
+          }
+        },
+        "waiting": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Wait"
+          },
+          "description": "Who waits on you, in the order to go to them."
+        },
+        "archiveAt": {
+          "type": "number",
+          "description": "The latest change to any archived card (epoch ms; 0 with none archived): a renderer holding a floor's archive reads it again when this or the floor's `archived` moves."
+        },
+        "rateLimits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RateLimit"
+          }
+        },
+        "rateLimitsAt": {
+          "type": "number",
+          "description": "When the rate limits were read (epoch ms): a reading arrives only with a session's turn, so it ages while nobody works."
+        },
+        "today": {
+          "$ref": "#/definitions/Today",
+          "description": "Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change."
+        },
+        "hostUp": {
+          "type": "boolean"
+        },
+        "hostOutdated": {
+          "type": "boolean",
+          "description": "The running host speaks another protocol than its clients: it predates their code, until it is restarted."
+        },
+        "claudeUntested": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The releases outside the tested range that live workers run, each once."
+        },
+        "shells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "activity": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "project": {
+                "type": "string"
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "startedAt": {
+                "type": "number"
+              },
+              "cols": {
+                "type": "number"
+              },
+              "rows": {
+                "type": "number"
+              },
+              "process": {
+                "type": "string",
+                "description": "The foreground process, such as `zsh` or `node`."
+              },
+              "title": {
+                "type": "string",
+                "description": "The terminal title the shell or its program set, if any."
+              }
+            },
+            "required": [
+              "activity",
+              "cols",
+              "cwd",
+              "id",
+              "process",
+              "project",
+              "rows",
+              "startedAt"
+            ]
+          }
+        },
+        "termsUp": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "user",
+        "config",
+        "keys",
+        "floors",
+        "waiting",
+        "archiveAt",
+        "rateLimits",
+        "today",
+        "hostUp",
+        "hostOutdated",
+        "claudeUntested",
+        "shells",
+        "termsUp"
+      ],
+      "additionalProperties": false
+    },
+    "Keys": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "description": "Each command id with its chords, as written in a canonical form (`chordOf`)."
+    },
+    "Floor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "cards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Card"
+          },
+          "description": "The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`."
+        },
+        "archived": {
+          "type": "number",
+          "description": "How many cards its archive holds."
+        },
+        "collections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorCollection"
+          }
+        },
+        "worktrees": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorWorktree"
+          }
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorBranch"
+          }
+        },
+        "threads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorThread"
+          },
+          "description": "The review thread of each checkout that has one, when the floor keeps the `reviews` collection."
+        },
+        "gallery": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GalleryShowing"
+          },
+          "description": "The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`)."
+        },
+        "bases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "branchPrefix": {
+          "type": "string",
+          "description": "What a cut's branch is named by default: this, then the worktree's name."
+        },
+        "cutByDefault": {
+          "type": "boolean",
+          "description": "Whether a new worker starts in a worktree of its own unless told where, when the floor can cut one."
+        },
+        "hiring": {
+          "type": "object",
+          "properties": {
+            "depth": {
+              "type": "number"
+            },
+            "live": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false,
+          "description": "How far its workers hire workers through `tower hire`."
+        },
+        "tidy": {
+          "$ref": "#/definitions/TidyPlan",
+          "description": "What its Tidy would do now, as its call applies it."
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/FloorCalls"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hub": {
+          "type": "string"
+        },
+        "repos": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "color": {
+          "type": "string",
+          "description": "A CSS color renderers mark the project's things with."
+        },
+        "shelf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShelfEntry"
+          }
+        },
+        "plugins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Absolute plugin directories this project's sessions load, beside the ones every session loads."
+        }
+      },
+      "required": [
+        "archived",
+        "bases",
+        "branchPrefix",
+        "branches",
+        "calls",
+        "cards",
+        "collections",
+        "cutByDefault",
+        "gallery",
+        "hiring",
+        "hub",
+        "id",
+        "name",
+        "repos",
+        "threads",
+        "tidy",
+        "verbs",
+        "worktrees"
+      ],
+      "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can start from, the default first; empty when a dir isn't a git repo with an origin."
+    },
+    "Card": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        },
+        "peer": {
+          "type": "string",
+          "description": "The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs."
+        },
+        "project": {
+          "type": "string"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "worktree": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            },
+            "gone": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "name",
+            "gone"
+          ],
+          "additionalProperties": false,
+          "description": "The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and, for a fork, the checkout it was forked from; `gone` once git no longer lists it with its folder in every repo of the project (`checkoutGone`)."
+        },
+        "reviews": {
+          "type": "string",
+          "description": "The callsign of the worker whose work this one reviews, named by its first prompt (`reviewPrompt`)."
+        },
+        "hiredBy": {
+          "$ref": "#/definitions/HiredBy",
+          "description": "The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none."
+        },
+        "reportsTo": {
+          "type": "string",
+          "description": "The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the author whose work it reviews, else its hirer. Only a worker's current card reports; nobody's when it reports to none."
+        },
+        "checkout": {
+          "type": "string",
+          "description": "The checkout it works in: its worktree's name, or `main`."
+        },
+        "checkoutState": {
+          "$ref": "#/definitions/CheckoutState",
+          "description": "Where the work in its checkout stands: what its Changes are."
+        },
+        "threadState": {
+          "$ref": "#/definitions/CheckoutState",
+          "description": "Where the work its review thread is about stands (`threadCheckoutOf`: a reviewer's is its author's), with the thread Tidy filed once it landed. The card offers `note` while it is live."
+        },
+        "unseen": {
+          "type": "number",
+          "description": "The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen (after its own last one); none without a thread, or once `threadState` is no longer live."
+        },
+        "status": {
+          "$ref": "#/definitions/Status"
+        },
+        "blocked": {
+          "$ref": "#/definitions/BlockedKind",
+          "description": "The screen a `blocked` worker shows: answered on its terminal."
+        },
+        "live": {
+          "type": "boolean",
+          "description": "Its PTY is running: the screen is live and it takes keys."
+        },
+        "waiting": {
+          "type": "boolean",
+          "description": "Waiting on the user since `enteredAt`: held by a screen or a question, or an outcome nobody has typed to since, unless that outcome is an answer its running hirer is to read (`waitsOn`)."
+        },
+        "waitsOn": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "callsign": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "callsign"
+          ],
+          "additionalProperties": false,
+          "description": "The worker whose prompt a hire's unread answer answers: its hirer as it runs now, while that runs."
+        },
+        "attention": {
+          "$ref": "#/definitions/Attention"
+        },
+        "enteredAt": {
+          "type": "number",
+          "description": "Epoch ms the session entered `status`."
+        },
+        "typedAt": {
+          "type": "number",
+          "description": "Epoch ms someone last typed into the session."
+        },
+        "heardAt": {
+          "type": "number",
+          "description": "Epoch ms Claude last raised a hook or a mod event."
+        },
+        "stuck": {
+          "type": "boolean",
+          "description": "Working with no word from Claude for `STUCK_MS`: a hung tool, or a long build."
+        },
+        "broken": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "code": {
+              "type": "string"
+            },
+            "at": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "message",
+            "code",
+            "at"
+          ],
+          "additionalProperties": false,
+          "description": "Its log holds an event the tower can't fold (`Facts.broken`): the error, the event's code and its time (epoch ms). Its facts stand as they were before it and are never folded on, so it waits on no one and is never stuck; whether it runs is the host's word, so it can still be driven and killed, or resumed once it no longer runs."
+        },
+        "startedAt": {
+          "type": "number"
+        },
+        "cols": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "number"
+        },
+        "context": {
+          "type": "number"
+        },
+        "costUsd": {
+          "type": "number"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "compacting": {
+          "type": "boolean",
+          "description": "Claude is compacting the conversation, inside a turn or by `/compact`."
+        },
+        "says": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What Claude told the user between tool calls in the current turn, oldest first."
+        },
+        "subagents": {
+          "type": "number"
+        },
+        "turns": {
+          "type": "number",
+          "description": "The main loop's turns that ran to their Stop, across the sessions the worker ran as."
+        },
+        "lineage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LineageSession"
+          },
+          "description": "The sessions the worker ran as, oldest first, ending with this one."
+        },
+        "model": {
+          "type": "string"
+        },
+        "effort": {
+          "type": "string"
+        },
+        "claude": {
+          "type": "string",
+          "description": "The release of Claude Code the session runs, once the mod reported it."
+        },
+        "claudeUntested": {
+          "type": "boolean",
+          "description": "Its Claude is outside the releases the tower is tested on (`CLAUDE_TESTED`)."
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardResource"
+          },
+          "description": "What the session left running, each with the verb that ends it alone."
+        },
+        "shown": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardShown"
+          },
+          "description": "What the worker showed the user across the sessions it ran as, oldest first; `at` in epoch ms, `session` the one that showed it."
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardPage"
+          },
+          "description": "The html files the worker wrote across the sessions it ran as, oldest first."
+        },
+        "sent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardSent"
+          },
+          "description": "The messages it sent other Claude sessions across the sessions it ran as, oldest first."
+        },
+        "stranded": {
+          "type": "boolean",
+          "description": "Ended by the host stopping or dying, while nobody meant it to end."
+        },
+        "letGoAt": {
+          "type": "number",
+          "description": "When the user let it go, stranded (epoch ms): off duty, its conversation still resumable from the archive."
+        },
+        "unresumable": {
+          "$ref": "#/definitions/Unresumable",
+          "description": "Not running, holding a conversation nobody resumed, which can't be resumed where it ran: why."
+        },
+        "conversations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardConversation"
+          },
+          "description": "The conversations Claude saved, in order: the last is the one a resume continues."
+        },
+        "continuedBy": {
+          "$ref": "#/definitions/SessionRef",
+          "description": "The session that carries this worker on, holding its callsign and showings from then on."
+        },
+        "onDuty": {
+          "type": "boolean",
+          "description": "Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go."
+        },
+        "seat": {
+          "$ref": "#/definitions/Seat",
+          "description": "Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one."
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/CardCalls"
+        }
+      },
+      "required": [
+        "id",
+        "callsign",
+        "project",
+        "cwd",
+        "checkout",
+        "checkoutState",
+        "threadState",
+        "status",
+        "live",
+        "waiting",
+        "attention",
+        "enteredAt",
+        "stuck",
+        "startedAt",
+        "cols",
+        "rows",
+        "compacting",
+        "says",
+        "subagents",
+        "turns",
+        "lineage",
+        "claudeUntested",
+        "resources",
+        "shown",
+        "pages",
+        "sent",
+        "stranded",
+        "conversations",
+        "onDuty",
+        "verbs",
+        "calls"
+      ],
+      "additionalProperties": false
+    },
+    "HiredBy": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "session",
+        "callsign"
+      ],
+      "additionalProperties": false,
+      "description": "A hirer: the session it hired from, and its callsign."
+    },
+    "CheckoutState": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "is": {
+              "type": "string",
+              "const": "live"
+            }
+          },
+          "required": [
+            "is"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "is": {
+              "type": "string",
+              "const": "landed"
+            },
+            "on": {
+              "type": "string"
+            },
+            "empty": {
+              "type": "boolean",
+              "const": true
+            },
+            "edited": {
+              "type": "number"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "filed": {
+              "$ref": "#/definitions/FiledThread"
+            }
+          },
+          "required": [
+            "is"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "is": {
+              "type": "string",
+              "const": "gone"
+            }
+          },
+          "required": [
+            "is"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Where a checkout's work stands. `live`: work can go on there, so a note on it reaches someone. `landed`: its work is in its base, `on` naming that base while git still holds the worktree or a branch cut under its name, `empty` when git says no branch of it gained a commit since it was cut (there was nothing to land), `edited` how many of its commits landed as edited copies (carried) on `branch` (the landing read's), and `filed` once Tidy filed its thread. `gone`: its worktree is gone, and nothing says its work landed. The main checkouts are always live."
+    },
+    "FiledThread": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "tag",
+        "at"
+      ],
+      "additionalProperties": false,
+      "description": "A thread Tidy filed: its item's id and tag, and when it was filed, as a message heading writes a time."
+    },
+    "Status": {
+      "type": "string",
+      "enum": [
+        "booting",
+        "blocked",
+        "idle",
+        "working",
+        "needs_input",
+        "watching",
+        "done",
+        "failed",
+        "exited",
+        "lost"
+      ],
+      "description": "`blocked`: held before it starts by one of Claude's screens (`blocked.ts`) until the user answers it. `watching`: the main loop's turn ended while something it started can start its next turn without the user (a background task, a `/loop`, a cron); `done`: it ended with nothing but the user to wake it. `failed`: the main loop's last turn ended in an API error or a refusal, with no answer to review."
+    },
+    "BlockedKind": {
+      "type": "string",
+      "enum": [
+        "trust",
+        "login"
+      ],
+      "description": "Claude's screens that hold a session before it starts: nothing happens until the user answers on the screen, and no hook is raised while they show. `trust`: the workspace trust dialog, raised in every folder Claude hasn't been told to trust (every new worktree). `login`: first-run setup and sign-in, raised when Claude has no account on this machine."
+    },
+    "Attention": {
+      "type": "string",
+      "enum": [
+        "needs",
+        "ready",
+        "working",
+        "quiet",
+        "broken"
+      ],
+      "description": "How loudly a worker asks for you, the one thing every renderer colours: the status word keeps the fact."
+    },
+    "LineageSession": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "startedAt"
+      ],
+      "additionalProperties": false,
+      "description": "A session of a worker's lineage, and when it started (epoch ms)."
+    },
+    "CardResource": {
+      "type": "object",
+      "properties": {
+        "pid": {
+          "type": "number"
+        },
+        "command": {
+          "type": "string"
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "orphan": {
+          "type": "boolean"
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ResourceVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/ResourceCalls"
+        }
+      },
+      "required": [
+        "pid",
+        "command",
+        "ports",
+        "orphan",
+        "verbs",
+        "calls"
+      ],
+      "additionalProperties": false,
+      "description": "A process a session left running: `orphan` when re-parented to launchd."
+    },
+    "ResourceVerb": {
+      "type": "string",
+      "const": "reap",
+      "description": "A process a session left running can always be ended on its own."
+    },
+    "ResourceCalls": {
+      "type": "object",
+      "properties": {
+        "reap": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "reap/process"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "reap"
+      ],
+      "additionalProperties": false
+    },
+    "CardShown": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "number"
+        },
+        "session": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "file",
+            "url",
+            "link"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "at",
+        "kind",
+        "session",
+        "target"
+      ]
+    },
+    "CardPage": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        },
+        "shown": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "at",
+        "shown"
+      ],
+      "additionalProperties": false,
+      "description": "An html file the worker wrote, at its first write (epoch ms), and whether the worker showed it."
+    },
+    "CardSent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "callsign": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        },
+        "to": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "at",
+        "to"
+      ],
+      "description": "A message the worker sent another Claude session, with the callsign of the worker that received it."
+    },
+    "Unresumable": {
+      "type": "string",
+      "enum": [
+        "outside",
+        "gone"
+      ],
+      "description": "Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the floor's dirs moved, or it left the config), or it is a worktree whose folder is gone (`gone`: removed, or deleted)."
+    },
+    "CardConversation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "promptBy": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "number"
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConversationVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/ConversationCalls"
+        },
+        "id": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The user's latest prompt in this session, and Claude's latest answer to the main loop."
+        },
+        "answer": {
+          "type": "string"
+        },
+        "resumes": {
+          "$ref": "#/definitions/SessionLink"
+        },
+        "resumedBy": {
+          "$ref": "#/definitions/SessionLink"
+        }
+      },
+      "required": [
+        "calls",
+        "id",
+        "startedAt",
+        "verbs"
+      ],
+      "description": "`promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's."
+    },
+    "ConversationVerb": {
+      "type": "string",
+      "enum": [
+        "resume",
+        "goto"
+      ]
+    },
+    "ConversationCalls": {
+      "type": "object",
+      "properties": {
+        "resume": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "resume"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "SessionLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startedAt": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "callsign",
+        "id",
+        "startedAt"
+      ],
+      "description": "A session a conversation came from or went on to, with when it started."
+    },
+    "SessionRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "callsign"
+      ],
+      "additionalProperties": false,
+      "description": "A session by id, with the callsign of the worker it ran as."
+    },
+    "Seat": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "n"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "beside": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "beside"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the author it reviews (the author's card id)."
+    },
+    "CardVerb": {
+      "type": "string",
+      "enum": [
+        "drive",
+        "submit",
+        "resume",
+        "goto",
+        "brief",
+        "review",
+        "reap",
+        "kill",
+        "let-go",
+        "send-home",
+        "note"
+      ],
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a stranded worker off duty, its conversation left resumable; `note` adds a note to the review thread about its work (`NoteVerb`)."
+    },
+    "CardCalls": {
+      "type": "object",
+      "properties": {
+        "submit": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "submit"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "resume": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "resume"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "review": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "spawn"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "reap": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "reap"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "kill": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "kill"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "let-go": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "let-go"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "send-home": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "items": [
+              {
+                "type": "string",
+                "const": "kill"
+              },
+              {
+                "type": "object",
+                "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+              }
+            ],
+            "maxItems": 2
+          }
+        },
+        "note": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "review/append"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "description": "`note` takes the author and what the note says."
+    },
+    "FloorCollection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorItem"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "dir",
+        "items"
+      ],
+      "additionalProperties": false,
+      "description": "One of a floor's collections, every project's and its own, with the files it holds in id order. `dir`: where they are on disk, an item's file being `<dir>/<id>`. `description`: what it is for, as the config says."
+    },
+    "FloorItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "keptBy": {
+          "$ref": "#/definitions/KeptBy"
+        },
+        "id": {
+          "type": "string"
+        },
+        "size": {
+          "type": "number"
+        },
+        "modifiedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "modifiedAt",
+        "size",
+        "tag"
+      ],
+      "description": "`tag`: what the item is called on screen and by workers (`tagOf`)."
+    },
+    "KeptBy": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        },
+        "conversation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "session",
+        "callsign"
+      ],
+      "additionalProperties": false,
+      "description": "The worker that kept an item (`tower keep`), in the conversation it was in. An item made any other way has none."
+    },
+    "FloorWorktree": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "repos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorWorktreeRepo"
+          }
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The workers on duty and the shells whose cwd is inside any of its paths."
+        },
+        "state": {
+          "$ref": "#/definitions/WorktreeState"
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorktreeVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/WorktreeCalls"
+        }
+      },
+      "required": [
+        "name",
+        "repos",
+        "sessions",
+        "state",
+        "verbs",
+        "calls"
+      ],
+      "additionalProperties": false
+    },
+    "FloorWorktreeRepo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": {
+          "type": "string"
+        },
+        "atRisk": {
+          "type": "boolean"
+        },
+        "dirty": {
+          "type": "number"
+        },
+        "unpushed": {
+          "type": "number"
+        },
+        "absorbed": {
+          "type": "boolean"
+        },
+        "carried": {
+          "$ref": "#/definitions/Carried"
+        },
+        "against": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "own": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "head": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "present": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "absorbed",
+        "atRisk",
+        "dir",
+        "dirty",
+        "path",
+        "present",
+        "risk",
+        "unpushed"
+      ],
+      "description": "`atRisk`: work only this repo's worktree holds; its `risk` names it."
+    },
+    "Carried": {
+      "type": "object",
+      "properties": {
+        "commits": {
+          "type": "number"
+        },
+        "edited": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "commits",
+        "edited"
+      ],
+      "additionalProperties": false,
+      "description": "A branch landed as copies: `commits` of it are in its base, `edited` of them a different patch from the branch's."
+    },
+    "WorktreeState": {
+      "type": "string",
+      "enum": [
+        "live",
+        "lost",
+        "at-risk",
+        "carried",
+        "removable"
+      ],
+      "description": "`carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy."
+    },
+    "WorktreeVerb": {
+      "type": "string",
+      "enum": [
+        "recut",
+        "prune",
+        "remove",
+        "discard"
+      ],
+      "description": "`recut` restores a lost worktree's folders from its branch, `prune` forgets them; `remove` is offered only when nothing would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named on the checkout's review thread first."
+    },
+    "WorktreeCalls": {
+      "type": "object",
+      "properties": {
+        "recut": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "worktree/recut"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "prune": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "worktree/prune"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "remove": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "worktree/remove"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "discard": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "worktree/discard"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "description": "`discard` carries what each repo held as shown, refused once it moved; it takes the author of its note."
+    },
+    "FloorBranch": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "repos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "dir": {
+                "type": "string"
+              },
+              "unpushed": {
+                "type": "number"
+              },
+              "absorbed": {
+                "type": "boolean"
+              },
+              "carried": {
+                "$ref": "#/definitions/Carried"
+              },
+              "against": {
+                "type": "string"
+              },
+              "risk": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "own": {
+                "type": "number"
+              },
+              "base": {
+                "type": "string"
+              },
+              "tree": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "absorbed",
+              "base",
+              "dir",
+              "risk",
+              "unpushed"
+            ]
+          }
+        },
+        "absorbed": {
+          "type": "boolean",
+          "description": "Absorbed in every repo that has it: deleting it loses nothing."
+        },
+        "carried": {
+          "type": "boolean",
+          "description": "Not absorbed, but absorbed or carried in every repo that has it: deleted by its own `delete`, never by Tidy."
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BranchVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/BranchCalls"
+        }
+      },
+      "required": [
+        "name",
+        "repos",
+        "absorbed",
+        "carried",
+        "verbs",
+        "calls"
+      ],
+      "additionalProperties": false
+    },
+    "BranchVerb": {
+      "type": "string",
+      "enum": [
+        "recut",
+        "delete"
+      ],
+      "description": "`delete` is offered only on a branch absorbed into its base, or carried there as copies."
+    },
+    "BranchCalls": {
+      "type": "object",
+      "properties": {
+        "recut": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "branch/recut"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "delete": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "branch/delete"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "FloorThread": {
+      "type": "object",
+      "properties": {
+        "checkout": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "messages": {
+          "type": "number"
+        },
+        "last": {
+          "type": "object",
+          "properties": {
+            "author": {
+              "type": "string"
+            },
+            "at": {
+              "type": "string"
+            },
+            "n": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "author",
+            "at",
+            "n"
+          ],
+          "additionalProperties": false
+        },
+        "landed": {
+          "type": "boolean"
+        },
+        "state": {
+          "$ref": "#/definitions/CheckoutState",
+          "description": "Where its checkout's work stands: a note is offered only while it is live."
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NoteVerb"
+          }
+        },
+        "calls": {
+          "$ref": "#/definitions/NoteCalls"
+        }
+      },
+      "required": [
+        "checkout",
+        "id",
+        "tag",
+        "messages",
+        "landed",
+        "state",
+        "verbs",
+        "calls"
+      ],
+      "additionalProperties": false,
+      "description": "A checkout's thread: `messages` it holds and the `last` one. `landed`: the checkout's work has landed, so Tidy files it (`landedThreadId`). A worktree's has when no worktree of that name is in use or holds work, and every branch cut under the name is absorbed into its base; `main`'s when no worker runs there and every main checkout is clean and level with its upstream."
+    },
+    "NoteVerb": {
+      "type": "string",
+      "const": "note",
+      "description": "`note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on work that landed, or whose worktree is gone, reaches nobody. The API still takes one there."
+    },
+    "NoteCalls": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "review/append"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "GalleryShowing": {
+      "type": "object",
+      "properties": {
+        "worker": {
+          "$ref": "#/definitions/SessionRef"
+        },
+        "shown": {
+          "$ref": "#/definitions/CardShown"
+        }
+      },
+      "required": [
+        "worker",
+        "shown"
+      ],
+      "additionalProperties": false,
+      "description": "A showing in a floor's gallery: what was shown, under the worker that carries it now."
+    },
+    "TidyPlan": {
+      "type": "object",
+      "properties": {
+        "worktrees": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "threads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prune": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Prune"
+          }
+        },
+        "logs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OldLog"
+          }
+        }
+      },
+      "required": [
+        "worktrees",
+        "branches",
+        "threads",
+        "prune",
+        "logs"
+      ],
+      "additionalProperties": false,
+      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`)."
+    },
+    "Prune": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "type": "string",
+              "const": "reap"
+            },
+            "id": {
+              "type": "string"
+            },
+            "pid": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "t",
+            "id",
+            "pid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "type": "string",
+              "const": "kill"
+            },
+            "id": {
+              "type": "string"
+            },
+            "since": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "t",
+            "id",
+            "since"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "`reap`: a process whose session no longer runs, orphaned or not. `kill`: a hired worker done with its purpose, quiet since `since` (epoch ms); it can be resumed, but its next turn reads the whole conversation again, uncached."
+    },
+    "OldLog": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "description": "A plain log Tidy would archive, by session id, with its size on disk."
+    },
+    "FloorVerb": {
+      "type": "string",
+      "enum": [
+        "spawn",
+        "cut",
+        "shell",
+        "editor",
+        "tidy"
+      ],
+      "description": "`spawn` starts a session, `cut` one in a new worktree of every dir, `shell` a shell in one of the floor's dirs, `editor` opens a dir in the user's editor, `tidy` applies the floor's `TidyPlan` as listed: worktrees and kept branches, landed review threads, leftover processes and idle workers."
+    },
+    "FloorCalls": {
+      "type": "object",
+      "properties": {
+        "spawn": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "spawn"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "cut": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "spawn"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "shell": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "shell/spawn"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "editor": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "open"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "tidy": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "tidy"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false,
+      "description": "`spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none."
+    },
+    "ShelfEntry": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "html": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "html",
+            "label"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "md": {
+              "type": "string"
+            },
+            "order": {
+              "type": "string",
+              "const": "desc"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "md"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "url"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "link": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "link"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "renderer": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "renderer"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "item": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "item",
+            "label"
+          ]
+        }
+      ],
+      "description": "Something kept on a project's shelf, to read or use beside its sessions: a page the project builds (`html`), a set of markdown files (`md`, a glob, in name order or `desc`), a web page shown in place (`url`), such as a local server's UI, or one opened in a new tab (`link`), for pages that refuse to be framed, such as claude.ai artifacts, a declared renderer framed as a page (`renderer`, its name), or an item of one of the project's collections (`item`, `<collection>/<id>`, the id its file name): a markdown item is read like an `md` entry's file, any other is framed like an `html` entry's page, alone. Paths are relative to the project's hub."
+    },
+    "Wait": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/definitions/WaitReason"
+        },
+        "since": {
+          "type": "number"
+        },
+        "detail": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "key",
+        "reason",
+        "since"
+      ],
+      "additionalProperties": false,
+      "description": "One wait of one worker. `key` (`id@since`) names this wait alone: the worker's next wait has another, so a renderer keys what it does about a wait (a notification, a dismissal, a visit) on it. `since`: epoch ms, the card's `enteredAt`. `detail`: the screen that blocks it, or the tool it asks to run, when known."
+    },
+    "WaitReason": {
+      "type": "string",
+      "enum": [
+        "blocked",
+        "asks",
+        "failed",
+        "done"
+      ],
+      "description": "Why a worker waits on you: `blocked` by a screen, `asks` a question, or holds an outcome nobody has typed to since, `failed` or `done`."
+    },
+    "RateLimit": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "percentUsed": {
+          "type": "number"
+        },
+        "resetsAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "percentUsed"
+      ],
+      "additionalProperties": false
+    },
+    "Today": {
+      "type": "object",
+      "properties": {
+        "since": {
+          "type": "number"
+        },
+        "spend": {
+          "type": "number"
+        },
+        "agentHours": {
+          "type": "number"
+        },
+        "waits": {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "number"
+            },
+            "p50": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "n",
+            "p50"
+          ],
+          "additionalProperties": false
+        },
+        "budget": {
+          "$ref": "#/definitions/WeeklyBudget"
+        }
+      },
+      "required": [
+        "since",
+        "spend",
+        "agentHours",
+        "waits"
+      ],
+      "additionalProperties": false,
+      "description": "Today so far, as the board carries it: spend, agent-hours and the waits answered since `since`, the local day's start (epoch ms), and the weekly budget."
+    },
+    "WeeklyBudget": {
+      "type": "object",
+      "properties": {
+        "percentUsed": {
+          "type": "number"
+        },
+        "resetsAt": {
+          "type": "string"
+        },
+        "since": {
+          "type": "number"
+        },
+        "spent": {
+          "type": "number"
+        },
+        "usdPerPercent": {
+          "type": "number"
+        },
+        "usdLeft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "percentUsed",
+        "resetsAt",
+        "since",
+        "spent"
+      ],
+      "additionalProperties": false,
+      "description": "The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where its percent moved, what was spent and how far the percent climbed, so what 1% buys and what the percent left buys at that rate. The rate is unknown until the percent has climbed."
+    },
+    "BoardError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ErrorCode"
+            },
+            {
+              "type": "string",
+              "const": "disconnected"
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "Why a renderer has no live board: the tower can't build it, `config` until the user fixes the config, `internal` for a failure of its own; or `disconnected`, told by `/tower.js` (never by the tower) while the tower doesn't answer."
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "invalid",
+        "not_found",
+        "refused",
+        "unavailable",
+        "exists",
+        "would_lose",
+        "lost",
+        "offline",
+        "worktree_failed",
+        "config",
+        "internal"
+      ]
+    }
+  }
+}

@@ -90,6 +90,7 @@ import type { Resource } from '../bridge/resources.ts'
 import type { BoardMsg, Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Route, type RouteInput } from '../shared/api.ts'
 import { z } from 'zod'
+import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { designCss, fonts } from '../shared/design.ts'
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
@@ -256,6 +257,17 @@ const apiSchema = JSON.stringify({
   v: API_VERSION,
   verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
   reads: Object.fromEntries(Object.entries(QUERIES).map(([read, query]) => [read, { query: z.toJSONSchema(query, { io: 'input' }) }])),
+  streams: {
+    board: {
+      description: 'The whole system as one view, again whenever it changes.',
+      read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+      message: boardSchema,
+    },
+    'screen/<id>': { description: 'A session\'s screen as a snapshot, then its output (`ScreenMsg`, src/shared/shelf-page.ts).' },
+    'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
+    'shell/<id>': { description: 'A shell\'s screen, then its output (`ShellStream`, src/shared/terms.ts).' },
+    mux: { description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' },
+  },
   error: z.toJSONSchema(ApiErrorSchema),
 })
 

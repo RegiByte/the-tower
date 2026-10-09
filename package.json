@@ -29,7 +29,8 @@
     "spike:pty": "tsx spikes/pty/passthrough.ts",
     "typecheck": "tsc -p . && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
     "test": "node --import tsx --test test/*.test.ts",
-    "tool:contrast": "tsx scripts/contrast.ts"
+    "tool:contrast": "tsx scripts/contrast.ts",
+    "schema:board": "tsx scripts/board-schema.ts"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",
@@ -49,6 +50,7 @@
     "@types/three": "^0.186.0",
     "esbuild": "^0.28.2",
     "three": "^0.186.1",
+    "ts-json-schema-generator": "^2.9.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

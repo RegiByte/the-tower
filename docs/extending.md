@@ -77,7 +77,7 @@ tower.subscribe((board) => {
 ```
 
 The board is the whole system as one value, sent again whenever it changes: its type is `Board` in
-`src/bridge/board.ts`. Each card, conversation and floor carries `verbs`, what can be done to it now, and `calls`,
+`src/bridge/board.ts`, described as JSON Schema by `tower api board` (each event is `{v, board}`, not the board itself). Each card, conversation and floor carries `verbs`, what can be done to it now, and `calls`,
 those verbs as ready requests: `tower.run(card.calls.resume)`. `/tower.js` documents its every member in its header
 (`curl http://127.0.0.1:4317/tower.js | head -60`).
 
