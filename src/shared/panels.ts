@@ -58,7 +58,7 @@ import { markRanges, wordRanges } from './words.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 import { identityOf } from './press.ts'
 
-export { markRanges, wordRanges, WORDS_ALIKE, WORDS_LONGEST, type CharRange } from './words.ts'
+export { markRanges, wordRanges, WORDS_ALIKE, WORDS_EDITS, WORDS_LONGEST, type CharRange } from './words.ts'
 
 /** The Finder and editor controls of a file, each opened by `open`, which names the element and its role. */
 const fileActsHtml = (open: string, close: string, path: string, line?: number) => {

@@ -12,21 +12,34 @@ export type CharRange = [number, number]
 export const WORDS_ALIKE = 0.5
 /** The longest line whose words are marked: longer ones are data or minified code, where marks only add noise. */
 export const WORDS_LONGEST = 1000
+/**
+ * The most tokens a pair may change for its words to be marked. The diff's cost grows with it: unbounded, 200 rewritten
+ * lines of 1000 characters took 5 s; at 100, 150 ms. In this repo's last 300 commits an edited line changed a median
+ * of 9 tokens, 62 at the 99th percentile, and 2 of 2419 more than 100.
+ */
+export const WORDS_EDITS = 100
 
-/** Code's tokens: a word (letters, digits, `_` and `$`), a run of whitespace, or any other single character. */
-const TOKEN = /[\p{L}\p{N}_$]+|\s+|[^]/gu
+/**
+ * Code's tokens: a word (letters with their combining marks, digits, `_` and `$`), a run of whitespace, or any other
+ * single character.
+ */
+const TOKEN = /[\p{L}\p{M}\p{N}_$]+|\s+|[^]/gu
 
 /**
  * Each side's changed characters, `old`'s and `now`'s, after diffing them by token; none when the two share less than
  * `WORDS_ALIKE` of their characters (whitespace aside) or either is longer than `WORDS_LONGEST`. Changed tokens apart
- * only by whitespace make one range.
+ * only by whitespace make one range. The diff gives up past half the pair's tokens changed (the threshold's own
+ * measure, in tokens) or past `WORDS_EDITS`, so a rewritten pair costs little.
  */
 export function wordRanges(old: string, now: string): { old: CharRange[]; now: CharRange[] } | undefined {
   if (old.length > WORDS_LONGEST || now.length > WORDS_LONGEST) return undefined
   const ranges = { old: [] as CharRange[], now: [] as CharRange[] }
   const at = { old: 0, now: 0 }
   let kept = 0
-  for (const part of diffArrays(old.match(TOKEN) ?? [], now.match(TOKEN) ?? [])) {
+  const [a, b] = [old.match(TOKEN) ?? [], now.match(TOKEN) ?? []]
+  const parts = diffArrays(a, b, { maxEditLength: Math.min(WORDS_EDITS, Math.ceil((a.length + b.length) * (1 - WORDS_ALIKE))) })
+  if (!parts) return undefined
+  for (const part of parts) {
     const text = part.value.join('')
     const sides = part.added ? (['now'] as const) : part.removed ? (['old'] as const) : (['old', 'now'] as const)
     if (!part.added && !part.removed) kept += 2 * text.replace(/\s/g, '').length

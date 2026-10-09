@@ -68,12 +68,16 @@ scrolling a half alone would part the sides. The head with the layout stays at t
 
 **Words (2026-10-09).** An edited line has the words it changed marked, as GitHub does, in both layouts. The pairs are
 `splitRows`' (a removed line beside the added line after it); an unpaired line has none.
-[`wordRanges`](ref:hub/src/shared/words.ts#wordRanges) diffs a pair by token (a word of letters, digits, `_` and `$`,
+[`wordRanges`](ref:hub/src/shared/words.ts#wordRanges) diffs a pair by token (a word of letters with their combining marks, digits, `_` and `$`,
 a run of whitespace, any other character alone) with jsdiff's `diffArrays`, and gives each side's changed characters,
 changed tokens apart only by whitespace joined. A pair sharing less than half its characters (whitespace aside,
 `WORDS_ALIKE`) was rewritten, and a line over 1000 characters (`WORDS_LONGEST`) is data or minified: neither is
 marked. On this repo's last 300 commits, pairs under half alike were mostly rewrites and those above mostly edits,
-and 99% of edited lines are under 650 characters.
+and 99% of edited lines are under 650 characters. The share is counted in characters, so a short line whose one
+word changed (`x = foo` → `x = bar`) reads as rewritten and is not marked. The diff is drawn on first sight of a file,
+on the page's thread, so it is bounded: it gives up past half a pair's tokens changed, or past 100 (`WORDS_EDITS`),
+and the pair is left unmarked. Unbounded, 200 rewritten lines of 1000 characters took 5 s; bounded, 150 ms. In the
+same history an edited line changed a median of 9 tokens, and 2 of 2419 more than 100.
 
 **Impact.** The tower page has a Changes pane beside Terminal and Brief, and Tower 3D the same view at a desk, with a viewed/total tally on its tab.
 It is the surface review threads anchor notes to: its line numbers pick lines for a note, one by a click or a range

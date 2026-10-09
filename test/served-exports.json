@@ -408,6 +408,7 @@
       "DIFF_LAYOUT_MEANS",
       "STATS_ALL",
       "WORDS_ALIKE",
+      "WORDS_EDITS",
       "WORDS_LONGEST",
       "anchorOf",
       "anchorSpot",
