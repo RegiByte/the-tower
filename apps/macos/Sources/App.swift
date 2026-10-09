@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
   /** The tower's address once it is up: the origin whose pages stay in the window. */
   var home: URL?
   var titleWatch: NSKeyValueObservation?
+  var attention: Attention!
   let renderersMenu = NSMenu(title: "Renderer")
 
   func applicationDidFinishLaunching(_ notification: Notification) {
@@ -34,6 +35,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     let config = WKWebViewConfiguration()
     config.mediaTypesRequiringUserActionForPlayback = []
     config.preferences.isElementFullscreenEnabled = true
+    // Hidden (⌘W) the page keeps hearing the board, as a background tab does, and rings.
+    config.preferences.inactiveSchedulingPolicy = .throttle
     web = TowerWebView(frame: .zero, configuration: config)
     web.isInspectable = true
     web.navigationDelegate = self
@@ -49,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
       if let title = web.title, !title.isEmpty { self?.window.title = title }
     }
     window.makeKeyAndOrderFront(nil)
+    attention = Attention(open: { [weak self] id in self?.openSession(id) }, watching: { [weak self] id in self?.isWatching(id) ?? false })
     NSApp.activate()
     start()
   }
@@ -64,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
           self.home = url
           self.web.load(URLRequest(url: url))
           self.loadRenderers()
+          self.attention.start(home: url)
         case .failure(let failure as StartFailure):
           self.showStatus(failure.title, detail: failure.detail, retry: true)
         case .failure(let error):
@@ -134,6 +139,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   @objc func showTower() {
     window.makeKeyAndOrderFront(nil)
+    NSApp.activate()
+  }
+
+  /** A worker's session in the window: the tower page opens one at `/#<id>`, and follows the hash once open. */
+  func openSession(_ id: String) {
+    showTower()
+    guard let home else { return }
+    if let url = web.url, isTower(url), url.path == home.path {
+      web.evaluateJavaScript("location.hash = \(String(reflecting: id))")
+    } else {
+      web.load(URLRequest(url: URL(string: "#\(id)", relativeTo: home)!))
+    }
+  }
+
+  /** Whether the user is looking at the worker's session: the app in front, its window key, at `/#<id>`. */
+  func isWatching(_ id: String) -> Bool {
+    NSApp.isActive && window.isKeyWindow && web.url?.fragment == id
   }
 
   // MARK: Window
