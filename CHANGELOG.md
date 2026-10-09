@@ -12,7 +12,11 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
-## Unreleased
+## v1.4.0
+
+Work that landed edited no longer reads as at risk, work that never landed can be thrown away on purpose, the archive
+keeps crews together, and Tower 3D catches up with the page on letting go, presses and shells. It asks nothing of you:
+no host restart, no config change (API 1.25 → 1.28, additions only).
 
 - Work that landed edited, and work thrown away on purpose (API 1.26, additions only). A branch whose commits landed as
   cherry-picked, amended, renumbered or conflict-resolved copies is `carried`: every commit missing from its base has
@@ -29,8 +33,7 @@ Commit messages hold the detail.
   step per depth, crews by their latest start, the newest first, and a worker's earlier lives after its latest. A filter
   keeps the order. `/cards.js` adds `pastCrews`, `pastMatching` and `pastSize`. Tower 3D's archive list no longer runs
   past its panel.
-- Tower 3D catches up with the page in this entry and the three below (API 1.28, additions to `/cards.js` only). It lets a
-  stranded worker go: Let go beside Resume in its desk panel, X held at its desk in the world, and a floor panel's
+- Tower 3D lets a stranded worker go (API 1.28 for this item and the three below, additions to `/cards.js` only): Let go beside Resume in its desk panel, X held at its desk in the world, and a floor panel's
   "resume all N stranded", each asked first the way the page asks. `/cards.js` adds `letGoAsk`,
   `letGoneLine`, `resumeAllAsk` and `resumeStranded`, the words and the loop both renderers share.
 - Tower 3D's destructive buttons press through `/press.js`: busy until the tower answers, the second press's "sure?"
