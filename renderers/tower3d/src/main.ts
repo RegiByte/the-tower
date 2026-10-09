@@ -994,7 +994,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   drawer: (a) => openSide({ kind: 'drawer', project: a.project, n: a.n }),
   thread(a, verb) {
     const t = floorOf(a.project).threads.find((t) => t.checkout === a.checkout)
-    if (verb === 'send' && t) return sendNotes(floorThread(floorOf(a.project), t), sendTarget(floorOf(a.project), a.checkout, pickedFor(a)))
+    if (verb === 'send' && t) return sendNotes(floorThread(floorOf(a.project), t), sendTarget(floorOf(a.project), a.checkout, undefined))
     openThread(a.project, a.checkout)
   },
   station(a, verb) {
@@ -1861,7 +1861,7 @@ function shownThread(): ThreadPlace | undefined {
 const noting = (t: ThreadPlace) => t.offers.verbs.includes('note')
 
 /** The worker the viewer picked to send a thread's notes to. */
-const pickedFor = (at: { project: string; checkout: string }) => s.sendPicks.get(`${at.project}/${at.checkout}`)
+const pickedFor = (at: ThreadPlace) => s.sendPicks.get(`${at.project}/${at.checkout}`)
 
 /** A thread as the Reviews tab and the thread panel draw it: anchors looked for in its reader's Changes. */
 const threadView = (at: ThreadPlace): ThreadView =>
