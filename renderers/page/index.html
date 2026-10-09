@@ -428,7 +428,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, threadItemFiles } from '/panels.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -915,7 +915,7 @@ const shownTabHtml = (c, s, on) => {
   return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} data-tip="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
   `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
   (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
-  (on && s.kind === 'file' ? fileButtonsHtml(s.target) : '') +
+  (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
   `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
 }
 
@@ -1320,7 +1320,7 @@ function render() {
   keepingFocus($('floors'), () => redrawHeld($('floors'), floorsTopDown().map(floorHtml).join('')))
   drawSideView()
   repaint($('rail'), railHtml(waiting))
-  $('side-foot').innerHTML = `<span>config</span><code data-tip="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}`
+  $('side-foot').innerHTML = board.config ? `<span>config</span><code data-tip="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}` : ''
   const c = selected && findCard(selected)
   if (c) barHtml(c)
   if (draftOpen) draftHeadHtml()
@@ -2311,35 +2311,41 @@ function syncSpawn() {
 }
 $('spawn').addEventListener('input', syncSpawn)
 $('spawn').addEventListener('click', (e) => {
-  const close = e.target.closest('[data-close]')?.dataset.close
-  if (close === 'start' && !$('spawn').querySelector('form').reportValidity()) return
-  if (close) $('spawn').close(close)
+  const close = e.target.closest('[data-close]')
+  if (!close || spawnStarting()) return
+  if (close.dataset.close === 'cancel') return $('spawn').close('cancel')
+  if ($('spawn').querySelector('form').reportValidity()) startSpawn(close)
 })
+/** While Start waits on its reply the form stays: closing it would keep as a draft a prompt the worker may already have. */
+$('spawn').addEventListener('cancel', (e) => spawnStarting() && e.preventDefault())
+const spawnStarting = () => $('spawn').querySelector('[data-close=start]')?.getAttribute('aria-busy') === 'true'
+
+/** Start stays busy until the tower answers: the form closes on a new worker and says why when there is none. */
+async function startSpawn(button) {
+  const f = floorOf($('spawn').dataset.project)
+  const error = $('spawn').querySelector('[data-spawn-error]')
+  error.textContent = ''
+  const reply = await pressing(button, () => tower.run(...spawnCall(f, syncSpawn()))).catch((err) => ((error.textContent = err.message), undefined))
+  if (!reply) return
+  $('spawn').close('start')
+  if (reply.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
+  if (spawnDraft) await deleteSent(spawnDraft)
+  selectArriving(reply.id)
+}
 $('spawn').addEventListener('keydown', (e) => {
   if (commandOf(board.keys, e, 'field') === 'submit') $('spawn').querySelector('[data-close=start]').click()
 })
 
-$('spawn').addEventListener('close', async () => {
-  if ($('spawn').returnValue !== 'start') return keepSpawnPrompt('')
-  const f = floorOf($('spawn').dataset.project)
-  const reply = await tower.run(...spawnCall(f, syncSpawn())).catch((err) => (toast(err.message), keepSpawnPrompt(`${err.message.replace(/\.?$/, '.')} `), undefined))
-  if (!reply) return
-  if (reply.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
-  if (spawnDraft) await deleteSent(spawnDraft)
-  selectArriving(reply.id)
-})
+$('spawn').addEventListener('close', () => $('spawn').returnValue !== 'start' && keepSpawnPrompt())
 
-/**
- * A prompt typed into a form closed without starting, or whose start failed, is kept in the floor's drafts, or in the
- * draft it was opened on; `why` heads the toast that says so.
- */
-async function keepSpawnPrompt(why) {
+/** A prompt typed into a form closed without starting is kept in the floor's drafts, or in the draft it was opened on. */
+async function keepSpawnPrompt() {
   const f = floorOf($('spawn').dataset.project)
   const text = $('spawn').querySelector('[name=prompt]').value
   if (!f || !draftsOf(f)) return
   const kept = await keepUnsent(draftIo, f.id, spawnDraft, text)
   if (kept && draftOpen === kept) $('draft-text').value = kept.text
-  if (kept) toast(`${why}${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
+  if (kept) toast(`${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id)})`)
 }
 
 async function resume(button, call) {

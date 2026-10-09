@@ -18,7 +18,9 @@
     "hub/src/shared/drafts.ts#restore",
     "hub/src/collections.ts#restoreItem",
     "hub/src/shared/api.ts#API_VERSION",
-    "hub/renderers/page/index.html"
+    "hub/src/shared/cards.ts#spawnFormHtml",
+    "hub/renderers/page/index.html",
+    "hub/renderers/tower3d/src/main.ts"
   ]
 }
 ---
@@ -43,6 +45,10 @@ them, and nothing it needs lives in the tower page.
   every button. Bar buttons name whom they act on (`data-of="<id>"`). The tower page presses through it for resume,
   review, kill, send home, let go, resume all (one press over every resume, busy to the last reply), tidy (all and per row), the worktree verbs, ending leftovers, notes and sending them, shells
   and the editor.
+- The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/cards.ts#spawnFormHtml), both renderers) stays open while
+  its Start is pressed: Start is busy until the spawn answers, Esc and Cancel wait for it, the form closes on a new
+  worker and shows a refusal in its own alert line (`data-spawn-error`), the prompt still in place to fix and start
+  again. A form closed while Start was in flight would have kept as a draft a prompt the new worker already had.
 - [`designCss`](ref:hub/src/shared/design.ts#designCss) draws every button's states, whatever the renderer's own
   look: `:active` sinks a pixel, `disabled` or `aria-disabled` (held, which stays focusable) fades to .45, and
   `aria-busy` sweeps a bar along its foot in its own text colour, still at full contrast; with reduced motion the bar

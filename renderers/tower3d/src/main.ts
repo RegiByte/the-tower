@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { discard as discardDraft, discardItem, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
-import type { Call, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
+import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, holdFill, offerForKey, offersOf, reachOf, sendTargetOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { REVIEWS, THE_USER, sendText, threadId, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import type { CheckoutState, FloorThread } from '../../../src/bridge/reviews.ts'
@@ -12,6 +12,7 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
+import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can } from './cards.ts'
 import { hueOf } from './avatar.ts'
@@ -2132,8 +2133,10 @@ async function spawnShell(c: Call<'shell/spawn'>, cwd: string) {
 }
 
 /** A new worker from the form's values. Answers its session id once it started. */
-async function hireWorker(project: string, form: SpawnForm) {
-  const reply = await offered(...spawnCall(floorOf(project), form))
+const hireWorker = async (project: string, form: SpawnForm) => spawnedId(await offered(...spawnCall(floorOf(project), form)))
+
+/** A spawn's reply: the worktree it cut told, and the new session's id. */
+function spawnedId(reply: Replies['spawn'] | undefined) {
   if (reply?.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
   return reply?.t === 'spawned' ? reply.id : undefined
 }
@@ -2247,10 +2250,27 @@ function syncSpawn() {
 spawn.addEventListener('input', syncSpawn)
 /** A shelf page runs sandboxed without `allow-forms`: the dialog closes from its buttons, never by a form submit. */
 spawn.addEventListener('click', (e) => {
-  const close = (e.target as HTMLElement).closest<HTMLElement>('[data-close]')?.dataset.close
-  if (close === 'start' && !spawnFormEl().reportValidity()) return
-  if (close) spawn.close(close)
+  const close = (e.target as HTMLElement).closest<HTMLElement>('[data-close]')
+  if (!close || spawnStarting()) return
+  if (close.dataset.close === 'cancel') return spawn.close('cancel')
+  if (spawnFormEl().reportValidity()) void startSpawn(close)
 })
+/** While Start waits on its reply the form stays, so its draft is sent only with a worker started on it. */
+spawn.addEventListener('cancel', (e) => spawnStarting() && e.preventDefault())
+const spawnStarting = () => spawn.querySelector('[data-close=start]')?.getAttribute('aria-busy') === 'true'
+
+/** Start stays busy until the tower answers: the form closes on a new worker, at whose terminal you sit, and says why when there is none. */
+async function startSpawn(button: HTMLElement) {
+  const error = spawn.querySelector('[data-spawn-error]')!
+  error.textContent = ''
+  const reply = await pressing(button, () => tower.run(...spawnCall(floorOf(spawn.dataset.project!), syncSpawn()))).catch((err: Error) => ((error.textContent = err.message), undefined))
+  const id = spawnedId(reply)
+  if (!id) return
+  const note = spawnNote
+  spawn.close('start')
+  s.pendingDesk = id
+  if (note) await sent(note)
+}
 spawn.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) spawn.querySelector<HTMLElement>('[data-close=start]')!.click()
 })
@@ -2262,10 +2282,7 @@ async function openSpawnOnNote(project: string, note: Held) {
 
 spawn.addEventListener('close', async () => {
   showPaused()
-  const note = spawnNote
   spawnNote = undefined
-  if (spawn.returnValue !== 'start') return
-  if ((await startWorker(spawn.dataset.project!, syncSpawn())) && note) await sent(note)
 })
 
 /** The draft editor beside the world: saved as you type, on leaving, and before it is carried or sent. */

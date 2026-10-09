@@ -32,7 +32,7 @@
  *   data-copy="<text>"         copy the text (the thread's tag)
  *   data-copy-code             copy a fence's code in a note (`/markdown.js`)
  *
- *   Files, wherever a panel names one (`fileButtonsHtml`), and any renderer's own (`fileCall` gives the call)
+ *   Files, wherever a panel names one (`fileButtonsHtml`, `fileSpansHtml`), and any renderer's own (`fileCall` gives the call)
  *   data-reveal="<path>"       show the file or folder in Finder through `reveal`
  *   data-edit="<path>"         open it in the user's editor through `edit`, at `data-line="<n>"` when the element has one
  *
@@ -55,13 +55,18 @@ import { markdownHtml } from './markdown.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 import { identityOf } from './press.ts'
 
-/**
- * Quiet buttons that show a file or folder in Finder and open it in the user's editor, at `line` when given. Spans, so they may sit
- * inside a button such as a tab.
- */
-export const fileButtonsHtml = (path: string, line?: number) =>
-  `<span class="file-acts"><span class="file-act" role="button" data-reveal="${esc(path)}" aria-label="reveal in Finder" data-tip="reveal ${esc(path)} in Finder">${ICON.finder}</span>` +
-  `<span class="file-act" role="button" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} aria-label="open in your editor" data-tip="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}</span></span>`
+/** The Finder and editor controls of a file, each opened by `open`, which names the element and its role. */
+const fileActsHtml = (open: string, close: string, path: string, line?: number) => {
+  const name = esc(path.replace(/\/$/, '').split('/').pop()!)
+  return `<span class="file-acts">${open} class="file-act" data-reveal="${esc(path)}" aria-label="reveal ${name} in Finder" data-tip="reveal ${esc(path)} in Finder">${ICON.finder}${close}` +
+    `${open} class="file-act" data-edit="${esc(path)}" ${line ? `data-line="${line}"` : ''} aria-label="open ${name} in your editor" data-tip="open ${esc(path)}${line ? `:${line}` : ''} in your editor">${ICON.editor}${close}</span>`
+}
+
+/** Quiet buttons that show a file or folder in Finder and open it in the user's editor, at `line` when given. */
+export const fileButtonsHtml = (path: string, line?: number) => fileActsHtml('<button type="button"', '</button>', path, line)
+
+/** `fileButtonsHtml` for a place inside another button, such as a tab, where a button may not sit: the same controls as spans. */
+export const fileSpansHtml = (path: string) => fileActsHtml('<span role="button"', '</span>', path)
 
 /** The call a click on a `data-reveal` or `data-edit` element makes: none when the click was elsewhere. */
 export function fileCall(target: Element): Call<'reveal' | 'edit'> | undefined {
@@ -719,7 +724,7 @@ export const panelsCss = `
 .shown-tab { display: inline-grid; grid-auto-flow: column; grid-template-columns: minmax(0, max-content); align-items: center; overflow: hidden; white-space: nowrap; }
 .shown-tab > .shown-name { min-width: 0; max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
 .file-acts { display: inline-flex; gap: var(--sp-2xs); flex: none; }
-.file-act { min-width: var(--control); min-height: var(--control); display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); cursor: pointer; }
+.file-act { min-width: var(--control); min-height: var(--control); display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); padding: 0; background: none; color: var(--muted); cursor: pointer; }
 .file-act:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
 .reviews-panel .anchor .where .file-acts { margin-left: auto; }
 .changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }

@@ -779,6 +779,7 @@ export function spawnFormHtml(f: Floor, { sign, draft }: { sign: string; draft?:
       </div>
     </div>
   </div>
+  <p class="spawn-error" role="alert" data-spawn-error></p>
   <footer><p class="summary" data-summary>${spawnSummaryHtml(f, v)}</p>
     <button type="button" data-close="cancel">Cancel</button><button type="button" class="primary" data-close="start">Start <kbd>⌘⏎</kbd></button></footer>
 </form>`

@@ -1,7 +1,7 @@
 import { documentCss } from '../../../src/shared/design.ts'
 import { draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { fileButtonsHtml, usd } from '../../../src/shared/panels.ts'
+import { fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
@@ -304,7 +304,7 @@ const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boo
   const from = shownFrom(c.lineage, s)
   return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" data-tip="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
     `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? '↗ ' : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
-    `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" data-tip="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileButtonsHtml(s.target) : ''}</button>`
+    `${on && s.kind !== 'link' ? `<span class="out" data-out="${esc(shownHref(s))}" data-tip="open in a browser tab">↗</span>` : ''}${on && s.kind === 'file' ? fileSpansHtml(s.target) : ''}</button>`
 }
 
 const TAB_NAME = { screen: 'Terminal', brief: 'Logbook', changes: 'Changes', reviews: 'Reviews' } as const

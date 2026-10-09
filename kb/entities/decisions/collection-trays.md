@@ -37,7 +37,7 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
   fold lists the threads Tidy filed ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the
   board's `reviews` items, no read needed), each opened in the item view. A live thread no worker has been in opens
   there too.
-- A prompt in the new-worker form that closes without Start, or whose Start fails, is kept
+- A prompt in the new-worker form that closes without starting is kept
   ([`keepUnsent`](ref:hub/src/shared/drafts.ts#keepUnsent)): a new draft, or the draft the form was opened on, with
   the edits made in the form. A toast names it. A blank prompt is never kept.
 - A floor keeping drafts has ✎ beside its `+`, a new draft in one click. The shell dock starts with `+`, a picker of

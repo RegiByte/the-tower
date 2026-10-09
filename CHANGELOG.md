@@ -37,6 +37,11 @@ Commit messages hold the detail.
   keys, and `SHELF_ICON`'s values are SVG; `/design.js` adds `controls` and `iconSize`; `/design.css` adds `.icon`,
   `.icon-btn`, `--control`, `--selected` and `--icon-s`/`--icon-m`. The shared Changes, Reviews and Stats panels draw
   the same icons in Tower 3D.
+- A file's Finder and editor controls are buttons named for the file, reached with Tab and pressed with Enter or
+  Space, wherever they sit outside another button; inside an open showing's tab they stay spans (API 1.23:
+  `/panels.js` adds `fileSpansHtml`).
+- The new-worker form waits for its Start: Start is busy until the spawn answers, the form closes on the new worker
+  and says why in the form when the tower refuses, with the prompt still there to fix, in both renderers.
 
 ## v1.2.0
 

@@ -364,7 +364,7 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
   color: var(--enamel); font: 900 var(--fs-l)/1 var(--display); font-variant-numeric: tabular-nums; }
 .sign .name { font: 800 var(--fs-l)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
-.spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1000px, calc(100vw - 32px));
+.spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(1000px, calc(100vw - 32px));
   height: min(680px, calc(100vh - 48px)); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
 .spawn-form header { display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
@@ -409,6 +409,8 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
 .spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: calc(-1 * var(--sp-s)); padding-left: var(--sp-xl); border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
 .spawn-form:has([name=where][value=new]:checked) .if-new, .spawn-form:has([name=where][value=worktree]:checked) .if-worktree,
   .spawn-form:has([name=where][value=main]:checked) .if-main { display: grid; }
+.spawn-form .spawn-error { margin: 0; padding: var(--sp-m) var(--sp-2xl); border-top: 1px solid var(--broken-text); color: var(--broken-text); font-size: var(--fs-s); }
+.spawn-form .spawn-error:empty { display: none; }
 .spawn-form footer { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-l) var(--sp-2xl); border-top: 1px solid var(--line); background: color-mix(in oklab, var(--sunk) 40%, var(--panel)); }
 .spawn-form .summary { display: flex; flex-wrap: wrap; gap: var(--sp-2xs) 0; margin: 0 auto 0 0; color: var(--muted); font-size: var(--fs-s); min-width: 0; }
 .spawn-form .summary span + span::before { content: '·'; margin: 0 var(--sp-m); color: var(--deco); }
