@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.8.0
+
+Scrolling a session's terminal follows your mouse and trackpad. It asks nothing of you: no host restart, no config
+change (API 1.33 → 1.34, additions only). Restart the tower (`tower down tower && tower up tower`) and rebuild Tower
+3D (`npm run tower3d`) where it is built.
+
+- A session's terminal sends the wheel to Claude itself, in both renderers: one wheel report per row your finger
+  travels, at the terminal's own row height, the remainder carried to the next event. xterm.js sent one report per
+  wheel event however far it went and damped a trackpad's small movements, so a flick reached Claude as about a
+  quarter of its travel and a slow stroke started late and stopped early. Claude's `/scroll-speed` now scales the
+  travel, from your finger's: leave it on auto or set it to taste. A shell's terminal keeps xterm's wheel.
+- `/terminal.js` serves `reportWheel(term, send)`, for a renderer's own Claude terminals (API 1.34).
+
 ## v1.7.0
 
 The Changes panel marks the words an edited line changed, as GitHub does. It asks nothing of you: no host restart, no
