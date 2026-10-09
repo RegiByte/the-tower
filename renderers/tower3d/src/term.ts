@@ -3,7 +3,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import { terminalTheme } from '../../../src/shared/design.ts'
 import { terminalKeymap } from '../../../src/shared/termkeys.ts'
 import type { Keys } from '../../../src/shared/keymap.ts'
-import { fitSize, loadTerminalFont, terminalFont } from '../../../src/shared/terminal.ts'
+import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '../../../src/shared/terminal.ts'
 import { tower, type StreamMsg } from './api.ts'
 import { watchStream } from './fixtures.ts'
 
@@ -21,6 +21,8 @@ type Target = {
   sendKeys: (id: string, data: string) => void
   resizeVerb: 'resize' | 'shell/resize'
   scrollback: number
+  /** Claude's terminal: its wheel goes to Claude as wheel reports, a row each (`reportWheel`). A shell's program may read another mouse encoding. */
+  claude: boolean
   onEnd: (msg: StreamMsg) => void
   onMode: (text: string, owner: boolean) => void
   onError: (err: Error) => void
@@ -100,6 +102,7 @@ export function mountTerm(host: HTMLElement, t: Target) {
       if ('exited' in msg && msg.exited) return (term.attachCustomKeyEventHandler(terminalKeymap(t.keys, t.run, () => {})), t.onMode('past session · read-only', false))
       term.attachCustomKeyEventHandler(terminalKeymap(t.keys, t.run, typed))
       term.onData(typed)
+      if (t.claude) reportWheel(term, typed)
       if ('terminals' in msg && msg.terminals > 0) showMode()
       else claim()
       term.focus()

@@ -4,7 +4,7 @@
   "name": "Claude Code",
   "summary": "The Claude Code TUI, run in a real PTY per session, with its classic hooks and mods API.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "settings-hook input JSON (SessionStart, UserPromptSubmit, PreToolUse, Stop, ...) via curl POST /hooks/<id> on hooks.sock" },
     { "to": "tower-mod", "verb": "triggers", "carries": "mod events: session.*, prompt.submit, turn.*, tool.*, agent.spawn" }
@@ -19,4 +19,4 @@ the runbook [[new-claude-release]].
 
 Every session runs Claude's fullscreen TUI ([[fullscreen-tui]]): the conversation on the alternate screen
 (`?1049h`) with mouse reporting (`?1000h ?1002h ?1003h ?1006h`), so a viewer's xterm keeps no scrollback and its wheel
-scrolls Claude's own transcript.
+scrolls Claude's own transcript, a wheel report per row of travel (`reportWheel`).

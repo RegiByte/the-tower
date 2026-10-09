@@ -486,6 +486,7 @@
       "cellOf",
       "fitSize",
       "loadTerminalFont",
+      "reportWheel",
       "terminalFont"
     ],
     "/prefs.js": [

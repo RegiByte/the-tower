@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/src/bridge/screen.ts#lastFrame"]
+  "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/renderers/tower3d/src/term.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
 **Context.** A session's screen is replayed into a viewer's xterm with no scrollback (`scrollback: 0` on the tower
@@ -29,6 +29,21 @@ scrollback fills with stale frames, and the log, not the viewer, is the history.
 session's env forces the same renderer, but the env is the host's to compose and an undocumented variable is a
 weaker contract than a documented setting. Asking users to set it themselves: the tower depends on it, so the tower
 sets it.
+
+**The wheel (2026-10-09).** Scrolling the transcript is a round of wheel reports: Claude moves its transcript a
+scroll speed's rows per report and repaints (2 ms to its first byte, 5–8 ms a frame, measured from the logs), the
+speed 3 in xterm.js-like terminals and 1 in macOS's own, or `/scroll-speed`'s (`CLAUDE_CODE_SCROLL_SPEED`, up to 20,
+in the user's settings), ramped during fast scrolls unless `wheelScrollAccelerationEnabled` is false (Claude
+2.1.295). The tower's legs, host to stream and browser to PTY, take 2 ms. xterm.js 6.0, left alone, sends one report
+per wheel event however many rows it is worth and damps a delta under 50 px by ×0.3 as a trackpad's: measured on the
+user's Mac, a fast mouse flick reached Claude as about a quarter of its travel (an event is worth 45–90 rows), a slow
+trackpad stroke of 9 rows as 2 reports, the first after 190 ms, and the last 200–400 ms of a stroke as none. A session's
+terminal therefore sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), both
+renderers): one SGR report per row of travel at the terminal's own row height, the remainder carried, undamped, so
+Claude scrolls as far and as soon as the finger moves, and `/scroll-speed` scales it. A shell's terminal keeps xterm's
+wheel: xterm does not say which mouse encoding a shell's program asked for, and Claude asks for SGR (`?1006h`).
+Rejected: xterm's `scrollSensitivity` (still one report per event, so a flick stays capped) and a renderer dividing by
+Claude's scroll speed (the speed is the user's Claude setting, which the renderer cannot read).
 
 **Consequences.** Every worker runs fullscreen, the user's setting notwithstanding; a user who wants Claude's
 default renderer elsewhere keeps it outside the tower. Checked on 2.1.295 on a sandbox system: a session with

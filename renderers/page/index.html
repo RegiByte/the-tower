@@ -443,7 +443,7 @@ import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/m
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
 import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/settings.js'
-import { fitSize, loadTerminalFont, terminalFont } from '/terminal.js'
+import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toaster, toastsCss } from '/toasts.js'
@@ -1621,6 +1621,7 @@ function openTerminal({ cols, rows, data, exited, terminals }) {
   if (exited) return (term.attachCustomKeyEventHandler(terminalKeymap(() => board.keys, run, () => {})), showMode(`past session · read-only${leaveHint()}`))
   term.attachCustomKeyEventHandler(terminalKeymap(() => board.keys, run, typed))
   term.onData(typed)
+  reportWheel(term, typed)
   if (terminals === 0) claim()
   else showMode()
   term.focus()

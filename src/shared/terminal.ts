@@ -38,6 +38,41 @@ export function cellOf(family: string): Cell {
   return { width: width / 32 / 100, height: height / 100 }
 }
 
+/** The parts of an xterm `Terminal` a wheel handler reads. */
+type WheelTerm = {
+  cols: number
+  rows: number
+  element: HTMLElement | undefined
+  modes: { mouseTrackingMode: string }
+  attachCustomWheelEventHandler(handler: (e: WheelEvent) => boolean): void
+}
+
+/**
+ * Sends a session's wheel motion to Claude as SGR wheel reports (`\e[<64;col;rowM` up, 65 down), one per row of
+ * travel, the remainder carried to the next event, so a flick reaches Claude at its full length and a slow trackpad
+ * stroke from its first row. Claude moves its transcript a scroll speed's rows per report (`/scroll-speed`; 1 follows
+ * the finger). xterm, left alone, sends one report per wheel event however far it went and damps a trackpad's small
+ * deltas. While the program reads no mouse, the wheel stays xterm's.
+ */
+export function reportWheel(term: WheelTerm, send: (data: string) => void) {
+  let carry = 0
+  term.attachCustomWheelEventHandler((e) => {
+    if (term.modes.mouseTrackingMode === 'none' || !term.element || e.deltaY === 0) return true
+    e.preventDefault()
+    const screen = term.element.querySelector('.xterm-screen')!.getBoundingClientRect()
+    const rowPx = screen.height / term.rows
+    carry += e.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? e.deltaY / rowPx : e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY : e.deltaY * term.rows
+    const rows = Math.trunc(carry)
+    carry -= rows
+    if (rows === 0) return false
+    const cell = (at: number, start: number, size: number, count: number) => Math.min(count, Math.max(1, Math.floor((at - start) / size) + 1))
+    const col = cell(e.clientX, screen.left, screen.width / term.cols, term.cols)
+    const row = cell(e.clientY, screen.top, rowPx, term.rows)
+    send(`\x1b[<${rows < 0 ? 64 : 65};${col};${row}M`.repeat(Math.abs(rows)))
+    return false
+  })
+}
+
 /**
  * The largest whole size, at most `font.size` and at least `MIN_SIZE`, at which `cols`×`rows` cells of its face fit in
  * `box`. xterm draws a row in whole device pixels, a cell's width as measured.
