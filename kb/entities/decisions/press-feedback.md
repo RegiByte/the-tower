@@ -21,7 +21,10 @@
     "hub/src/shared/api.ts#API_VERSION",
     "hub/src/shared/cards.ts#spawnFormHtml",
     "hub/renderers/page/index.html",
-    "hub/renderers/tower3d/src/main.ts"
+    "hub/renderers/tower3d/src/main.ts",
+    "hub/renderers/tower3d/src/main.ts#confirmed",
+    "hub/renderers/tower3d/src/ui.ts#askingButton",
+    "hub/src/shared/cards.ts#sendHomeAsk"
   ]
 }
 ---
@@ -91,5 +94,8 @@ them, and nothing it needs lives in the tower page.
 `discard` in `/drafts.js` now answers what it deleted. Tower 3D draws its toasts through `/toasts.js` too, raised
 above its HUD: sending a worker home (its hold, or the desk's second press) toasts with Resume, read from the board
 or its floor's archive, and a draft deleted from its editor or thrown away from the corkboard (held X, its text read
-first) toasts with Undo through `restore`; the editor's Delete no longer asks. It keeps its second-press confirm for
-the other destructive buttons and has not adopted `/press.js`.
+first) toasts with Undo through `restore`; the editor's Delete no longer asks. Its other destructive buttons press through `/press.js` too:
+a shelf page may not open `confirm()`, so each asks where the page confirms with a first press that arms it,
+"sure?" with the page's question as its tip (`sendHomeAsk`, `reapAsk`, `killShellAsk`, `letGoAsk`, `resumeAllAsk`,
+`tidyRowAsk`, `tidyAllAsk`, `deleteAsk`, shared in `/cards.js` and `/items.js`), and the second press within 3 s
+runs busy until the reply; ending one leftover process acts at once, as on the page.

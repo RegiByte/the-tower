@@ -32,6 +32,10 @@ Commit messages hold the detail.
 - Tower 3D lets a stranded worker go: Let go beside Resume in its desk panel, X held at its desk in the world, and a
   floor panel's "resume all N stranded", each asked first the way the page asks. `/cards.js` adds `letGoAsk`,
   `letGoneLine`, `resumeAllAsk` and `resumeStranded`, the words and the loop both renderers share.
+- Tower 3D's destructive buttons press through `/press.js`: busy until the tower answers, the second press's "sure?"
+  showing the page's own question in its tip, a toast after killing a shell, and ending one leftover process at once,
+  as the page does. `/cards.js` adds the questions both renderers ask (`sendHomeAsk`, `reapAsk`, `killShellAsk`,
+  `shellWhere`, `tidyRowAsk`, `tidyAllAsk`).
 
 ## v1.3.0
 

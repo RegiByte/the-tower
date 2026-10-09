@@ -228,6 +228,26 @@ export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) 
   return failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`
 }
 
+/** What a renderer asks before sending `c` home with `sent`, those its `send-home` calls end, naming who is mid-turn. */
+export const sendHomeAsk = (c: Card, sent: Card[]) => {
+  const busy = sent.filter((h) => h.status === 'working')
+  return `Send ${c.callsign} home with everyone under it that runs?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${
+    busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\nEach can be resumed.`
+}
+
+/** What a renderer asks before ending everything a worker left running. */
+export const reapAsk = (c: Card) => `End what ${c.callsign} left running?\n\n${c.resources.map((r) => `${r.pid}  ${r.command}`).join('\n')}`
+
+/** Where a shell runs, by its floor's name: the hub alone, any other directory by its base name after. */
+export const shellWhere = (f: Floor | undefined, sh: Board['shells'][number]) => `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
+
+/** What a renderer asks before killing a shell. */
+export const killShellAsk = (f: Floor | undefined, sh: Board['shells'][number]) => `Kill the shell in ${shellWhere(f, sh)} (${sh.activity})?`
+
+/** What a renderer asks before doing one of Tidy's rows, or all of them. */
+export const tidyRowAsk = (r: TidyRow) => `${r.what}: ${r.does}?\n\n${r.title}`
+export const tidyAllAsk = (f: Floor, now: number) => `${tidyLine(f.tidy)}\n\n${tidyRows(f, now).map((r) => `${r.what}: ${r.does}`).join('\n')}\n\nDo all of it?`
+
 /** How many past workers a floor has, its archive's among them, before the archive is read. */
 export const pastCount = (f: Floor) => f.cards.filter((c) => !c.onDuty).length + f.archived
 

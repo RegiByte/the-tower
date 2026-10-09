@@ -15,7 +15,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, fileKey, isFolded, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, threadItemFiles, type StatsRange, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, strandedOf, type DaemonVerb } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, esc, findCard, gistLine, wordsOf, neighbours, sendTargets, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, showOnMonitor, type Desk } from './desk.ts'
@@ -123,7 +123,10 @@ const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Paramet
 /** A call the board offers, with the fields the user supplied. */
 const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => tower.run(c, fields).catch((err: Error) => (toast(err.message), undefined))
 
-/** Destructive buttons ask on their own label and act on a second click: a shelf page may not open `confirm()`. */
+/**
+ * Destructive buttons ask on their own label, the question in their tip, and act on a second click within `ARM_MS`:
+ * a shelf page may not open `confirm()`.
+ */
 const ARM_MS = 3000
 /** Why a daemon verb is held back now, for the panels' buttons. */
 const held = (verb: DaemonVerb) => heldWhy(s.board!, s.lost, verb)
@@ -1010,7 +1013,7 @@ const RUN: ByKind<unknown, [Verb]> = {
     const r = findCard(s.board!, a.id)?.resources.find((r) => r.pid === a.pid)
     return r && offered(r.calls.reap)
   },
-  shell: (a, verb) => (verb === 'use' ? goShell(a.id) : call('shell/kill', { id: a.id })),
+  shell: (a, verb) => (verb === 'use' ? goShell(a.id) : killShell(s.board!.shells.find((sh) => sh.id === a.id)!)),
   floor(a, verb) {
     if (verb === 'use') return openSide({ kind: 'floor', id: a.id, tray: undefined })
     const f = s.board!.floors.find((f) => f.id === a.id)!
@@ -2155,18 +2158,19 @@ $('desk-head').addEventListener('click', (e) => {
   const { board, panel } = s
   if (!what || !board || !panel) return
   if (what === 'close') return (unfocus(), lock())
-  if (panel.kind === 'shell') return what === 'shell-kill' && confirmed(`shell ${panel.id}`) && call('shell/kill', { id: panel.id })
+  if (panel.kind === 'shell') return what === 'shell-kill' && confirmed(`shell ${panel.id}`) && pressing(button!, () => killShell(board.shells.find((sh) => sh.id === panel.id)!))
   if (panel.kind !== 'desk') return
   const c = findCard(board, panel.id)!
   if (what === 'tower') return tower.ui('select', { id: c.id })
   if (what === 'resume') return resume(c.calls.resume!)
-  if (what === 'kill') return confirmed(`kill ${c.id}`) && sendHome(c)
+  if (what === 'kill') return confirmed(`kill ${c.id}`) && pressing(button!, () => sendHome(c))
   if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
-  if (what === 'reap') return confirmed(`reap ${c.id}`) && offered(c.calls.reap!)
+  if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => offered(c.calls.reap!))
 })
 
 $('doc-head').addEventListener('click', (e) => {
-  const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act
+  const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
+  const what = button?.dataset.act
   if (s.panel?.kind === 'picture') {
     if (openOut(e)) return
     if (what === 'close') return (closeDoc(), lock())
@@ -2174,9 +2178,10 @@ $('doc-head').addEventListener('click', (e) => {
   }
   if (s.panel?.kind === 'stats' && what === 'close') return (closeDoc(), lock())
   if (s.panel?.kind === 'kept') {
+    const kept = s.panel
     if (openOut(e)) return
     if (what === 'close') return (closeDoc(), lock())
-    if (what === 'delete') return confirmed(`kept ${s.panel.id}`) && deleteKept(s.panel)
+    if (what === 'delete') return confirmed(`kept ${kept.id}`) && pressing(button!, () => deleteKept(kept))
   }
   if (s.panel?.kind !== 'doc') return
   if (what === 'close') return (closeDoc(), lock())
@@ -2225,11 +2230,14 @@ $('side').addEventListener('click', async (e) => {
   if (d.shelf && s.panel?.kind === 'floor') return tower.ui('shelf', { project: s.panel.id, n: Number(d.shelf) })
   if (d.resume) return resume(JSON.parse(d.resume))
   if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
-  if (d.reapPid) return reapProcess(d.reapPid)
+  if (d.reapPid) return pressing(el, () => reapProcess(d.reapPid!))
   if (d.shellDir && s.panel?.kind === 'floor') return spawnShell(floorOf(s.panel.id).calls.shell!, d.shellDir)
-  if (d.wtCall) return offered(JSON.parse(d.wtCall))
-  if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && tidy(JSON.parse(d.tidyCall))
-  if (d.tidy !== undefined && s.panel?.kind === 'floor') return confirmed(`tidy ${s.panel.id}`) && tidy(floorOf(s.panel.id).calls.tidy!)
+  if (d.wtCall) return pressing(el, () => offered(JSON.parse(d.wtCall!)))
+  if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
+  if (d.tidy !== undefined && s.panel?.kind === 'floor') {
+    const f = floorOf(s.panel.id)
+    return confirmed(`tidy ${f.id}`) && pressing(el, () => tidy(f.calls.tidy!))
+  }
   if (d.tray && s.panel?.kind === 'floor') return ((s.panel.tray = s.panel.tray === d.tray ? undefined : d.tray), renderPanel())
   if (d.kept && s.panel?.kind === 'floor') return openKept(keptOf(d.kept))
   if (d.archive !== undefined && s.panel?.kind === 'floor') return (openSide({ kind: 'archive', id: s.panel.id, words: [] }), $('archive-filter').focus())
@@ -2248,11 +2256,15 @@ async function tidy(c: Call<'tidy'>) {
   if (reply) toast(tidiedLine(reply))
 }
 
-/** `"<session> <pid>"` from the floor panel, ended on the second click. */
-function reapProcess(which: string) {
+/** `"<session> <pid>"` from the floor panel, ended at once. */
+async function reapProcess(which: string) {
   const [id, pid] = which.split(' ')
   const r = findCard(s.board!, id)?.resources.find((r) => r.pid === Number(pid))
-  return r && confirmed(`reap ${which}`) && offered(r.calls.reap)
+  if (r) await offered(r.calls.reap)
+}
+
+async function killShell(sh: Board['shells'][number]) {
+  if (await call('shell/kill', { id: sh.id })) toast(`Killed the shell in ${shellWhere(floorOf(sh.project), sh)}`)
 }
 
 async function spawnShell(c: Call<'shell/spawn'>, cwd: string) {

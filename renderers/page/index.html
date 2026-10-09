@@ -437,7 +437,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTargets, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -1556,10 +1556,7 @@ const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => c.calls['send-h
 const sendHomeTitle = (c) => `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
 
 async function sendHome(button, c) {
-  const sent = sentHome(c)
-  const busy = sent.filter((h) => h.status === 'working')
-  const ask = `Send ${callsign(c.id)} home with everyone under it that runs?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\nEach can be resumed.`
-  if (!confirm(ask)) return
+  if (!confirm(sendHomeAsk(c, sentHome(c)))) return
   await pressing(button, async () => {
     for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
   })
@@ -2204,10 +2201,7 @@ function selectArriving(id) {
 let shell
 const SHELL_SCROLLBACK = 2000
 
-const shellWhere = (sh) => {
-  const f = board.floors.find((f) => f.id === sh.project)
-  return `${f?.name ?? sh.project}${sh.cwd === f?.hub ? '' : '/' + base(sh.cwd)}`
-}
+const shellFloor = (sh) => board.floors.find((f) => f.id === sh.project)
 
 const shellAddHtml = () => shellPlaces(board.floors).length ? `<button class="tab-add" popovertarget="shell-pick" aria-label="new shell" data-tip="new shell: pick a directory">${ICON.plus}</button>` : ''
 
@@ -2225,7 +2219,7 @@ function renderDock() {
   if (!board.shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · ${ICON.plus} starts one in a floor's directory</span>`)
   $('tabs').innerHTML = shellAddHtml() + [...board.shells].sort(byStart).map((sh) =>
     `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" data-tip="${esc(sh.cwd)}">
-      <span class="where">${esc(shellWhere(sh))}</span><span class="what">${esc(sh.activity)}</span>
+      <span class="where">${esc(shellWhere(shellFloor(sh), sh))}</span><span class="what">${esc(sh.activity)}</span>
       <span class="icon-btn" data-kill-shell="${sh.id}" aria-hidden="true" data-tip="kill this shell">${ICON.close}</span></button>`).join('')
 }
 
@@ -2543,7 +2537,7 @@ document.addEventListener('click', (e) => {
   const killShell = e.target.closest('[data-kill-shell]')?.dataset.killShell
   if (killShell) {
     const sh = board.shells.find((sh) => sh.id === killShell)
-    return confirm(`Kill the shell in ${shellWhere(sh)} (${sh.activity})?`) && told(pressing(e.target.closest('[data-kill-shell]'), () => tower.call('shell/kill', { id: killShell })))
+    return confirm(killShellAsk(shellFloor(sh), sh)) && told(pressing(e.target.closest('[data-kill-shell]'), () => tower.call('shell/kill', { id: killShell })))
   }
   const tab = e.target.closest('[data-shell]')?.dataset.shell
   if (tab) return tab === shell?.id ? closeShell() : openShell(tab)
@@ -2556,8 +2550,7 @@ document.addEventListener('click', (e) => {
   const reapable = e.target.closest('[data-reap]')
   if (reapable) {
     const c = findCard(reapable.dataset.reap)
-    const list = c.resources.map((r) => `${r.pid}  ${r.command}`).join('\n')
-    if (confirm(`End what ${callsign(c.id)} left running?\n\n${list}`)) told(pressing(reapable, () => tower.run(c.calls.reap)))
+    if (confirm(reapAsk(c))) told(pressing(reapable, () => tower.run(c.calls.reap)))
     return
   }
   const actor = e.target.closest('[data-act]')
