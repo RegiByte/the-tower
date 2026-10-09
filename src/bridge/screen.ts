@@ -53,6 +53,11 @@ export function lastFrame(log: SessionLog): SessionLog {
   return { header: log.header, events: [...log.events.slice(0, index), ...kept] }
 }
 
+const sizeOf = (size: string): [number, number] => {
+  const [cols, rows] = size.split('x').map(Number)
+  return [cols, rows]
+}
+
 const terminalFor = ({ header }: SessionLog): Terminal =>
   new headless.Terminal({ cols: header.cols, rows: header.rows, allowProposedApi: true })
 
@@ -76,7 +81,7 @@ async function replayInto(term: Terminal, { events }: SessionLog, until: number)
       }
     }
     if (event[1] === 'r') {
-      const [cols, rows] = event[2].split('x').map(Number)
+      const [cols, rows] = sizeOf(event[2])
       await flushed(term)
       unparsed = 0
       term.resize(cols, rows)
@@ -113,4 +118,35 @@ export async function snapshot(log: SessionLog): Promise<string> {
   const bytes = serialized()
   term.dispose()
   return bytes
+}
+
+/** A running session's screen, kept current as its log grows. */
+export type Mirror = {
+  /** Draws an `o` or `r` event logged after those already drawn, in the order they were logged. */
+  draw: (event: LogEvent) => void
+  /** Bytes that redraw the screen as the events drawn so far left it, as `snapshot` gives them. */
+  snapshot: () => Promise<string>
+  dispose: () => void
+}
+
+/**
+ * A mirror of the screen of a session still running, built by replaying its log. A resize waits in xterm's write queue
+ * behind the output before it, and a snapshot is taken there too: it holds every event drawn before it was asked for,
+ * and none drawn after.
+ */
+export async function mirrorOf(log: SessionLog): Promise<Mirror> {
+  const term = terminalFor(log)
+  const serialized = serializer(term)
+  await replayInto(term, log, Infinity)
+  return {
+    draw: (event) => {
+      if (event[1] === 'o') term.write(event[2])
+      if (event[1] === 'r') {
+        const [cols, rows] = sizeOf(event[2])
+        term.write('', () => term.resize(cols, rows))
+      }
+    },
+    snapshot: () => new Promise((resolve) => term.write('', () => resolve(serialized()))),
+    dispose: () => term.dispose(),
+  }
 }

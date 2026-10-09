@@ -5,7 +5,7 @@
   "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
   "in": "bridge",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
+  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -60,7 +60,10 @@ or one event at a time as it is tailed:
   split between two `o` events or sharing one with other bytes cuts at its first byte), which would leave the empty
   normal screen under Claude's resume line ([[fullscreen-tui]]). A log with no `x`, or whose last `?1049h` follows
   its last `?1049l` (killed in the alternate screen), is replayed whole. `tower screen <id>` reads the same frame;
-  with a time, the screen as it stood then.
+  with a time, the screen as it stood then. [`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf) keeps a running
+  session's screen current from its replay on: each later event drawn in the order it was logged (a resize waits in
+  xterm's write queue behind the output before it), and a snapshot of it is the bytes a replay of the log so far
+  gives (`test/screen.test.ts` checks it at several cuts of every fixture).
 - [`resources`](ref:hub/src/bridge/resources.ts#resources): a session's [[leftover]] processes, from `ps`
   and `lsof` output. [`peers`](ref:hub/src/bridge/resources.ts#peers): the peer name of each session's own
   Claude, from Claude Code's registrations and the same `ps` output ([[agent-directory]]).

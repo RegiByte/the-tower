@@ -79,7 +79,7 @@ import { attachShell } from '../shared/client.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
-import { everyEvent, logFileOf, readLog, screenEvents, tailLog } from '../tail.ts'
+import { everyEvent, logFileOf, readLog, screenEvents } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { archiveLog } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
@@ -95,6 +95,7 @@ import { designCss, fonts } from '../shared/design.ts'
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
+import { screenMirrors } from './screens.ts'
 
 const PUBLISH_DEBOUNCE_MS = 150
 /** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
@@ -357,24 +358,34 @@ async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse) 
 
 type Stop = () => void
 
+/** How long a watched screen's mirror outlives its last viewer: a reconnect or a switch back finds it built. */
+const MIRROR_GRACE_MS = 30_000
+
+const mirrors = screenMirrors((id) => logFileOf(paths, id), MIRROR_GRACE_MS)
+
 /**
  * A snapshot of the session's screen, then its output as the host logs it; a session no longer running has only
- * its snapshot. `undefined` for a session nobody logged.
+ * its snapshot, its last frame. `undefined` for a session nobody logged.
  */
 async function screenStream(id: string, send: (msg: ScreenMsg) => void): Promise<Stop | undefined> {
   const session = system.session(id)
   if (!session) return
-  const logPath = logFileOf(paths, id)
-  const { log, offset } = readLog(logPath, screenEvents)
   const { facts } = session
   const running = isLive(withLiveness(facts.state, id, system.live()?.ids ?? new Set()).status)
-  send({ t: 'snapshot', data: await snapshot(log), cols: facts.cols, rows: facts.rows, exited: !running })
-  if (!running) return () => {}
-  return tailLog(logPath, offset, screenEvents, (event) => {
-    if (event[1] === 'o') send({ t: 'o', data: event[2] })
-    if (event[1] === 'r') send({ t: 'r', size: event[2] })
-    if (event[1] === 'x') send({ t: 'x', exitCode: event[2].exitCode })
-  })
+  const sendSnapshot = (data: string, exited: boolean) => send({ t: 'snapshot', data, cols: facts.cols, rows: facts.rows, exited })
+  if (running) {
+    const stop = await mirrors.watch(id, {
+      snapshot: (data) => sendSnapshot(data, false),
+      event: (event) => {
+        if (event[1] === 'o') send({ t: 'o', data: event[2] })
+        if (event[1] === 'r') send({ t: 'r', size: event[2] })
+        if (event[1] === 'x') send({ t: 'x', exitCode: event[2].exitCode })
+      },
+    })
+    if (stop) return stop
+  }
+  sendSnapshot(await snapshot(readLog(logFileOf(paths, id), screenEvents).log), !running)
+  return () => {}
 }
 
 /** How many terminals are open on each session. */

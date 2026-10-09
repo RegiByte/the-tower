@@ -5,7 +5,7 @@
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "web-tower",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
+  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -20,9 +20,14 @@
 config's `port`, read when it starts ([[port-in-config]]). The board (floors of cards, rate limits, today's stats, shells) is
 derived by [`board`](ref:hub/src/bridge/board.ts#board) and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/server.ts#archive) ([[board-archive]]). A session screen is
-a stream ([`screenStream`](ref:hub/src/tower/server.ts#screenStream)): a [snapshot](ref:hub/src/bridge/screen.ts#snapshot)
-rebuilt from the log, marked `exited` (read-only) unless the host still runs the session, then the log's
-output as it is appended. An interactive terminal opens the same stream as `terminal/<id>`
+a stream ([`screenStream`](ref:hub/src/tower/server.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
+the host still runs the session, then the log's output as it is appended. A running session's screen is one
+[mirror](ref:hub/src/tower/screens.ts#screenMirrors) shared by all its viewers: the first builds it, replaying the
+log once ([`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf)), it follows the log with one tail, and every later
+viewer is sent its snapshot, so a floor of monitors opening at once costs one replay per session, not one per
+monitor. It outlives its last viewer by 30 s, so a reconnect finds it built, and is kept nowhere else: a restarted
+tower builds it again. A session no longer running is sent its last frame, a
+[snapshot](ref:hub/src/bridge/screen.ts#snapshot) rebuilt from the log, and no mirror. An interactive terminal opens the same stream as `terminal/<id>`
 ([`terminalStream`](ref:hub/src/tower/server.ts#terminalStream)), whose snapshot also says how many other terminals
 are open on the session, so a renderer claims the PTY size on open only as the sole one ([[tower3d-desk]]). A board
 client observes the machine while it holds the board ([[live-system]]). Screens and shells stream on their own routes or
