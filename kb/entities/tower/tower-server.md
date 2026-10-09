@@ -45,7 +45,7 @@ schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 return a reply or an error as a value; a daemon that answers no becomes `refused`, one that doesn't answer
 `unavailable`. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
 [`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, and the error, as JSON
-Schema, and `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
+Schema, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
 that throws answers `config` for a [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError), else `internal`
 ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)), and goes to the log.
 

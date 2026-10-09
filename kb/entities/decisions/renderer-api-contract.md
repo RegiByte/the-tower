@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-09",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts"]
 }
 ---
 **Problem.** The [[renderer-api]] was typed but never checked. `Verbs` in `shelf-page.ts` is a TypeScript type the
@@ -53,7 +53,11 @@ what went wrong.
   supplies (a prompt's text, a floor's directory) and sends it. `drive`, `brief` and `goto` are moves within the
   renderer, not requests, and have no call; `goto` goes to the conversation's `resumedBy` (its `id`, with the `callsign` to name it).
 - **The contract is served.** `GET /schema` answers the verbs' input and reply schemas, and the error, as JSON
-  Schema (`z.toJSONSchema`).
+  Schema (`z.toJSONSchema`), and its `streams`: the board's message (`{v, board}` or `{v, error}`) as the JSON Schema of the
+  TypeScript type `BoardMsg`, JSDoc as descriptions, the rest listed in a line each. The type is the source: `npm run schema:board`
+  ([`board-schema.ts`](ref:hub/scripts/board-schema.ts)) writes the committed `src/shared/board.schema.json`, and
+  [`board-schema.test.ts`](ref:hub/test/board-schema.test.ts) fails when it is stale. The generator reads types with its own
+  TypeScript 5 (a dev dependency): the repo's TypeScript 7 has no JS API. `tower api board` prints it.
 - **Writes name the version they edited.** `collection/write` carries the item's `modifiedAt` as the writer last
   saw it (from the board, or from its own previous write's reply) and is `refused` once the file has moved on, so
   two editors saving within a board's round trip never overwrite each other. [`itemVersion`](ref:hub/src/collections.ts#itemVersion)
@@ -95,7 +99,7 @@ what went wrong.
 - Mapping the host's error messages to codes: the host's protocol would have to grow codes too, and a host change
   ends every running session.
 - The board as a zod schema too: a large type that only the bridge builds, already pinned by the board tests. It
-  stays a TypeScript type for now.
+  stays a TypeScript type, and its schema is generated from it.
 - One integer that moves on every change (the scheme before 1.0): every renderer in the repo moves with it, but one
   kept apart breaks on each addition it would have read past.
 - Full semver for the API: a patch says nothing to a renderer, which reads the same shapes before and after one.
