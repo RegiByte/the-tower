@@ -40,7 +40,10 @@ user's Mac, a fast mouse flick reached Claude as about a quarter of its travel (
 trackpad stroke of 9 rows as 2 reports, the first after 190 ms, and the last 200–400 ms of a stroke as none. A session's
 terminal therefore sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), both
 renderers): one SGR report per row of travel at the terminal's own row height, the remainder carried, undamped, so
-Claude scrolls as far and as soon as the finger moves, and `/scroll-speed` scales it. A shell's terminal keeps xterm's
+Claude scrolls as far and as soon as the finger moves. How Claude counts them depends on the terminal it believes it
+runs in, which the tower no longer passes on ([[env-scrub]]): with none named, it counts reports arriving together a
+row each and drains what is left of a scroll at three quarters a frame, so the transcript follows the finger about one
+to one and stops with the last report (1 ms after it, measured). A shell's terminal keeps xterm's
 wheel: xterm does not say which mouse encoding a shell's program asked for, and Claude asks for SGR (`?1006h`).
 Rejected: xterm's `scrollSensitivity` (still one report per event, so a flick stays capped) and a renderer dividing by
 Claude's scroll speed (the speed is the user's Claude setting, which the renderer cannot read).

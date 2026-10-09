@@ -13,5 +13,25 @@ const PARENT_SESSION_PREFIXES = ['CLAUDE_CODE_SESSION', 'CLAUDE_CODE_CHILD', 'CL
 const isParentSessionVar = (key: string): boolean =>
   PARENT_SESSION_VARS.has(key) || PARENT_SESSION_PREFIXES.some((prefix) => key.startsWith(prefix))
 
-export const withoutParentSession = (env: NodeJS.ProcessEnv): Record<string, string> =>
-  Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined && !isParentSessionVar(entry[0])))
+const without = (env: NodeJS.ProcessEnv, drops: (key: string) => boolean): Record<string, string> =>
+  Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined && !drops(entry[0])))
+
+export const withoutParentSession = (env: NodeJS.ProcessEnv): Record<string, string> => without(env, isParentSessionVar)
+
+/**
+ * The terminal a process was started from names itself in its environment, and programs tune themselves to it:
+ * Claude reads `TERM_PROGRAM=vscode` or Cursor's askpass path as an editor's xterm.js and changes how it scrolls,
+ * `TMUX` as tmux. A PTY the tower draws is in the viewer's xterm, whatever terminal ran `tower up`. VS Code and Cursor
+ * point `GIT_ASKPASS` at a script that reaches the running editor through their `VSCODE_GIT_*` variables, so it goes
+ * with them.
+ */
+const TERMINAL_VARS = new Set([
+  'TERM_PROGRAM', 'TERM_PROGRAM_VERSION', 'TERM_SESSION_ID', 'TERMINAL_EMULATOR', 'LC_TERMINAL', 'LC_TERMINAL_VERSION', 'COLORFGBG',
+  'GIT_ASKPASS', 'WT_SESSION', 'WT_PROFILE_ID', 'VTE_VERSION', 'WINDOWID', 'TMUX', 'TMUX_PANE', 'STY',
+])
+const TERMINAL_PREFIXES = ['VSCODE_', 'CURSOR_', 'ITERM_', 'WEZTERM_', 'GHOSTTY_', 'KITTY_', 'ALACRITTY_', 'KONSOLE_', 'WARP_', 'ZELLIJ']
+
+const isTerminalVar = (key: string): boolean => TERMINAL_VARS.has(key) || TERMINAL_PREFIXES.some((prefix) => key.startsWith(prefix))
+
+/** An environment for a PTY the tower draws, without the terminal its daemon was started from. */
+export const withoutTerminal = (env: NodeJS.ProcessEnv): Record<string, string> => without(env, isTerminalVar)

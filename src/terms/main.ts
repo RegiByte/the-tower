@@ -11,7 +11,7 @@ import path from 'node:path'
 import * as pty from '@lydell/node-pty'
 import headless from '@xterm/headless'
 import { serializer, type Terminal } from '../bridge/screen.ts'
-import { withoutParentSession } from '../shared/env.ts'
+import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import { sessionDirs, type Config } from '../shared/model.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import { frame, onLines } from '../shared/protocol.ts'
@@ -58,7 +58,7 @@ function spawnShell({ project: projectId, cwd, cols, rows }: Extract<ToTerms, { 
   sessionDirs(project, cwd) // throws for a directory the project's sessions don't work in
 
   const id = `sh-${randomBytes(3).toString('hex')}`
-  const proc = pty.spawn(SHELL!, ['-l'], { name: 'xterm-256color', cols, rows, cwd, env: withoutParentSession(process.env) })
+  const proc = pty.spawn(SHELL!, ['-l'], { name: 'xterm-256color', cols, rows, cwd, env: withoutTerminal(withoutParentSession(process.env)) })
   const screen = new headless.Terminal({ cols, rows, scrollback: SHELL_SCROLLBACK, allowProposedApi: true })
   const s: LiveShell = { shell: { id, project: projectId, cwd, startedAt: Date.now(), cols, rows }, proc, screen, snapshot: serializer(screen), viewers: new Set() }
   shells.set(id, s)

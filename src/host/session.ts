@@ -1,4 +1,4 @@
-import { withoutParentSession } from '../shared/env.ts'
+import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import type { ClaudeHookInput, Config, ModEvent } from '../shared/model.ts'
 
 /**
@@ -12,9 +12,12 @@ export const sessionArgv = (config: Config, args: string[], modDir: string): str
   ...args,
 ]
 
-/** The config's `env` is scrubbed with the parent's: it could otherwise set a parent session's markers again. */
+/**
+ * The config's `env` is scrubbed with the parent's: it could otherwise set a parent session's markers again. It may set
+ * a terminal's variables: only the parent's terminal is dropped.
+ */
 export const sessionEnv = (parent: NodeJS.ProcessEnv, config: Config, id: string, hooksSocket: string): Record<string, string> => ({
-  ...withoutParentSession({ ...parent, ...config.env }),
+  ...withoutParentSession({ ...withoutTerminal(parent), ...config.env }),
   TOWER_SESSION_ID: id,
   TOWER_HOOKS_SOCKET: hooksSocket,
 })
