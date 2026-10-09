@@ -12,42 +12,43 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
-## Unreleased
+## v1.3.0
 
-- Tower 3D's logbook reader shows the last screen and the logbook on two tabs, each the whole panel, opening on the
-  logbook; a long answer shown in full no longer squeezes the screen.
-- A resumed session given no prompt of its own is marked "resumed, no new turns" in the brief and on Tower 3D's
-  session chips (API 1.19: `/brief.js` adds `resumedIdle` and `RESUMED_IDLE`).
-- Copy works inside framed pages: the tower page's shelf frame (an `html` or `renderer` entry), `html` items and shown
-  files allow `clipboard-write`, as do Tower 3D's frames of shelf pages and shown files.
-- Reviews and Changes on landed work (API 1.20): each card says where its checkout's work stands
-  (`checkoutState`: `live`, `landed` on its base, or `gone` with its worktree), and where its review thread's does
-  (`threadState`, with the thread Tidy filed); the card and each floor thread offer `note` only while that work goes on.
-- Landed checkouts, follow-ups (API 1.24): a landed checkout whose branches made no commits of their own says "Nothing
-  to land" (`checkoutState.empty`, from git's new `own` count on worktrees and kept branches); `review` is offered,
-  and `tower review` runs, only while the worker's checkout is live; `card.unseen` leaves out threads on landed work.
-  Both renderers draw the note forms only when offered: a landed worker's Reviews read its thread, filed or not, under a
-  line saying it landed, and its Changes say "Landed on <base>" or "Worktree removed" instead of an empty diff.
-- Tower 3D's HUD, panel heads and floor panel draw the shared SVG icons where they drew Unicode glyphs (✕ ⓘ ⎇ ↗ ↻ ⌂
-  ▤ ‹ ♪ ●): every close is an `.icon-btn` with `ICON.close`, icon-only controls are named and at least `--control`
-  (API 1.25: `ICON` adds `back`, `music` and `silent`).
-  `POST /review/append` still takes any checkout. `/panels.js` adds `threadItemFiles`.
+Follow-ups to v1.2.0: work that has landed says so, other workers' messages show in the brief, one icon set for both
+renderers, and Tower 3D catches up with the page. It asks nothing of you: no host restart, no config change (API
+1.18 → 1.25, additions only).
+
+- Reviews and Changes on landed work (API 1.20, 1.24): each card says where its checkout's work stands
+  (`checkoutState`: `live`, `landed` on its base, or `gone` with its worktree; `empty` when its branches made no
+  commits of their own, from git's new `own` count) and where its review thread's does (`threadState`, with the thread
+  Tidy filed). The card and each floor thread offer `note`, and the card `review`, only while that work goes on;
+  `card.unseen` leaves out threads on landed work. A landed worker's Reviews read its thread under a line saying it
+  landed, and its Changes say "Landed on <base>", "Nothing to land" or "Worktree removed" instead of an empty diff.
+  `POST /review/append` still takes any checkout; `tower review` refuses landed work with the reason. `/panels.js`
+  adds `threadItemFiles`.
+- Tidy keeps a stranded worker's worktree: a worker the host stopped or lost holds its worktree until it is resumed or
+  let go, so Tidy, a row's Tidy and the worktree verbs no longer remove the folder its resume needs.
 - A worker's brief shows what other workers sent it by `SendMessage` as their own bubbles, named by the sender's
   callsign, beside the user's prompts and Claude's answers, in both renderers and in `tower agent`; they count toward
   `brief.pairs` (API 1.21: a turn of `/conversations/<id>` gains `from`). Stats' "from workers" no longer counts a
   subagent's hand-back.
-- The tower page's icons are one SVG set (API 1.22): the glyphs that stood for icons (✎ ⎇ ◇ ▤ ⌫ ⌂ ↻ ▾ ✕ ⓘ « ?, a
-  shelf entry's kind) came from fallback fonts at their own weights and baselines. Every close is one control, every
-  small control is at least 24 px (WCAG 2.5.8), a selected card or tab is one look (an ink border and ring), and the
-  panels' gutters are 16 px. Icons grow with the Text size. `/icons.js` adds `GIST_ICON`, `withIcons` and new `ICON`
-  keys, and `SHELF_ICON`'s values are SVG; `/design.js` adds `controls` and `iconSize`; `/design.css` adds `.icon`,
-  `.icon-btn`, `--control`, `--selected` and `--icon-s`/`--icon-m`. The shared Changes, Reviews and Stats panels draw
-  the same icons in Tower 3D.
-- A file's Finder and editor controls are buttons named for the file, reached with Tab and pressed with Enter or
-  Space, wherever they sit outside another button; inside an open showing's tab they stay spans (API 1.23:
-  `/panels.js` adds `fileSpansHtml`).
-- The new-worker form waits for its Start: Start is busy until the spawn answers, the form closes on the new worker
-  and says why in the form when the tower refuses, with the prompt still there to fix, in both renderers.
+- A resumed session given no prompt of its own is marked "resumed, no new turns" in the brief and on Tower 3D's
+  session chips (API 1.19: `/brief.js` adds `resumedIdle` and `RESUMED_IDLE`).
+- One SVG icon set (API 1.22, 1.25): the glyphs that stood for icons came from fallback fonts at their own weights and
+  baselines. Both renderers draw `ICON` (`back`, `music` and `silent` new in 1.25); every close is one `.icon-btn`,
+  every control at least `--control` (24 px), one selected look (`--selected`) for cards and tabs, panel gutters on
+  the spacing scale.
+- Toasts: one told again while it shows merges into it with a count (×2), and the stack is one aligned column.
+- A file's Finder and editor controls are buttons named for the file wherever they sit outside another button
+  (API 1.23: `/panels.js` adds `fileSpansHtml`). The new-worker form waits for its Start: busy until the spawn
+  answers, closing on the new worker or saying why in the form, in both renderers.
+- Copy works inside framed pages: the tower page's shelf frame, `html` items and shown files allow `clipboard-write`,
+  as do Tower 3D's frames of shelf pages and shown files.
+- Tower 3D's logbook reader shows the last screen and the logbook on two tabs, each the whole panel.
+- Tower 3D catches up with the page: Tidy one row at a time, verbs held back listed with why, the archive's failed
+  read with Read again, the keymap's pane keys and its sheet in the pause card, the shared toasts (Resume after
+  sending home, Undo after deleting a draft), a tray per collection with an item reader, and an unsent prompt kept as
+  a draft.
 
 ## v1.2.0
 
