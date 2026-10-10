@@ -299,7 +299,16 @@ const apiSchema = JSON.stringify({
 
 async function origins(res: http.ServerResponse) {
   const dirs = Object.values(readConfig().projects).flatMap(projectDirs)
-  const urls = await Promise.all(dirs.map(async (dir) => [dir, await originUrl(dir)]))
+  const urls = await Promise.all(
+    dirs.map(async (dir) => {
+      try {
+        return [dir, await originUrl(dir)]
+      } catch (err) {
+        console.error(`origin of ${dir}:`, (err as Error).message)
+        return [dir, undefined]
+      }
+    }),
+  )
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(Object.fromEntries(urls.filter(([, url]) => url))))
 }
 
