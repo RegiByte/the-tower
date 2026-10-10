@@ -20,13 +20,17 @@ const parseLine = (line: string): { json: unknown } | { error: Error } => {
 
 const PREVIEW_LENGTH = 200
 
+/** How long a daemon may take to answer one request. */
+const REQUEST_TIMEOUT_MS = 30_000
+
 /** A server whose handler returns nothing for a request it doesn't know answers `undefined`. */
 const notJson = (server: string, socketPath: string, line: string, cause: Error, request?: string) =>
   new Error(`The ${server} on ${socketPath} answered${request ? ` "${request}"` : ''} with ${line.slice(0, PREVIEW_LENGTH)}, which isn't JSON: a ${server} older than this client answers so to a request it doesn't know`, { cause })
 
 /**
  * The server replies to requests in the order they arrive, so the oldest pending request owns each reply; one that
- * isn't JSON fails that request, and the next reply is the next request's.
+ * isn't JSON fails that request, and the next reply is the next request's. A request unanswered after
+ * REQUEST_TIMEOUT_MS fails, and the connection closes with the requests behind it: a late reply would be read as theirs.
  */
 const connect = <Request extends { t: string }, Reply>(socketPath: string, server: string, start: string): Promise<Client<Request, Reply>> =>
   new Promise((resolve, reject) => {
@@ -51,7 +55,13 @@ const connect = <Request extends { t: string }, Reply>(socketPath: string, serve
       resolve({
         request: (msg) =>
           new Promise((settle, fail) => {
-            pending.push({ t: msg.t, settle, fail })
+            const timer = setTimeout(() => {
+              pending.splice(pending.findIndex((p) => p.fail === failRequest), 1)
+              fail(new Error(`The ${server} on ${socketPath} didn't answer "${msg.t}" within ${REQUEST_TIMEOUT_MS / 1000}s: it may be wedged`))
+              sock.destroy()
+            }, REQUEST_TIMEOUT_MS)
+            const failRequest = (err: Error) => (clearTimeout(timer), fail(err))
+            pending.push({ t: msg.t, settle: (reply) => (clearTimeout(timer), settle(reply)), fail: failRequest })
             sock.write(frame(msg))
           }),
         close: () => sock.end(),
