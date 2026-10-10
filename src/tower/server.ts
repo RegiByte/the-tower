@@ -58,7 +58,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import { heldBy, resumeName, runsAs } from '../bridge/chains.ts'
+import { carriesOn, heldBy, heldNames, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
@@ -70,6 +70,7 @@ import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, rea
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { discardNote } from '../bridge/worktrees.ts'
+import { freshId } from '../shared/callsign.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
 import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, landingOf, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
@@ -836,7 +837,7 @@ const resumeOnce = (id: string, conversation: string, prompt: string | undefined
     if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
     const lost = lostWorktree(project, source.header.cwd)
     if (lost) return lost
-    const heir = newSessionId()
+    const heir = carriesOn(source, conversation) ? newSessionId() : (await workerIds(config))()
     const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
     const answer = await host(resumeRequest(source.header, conversation, prompt, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
     if (answer.t === 'spawned') await system.tracked(heir, TRACK_TIMEOUT_MS)
@@ -865,10 +866,19 @@ async function worktreeVerb(act: () => Promise<Answer>): Promise<Answer> {
 const occupants = () => occupantsOf(cardsNow(), system.shells())
 const cardsNow = () => boardOf().floors.flatMap((f) => f.cards)
 
+/** Draws new workers' session ids, each callsign's name held by no worker on duty (`freshId`), or just spawned and not on the board yet. */
+const workerIds = async (config: Config): Promise<() => string> => {
+  await system.refreshLive()
+  const callsign = callsignsOf(config)
+  const onDuty = cardsNow().flatMap((c) => (c.onDuty ? [c.id] : []))
+  const held = heldNames(system.sessions(), new Set([...onDuty, ...(system.live()?.ids ?? [])]), callsign)
+  return () => freshId(newSessionId, callsign, held)
+}
+
 /** A session in `cwd`, or in the hub's main checkout when none is given. */
 const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =>
   withProject(projectId, async (project, config) => {
-    const id = newSessionId()
+    const id = (await workerIds(config))()
     const cwd = given ?? project.hub
     const outside = outsideProject(project, cwd)
     if (outside) return apiError('refused', outside)
@@ -878,10 +888,10 @@ const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =
 /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
 const MAX_NAME_TRIES = 50
 
-/** A session id whose callsign, lowercased, is a free worktree name. */
-async function freeName(project: Project, branchPrefix: string, callsign: (id: string) => string): Promise<{ id: string; name: string }> {
+/** A new worker's session id, from `draw` (`workerIds`), whose callsign, lowercased, is a free worktree name. */
+async function freeName(project: Project, branchPrefix: string, draw: () => string, callsign: (id: string) => string): Promise<{ id: string; name: string }> {
   for (let i = 0; i < MAX_NAME_TRIES; i++) {
-    const id = newSessionId()
+    const id = draw()
     const name = callsign(id).toLowerCase()
     if (await nameIsFree(projectDirs(project), name, `${branchPrefix}${name}`)) return { id, name }
   }
@@ -891,13 +901,14 @@ async function freeName(project: Project, branchPrefix: string, callsign: (id: s
 /**
  * A new worktree in every dir of the project, cut from a base on origin or forked from a checkout, then a session in the
  * hub's. The worker is named for the worktree unless the worktree was named: a session id is drawn until its callsign is
- * a free name. A failed spawn rolls the cut back.
+ * a free name, and its name one no worker on duty holds. A failed spawn rolls the cut back.
  */
 const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, launch: Launch) =>
   withProject(projectId, (project, config) =>
     worktreeVerb(async () => {
       const { branchPrefix, links } = worktreesConfig(config, projectId)
-      const { id, name } = request.name ? { id: newSessionId(), name: request.name } : await freeName(project, branchPrefix, callsignsOf(config))
+      const draw = await workerIds(config)
+      const { id, name } = request.name ? { id: draw(), name: request.name } : await freeName(project, branchPrefix, draw, callsignsOf(config))
       const branch = request.branch ?? `${branchPrefix}${name}`
       const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
       const cwd = made.made[0].path

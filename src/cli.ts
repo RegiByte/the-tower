@@ -43,12 +43,13 @@ import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
-import { heldBy, resumeName, runsAs } from './bridge/chains.ts'
+import { carriesOn, heldBy, heldNames, resumeName, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
+import { freshId } from './shared/callsign.ts'
 import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
 import { CARRY_ON, newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
@@ -93,6 +94,10 @@ const readSessions = (): Session[] =>
     .sort()
     .flatMap((file) => foldLog(paths.cache, path.join(paths.sessions, file))?.session ?? [])
 
+/** A new worker's session id, its callsign's name held by no running worker (`freshId`). */
+const workerId = (sessions: Session[], live: Set<string>, callsign: (id: string) => string) =>
+  freshId(newSessionId, callsign, heldNames(sessions, live, callsign))
+
 const summary = (running: Resource[]): string => {
   if (!running.length) return ''
   const orphans = running.filter((r) => r.orphan).length
@@ -131,9 +136,10 @@ const resumeAtHost = async (log: SessionLog, conversation: string, prompt: strin
   const sessions = readSessions()
   const source = sessions.find((s) => s.header.id === id)!
   const config = readConfigFile()
-  const holder = heldBy(conversation, sessions, await liveIds(paths))
+  const live = await liveIds(paths)
+  const holder = heldBy(conversation, sessions, live)
   if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": attach to it`)
-  const heir = newSessionId()
+  const heir = carriesOn(source, conversation) ? newSessionId() : workerId(sessions, live, callsignsOf(config))
   const project = config.projects[log.header.project]
   const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
   return request(resumeRequest(log.header, conversation, prompt, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
@@ -182,7 +188,7 @@ const main = async (): Promise<void> => {
       const cwd = values.cwd ?? project.hub
       const outside = outsideProject(project, cwd)
       if (outside) throw new CliError(outside)
-      const session = newSessionId()
+      const session = workerId(readSessions(), await liveIds(paths), callsignsOf(config))
       print(await request(spawnRequest(session, callsignsOf(config)(session), id, cwd, sessionDirs(project, cwd), { ...values, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
       break
     }

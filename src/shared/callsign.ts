@@ -15,6 +15,22 @@ export const CALLSIGNS = [
   "HOPPER", "KOROLEV", "MORIARTY", "LESTRADE", "ENDURANCE",
 ]
 
+/** A callsign's name, its number left out. */
+export const nameIn = (callsign: string): string => callsign.slice(0, callsign.lastIndexOf("-"))
+
+/** Past this many draws nearly every name is held, and the last id drawn names the worker: its number tells it apart. */
+const MAX_DRAWS = 64
+
+/**
+ * A new worker's session id: `draw` is called until the id's callsign has a name none of `held` has, so workers on
+ * duty together don't share a name. The callsign stays a function of the id alone.
+ */
+export const freshId = (draw: () => string, callsign: (id: string) => string, held: ReadonlySet<string>): string => {
+  let id = draw()
+  for (let n = 1; n < MAX_DRAWS && held.has(nameIn(callsign(id))); n++) id = draw()
+  return id
+}
+
 /** A name a callsign can start with: it is matched in upper case, and lowercased it names a worktree. */
 export const CALLSIGN_NAME = /^[A-Z][A-Z0-9]*$/
 

@@ -1,5 +1,6 @@
 import { latestSaved, type Conversation } from './conversation.ts'
 import type { Session } from './facts.ts'
+import { nameIn } from '../shared/callsign.ts'
 
 const byStart = (a: Session, b: Session) => a.header.startedAt - b.header.startedAt
 
@@ -68,6 +69,18 @@ export const lineage = (session: Session, before: (s: Session) => Session | unde
 const workerName = (session: Session, before: (s: Session) => Session | undefined, callsign: (id: string) => string) => {
   const [first] = lineage(session, before)
   return runsAs(first) ?? callsign(first.header.id)
+}
+
+/**
+ * The names, numbers left out, of the workers of sessions `ids`: a new worker's is drawn apart from them (`freshId`).
+ * A session whose log isn't read yet was just spawned, and holds its id's callsign.
+ */
+export const heldNames = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): Set<string> => {
+  const byId = new Map(sessions.map((s) => [s.header.id, s]))
+  return new Set([...ids].map((id) => {
+    const session = byId.get(id)
+    return nameIn(session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id))
+  }))
 }
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */

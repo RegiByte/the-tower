@@ -5,7 +5,7 @@
   "summary": "A worker's name in every renderer and its Claude peer name (ODIN-07): drawn when the worker starts, a name from the config's callsigns (CALLSIGNS when it names none) chosen by rendezvous hashing over the session id, and a number from that id's own hash; passed to Claude as --name and read back from the log ever after, so a changed list names new workers only. A resume that continues a worker keeps its callsign.",
   "in": "tower",
   "reviewed": "2026-10-10",
-  "refs": ["hub/src/shared/callsign.ts#callsigns", "hub/src/shared/callsign.ts#CALLSIGNS", "hub/src/shared/callsign.ts#CALLSIGN_NAME", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#workerName", "hub/src/bridge/chains.ts#runsAs", "hub/src/shared/callsign.ts#nameOf", "hub/src/shared/launch.ts#spawnRequest"]
+  "refs": ["hub/src/shared/callsign.ts#callsigns", "hub/src/shared/callsign.ts#CALLSIGNS", "hub/src/shared/callsign.ts#CALLSIGN_NAME", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#workerName", "hub/src/bridge/chains.ts#runsAs", "hub/src/shared/callsign.ts#nameOf", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/callsign.ts#freshId", "hub/src/bridge/chains.ts#heldNames"]
 }
 ---
 A worker is the chain of sessions it ran as ([[resume]]): a session that resumes its predecessor's latest
@@ -28,10 +28,11 @@ when a worker starts: a changed list names new workers only, and a name taken ou
 ran under it. Only the logs from before sessions were named (2026-10-04) still derive their callsign from the current
 list, so a change renames those: adding a name to n renames about 1 in n+1 of them. Two texts keep a callsign as
 written: a reviewer's first prompt (`/tower:review HOLMES-42`, read back by `reviewedIn`) and review note headings;
-since a worker's callsign no longer moves, they keep pointing at it. Fewer
-names mean more shared callsigns: each name gives a hundred, so with two names two workers share one about half the
-time once about 17 have run, and two live workers sharing a callsign share a peer name too; only worktree cuts draw
-until the name is free. The default list gives about 8,100. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
+since a worker's callsign no longer moves, they keep pointing at it. A new worker's session id is drawn until its
+callsign's name is one no worker on duty holds ([`freshId`](ref:hub/src/shared/callsign.ts#freshId),
+[[callsign-free-name]]), so workers on duty together have different names while the list has a free one; past that,
+the number tells them apart, and two live workers sharing a whole callsign would share a peer name too. A worktree cut
+also draws until the lowercased callsign is a free worktree name. The default list gives about 8,100. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
 the naming function for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge,
 the CLI, the tower's spawns and `tower whoami`/`hire`/`review` all name through it, and renderers read
 `card.callsign` from the board, never deriving one. Tower 3D's fixture boards use the default list. Item tags
