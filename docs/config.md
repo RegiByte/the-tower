@@ -151,7 +151,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `help` (the `?` sheet) | global | `?` |
 | `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+1` … `Ctrl+4` |
 | `leave-terminal` | terminal | `Alt+Escape` |
-| `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight` |
+| `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end`, `word-left`, `word-right` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight`, `Alt+ArrowLeft`, `Alt+ArrowRight` |
 | `save-draft` | field | `Meta+S`, `Ctrl+S` |
 | `submit` | field | `Meta+Enter`, `Ctrl+Enter` |
 | `cancel-pick` (drop the lines picked for a note) | field | `Escape` |

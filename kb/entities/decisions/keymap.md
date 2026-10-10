@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/index.html#run", "hub/renderers/page/index.html#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
 }
 ---
@@ -24,8 +24,8 @@ hand-edited file, checked like every other key, and reach every renderer the way
 - [`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS): `{ id, scope, group, does, chords }`. Scopes: `global`
   (anywhere, but a chord without Alt, Ctrl or Meta only while nothing types), `terminal` (focus in a terminal),
   `field` (a text field or an open dialog). Ids: `prev-worker`, `next-worker`, `next-waiting`, `home`, `sidebar`,
-  `help`, `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews`, `leave-terminal`, the six natural keys
-  (`newline`, `delete-word`, …), `save-draft`, `submit`, `cancel-pick`.
+  `help`, `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews`, `leave-terminal`, the eight natural keys
+  (`newline`, `delete-word`, …, `word-left`, `word-right`), `save-draft`, `submit`, `cancel-pick`.
 - A chord is modifiers (`Alt`, `Ctrl`, `Meta`, `Shift`) and one key: a letter or digit (the physical key, so ⌥'s
   composed characters on a Mac don't matter), a `KeyboardEvent.code`, or one other character matched by what it
   types, Shift ignored (`?`). Alt with a character is refused: ⌥ changes the character.

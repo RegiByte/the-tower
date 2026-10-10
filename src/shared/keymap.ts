@@ -44,6 +44,8 @@ export const COMMANDS: Command[] = [
   { id: 'delete-to-end', scope: 'terminal', group: 'Terminal', chords: ['Meta+Delete'], does: 'delete to the end of the line' },
   { id: 'line-start', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowLeft'], does: 'go to the start of the line' },
   { id: 'line-end', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowRight'], does: 'go to the end of the line' },
+  { id: 'word-left', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowLeft'], does: 'go back one word' },
+  { id: 'word-right', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowRight'], does: 'go forward one word' },
   { id: 'save-draft', scope: 'field', group: 'Fields', chords: ['Meta+S', 'Ctrl+S'], does: 'save the open draft' },
   { id: 'submit', scope: 'field', group: 'Fields', chords: ['Meta+Enter', 'Ctrl+Enter'], does: 'start a session from the open draft or the new session dialog; add a review note' },
   { id: 'cancel-pick', scope: 'field', group: 'Fields', chords: ['Escape'], does: 'drop the lines picked for a review note' },

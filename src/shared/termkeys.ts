@@ -1,7 +1,7 @@
 /**
  * The editing keys of a Mac text field, in every browser terminal. xterm.js sends a plain Enter for Shift+Enter, a
- * plain backspace for ⌘⌫ and ^H for Ctrl+⌫, and nothing for ⌘← / ⌘→. Each of these sends the readline control key
- * that both Claude Code's prompt and a shell read. ⌥⌫ is left to xterm: its ESC DEL already deletes a word in both. The
+ * plain backspace for ⌘⌫ and ^H for Ctrl+⌫, nothing for ⌘← / ⌘→, and ESC [1;3D / ESC [1;3C for ⌥← / ⌥→, which a shell's
+ * default keymap leaves unbound. Each of these sends the readline key that both Claude Code's prompt and a shell read. ⌥⌫ is left to xterm: its ESC DEL already deletes a word in both. The
  * tower serves this module as `/termkeys.js`.
  */
 
@@ -10,11 +10,12 @@ import { chordLabel, commandOf, COMMANDS, type Keys } from './keymap.ts'
 /** The parts of a keydown a natural key depends on. */
 export type TermKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>
 
-type Chord = 'Shift' | 'Ctrl' | 'Meta'
+type Chord = 'Shift' | 'Ctrl' | 'Alt' | 'Meta'
 
 /** The bytes each natural key's command (`/keymap.js`) sends. */
 const BYTES: Record<string, string> = {
   newline: '\n', 'delete-word': '\x17', 'delete-to-start': '\x15', 'delete-to-end': '\x0b', 'line-start': '\x01', 'line-end': '\x05',
+  'word-left': '\x1bb', 'word-right': '\x1bf',
 }
 
 /** Each natural key at its default chord: its command, the key and the only modifier held, the bytes it sends, and how renderers name it. */

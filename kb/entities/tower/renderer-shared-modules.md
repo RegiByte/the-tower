@@ -4,7 +4,7 @@
   "name": "Renderer shared modules",
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes and Reviews panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "web-tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts"]
 }
 ---
@@ -40,7 +40,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   `statusLegendHtml`) and of the host's state (`hostState`, `HOST_NAME`, `HOST_MEANS`).
 - `termkeys.ts`: the editing keys of a Mac text field in every browser terminal
   ([`NATURAL_KEYS`](ref:hub/src/shared/termkeys.ts#NATURAL_KEYS)): Shift+Enter sends `\n` (a newline in Claude's
-  prompt, Enter in a shell), Ctrl+⌫ `^W`, ⌘⌫ `^U`, ⌘⌦ `^K`, ⌘← / ⌘→ `^A` / `^E`, the readline keys Claude's
+  prompt, Enter in a shell), Ctrl+⌫ `^W`, ⌘⌫ `^U`, ⌘⌦ `^K`, ⌘← / ⌘→ `^A` / `^E`, ⌥← / ⌥→ `ESC b` / `ESC f` (xterm's `ESC [1;3D` leaks `D` in zsh), the readline keys Claude's
   prompt and a shell both read. ⌥⌫ is xterm's own ESC DEL, already a word delete in both. Every xterm a renderer
   mounts (the tower page's session and shells, Tower 3D's desk and kiosks) takes
   [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) as its key handler: each natural key is a
