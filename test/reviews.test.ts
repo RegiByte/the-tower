@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { DiffFile } from '../src/bridge/diff.ts'
 import type { RepoChanges } from '../src/changes.ts'
-import { anchorState, appended, nextNumber, parseThread, printThread, unseenBy, type Anchor } from '../src/shared/reviews.ts'
+import { anchorState, appended, bodyProblem, nextNumber, parseThread, printThread, unseenBy, type Anchor } from '../src/shared/reviews.ts'
 
 /** Written by `review/append` on the sandbox: an anchored note, a reply, a diff quote beside a plain one, a bare anchor. */
 const text = readFileSync(new URL('./fixtures/review-thread.md', import.meta.url), 'utf8')
@@ -60,6 +60,21 @@ test('review thread: a worker has seen everything up to its own last note, and n
   assert.deepEqual(unseenBy(thread, 'ODIN-42').map((m) => m.n), [3, 4])
   assert.deepEqual(unseenBy(thread, 'user').map((m) => m.n), [])
   assert.deepEqual(unseenBy(thread, 'CAESAR-60').map((m) => m.n), [1, 2, 3, 4])
+})
+
+test('review thread: a body leaving a fence open is refused, a closed one and a longer fence are not', () => {
+  assert.match(bodyProblem('Look at:\n```ts\nconst a = 1')!, /fence opened on line 2 .* never closed/)
+  assert.match(bodyProblem('````md\n```\nstill open\n```')!, /line 1 .* never closed/)
+  assert.equal(bodyProblem('Look at:\n```ts\nconst a = 1\n```\nDone.'), undefined)
+  assert.equal(bodyProblem('````md\n```\ninner\n```\n````'), undefined)
+})
+
+test('review thread: a refused open fence keeps the thread numbering intact', () => {
+  const note = { author: 'ODIN-42', at: '2026-10-06 16:00', n: 5, re: undefined, anchors: [], body: 'ok' }
+  const next = appended(text, 'main', note)
+  assert.deepEqual(parseThread(next).messages.map((m) => m.n), [1, 2, 3, 4, 5])
+  const broken = appended(text, 'main', { ...note, body: '```ts\nconst a = 1' })
+  assert.notDeepEqual(parseThread(appended(broken, 'main', { ...note, n: 6 })).messages.map((m) => m.n), [1, 2, 3, 4, 5, 6])
 })
 
 const file = (path: string, lines: string[]): DiffFile => ({

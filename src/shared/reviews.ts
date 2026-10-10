@@ -162,11 +162,30 @@ export const stamp = (date: Date): string => {
   return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())} ${two(date.getHours())}:${two(date.getMinutes())}`
 }
 
-/** What would break the thread if it were appended: a body line outside a fence that reads as a message heading. */
+/** The line index where a code fence opens and is never closed, if one is. */
+const openFenceAt = (lines: string[]): number | undefined => {
+  let open: { ticks: string; at: number } | undefined
+  lines.forEach((line, i) => {
+    if (open) {
+      if (closes(line, open.ticks)) open = undefined
+      return
+    }
+    const opens = FENCE.exec(line)
+    if (opens) open = { ticks: opens[1], at: i }
+  })
+  return open?.at
+}
+
+/**
+ * What would break the thread if it were appended: a body line outside a fence that reads as a message heading, or a
+ * code fence left open, which would turn every later message heading into fence content.
+ */
 export const bodyProblem = (body: string): string | undefined => {
   const lines = body.split('\n')
   const heading = headingsOf(lines)[0]
-  return heading === undefined ? undefined : `line ${heading + 1} of the body reads as a message heading: "${lines[heading]}"`
+  if (heading !== undefined) return `line ${heading + 1} of the body reads as a message heading: "${lines[heading]}"`
+  const fence = openFenceAt(lines)
+  return fence === undefined ? undefined : `the code fence opened on line ${fence + 1} of the body is never closed: close it with a line of ${lines[fence].trim().match(/^`+/)![0]}`
 }
 
 /** A message's number is one past the last. */

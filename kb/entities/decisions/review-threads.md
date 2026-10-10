@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/src/bridge/reviews.ts#checkoutState",
     "hub/src/bridge/reviews.ts#filedThreadOf",
@@ -106,7 +106,7 @@ unlanded work, sometimes pointing at code. Building that primitive covers all of
   by the core and served to renderers as `/reviews.js`. A quote is fenced longer than any backtick run it holds; a
   quote of picked diff rows holding a removal is a `diff` block keeping git's marks, its lines numbered on the new
   side (the old side when only removals are picked). The parser ignores a heading-shaped line inside a code fence, and
-  the verb refuses a body with one outside a fence. Pinned by a thread recorded through the verb
+  the verb refuses a body with one outside a fence, and a body that leaves a fence open (it would hide every later heading from the parser, so `unseenBy`, `send` and `nextNumber` would miss them). Pinned by a thread recorded through the verb
   (`test/fixtures/review-thread.md`): printing what was parsed gives the file back.
 - *Verb: `review/append`*, not a generic `collection/append`. The note's number and the file's name come from the
   thread, so they must be worked out inside the one serialization point; a generic append would leave numbering to
