@@ -3,7 +3,6 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { skyAt, type Sky } from '../../../src/shared/design.ts'
 import { pick, roll } from './avatar.ts'
 import { random } from './random.ts'
-import { toon } from './toon.ts'
 
 /** The city around the tower: sky, lights, the street and a city of windows, lit by the viewer's clock. Built once. */
 

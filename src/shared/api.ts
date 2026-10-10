@@ -338,5 +338,4 @@ export type Call<V extends Verb = Verb> = { [K in V]: [K, Partial<Verbs[K]>] }[V
 type Routes = typeof VERBS & typeof TRANSPORT
 export type Route = keyof Routes
 export type RouteInput = { [R in Route]: z.infer<Routes[R]['input']> }
-export type RouteReply = { [R in Route]: z.infer<Routes[R]['reply']> }
 export const ROUTES: Routes = { ...VERBS, ...TRANSPORT }

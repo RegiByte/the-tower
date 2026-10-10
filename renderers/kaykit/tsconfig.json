@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "lib": ["es2024", "dom", "dom.iterable"],
     "strict": true,
+    "noUnusedLocals": true,
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["node"],
