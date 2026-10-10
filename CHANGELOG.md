@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.19.0
+
+Workers keep their callsigns, new workers don't repeat the name of one on duty, and 74 more names. No host restart, no
+config change, the renderer API is unchanged. Restart the tower (`tower down tower && tower up tower`).
+
+- A worker's callsign is read from its log: the `--name` its first session's Claude ran under. Changing `callsigns`
+  (or the tower's list) names new workers only; no worker named since 2026-10-04 is renamed, running or past, and a
+  name taken out of the list keeps naming the workers that ran under it. Logs from before then still derive theirs
+  from the list. 18 sessions from 2026-10-04/05 get back the names they ran under (decision `callsign-from-log`).
+- A new worker's session id is drawn until its callsign's name is one no worker on duty holds: spawns, worktree cuts
+  and forking resumes, from the tower and from `tower spawn`/`tower resume`. Workers on duty together share a name
+  only once every name is held (decision `callsign-free-name`).
+- `CALLSIGNS` grows from 81 to 155 names: MYCROFT, ADLER, the Musketeers to keep ATHOS company, PHOBOS for DEIMOS,
+  ROOK and EIFFEL for the tower, and more. With a list of your own in the config, nothing changes.
+
 ## v1.18.0
 
 A worker's kills, keys and `tower submit` prompts are named in the target's log, and the next wait stays in view
