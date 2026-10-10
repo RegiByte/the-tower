@@ -1346,12 +1346,20 @@ const topAnchorOf = (list) => {
   return row && { key: row.dataset.hold, offset: row.getBoundingClientRect().top - top }
 }
 
+/** The `[data-hold="key"]` row and its offset from a scrolled list's top edge, while any of it is in sight. */
+const sightAnchorOf = (list, key) => {
+  const row = key && list.querySelector(`[data-hold="${CSS.escape(key)}"]`)
+  if (!row) return undefined
+  const edges = list.getBoundingClientRect()
+  const { top, bottom } = row.getBoundingClientRect()
+  return top < edges.bottom && bottom > edges.top ? { key, offset: top - edges.top } : undefined
+}
+
 /**
- * Replaces a scrolled list's content with what stays at its top kept where it was: a browser's scroll anchoring holds
- * a list still while rows above change height, and loses its anchor when the rows are replaced.
+ * Replaces a scrolled list's content with the `anchor` row kept where it was: a browser's scroll anchoring holds a list
+ * still while rows above change height, and loses its anchor when the rows are replaced.
  */
-function redrawHeld(list, html) {
-  const anchor = topAnchorOf(list)
+function redrawHeld(list, html, anchor) {
   list.innerHTML = html
   const row = anchor && list.querySelector(`[data-hold="${CSS.escape(anchor.key)}"]`)
   if (row) list.scrollTop += row.getBoundingClientRect().top - list.getBoundingClientRect().top - anchor.offset
@@ -1377,7 +1385,9 @@ function render() {
   $('notes').innerHTML = claudeUntestedHtml(board) ?? ''
   paintKeys()
   paintLimits()
-  keepingFocus($('floors'), () => redrawHeld($('floors'), floorsTopDown().map(floorHtml).join('')))
+  const floors = $('floors')
+  // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
+  keepingFocus(floors, () => redrawHeld(floors, floorsTopDown().map(floorHtml).join(''), sightAnchorOf(floors, selected) ?? topAnchorOf(floors)))
   drawSideView()
   repaint($('rail'), railHtml(waiting))
   $('side-foot').innerHTML = board.config ? `<span>config</span><code data-tip="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}` : ''
