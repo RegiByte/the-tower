@@ -292,6 +292,7 @@ const fromOrigin = (dir: string, args: string[]) =>
   })
 
 const fetchNow = async (dir: string, prune: boolean) => {
+  if ((await run(dir, ['remote', 'get-url', 'origin'])).code !== 0) return
   const r = await fromOrigin(dir, ['fetch', ...(prune ? ['--prune'] : []), 'origin'])
   if (r.code !== 0) throw new WorktreeError('offline', `Couldn't fetch origin in ${dir}: ${r.stderr.trim()}`)
 }
