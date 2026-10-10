@@ -9,7 +9,7 @@ import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
-import { latestRateLimits, type RateLimit, type Session, type Shown } from './facts.ts'
+import { latestRateLimits, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { isMidTurn, waitsOnSomeone, withLiveness, type Status } from './status.ts'
@@ -62,6 +62,9 @@ export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resume
 export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; verbs: ResourceVerb[]; calls: ResourceCalls }
 
 export type CardShown = Omit<Shown, 'at'> & { at: number; session: string }
+
+/** A subagent the session started whose loop the tower follows (`SubagentRun` with an `id`), running while its loop is mid-turn in a live session. */
+export type CardSubagent = SubagentRun & { id: string; running: boolean }
 
 /** An html file the worker wrote, at its first write (epoch ms), and whether the worker showed it. */
 export type CardPage = { path: string; at: number; shown: boolean }
@@ -148,7 +151,10 @@ export type Card = {
   compacting: boolean
   /** What Claude told the user between tool calls in the current turn, oldest first. */
   says: string[]
+  /** The subagents the session started, followed or not. */
   subagents: number
+  /** The subagents the session started whose loops it follows, oldest first. */
+  subagentRuns: CardSubagent[]
   /** The main loop's turns that ran to their Stop, across the sessions the worker ran as. */
   turns: number
   /** The sessions the worker ran as, oldest first, ending with this one. */
@@ -420,7 +426,8 @@ const card = (
     tool: facts.tool,
     compacting: state.status === 'working' && state.compaction !== undefined,
     says: facts.says,
-    subagents: facts.subagents,
+    subagents: facts.subagentRuns.length,
+    subagentRuns: facts.subagentRuns.filter((run): run is SubagentRun & { id: string } => run.id !== undefined).map((run) => ({ ...run, running: live && run.endedAt === undefined })),
     turns: worker.reduce((sum, s) => sum + s.facts.turns, 0),
     lineage: worker.map((s) => ({ id: s.header.id, startedAt: s.header.startedAt })),
     model: facts.model,

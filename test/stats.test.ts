@@ -42,9 +42,33 @@ test("a subagent's steps count their tokens, and a turn its notification starts 
   const { facts } = session('subagent-background')
   assert.equal(facts.tokens.length, 7)
   assert.equal(facts.tokens.filter(([, , t]) => t.output === 194 || t.output === 117).length, 2)
-  assert.equal(facts.spawns.length, 1)
+  assert.equal(facts.subagentRuns.length, 1)
+  assert.equal(facts.subagentRuns[0].id, undefined)
   assert.equal(facts.turnSpans.length, 2)
   assert.deepEqual(facts.waits, [])
+})
+
+test("each subagent is a run: its spawn names its loop, whose steps add its tokens and whose turn's end ends it", () => {
+  const log = fixture('subagent-fork')
+  const at = (t: number) => log.header.startedAt + t * 1000
+  const midway = factsOf({ header: log.header, events: log.events.filter(([t]) => t < 35.5) })
+  assert.deepEqual(midway.subagentRuns.map((run) => [run.id, run.endedAt]), [['a6cd8e69660dcac39', at(35.335)], ['a3e6404c3b4b12502', undefined]])
+  assert.deepEqual(factsOf(log).subagentRuns, [
+    {
+      id: 'a6cd8e69660dcac39', type: 'fork', description: 'Read facts.txt and report', background: true, parent: undefined, model: 'claude-haiku-5-5',
+      startedAt: at(32.574), endedAt: at(35.335), ended: 'answer', tokens: { input: 6, output: 274, cacheRead: 75624, cacheWrite: 3086 },
+    },
+    {
+      id: 'a3e6404c3b4b12502', type: 'general-purpose', description: 'Read more.txt and report', background: true, parent: undefined, model: 'claude-haiku-5-5',
+      startedAt: at(32.933), endedAt: at(35.792), ended: 'answer', tokens: { input: 4, output: 253, cacheRead: 33534, cacheWrite: 36997 },
+    },
+  ])
+})
+
+test('a subagent stopped mid-turn ends aborted', () => {
+  const log = fixture('subagent-stopped')
+  const [run] = factsOf(log).subagentRuns
+  assert.deepEqual([run.id, run.endedAt, run.ended], ['a879d6a43ea150891', log.header.startedAt + 17315, 'aborted'])
 })
 
 test('a permission dialog is an ask, and a failed tool call a failure', () => {

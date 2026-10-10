@@ -21,6 +21,31 @@ export type Kept = { project: string; collection: string; id: string; conversati
 /** Tokens of one model step: fresh input, output, and the prompt cache read and written. */
 export type Tokens = { input: number; output: number; cacheRead: number; cacheWrite: number }
 
+/**
+ * A subagent the worker started, a fork included, folded from its `agent.spawn` and the events of its loop, which carry
+ * its `id`. Its loop ends a turn when it answers or is stopped, and may step again when background work it left or a
+ * message wakes it. Times in epoch ms.
+ */
+export type SubagentRun = {
+  /** Claude's id for the subagent's loop; absent from a spawn the mod posted before it reported one, whose loop can't be followed. */
+  id?: string
+  /** `general-purpose`, `Explore`, `fork`, a plugin's agent. */
+  type: string
+  /** The Agent call's few words on the task. */
+  description: string
+  background: boolean
+  /** The subagent whose loop spawned it; absent when the main loop did. */
+  parent?: string
+  model?: string
+  startedAt: number
+  /** When its loop last ended a turn, until it steps again. */
+  endedAt?: number
+  /** How that turn ended: `answer`, or `aborted` when it was stopped. */
+  ended?: string
+  /** Its steps' tokens, summed. */
+  tokens: Tokens
+}
+
 /** A rate limit's reading where it changed: epoch ms, the percent used, and when its window resets. */
 export type LimitReading = [at: number, percentUsed: number, resetsAt: string]
 
@@ -37,7 +62,6 @@ export type Facts = {
   tool?: string
   /** What Claude told the user between tool calls in the current turn: its latest text steps, oldest first. */
   says: string[]
-  subagents: number
   /** The main loop's turns that ran to their Stop: an interrupted or failed turn raises none. */
   turns: number
   /** The model and effort of the main loop's latest step: what Claude used, whatever was asked for. Haiku has no effort. */
@@ -93,8 +117,8 @@ export type Facts = {
   asks: number[]
   /** When a tool call failed (epoch ms). */
   failures: number[]
-  /** When each subagent was spawned (epoch ms). */
-  spawns: number[]
+  /** The subagents it started, oldest first: a spawn refused by a plugin started none. */
+  subagentRuns: SubagentRun[]
   /** Each rate limit's readings where it changed, by kind, oldest first. */
   limitReadings: Record<string, LimitReading[]>
   /** The html files the worker wrote (`Write`, its subagents' too), each at its first write (epoch ms), oldest first. */
@@ -119,8 +143,8 @@ export type FoldEvent = LogEvent | Unreadable
 export type Session = { header: SessionHeader; facts: Facts }
 
 export const initialFacts = (header: SessionHeader): Facts => ({
-  state: BOOTING, cols: header.cols, rows: header.rows, subagents: 0, turns: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
-  spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], spawns: [], limitReadings: {},
+  state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
+  spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], subagentRuns: [], limitReadings: {},
   pages: [], sent: [], received: [],
 })
 
@@ -183,6 +207,26 @@ const tokensOf = (u: Usage): Tokens => ({
   input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0,
 })
 
+const NO_TOKENS: Tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+
+export const addTokens = (a: Tokens, b: Tokens): Tokens => ({
+  input: a.input + b.input, output: a.output + b.output, cacheRead: a.cacheRead + b.cacheRead, cacheWrite: a.cacheWrite + b.cacheWrite,
+})
+
+type SpawnResult = { model?: string; agentId?: string; deny?: string }
+
+const spawned = (hook: Record<string, unknown>, at: number): SubagentRun => {
+  const result = hook.result as SpawnResult | undefined
+  return {
+    id: result?.agentId, type: String(hook.subagentType), description: String(hook.description), background: hook.background === true,
+    parent: hook.parentAgentId as string | undefined, model: result?.model, startedAt: at, tokens: NO_TOKENS,
+  }
+}
+
+/** The run whose loop raised the event, changed by `change`; the runs as they were when none is that loop's. */
+const runOf = (runs: SubagentRun[], id: unknown, change: (run: SubagentRun) => SubagentRun): SubagentRun[] =>
+  runs.some((run) => run.id === id) ? runs.map((run) => (run.id === id ? change(run) : run)) : runs
+
 const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<string, unknown>): Facts => {
   const mainLoop = hook.agentId === undefined
   const at = startedAt + t * 1000
@@ -227,16 +271,19 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     case 'PostToolUseFailure':
       return { ...facts, failures: [...facts.failures, at] }
     case 'agent.spawn':
-      return { ...facts, subagents: facts.subagents + 1, spawns: [...facts.spawns, at] }
+      return (hook.result as SpawnResult | undefined)?.deny ? facts : { ...facts, subagentRuns: [...facts.subagentRuns, spawned(hook, at)] }
     case 'turn.step': {
       const { answer, usage } = hook.result as { answer?: string; usage?: Usage }
       const counted = usage ? { ...facts, tokens: [...facts.tokens, [at, String(hook.model), tokensOf(usage)] as Facts['tokens'][number]] } : facts
-      if (!mainLoop) return counted
+      if (!mainLoop) {
+        const step = usage ? tokensOf(usage) : NO_TOKENS
+        return { ...counted, subagentRuns: runOf(facts.subagentRuns, hook.agentId, (run) => ({ ...run, tokens: addTokens(run.tokens, step), endedAt: undefined, ended: undefined })) }
+      }
       const stepped = { ...counted, model: String(hook.model), effort: hook.effort as string | undefined }
       return answer?.trim() ? { ...stepped, says: [...facts.says, clip(answer.trim())].slice(-SAYS_KEPT) } : stepped
     }
     case 'turn.complete':
-      if (!mainLoop) return facts
+      if (!mainLoop) return { ...facts, subagentRuns: runOf(facts.subagentRuns, hook.agentId, (run) => ({ ...run, endedAt: at, ended: String(hook.reason) })) }
       return facts.turnStartedAt === undefined
         ? { ...facts, says: [] }
         : { ...facts, says: [], turnSpans: [...facts.turnSpans, [startedAt + facts.turnStartedAt * 1000, t - facts.turnStartedAt]], turnStartedAt: undefined }

@@ -33,7 +33,7 @@ or one event at a time as it is tailed:
   effort, the release of Claude it runs (`claude`, from `tower.claude`), the main loop's finished turns (`turns`: each `Stop`; an interrupt or a failure raises none), the [[conversation]]s held, what the worker showed (`shown`, from `tower.show`: [[agent-show]]), what it kept (`kept`, from `tower.keep`: [[agent-keep]]), when someone
   last typed, `hostStopped` and `exitedFrom` (the status it exited from, which says a turn was cut short:
   [[carry-on]]), and the timed facts stats reduce ([[stats]]): `spend` per cost reading, `tokens` per
-  model step, `turnSpans`, `waits` on the user, `prompts` by origin, `asks`, `failures`, `spawns` and each rate
+  model step, `turnSpans`, `waits` on the user, `prompts` by origin, `asks`, `failures`, `subagentRuns` and each rate
   limit's readings where they moved. [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces them over a window. Also
   `pages`: each html file the worker wrote (`Write`, subagents' too), which the card carries with whether the worker
   showed it (`card.pages`), and `sent` and `received`: each message to or from another Claude session with a digest
@@ -43,6 +43,12 @@ or one event at a time as it is tailed:
   A message is received as a prompt wrapping the text as sent (`<cross-session-message from-name="…">`), read by
   [`delivered`](ref:hub/src/bridge/messages.ts#delivered); [`receipts`](ref:hub/src/bridge/messages.ts#receipts) is the
   same join from the receiving side, which names the sender of a worker's message in its brief ([[brief-turns]]).
+  `subagentRuns`: each subagent the worker started, a fork included (`agent.spawn`: its type, description,
+  `background`, the subagent that spawned it, its model, and its `agentId`, which the mod reads from Claude's
+  answer), followed by that id through its loop's events: each `turn.step` adds its tokens, and a `turn.complete`
+  ends it with its `reason` (`answer`, or `aborted` when TaskStop stopped it) until it steps again (background work
+  it left, or a message, wakes it). A spawn an older mod posted has no id and is counted, never followed. The card
+  carries the followed ones as `subagentRuns`, each `running` while its loop is mid-turn in a live session.
   A prompt of Claude's peer origin without that wrapper is a subagent's hand-back, counted under `prompts` as
   `hand-back`. A prompt a worker typed through the tower (`submit` or `spawn` with `by`) reaches Claude as the
   composer's: the `tower.prompt` fact before it makes it `peer`, and it answers no wait ([[worker-prompts]]).

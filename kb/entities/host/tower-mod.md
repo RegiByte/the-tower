@@ -20,6 +20,10 @@ posts `trigger`, `instructions` and a `messageCount` in place of the messages it
 conversation, megabytes in a long session). Each hook awaits its post, so
 events reach the log in the order Claude raised them.
 
+`agent.spawn` is posted once Claude has started the subagent, with Claude's answer under `result`: the
+`agentId` every event of the subagent's loop carries, and the model it runs on. It joins a spawn to its loop
+([[log-reductions]]: `subagentRuns`).
+
 `tower.claude` carries `$.session.version()` (the release, `claude --version`'s), posted right after
 `session.start`: the release a session runs is a fact in its own log ([[new-claude-release]]).
 

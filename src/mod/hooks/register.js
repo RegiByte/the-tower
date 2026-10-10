@@ -1,8 +1,9 @@
 /**
  * Posts Claude Code events to the host, which appends each to the session's log as an `h` event named by
  * `hook_event_name`. An event under Claude's name carries Claude's input for it, and Claude's result under
- * `result` where the hook awaits one (`tool.check` leaves out the tool input that its `tool.call` carries,
- * and `session.compact` counts the messages it summarizes, which hold the whole conversation).
+ * `result` where the hook awaits one (`agent.spawn`'s names the started subagent's `agentId`, which its loop's events
+ * carry; `tool.check` leaves out the tool input that its `tool.call` carries, and `session.compact` counts the
+ * messages it summarizes, which hold the whole conversation).
  * What this mod derives is posted under `tower.*` (`tower.claude`: the release of Claude the session runs, as it starts). Each hook awaits its post, so events reach the log in the
  * order Claude raised them.
  */
@@ -70,8 +71,9 @@ export function register(on) {
     return next(e)
   })
   on('agent.spawn', async ($, e, next) => {
-    await forward($, 'agent.spawn', e)
-    return next(e)
+    const result = await next(e)
+    await forward($, 'agent.spawn', { ...e, result: { model: result.model, agentId: result.agentId, deny: result.deny } })
+    return result
   })
   on('turn.start', async ($, e, next) => {
     await forward($, 'turn.start', e)

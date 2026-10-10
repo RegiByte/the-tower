@@ -2,7 +2,7 @@
  * Stats over sessions: a pure reduction of their facts over a window of time, per project and for all of them, in
  * the local time of the process (the tower's, which is the viewer's).
  */
-import type { Session, Tokens } from './facts.ts'
+import { addTokens, type Session, type Tokens } from './facts.ts'
 import { extensionOf, type RepoLanded } from './landed.ts'
 
 export type Bucket = 'hour' | 'day'
@@ -141,10 +141,6 @@ export const bucketsOf = ({ from, to, bucket }: StatsQuery): number[] => {
 
 const within = (q: StatsQuery) => (at: number) => at >= q.from && at < q.to
 
-const addTokens = (a: Tokens, b: Tokens): Tokens => ({
-  input: a.input + b.input, output: a.output + b.output, cacheRead: a.cacheRead + b.cacheRead, cacheWrite: a.cacheWrite + b.cacheWrite,
-})
-
 const tally = (keys: string[]): Record<string, number> => keys.reduce<Record<string, number>>((a, k) => ((a[k] = (a[k] ?? 0) + 1), a), {})
 
 /** Turns running at once over [from, to): the wall time any ran, their time, both in ms, and the most at once. */
@@ -224,7 +220,7 @@ const scopeStats = (sessions: Session[], landed: RepoLanded[], q: StatsQuery, bu
       atOnce: atOnce(whole),
       turns: turns.length,
       prompts: tally(sessions.flatMap((s) => s.facts.prompts.filter(([at]) => inWindow(at)).map(([, origin]) => origin))),
-      subagents: sum(sessions.map((s) => s.facts.spawns.filter(inWindow).length)),
+      subagents: sum(sessions.map((s) => s.facts.subagentRuns.filter((run) => inWindow(run.startedAt)).length)),
       asks: sum(sessions.map((s) => s.facts.asks.filter(inWindow).length)),
       failures: sum(sessions.map((s) => s.facts.failures.filter(inWindow).length)),
       waits: spread(sessions.flatMap((s) => s.facts.waits.filter(([at]) => inWindow(at)).map(([, seconds]) => seconds))),

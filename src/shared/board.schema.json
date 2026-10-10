@@ -503,7 +503,15 @@
           "description": "What Claude told the user between tool calls in the current turn, oldest first."
         },
         "subagents": {
-          "type": "number"
+          "type": "number",
+          "description": "The subagents the session started, followed or not."
+        },
+        "subagentRuns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardSubagent"
+          },
+          "description": "The subagents the session started whose loops it follows, oldest first."
         },
         "turns": {
           "type": "number",
@@ -623,6 +631,7 @@
         "compacting",
         "says",
         "subagents",
+        "subagentRuns",
         "turns",
         "lineage",
         "claudeUntested",
@@ -771,6 +780,87 @@
         "broken"
       ],
       "description": "How loudly a worker asks for you, the one thing every renderer colours: the status word keeps the fact."
+    },
+    "CardSubagent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Claude's id for the subagent's loop; absent from a spawn the mod posted before it reported one, whose loop can't be followed."
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "description": "`general-purpose`, `Explore`, `fork`, a plugin's agent."
+        },
+        "description": {
+          "type": "string",
+          "description": "The Agent call's few words on the task."
+        },
+        "background": {
+          "type": "boolean"
+        },
+        "parent": {
+          "type": "string",
+          "description": "The subagent whose loop spawned it; absent when the main loop did."
+        },
+        "model": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "number"
+        },
+        "endedAt": {
+          "type": "number",
+          "description": "When its loop last ended a turn, until it steps again."
+        },
+        "ended": {
+          "type": "string",
+          "description": "How that turn ended: `answer`, or `aborted` when it was stopped."
+        },
+        "tokens": {
+          "$ref": "#/definitions/Tokens",
+          "description": "Its steps' tokens, summed."
+        }
+      },
+      "required": [
+        "background",
+        "description",
+        "id",
+        "running",
+        "startedAt",
+        "tokens",
+        "type"
+      ],
+      "description": "A subagent the session started whose loop the tower follows (`SubagentRun` with an `id`), running while its loop is mid-turn in a live session."
+    },
+    "Tokens": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "number"
+        },
+        "output": {
+          "type": "number"
+        },
+        "cacheRead": {
+          "type": "number"
+        },
+        "cacheWrite": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "output",
+        "cacheRead",
+        "cacheWrite"
+      ],
+      "additionalProperties": false,
+      "description": "Tokens of one model step: fresh input, output, and the prompt cache read and written."
     },
     "LineageSession": {
       "type": "object",

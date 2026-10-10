@@ -44,7 +44,7 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   conversation is where its total starts, a lower total started again), `tokens` per model step (main loop and
   subagents), `turnSpans` (main-loop `turn.start` to `turn.complete`), `waits` (a `Stop` to the user's next prompt,
   `composer` or `bridge`), `prompts` by origin, `asks` (`PermissionRequest`: a dialog the user saw), `failures`
-  (`PostToolUseFailure`), `spawns`, and each rate limit's readings where they moved (`limitReadings`). None reads a
+  (`PostToolUseFailure`), `subagentRuns` (each started at its `agent.spawn`), and each rate limit's readings where they moved (`limitReadings`). None reads a
   `PostToolUse` body.
 - *A pure reduction.* [`stats`](ref:hub/src/bridge/stats.ts#stats)`(sessions, {from, to, bucket})` gives per
   project and for all: summaries (sessions started, sessions that ran a turn, resumes, spend, tokens by model,
