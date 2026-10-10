@@ -152,8 +152,13 @@
     let mux
     let keys = 0
     let source
-    const watchOn = (key) =>
-      call('mux/watch', { mux, key, path: watchers.get(key).path }).catch((err) => watchers.get(key)?.fn({ t: 'error', message: err.message }))
+    /** The watch in flight per key: an unwatch is sent once it has settled, so the tower never drops a stream before it holds it. */
+    const settling = new Map()
+    const watchOn = (key) => {
+      const settled = call('mux/watch', { mux, key, path: watchers.get(key).path }).catch((err) => watchers.get(key)?.fn({ t: 'error', message: err.message }))
+      settling.set(key, settled)
+      return settled
+    }
     /**
      * An EventSource reconnects on its own after a dropped connection, and gives up after an error answer: `onLost`
      * hears both, and a stream given up on is opened again.
@@ -185,7 +190,13 @@
         watchers.set(key, { path, fn })
         if (!source) connect()
         if (mux) watchOn(key)
-        return () => watchers.delete(key) && mux && call('mux/unwatch', { mux, key }).catch(() => {})
+        return () => {
+          if (!watchers.delete(key)) return
+          const unwatchOn = mux
+          const settled = settling.get(key)
+          settling.delete(key)
+          if (unwatchOn) (settled ?? Promise.resolve()).then(() => call('mux/unwatch', { mux: unwatchOn, key })).catch(() => {})
+        }
       },
       ui: () => {},
       setPrefs: (patch) => {
