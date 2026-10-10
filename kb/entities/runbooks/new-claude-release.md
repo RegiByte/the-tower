@@ -4,7 +4,7 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after the fixture set is recorded again on it and replays clean.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
 }
 ---

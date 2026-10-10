@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/model.ts#towerPort", "hub/src/shared/model.ts#towerUrl", "hub/src/machine.ts#daemons", "hub/src/machine.ts#startedPid", "hub/src/tower/server.ts", "hub/src/directory.ts", "hub/src/doctor.ts#running", "hub/src/init.ts#initialConfig", "hub/scripts/sandbox.ts", "hub/scripts/sandbox-root.ts"]
 }
 ---
@@ -34,8 +34,8 @@ on, kept in each one's environment, is two copies that drift.
 - The workers' directory reads the config at `TOWER_CONFIG` (the default system root when unset) for the board's
   address, and `tower whoami` prints it, the page's and the API's address alike. The handbook points there.
 - `tower init` writes `port: 4317` into a first config, so the key is found where it is changed.
-- The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it (4399 for a new
-  sandbox, the one already there otherwise), and `down`, `tool:frames` and `tool:tour` read it from the config under
+- The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it into the config (4399 for a new
+  sandbox, the one already there otherwise; the rest of an existing config is left as it is), and `down`, `tool:frames` and `tool:tour` read it from the config under
   `TOWER_SANDBOX` ([`sandbox-root.ts`](ref:hub/scripts/sandbox-root.ts)).
 
 **Alternatives considered.**
