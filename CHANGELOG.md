@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.16.0
+
+A worker's subagents, forks included, are on the board one by one: what each is, its task, whether it still runs,
+and its tokens. No host restart, no config change. The renderer API moves to 1.40, an addition. Restart the tower
+(`tower down tower && tower up tower`) and rebuild Tower 3D (`npm run tower3d`) where it is built. The mod changed:
+each Claude reads it as it starts, so a worker already running is followed from its next resume.
+
+- The mod posts `agent.spawn` once Claude started the subagent, with the `agentId` its loop's events carry. The
+  bridge folds each into `facts.subagentRuns`: type, description, background, parent, model, start, its steps'
+  tokens, and how its last turn ended (`answer`, or `aborted` when TaskStop stopped it). Cards carry the followed
+  ones as `subagentRuns`, each `running` while its loop is mid-turn in a live session; `subagents` still counts
+  them all.
+- The tower page draws the running ones under their worker in the sidebar, a fork marked as the worker's twin; one
+  that ends fades out. The worker's details list every run with its tokens. Tower 3D seats a running fork in a
+  second chair at its worker's right, in the worker's look; the minis on a desk are now the subagents running, no
+  longer every one the session started.
+- `/cards.js` adds `satellitesOf`, `subagentTitle`, `subagentEnd`, `subagentTokens`, `tokenCount` and
+  `SUBAGENT_FADE_MS`, for any renderer.
+
 ## v1.15.2
 
 Claude Code 2.1.296 is tested: the board and `tower doctor` no longer flag it. It asks nothing of you: no host
