@@ -165,6 +165,13 @@ function openRepo(alias, spec, host) {
       .filter(([, date]) => date > day)
       .map(([hash, date, subject]) => ({ hash, date, subject })),
     commitsTouching: (p) => new Set(git("log", "--format=%h", rev, "--", p).split("\n").filter(Boolean)),
+    // A commit whose diff of p ends by deleting the old file's last lines (git log -L can't see them go).
+    deletesAtEnd: (p, hash) => {
+      const kept = git("show", `${hash}:${p}`).split("\n");
+      const length = kept.at(-1) === "" ? kept.length - 1 : kept.length;
+      return git("diff", "-U0", "--no-color", "--no-ext-diff", `${hash}^`, hash, "--", p).split("\n")
+        .map((l) => l.match(/^@@ -\d+(?:,\d+)? \+(\d+),0 @@/)).some((m) => m && Number(m[1]) === length);
+    },
     commitsInRange: (p, r, day) => git("log", "--format=%H", "-s", `--since=${day}`, "-L", `${r.from},${r.to}:${p}`, rev)
       .split("\n").filter(Boolean),
   };
@@ -215,9 +222,10 @@ export function suspectsSince(diagnostics, hashes) {
   });
 }
 
-// A git log -L range misses a pure deletion at its edges, so each region is read one line wider on both sides;
-// a region at the file's first or last line can't be, and is judged by the whole file.
-const widened = (r) => (r.from > 1 && r.to < r.last ? { from: r.from - 1, to: r.to + 1 } : null);
+// A git log -L range misses a pure deletion at its edges, so each region is read one line wider on both sides. A region
+// on the file's last line can't be: it is read to that line, and a commit deleting the file's last lines counts too.
+// A region on the file's first line can't be either, and is judged by the whole file.
+const reading = (r) => (r.from > 1 ? { from: r.from - 1, to: Math.min(r.to + 1, r.last), atEnd: r.to === r.last } : null);
 
 // The diagnostics with each suspect narrowed to the commits that changed the lines of a symbol it is anchored at
 // (git log -L follows them back through shifts), and dropped when none did. A suspect read at a whole file, or at
@@ -227,13 +235,17 @@ export function suspectsInSymbols(diagnostics, repos) {
     if (!d.suspect || d.suspect.anchors.includes(null)) return [d];
     const ref = parseRef(d.suspect.ref);
     const repo = repos.get(ref.alias);
-    const ranges = d.suspect.anchors.map((a) => symbolRegion(repo.lines(ref.path), a, ref.path)).map((r) => r && widened(r));
+    const ranges = d.suspect.anchors.map((a) => symbolRegion(repo.lines(ref.path), a, ref.path)).map((r) => r && reading(r));
     if (ranges.includes(null)) return [d];
-    let touched;
-    // One git log -L per range: given several, git can abort on an assertion in line-log.c.
-    try { touched = new Set(ranges.flatMap((r) => repo.commitsInRange(ref.path, r, d.suspect.reviewed))); }
-    catch (err) { return [{ ...d, msg: `${d.msg}\n      (judged by the whole file: git log -L failed: ${String(err.stderr || err.message).trim().split("\n")[0]})` }]; }
-    const commits = d.suspect.commits.filter((c) => [...touched].some((h) => h.startsWith(c.hash)));
+    let commits;
+    try {
+      // One git log -L per range: given several, git can abort on an assertion in line-log.c.
+      const touched = [...new Set(ranges.flatMap((r) => repo.commitsInRange(ref.path, r, d.suspect.reviewed)))];
+      const atEnd = ranges.some((r) => r.atEnd);
+      commits = d.suspect.commits.filter((c) => touched.some((h) => h.startsWith(c.hash)) || (atEnd && repo.deletesAtEnd(ref.path, c.hash)));
+    } catch (err) {
+      return [{ ...d, msg: `${d.msg}\n      (judged by the whole file: git failed: ${String(err.stderr || err.message).trim().split("\n")[0]})` }];
+    }
     return commits.length ? [suspectWarning(d.where, { ...d.suspect, commits })] : [];
   });
 }
