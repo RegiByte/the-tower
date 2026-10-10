@@ -620,10 +620,12 @@ const isDeclared = (project: string, collection: string): boolean => {
   return Object.hasOwn(config.projects, project) && Object.hasOwn(projectCollections(config, project), collection)
 }
 
-const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) =>
+const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
   res
     .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...headers })
     .end(readFileSync(file))
+}
 
 type Answer = { t: string } | ApiError
 
@@ -1079,6 +1081,11 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     return
   }
   const url = req.url ?? '/'
+  try {
+    decodeURIComponent(url.split('?')[0])
+  } catch {
+    return fail(res, 'invalid', 'The path has a malformed % escape')
+  }
   const asset = STATIC[url]
   if (req.method === 'GET' && asset) {
     res.writeHead(200, { 'content-type': asset[1] }).end(readFileSync(asset[0]))
