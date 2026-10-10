@@ -25,6 +25,16 @@ function lispDefinitions(anchor) {
     : [new RegExp(`\\((?:[\\w.-]+/)?def[\\w-]*\\s+(?:\\^(?:\\{[^}]*\\}|\\S+)\\s+)*${sym}${end}`)];
 }
 
+const anyCase = (words) => words.replace(/[a-z]/g, (c) => `[${c}${c.toUpperCase()}]`);
+const KEYWORDS = anyCase("def|class|function|const|let|var|type|interface|enum|struct|fn|func|defn|table|view|procedure");
+const IF_NOT_EXISTS = ["if", "not", "exists"].map(anyCase).join("\\s+");
+// Keywords match in any case (SQL); the name in its own case, unless flags say otherwise.
+const definitionRe = (name, flags = "") => new RegExp(
+  `(?:^|[^\\w])(?:${KEYWORDS})\\s+(?:${IF_NOT_EXISTS}\\s+)?["'\`]?${name}(?![\\w])`
+  + `|^\\s*(?:export\\s+)?${name}\\s*(?::[^=]*)?=`, flags);
+
+// A name is found in its own case first, so ICON is `const ICON` past an earlier `const icon`; in any case only
+// where it has no definition in its own (SQL names).
 export function locateAnchor(lines, anchor, file) {
   const range = anchor.match(LINES_RE);
   if (range) {
@@ -38,11 +48,8 @@ export function locateAnchor(lines, anchor, file) {
     return idx === undefined ? null : { from: idx + 1, to: null };
   }
   const sym = escapeRe(anchor);
-  const definition = new RegExp(
-    `(?:^|[^\\w])(?:def|class|function|const|let|var|type|interface|enum|struct|fn|func|defn|table|view|procedure)\\s+(?:if\\s+not\\s+exists\\s+)?["'\`]?${sym}(?![\\w])`
-    + `|^\\s*(?:export\\s+)?${sym}\\s*(?::[^=]*)?=`, "i");
-  const idx = lines.findIndex((l) => definition.test(l));
-  return idx < 0 ? null : { from: idx + 1, to: null };
+  const idx = ["", "i"].map((flags) => lines.findIndex((l) => definitionRe(sym, flags).test(l))).find((i) => i >= 0);
+  return idx === undefined ? null : { from: idx + 1, to: null };
 }
 
 const run = (dir, args) => execFileSync("git", ["-C", dir, ...args], {
