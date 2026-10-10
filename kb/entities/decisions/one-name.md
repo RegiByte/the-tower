@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
-  "refs": ["hub/src/cli.ts", "hub/src/directory.ts", "hub/src/mod/bin/tower", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/shared/paths.ts#configPath", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/env.ts#withoutParentSession", "hub/src/bridge/facts.ts", "hub/scripts/migrate-tower.ts", "hub/package.json"]
+  "reviewed": "2026-10-10",
+  "refs": ["hub/src/cli.ts", "hub/src/directory.ts", "hub/src/mod/bin/tower", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/shared/paths.ts#configPath", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/env.ts#withoutParentSession", "hub/src/bridge/facts.ts", "hub/package.json"]
 }
 ---
 **Problem.** The project had four names: `agent-hub` (the GitHub repo and the kb project), `managing-claudes` (the
@@ -29,11 +29,11 @@ repo needs, and what keeps the Claudes who change the code consistent.
 - **Env:** `TOWER_SESSION_ID`, `TOWER_HOOKS_SOCKET` (set by the host, scrubbed from children, [[env-scrub]]),
   `TOWER_CONFIG`, `TOWER_PORT`, `TOWER_SANDBOX`, `TOWER_FRAMES`, `TOWER_TOUR`.
 - **Log events** the tower derives are `tower.show`, `tower.keep`, `tower.hire`, `tower.tool.result` and
-  `tower.tool.abandoned`. The fold reads only these. [`migrate-tower.ts`](ref:hub/scripts/migrate-tower.ts) rewrote the
-  logs written before, once (and the recorded fixtures), and deleted `cache/facts`, whose byte offsets it invalidated.
-  It also renamed a reviewer's launch prompt, `/mc-sensor:review` → `/tower:review`, in the header's argv and in the
-  prompt events that carry it: the board finds a reviewer from its launch (`reviewedIn`) and the hirer of a prompt by
-  comparing it with the launch (`promptBy`).
+  `tower.tool.abandoned`. The fold reads only these. A one-off migration rewrote the logs written before (and the
+  recorded fixtures) and deleted `cache/facts`, whose byte offsets it invalidated; it also renamed a reviewer's launch
+  prompt, `/mc-sensor:review` → `/tower:review`, in the header's argv and in the prompt events that carry it: the board
+  finds a reviewer from its launch (`reviewedIn`) and the hirer of a prompt by comparing it with the launch (`promptBy`).
+  The script is gone: no public user has logs from before the rename.
 - **System root** `~/.tower` ([[system-root]]), moved by the user with the host stopped.
 
 **Alternatives considered.**
