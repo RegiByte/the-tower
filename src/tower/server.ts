@@ -36,8 +36,8 @@
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
- *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data}
- *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
+ *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data, by?}
+ *        | /resize {id, cols, rows} | /kill {id, by?}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
  *        | /worktree/discard {project, name, author, held}
  *        | /branch/recut {project, name} | /branch/delete {project, name} | /tidy {project}   the tower's worktrees and kept branches, through git
@@ -62,7 +62,7 @@ import { heldBy, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
-import { HIRED, LET_GO, PROMPTED_BY } from '../bridge/facts.ts'
+import { HIRED, KEYED_BY, KILLED_BY, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
@@ -692,19 +692,51 @@ const letGo = (id: string) =>
       : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
   })
 
-/** The worker a prompt comes from is named in the session's log before the prompt reaches it: the user's prompts are the rest. */
-const promptedBy = (id: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } })
+/** A worker's act on a session is named in the session's log before it lands: the user's acts are the rest. */
+const actedBy = (id: string, act: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: act, by } })
 
 const PROMPT_FROM_WORKER = 'name the worker a prompt comes from'
 
 const fromWorker = (by: string | undefined, act: () => Answer | Promise<Answer>) =>
   by === undefined || system.session(by) ? act() : apiError('not_found', `No session "${by}"`)
 
+/** `act` runs once `fact` names `by` in the session's log, when `by` is given. */
+const namedFirst = (id: string, fact: string, by: string | undefined, doing: string, act: () => Answer | Promise<Answer>) =>
+  fromWorker(by, async () => {
+    const named = by ? (factRefused(doing) ?? (await actedBy(id, fact, by))) : OK
+    return named.t === 'error' ? named : act()
+  })
+
 const submit = (id: string, text: string, by: string | undefined) =>
+  withSession(id, () => namedFirst(id, PROMPTED_BY, by, PROMPT_FROM_WORKER, () => daemon(() => submitText(paths, id, text))))
+
+/** Only a running session's kill is named: the host refuses the rest. */
+const kill = (id: string, by: string | undefined) =>
+  withSession(id, () =>
+    namedFirst(id, KILLED_BY, system.live()?.ids.has(id) ? by : undefined, 'name the worker that kills a session', () => host({ t: 'kill', id })),
+  )
+
+/** A worker's keys are named once per burst: again when another worker typed last, or after a minute. */
+const KEYS_BURST_MS = 60_000
+
+const inBurst = ({ header, facts }: Session, by: string, now: number) =>
+  facts.keyedBy !== undefined && facts.keyedBy[1] === by && now - (header.startedAt + facts.keyedBy[0] * 1000) < KEYS_BURST_MS
+
+/** The fact is folded before the keys are typed, so the next request of the burst reads it. */
+const keyedBy = async (id: string, by: string) => {
+  const before = system.session(id)!.facts.keyedBy
+  const named = await actedBy(id, KEYED_BY, by)
+  if (named.t !== 'error') await system.until(() => system.session(id)!.facts.keyedBy !== before, TRACK_TIMEOUT_MS)
+  return named
+}
+
+const keys = (id: string, data: string, by: string | undefined) =>
   withSession(id, () =>
     fromWorker(by, async () => {
-      const named = by ? (factRefused(PROMPT_FROM_WORKER) ?? (await promptedBy(id, by))) : OK
-      return named.t === 'error' ? named : daemon(() => submitText(paths, id, text))
+      const typed = sessionKeys(data)
+      if (!typed) return OK
+      const named = by && !inBurst(system.session(id)!, by, Date.now()) ? (factRefused('name the worker that types keys') ?? (await keyedBy(id, by))) : OK
+      return named.t === 'error' ? named : host({ t: 'write', id, data: typed })
     }),
   )
 
@@ -715,7 +747,7 @@ const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | un
     if (refused) return refused
     const answer = await spawning()
     if (answer.t !== 'spawned' || !prompt || !by) return answer
-    const named = await promptedBy((answer as Replies['spawn']).id, by)
+    const named = await actedBy((answer as Replies['spawn']).id, PROMPTED_BY, by)
     return named.t === 'error' ? named : answer
   })
 
@@ -1049,14 +1081,10 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
     return hire ? hired(project, by!, prompt, spawning) : spawning()
   },
   resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
-  keys: ({ id, data }) =>
-    withSession(id, () => {
-      const keys = sessionKeys(data)
-      return keys ? host({ t: 'write', id, data: keys }) : OK
-    }),
+  keys: ({ id, data, by }) => keys(id, data, by),
   submit: ({ id, text, by }) => submit(id, text, by),
   resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
-  kill: ({ id }) => withSession(id, () => host({ t: 'kill', id })),
+  kill: ({ id, by }) => kill(id, by),
   'let-go': ({ id }) => letGo(id),
   reap: ({ id }) => reapSession(id),
   'reap/process': ({ id, pid }) => reapProcess(id, pid),

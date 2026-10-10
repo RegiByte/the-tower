@@ -82,7 +82,8 @@ script, and Chrome plays no video document under a sandbox. So are collection it
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
 into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText); with `by`, a worker's, it first
-has the host append `tower.prompt` to the session's log ([[worker-prompts]]). A `/spawn` with `hire` is `by`'s hire:
+has the host append `tower.prompt` to the session's log ([[worker-prompts]]); `/kill` and `/keys` with `by` append
+`tower.kill` and `tower.keys`, the keys once per burst ([[worker-acts]]). A `/spawn` with `hire` is `by`'s hire:
 [`hired`](ref:hub/src/tower/server.ts#hired) weighs it against the floor's limits, has the host append `tower.hire` to
 the hirer's log, and takes a hirer's hires one at a time, each until the system counts it ([[hiring-limits]]). claude.ai
 artifacts refuse framing, so they go on the shelf as `link`, not `url`. An `item` entry's file is served from its

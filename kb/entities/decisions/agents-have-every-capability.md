@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/tower/server.ts#isFromTower", "hub/src/directory.ts#command", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/host/main.ts"]
 }
 ---
@@ -45,6 +45,6 @@ open to every renderer and every agent.
 `tower hire` is the first general one: a worker starts another on a prompt ([[agent-directory]]), and `tower home`
 ends a worker with everyone under it ([[crews]]). The verbs that reach the user's desktop, `reveal` and `edit`, take
 only paths the system names ([[open-files]]).
-Open follow-up: attribution. A hire is the first act logged with its actor (`tower.hire` in the hirer's log, read as
-the hired card's `hiredBy`, [[hiring-limits]]); the other acts one worker takes on another (`submit`, `kill`) are not
-yet facts naming their actor; the roadmap carries it.
+Attribution: the acts one worker takes on another are facts naming their actor: a hire (`tower.hire` in the hirer's
+log, read as the hired card's `hiredBy`, [[hiring-limits]]), a prompt (`tower.prompt`, [[worker-prompts]]), a kill and
+keys (`tower.kill`, `tower.keys` once per burst, [[worker-acts]]), each in the target's log.

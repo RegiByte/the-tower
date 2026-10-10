@@ -113,6 +113,10 @@ export type Facts = {
   prompts: [at: number, origin: string][]
   /** The worker the next prompt typed in the composer comes from (`tower.prompt`), until it arrives. */
   promptedBy?: string
+  /** The latest worker that typed keys into the session (`tower.keys`), with when, in seconds since the session's start. */
+  keyedBy?: [at: number, by: string]
+  /** The worker that killed the session (`tower.kill`): a kill no worker named is the user's. */
+  killedBy?: string
   /** When Claude showed the user a permission dialog (epoch ms): a check settled without one is not an ask. */
   asks: number[]
   /** When a tool call failed (epoch ms). */
@@ -153,6 +157,12 @@ export const LET_GO = 'tower.letGo'
 
 /** The fact the tower appends before a worker's prompt reaches a session through its composer (`submit`, `spawn` with `by`). */
 export const PROMPTED_BY = 'tower.prompt'
+
+/** The fact the tower appends before a worker's keys reach a session (`keys` with `by`), once per burst. */
+export const KEYED_BY = 'tower.keys'
+
+/** The fact the tower appends before a worker's kill reaches a session (`kill` with `by`). */
+export const KILLED_BY = 'tower.kill'
 
 /** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
 export const HIRED = 'tower.hire'
@@ -306,6 +316,10 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, hired: [...facts.hired, String(hook.id)] }
     case PROMPTED_BY:
       return { ...facts, promptedBy: String(hook.by) }
+    case KEYED_BY:
+      return { ...facts, keyedBy: [t, String(hook.by)] }
+    case KILLED_BY:
+      return { ...facts, killedBy: String(hook.by) }
     default:
       return facts
   }

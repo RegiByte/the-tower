@@ -597,7 +597,7 @@ switch (verb) {
     const card = await cardNamed(board, flag)
     const calls = card.calls['send-home']
     if (!calls) throw new CliError(`${card.callsign} has nobody to send home: it is in no crew, or nobody in its crew runs. \`tower agents\` shows the crews; a lone worker ends with \`kill\`.`)
-    for (const [verbName, body] of calls) await command(verbName, body)
+    for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })
     const floor = board.floors.find((f) => f.id === card.project)!
     const sent = [card, ...crewOf(floor.cards, card)].filter((c) => calls.some(([, { id }]) => id === c.id))
     console.log(`Sent home ${sent.map((c) => c.callsign).join(', ')}: their sessions ended, and each can be resumed.`)

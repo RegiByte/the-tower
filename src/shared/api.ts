@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.41'
+export const API_VERSION = '1.42'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -36,9 +36,9 @@ const written = z.object({ t: z.literal('written'), modifiedAt })
 const worktreeName = z.string().regex(WORKTREE_NAME)
 const worktree = { project: id, name: worktreeName }
 const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
-const by = id
-  .optional()
-  .describe("The worker that makes the request, by session id: the prompt it types is counted as that worker's, not the user's. Left out, the user makes it.")
+const actor = (what: string) =>
+  id.optional().describe(`The worker that makes the request, by session id: ${what} Left out, the user makes it.`)
+const by = actor("the prompt it types is counted as that worker's, not the user's.")
 const cutName = {
   name: worktreeName.optional().describe("The worktrees' folder name; the new worker's callsign, lowercased, when left out."),
   branch: z.string().min(1).optional().describe("The new branch; the project's branch prefix and the name when left out."),
@@ -94,7 +94,9 @@ export const VERBS = {
     reply: spawned,
   },
   keys: {
-    input: z.object({ id, data: z.string() }).describe('Keys reach a session in order, one request at a time, each chunk the terminal produced its own write. Ctrl+Z is dropped: a session has no shell to continue it.'),
+    input: z
+      .object({ id, data: z.string(), by: actor('named in the session\'s log as `tower.keys`, once per burst (again when another worker typed last, or after a minute).') })
+      .describe('Keys reach a session in order, one request at a time, each chunk the terminal produced its own write. Ctrl+Z is dropped: a session has no shell to continue it.'),
     reply: ok,
   },
   submit: {
@@ -102,7 +104,7 @@ export const VERBS = {
     reply: ok,
   },
   resize: { input: z.object({ id, ...size }).describe("Resize the session's PTY; whoever resizes it owns its size."), reply: ok },
-  kill: { input: z.object({ id }).describe('End the session.'), reply: ok },
+  kill: { input: z.object({ id, by: actor("named in the session's log as `tower.kill` before it ends.") }).describe('End the session.'), reply: ok },
   'let-go': {
     input: z.object({ id }).describe("Take a stranded worker (stopped or lost with the host, waiting to be resumed) off duty: a fact in its log, appended by the host. Its conversation stays resumable from the floor's archive."),
     reply: ok,

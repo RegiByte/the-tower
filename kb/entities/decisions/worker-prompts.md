@@ -6,12 +6,13 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/src/bridge/facts.ts#PROMPTED_BY",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/tower/server.ts#factRefused",
-    "hub/src/tower/server.ts#promptedBy",
+    "hub/src/tower/server.ts#actedBy",
+    "hub/src/tower/server.ts#namedFirst",
     "hub/src/tower/server.ts#submit",
     "hub/src/tower/server.ts#spawnedBy",
     "hub/src/shared/api.ts#VERBS",
@@ -21,7 +22,8 @@
   "links": [
     { "to": "stats", "verb": "refines", "carries": "prompts from you and waits on you count only the user's prompts" },
     { "to": "log-reductions", "verb": "uses", "carries": "tower.prompt, then prompt.submit" },
-    { "to": "agents-have-every-capability", "verb": "follows", "carries": "a worker holds the verbs, and its acts are told apart from the user's" }
+    { "to": "agents-have-every-capability", "verb": "follows", "carries": "a worker holds the verbs, and its acts are told apart from the user's" },
+    { "to": "worker-acts", "verb": "refines", "carries": "the prompt is one of a worker's acts named in the target's log" }
   ]
 }
 ---
@@ -34,7 +36,7 @@ from you" were hire briefs alone, so every attention number overstated the user'
 46 busy. Work that reduces the user's load can only be judged against a count of the user's own prompts.
 
 **How.** `submit` and `spawn` take an optional `by`, a session id the tower knows (an unknown one is refused before
-anything happens). With it, [`promptedBy`](ref:hub/src/tower/server.ts#promptedBy) has the host append
+anything happens). With it, [`actedBy`](ref:hub/src/tower/server.ts#actedBy) has the host append
 `{"hook_event_name":"tower.prompt","by":<id>}` to the target's log, through the host's `fact` request, before the
 text is typed; for a spawn, right after it starts, only when it has a prompt (Claude takes over a second to read its
 first). The host takes `fact` from protocol 2 on: while an older host runs, a `submit` or a spawn with a prompt and
@@ -55,4 +57,4 @@ user's. The Stats panel adds the user's prompts per commit landed.
 
 **Impact.** A mark whose prompt never arrives (text typed into a dialog, not submitted) makes the user's next
 composer prompt the worker's: rare, since the CLI submits only to a worker at its composer. Logs before this
-decision keep their old counts. The rest of roadmap 7's "acts name their actor" (keys, kills, other verbs) is open.
+decision keep their old counts. Kills and keys are named the same way (decision `worker-acts`).
