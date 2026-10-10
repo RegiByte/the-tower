@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadKb } from "./model.mjs";
 import { execFileSync } from "node:child_process";
-import { collectEvidence, suspectsSince } from "./evidence.mjs";
+import { collectEvidence, suspectsInSymbols, suspectsSince } from "./evidence.mjs";
 import { buildPayload, renderHtml } from "./render.mjs";
 
 const ROOT = path.resolve("kb");
@@ -14,6 +14,10 @@ const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the pro
   verify --since <rev>
               the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/
               (a branch's own: verify --since origin/main)
+  verify --symbols
+              the same, with a suspect read at symbols (path#name) kept only for the commits that changed
+              the lines of one of them; read at a whole file, or at the first or last lines of one, it is
+              kept as is. Combines with --since.
   render      build kb/dist/<project-id>.html (refuses on errors)
 
 The repo holding kb/ is read at HEAD, which must contain its origin/<branch>; every other repo at its
@@ -75,15 +79,17 @@ if (cmd === "tree") {
   const errors = kb.diagnostics.filter((d) => d.level === "error");
   if (errors.length) { console.log(""); report(errors); }
 } else if (cmd === "verify") {
+  const flags = process.argv.slice(3);
   const evidence = collectEvidence(kb);
   freshness(evidence.repos);
-  const diagnostics = [...kb.diagnostics, ...evidence.diagnostics];
-  if (arg === "--since") {
-    const since = process.argv[4];
-    if (!since) { console.error("usage: verify --since <rev>"); process.exit(1); }
+  let diagnostics = [...kb.diagnostics, ...evidence.diagnostics];
+  if (flags.includes("--symbols")) diagnostics = suspectsInSymbols(diagnostics, evidence.repos);
+  if (flags.includes("--since")) {
+    const since = flags[flags.indexOf("--since") + 1];
+    if (!since || since.startsWith("--")) { console.error("usage: verify --since <rev>"); process.exit(1); }
     const hashes = execFileSync("git", ["rev-list", `${since}..HEAD`], { encoding: "utf8" }).split("\n").filter(Boolean);
     console.log(`\nsuspects caused by ${hashes.length} commit(s) in ${since}..HEAD`);
-    process.exit(report(suspectsSince(diagnostics, hashes)) ? 1 : 0);
+    diagnostics = suspectsSince(diagnostics, hashes);
   }
   process.exit(report(diagnostics) ? 1 : 0);
 } else if (cmd === "render") {

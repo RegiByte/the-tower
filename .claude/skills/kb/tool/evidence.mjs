@@ -20,9 +20,10 @@ const LISP_RE = /\.(clj|cljs|cljc|bb|edn)$/;
 function lispDefinitions(anchor) {
   const sym = escapeRe(anchor);
   const end = "(?=[\\s)\\]}]|$)";
+  const form = { opens: FORM_LINE, column: indentOf };
   return anchor.startsWith(":")
-    ? [new RegExp(`\\(defmethod\\s+\\S+\\s+${sym}${end}`), new RegExp(`^[\\s{\\[]*${sym}${end}`)]
-    : [new RegExp(`\\((?:[\\w.-]+/)?def[\\w-]*\\s+(?:\\^(?:\\{[^}]*\\}|\\S+)\\s+)*${sym}${end}`)];
+    ? [{ re: new RegExp(`\\(defmethod\\s+\\S+\\s+${sym}${end}`), ...form }, { re: new RegExp(`^[\\s{\\[]*${sym}${end}`), opens: KEY_LINE, column: keyColumn }]
+    : [{ re: new RegExp(`\\((?:[\\w.-]+/)?def[\\w-]*\\s+(?:\\^(?:\\{[^}]*\\}|\\S+)\\s+)*${sym}${end}`), ...form }];
 }
 
 const anyCase = (words) => words.replace(/[a-z]/g, (c) => `[${c}${c.toUpperCase()}]`);
@@ -32,24 +33,69 @@ const IF_NOT_EXISTS = ["if", "not", "exists"].map(anyCase).join("\\s+");
 const definitionRe = (name, flags = "") => new RegExp(
   `(?:^|[^\\w])(?:${KEYWORDS})\\s+(?:${IF_NOT_EXISTS}\\s+)?["'\`]?${name}(?![\\w])`
   + `|^\\s*(?:export\\s+)?${name}\\s*(?::[^=]*)?=`, flags);
+const ANY_DEFINITION = definitionRe("[\\w$]+");
+const FORM_LINE = /^\s*\(/;
+const KEY_LINE = /^[\s{[]*:\S/;
+const COMMENT_LINE = /^\s*(?:#|\/\/|\/\*|\*|;|--)/;
+const indentOf = (line) => line.match(/^\s*/)[0].length;
+const keyColumn = (line) => line.match(/^[\s{[]*/)[0].length;
 
+// An anchor's definition line (0-based), with what opens a sibling definition and the column it is compared at.
 // A name is found in its own case first, so ICON is `const ICON` past an earlier `const icon`; in any case only
 // where it has no definition in its own (SQL names).
+function findDefinition(lines, anchor, file) {
+  const candidates = LISP_RE.test(file)
+    ? lispDefinitions(anchor)
+    : ["", "i"].map((flags) => ({ re: definitionRe(escapeRe(anchor), flags), opens: ANY_DEFINITION, column: indentOf }));
+  for (const c of candidates) {
+    const index = lines.findIndex((l) => c.re.test(l));
+    if (index >= 0) return { index, opens: c.opens, column: c.column };
+  }
+  return null;
+}
+
 export function locateAnchor(lines, anchor, file) {
   const range = anchor.match(LINES_RE);
   if (range) {
     const [a, b] = [Number(range[1]), Number(range[2] ?? range[1])];
     return a >= 1 && b >= a && b <= lines.length ? { from: a, to: range[2] ? b : null } : null;
   }
-  if (LISP_RE.test(file)) {
-    const idx = lispDefinitions(anchor)
-      .map((re) => lines.findIndex((l) => re.test(l)))
-      .find((i) => i >= 0);
-    return idx === undefined ? null : { from: idx + 1, to: null };
+  const def = findDefinition(lines, anchor, file);
+  return def && { from: def.index + 1, to: null };
+}
+
+const BRACKET = { "(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1 };
+const MULTILINE_QUOTE = /"""|'''|`/g;
+
+// The lines an anchor's symbol spans (1-based, inclusive): the decorators right above its definition line, down to
+// the line before the next definition at its column or less that is not a comment, or the file's last line.
+// A deeper definition is nested in it and does not end it, nor does one met while the lines since its definition
+// leave a bracket or a multi-line string open (a definition-like line in a string). A line-range anchor is its own region.
+export function symbolRegion(lines, anchor, file) {
+  const last = lines.at(-1) === "" ? lines.length - 1 : lines.length;
+  const range = anchor.match(LINES_RE);
+  if (range) {
+    const loc = locateAnchor(lines, anchor, file);
+    return loc && { from: loc.from, to: Math.min(loc.to ?? loc.from, last), last };
   }
-  const sym = escapeRe(anchor);
-  const idx = ["", "i"].map((flags) => lines.findIndex((l) => definitionRe(sym, flags).test(l))).find((i) => i >= 0);
-  return idx === undefined ? null : { from: idx + 1, to: null };
+  const def = findDefinition(lines, anchor, file);
+  if (!def) return null;
+  const at = def.column(lines[def.index]);
+  const indent = indentOf(lines[def.index]);
+  let from = def.index;
+  while (from > 0 && /^\s*@/.test(lines[from - 1]) && indentOf(lines[from - 1]) === indent) from--;
+  const opensSibling = (l) => l.trim() && !COMMENT_LINE.test(l) && def.opens.test(l) && def.column(l) <= at;
+  let depth = 0;
+  const quotes = new Set();
+  let to = def.index;
+  for (;;) {
+    const line = to === def.index ? lines[to].slice(at) : lines[to];
+    for (const c of line) depth += BRACKET[c] ?? 0;
+    for (const [q] of line.matchAll(MULTILINE_QUOTE)) if (!quotes.delete(q)) quotes.add(q);
+    to++;
+    if (to >= last || (depth <= 0 && !quotes.size && opensSibling(lines[to]))) break;
+  }
+  return { from: from + 1, to, last };
 }
 
 const run = (dir, args) => execFileSync("git", ["-C", dir, ...args], {
@@ -113,6 +159,8 @@ function openRepo(alias, spec, host) {
       .filter(([, date]) => date > day)
       .map(([hash, date, subject]) => ({ hash, date, subject })),
     commitsTouching: (p) => new Set(git("log", "--format=%h", rev, "--", p).split("\n").filter(Boolean)),
+    commitsInRange: (p, r, day) => git("log", "--format=%H", "-s", `--since=${day}`, "-L", `${r.from},${r.to}:${p}`, rev)
+      .split("\n").filter(Boolean),
   };
 }
 
@@ -142,12 +190,13 @@ function resolveRef(ref, repo) {
     : { problem: `${ref.text}: anchor "${ref.anchor}" not found in ${ref.path} on ${repo.rev}` };
 }
 
-// A suspect warning keeps its ref and commits, so a report can narrow it to some of them (suspectsSince).
-export function suspectWarning(where, reviewed, ref, commits) {
+// A suspect warning keeps its ref, the anchors the entity reads it at (null for the whole file) and its commits,
+// so a report can narrow it to some of them (suspectsSince, suspectsInSymbols).
+export function suspectWarning(where, { reviewed, ref, anchors, commits }) {
   const list = commits.slice(0, 5).map((c) => `      ${c.hash} ${c.date} ${c.subject}`).join("\n");
   const more = commits.length > 5 ? `\n      … ${commits.length - 5} more` : "";
   const msg = `suspect: ${ref} changed after reviewed ${reviewed} (${commits.length} commit${commits.length > 1 ? "s" : ""})\n${list}${more}`;
-  return { level: "warn", where, msg, suspect: { reviewed, ref, commits } };
+  return { level: "warn", where, msg, suspect: { reviewed, ref, anchors, commits } };
 }
 
 // The diagnostics with each suspect narrowed to the commits in `hashes` (full hashes), and dropped when none is:
@@ -156,7 +205,30 @@ export function suspectsSince(diagnostics, hashes) {
   return diagnostics.flatMap((d) => {
     if (!d.suspect) return [d];
     const commits = d.suspect.commits.filter((c) => hashes.some((h) => h.startsWith(c.hash)));
-    return commits.length ? [suspectWarning(d.where, d.suspect.reviewed, d.suspect.ref, commits)] : [];
+    return commits.length ? [suspectWarning(d.where, { ...d.suspect, commits })] : [];
+  });
+}
+
+// A git log -L range misses a pure deletion at its edges, so each region is read one line wider on both sides;
+// a region at the file's first or last line can't be, and is judged by the whole file.
+const widened = (r) => (r.from > 1 && r.to < r.last ? { from: r.from - 1, to: r.to + 1 } : null);
+
+// The diagnostics with each suspect narrowed to the commits that changed the lines of a symbol it is anchored at
+// (git log -L follows them back through shifts), and dropped when none did. A suspect read at a whole file, or at
+// an anchor whose region can't be told, keeps every commit.
+export function suspectsInSymbols(diagnostics, repos) {
+  return diagnostics.flatMap((d) => {
+    if (!d.suspect || d.suspect.anchors.includes(null)) return [d];
+    const ref = parseRef(d.suspect.ref);
+    const repo = repos.get(ref.alias);
+    const ranges = d.suspect.anchors.map((a) => symbolRegion(repo.lines(ref.path), a, ref.path)).map((r) => r && widened(r));
+    if (ranges.includes(null)) return [d];
+    let touched;
+    // One git log -L per range: given several, git can abort on an assertion in line-log.c.
+    try { touched = new Set(ranges.flatMap((r) => repo.commitsInRange(ref.path, r, d.suspect.reviewed))); }
+    catch (err) { return [{ ...d, msg: `${d.msg}\n      (judged by the whole file: git log -L failed: ${String(err.stderr || err.message).trim().split("\n")[0]})` }]; }
+    const commits = d.suspect.commits.filter((c) => [...touched].some((h) => h.startsWith(c.hash)));
+    return commits.length ? [suspectWarning(d.where, { ...d.suspect, commits })] : [];
   });
 }
 
@@ -190,15 +262,17 @@ export function collectEvidence(kb) {
   for (const e of kb.entities.values()) {
     const refs = [...new Set([...e.metaRefs, ...e.refs])].map((t) => resolve(t, e.file)).filter(Boolean);
     const paths = new Map(refs.filter((r) => r.checked).map((r) => [`${r.alias}/${r.path}`, r]));
+    const anchorsOf = (key) => [...new Set(refs.filter((r) => r.checked && `${r.alias}/${r.path}` === key).map((r) => r.anchor))];
     const suspect = [...paths.values()].flatMap((r) => {
       const repo = repos.get(r.alias);
       const reviewedWith = repo.own ? repo.commitsTouching(path.relative(host.top, path.join(kb.root, e.file))) : new Set();
       const commits = repo.commitsAfter(r.path, e.reviewed)
         .filter((c) => !reviewedWith.has(c.hash))
         .map((c) => ({ ...c, url: commitUrl(repo.spec, c.hash) }));
-      return commits.length ? [{ ref: `${r.alias}/${r.path}`, commits }] : [];
+      const ref = `${r.alias}/${r.path}`;
+      return commits.length ? [{ reviewed: e.reviewed, ref, anchors: anchorsOf(ref), commits }] : [];
     });
-    for (const s of suspect) diagnostics.push(suspectWarning(e.file, e.reviewed, s.ref, s.commits));
+    for (const s of suspect) diagnostics.push(suspectWarning(e.file, s));
     if (kb.typeById.get(e.type).evidence && e.metaRefs.length + e.refs.length === 0) {
       warn(e.file, `unanchored: a ${e.type} should have at least one ref`);
     }
