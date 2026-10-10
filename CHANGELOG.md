@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.18.0
+
+A worker's kills, keys and `tower submit` prompts are named in the target's log, and the next wait stays in view
+on the tower page. No host restart, no config change. The renderer API moves to 1.42, an addition. Restart the
+tower (`tower down tower && tower up tower`).
+
+- `kill` and `keys` take `by`, the acting worker's session id. With it, the tower appends `tower.kill` before a
+  running session's kill, and `tower.keys` once per burst (again when another worker types, or after a minute), to
+  the target's log; the fold keeps them as `facts.killedBy` and `facts.keyedBy`. The user's kills and keys carry no
+  `by` and are never named (decision `worker-acts`). `tower home`, `tower kill` and `tower submit` name their caller
+  from `TOWER_SESSION_ID`, so a worker's `tower submit` no longer counts as the user's prompt in Stats.
+- Tower page: the selected row holds still while any of it is in sight, so the worker N went to stays in view when
+  rows above it grow; otherwise the top row holds, as before.
+- `npm run sandbox -- up` writes the sandbox's config only when it has none, and `--port` updates an existing one:
+  keys set by hand survive.
+- Dead code removed (`scripts/migrate-tower.ts`, a pre-v1.0 migration) and `noUnusedLocals` on; AGENTS.md lists
+  the `live`, `keep`, `kept` and `read` verbs and the `keys` config key.
+
 ## v1.17.0
 
 Hiring limits hold when a worker hires several at once, ⌥← / ⌥→ move by word in shells, and a round of small
