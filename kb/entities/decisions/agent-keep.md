@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/directory.ts#keepContent", "hub/src/directory.ts#keepArgs", "hub/src/directory.ts#collectionLine", "hub/src/directory.ts#collectionLines", "hub/src/shared/titles.ts#titleIn", "hub/src/bridge/facts.ts#Kept", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#KeptBy", "hub/src/bridge/board.ts#keepers", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"]
 }
 ---

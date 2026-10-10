@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/update.ts#update", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#hostSources", "hub/src/cli.ts", "hub/CHANGELOG.md", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
 }
 ---

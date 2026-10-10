@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/tags.ts#tagOf", "hub/src/shared/hash.ts", "hub/src/bridge/board.ts#FloorItem", "hub/src/bridge/board.ts#FloorCollection", "hub/src/directory.ts#itemNamed", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/cork.ts#noteTexture", "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"]
 }
 ---

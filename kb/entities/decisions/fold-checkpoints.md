@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/checkpoints.ts#foldLog", "hub/src/checkpoints.ts#FOLD", "hub/src/checkpoints.ts#sourceHash", "hub/src/checkpoints.ts#writeCheckpoint", "hub/src/tail.ts#readHeader", "hub/src/tail.ts#readEvents", "hub/src/tail.ts#factEvents", "hub/src/system.ts#watchSystem", "hub/src/cli.ts", "hub/src/shared/paths.ts#systemPaths", "hub/test/checkpoints.test.ts"],
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8: a checkpoint per log, moved to the log's last full line by each fold that read past it" }

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "supersedes": "shelf-page-contract",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/renderers/page/index.html"]
 }
 ---

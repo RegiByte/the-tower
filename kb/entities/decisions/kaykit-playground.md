@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/renderers/kaykit/src/catalog.ts#NORMS",
     "hub/renderers/kaykit/src/catalog.ts#fit",

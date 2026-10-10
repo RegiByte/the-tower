@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/bridge/turns.ts#turnsByConversation", "hub/src/bridge/turns.ts#lastTurns", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/turns.ts#BriefSession", "hub/src/bridge/turns.ts#PeerFrom", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/src/bridge/board.ts#LineageSession", "hub/src/shared/brief.ts#briefParts", "hub/src/shared/brief.ts#briefHtml", "hub/src/shared/brief.ts#shownFrom", "hub/src/shared/brief.ts#resumedIdle", "hub/src/shared/brief.ts#briefCss", "hub/src/shared/brief.ts#openFolds", "hub/src/shared/model.ts#briefConfig", "hub/src/tower/server.ts#conversations", "hub/src/directory.ts#threadLines", "hub/test/turns.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "reads", "carries": "the session logs of a conversation's resume chain, on each GET /conversations/<id>" },

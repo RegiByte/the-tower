@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/renderers/tower3d/src/levels.ts#levelsShown",
     "hub/renderers/tower3d/src/levels.ts#showLevels",

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/cards.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
 }
 ---

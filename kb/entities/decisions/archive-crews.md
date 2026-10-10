@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/cards.ts#pastCrews", "hub/src/shared/cards.ts#pastMatching", "hub/src/shared/cards.ts#pastSize", "hub/src/shared/cards.ts#pastOf", "hub/src/bridge/board.ts#withCrews", "hub/src/bridge/board.ts#carriedOn", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/ui.ts#archiveListHtml", "hub/test/past.test.ts"]
 }
 ---
