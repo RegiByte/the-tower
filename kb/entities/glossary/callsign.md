@@ -32,7 +32,7 @@ since a worker's callsign no longer moves, they keep pointing at it. A new worke
 callsign's name is one no worker on duty holds ([`freshId`](ref:hub/src/shared/callsign.ts#freshId),
 [[callsign-free-name]]), so workers on duty together have different names while the list has a free one; past that,
 the number tells them apart, and two live workers sharing a whole callsign would share a peer name too. A worktree cut
-also draws until the lowercased callsign is a free worktree name. The default list gives about 8,100. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
+also draws until the lowercased callsign is a free worktree name. The default list gives about 15,500. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
 the naming function for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge,
 the CLI, the tower's spawns and `tower whoami`/`hire`/`review` all name through it, and renderers read
 `card.callsign` from the board, never deriving one. Tower 3D's fixture boards use the default list. Item tags
