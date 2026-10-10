@@ -35,9 +35,9 @@ test('a worker’s brief holds every session it ran as: its own conversations fi
   const [root, heir, fork] = sessions
   const logOf = (id: string) => logs.find((l) => l.header.id === id)!
   const brief = briefOf(heir, sessions, logOf, 2, callsign)
-  const rootRef = { id: root.header.id, callsign: callsign(root.header.id), startedAt: 1791198499292 }
+  const rootRef = { id: root.header.id, callsign: 'MORIARTY-05', startedAt: 1791198499292 }
   assert.deepEqual(brief.map((b) => [b.session, b.id, b.turns.map((t) => [t.prompt, t.answer])]), [
-    [{ id: heir.header.id, callsign: callsign(root.header.id), startedAt: 1791198520998 }, '11111111-2222-4333-8444-555555555555', [
+    [{ id: heir.header.id, callsign: 'MORIARTY-05', startedAt: 1791198520998 }, '11111111-2222-4333-8444-555555555555', [
       ['After the clear.', 'Second conversation.'],
       ['Say hello from **the sandbox**.', 'Hello from the sandbox, session 9889.\n\n- a list\n- of things'],
     ]],
@@ -57,9 +57,9 @@ test('a message from another worker opens a turn of its own, from the session th
   assert.deepEqual(turnsOf(sender, sessions), [
     ['With SendMessage, send the message ping to the Claude session named BISHOP-44, then end your turn. When its answer arrives, reply with the single word it sent.', undefined,
       'I\'ve sent the ping to BISHOP-44 (message as "BISHOP-44", lab floor). The message is in its inbox, and I\'ll reply with its single word once the answer arrives.'],
-    ['pong', { callsign: callsign(receiver.header.id), session: receiver.header.id }, 'pong'],
+    ['pong', { callsign: 'BISHOP-44', session: receiver.header.id }, 'pong'],
   ])
-  assert.deepEqual(turnsOf(receiver, sessions)[1].slice(0, 2), ['Ping from BEOWULF-38 (lab floor). Please reply with the single word you were asked to send.', { callsign: callsign(sender.header.id), session: sender.header.id }])
+  assert.deepEqual(turnsOf(receiver, sessions)[1].slice(0, 2), ['Ping from BEOWULF-38 (lab floor). Please reply with the single word you were asked to send.', { callsign: 'BEOWULF-38', session: sender.header.id }])
   assert.deepEqual(turnsOf(receiver, [receiver])[1][1], { callsign: 'BEOWULF-38' })
   assert.deepEqual(receiver.facts.prompts.map(([, origin]) => origin), ['composer', 'peer'])
 })

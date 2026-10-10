@@ -413,6 +413,13 @@ test('the config’s callsigns name every worker; a list that can’t name them 
   assert.throws(() => named(['ALPHA', 'ALPHA']), /names ALPHA twice/)
 })
 
+test('a worker keeps the callsign it ran under, whatever the list says now; a continuation keeps its first session’s', () => {
+  const named = (fixtures: string[], callsigns: string[]) =>
+    board({ ...CONFIG, callsigns } as Config, fixtures.map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(), [], [], [], [], [], new Map(), new Map(), PATHS, 0).floors.flatMap((f) => f.cards).map((c) => c.callsign)
+  assert.deepEqual(named(['peer-receiver'], ['ALPHA', 'BRAVO']), ['BISHOP-44'])
+  assert.deepEqual(named(['lineage-root', 'lineage-heir'], ['ALPHA', 'BRAVO']).sort(), ['MORIARTY-05', 'MORIARTY-05'])
+})
+
 test('a card says it compacts while Claude compacts, by /compact or inside a turn', () => {
   const at = (name: string, t: number) => {
     const log = fixture(name)
