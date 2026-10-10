@@ -18,6 +18,9 @@ export type Verdict = { level: 'ok' | 'warn' | 'fail'; what: string; fix?: strin
 
 const NODE_MAJOR = 24
 
+/** `git merge-tree --write-tree`, which the landing check runs, came in git 2.38. */
+const GIT_MINIMUM = [2, 38]
+
 type Ran = { code: number; stdout: string; stderr: string }
 
 /** A command run to its end, whatever it exits with; `undefined` when it isn't on the PATH. */
@@ -46,6 +49,17 @@ const node = (): Verdict =>
 const onPath = async (command: string, args: string[], fix: string): Promise<Verdict> => {
   const run = await ran(command, args)
   return run ? { level: 'ok', what: `${command} ${(run.stdout || run.stderr).split('\n')[0].trim()}` } : { level: 'fail', what: `${command} is not on the PATH`, fix }
+}
+
+const gitVersion = async (): Promise<Verdict> => {
+  const run = await ran('git', ['--version'])
+  if (!run) return { level: 'fail', what: 'git is not on the PATH', fix: 'xcode-select --install' }
+  const what = run.stdout.trim()
+  const [major, minor] = (/(\d+)\.(\d+)/.exec(what) ?? []).slice(1).map(Number)
+  const [wantMajor, wantMinor] = GIT_MINIMUM
+  return major > wantMajor || (major === wantMajor && minor >= wantMinor)
+    ? { level: 'ok', what }
+    : { level: 'fail', what: `${what}, older than ${GIT_MINIMUM.join('.')}`, fix: 'brew install git, or update the Command Line Tools: xcode-select --install' }
 }
 
 const claudeVersion = async (): Promise<Verdict> => {
@@ -138,7 +152,7 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
     node(),
     await claudeVersion(),
     await claudeSignedIn(),
-    await onPath('git', ['--version'], 'xcode-select --install'),
+    await gitVersion(),
     await onPath('curl', ['--version'], 'xcode-select --install'),
     writable(paths),
     configValid(paths, config),
