@@ -12,6 +12,28 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.17.0
+
+Hiring limits hold when a worker hires several at once, ⌥← / ⌥→ move by word in shells, and a round of small
+failure paths closed. No host restart, no config change. The renderer API moves to 1.41, an addition. Restart the
+tower (`tower down tower && tower up tower`) and run `npm ci` where you develop: esbuild and tsx moved to runtime
+dependencies. A checkout's `tower` CLI asks the tower for hiring limits from now on, so restart the tower before the
+next `tower hire`.
+
+- The tower enforces the floor's `hiring` limits: `spawn` takes `hire: true` (with `by`), weighs it against every
+  card, logs `tower.hire` in the hirer's log and counts it before the hirer's next hire is weighed. Parallel
+  `tower hire` calls from one worker no longer all pass. A hire past the limits answers the new error `limited`
+  (409). `tower review` is still never limited.
+- ⌥← / ⌥→ in a browser terminal send readline's `ESC b` / `ESC f` (new keymap commands `word-left`, `word-right`,
+  rebindable in `keys`): a shell moves by word instead of printing `D` / `C`, and Claude's prompt still does.
+- `review/append` refuses a body that leaves a code fence open, which hid every later note in the thread.
+- `marked` 18.1.0 (from 16.4.2): rendered markdown unchanged.
+- Small failure paths: an unwatch waits for its watch, so no stream or terminal count is left open; a malformed `%`
+  answers 400 and a directory under a shelf entry 404; one unreadable origin no longer fails `/origins` for every
+  project; a repo without an origin can have its forks removed; `/stats` reads paths whatever `core.quotepath` says;
+  `tower doctor` fails on git older than 2.38; a request the host or terms daemon leaves unanswered fails after 30 s,
+  naming the daemon; a let-go session's tail closes; `@lydell/node-pty` is pinned exactly.
+
 ## v1.16.0
 
 A worker's subagents, forks included, are on the board one by one: what each is, its task, whether it still runs,
