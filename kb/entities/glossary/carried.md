@@ -4,7 +4,7 @@
   "name": "Carried",
   "summary": "A branch whose work landed in its base only as copies, some edited on the way (amended, renumbered, conflicts resolved, rebased with other context): not absorbed, but each commit missing from the base is an equal patch there or has a copy made alike (author ident, author date and subject, which git keeps through cherry-pick, rebase and amend) and committed no earlier. A clean worktree on such a branch reads `carried` (\"landed, edited\") and goes by its own remove, after a look at what landing changed; never by Tidy all.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/bridge/worktrees.ts#copiesOf", "hub/src/bridge/worktrees.ts#carriedOf", "hub/src/bridge/worktrees.ts#isCarried", "hub/src/worktrees.ts#landing", "hub/src/worktrees.ts#marksOf", "hub/src/worktrees.ts#landingOf", "hub/src/shared/cards.ts#editedRows", "hub/src/shared/cards.ts#landingHtml", "hub/test/absorbed.test.ts"]
 }
 ---

@@ -4,7 +4,7 @@
   "name": "A worker reads broken",
   "summary": "A card that reads broken has an event in its log the tower can't fold: its facts stop there and the reason is its gist. Drive or kill it while it runs, then resume its conversation into a new log.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/bridge/facts.ts#factsAfter", "hub/src/shared/cards.ts#statusTitle", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts"]
 }
 ---

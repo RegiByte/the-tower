@@ -4,7 +4,7 @@
   "name": "Absorbed",
   "summary": "A branch whose changes are already in the base it was cut from, or in origin's default once origin deleted that base: merging it would change nothing (merge-tree of base and branch equals the base's tree), whether it was merged, rebased or squashed in, or each of its commits landed there as an equal patch (`git patch-id`), a rebased or cherry-picked copy; the tower's meaning of merged. A fork is also absorbed while it has no commits beyond its snapshot.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/worktrees.ts#landing", "hub/src/worktrees.ts#marksOf", "hub/src/worktrees.ts#againstOf", "hub/src/worktrees.ts#exposureOf"]
 }
 ---

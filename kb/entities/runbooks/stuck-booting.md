@@ -4,7 +4,7 @@
   "name": "Session stuck on booting",
   "summary": "A session that stays booting is Claude on a startup screen the bridge does not recognize (an external CLAUDE.md imports prompt, new dialog copy), or a launch that never drew Claude; recognized screens (trust, login) show as blocked.",
   "in": "host",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/verbs.ts#AT_COMPOSER", "hub/src/cli.ts"]
 }
 ---

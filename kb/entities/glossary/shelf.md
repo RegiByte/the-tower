@@ -4,7 +4,7 @@
   "name": "Shelf",
   "summary": "A project's pages kept beside its sessions in the config: a built html page, a markdown glob, a url shown in place by the tower page, a link opened in a new tab, a declared renderer, or an item of one of its collections.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shelf.ts#shelfProblem", "hub/docs/config.md"]
 }
 ---
