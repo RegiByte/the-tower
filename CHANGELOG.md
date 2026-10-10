@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.15.2
+
+Claude Code 2.1.296 is tested: the board and `tower doctor` no longer flag it. It asks nothing of you: no host
+restart, no config change. Restart the tower (`tower down tower && tower up tower`) to clear the notice.
+
+- Every scenario of the fixture set recorded from Claude was recorded again on it and read the same as before
+  (runbook `new-claude-release`): no event or field the bridge reads was renamed or lost. The surfaces no fixture
+  covers were checked by hand: long prompts through `submit`, the peer registry, resume, the trust and sign-in
+  screens, and the fullscreen TUI.
+
 ## v1.15.1
 
 A review thread's new notes are new to whoever's view you're looking at. It asks nothing of you: no host restart, no
