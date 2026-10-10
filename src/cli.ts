@@ -20,7 +20,7 @@
  *                                start a session that continues <id>'s conversation, print its id; through the
  *                                tower's resume queue while it runs, else straight to the host. --carry-on tells
  *                                Claude it was cut off mid-turn by the host and to carry on (a card's `carry-on`)
- *   tower submit <id> <text...>  type a prompt and submit it
+ *   tower submit <id> <text...>  type a prompt and submit it; a worker's prompt (TOWER_SESSION_ID) is named in its log first
  *   tower kill <id>              end a session; a worker's kill (TOWER_SESSION_ID) is named in its log first
  *   tower live                   ids of running sessions
  *   tower ls                     every session, with project, status and what it left running
@@ -45,7 +45,7 @@ import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
 import { heldBy, resumeName, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
-import { KILLED_BY, type Session } from './bridge/facts.ts'
+import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
@@ -195,9 +195,12 @@ const main = async (): Promise<void> => {
       print((await resumeThroughTower(log.header.id, conversation.id, prompt)) ?? (await resumeAtHost(log, conversation.id, prompt)))
       break
     }
-    case 'submit':
+    case 'submit': {
+      const by = process.env.TOWER_SESSION_ID
+      if (by) print(await request({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } }))
       print(await fromHost(submitText(paths, id, rest.join(' '))))
       break
+    }
     case 'kill': {
       const by = process.env.TOWER_SESSION_ID
       const live = await liveIds(paths)

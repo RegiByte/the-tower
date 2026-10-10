@@ -8,6 +8,7 @@
   "date": "2026-10-09",
   "reviewed": "2026-10-10",
   "refs": [
+    "hub/src/cli.ts",
     "hub/src/bridge/facts.ts#PROMPTED_BY",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/tower/server.ts#factRefused",
@@ -44,8 +45,9 @@ first). The host takes `fact` from protocol 2 on: while an older host runs, a `s
 ([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as `let-go` refuses). [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps the mark as `promptedBy` until the next
 `prompt.submit` of a user origin, counts that prompt as `peer` and lets its wait go unanswered, and spends the mark.
 The conversation's prompt is untouched: a hired worker's card still shows its brief. The `tower` CLI passes its own
-session id on `hire`, `review` and `send`; the user's page and the user's CLI pass none, so their prompts stay the
-user's. The Stats panel adds the user's prompts per commit landed.
+session id on `hire`, `review` and `send`, and `tower submit`, which speaks to the host directly, appends
+`tower.prompt` itself before typing when `TOWER_SESSION_ID` is set; the user's page and the user's terminal pass none,
+so their prompts stay the user's. The Stats panel adds the user's prompts per commit landed.
 
 **Alternatives considered.**
 - *Match the fact to the prompt by a digest of its text* (as messages are matched): Claude wraps a long paste in
