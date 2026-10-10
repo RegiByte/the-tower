@@ -108,6 +108,19 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .st.stuck, .pill.stuck { color: var(--needs-text); }
 .sess .line { margin-top: var(--sp-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
+.subs { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
+.sub { display: flex; align-items: center; gap: var(--sp-s); min-width: 0; color: var(--muted); font-size: var(--fs-xs); overflow: hidden; }
+.sub .mark { flex: none; display: grid; place-items: center; width: 12px; height: 12px; }
+.sub:not(.fork) .mark::before { content: ''; width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid var(--c-text); }
+.sub.fork { color: var(--ink); }
+.sub.fork .mark { color: var(--c-text); }
+.sub .mark svg { width: 12px; height: 12px; }
+.sub .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub .since { margin-left: auto; flex: none; color: var(--faint); font-variant-numeric: tabular-nums; }
+.sub.stopped { color: var(--broken-text); text-decoration: line-through; }
+.sub.ended { animation: satellite-leaves var(--fade) linear forwards; }
+@keyframes satellite-leaves { 0% { opacity: 1; max-height: 2em; } 75% { opacity: .35; max-height: 2em; } 100% { opacity: 0; max-height: 0; } }
+@media (prefers-reduced-motion: reduce) { .sub.ended { animation-timing-function: steps(1, end); } }
 .sess .act { margin-top: var(--sp-s); display: flex; gap: var(--sp-s); }
 .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
 .sess.gone { opacity: .55; }
@@ -433,7 +446,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -540,8 +553,21 @@ const sessionHtml = (c) => {
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · ')))}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
+    ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act">${carryOnHtml(c, 'carry on')}${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
   </div>`
+}
+
+/**
+ * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an
+ * animation started `left` ms in, so a redraw picks it up where it stands.
+ */
+const satellitesHtml = (c) => {
+  const now = pageNow()
+  const drawn = satellitesOf(c, now)
+  if (!drawn.length) return ''
+  return `<div class="subs" style="--fade:${SUBAGENT_FADE_MS}ms">${drawn.map(({ run, left }) => `<div class="sub${run.type === 'fork' ? ' fork' : ''}${left === undefined ? '' : ` ended${run.ended === 'aborted' ? ' stopped' : ''}`}"${left === undefined ? '' : ` style="animation-delay:-${left}ms"`} data-tip="${esc(subagentTitle(run))}">
+    <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
 }
 
 /** Let a stranded worker go, asked first. */

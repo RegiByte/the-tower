@@ -55,7 +55,7 @@ import type { Board, Card, Floor } from '../bridge/board.ts'
 import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteCalls } from '../bridge/verbs.ts'
 import type { Call } from './api.ts'
-import { esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, workerIn } from './cards.ts'
+import { esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
@@ -672,7 +672,6 @@ const hoursAxis = (v: number) => `${v < 1 ? v.toFixed(2) : v < 10 ? v.toFixed(1)
 export const usd = (v: number) => (v >= 100 ? `$${Math.round(v).toLocaleString('en-US')}` : `$${v.toFixed(2)}`)
 export const hours = (v: number) => `${v < 10 ? v.toFixed(1) : Math.round(v)} h`
 const count = (v: number) => (v >= 10_000 ? `${(v / 1000).toFixed(0)}k` : v.toLocaleString('en-US'))
-const tokens = (v: number) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)} B` : v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)} k` : String(v))
 /** A duration in seconds, in the unit that reads best. */
 export const duration = (s: number) => (s < 90 ? `${Math.round(s)} s` : s < 90 * 60 ? `${(s / 60).toFixed(s < 600 ? 1 : 0)} min` : `${(s / 3600).toFixed(1)} h`)
 /** The same, as narrow as a table column wants it. */

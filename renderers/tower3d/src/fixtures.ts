@@ -41,7 +41,9 @@ type Facts = {
   model?: string
   context?: number
   costUsd?: number
+  /** Its subagents running now: `forks` of them forks of the worker, the rest general-purpose. */
   subagents?: number
+  forks?: number
   turns?: number
   resumes?: string
   resumedBy?: string
@@ -80,6 +82,16 @@ const DAY = 24 * 60 * MIN
 const lineageOf = (id: string, startedAt: number, sessions: number): Card['lineage'] =>
   Array.from({ length: sessions }, (_, i) => (i === sessions - 1 ? { id, startedAt } : { id: `${id}-s${i + 1}`, startedAt: startedAt - (sessions - 1 - i) * DAY }))
 
+/** The subagents a fixture worker runs, started a minute after it, the forks first. */
+const runsOf = (id: string, startedAt: number, f: Facts): Card['subagentRuns'] =>
+  Array.from({ length: f.subagents ?? 0 }, (_, i) => {
+    const fork = i < (f.forks ?? 0)
+    return {
+      id: `${id}-agent-${i}`, type: fork ? 'fork' : 'general-purpose', description: fork ? 'Check the plan against the spec' : 'Search the codebase', background: true,
+      model: f.model, startedAt: startedAt + MIN, tokens: { input: 12, output: 840, cacheRead: 40_000, cacheWrite: 6_000 }, running: true,
+    }
+  })
+
 function card(project: string, n: number, f: Facts, now: number, floor: Facts[]): Card {
   const id = idOf(project, n)
   const author = f.reviews === undefined ? undefined : floor[f.reviews]
@@ -105,7 +117,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     ...(f.waitsOn !== undefined && { reportsTo: idOf(project, f.waitsOn), waitsOn: { id: idOf(project, f.waitsOn), callsign: callsign(idOf(project, f.waitsOn)) } }),
     ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)) } }),
     attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
-    context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: [], turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
+    context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, cutOff, unresumable: f.unresumable, conversations,
     onDuty: live || awaitsResume,
     ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined, awaitsResume, cutOff),
@@ -269,7 +281,7 @@ function busyFloors(now: number, later = false): FloorFacts[] {
           shown: [{ kind: 'file', target: '/work/alpha/reports/failing-tests.md', ago: 30 }, { kind: 'file', target: '/work/alpha/reports/timezones.html', title: 'Where the clocks disagree', ago: 20 }, { kind: 'file', target: '/work/alpha/reports/failures-by-hour.png', title: 'Failures by hour', ago: 15 }] },
         { status: 'idle', prompt: 'hello', answer: 'Ready when you are.', ago: 5,
           shown: later ? [{ kind: 'file', target: '/work/alpha/reports/retry-budget.md', title: 'Retry budget: what I found', ago: 1 }, { kind: 'file', target: '/work/alpha/reports/retry.webm', title: 'The retry, recorded', ago: 0 }] : [] },
-        { status: 'working', prompt: LONG, tool: 'mcp__knowledge_base__write_entity_with_a_very_long_tool_name', subagents: 2, context: 77, costUsd: 4.8, turns: 14, ago: 90,
+        { status: 'working', prompt: LONG, tool: 'mcp__knowledge_base__write_entity_with_a_very_long_tool_name', subagents: 2, forks: 1, context: 77, costUsd: 4.8, turns: 14, ago: 90,
           shown: [{ kind: 'file', target: '/work/alpha/notes/pipeline.md', ago: 70 }, { kind: 'url', target: 'http://localhost:5173/', title: 'The ingestion dashboard', ago: 50 }] },
         { status: 'blocked', blocked: 'trust', waiting: true, ago: 1 },
         { status: 'exited', prompt: 'Start the refactor', answer: 'Started; picked up in a resume.', resumedBy: resumed, ago: 120,

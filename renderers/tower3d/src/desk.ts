@@ -5,7 +5,7 @@ import type { Card } from './api.ts'
 import { WORLD, branchLine, bubbleOf, pairLine, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
 import { ASLEEP, OFFLINE, OPEN_DESK, screenTexture } from './screens.ts'
-import { avatar, lookOf, type Look } from './avatar.ts'
+import { avatar, lookOf, type Avatar, type Look } from './avatar.ts'
 import { instance, type Models } from './models.ts'
 import { posterOf, shownKey, type Shown } from './showing.ts'
 import { block, dispose, glowing, mesh, sprite, toon } from './toon.ts'
@@ -51,6 +51,8 @@ type Marks = {
   tag: THREE.Vector3; tagHeight: number; branch: boolean; gist?: THREE.Vector3; speech: THREE.Vector3; lay: THREE.Vector3; layWidth: number
   /** Where the first subagent stands, how far apart they stand along x, on what. */
   minis: { x: number; step: number; y: number; z: number }
+  /** Where a fork of the worker sits beside it, in a chair of its own, turned toward the monitor; a reviewer beside its author seats none. */
+  twin?: { x: number; z: number; turn: number }
 }
 
 export type Desk = {
@@ -66,6 +68,8 @@ export type Desk = {
   strip: THREE.MeshBasicMaterial
   screen: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
   minis: THREE.Group
+  /** The fork of the worker running now in the second chair, and which run it is; the chair stands only while one runs. */
+  twin?: { run: string; group: THREE.Group; avatar: Avatar }
   tag?: THREE.Sprite
   tagText: string
   gist?: THREE.Sprite
@@ -162,6 +166,7 @@ const SIDE_CENTER = new THREE.Vector3(SIDE.x, SIDE.y, SIDE.z - 0.03)
 const OWN: Marks = {
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
   speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: { x: 0.72, step: 0.15, y: DESK.height, z: -0.34 },
+  twin: { x: 0.8, z: -0.3, turn: -0.4 },
 }
 /**
  * A worker's logbook right of its keyboard, clear of the cat's perch and its subagents: a thin notebook on a first
@@ -339,7 +344,10 @@ export function syncDesk(desk: Desk, card: Card) {
     }, 0)
   }
 
-  const minis = card.stranded ? 0 : Math.min(card.subagents, 4)
+  const running = card.stranded ? [] : card.subagentRuns.filter((run) => run.running)
+  const fork = desk.marks.twin && running.find((run) => run.type === 'fork')
+  if (fork?.id !== desk.twin?.run) seatTwin(desk, fork?.id)
+  const minis = Math.min(running.filter((run) => run !== fork).length, 4)
   if (desk.minis.children.length !== minis) {
     dispose(desk.minis)
     desk.minis.clear()
@@ -350,6 +358,24 @@ export function syncDesk(desk: Desk, card: Card) {
       desk.minis.add(m)
     }
   }
+}
+
+/** A fork of the worker in the second chair: the worker's own look, a little smaller, its twin; none when `run` is. */
+function seatTwin(desk: Desk, run: string | undefined) {
+  if (desk.twin) (desk.group.remove(desk.twin.group), dispose(desk.twin.group))
+  desk.twin = undefined
+  const at = desk.marks.twin
+  if (run === undefined || !at) return
+  const group = new THREE.Group()
+  const chair = instance(desk.models.desk).part('chair')
+  chair.position.set(0, 0, 0)
+  const twin = avatar(desk.models, desk.look)
+  twin.root.scale.setScalar(0.85)
+  group.add(chair, twin.root)
+  group.position.set(SEAT.x + at.x, SEAT.y, SEAT.z + at.z)
+  group.rotation.y = at.turn
+  desk.group.add(group)
+  desk.twin = { run, group, avatar: twin }
 }
 
 /** Puts what the worker last showed on its second monitor, ribboned NEW until you open it. */
@@ -458,6 +484,11 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   arms.forEach((a, i) => {
     a.rotation.x = holding ? -2.7 + Math.sin(p * 3 + i) * 0.08 : working ? Math.sin(p * 16 + i * Math.PI) * 0.25 : asks ? -1.6 + Math.sin(p * 6 + i) * 0.4 : 0
   })
+  if (desk.twin) {
+    const { body: twinBody, arms: twinArms } = desk.twin.avatar
+    twinBody.position.y = SEAT_Y + Math.abs(Math.sin(p * 10 + 1.3)) * 0.025
+    twinArms.forEach((a, i) => (a.rotation.x = Math.sin(p * 16 + 1.3 + i * Math.PI) * 0.25))
+  }
   desk.minis.children.forEach((m, i) => (m.position.y = desk.marks.minis.y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
   if (desk.bubble) desk.bubble.position.set(SEAT.x + 0.32, BUBBLE_Y + Math.sin(p * 3) * 0.05 + hop, SEAT.z)
   desk.bulb.color.set(statusColor(card)).multiplyScalar(card.waiting ? 0.6 + Math.abs(Math.sin(p * 4)) * 0.6 : 1)

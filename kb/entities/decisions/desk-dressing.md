@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#PROPS",
@@ -35,7 +35,9 @@ loudest thing on the floor.
   back edge holds a pizza box per finished turn (`card.turns`), stacks of six, up to three. Up to two standing
   frames face the aisle for what the worker showed. Candy in October. Each placement is nudged by the worker's
   id so no two desks are clones. Right of the keyboard lies the worker's logbook, drawn in code as thick as its
-  lineage ([[logbook]]), and the subagents stand along the near edge past it.
+  lineage ([[logbook]]), and its running subagents stand along the near edge past it (`card.subagentRuns`, up to
+  four). A running fork of the worker sits in a second chair at its right, in the worker's own look, its twin; a
+  reviewer beside its author seats none.
 - Every workstation is an L: a `cabinet_medium` return off the desk's right end
   ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in the Furniture pack's alt_C atlas (grey,
   beside `desk.glb`'s black legs); free stations draw it bare. The collider is widened to match.
