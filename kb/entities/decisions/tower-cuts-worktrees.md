@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "supersedes": "worktrees-are-claudes",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
@@ -56,7 +56,7 @@ leftovers, a reviewer in the same dir. The spec and lab evidence are in the main
   branch, a free path, each `worktrees.links` key ignored and untracked), fetch (10 s, else `offline`; verbs at
   once share a repo's fetch, one finished under 5 s ago stands for a new one, and one that can't (a prune after a plain
   fetch) waits for it, so a burst of hires fetches once and a repo never runs two:
-  [`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin); a failed fetch fails all who shared it and is never reused), resolve the
+  [`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin); a failed fetch fails all who shared it and is never reused; a repo with no origin has nothing to fetch, so a fork of one can still be removed), resolve the
   base (an origin branch, `origin/HEAD` by default), then per repo `.worktrees/` into `.git/info/exclude`,
   `worktree add --no-track -b`, record `towerBase` and `towerName`, copy what `.worktreeinclude` names, symlink the links, each checked
   ignored again as the link it is (a pattern ending in `/` matches a directory, never a link). Every verb writing a repo's `.git/config` (a cut's or fork's
