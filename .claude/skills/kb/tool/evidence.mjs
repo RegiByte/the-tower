@@ -135,6 +135,24 @@ function resolveRef(ref, repo) {
     : { problem: `${ref.text}: anchor "${ref.anchor}" not found in ${ref.path} on ${repo.rev}` };
 }
 
+// A suspect warning keeps its ref and commits, so a report can narrow it to some of them (suspectsSince).
+export function suspectWarning(where, reviewed, ref, commits) {
+  const list = commits.slice(0, 5).map((c) => `      ${c.hash} ${c.date} ${c.subject}`).join("\n");
+  const more = commits.length > 5 ? `\n      … ${commits.length - 5} more` : "";
+  const msg = `suspect: ${ref} changed after reviewed ${reviewed} (${commits.length} commit${commits.length > 1 ? "s" : ""})\n${list}${more}`;
+  return { level: "warn", where, msg, suspect: { reviewed, ref, commits } };
+}
+
+// The diagnostics with each suspect narrowed to the commits in `hashes` (full hashes), and dropped when none is:
+// what a branch's own commits made suspect. Every other diagnostic stays.
+export function suspectsSince(diagnostics, hashes) {
+  return diagnostics.flatMap((d) => {
+    if (!d.suspect) return [d];
+    const commits = d.suspect.commits.filter((c) => hashes.some((h) => h.startsWith(c.hash)));
+    return commits.length ? [suspectWarning(d.where, d.suspect.reviewed, d.suspect.ref, commits)] : [];
+  });
+}
+
 export function collectEvidence(kb) {
   const diagnostics = [];
   const error = (where, msg) => diagnostics.push({ level: "error", where, msg });
@@ -173,11 +191,7 @@ export function collectEvidence(kb) {
         .map((c) => ({ ...c, url: commitUrl(repo.spec, c.hash) }));
       return commits.length ? [{ ref: `${r.alias}/${r.path}`, commits }] : [];
     });
-    for (const s of suspect) {
-      const list = s.commits.slice(0, 5).map((c) => `      ${c.hash} ${c.date} ${c.subject}`).join("\n");
-      const more = s.commits.length > 5 ? `\n      … ${s.commits.length - 5} more` : "";
-      warn(e.file, `suspect: ${s.ref} changed after reviewed ${e.reviewed} (${s.commits.length} commit${s.commits.length > 1 ? "s" : ""})\n${list}${more}`);
-    }
+    for (const s of suspect) diagnostics.push(suspectWarning(e.file, e.reviewed, s.ref, s.commits));
     if (kb.typeById.get(e.type).evidence && e.metaRefs.length + e.refs.length === 0) {
       warn(e.file, `unanchored: a ${e.type} should have at least one ref`);
     }

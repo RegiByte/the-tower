@@ -2,7 +2,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadKb } from "./model.mjs";
-import { collectEvidence } from "./evidence.mjs";
+import { execFileSync } from "node:child_process";
+import { collectEvidence, suspectsSince } from "./evidence.mjs";
 import { buildPayload, renderHtml } from "./render.mjs";
 
 const ROOT = path.resolve("kb");
@@ -10,6 +11,9 @@ const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the pro
 
   tree [id]   print the entity tree, from the project or from <id>
   verify      report repo freshness, errors and warnings (exit 1 on errors)
+  verify --since <rev>
+              the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/
+              (a branch's own: verify --since origin/main)
   render      build kb/dist/<project-id>.html (refuses on errors)
 
 The repo holding kb/ is read at HEAD, which must contain its origin/<branch>; every other repo at its
@@ -73,7 +77,15 @@ if (cmd === "tree") {
 } else if (cmd === "verify") {
   const evidence = collectEvidence(kb);
   freshness(evidence.repos);
-  process.exit(report([...kb.diagnostics, ...evidence.diagnostics]) ? 1 : 0);
+  const diagnostics = [...kb.diagnostics, ...evidence.diagnostics];
+  if (arg === "--since") {
+    const since = process.argv[4];
+    if (!since) { console.error("usage: verify --since <rev>"); process.exit(1); }
+    const hashes = execFileSync("git", ["rev-list", `${since}..HEAD`], { encoding: "utf8" }).split("\n").filter(Boolean);
+    console.log(`\nsuspects caused by ${hashes.length} commit(s) in ${since}..HEAD`);
+    process.exit(report(suspectsSince(diagnostics, hashes)) ? 1 : 0);
+  }
+  process.exit(report(diagnostics) ? 1 : 0);
 } else if (cmd === "render") {
   const evidence = collectEvidence(kb);
   if (report([...kb.diagnostics, ...evidence.diagnostics])) {

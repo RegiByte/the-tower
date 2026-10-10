@@ -21,6 +21,7 @@ Run from the project root (`<skill-dir>` is this skill's folder):
 ```
 node <skill-dir>/tool/kb.mjs tree [id]   print the entity tree (id, type, name, summary)
 node <skill-dir>/tool/kb.mjs verify      report repo freshness, errors and warnings
+node <skill-dir>/tool/kb.mjs verify --since <rev>   the same, with only the suspects commits in <rev>..HEAD caused
 node <skill-dir>/tool/kb.mjs render      build kb/dist/<project-id>.html (refuses on errors)
 ```
 
