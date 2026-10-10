@@ -145,7 +145,7 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
     sessions.set(id, session)
     measure()
     awaited.get(id)?.()
-    if (session.facts.state.status === 'exited' || session.facts.broken || isArchived(logPath)) return
+    if (session.facts.state.status === 'exited' || session.facts.broken || session.facts.letGoAt !== undefined || isArchived(logPath)) return
     const step = factsAfter(session.header.startedAt)
     const stop = tailLog(logPath, offset, factEvents(session.facts.state), (event) => {
       const facts = step(session.facts, event)
@@ -157,7 +157,8 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
         onChange()
         return
       }
-      if (!('unreadable' in event) && event[1] === 'x') {
+      const done = !('unreadable' in event) && event[1] === 'x'
+      if (done || facts.letGoAt !== undefined) {
         stop()
         tails.delete(id)
         measure()
