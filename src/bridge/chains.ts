@@ -60,12 +60,19 @@ export const lineage = (session: Session, before: (s: Session) => Session | unde
   return earlier ? [...lineage(earlier, before), session] : [session]
 }
 
-/** A worker keeps its callsign across the sessions it continues: the name of the first. `callsign`: a session id's (`callsignsOf`). */
-export const workerName = (worker: Session[], callsign: (id: string) => string) => callsign(worker[0].header.id)
+/**
+ * A worker keeps the callsign of its first session: the name that session's Claude ran under, read from its log, so a
+ * change to the names callsigns are drawn from renames no one. A log from before sessions were named takes its id's
+ * callsign. `before`: the session a session continues. `callsign`: a session id's (`callsignsOf`).
+ */
+const workerName = (session: Session, before: (s: Session) => Session | undefined, callsign: (id: string) => string) => {
+  const [first] = lineage(session, before)
+  return runsAs(first) ?? callsign(first.header.id)
+}
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
 export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>
-  carriesOn(source, conversation) ? workerName(lineage(source, (s) => continues(s, sessions)), callsign) : callsign(id)
+  carriesOn(source, conversation) ? workerName(source, (s) => continues(s, sessions), callsign) : callsign(id)
 
 /** The conversation's latest prompt and answer: what a resumed session hasn't had yet comes from the session it resumed. */
 const latest = (session: Session, conversation: Conversation, sessions: Session[]): Pick<Conversation, 'prompt' | 'answer'> => {
@@ -82,7 +89,7 @@ export type SessionLink = SessionRef & { startedAt: number }
 
 /** The callsign of the worker each session ran as, over the sessions' `continuations`. */
 export const namer = (continued: Map<Session, Session>, callsign: (id: string) => string) => (session: Session) =>
-  workerName(lineage(session, (s) => continued.get(s)), callsign)
+  workerName(session, (s) => continued.get(s), callsign)
 
 /** A saved conversation as a session holds it, linked to the sessions it came from and went on to. */
 export type Thread = Conversation & { resumes?: SessionLink; resumedBy?: SessionLink }

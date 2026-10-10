@@ -42,7 +42,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `collections` | The collections every project has, by id: see [Collections](#collections). | none |
 | `user.name` | The name the user's review notes are signed with: text with no `·`, no line break and no space at either end. | `user` |
 | `editor` | How the tower opens things in the user's editor, three argv templates: `window` opens `{dir}` in a new window, `open` opens `{path}` (a file or folder), `goto` opens `{path}` at `{line}`. Set all three or none. | VS Code's `code` |
-| `callsigns` | The names workers are called by, the same on every floor: each an upper case letter, then upper case letters and digits, none twice. | the tower's list |
+| `callsigns` | The names workers are called by, the same on every floor: each an upper case letter, then upper case letters and digits, none twice. Read when a worker starts: a change names new workers only. | the tower's list |
 | `plugins` | Absolute plugin directories every session loads, each passed to Claude as `--plugin-dir`. | none |
 | `renderers` | Renderers served at `/r/<name>/`, by name: `root`, the absolute directory of its built files; `entry`, its page in it (`index.html` unless set); `settings`, its own configuration, passed through unread. A new name adds a renderer; `page` or `tower3d` overrides that built-in's fields. | the built-ins |
 | `renderer` | The renderer `/` opens, by name. | `page` |
