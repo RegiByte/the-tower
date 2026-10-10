@@ -30,8 +30,9 @@
  *                                   as a quick hire in a renderer places it, on a prompt: the text of an item of the
  *                                   floor's collections, or stdin; refused past the floor's `hiring` limits
  *
- * `show`, `open`, `keep`, `hire` and `review` are facts about this session: they go to the host, which logs them
- * (`tower.show`, `tower.keep`, `tower.hire`), and every renderer draws them from the board. An item is called by its tag, as
+ * `show`, `open` and `keep` are facts about this session: they go to the host, which logs them (`tower.show`,
+ * `tower.keep`), and every renderer draws them from the board. `hire` and `review` spawn with `hire`: the tower weighs
+ * the hire against the limits and logs `tower.hire` in this session's log. An item is called by its tag, as
  * every renderer shows it.
  * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
  * written only through `tower note`, which appends.
@@ -44,7 +45,7 @@ import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, base, crewOf, crewTree, GIST_MARK, gistLine, hireRefusal, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, base, crewOf, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -256,11 +257,19 @@ const shownOf = (command: 'show' | 'open', target: string | undefined, title: st
 type Failure = { t: 'error'; code: string; message: string }
 
 /** POSTs are taken only from the tower's own origin. */
-const command = async <T>(verb: string, body: unknown): Promise<T> => {
+const ask = async <T>(verb: string, body: unknown): Promise<T | Failure> => {
   const res = await fetch(`${TOWER}/${verb}`, { method: 'POST', headers: { origin: TOWER, 'content-type': 'application/json' }, body: JSON.stringify(body) })
-  const reply = await res.json()
-  if (!res.ok) throw new CliError(`The tower refused ${verb}: ${(reply as Failure).message}`)
-  return reply as T
+  return (await res.json()) as T | Failure
+}
+
+const isFailure = (reply: unknown): reply is Failure => (reply as Failure).t === 'error'
+
+const refusedLine = (verb: string, failure: Failure) => `The tower refused ${verb}: ${failure.message}`
+
+const command = async <T>(verb: string, body: unknown): Promise<T> => {
+  const reply = await ask<T>(verb, body)
+  if (isFailure(reply)) throw new CliError(refusedLine(verb, reply))
+  return reply
 }
 
 const ownFloor = (board: Board, me: string | undefined): Floor => board.floors.find((f) => f.id === ownCard(board, me).project)!
@@ -554,33 +563,31 @@ switch (verb) {
   }
   case 'review': {
     if (!flag) throw new CliError('Usage: tower review <CALLSIGN> [tell]')
-    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+    if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const author = await cardNamed(board, flag)
     if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
     const tell = rest[0] === 'tell'
     const [verbName, body] = author.calls.review
-    const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me })
-    await postToHost(me, { hook_event_name: 'tower.hire', id: hired.id })
+    const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me, hire: true })
     console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
     break
   }
   case 'hire': {
     const hire = hireArgs([flag, ...rest].filter((a) => a !== undefined))
     if (!hire.item && process.stdin.isTTY) throw new CliError(HIRE_USAGE)
-    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+    if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const floor = ownFloor(board, me)
-    const refusal = hireRefusal(await everyCard(board), floor, ownCard(board, me))
-    if (refusal) throw new CliError(`${refusal}. Tell the user what you would hire and why (the limits are \`hiring\` in the tower's config.json). \`tower review\` is never limited.`)
     if (!floor.calls.spawn) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
     const named = hire.item ? itemNamed(floor, hire.item) : undefined
     const prompt = named ? await readItem(floor, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
     const form = { ...spawnDefaults(floor, prompt), ...hire.fields }
     const [[verbName, body], given] = spawnCall(floor, form)
-    const reply = await command<Replies['spawn']>(verbName, { ...body, ...given, by: me })
-    await postToHost(me, { hook_event_name: 'tower.hire', id: reply.id })
+    const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
+    if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. \`tower review\` is never limited.`)
+    if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
     console.log(hiredLines(board, floor, reply, form).join('\n'))
     break
   }

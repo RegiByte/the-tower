@@ -75,7 +75,7 @@ export type Facts = {
   shown: Shown[]
   /** What the worker kept, oldest first. */
   kept: Kept[]
-  /** The sessions the worker hired (`tower hire`, `tower review`), oldest first. */
+  /** The sessions the worker hired (`spawn` with `hire`: `tower hire`, `tower review`), oldest first. */
   hired: string[]
   /** When someone last typed into the session. */
   typedAt?: number
@@ -153,6 +153,9 @@ export const LET_GO = 'tower.letGo'
 
 /** The fact the tower appends before a worker's prompt reaches a session through its composer (`submit`, `spawn` with `by`). */
 export const PROMPTED_BY = 'tower.prompt'
+
+/** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
+export const HIRED = 'tower.hire'
 
 /** The board is pushed on every change: a few short lines per worker. */
 const SAYS_KEPT = 3
@@ -299,7 +302,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     }
     case 'tower.claude':
       return { ...facts, claude: String(hook.version) }
-    case 'tower.hire':
+    case HIRED:
       return { ...facts, hired: [...facts.hired, String(hook.id)] }
     case PROMPTED_BY:
       return { ...facts, promptedBy: String(hook.by) }

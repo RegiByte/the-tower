@@ -4,7 +4,7 @@
   "name": "Tower server",
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "web-tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
@@ -82,7 +82,9 @@ script, and Chrome plays no video document under a sandbox. So are collection it
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
 into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText); with `by`, a worker's, it first
-has the host append `tower.prompt` to the session's log ([[worker-prompts]]). claude.ai
+has the host append `tower.prompt` to the session's log ([[worker-prompts]]). A `/spawn` with `hire` is `by`'s hire:
+[`hired`](ref:hub/src/tower/server.ts#hired) weighs it against the floor's limits, has the host append `tower.hire` to
+the hirer's log, and takes a hirer's hires one at a time, each until the system counts it ([[hiring-limits]]). claude.ai
 artifacts refuse framing, so they go on the shelf as `link`, not `url`. An `item` entry's file is served from its
 collection, alone ([[shelf-items]]).
 

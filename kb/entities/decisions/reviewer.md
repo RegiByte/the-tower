@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -77,8 +77,8 @@ and how its findings reach the author.
   [`sendText`](ref:hub/src/shared/reviews.ts#sendText): a pointer naming the reviewer's callsign and the notes new to
   the author. `submit` doesn't log who sent it yet, so the text carries the name. An author hiring its own reviewer
   passes `tell`.
-- *A hire.* `tower review` logs `tower.hire` in the hirer's log like `tower hire`, so the reviewer's card names who hired
-  it; the floor's hiring limits never refuse a review ([[hiring-limits]]).
+- *A hire.* `tower review` spawns with `hire` like `tower hire`, so the tower logs `tower.hire` in the hirer's log and the
+  reviewer's card names who hired it; the floor's hiring limits never refuse a review ([[hiring-limits]]).
 - *One round.* The reviewer stops after delivering. A re-review is a new request: a new fork from a new snapshot.
 - *The pair is derived.* A worker whose first prompt is `reviewPrompt` reviews that callsign:
   [`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn) over the prompt read back from the first session's argv

@@ -105,7 +105,8 @@ Tower 3D.
 
 ## Hiring
 
-A guard against a chain of hires running away by accident; `tower review` is never limited.
+A guard against a chain of hires running away by accident: the tower refuses a hire past them (`tower hire`, or any
+`spawn` with `hire`), and never a review (`tower review`).
 
 | Key | Takes | Unset |
 |---|---|---|

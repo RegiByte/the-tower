@@ -36,7 +36,7 @@
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
- *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?} | /resume {id, conversation, prompt?} | /keys {id, data}
+ *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data}
  *        | /resize {id, cols, rows} | /kill {id}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
  *        | /worktree/discard {project, name, author, held}
@@ -62,12 +62,12 @@ import { heldBy, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
-import { LET_GO, PROMPTED_BY } from '../bridge/facts.ts'
+import { HIRED, LET_GO, PROMPTED_BY } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
 import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, readItem, restoreItem, writeItem } from '../collections.ts'
-import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
+import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { discardNote } from '../bridge/worktrees.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
@@ -91,7 +91,7 @@ import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_I
 import { z } from 'zod'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { designCss, fonts } from '../shared/design.ts'
-import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
+import { esc, hireRefusal, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -209,12 +209,13 @@ const currentBoard = (): string => {
 
 const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), paths, Date.now())
 
+/** Every session's card, the ones the board leaves out included. */
+const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
+
 function archive(res: http.ServerResponse, project: string) {
-  const config = readConfig()
-  if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
+  if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
   const now = Date.now()
-  const cards = allCards(config, system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
-  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(cards, project, now)))
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(everyCard(now), project, now)))
 }
 
 function conversations(res: http.ServerResponse, id: string) {
@@ -718,6 +719,58 @@ const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | un
     return named.t === 'error' ? named : answer
   })
 
+/**
+ * A worker's hires are taken one at a time, by its callsign (the name its hires are counted under, across resumes), each
+ * until the system counts it, so the next one is weighed against it.
+ */
+const hiring = new Map<string, Promise<unknown>>()
+
+const inTurn = (key: string, act: () => Promise<Answer>): Promise<Answer> => {
+  const run = (hiring.get(key) ?? Promise.resolve()).then(act)
+  const settled = run.catch(() => undefined)
+  hiring.set(key, settled)
+  void settled.then(() => hiring.get(key) === settled && hiring.delete(key))
+  return run
+}
+
+const HIRE_FACT = 'log a hire'
+
+/** A hire counts once the system holds its log, its hirer's log names it and the host runs it: what `liveHires` reads. */
+const counted = (by: string, id: string) =>
+  system.session(id) !== undefined && (system.session(by)?.facts.hired.includes(id) ?? false) && (system.live()?.ids.has(id) ?? false)
+
+/**
+ * A session `by` hires: refused past its floor's `hiring` limits unless it starts a reviewer, then logged in the hirer's
+ * log. A hire that can't be logged is killed, so every hire that runs is counted.
+ */
+const hired = (projectId: string, by: string, prompt: string | undefined, spawning: () => Answer | Promise<Answer>) =>
+  fromWorker(by, () =>
+    withProject(projectId, () => {
+      const hirer = everyCard(Date.now()).find((c) => c.id === by)!
+      return inTurn(hirer.callsign, async () => {
+        const refused = factRefused(HIRE_FACT)
+        if (refused) return refused
+        if (reviewedIn(prompt) === undefined) {
+          await system.refreshLive()
+          const cards = everyCard(Date.now())
+          const limit = hireRefusal(cards, boardOf().floors.find((f) => f.id === projectId)!, cards.find((c) => c.id === by)!)
+          if (limit) return apiError('limited', `${limit} (the limits are \`hiring\` in the tower's config)`)
+        }
+        const answer = await spawning()
+        if (answer.t !== 'spawned') return answer
+        const { id } = answer as Replies['spawn']
+        const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
+        if (logged.t === 'error') {
+          await host({ t: 'kill', id })
+          return { ...(logged as ApiError), message: `Session ${id} started but its hire couldn't be logged, so it was killed (it can be resumed): ${(logged as ApiError).message}` }
+        }
+        await system.refreshLive()
+        await system.until(() => counted(by, id), TRACK_TIMEOUT_MS)
+        return answer
+      })
+    }),
+  )
+
 /** A worktree with a folder gone, in any repo, can't be worked in until it is recut. */
 const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
   const name = worktreeName(project, cwd)
@@ -991,8 +1044,10 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
   })
 
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
-  spawn: ({ project, cwd, cut, model, effort, prompt, by }) =>
-    spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by),
+  spawn: ({ project, cwd, cut, model, effort, prompt, by, hire }) => {
+    const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by)
+    return hire ? hired(project, by!, prompt, spawning) : spawning()
+  },
   resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
   keys: ({ id, data }) =>
     withSession(id, () => {

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/directory.ts", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/cards.ts#spawnCall"]
 }
 ---
@@ -50,7 +50,8 @@ name belongs to which callsign, floor or task.
   floor, on a prompt read from stdin or from any item of the floor's collections by its tag: the core reads an
   item's text and never what a draft means ([[collections]]). It sends what a quick hire in a renderer sends, built
   by the same [`spawnCall`](ref:hub/src/shared/cards.ts#spawnCall) over the floor's offered calls, so it lands where
-  the renderers would land it. It refuses past the floor's `hiring` limits, and logs who hired whom ([[hiring-limits]]).
+  the renderers would land it. It marks the spawn as its `hire`: the tower refuses it past the floor's `hiring` limits and logs who hired whom
+  ([[hiring-limits]]).
 - The directory is read-only. `tower show` and `tower open` write only to the worker's own log ([[agent-show]]); `tower keep` adds to the floor's collections ([[agent-keep]]). A peer message is Claude Code's, visible in both sessions.
   At first workers never spawned, prompted, killed or reaped workers, by a rule in the skill; since 2026-10-06 they
   hold every verb of the renderer API ([[agents-have-every-capability]]).

@@ -100,6 +100,8 @@ export type System = {
   refreshLive: () => Promise<void>
   /** Resolves once the system holds the session the host just started, or after `ms`. */
   tracked: (id: string, ms: number) => Promise<void>
+  /** Resolves once `holds` is true of the system, checked now and after each change, or after `ms`. */
+  until: (holds: () => boolean, ms: number) => Promise<void>
   /** Look at the machine's processes again now, after ending some. */
   refreshRunning: () => Promise<void>
   /** Ask the terms daemon again now, after a request that changed its shells. */
@@ -117,7 +119,12 @@ export type System = {
  * `onChange` is called after anything the system holds changes: a logged event, a collection's items, the live set,
  * the shells, the processes, git, or the config file.
  */
-export const watchSystem = async (paths: SystemPaths, onChange: () => void): Promise<System> => {
+export const watchSystem = async (paths: SystemPaths, notify: () => void): Promise<System> => {
+  const waiters = new Set<() => void>()
+  const onChange = () => {
+    notify()
+    for (const check of waiters) check()
+  }
   const sessions = new Map<string, Session>()
   const logs = new Map<string, LogFile>()
   /** Each tailed log's stop, by session id, until its session exits or its log is archived. */
@@ -329,6 +336,14 @@ export const watchSystem = async (paths: SystemPaths, onChange: () => void): Pro
             const timer = setTimeout(done, ms)
             awaited.set(id, done)
           }),
+    until: (holds, ms) =>
+      new Promise((resolve) => {
+        const done = () => (waiters.delete(check), clearTimeout(timer), resolve())
+        const check = () => holds() && done()
+        const timer = setTimeout(done, ms)
+        waiters.add(check)
+        check()
+      }),
     refreshRunning,
     refreshShells,
     refreshRepos,

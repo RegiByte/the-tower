@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts"]
 }
 ---
@@ -42,6 +42,7 @@ what went wrong.
   | `offline`     | 504    | origin couldn't be fetched within 10 s                                   |
   | `worktree_failed` | 500 | git failed while cutting; what the request made is rolled back          |
   | `config`      | 500    | the config can't be read or holds a value the tower can't take, until the user fixes it ([[board-errors]]) |
+  | `limited`     | 409    | the config's limits refuse it now: a hire past the floor's `hiring` ([[hiring-limits]])     |
   | `internal`    | 500    | the tower failed where it didn't expect to; its log has the stack        |
 
   Reads answer their failures the same way, and so does a handler that throws ([[board-errors]]).

@@ -4,9 +4,9 @@
   "name": "Review round",
   "summary": "One review end to end: a worker (or the user) hires a reviewer in a fork of the author's checkout, the reviewer leaves notes on the checkout's thread, delivers a pointer to them, and the author answers each note on the same thread.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
-  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/directory.ts#postToHost", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md"]
+  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/server.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md"]
 }
 ---
 ```mermaid
@@ -18,10 +18,10 @@ sequenceDiagram
   participant R as [[system-root]]
   A->>M: tower review <CALLSIGN> [tell]
   M->>T: GET /board: the author's card, its calls.review
-  M->>T: POST /spawn {cut: {from: checkout}, prompt: /tower:review <CALLSIGN> [tell]}
+  M->>T: POST /spawn {cut: {from: checkout}, prompt: /tower:review <CALLSIGN> [tell], by: hirer, hire: true}
   T->>T: fork: a worktree per repo from a snapshot of the author's checkout
   T->>H: spawn in the fork, started on the review skill
-  M->>H: POST /hooks/<hirer> tower.hire {id: reviewer}
+  T->>H: fact tower.hire {id: reviewer} in the hirer's log
   H->>R: h event in the hirer's log
   Note over H: the reviewer reads the goal and the diff, runs checks in its fork
   H->>T: reviewer: tower note on <checkout> repo:path:lines (one per finding)
@@ -48,7 +48,8 @@ sequenceDiagram
 - **The pair is derived.** The reviewer's first prompt starts with the review skill and the author's callsign
   ([`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn)); `card.reviews` and the thread a reviewer writes on
   (its author's checkout) come from that, nothing is stored. The hire itself is a fact: [[hire]] covers
-  `tower.hire`, and `tower review` posts it too but is never refused by the hiring limits ([[hiring-limits]]).
+  `tower.hire`, and `tower review` spawns as a hire too, never refused by the hiring limits since its prompt starts a
+  reviewer ([[hiring-limits]]).
 - **The thread is a file.** Notes are appended only through `review/append`, read, numbered and written in one
   synchronous step so concurrent appends from the page and from workers never interleave
   ([`appendReview`](ref:hub/src/tower/server.ts#appendReview)). A note may quote the lines it is about, read from

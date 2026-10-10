@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.40'
+export const API_VERSION = '1.41'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -72,8 +72,15 @@ export const VERBS = {
         cut: cut.optional(),
         ...launch,
         by,
+        hire: z
+          .literal(true)
+          .optional()
+          .describe(
+            "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer. Hires of one worker are taken one at a time, each counted before the next is weighed.",
+          ),
       })
       .refine((s) => s.cwd === undefined || s.cut === undefined, { message: 'A spawn takes `cwd` or `cut`, not both', path: ['cut'] })
+      .refine((s) => !s.hire || s.by !== undefined, { message: 'A hire names its hirer: `by`', path: ['by'] })
       .meta({ not: { required: ['cwd', 'cut'] } })
       .describe(
         "Start a session in one of the project's directories or one of their worktrees (`cwd`, the hub when left out), or in a new worktree (`cut`); whatever else is left out is Claude's own default.",
@@ -294,10 +301,11 @@ export const TRANSPORT = {
  * answer. Worktrees add `exists` (the name, path or branch is taken), `would_lose` (removing would lose uncommitted or
  * unpushed work), `lost` (the worktree's folder is gone: recut it), `offline` (origin couldn't be fetched) and
  * `worktree_failed` (git failed partway, and what was made is rolled back). `config`: the config can't be read, or holds a
- * value the tower can't take, until the user fixes it. `internal`: the tower failed where it didn't expect to (its log has
+ * value the tower can't take, until the user fixes it. `limited`: the config's limits refuse it now (a hire past the
+ * floor's `hiring`), until something ends or the user raises them. `internal`: the tower failed where it didn't expect to (its log has
  * the stack). Renderers branch on the code; the message is for people.
  */
-export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'internal'] as const
+export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'limited', 'internal'] as const
 export const ApiError = z.object({ t: z.literal('error'), code: z.enum(ERROR_CODES), message: z.string() })
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
@@ -314,6 +322,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   offline: 504,
   worktree_failed: 500,
   config: 500,
+  limited: 409,
   internal: 500,
 }
 
