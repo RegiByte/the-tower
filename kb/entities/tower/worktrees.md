@@ -4,7 +4,7 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "web-tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#tidy", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
 }
 ---
@@ -28,7 +28,7 @@
   [[kept-branch]]. [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch
   (`GET /landing`).
 - **Tidy.** [`tidy`](ref:hub/src/worktrees.ts#tidy) removes the worktrees and kept branches the floor's Tidy listed,
-  refusing before it touches any once one is no longer `removable` or absorbed, after one fetch ([[tidy]]), so unmerged or uncommitted work is never lost; it runs only when
+  refusing before it touches any once one is no longer `removable` or absorbed, after one fetch (none for a repo without an `origin`, which has nothing to fetch: [[tidy]]), so unmerged or uncommitted work is never lost; it runs only when
   the user asks. Work that never landed goes only by [`discardable`](ref:hub/src/worktrees.ts#discardable) and
   `discard`, its tips noted on its thread first ([[discard]]). Threads of landed
   checkouts are filed by the server after it, as review history ([[review-threads]]).

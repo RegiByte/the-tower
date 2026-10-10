@@ -4,7 +4,7 @@
   "name": "Web tower",
   "summary": "The disposable web renderer: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf, on 127.0.0.1:4317.",
   "in": "tower",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
@@ -12,6 +12,8 @@ Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-ser
 [[live-system]] into a board and relays requests to the daemons. It holds no machinery. The skyline home
 (projects as buildings, sessions as lit windows) is the seed of a spatial renderer.
 Spatial renderers live in `renderers/` on the same API: [[tower3d]] is the first-person one.
+
+A worker's subagents hang under its sidebar line as satellites ([`satellitesOf`](ref:hub/src/shared/cards.ts#satellitesOf): those running, and those that ended a turn under 8 s ago, fading out; a fork marked with the branch glyph, a stopped one struck through), and its details list every run with its tokens and how it ended. A board push redraws the floors holding the selected row while any of it is in sight, so a move key's target stays in view.
 
 Every collection a floor declares has a tray under its workers ([[collection-trays]]): rows by title, tag, keeper and
 age from `/items.js`, an item opened in the main pane read as its type, with its tag, Finder and editor buttons, a new

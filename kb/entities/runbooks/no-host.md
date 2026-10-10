@@ -4,7 +4,7 @@
   "name": "No host answering",
   "summary": "Nothing answers on control.sock: the board shows the host down, running sessions turn lost, and every session verb fails as unavailable until a host is started.",
   "in": "host",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/client.ts#connectHost", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/shared/socket.ts#claimSocket", "hub/src/bridge/status.ts#withLiveness", "hub/src/tower/server.ts#daemon"]
 }
 ---
@@ -15,7 +15,8 @@
   their PTYs died with the host. Each stays resumable.
 - Keys, resize, kill and spawn fail with `unavailable` (502) from the tower
   ([`daemon`](ref:hub/src/tower/server.ts#daemon)); `tower` commands fail with "No host on …/control.sock (…).
-  Start it with: npm run host" ([`connectHost`](ref:hub/src/shared/client.ts#connectHost)).
+  Start it with: npm run host" ([`connectHost`](ref:hub/src/shared/client.ts#connectHost)). A request the daemon leaves
+  unanswered for 30 s fails naming it ("may be wedged") and closes the connection, so a hung host reads as an error, not a wait.
 
 **Host outdated.** A host that answers with another protocol than its clients (`board.hostOutdated`) is up and
 works; it runs code older than the tower's, so the renderers say `host outdated`. It updates when restarted

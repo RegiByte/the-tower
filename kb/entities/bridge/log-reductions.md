@@ -4,7 +4,7 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
   "in": "bridge",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/facts.ts#latestRateLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
 }
 ---
@@ -51,7 +51,7 @@ or one event at a time as it is tailed:
   carries the followed ones as `subagentRuns`, each `running` while its loop is mid-turn in a live session.
   A prompt of Claude's peer origin without that wrapper is a subagent's hand-back, counted under `prompts` as
   `hand-back`. A prompt a worker typed through the tower (`submit` or `spawn` with `by`) reaches Claude as the
-  composer's: the `tower.prompt` fact before it makes it `peer`, and it answers no wait ([[worker-prompts]]).
+  composer's: the `tower.prompt` fact before it makes it `peer`, and it answers no wait ([[worker-prompts]]). `tower.keys` and `tower.kill`, appended by the tower before a worker's keys or kill reach the session, fold as `keyedBy` (the latest worker that typed, with when) and `killedBy`; a kill none names is the user's ([[worker-acts]]).
 - [`conversationsAfter`](ref:hub/src/bridge/conversation.ts#conversationsAfter) and
   [`threads`](ref:hub/src/bridge/chains.ts#threads): each conversation with its latest prompt and answer, linked
   to the sessions it was resumed from and by ([[resume]]). [`briefOf`](ref:hub/src/bridge/turns.ts#briefOf) gathers

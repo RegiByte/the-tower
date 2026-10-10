@@ -4,7 +4,7 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every collection's items, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, read to its last full line from its checkpoint on, then tailed while the session runs; collections/ rescanned on any change" },
@@ -19,7 +19,7 @@
 ---
 `src/system.ts`, with its machine edges in `src/machine.ts` (host and terms requests, `ps`/`lsof`, git
 origins, the editor, `bringUp`). A new log file is picked up by a directory watch; an exited session stops being
-tailed, as does one whose fold breaks on an event it can't follow ([[broken-logs]]): it costs that session's facts,
+tailed, as does one let go ([[let-go]]) and one whose fold breaks on an event it can't follow ([[broken-logs]]): it costs that session's facts,
 and the tower and every other session carry on. Each log is folded from its checkpoint on ([`foldLog`](ref:hub/src/checkpoints.ts#foldLog),
 [[fold-checkpoints]]): an exited log costs a header read and a lookup, so a start is about 36 ms for 235 logs
 (881 MB) once checkpointed, against 1.6 s folding them all; a running session's tail goes on from where its fold

@@ -4,7 +4,7 @@
   "name": "tower",
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/src/cli.ts", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill, live over control.sock" },
@@ -27,7 +27,8 @@ tower mod puts the command on every session's PATH; `npm link` puts it on the us
 Unlike the tower it does not use [[live-system]]: each command reads the logs it needs and exits. `ls` and
 `resume` fold every log from its checkpoint on, as the tower does ([[fold-checkpoints]]); `resume` asks the
 running tower first and folds only when none answers ([[resume]]).
-`tower submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`.
+`tower submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`; run by a worker (`TOWER_SESSION_ID` set), it first has the host append `tower.prompt` naming it ([[worker-prompts]]).
+`tower kill` speaks to the host, and when a worker runs it (`TOWER_SESSION_ID` set) on a running session, first has the host append `tower.kill` naming that worker ([[worker-acts]]).
 `tower attach` puts the terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `tower down`
 stops the daemons `tower up` started ([[bring-up]]); both take daemons by name. `tower init` writes a first config
 and `tower doctor` checks what the tower needs, one fix for each failure ([[setup]]). `tower update` moves the

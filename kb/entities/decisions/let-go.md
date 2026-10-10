@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",
@@ -57,7 +57,7 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   and frees its seat at that moment. Its status reads "let go, resumable", and it keeps `resume` in the archive.
   The `let-go` verb is offered while the card is stranded, on duty and not yet resumed. It is a
   card verb with its call ([[board-verbs]]), the API's `let-go`, and `tower let-go <CALLSIGN>`.
-- The live system stops tailing a log at its exit or its break ([[broken-logs]]), so a log that grows after it is
+- The live system stops tailing a log at its exit, its break ([[broken-logs]]) or this fact, closing its fd and watcher, so a log that grows after it is
   folded again from its checkpoint when the sessions directory reports it. A broken session folds nothing past
   its break but this fact ([`afterBreak`](ref:hub/src/tail.ts#afterBreak)), so it can be let go too.
 - "Resume all N" on a floor is composed in the renderer from the stranded cards' `calls.resume`

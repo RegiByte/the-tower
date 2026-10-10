@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
@@ -63,7 +63,7 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   absent while what is left is unknown.
 - *What landed, from git's own records.* Per project only: for each of a project's dirs (its hub and `repos`),
   [`readLanded`](ref:hub/src/landed.ts#readLanded) walks the first parents of `origin/HEAD` over the window (as of the
-  last fetch) with `--diff-merges=first-parent --numstat`, and [`parseLog`](ref:hub/src/bridge/landed.ts#parseLog)
+  last fetch) with `--diff-merges=first-parent --numstat` (and `core.quotepath=false`, so a path reads as it is whatever the user's git config says), and [`parseLog`](ref:hub/src/bridge/landed.ts#parseLog)
   reads each landing: the time it reached the branch (its committer time) and the lines it changed against the
   branch before it. A merge is one landing that counts the commits it brought, itself included (`rev-list --count
   M^1..M`), its lines those of all of them; a commit made straight on the branch, or a squash, is one. Repos are keyed

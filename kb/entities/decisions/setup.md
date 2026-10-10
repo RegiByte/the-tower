@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#daemonsNamed", "hub/src/cli.ts", "hub/package.json", "hub/README.md"]
 }
 ---
@@ -27,7 +27,7 @@ session.
   `page`, `editor` VS Code's) and the README shows it.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing: each check is `ok`, `warn`
   (the tower runs with less: no editor command, Claude newer than tested ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)), a version it cannot place, or not signed in, a daemon not running yet) or
-  `fail` (it can't run: not macOS, Node below 24, no `claude`, `git` or `curl`, Claude older than the tested range, a
+  `fail` (it can't run: not macOS, Node below 24, no `claude` or `curl`, `git` missing or older than 2.38 (the landing check runs `merge-tree --write-tree`), Claude older than the tested range, a
   system root that isn't writable, a config that doesn't read or names a missing directory, a daemon's place held by
   something else), each `warn` and `fail` with one fix. Any `fail` exits 1. The config is checked by the same
   validators the tower runs as it reads it, the check `tower config check` prints in full ([[tower-cli]]). Claude's sign-in is `claude auth status`; signing in can also happen at the
