@@ -5,8 +5,11 @@
  * running at once each pick their own root and port (`TOWER_SANDBOX=/tmp/tower-<callsign> npm run sandbox -- up --port
  * <port>`): `up` refuses a port another tower holds.
  *
- *   npm run sandbox -- up [--port <n>]   write the config, start the host, terms and tower; the port stays in the
- *                                        config, so a later `up` without --port keeps it
+ *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, start the host, terms and tower;
+ *                                        an existing config stays as it is (hand-edit it: `hiring`, more projects), only
+ *                                        --port is written into it, and a later `up` without --port keeps the port.
+ *                                        A config from an older script keeps its old shape: delete the root to get the
+ *                                        current one
  *   npm run sandbox -- down              stop all three
  *
  * Tower 3D runs at <the URL up prints>/r/tower3d/ once built (`npm run tower3d`), a fixture board at …/r/tower3d/?board=busy.
@@ -32,7 +35,7 @@
  * `/screen/<id>` and `/shell/<id>` are SSE streams that never end: bound them, or curl hangs.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { initialConfig } from '../src/init.ts'
@@ -90,11 +93,11 @@ function seedRepo(dir: string) {
   git(dir, 'remote', 'set-head', 'origin', '--auto')
 }
 
-function writeConfig(port: number) {
+function freshConfig(port: number) {
   const lab = path.join(ROOT, 'lab')
   const labApi = path.join(ROOT, 'lab-api')
   for (const dir of [lab, labApi]) seedRepo(dir)
-  writeFileSync(CONFIG, JSON.stringify({
+  return {
     argv: ['bash', '-c', SESSION, 'session'],
     port,
     projects: {
@@ -106,7 +109,13 @@ function writeConfig(port: number) {
       games: { label: 'Games', description: "Games played in Tower 3D's arcade: one self-contained .html file each, kept with `tower keep games <file>.html`." },
     },
     worktrees: { links: { '.notes': '.notes' } },
-  }, null, 2))
+  }
+}
+
+function prepareConfig(port: number | undefined) {
+  const config = existsSync(CONFIG) ? JSON.parse(readFileSync(CONFIG, 'utf8')) : freshConfig(port ?? 4399)
+  if (port !== undefined) config.port = port
+  writeFileSync(CONFIG, JSON.stringify(config, null, 2))
 }
 
 const OWN_SANDBOX = `Run one of your own beside it: TOWER_SANDBOX=/tmp/tower-<you> npm run sandbox -- up --port <free port> (the root under ~80 bytes: sockets cap it).`
@@ -115,7 +124,7 @@ const paths = systemPaths(CONFIG)
 const { positionals: [command], values } = parseArgs({ allowPositionals: true, options: { port: { type: 'string' } } })
 if (command === 'up') {
   mkdirSync(ROOT, { recursive: true })
-  writeConfig(values.port !== undefined ? Number(values.port) : existsSync(CONFIG) ? towerPort(readConfig(CONFIG)) : 4399)
+  prepareConfig(values.port !== undefined ? Number(values.port) : undefined)
   const port = towerPort(readConfig(CONFIG))
   const URL = sandboxUrl()
   const brought = await bringAllUp(daemons(paths, port)).catch((err: Error) => {
