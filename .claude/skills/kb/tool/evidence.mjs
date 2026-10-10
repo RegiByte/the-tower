@@ -67,8 +67,9 @@ export function locateAnchor(lines, anchor, file) {
 const BRACKET = { "(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1 };
 const MULTILINE_QUOTE = /"""|'''|`/g;
 
-// The lines an anchor's symbol spans (1-based, inclusive): the decorators right above its definition line, down to
-// the line before the next definition at its column or less that is not a comment, or the file's last line.
+// The lines an anchor's symbol spans (1-based, inclusive): the decorators right above its definition line, their
+// arguments over several lines included, down to the line before the next definition at its column or less that is
+// not a comment, or the file's last line.
 // A deeper definition is nested in it and does not end it, nor does one met while the lines since its definition
 // leave a bracket or a multi-line string open (a definition-like line in a string). A line-range anchor is its own region.
 export function symbolRegion(lines, anchor, file) {
@@ -83,7 +84,12 @@ export function symbolRegion(lines, anchor, file) {
   const at = def.column(lines[def.index]);
   const indent = indentOf(lines[def.index]);
   let from = def.index;
-  while (from > 0 && /^\s*@/.test(lines[from - 1]) && indentOf(lines[from - 1]) === indent) from--;
+  for (let i = def.index - 1, depth = 0; i >= 0 && lines[i].trim(); i--) {
+    for (const c of lines[i]) depth += BRACKET[c] ?? 0;
+    const atIndent = indentOf(lines[i]) === indent;
+    if (atIndent && /^\s*@/.test(lines[i]) && depth === 0) from = i;
+    else if (atIndent && !/^\s*[)\]}]/.test(lines[i])) break;
+  }
   const opensSibling = (l) => l.trim() && !COMMENT_LINE.test(l) && def.opens.test(l) && def.column(l) <= at;
   let depth = 0;
   const quotes = new Set();
