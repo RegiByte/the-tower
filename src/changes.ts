@@ -44,12 +44,15 @@ const commitsSince = async (dir: string, since: string): Promise<Commit[]> =>
       return { sha, subject, at }
     })
 
+/** Files in the order of the paths their headers show, untracked ones among the rest; as git sorts its own, for ASCII paths. */
+const byPath = (files: DiffFile[]): DiffFile[] => files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+
 /** The working tree's diff from `from`, untracked files with it. */
 const treeDiff = async (dir: string, from: string) => {
   const untracked = (await git(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
   const shown = untracked.slice(0, MAX_UNTRACKED)
   const outs = await Promise.all([git(dir, [...DIFF, from]), ...shown.map((file) => untrackedDiff(dir, file))])
-  return { files: outs.flatMap(parseDiff), more: untracked.length - shown.length }
+  return { files: byPath(outs.flatMap(parseDiff)), more: untracked.length - shown.length }
 }
 
 const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChanges> => {
@@ -61,7 +64,7 @@ const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChange
   if (scope === 'uncommitted') return { ...base, shows: 'uncommitted', ...(await treeDiff(dir, 'HEAD')) }
   const commit = commits.find((c) => c.sha.startsWith(scope.commit))
   if (!commit) return { ...base, shows: scope.commit, files: [], more: 0 }
-  return { ...base, shows: commit.sha, files: parseDiff(await git(dir, [...DIFF, `${commit.sha}^`, commit.sha])), more: 0 }
+  return { ...base, shows: commit.sha, files: byPath(parseDiff(await git(dir, [...DIFF, `${commit.sha}^`, commit.sha]))), more: 0 }
 }
 
 /** The changes in each of a session's dirs that is a repo, in its order, as `scope` shows them. */

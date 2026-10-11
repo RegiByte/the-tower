@@ -23,7 +23,8 @@ and haven't read while the agent keeps working.
   upstream (a main checkout tracking `origin/main`), since the merge-base with the upstream, so a commit not yet pushed
   is still work to review and a note anchored to it stays anchored ([[review-threads]]). Anywhere else, since `HEAD`.
   One `git diff <since>` against the working tree covers commits, staged and unstaged; untracked files are diffed
-  one by one against `/dev/null` (up to 300; the rest are counted). Files outside the repos aren't seen.
+  one by one against `/dev/null` (up to 300; the rest are counted). Files outside the repos aren't seen. A repo's
+  files are listed by path, untracked ones among the rest.
 - **As data.** [`parseDiff`](ref:hub/src/bridge/diff.ts#parseDiff) turns git's output into files with their
   hunks, lines kept with git's marks; renderers number lines from each hunk's start. Binary files and files past
   2000 changed lines keep their counts and drop their hunks. Every config of the user's that changes what
