@@ -5,7 +5,7 @@ import { conversationsOf } from '../src/bridge/conversation.ts'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { extensionOf, landed as landing, parseLog, type RepoLanded } from '../src/bridge/landed.ts'
-import { bucketStart, pace, stats, today, weeklyBudget } from '../src/bridge/stats.ts'
+import { bucketStart, pace, stats, today, weeklyBudget, weeklyRead } from '../src/bridge/stats.ts'
 import { fixture } from './replay.ts'
 
 const session = (name: string): Session => {
@@ -102,6 +102,15 @@ test('stats over a window: summaries, buckets, the hours of the day and the week
   close(s.budget!.usdPerPercent!, 0.0382443)
   close(s.budget!.usdLeft!, 83 * 0.0382443)
   assert.equal(weeklyBudget(sessions, [], Date.parse('2026-10-05T00:00:00Z')), undefined)
+  const shares = Object.values(s.sessions)
+  assert.deepEqual(Object.keys(s.sessions).sort(), sessions.map((x) => x.header.id).sort())
+  assert.equal(shares.reduce((a, x) => a + x.turns, 0), sum.turns)
+  close(shares.reduce((a, x) => a + x.spend, 0), sum.spend)
+  assert.equal(Math.max(...shares.map((x) => x.longestTurn?.seconds ?? 0)), sum.turnSeconds.max)
+  assert.deepEqual(shares.flatMap((x) => (x.longestWait ? [x.longestWait.seconds] : [])), [sum.waits.max])
+  assert.deepEqual(stats(sessions, {}, { from: from - 86400_000, to: from, bucket: 'day' }).sessions, {})
+  assert.equal(weeklyRead(sessions, [], { from, to: from + 2 * 86400_000 })?.percentUsed, 17)
+  assert.equal(weeklyRead(sessions, [], { from: from - 86400_000, to: from }), undefined)
   const day = today(sessions, [], sessions[2].header.startedAt + 20_000)
   close(day.spend, sum.spend)
   assert.deepEqual(day.waits, { n: 1, p50: sum.waits.p50 })

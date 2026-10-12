@@ -6,12 +6,13 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-12",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
     "hub/src/bridge/stats.ts#overlap",
     "hub/src/bridge/stats.ts#weeklyBudget",
+    "hub/src/bridge/stats.ts#weeklyRead",
     "hub/src/bridge/stats.ts#pace",
     "hub/src/bridge/stats.ts#today",
     "hub/src/bridge/probes.ts#probeFacts",
@@ -51,13 +52,17 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   project and for all: summaries (sessions started, sessions that ran a turn, resumes, spend, tokens by model,
   agent-hours, turns, prompts by origin (`peer` a message from another Claude session or a prompt a worker typed
   through the tower ([[worker-prompts]]), a subagent's hand-back `hand-back`), subagents, asks, failures, and the spread (min, p50, avg, p90, max) of waits,
-  turn durations and active minutes per session), series per local hour or day, spend and turns by hour of day, and
+  turn durations and active minutes per session), each session's share of the window by its id (`sessions`: its
+  turns, agent-hours and spend, counted as the summary counts them, and its longest turn and longest wait on the user,
+  each with when it began), series per local hour or day, spend and turns by hour of day, and
   concurrency: [`overlap`](ref:hub/src/bridge/stats.ts#overlap) sweeps every main-loop turn span cut to the window (and
   to each bucket) for the wall time anyone worked (`busyHours`), the workers working at once on average over it
   (`atOnce`: turn time over busy time) and the most at once (`peak`, per bucket in `series.peak`). Subagents' turns
   are not workers and are not counted. [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
   every session's readings and every probe's reads ([[probes]]: the quota is read while no session's turn reads it)
-  (it is the account's, so `/stats?project=` filters the stats and never the budget): over the window it is in, the spend from its first reading to the
+  (it is the account's, so `/stats?project=` filters the stats and never the budget), and
+  [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) the latest of those readings taken in the window (`weekly`:
+  the percent used then and the reset it counts to), so a past week shows how far its quota went: over the window it is in, the spend from its first reading to the
   latest where it moved, divided by the percent it climbed, is what 1% buys; the percent left times that is "$ left
   this week". Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
   even daily spend that spends what is left at the reset, and `runsOutAt`, when what is left runs out at today's rate

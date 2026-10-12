@@ -2,7 +2,7 @@
  * Stats over sessions: a pure reduction of their facts over a window of time, per project and for all of them, in
  * the local time of the process (the tower's, which is the viewer's).
  */
-import { addTokens, type Session, type Tokens } from './facts.ts'
+import { addTokens, type LimitReading, type Session, type Tokens } from './facts.ts'
 import { extensionOf, type RepoLanded } from './landed.ts'
 import type { ProbeFacts } from './probes.ts'
 
@@ -98,12 +98,27 @@ const DAY = 86400_000
 const HOUR = 3600_000
 const MIN_RATE_WINDOW = HOUR
 
+/** Something that lasted `seconds` from `at` (epoch ms). */
+export type Lasted = { at: number; seconds: number }
+
+/**
+ * One session's part of the window, counted as the summary counts them: its main loop's turns that started in it and
+ * their hours, its spend, its longest such turn and its longest wait on the user answered in it (from its `Stop`).
+ */
+export type SessionShare = { turns: number; agentHours: number; spend: number; longestTurn?: Lasted; longestWait?: Lasted }
+
+/** The weekly limit as last read in the window: the percent used then, of the week that resets at `resetsAt`. */
+export type WeeklyRead = { at: number; percentUsed: number; resetsAt: string }
+
 export type Stats = StatsQuery & {
   /** Each bucket's start, epoch ms. */
   buckets: number[]
   all: ScopeStats
   projects: Record<string, ScopeStats>
+  /** By session id, every session that ran a turn, spent or was answered in the window. */
+  sessions: Record<string, SessionShare>
   budget?: WeeklyBudget
+  weekly?: WeeklyRead
 }
 
 export const WEEKLY = 'seven_day'
@@ -140,7 +155,7 @@ export const bucketsOf = ({ from, to, bucket }: StatsQuery): number[] => {
   return starts
 }
 
-const within = (q: StatsQuery) => (at: number) => at >= q.from && at < q.to
+const within = (q: Pick<StatsQuery, 'from' | 'to'>) => (at: number) => at >= q.from && at < q.to
 
 const tally = (keys: string[]): Record<string, number> => keys.reduce<Record<string, number>>((a, k) => ((a[k] = (a[k] ?? 0) + 1), a), {})
 
@@ -246,12 +261,39 @@ const scopeStats = (sessions: Session[], landed: RepoLanded[], q: StatsQuery, bu
   }
 }
 
+const longest = (spans: [number, number][]): Lasted | undefined =>
+  spans.reduce<Lasted | undefined>((a, [at, seconds]) => (!a || seconds > a.seconds ? { at, seconds } : a), undefined)
+
+const shareOf = (s: Session, q: StatsQuery): SessionShare | undefined => {
+  const inWindow = within(q)
+  const turns = s.facts.turnSpans.filter(([at]) => inWindow(at))
+  const spend = s.facts.spend.filter(([at]) => inWindow(at))
+  const waits = s.facts.waits.filter(([at]) => inWindow(at))
+  if (!turns.length && !spend.length && !waits.length) return undefined
+  return {
+    turns: turns.length,
+    agentHours: sum(turns.map(([, seconds]) => seconds)) / 3600,
+    spend: sum(spend.map(([, usd]) => usd)),
+    longestTurn: longest(turns),
+    longestWait: longest(waits.map(([at, seconds]) => [at - seconds * 1000, seconds])),
+  }
+}
+
+const weeklyReadings = (sessions: Session[], probes: ProbeFacts[]) =>
+  [...sessions.map((s) => s.facts), ...probes].flatMap((f) => f.limitReadings[WEEKLY] ?? [])
+
+/** The latest reading of the weekly limit taken in the window, a session's or a probe's: the account's. */
+export const weeklyRead = (sessions: Session[], probes: ProbeFacts[], q: Pick<StatsQuery, 'from' | 'to'>): WeeklyRead | undefined => {
+  const latest = weeklyReadings(sessions, probes).filter(([at]) => within(q)(at)).reduce<LimitReading | undefined>((a, r) => (!a || r[0] > a[0] ? r : a), undefined)
+  return latest && { at: latest[0], percentUsed: latest[1], resetsAt: latest[2] }
+}
+
 /**
  * The weekly budget from every reading of the weekly limit, a session's or a probe's: the account's, whatever read
  * them. None once the window of the latest reading has reset by `now`.
  */
 export const weeklyBudget = (sessions: Session[], probes: ProbeFacts[], now: number): WeeklyBudget | undefined => {
-  const readings = [...sessions.map((s) => s.facts), ...probes].flatMap((f) => f.limitReadings[WEEKLY] ?? [])
+  const readings = weeklyReadings(sessions, probes)
   const latest = readings.reduce<(typeof readings)[number] | undefined>((a, r) => (!a || r[0] > a[0] ? r : a), undefined)
   if (!latest || Date.parse(latest[2]) <= now) return undefined
   const [at, percentUsed, resetsAt] = latest
@@ -283,7 +325,7 @@ export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { 
  * The sessions' stats over the window, with what landed on each project's repos (`landed`, by project). The weekly
  * budget is the account's, so it is read apart, from every session.
  */
-export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>, q: StatsQuery): Omit<Stats, 'budget'> => {
+export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>, q: StatsQuery): Omit<Stats, 'budget' | 'weekly'> => {
   const buckets = bucketsOf(q)
   const projects = [...new Set([...sessions.map((s) => s.header.project), ...Object.keys(landed)])].sort()
   return {
@@ -291,6 +333,7 @@ export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>,
     buckets,
     all: scopeStats(sessions, uniqueRepos(Object.values(landed).flat()), q, buckets),
     projects: Object.fromEntries(projects.map((p) => [p, scopeStats(sessions.filter((s) => s.header.project === p), uniqueRepos(landed[p] ?? []), q, buckets)])),
+    sessions: Object.fromEntries(sessions.flatMap((s) => { const share = shareOf(s, q); return share ? [[s.header.id, share] as const] : [] })),
   }
 }
 
