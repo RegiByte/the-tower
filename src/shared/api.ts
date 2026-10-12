@@ -11,7 +11,7 @@ import { AUTHOR, WORKTREE_NAME } from './model.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.45'
+export const API_VERSION = '1.46'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -281,6 +281,9 @@ export const QUERIES = {
       project: id.optional().describe("Only this project's sessions."),
     })
     .describe("Stats over every session's log and what landed on each project's default branches: summaries, series, hours of the day and the weekly budget, per project and for all."),
+  'probe/<name>': z
+    .object({ last: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest reads, newest first.') })
+    .describe("One probe of the config's: its status as the board shows it, and its latest reads as its stream keeps them, each Claude's answer as it came or why there is none."),
   landing: z
     .object({ project: id, branch: z.string().min(1).describe('A branch of a worktree or a kept branch, `carried` on the board.') })
     .describe(

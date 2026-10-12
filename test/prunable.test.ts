@@ -19,7 +19,7 @@ const at = (log: SessionLog, seconds: number) => log.header.startedAt + seconds 
 
 /** The floor of `log`'s project at `now`, its session running when `live`. */
 const floorAt = (log: SessionLog, now: number, live: boolean, running: Resource[] = []) =>
-  board(CONFIG, [{ header: log.header, facts: factsOf(log) }], { ids: new Set(live ? [log.header.id] : []), protocol: HOST_PROTOCOL }, running, [], [], [], [], new Map(), new Map(), [], PATHS, now).floors.find(
+  board(CONFIG, [{ header: log.header, facts: factsOf(log) }], { ids: new Set(live ? [log.header.id] : []), protocol: HOST_PROTOCOL }, running, [], [], [], [], new Map(), new Map(), new Map(), PATHS, now).floors.find(
     (f) => f.id === log.header.project,
   )!
 
@@ -64,7 +64,7 @@ const towerAt = (logs: SessionLog[], now: number, read: Map<string, RepoRead>, a
     CONFIG,
     logs.map((log) => ({ header: log.header, facts: factsOf(log) })),
     { ids: new Set((allLive ? logs : logs.slice(-1)).map((log) => log.header.id)), protocol: HOST_PROTOCOL },
-    [], [], [], [], [], read, new Map(), [], PATHS, now,
+    [], [], [], [], [], read, new Map(), new Map(), PATHS, now,
   ).floors.find((f) => f.id === 'tower')!
 
 const DAY = 24 * 60 * 60 * 1000

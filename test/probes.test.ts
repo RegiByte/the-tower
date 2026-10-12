@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { accountLimits, due, NO_READS, probeFacts, probesOf, readingsOf, usageAnswer, type Probe, type ProbeFacts } from '../src/bridge/probes.ts'
+import { accountLimits, due, NO_READS, probeFacts, probesOf, probeStatus, probeView, readingsOf, usageAnswer, type Probe, type ProbeFacts } from '../src/bridge/probes.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
 import { ConfigError, type Config } from '../src/shared/model.ts'
 
@@ -113,4 +113,31 @@ test('a line that is no JSON costs its own read only: the reads before and after
   assert.equal(unreadable, 1)
   assert.deepEqual(readings.map(([, r]) => r.ok), [true, false, false, false])
   assert.deepEqual(readingsOf(['{"stream"', first, ''].join('\n')), { readings: [], unreadable: 2 })
+})
+
+test("a probe's status says how its stream stands: three failures back off, with why the last failed and when it reads next", () => {
+  const { readings } = readingsOf(text('probe-quota.jsonl'))
+  const at = (i: number) => readings[i][0]
+  const status = probeStatus(QUOTA, probeFacts(readings), NO_LIMITS)
+  assert.deepEqual(
+    [status.state, status.lastAt, status.answeredAt, status.failsInRow, status.wait, status.nextAt, status.held],
+    ['backoff', at(4), at(1), 3, 10 * MIN, at(4) + 10 * MIN, false],
+  )
+  assert.equal(status.error, (readings[4][1] as { error: string }).error)
+  assert.deepEqual([probeStatus(QUOTA, probeFacts(readings.slice(0, 3)), NO_LIMITS).state, probeStatus(QUOTA, probeFacts(readings.slice(0, 2)), NO_LIMITS).error], ['failing', undefined])
+})
+
+test("a probe's next read waits for a session's newer reading, and an off probe has none", () => {
+  const facts = readAt(NOW - 9 * MIN)
+  assert.deepEqual(probeStatus(QUOTA, facts, { rateLimitsAt: NOW - 2 * MIN, rateLimitsFrom: 'session' }), { ...probeStatus(QUOTA, facts, NO_LIMITS), nextAt: NOW + 8 * MIN, held: true })
+  assert.deepEqual([probeStatus(QUOTA, NO_READS, NO_LIMITS).state, probeStatus(QUOTA, NO_READS, NO_LIMITS).nextAt], ['new', 0])
+  const off = probeStatus({ ...QUOTA, off: true }, facts, NO_LIMITS)
+  assert.deepEqual([off.state, off.nextAt, off.held], ['off', undefined, false])
+  assert.equal(probeStatus(QUOTA, readAt(NOW, { unavailable: true }), NO_LIMITS).state, 'unavailable')
+})
+
+test("GET /probe/<name> reads the latest reads, newest first, each at its moment", () => {
+  const { readings } = readingsOf(text('probe-quota.jsonl'))
+  const view = probeView(probeStatus(QUOTA, probeFacts(readings), NO_LIMITS), readings, 2)
+  assert.deepEqual(view.reads.map((r) => [r.at, r.ok]), [[readings[4][0], false], [readings[3][0], false]])
 })

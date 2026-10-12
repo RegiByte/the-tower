@@ -8,6 +8,9 @@ import { accessSync, constants, existsSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { daemons, startedPid, type Daemon, type Holder } from './machine.ts'
+import type { ProbeView } from './bridge/probes.ts'
+import type { ApiError } from './shared/api.ts'
+import { probeLine, span } from './shared/cards.ts'
 import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
 import { ConfigError, editorArgv, towerPort, type Config } from './shared/model.ts'
@@ -134,6 +137,32 @@ const daemon = ({ name, where, config }: Daemon, holder: Holder, stray: number |
   return { level: 'fail', what: `${name}: ${where} is held by ${holder.what}`, fix: name === 'tower' ? `stop it where it runs, or serve this system on another port: set port in ${config}` : 'stop it where it runs' }
 }
 
+/** How late a probe's read may start past its `nextAt`: the tower's tick (30 s) and the 60 s floor between reads, with room to spare. */
+const PROBE_LATE_MS = 3 * 60_000
+
+/** What failed reads say to do, by what failed: the command, Claude waiting on something, or anything else. */
+const probeFix = (error: string, log: string): string =>
+  /ENOENT/.test(error)
+    ? "argv in the config names a command that isn't on the tower's PATH: fix argv"
+    : /no answer within/.test(error)
+      ? 'run claude in a terminal: it may wait on an update, a sign-in or a trust prompt'
+      : `run claude in a terminal to see why it fails; ${log} has the tower's side, and \`tower probes\` follows the next read`
+
+/** Whether the quota probe answered recently, read from the running tower: it is the tower that runs it. */
+const quotaProbe = async (tower: Daemon, answering: boolean): Promise<Verdict> => {
+  if (!answering) return { level: 'warn', what: 'the quota probe: unchecked while the tower is down', fix: 'tower up' }
+  const res = await fetch(`${tower.where}/probe/quota?last=1`)
+  if (!res.ok) return { level: 'warn', what: `the quota probe: the tower answers ${res.status}: ${((await res.json()) as ApiError).message}`, fix: 'a tower older than this checkout: tower down tower, then tower up tower' }
+  const { status: p }: ProbeView = await res.json()
+  const now = Date.now()
+  const line = probeLine(p, now)
+  if (p.state === 'unavailable')
+    return { level: 'warn', what: `${line}: the account has no rate limits to read`, fix: 'sign in to Claude Code with a Claude subscription (claude, then /login): an API key or a cloud provider has none' }
+  if (p.error !== undefined) return { level: 'warn', what: `${line}: ${p.failsInRow} failed in a row: ${p.error}`, fix: probeFix(p.error, tower.log) }
+  if (p.nextAt !== undefined && now - p.nextAt > PROBE_LATE_MS) return { level: 'warn', what: `${line}: overdue by ${span(now - p.nextAt)}`, fix: `${tower.log} says why; tower down tower, then tower up tower` }
+  return { level: 'ok', what: line }
+}
+
 const readable = (paths: SystemPaths): Config | Error => {
   try {
     return readConfig(paths.config)
@@ -171,12 +200,15 @@ export const running = async (paths: SystemPaths): Promise<Verdict[]> => {
     if (!(err instanceof ConfigError)) throw err
     return [{ level: 'warn', what: 'the daemons: unchecked until the config names a port', fix: 'fix the config first' }]
   }
-  return Promise.all(
-    daemons(paths, port).map(async (d) => {
+  const all = daemons(paths, port)
+  const verdicts = await Promise.all(
+    all.map(async (d) => {
       const holder = await d.holder()
-      return daemon(d, holder, holder.t === 'nothing' ? await startedPid(d) : undefined)
+      return { verdict: daemon(d, holder, holder.t === 'nothing' ? await startedPid(d) : undefined), ours: holder.t === 'ours' }
     }),
   )
+  const tower = all.findIndex((d) => d.name === 'tower')
+  return [...verdicts.map((v) => v.verdict), await quotaProbe(all[tower], verdicts[tower].ours)]
 }
 
 export const doctor = async (paths: SystemPaths): Promise<Verdict[]> => [...(await readiness(paths)), ...(await running(paths))]

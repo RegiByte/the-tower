@@ -52,7 +52,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 #hud-notes .untested { font-size: var(--fs-xs); white-space: normal; }
 .hud-limits .meter { width: 24px; height: 4px; }
 .hud-limits small { color: var(--faint); font-weight: 400; }
-.hud-limits.stale > span { opacity: .5; }
+.hud-limits.stale > span:not(.hud-probe) { opacity: .5; }
+.hud-probe.working small, .hud-probe.broken small { color: var(--c-text); }
 .hud-music { color: var(--faint); }
 .hud-music.on { color: var(--ink); }
 .hud-host.working, .hud-host.broken { color: var(--c-text); }

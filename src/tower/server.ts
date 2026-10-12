@@ -17,6 +17,7 @@
  *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
+ *   GET  /probe/<name>?last  one probe's status as the board shows it, and its latest reads, newest first (src/bridge/probes.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
  *                                        branches, read from git now (src/bridge/stats.ts), the query by its schema
  *   GET  /shell/<id>    SSE: a snapshot of the shell's screen, then its output, from the terms daemon
@@ -80,6 +81,7 @@ import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
 import { runProbes } from '../probes.ts'
+import { probeView } from '../bridge/probes.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { archiveLog } from '../archive.ts'
@@ -209,7 +211,7 @@ const currentBoard = (): string => {
   }
 }
 
-const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), [...system.probes().values()], paths, Date.now())
+const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), paths, Date.now())
 
 /** Every session's card, the ones the board leaves out included. */
 const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
@@ -261,6 +263,15 @@ async function landingRead(res: http.ServerResponse, search: string) {
     if (!(err instanceof WorktreeError)) throw err
     fail(res, err.code, err.message)
   }
+}
+
+function probeRead(res: http.ServerResponse, name: string, search: string) {
+  const query = QUERIES['probe/<name>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
+  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+  const { probes } = boardOf()
+  const status = probes.find((p) => p.name === name)
+  if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), query.data.last)))
 }
 
 async function statsRead(res: http.ServerResponse, search: string) {
@@ -1225,6 +1236,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (req.method === 'GET' && rendering) return rendered(res, rendering[1], rendering[2] === undefined ? undefined : decodeURIComponent(rendering[2]), query)
   if (req.method === 'GET' && pathname === '/stats') return statsRead(res, search ?? '')
   if (req.method === 'GET' && pathname === '/landing') return landingRead(res, search ?? '')
+  const probed = /^\/probe\/([\w-]+)$/.exec(pathname)?.[1]
+  if (req.method === 'GET' && probed) return probeRead(res, probed, search ?? '')
   const ran = /^\/run\/([\w-]+)\/(\d+)(?:\/(.+))?$/.exec(pathname)
   if (req.method === 'GET' && ran) return run(res, ran[1], Number(ran[2]), ran[3] && decodeURIComponent(ran[3]), query)
   const item = /^\/collection\/([\w-]+)\/([\w-]+)\/([^/]+)$/.exec(pathname)

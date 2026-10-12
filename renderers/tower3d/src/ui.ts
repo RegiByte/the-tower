@@ -10,7 +10,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, CARRY_ON_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, PROBE_STATE_NAME, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfSource, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, CARRY_ON_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -72,11 +72,16 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
     return `<span data-tip="${esc(title)}">${esc(limitName(r.kind))}
       <span class="meter" style="--fill:${fillOf(r.percentUsed)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
   })
-  const asOf = stale ? [`<small data-tip="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`] : []
+  const asOf = stale ? [`<small data-tip="${esc(limitsFromTitle(board))}">as of ${span(age)} ago</small>`] : []
+  /** A probe as a lamp and its name, and its state while that asks for you: the whole line on hover. */
+  const probes = board.probes.map((p) => {
+    const said = PROBE_ATTENTION[p.state] === 'quiet' ? p.name : `${p.name} ${PROBE_STATE_NAME[p.state]}`
+    return `<span class="hud-probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span><small>${esc(said)}</small></span>`
+  })
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
     ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
-    ${limits.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf].join('')}</span>` : ''}
+    ${limits.length || probes.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf, ...probes].join('')}</span>` : ''}
     ${fresh ? `<button class="chip hud-shown" data-shown data-tip="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
     ${sharing ? '<button class="chip hud-share" data-stop-share data-tip="stop sharing the big screen">stop sharing</button>' : ''}`
 }

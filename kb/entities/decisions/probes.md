@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Probes: periodic readings the tower takes, kept as facts in a stream",
-  "summary": "A probe is a named reader from a closed set in the core, run by the tower while due: a pure due(probe, its stream, the board, now) decides each read, each read (Claude's answer or why there is none) is appended to the probe's own log under streams/system/, and the bridge folds it into the same limit readings sessions give, so the rate limits, the weekly budget and its pace have no holes while no session runs.",
+  "summary": "A probe is a named reader from a closed set in the core, run by the tower while due: a pure due(probe, its stream, the board, now) decides each read, each read (Claude's answer or why there is none) is appended to the probe's own log under streams/system/, and the bridge folds it into the same limit readings sessions give, so the rate limits, the weekly budget and its pace have no holes while no session runs; how each probe stands is derived from its stream onto the board, GET /probe/<name>, tower probes and tower doctor.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
@@ -15,6 +15,14 @@
     "hub/src/bridge/probes.ts#probesOf",
     "hub/src/bridge/probes.ts#usageAnswer",
     "hub/src/bridge/probes.ts#readingsOf",
+    "hub/src/bridge/probes.ts#probeStatus",
+    "hub/src/bridge/probes.ts#ProbeStatus",
+    "hub/src/bridge/probes.ts#probeView",
+    "hub/src/tower/server.ts#probeRead",
+    "hub/src/shared/cards.ts#probeLine",
+    "hub/src/shared/cards.ts#probeTitle",
+    "hub/src/directory.ts#probeCliLine",
+    "hub/src/doctor.ts#quotaProbe",
     "hub/src/probes.ts#runProbes",
     "hub/src/system.ts#watchSystem",
     "hub/src/shared/paths.ts#systemStreamsPath",
@@ -76,6 +84,23 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   of sessions ∪ probes ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)), with `rateLimitsFrom`
   (`session` or `probe`); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
 
+- *How a probe stands, derived.* [`probeStatus`](ref:hub/src/bridge/probes.ts#probeStatus) folds each probe of
+  the config with its stream's facts and the board's limits into a
+  [`ProbeStatus`](ref:hub/src/bridge/probes.ts#ProbeStatus) on `board.probes`: `state` (`off`, `new`, `ok`,
+  `failing`, `backoff` once failures lengthen its wait, `unavailable`), its last read, the error of a last read that
+  failed, when one last answered, failures in a row, its `wait`, and `nextAt`, when it reads next: its wait after its
+  last read, or later while a session's newer reading holds it (`held`). Times, never "due now": the board changes
+  only with facts, and a renderer reads them against its clock. The tower's read in flight is not on it.
+- *Where it shows.* Both renderers draw each probe under the limits from the same words
+  ([`probeLine`](ref:hub/src/shared/cards.ts#probeLine), [`probeTitle`](ref:hub/src/shared/cards.ts#probeTitle) in
+  `/cards.js`): the tower page a line under the meter, Tower 3D a lamp and its name in the HUD's limits, its state
+  too while it asks for attention, the whole on hover. `GET /probe/<name>?last`
+  ([`probeRead`](ref:hub/src/tower/server.ts#probeRead), [`probeView`](ref:hub/src/bridge/probes.ts#probeView);
+  `tower.probe`) answers the status and its latest reads, newest first, each answer as it came. `tower probes`
+  prints one line each ([`probeCliLine`](ref:hub/src/directory.ts#probeCliLine)), and `tower doctor` asks the running
+  tower for the quota probe ([`quotaProbe`](ref:hub/src/doctor.ts#quotaProbe)): ok while it answers, else a warning
+  with one fix by what failed (the command not found, no answer in time, anything else; no limits to read; overdue
+  past its `nextAt`).
 **Alternatives considered.** A timer in the host: it must stay small, its changes kill sessions, and it knows no
 Claude flags ([[host-knows-no-flags]]). A mod hook: runs only while a session runs, the gap itself. A daemon of its
 own, cron or launchd: another process to supervise, blind to the board. Calling the OAuth usage endpoint: the tower
@@ -85,6 +110,4 @@ the user, and these are observed facts.
 
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
-session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. Not built yet: the probes' status on
-the board, `GET /probe/<name>`, `tower probes`, a doctor line, Tidy archiving closed months, per-model weeks and
-outside use.
+session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes` and `GET /probe/<name>`. Not built yet: per-model weeks, extra usage and outside use as stats, `POST /probe/run`.

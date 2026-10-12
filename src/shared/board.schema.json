@@ -96,6 +96,13 @@
           "$ref": "#/definitions/LimitsFrom",
           "description": "Whose reading the rate limits are: a session's turn, or a probe's read."
         },
+        "probes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProbeStatus"
+          },
+          "description": "Every probe the config runs, the core's first, as its stream says it stands (decision `probes`)."
+        },
         "today": {
           "$ref": "#/definitions/Today",
           "description": "Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change."
@@ -174,6 +181,7 @@
         "waiting",
         "archiveAt",
         "rateLimits",
+        "probes",
         "today",
         "hostUp",
         "hostOutdated",
@@ -2233,6 +2241,78 @@
         "session",
         "probe"
       ]
+    },
+    "ProbeStatus": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "reads": {
+          "$ref": "#/definitions/Reader"
+        },
+        "every": {
+          "type": "number",
+          "description": "How often it reads while nothing else holds it, ms."
+        },
+        "state": {
+          "$ref": "#/definitions/ProbeState"
+        },
+        "lastAt": {
+          "type": "number",
+          "description": "When it last read, answered or not."
+        },
+        "error": {
+          "type": "string",
+          "description": "Why its last read has no answer."
+        },
+        "answeredAt": {
+          "type": "number",
+          "description": "When a read last answered."
+        },
+        "failsInRow": {
+          "type": "number"
+        },
+        "wait": {
+          "type": "number",
+          "description": "How long it waits after its last read, ms: `every`, longer while backing off or unavailable."
+        },
+        "nextAt": {
+          "type": "number",
+          "description": "When it reads next: its wait after its last read, or later while `held`; a moment past (0 before its first read) means at the tower's next tick. Absent while off."
+        },
+        "held": {
+          "type": "boolean",
+          "description": "`nextAt` is set by what the board already has: a session's turn read the same limits, and it reads no sooner than `every` after."
+        }
+      },
+      "required": [
+        "name",
+        "reads",
+        "every",
+        "state",
+        "failsInRow",
+        "wait",
+        "held"
+      ],
+      "additionalProperties": false,
+      "description": "A probe as the board shows it: what it reads and how often, its last read, and when it reads next. Times in epoch ms."
+    },
+    "Reader": {
+      "type": "string",
+      "const": "claude.usage"
+    },
+    "ProbeState": {
+      "type": "string",
+      "enum": [
+        "off",
+        "new",
+        "ok",
+        "failing",
+        "backoff",
+        "unavailable"
+      ],
+      "description": "How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing` after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while the account has no rate limits to read, `off` by the config."
     },
     "Today": {
       "type": "object",

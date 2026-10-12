@@ -9,7 +9,7 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
 import { foldLog } from './checkpoints.ts'
-import { probeFacts, readingsOf, type ProbeFacts, type StreamFile } from './bridge/probes.ts'
+import { probeFacts, readingsOf, type ProbeFacts, type ProbeReading, type StreamFile } from './bridge/probes.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
 import { readItem, scanCollections } from './collections.ts'
@@ -93,12 +93,12 @@ const readStream = (file: string, bytes: number): HeldStream => {
 }
 
 /**
- * Each probe's stream folded, by probe name, from its month files in order, and the files as read: a file `held` at
- * the same size is not read again.
+ * Each probe's stream, by probe name, from its month files in order, and the files as read: a file `held` at the same
+ * size is not read again.
  */
-const probesIn = (root: string, held: Map<string, HeldStream>): { probes: Map<string, ProbeFacts>; files: Map<string, HeldStream> } => {
+const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams: Map<string, ProbeReading[]>; files: Map<string, HeldStream> } => {
   const files = new Map<string, HeldStream>()
-  const probes = new Map<string, ProbeFacts>()
+  const streams = new Map<string, ProbeReading[]>()
   for (const stream of readdirSync(root)) {
     const name = PROBE_STREAM.exec(stream)?.[1]
     if (!name) continue
@@ -112,9 +112,9 @@ const probesIn = (root: string, held: Map<string, HeldStream>): { probes: Map<st
         files.set(file, read)
         return read.readings
       })
-    probes.set(name, probeFacts(readings))
+    streams.set(name, readings)
   }
-  return { probes, files }
+  return { streams, files }
 }
 
 export type System = {
@@ -129,6 +129,8 @@ export type System = {
   threads: () => ThreadFile[]
   /** Each probe's stream folded, by probe name, read again when it grows. */
   probes: () => Map<string, ProbeFacts>
+  /** A probe's reads, oldest first: none for a probe with no stream. */
+  probeReads: (name: string) => ProbeReading[]
   /** `undefined` while no host is running. */
   live: () => HostLive | undefined
   running: () => Resource[]
@@ -174,6 +176,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let items: CollectionItem[] = []
   let threads: ThreadFile[] = []
   let streamFiles = new Map<string, HeldStream>()
+  let probeStreams = new Map<string, ProbeReading[]>()
   let probes = new Map<string, ProbeFacts>()
   let live: HostLive | undefined
   let running: Resource[] = []
@@ -274,10 +277,12 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   /** A probe's read appends a line: its stream is folded again once the write settles. */
   let streamsTimer: NodeJS.Timeout | undefined
   const rescanStreams = () => {
-    const next = probesIn(systemStreamsPath(paths), streamFiles)
+    const next = probeStreamsIn(systemStreamsPath(paths), streamFiles)
+    const nextProbes = new Map([...next.streams].map(([name, readings]) => [name, probeFacts(readings)]))
     streamFiles = next.files
-    if (asJson(next.probes) === asJson(probes)) return
-    probes = next.probes
+    probeStreams = next.streams
+    if (asJson(nextProbes) === asJson(probes)) return
+    probes = nextProbes
     onChange()
   }
   const scheduleStreams = () => {
@@ -404,6 +409,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     items: () => items,
     threads: () => threads,
     probes: () => probes,
+    probeReads: (name) => probeStreams.get(name) ?? [],
     live: () => live,
     running: () => running,
     peers: () => peers,

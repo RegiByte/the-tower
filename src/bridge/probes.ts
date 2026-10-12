@@ -25,6 +25,10 @@ export type ProbeReading = [at: number, read: ProbeRead]
 /** What a probe's stream says. */
 export type ProbeFacts = {
   lastAt?: number
+  /** Why the last read has no answer; absent once a read answers. */
+  error?: string
+  /** When a read last answered. */
+  answeredAt?: number
   /** The reads at the stream's end that failed. */
   failsInRow: number
   /** The last answer says the account has no rate limits to read: an API key, a cloud provider, nobody signed in. */
@@ -79,7 +83,7 @@ const USAGE_WINDOWS = ['five_hour', 'seven_day']
 const toSecond = (iso: string): string => new Date(Math.round(Date.parse(iso) / 1000) * 1000).toISOString()
 
 /** What each reader's answer says, and when its read can wait: pure, so the fold and `due` read them. */
-const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavailable: (answer: unknown) => boolean; skip: (board: LimitsAge, every: number, now: number) => boolean }> = {
+const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavailable: (answer: unknown) => boolean; heldUntil: (board: LimitsAge, every: number) => number | undefined }> = {
   'claude.usage': {
     limits: (answer) =>
       USAGE_WINDOWS.flatMap((kind) => {
@@ -88,16 +92,17 @@ const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavai
       }),
     unavailable: (answer) => (answer as UsageAnswer).rate_limits_available === false,
     /** A session's turn measures the same limits: no read while its reading is newer than `every`. */
-    skip: (board, every, now) => board.rateLimitsFrom === 'session' && board.rateLimitsAt !== undefined && now - board.rateLimitsAt < every,
+    heldUntil: (board, every) => (board.rateLimitsFrom === 'session' && board.rateLimitsAt !== undefined ? board.rateLimitsAt + every : undefined),
   },
 }
 
 export const probeFacts = (readings: ProbeReading[]): ProbeFacts =>
   readings.reduce<ProbeFacts>((facts, [at, read]) => {
-    if (!read.ok) return { ...facts, lastAt: at, failsInRow: facts.failsInRow + 1 }
+    if (!read.ok) return { ...facts, lastAt: at, error: read.error, failsInRow: facts.failsInRow + 1 }
     const limits = READ_AS[read.reads].limits(read.answer)
     return {
       lastAt: at,
+      answeredAt: at,
       failsInRow: 0,
       unavailable: READ_AS[read.reads].unavailable(read.answer),
       limitReadings: limitsRead(facts.limitReadings, at, limits),
@@ -146,8 +151,80 @@ export const waitOf = (probe: Probe, facts: ProbeFacts): number =>
  * back) makes it due: the tower's floor keeps reads apart.
  */
 export const due = (probe: Probe, facts: ProbeFacts, board: LimitsAge, now: number): boolean => {
-  if (probe.off || READ_AS[probe.reads].skip(board, probe.every, now)) return false
+  if (probe.off || now < (READ_AS[probe.reads].heldUntil(board, probe.every) ?? -Infinity)) return false
   return facts.lastAt === undefined || facts.lastAt > now || now - facts.lastAt >= waitOf(probe, facts)
+}
+
+/**
+ * How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing`
+ * after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while the account has
+ * no rate limits to read, `off` by the config.
+ */
+export type ProbeState = 'off' | 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
+
+/** A probe as the board shows it: what it reads and how often, its last read, and when it reads next. Times in epoch ms. */
+export type ProbeStatus = {
+  name: string
+  reads: Reader
+  /** How often it reads while nothing else holds it, ms. */
+  every: number
+  state: ProbeState
+  /** When it last read, answered or not. */
+  lastAt?: number
+  /** Why its last read has no answer. */
+  error?: string
+  /** When a read last answered. */
+  answeredAt?: number
+  failsInRow: number
+  /** How long it waits after its last read, ms: `every`, longer while backing off or unavailable. */
+  wait: number
+  /**
+   * When it reads next: its wait after its last read, or later while `held`; a moment past (0 before its first read)
+   * means at the tower's next tick. Absent while off.
+   */
+  nextAt?: number
+  /** `nextAt` is set by what the board already has: a session's turn read the same limits, and it reads no sooner than `every` after. */
+  held: boolean
+}
+
+/** GET `/probe/<name>`: a probe's status and its latest reads, newest first. */
+export type ProbeView = { status: ProbeStatus; reads: ({ at: number } & ProbeRead)[] }
+
+export const probeView = (status: ProbeStatus, readings: ProbeReading[], last: number): ProbeView => ({
+  status,
+  reads: readings.slice(-last).reverse().map(([at, read]) => ({ at, ...read })),
+})
+
+const stateOf = (probe: Probe, facts: ProbeFacts): ProbeState =>
+  probe.off
+    ? 'off'
+    : facts.lastAt === undefined
+      ? 'new'
+      : facts.unavailable
+        ? 'unavailable'
+        : facts.failsInRow >= FAILS_BEFORE_BACKOFF
+          ? 'backoff'
+          : facts.failsInRow
+            ? 'failing'
+            : 'ok'
+
+export const probeStatus = (probe: Probe, facts: ProbeFacts, board: LimitsAge): ProbeStatus => {
+  const wait = waitOf(probe, facts)
+  const after = facts.lastAt === undefined ? 0 : facts.lastAt + wait
+  const heldUntil = READ_AS[probe.reads].heldUntil(board, probe.every) ?? 0
+  return {
+    name: probe.name,
+    reads: probe.reads,
+    every: probe.every,
+    state: stateOf(probe, facts),
+    ...(facts.lastAt !== undefined && { lastAt: facts.lastAt }),
+    ...(facts.error !== undefined && { error: facts.error }),
+    ...(facts.answeredAt !== undefined && { answeredAt: facts.answeredAt }),
+    failsInRow: facts.failsInRow,
+    wait,
+    ...(!probe.off && { nextAt: Math.max(after, heldUntil) }),
+    held: !probe.off && heldUntil > after,
+  }
 }
 
 /** The probes the core declares: the account's quota, read while no session's turn reads it. */

@@ -9,7 +9,7 @@ import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
-import { accountLimits, type LimitsFrom, type ProbeFacts } from './probes.ts'
+import { accountLimits, NO_READS, probesOf, probeStatus, type LimitsFrom, type ProbeFacts, type ProbeStatus } from './probes.ts'
 import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
@@ -294,6 +294,8 @@ export type Board = {
   rateLimitsAt?: number
   /** Whose reading the rate limits are: a session's turn, or a probe's read. */
   rateLimitsFrom?: LimitsFrom
+  /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`). */
+  probes: ProbeStatus[]
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
   today: Today
   hostUp: boolean
@@ -680,7 +682,7 @@ export const board = (
   threads: { project: string; id: string; thread: ReviewThread }[],
   repos: Map<string, RepoRead>,
   logs: Map<string, LogFile>,
-  probes: ProbeFacts[],
+  probes: Map<string, ProbeFacts>,
   paths: Pick<SystemPaths, 'config' | 'collections'>,
   now: number,
 ): Board => {
@@ -690,6 +692,7 @@ export const board = (
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
+  const limits = accountLimits(sessions.map((s) => s.facts), [...probes.values()])
   return {
     user: { name: userName(config) },
     keys: configuredKeys(config),
@@ -728,8 +731,9 @@ export const board = (
     }),
     waiting: waitingOrder(cards),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
-    ...accountLimits(sessions.map((s) => s.facts), probes),
-    today: today(sessions, probes, now),
+    ...limits,
+    probes: probesOf(config).map((p) => probeStatus(p, probes.get(p.name) ?? NO_READS, limits)),
+    today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
     claudeUntested: [...new Set(cards.filter((c) => c.live && c.claudeUntested).map((c) => c.claude!))],

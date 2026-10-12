@@ -211,7 +211,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   the tower answers 403, its guard against other web pages.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
-  `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
+  `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
   weekly limit as last read in the window (`weekly`). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the

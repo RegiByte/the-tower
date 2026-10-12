@@ -71,6 +71,9 @@ a new name adds a probe. The tower reads the file again on every change.
 `{ "probes": { "quota": { "off": true } } }` turns the quota probe off. Top-level `probes` are the system's; a
 project's own will go under `projects.<id>.probes`, not read yet.
 
+How each probe stands (its last read, why it failed, when it reads next) is on the board under the limits in both
+renderers, in `tower probes`, at `GET /probe/<name>` with its latest reads, and in `tower doctor`.
+
 ## Projects
 
 Each project is a floor. Its sessions start in the hub; the repos are the other directories they work in.

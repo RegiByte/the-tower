@@ -8,6 +8,7 @@
  */
 import type { Board, Card } from '../bridge/board.ts'
 import type { Stats } from '../bridge/stats.ts'
+import type { ProbeView } from '../bridge/probes.ts'
 import type { LandingRead } from '../bridge/worktrees.ts'
 import type { Brief } from '../bridge/turns.ts'
 import type { ReviewHistory } from '../bridge/reviews.ts'
@@ -34,6 +35,8 @@ export type Reads = {
   'reviews/<project>': ReviewHistory
   /** Stats over every session's log, `stats?from&to&bucket&project` (`Queries['stats']`, parsed by its schema). */
   stats: Stats
+  /** One probe's status, as `board.probes` has it, and its latest reads, newest first, `probe/<name>?last` (`Queries['probe/<name>']`). */
+  'probe/<name>': ProbeView
   /** What landing changed on a carried branch, `landing?project&branch` (`Queries['landing']`): each commit landed edited, its copy and `git range-diff`. */
   landing: LandingRead
   /** Every renderer the tower serves at `/r/<name>/`, built-ins first, and `default`, the name of the one `/` opens. */

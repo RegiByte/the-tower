@@ -43,6 +43,9 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .asof { color: var(--faint); }
 .limits:has(.asof.stale) > div { opacity: .5; }
 .limits .asof.stale { color: var(--ink); }
+.limits .probe { display: flex; align-items: center; gap: var(--sp-xs); margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
+.limits .probe .lamp { width: 7px; height: 7px; }
+.limits .probe:is(.working, .broken) { color: var(--muted); }
 .side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
 .stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
@@ -446,7 +449,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, dismissing, heededWaits, nextWait, ringing, soundOf, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfSource, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -490,7 +493,7 @@ let boardError
 /** When the tower stopped answering, while it doesn't: the page's times stand still there, as its board does. */
 let lostAt
 const pageNow = () => lostAt ?? Date.now()
-let board = { user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], rateLimits: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
+let board = { user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], rateLimits: [], probes: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }
 /** The web page of each project directory's origin remote. */
 let origins = {}
 let selected
@@ -786,12 +789,16 @@ const limitHtml = (r, now) => {
     <div class="meter" style="--fill:${fillOf(pct, 60, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
 }
 
-/** The rate limits as of their reading, dimmed once it is old enough to have moved. */
+/** Each probe under the limits: its line, its state's colour on the lamp, and in full on hover. */
+const probesHtml = (now) =>
+  board.probes.map((p) => `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}</small>`).join('')
+
+/** The rate limits as of their reading, dimmed once it is old enough to have moved, then the probes that read them. */
 const limitsHtml = (now) => {
-  if (!board.rateLimits.length) return '<small>no rate-limit reading yet</small>'
+  if (!board.rateLimits.length) return `<small>no rate-limit reading yet</small>${probesHtml(now)}`
   const age = now - board.rateLimitsAt
   return `${board.rateLimits.map((r) => limitHtml(r, now)).join('')}
-    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="read during a session's turn: it refreshes only while one works">as of ${span(age)} ago</small>`
+    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(board))}">as of ${span(age)} ago</small>${probesHtml(now)}`
 }
 
 let limitsPainted = ''
