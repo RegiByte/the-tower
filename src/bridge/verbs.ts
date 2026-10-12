@@ -164,7 +164,8 @@ export const resourceOffers = (session: string, pid: number): Offers<ResourceVer
   calls: { reap: ['reap/process', { id: session, pid }] },
 })
 
-export const isTidy = ({ worktrees, branches, threads, prune, logs }: TidyPlan) => !worktrees.length && !branches.length && !threads.length && !prune.length && !logs.length
+export const isTidy = ({ worktrees, branches, threads, prune, logs, streams }: TidyPlan) =>
+  !worktrees.length && !branches.length && !threads.length && !prune.length && !logs.length && !streams.length
 
 /** Tidy's call carries the plan it applies: the tower refuses it once the floor's plan moved on. */
 export const floorOffers = (project: string, hostUp: boolean, termsUp: boolean, canCut: boolean, tidy: TidyPlan): Offers<FloorVerb, FloorCalls> => {

@@ -51,7 +51,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `brief.pairs` | How many of a conversation's last turns a worker's brief shows, each a prompt with Claude's latest answer to it. A project's own wins. | 2 |
 | `port` | The loopback port the tower serves on, `http://127.0.0.1:<port>`: the user's page and the API. A whole number from 1 to 65535. The tower reads it when it starts: after a change, `tower down`, then `tower up`. | 4317 |
 | `probes` | Readings the tower takes on its own, by name: see [Probes](#probes). | `quota`, on |
-| `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place). | never |
+| `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a probe's stream file. | never |
 | `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
 
 ## Probes

@@ -1,6 +1,6 @@
 /**
- * Which logs Tidy offers to archive: gzipped in place, read the same everywhere, never deleted (decision
- * `log-retention`).
+ * Which logs Tidy offers to archive, sessions' and streams': gzipped in place, read the same everywhere, never deleted
+ * (decision `log-retention`).
  */
 import { carriedOn, type Card } from './board.ts'
 
@@ -25,4 +25,25 @@ export const oldLogs = (cards: Card[], logs: Map<string, LogFile>, days: number 
     .filter((c) => logs.get(c.id)?.archived === false && ended(carriedOn(byId, c.id)!))
     .sort((a, b) => a.startedAt - b.startedAt)
     .map((c) => ({ id: c.id, bytes: logs.get(c.id)!.bytes }))
+}
+
+/** A stream's month file on disk, by its path under `streams/` (`system/probe.quota/2026-09.jsonl`), and its size in bytes on disk. */
+export type StreamMonth = { file: string; archived: boolean; bytes: number }
+
+/** A plain month file Tidy would archive. */
+export type OldStream = { file: string; bytes: number }
+
+/** When a month file's month ends (epoch ms): the start of the next UTC month. */
+const monthEnd = (file: string): number => {
+  const [, year, month] = /(\d{4})-(\d{2})\.jsonl$/.exec(file)!
+  return Date.UTC(Number(year), Number(month), 1)
+}
+
+/** The plain month files whose month ended more than `days` ago: nothing appends to them again. Oldest first. `days` unset: none. */
+export const oldStreams = (months: StreamMonth[], days: number | undefined, now: number): OldStream[] => {
+  if (days === undefined) return []
+  return months
+    .filter((m) => !m.archived && monthEnd(m.file) <= now - days * DAY_MS)
+    .sort((a, b) => monthEnd(a.file) - monthEnd(b.file) || a.file.localeCompare(b.file))
+    .map(({ file, bytes }) => ({ file, bytes }))
 }

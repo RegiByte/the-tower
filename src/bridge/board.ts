@@ -16,7 +16,7 @@ import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { isMidTurn, waitsOnSomeone, withLiveness, type Status } from './status.ts'
 import type { BlockedKind } from './blocked.ts'
 import { isStuck, prunable, type Prune } from './prunable.ts'
-import { oldLogs, type LogFile, type OldLog } from './retention.ts'
+import { oldLogs, oldStreams, type LogFile, type OldLog, type OldStream, type StreamMonth } from './retention.ts'
 import { withSeats, type Seat } from './seats.ts'
 import {
   cardOffers,
@@ -254,9 +254,10 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
 
 /**
  * A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work
- * has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`).
+ * has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the
+ * floor's sessions', and the system's streams' closed months (`oldStreams`), which every floor's Tidy lists.
  */
-export type TidyPlan = { worktrees: string[]; branches: string[]; threads: string[]; prune: Prune[]; logs: OldLog[] }
+export type TidyPlan = { worktrees: string[]; branches: string[]; threads: string[]; prune: Prune[]; logs: OldLog[]; streams: OldStream[] }
 
 /**
  * Why a worker waits on you: `blocked` by a screen, `asks` a question, or holds an outcome nobody has typed to since,
@@ -683,6 +684,7 @@ export const board = (
   repos: Map<string, RepoRead>,
   logs: Map<string, LogFile>,
   probes: Map<string, ProbeFacts>,
+  streams: StreamMonth[],
   paths: Pick<SystemPaths, 'config' | 'collections'>,
   now: number,
 ): Board => {
@@ -693,6 +695,7 @@ export const board = (
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
   const limits = accountLimits(sessions.map((s) => s.facts), [...probes.values()])
+  const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
     keys: configuredKeys(config),
@@ -710,6 +713,7 @@ export const board = (
         threads: floorThreadsNow.filter((t) => t.landed).map((t) => t.checkout),
         prune: prunable(floorCards, worktrees),
         logs: oldLogs(floorCards, logs, config.retention?.days, now),
+        streams: systemStreams,
       }
       return {
         id,

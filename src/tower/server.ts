@@ -84,7 +84,7 @@ import { runProbes } from '../probes.ts'
 import { probeView } from '../bridge/probes.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
-import { archiveLog } from '../archive.ts'
+import { archiveLog, archiveStream } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { allCards, archiveOf, board, occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import type { Prune } from '../bridge/prunable.ts'
@@ -211,7 +211,7 @@ const currentBoard = (): string => {
   }
 }
 
-const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), paths, Date.now())
+const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), system.streamMonths(), paths, Date.now())
 
 /** Every session's card, the ones the board leaves out included. */
 const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
@@ -1060,12 +1060,13 @@ const movedOn = (plan: TidyPlan, now: TidyPlan, callsign: (id: string) => string
     ...plan.prune.filter((p) => !prunes.has(pruneKey(p))).map((p) => (p.t === 'reap' ? `process ${p.pid}` : `worker ${callsign(p.id)}`)),
     ...plan.threads.filter((t) => !now.threads.includes(t)).map((t) => `thread ${t}`),
     ...plan.logs.filter((l) => !now.logs.some((n) => n.id === l.id)).map((l) => `log ${l.id}`),
+    ...plan.streams.filter((m) => !now.streams.some((n) => n.file === m.file)).map((m) => `stream ${m.file}`),
   ]
 }
 
 /**
  * Tidy as listed, or nothing when the list moved on: git's part (checked after its fetch), then the landed threads
- * filed, the leftover processes ended, the idle workers killed and the old logs archived. A worker is checked again just before its kill,
+ * filed, the leftover processes ended, the idle workers killed and the old logs and stream months archived. A worker is checked again just before its kill,
  * since the fetch takes seconds: one no longer listed, or whose kill fails, is skipped and named, and the rest goes on.
  */
 const tidyProject = (projectId: string, plan: TidyPlan) =>
@@ -1085,7 +1086,7 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
       const skipped = git.kept.map((why) => `branch ${why}`)
       for (const p of plan.prune) {
         if (p.t !== 'kill') continue
-        if (movedOn({ ...plan, threads: [], prune: [p], logs: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
+        if (movedOn({ ...plan, threads: [], prune: [p], logs: [], streams: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
           skipped.push(`worker ${callsign(p.id)}: no longer done with its purpose`)
           continue
         }
@@ -1094,7 +1095,8 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
         else killed.push(p.id)
       }
       for (const { id } of plan.logs) await archiveLog(paths, id)
-      return { t: 'tidied', ...git, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id) }
+      for (const { file } of plan.streams) await archiveStream(paths, file)
+      return { t: 'tidied', ...git, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams: plan.streams.map((m) => m.file) }
     } finally {
       release()
     }

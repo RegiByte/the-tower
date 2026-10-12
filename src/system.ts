@@ -19,8 +19,8 @@ import { systemStreamsPath, type SystemPaths } from './shared/paths.ts'
 import type { HostLive } from './shared/protocol.ts'
 import { parseThread, REVIEWS, type ReviewThread } from './shared/reviews.ts'
 import type { Shell } from './shared/terms.ts'
-import type { LogFile } from './bridge/retention.ts'
-import { factEvents, isArchived, logFilesIn, logIdOf, tailLog } from './tail.ts'
+import type { LogFile, StreamMonth } from './bridge/retention.ts'
+import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
 import { logged, loggedRead, watchedOrExit } from './logged.ts'
 
 const LIVE_POLL_MS = 1000
@@ -80,21 +80,21 @@ const threadsIn = (paths: SystemPaths, items: CollectionItem[], held: ThreadFile
     })
 
 const PROBE_STREAM = /^probe\.([\w-]+)$/
-const MONTH_FILE = /^\d{4}-\d{2}\.jsonl$/
+const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
 /** A stream file's reads, as of its size. */
 type HeldStream = StreamFile & { bytes: number }
 
-/** A stream file read again: lines that are no JSON are passed over, and the tower's log says so. */
+/** A stream file read again, archived or plain: lines that are no JSON are passed over, and the tower's log says so. */
 const readStream = (file: string, bytes: number): HeldStream => {
-  const read = readingsOf(readFileSync(file, 'utf8'))
+  const read = readingsOf(logBytes(file).toString('utf8'))
   if (read.unreadable) console.error(`${file}: ${read.unreadable} line(s) are no JSON, each a read passed over`)
   return { ...read, bytes }
 }
 
 /**
- * Each probe's stream, by probe name, from its month files in order, and the files as read: a file `held` at the same
- * size is not read again.
+ * Each probe's stream, by probe name, from its month files in order (while Tidy archives a month both its files are
+ * there, and the plain one is read), and the files as read: a file `held` at the same size is not read again.
  */
 const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams: Map<string, ProbeReading[]>; files: Map<string, HeldStream> } => {
   const files = new Map<string, HeldStream>()
@@ -102,8 +102,7 @@ const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams:
   for (const stream of readdirSync(root)) {
     const name = PROBE_STREAM.exec(stream)?.[1]
     if (!name) continue
-    const readings = readdirSync(path.join(root, stream))
-      .filter((f) => MONTH_FILE.test(f))
+    const readings = logFilesIn(readdirSync(path.join(root, stream)).filter((f) => MONTH_FILE.test(f)))
       .sort()
       .flatMap((f) => {
         const file = path.join(root, stream, f)
@@ -131,6 +130,8 @@ export type System = {
   probes: () => Map<string, ProbeFacts>
   /** A probe's reads, oldest first: none for a probe with no stream. */
   probeReads: (name: string) => ProbeReading[]
+  /** Every stream's month files on disk, by path under `streams/`. */
+  streamMonths: () => StreamMonth[]
   /** `undefined` while no host is running. */
   live: () => HostLive | undefined
   running: () => Resource[]
@@ -279,9 +280,10 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   const rescanStreams = () => {
     const next = probeStreamsIn(systemStreamsPath(paths), streamFiles)
     const nextProbes = new Map([...next.streams].map(([name, readings]) => [name, probeFacts(readings)]))
+    const filesBefore = [...streamFiles.keys()]
     streamFiles = next.files
     probeStreams = next.streams
-    if (asJson(nextProbes) === asJson(probes)) return
+    if (asJson(nextProbes) === asJson(probes) && asJson([...streamFiles.keys()]) === asJson(filesBefore)) return
     probes = nextProbes
     onChange()
   }
@@ -410,6 +412,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     threads: () => threads,
     probes: () => probes,
     probeReads: (name) => probeStreams.get(name) ?? [],
+    streamMonths: () =>
+      [...streamFiles].map(([file, { bytes }]) => ({ file: path.relative(paths.streams, file), archived: isArchived(file), bytes })),
     live: () => live,
     running: () => running,
     peers: () => peers,

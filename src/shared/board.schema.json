@@ -1904,6 +1904,12 @@
           "items": {
             "$ref": "#/definitions/OldLog"
           }
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OldStream"
+          }
         }
       },
       "required": [
@@ -1911,10 +1917,11 @@
         "branches",
         "threads",
         "prune",
-        "logs"
+        "logs",
+        "streams"
       ],
       "additionalProperties": false,
-      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`)."
+      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the floor's sessions', and the system's streams' closed months (`oldStreams`), which every floor's Tidy lists."
     },
     "Prune": {
       "anyOf": [
@@ -1979,6 +1986,23 @@
       ],
       "additionalProperties": false,
       "description": "A plain log Tidy would archive, by session id, with its size on disk."
+    },
+    "OldStream": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "file",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "description": "A plain month file Tidy would archive."
     },
     "FloorVerb": {
       "type": "string",

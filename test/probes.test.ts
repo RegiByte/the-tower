@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { accountLimits, due, NO_READS, probeFacts, probesOf, probeStatus, probeView, readingsOf, usageAnswer, type Probe, type ProbeFacts } from '../src/bridge/probes.ts'
+import { oldStreams } from '../src/bridge/retention.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
 import { ConfigError, type Config } from '../src/shared/model.ts'
 
@@ -140,4 +141,17 @@ test("GET /probe/<name> reads the latest reads, newest first, each at its moment
   const { readings } = readingsOf(text('probe-quota.jsonl'))
   const view = probeView(probeStatus(QUOTA, probeFacts(readings), NO_LIMITS), readings, 2)
   assert.deepEqual(view.reads.map((r) => [r.at, r.ok]), [[readings[4][0], false], [readings[3][0], false]])
+})
+
+test("Tidy archives a stream's month once it closed more than retention.days ago, never the month still written", () => {
+  const months = [
+    { file: 'system/probe.quota/2026-09.jsonl', archived: false, bytes: 900 },
+    { file: 'system/probe.quota/2026-08.jsonl', archived: true, bytes: 300 },
+    { file: 'system/probe.quota/2026-10.jsonl', archived: false, bytes: 100 },
+  ]
+  const oct = (day: number) => Date.parse(`2026-10-${String(day).padStart(2, '0')}T12:00:00Z`)
+  assert.deepEqual(oldStreams(months, 7, oct(8)), [{ file: 'system/probe.quota/2026-09.jsonl', bytes: 900 }])
+  assert.deepEqual(oldStreams(months, 14, oct(8)), [])
+  assert.deepEqual(oldStreams(months, undefined, oct(30)), [])
+  assert.deepEqual(oldStreams(months, 0, oct(1)), [{ file: 'system/probe.quota/2026-09.jsonl', bytes: 900 }])
 })

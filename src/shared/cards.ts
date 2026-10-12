@@ -95,7 +95,7 @@ export const plural = (n: number, word: string) => `${n} ${noun(n, word)}`
 const counted = (n: number, one: string, many: string) => (n ? [`${n} ${n === 1 ? one : many}`] : [])
 
 /** A floor's Tidy in a line, before the press: `Tidy: 4 leftovers, 2 finished hires`. */
-export const tidyLine = ({ worktrees, branches, threads, prune, logs }: TidyPlan) => {
+export const tidyLine = ({ worktrees, branches, threads, prune, logs, streams }: TidyPlan) => {
   const parts = [
     ...counted(prune.filter((p) => p.t === 'reap').length, 'leftover', 'leftovers'),
     ...counted(prune.filter((p) => p.t === 'kill').length, 'finished hire', 'finished hires'),
@@ -103,6 +103,7 @@ export const tidyLine = ({ worktrees, branches, threads, prune, logs }: TidyPlan
     ...counted(branches.length, 'merged branch', 'merged branches'),
     ...counted(threads.length, 'landed thread', 'landed threads'),
     ...counted(logs.length, 'old log', 'old logs'),
+    ...counted(streams.length, 'closed stream month', 'closed stream months'),
   ]
   return parts.length ? `Tidy: ${parts.join(', ')}` : 'nothing to tidy'
 }
@@ -115,7 +116,7 @@ export const KILL_COST = 'resumable, but its next turn reads the whole conversat
  */
 export type TidyRow = { what: string; does: string; title: string; call: Call<'tidy'> }
 
-const NOTHING: TidyPlan = { worktrees: [], branches: [], threads: [], prune: [], logs: [] }
+const NOTHING: TidyPlan = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
 
 export const tidyRows = (f: Floor, now: number): TidyRow[] => {
   const card = (id: string) => f.cards.find((c) => c.id === id)!
@@ -133,7 +134,18 @@ export const tidyRows = (f: Floor, now: number): TidyRow[] => {
     ...f.tidy.branches.map((name) => ({ what: `⎇ ${name}`, does: 'delete merged branch', title: 'absorbed into its base', call: only({ branches: [name] }) })),
     ...f.tidy.threads.map((checkout) => ({ what: `◇ ${checkout}`, does: 'file landed thread', title: `its work has landed: filed as ${checkout}@<time>.md`, call: only({ threads: [checkout] }) })),
     ...(f.tidy.logs.length ? [{ ...oldLogsRow(f.tidy.logs), call: only({ logs: f.tidy.logs }) }] : []),
+    ...(f.tidy.streams.length ? [{ ...oldStreamsRow(f.tidy.streams), call: only({ streams: f.tidy.streams }) }] : []),
   ]
+}
+
+/** The system's stream months Tidy would archive, in one row: every floor's Tidy lists them. */
+const oldStreamsRow = (streams: TidyPlan['streams']): Omit<TidyRow, 'call'> => {
+  const n = `${streams.length} closed stream ${streams.length === 1 ? 'month' : 'months'}`
+  return {
+    what: `▤ ${n}`,
+    does: `archive · ${sizeOf(streams.reduce((sum, m) => sum + m.bytes, 0))}`,
+    title: `${n} of the tower's own logs (${streams.map((m) => m.file).join(', ')}), closed more than retention.days ago, gzipped in place: the limits and the budget read the same`,
+  }
 }
 
 /** The logs Tidy would archive, in one row: a floor can hold hundreds. */
@@ -162,6 +174,7 @@ export const tidiedLine = (r: Replies['tidy']) => {
     ...r.deleted,
     ...r.threads.map((t) => `thread ${t}`),
     ...counted(r.archived.length, 'log archived', 'logs archived'),
+    ...counted(r.streams.length, 'stream month archived', 'stream months archived'),
   ]
   const line = done.length ? `tidied: ${done.join(', ')}` : 'nothing to tidy'
   return r.skipped.length ? `${line}; skipped ${r.skipped.join('; ')}` : line

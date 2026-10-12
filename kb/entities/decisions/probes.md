@@ -34,7 +34,8 @@
   "links": [
     { "to": "logs-are-facts", "verb": "amends", "carries": "one writer per log: the tower writes streams/" },
     { "to": "stats", "verb": "feeds", "carries": "seven_day readings from probe reads" },
-    { "to": "env-scrub", "verb": "follows", "carries": "the probe's claude runs with the parent session scrubbed" }
+    { "to": "env-scrub", "verb": "follows", "carries": "the probe's claude runs with the parent session scrubbed" },
+    { "to": "log-retention", "verb": "follows", "carries": "a stream's closed months, archived by Tidy" }
   ]
 }
 ---
@@ -101,6 +102,9 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   tower for the quota probe ([`quotaProbe`](ref:hub/src/doctor.ts#quotaProbe)): ok while it answers, else a warning
   with one fix by what failed (the command not found, no answer in time, anything else; no limits to read; overdue
   past its `nextAt`).
+- *Closed months archived.* Tidy offers a stream's months closed more than `retention.days` ago, gzipped in place
+  and read the same ([[log-retention]]).
+
 **Alternatives considered.** A timer in the host: it must stay small, its changes kill sessions, and it knows no
 Claude flags ([[host-knows-no-flags]]). A mod hook: runs only while a session runs, the gap itself. A daemon of its
 own, cron or launchd: another process to supervise, blind to the board. Calling the OAuth usage endpoint: the tower
@@ -110,4 +114,5 @@ the user, and these are observed facts.
 
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
-session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes` and `GET /probe/<name>`. Not built yet: per-model weeks, extra usage and outside use as stats, `POST /probe/run`.
+session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
+the Tidy plan's `streams`. Not built yet: per-model weeks, extra usage and outside use as stats, `POST /probe/run`.
