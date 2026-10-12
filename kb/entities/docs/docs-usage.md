@@ -5,7 +5,7 @@
   "summary": "What the tower makes possible day to day, told through what the user asks workers: setting up floors (hub, repos, worktrees), showing, hiring, checking on workers, review threads, collections, the shelf, waits, the brief, resume and carry on, Tidy, shells, Stats and The Week, Tower 3D and renderers of their own.",
   "in": "tower",
   "reviewed": "2026-10-12",
-  "refs": ["hub/src/directory.ts#USAGES", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/tags.ts#tagOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/keymap.ts", "hub/src/bridge/prunable.ts#prunable"]
+  "refs": ["hub/src/directory.ts#USAGES", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/tags.ts#tagOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/keymap.ts", "hub/src/bridge/prunable.ts#prunable", "hub/src/shared/launch.ts#settingsArgs"]
 }
 ---
 `docs/usage.md` names the workers' `tower` verbs ([`USAGES`](ref:hub/src/directory.ts#USAGES), [[tower-cli]]):

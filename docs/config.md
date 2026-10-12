@@ -79,7 +79,7 @@ Each project is a floor. Its sessions start in the hub; the repos are the other 
 |---|---|---|
 | `name` | The name the floor is shown by. | required |
 | `hub` | The absolute directory sessions start in. | required |
-| `repos` | Absolute directories the sessions also work in, each passed as `--add-dir`. | required, `[]` for none |
+| `repos` | Absolute directories the sessions also work in, granted as file access only (Claude's `permissions.additionalDirectories`): their `CLAUDE.md` and `.claude/` stay out. | required, `[]` for none |
 | `color` | A CSS color renderers mark the floor's things with. | the tower's |
 | `shelf` | Pages kept beside the floor's sessions: see [Shelf](#shelf). | none |
 | `collections` | Collections only this floor has, beside every floor's. An id declared in both is an error. | none |

@@ -103,8 +103,8 @@ live). `tower init` writes the smallest one; this is it with more of what a proj
 }
 ```
 
-A project's sessions start in its `hub`; its `repos` are added with `--add-dir`. The `shelf` keeps pages beside
-its sessions. `collections` are sets of files the project keeps for later, every project's at the top level and a
+A project's sessions start in its `hub`; its `repos` are granted as file access only, so their own `CLAUDE.md` and
+skills stay out. The `shelf` keeps pages beside its sessions. `collections` are sets of files the project keeps for later, every project's at the top level and a
 project's own under it; each `description` says what its collection is for, to the user and to every worker.
 `port` is where the tower serves (`http://127.0.0.1:<port>`): set another when 4317 is taken, then `tower down` and
 `tower up`. Every
