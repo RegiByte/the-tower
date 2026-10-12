@@ -156,10 +156,10 @@ const quotaProbe = async (tower: Daemon, answering: boolean): Promise<Verdict> =
   const { status: p }: ProbeView = await res.json()
   const now = Date.now()
   const line = probeLine(p, now)
+  if (p.error !== undefined) return { level: 'warn', what: `${line}: ${p.failsInRow} failed in a row: ${p.error}`, fix: probeFix(p.error, tower.log) }
   if (p.state === 'unavailable')
     return { level: 'warn', what: `${line}: the account has no rate limits to read`, fix: 'sign in to Claude Code with a Claude subscription (claude, then /login): an API key or a cloud provider has none' }
-  if (p.error !== undefined) return { level: 'warn', what: `${line}: ${p.failsInRow} failed in a row: ${p.error}`, fix: probeFix(p.error, tower.log) }
-  if (p.nextAt !== undefined && now - p.nextAt > PROBE_LATE_MS) return { level: 'warn', what: `${line}: overdue by ${span(now - p.nextAt)}`, fix: `${tower.log} says why; tower down tower, then tower up tower` }
+  if (p.lastAt !== undefined && p.nextAt !== undefined && now - p.nextAt > PROBE_LATE_MS) return { level: 'warn', what: `${line}: overdue by ${span(now - p.nextAt)}`, fix: `${tower.log} says why; tower down tower, then tower up tower` }
   return { level: 'ok', what: line }
 }
 

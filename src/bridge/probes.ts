@@ -157,8 +157,8 @@ export const due = (probe: Probe, facts: ProbeFacts, board: LimitsAge, now: numb
 
 /**
  * How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing`
- * after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while the account has
- * no rate limits to read, `off` by the config.
+ * after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while its last answer
+ * said the account has no rate limits to read, `off` by the config.
  */
 export type ProbeState = 'off' | 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
 
@@ -200,12 +200,12 @@ const stateOf = (probe: Probe, facts: ProbeFacts): ProbeState =>
     ? 'off'
     : facts.lastAt === undefined
       ? 'new'
-      : facts.unavailable
-        ? 'unavailable'
-        : facts.failsInRow >= FAILS_BEFORE_BACKOFF
-          ? 'backoff'
-          : facts.failsInRow
-            ? 'failing'
+      : facts.failsInRow >= FAILS_BEFORE_BACKOFF
+        ? 'backoff'
+        : facts.failsInRow
+          ? 'failing'
+          : facts.unavailable
+            ? 'unavailable'
             : 'ok'
 
 export const probeStatus = (probe: Probe, facts: ProbeFacts, board: LimitsAge): ProbeStatus => {

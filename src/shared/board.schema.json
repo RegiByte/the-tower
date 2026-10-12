@@ -2336,7 +2336,7 @@
         "backoff",
         "unavailable"
       ],
-      "description": "How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing` after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while the account has no rate limits to read, `off` by the config."
+      "description": "How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing` after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while its last answer said the account has no rate limits to read, `off` by the config."
     },
     "Today": {
       "type": "object",

@@ -135,6 +135,7 @@ test("a probe's next read waits for a session's newer reading, and an off probe 
   const off = probeStatus({ ...QUOTA, off: true }, facts, NO_LIMITS)
   assert.deepEqual([off.state, off.nextAt, off.held], ['off', undefined, false])
   assert.equal(probeStatus(QUOTA, readAt(NOW, { unavailable: true }), NO_LIMITS).state, 'unavailable')
+  assert.equal(probeStatus(QUOTA, readAt(NOW, { unavailable: true, failsInRow: 1, error: 'spawn claude ENOENT' }), NO_LIMITS).state, 'failing', 'a failure since says more than the answer before it')
 })
 
 test("GET /probe/<name> reads the latest reads, newest first, each at its moment", () => {
