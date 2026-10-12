@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-12",
   "refs": ["hub/src/directory.ts#USAGES", "hub/src/directory.ts", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/cards.ts#spawnCall"]
 }
 ---
@@ -26,7 +26,7 @@ name belongs to which callsign, floor or task.
   own. The join still names sessions started before a host ran this. `cardNamed` finds a callsign on several cards
   (a worker on duty wins over past ones), reading the floors' archives when no worker on duty has it ([[board-archive]]).
 - The tower mod ships `bin/tower` (`src/directory.ts`), which Claude Code puts on the Bash tool's PATH:
-  `tower <verb> --help` (one usage table, `USAGES`, which also lists the verbs when one is unknown), `tower whoami` (also the floor's shelf, its collections and the config's path), `tower agents`, `tower agents --all`, `tower api [name]` (the API's verbs, reads and streams from `/schema`, one line each; `tower api board` the board's schema), `tower agent <CALLSIGN>` (one worker's last prompts
+  `tower <verb> --help` (one usage table, `USAGES`, which also lists the verbs when one is unknown), `tower whoami` (also the floor's shelf, its collections and the config's path), `tower agents`, `tower agents --all`, `tower probes` (each probe's status, one line each, from the board's `probes`, [[probes]]), `tower api [name]` (the API's verbs, reads and streams from `/schema`, one line each; `tower api board` the board's schema), `tower agent <CALLSIGN>` (one worker's last prompts
   and the answers to them in full, from `/conversations/<id>`, and a line per earlier session it ran as). It reads the running tower's `/board`, the
   [[renderer-api]], and folds no logs. Its skill (`skills/handbook`) teaches the tower, the command, and how to
   reach out. The skill pre-approves `Bash(tower *)`.

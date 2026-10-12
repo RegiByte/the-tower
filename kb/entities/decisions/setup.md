@@ -26,7 +26,7 @@ session.
   ([`initialConfig`](ref:hub/src/init.ts#initialConfig)). The rest of the config keeps its defaults (`renderer` is
   `page`, `editor` VS Code's) and the README shows it.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing: each check is `ok`, `warn`
-  (the tower runs with less: no editor command, Claude newer than tested ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)), a version it cannot place, or not signed in, a daemon not running yet) or
+  (the tower runs with less: no editor command, Claude newer than tested ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)), a version it cannot place, or not signed in, a daemon not running yet, the quota probe failing or overdue as the running tower reports it ([[probes]])) or
   `fail` (it can't run: not macOS, Node below 24, no `claude` or `curl`, `git` missing or older than 2.38 (the landing check runs `merge-tree --write-tree`), Claude older than the tested range, a
   system root that isn't writable, a config that doesn't read or names a missing directory, a daemon's place held by
   something else), each `warn` and `fail` with one fix. Any `fail` exits 1. The config is checked by the same

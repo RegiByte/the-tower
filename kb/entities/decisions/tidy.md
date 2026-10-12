@@ -78,13 +78,13 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   ([`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter)): `Card.stuck`, and the status word reads "stuck". Output
   doesn't count, since Claude's spinner draws while a tool hangs. Never listed: a long build looks the same.
 - The floor's [`TidyPlan`](ref:hub/src/bridge/board.ts#TidyPlan), `floor.tidy`: worktrees and branches by name,
-  landed threads by checkout, `prune`, and `logs` ([[log-retention]]). `tidy` is offered while it lists anything, its call
+  landed threads by checkout, `prune`, `logs`, and `streams`, the system streams' closed months every floor lists ([[log-retention]]). `tidy` is offered while it lists anything, its call
   `['tidy', { project, plan }]` ([`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)).
 - [`tidyProject`](ref:hub/src/tower/server.ts#tidyProject) checks the plan against the floor as read now
-  ([`movedOn`](ref:hub/src/tower/server.ts#movedOn): processes, workers, threads) and git's part after its fetch
+  ([`movedOn`](ref:hub/src/tower/server.ts#movedOn): processes, workers, threads, logs, stream months) and git's part after its fetch
   ([`tidy`](ref:hub/src/worktrees.ts#tidy)), and answers `refused` before touching anything when an item no longer
   qualifies, like `collection/write` on a stale version. It applies only what is listed, in order: worktrees and
-  branches, threads filed, processes reaped (SIGTERM), workers killed through the host, old logs archived. Each worker is checked again
+  branches, threads filed, processes reaped (SIGTERM), workers killed through the host, old logs and stream months archived. Each worker is checked again
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, or whose kill fails, is left alive
   and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done. A branch
   that moved since git's read is kept the same way, named in `skipped` (see [[tower-cuts-worktrees]]).
