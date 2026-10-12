@@ -152,7 +152,7 @@ const main = async (): Promise<void> => {
     case 'init': {
       const [hub = process.cwd(), ...repos] = process.argv.slice(3)
       const config = await init(paths.config, hub, repos)
-      console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.`)
+      console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.\nThen ask any worker: "show me how to use the tower".`)
       break
     }
     case 'doctor': {

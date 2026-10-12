@@ -65,8 +65,10 @@ menu bar, and quitting it leaves the system running. Built from your checkout, i
 
 Talk to your workers: "show me the page you built", "hire a worker for the flaky tests", "check on HOLMES-42",
 "get yourself reviewed when you're done", "keep that idea as a draft". [docs/usage.md](docs/usage.md) walks through
-what the tower makes possible: showing, hiring, checking on workers, review threads, collections, the shelf and
-renderers of your own.
+what the tower makes possible: setting up your floors (a project's hub and repos), showing, hiring, checking on
+workers, review threads, collections, the shelf, resume, Tidy, shells, Stats, Tower 3D and renderers of your own.
+
+New to it? Ask any worker "show me how to use the tower": it gives you a tour of your own floors.
 
 To customize it (your own renderer, a copy of one that ships, shelf pages, scripts over the API, your own kinds of
 files), read [docs/extending.md](docs/extending.md): every extension point, its contract, and what isn't one.

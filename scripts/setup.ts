@@ -47,4 +47,6 @@ The tower: ${towerUrl(config)}
 
   npm link                 puts the tower command on your PATH (tower up, tower down, tower doctor, tower spawn …)
   ${values.tower3d ? `${towerUrl(config)}/r/tower3d/   Tower 3D` : 'npm run tower3d          builds Tower 3D, then open /r/tower3d/'}
-  ${paths.config}   your config: projects, shelf, editor (README)`)
+  ${paths.config}   your config: projects, shelf, editor (README)
+
+New to the tower? Ask any worker: "show me how to use the tower".`)
