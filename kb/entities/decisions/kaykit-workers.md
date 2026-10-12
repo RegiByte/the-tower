@@ -65,7 +65,7 @@
 `arm_R`), seven to ten draw calls each, three looks and a colour. They could not sit, type, walk or dance the way
 the KayKit office around them looked, and every new motion was hand-written trigonometry.
 
-**Why.** NEMO-27's research (`.regibyte/research/2026-10-11-characters/`) found KayKit's `Rig_Medium` the best
+**Why.** NEMO-27's research, done before the decision, found KayKit's `Rig_Medium` the best
 fit: the office's own artist and atlas technique, a skeleton with hand slots, and 150+ CC0 clips. RegiByte chose
 the KayKit Adventurers as the base and liked the fantasy bits showing up at random; the bot stays as a species.
 
