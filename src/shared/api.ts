@@ -258,7 +258,7 @@ export const VERBS = {
       threads: z.array(z.string()),
       reaped: z.array(z.int()),
       killed: z.array(z.string()),
-      skipped: z.array(z.string()).describe('Branches kept instead of deleted, and workers left alive: no longer idle when their turn came, or their kill failed, each with why.'),
+      skipped: z.array(z.string()).describe('Branches kept instead of deleted, workers left alive (no longer idle when their turn came, or their kill failed) and stream months another floor\'s Tidy archived meanwhile, each with why.'),
       archived: z.array(z.string()).describe('The sessions whose logs were archived.'),
       streams: z.array(z.string()).describe('The stream month files archived, by path under `streams/`.'),
     }),

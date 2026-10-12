@@ -1065,6 +1065,21 @@ const movedOn = (plan: TidyPlan, now: TidyPlan, callsign: (id: string) => string
 }
 
 /**
+ * Every floor's Tidy lists the system's stream months, so two can press for the same one: they are archived one at a
+ * time, and a month another Tidy archived meanwhile is not there to archive. `false` for that month.
+ */
+let streamArchiving: Promise<unknown> = Promise.resolve()
+const archiveMonth = (file: string): Promise<boolean> => {
+  const archived = streamArchiving.then(async () => {
+    if (!existsSync(path.join(paths.streams, file))) return false
+    await archiveStream(paths, file)
+    return true
+  })
+  streamArchiving = archived.catch(() => {})
+  return archived
+}
+
+/**
  * Tidy as listed, or nothing when the list moved on: git's part (checked after its fetch), then the landed threads
  * filed, the leftover processes ended, the idle workers killed and the old logs and stream months archived. A worker is checked again just before its kill,
  * since the fetch takes seconds: one no longer listed, or whose kill fails, is skipped and named, and the rest goes on.
@@ -1095,8 +1110,12 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
         else killed.push(p.id)
       }
       for (const { id } of plan.logs) await archiveLog(paths, id)
-      for (const { file } of plan.streams) await archiveStream(paths, file)
-      return { t: 'tidied', ...git, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams: plan.streams.map((m) => m.file) }
+      const streams: string[] = []
+      for (const { file } of plan.streams) {
+        if (await archiveMonth(file)) streams.push(file)
+        else skipped.push(`stream ${file}: archived by another floor's Tidy meanwhile`)
+      }
+      return { t: 'tidied', ...git, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams }
     } finally {
       release()
     }

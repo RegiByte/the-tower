@@ -75,7 +75,8 @@ most of the space; moving logs to another directory gives back none.
   month that ended more than `retention.days` ago is eligible ([`oldStreams`](ref:hub/src/bridge/retention.ts#oldStreams)).
   Streams under `streams/system/` belong to no floor, so every floor's Tidy lists them in the plan's `streams`, each
   `{file, bytes}` by its path under `streams/`, as one row ("▤ 1 closed stream month · archive · 3.7 KB"); whichever
-  floor applies it archives them, and the others' plans move on. A project's own streams, once written, will go to
+  floor applies it archives them, and the others' plans move on. Two floors' Tidy pressed together pass the same check,
+  so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams, once written, will go to
   its floor's Tidy alone. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
   no fold first (streams keep no checkpoints); the live view reads a month plain while it is, else archived
   ([`StreamMonth`](ref:hub/src/bridge/retention.ts#StreamMonth) on `system.streamMonths()`), and its reads fold the same.
