@@ -47,23 +47,34 @@ const caption = (text) => {
 }
 
 /**
- * Every worker on duty within the week, one per floor and callsign: its sessions, their turns (each session's whole
- * run, the cards' only count of work) and its latest card.
+ * Every worker on duty within the week, one per floor and callsign: its sessions, their turns, worker-hours and spend
+ * within the week (`/stats`'s share of each session), and its latest card.
  */
-function workersOf(cards, { from, to }) {
+function workersOf(cards, { from, to }, shares) {
   const byName = new Map()
   for (const card of cards) {
     if (card.startedAt >= to || lastSeen(card) < from) continue
     const key = `${card.project}\n${card.callsign}`
     const had = byName.get(key)
+    const share = shares[card.id]
     byName.set(key, {
       project: card.project, callsign: card.callsign,
       sessions: (had?.sessions ?? 0) + 1,
-      turns: (had?.turns ?? 0) + card.turns,
+      turns: (had?.turns ?? 0) + (share?.turns ?? 0),
+      agentHours: (had?.agentHours ?? 0) + (share?.agentHours ?? 0),
+      spend: (had?.spend ?? 0) + (share?.spend ?? 0),
       latest: had && lastSeen(had.latest) > lastSeen(card) ? had.latest : card,
     })
   }
   return [...byName.values()]
+}
+
+/** The card whose session's share holds the longest of `pick` in the week, with that length. */
+function holderOf(shares, cards, pick) {
+  const [id, lasted] = Object.entries(shares).map(([id, share]) => [id, pick(share)]).filter(([, l]) => l)
+    .sort(([, a], [, b]) => b.seconds - a.seconds)[0] ?? []
+  const card = id && cards.find((c) => c.id === id)
+  return card && { card, lasted }
 }
 
 /** What a worker did, in one line: its latest answer's first sentence, else what it was asked. */
@@ -91,7 +102,7 @@ function daysOf(stats) {
 /** How late into the night a local hour is: 06:00 the earliest, 05:00 the latest. */
 const lateness = (hour) => (hour + 18) % 24
 
-function superlatives(stats, floors, days) {
+function superlatives(stats, floors, days, workers, cards) {
   const { summary, peak } = stats.all
   const said = []
   const landed = Object.entries(stats.projects).filter(([, p]) => p.summary.git.commits > 0)
@@ -104,8 +115,21 @@ function superlatives(stats, floors, days) {
   }
   const busiest = days.filter((d) => d.turns > 0).sort((a, b) => b.spend - a.spend)[0]
   if (busiest) said.push({ title: 'Busiest day', who: dayName(busiest.at), value: usd(busiest.spend), more: `${count(busiest.turns)} turns, ${count(busiest.commits)} commits` })
-  if (summary.turnSeconds.n) said.push({ title: 'Longest single turn', value: duration(summary.turnSeconds.max), more: `the median turn took ${duration(summary.turnSeconds.p50)}` })
-  if (summary.waits.n) said.push({ title: 'Longest wait on you', value: duration(summary.waits.max), more: `the median wait was ${duration(summary.waits.p50)}` })
+  const longest = (title, pick, median) => {
+    const held = holderOf(stats.sessions, cards, pick)
+    if (!held) return
+    const floor = floors.find((f) => f.id === held.card.project)
+    said.push({ title, who: `${held.card.callsign}, ${floor?.name ?? held.card.project}`, color: floor?.color,
+      value: duration(held.lasted.seconds), more: `${dayName(held.lasted.at)}, ${clock(held.lasted.at)}; ${median}` })
+  }
+  longest('Longest single turn', (s) => s.longestTurn, `the median turn took ${duration(summary.turnSeconds.p50)}`)
+  longest('Longest wait on you', (s) => s.longestWait, `the median wait was ${duration(summary.waits.p50)}`)
+  const hardest = [...workers].sort((a, b) => b.agentHours - a.agentHours)[0]
+  if (hardest?.agentHours > 0) {
+    const floor = floors.find((f) => f.id === hardest.project)
+    said.push({ title: 'Most worker-hours', who: `${hardest.callsign}, ${floor?.name ?? hardest.project}`, color: floor?.color,
+      value: hours(hardest.agentHours), more: `${count(hardest.turns)} turns, ${usd(hardest.spend)} spent` })
+  }
   const owl = stats.buckets.map((at, i) => ({ at, turns: stats.all.series.turns[i], hour: new Date(at).getHours() }))
     .filter((b) => b.turns > 0 && lateness(b.hour) >= 16)
     .sort((a, b) => lateness(b.hour) - lateness(a.hour) || b.at - a.at)[0]
@@ -134,10 +158,10 @@ const textOn = (hex) => {
 }
 const floorStyle = (color) => (color ? `--floor:${color};--on-floor:${textOn(color)}` : '')
 
-function coverHtml(week, stats, budget) {
+function coverHtml(week, stats) {
   const { summary } = stats.all
   const git = summary.git
-  const used = budget && week.back === 0 ? `<div class="big"><b>${budget.percentUsed}%</b><span>of the weekly quota</span></div>` : ''
+  const used = stats.weekly ? `<div class="big"><b>${stats.weekly.percentUsed}%</b><span>of the weekly quota${week.to < week.end ? ' so far' : ''}</span></div>` : ''
   return `<section class="cover">
     <p class="eyebrow">The tower's yearbook</p>
     <h1>The Week</h1>
@@ -159,6 +183,7 @@ function tileHtml(worker, color) {
     <span class="face" aria-hidden="true">${esc(worker.callsign.slice(0, 2))}</span>
     <span class="name">${esc(worker.callsign)}${worker.sessions > 1 ? ` <small>×${worker.sessions}</small>` : ''}</span>
     <span class="did" title="${esc(line)}">${esc(line) || '<i>no words saved</i>'}</span>
+    <span class="tally">${worker.turns ? `${count(worker.turns)} ${worker.turns === 1 ? 'turn' : 'turns'} · ${usd(worker.spend)}` : 'no turns this week'}</span>
   </li>`
 }
 
@@ -219,9 +244,8 @@ const state = { board: undefined, cards: [], reading: 0 }
 const book = document.getElementById('book')
 document.head.append(Object.assign(document.createElement('style'), { textContent: markdownCss }))
 
-const budgetOf = (board) => board.today.budget
 const resetOf = (board) => {
-  const budget = budgetOf(board)
+  const { budget } = board.today
   return budget ? new Date(budget.resetsAt).getTime() : undefined
 }
 
@@ -238,14 +262,14 @@ async function draw() {
   if (reading !== state.reading) return
   const floors = state.board.floors
   const cards = [...new Map([...state.cards, ...floors.flatMap((f) => f.cards)].map((c) => [c.id, c])).values()]
-  const workers = workersOf(cards, week)
+  const workers = workersOf(cards, week, stats.sessions)
   const days = daysOf(stats)
   book.innerHTML = [
-    coverHtml(week, stats, budgetOf(state.board)),
+    coverHtml(week, stats),
     resetsAt ? '' : '<p class="note">No weekly quota read yet: this is the last seven days.</p>',
     photoHtml(workers, floors),
     rhythmHtml(days),
-    superlativesHtml(superlatives(stats, floors, days)),
+    superlativesHtml(superlatives(stats, floors, days, workers, cards)),
     quoteHtml(quoteOf(workers, stats), floors),
   ].join('')
 }
