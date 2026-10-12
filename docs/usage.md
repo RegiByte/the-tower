@@ -10,8 +10,9 @@ Nothing here is a prescribed workflow. These are primitives; combine them the wa
 ## Setting up your floors
 
 A **project** is a floor of the tower. It has one **hub**, the directory its sessions start in, and the **repos** it
-spans, the other directories its workers work in (each passed to Claude as `--add-dir`). Only the hub configures a
-session: its `CLAUDE.md`, `.claude/` skills and commands load; the repos are granted file access only.
+spans, the other directories its workers work in. Only the hub configures a session: its `CLAUDE.md`, `.claude/`
+skills and commands load; the repos are granted file access only (Claude's `additionalDirectories`), so their own
+`CLAUDE.md` and skills stay out.
 
 So the hub is where the project's brain lives. A common shape: the hub is a notes repo or the main repo of a
 product, holding your notes, plans and project-wide `CLAUDE.md`, and the API, the frontend and the worker services

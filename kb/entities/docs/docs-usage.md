@@ -12,7 +12,7 @@
 `show`, `hire`, `agents`, `agent`, `home`, `review`, `note`, `thread`, `send`, `keep`, and the renderers that ship.
 A verb added, renamed or dropped re-checks it.
 
-It also restates what a floor is ([[hub]], [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs) passing the repos as `--add-dir`, [[tower-cuts-worktrees]]),
+It also restates what a floor is ([[hub]], [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs) granting the repos as file access only, [[tower-cuts-worktrees]]),
 the default keys it names ([[keymap]]) and what Tidy lists ([[tidy]]): a change there re-checks it. The
 `tower:guide` skill teaches from it ([[tower-mod]]), so it is written for an agent to read aloud as much as for a
 person.

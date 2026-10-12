@@ -32,6 +32,6 @@ End by offering to show one thing live, and do it only if they say yes:
 
 - `tower show` a page you make on the spot (a map of their floors, say), which opens beside you.
 - `tower keep drafts` a prompt they would type later, then name it by its tag.
-- `tower review <your callsign>` to hire a reviewer on this session, when there is work to review.
+- `tower agent <CALLSIGN>` on a worker on duty: what the user asked it and what it answered, as a worker reads it.
 
 Say what each command did as you run it. Never change their config, start workers or delete anything as part of a demo unless they ask for it.
