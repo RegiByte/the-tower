@@ -71,10 +71,10 @@ function workersOf(cards, { from, to }, shares) {
 
 /** The card whose session's share holds the longest of `pick` in the week, with that length. */
 function holderOf(shares, cards, pick) {
-  const [id, lasted] = Object.entries(shares).map(([id, share]) => [id, pick(share)]).filter(([, l]) => l)
-    .sort(([, a], [, b]) => b.seconds - a.seconds)[0] ?? []
-  const card = id && cards.find((c) => c.id === id)
-  return card && { card, lasted }
+  return Object.entries(shares)
+    .map(([id, share]) => ({ card: cards.find((c) => c.id === id), lasted: pick(share) }))
+    .filter(({ card, lasted }) => card && lasted)
+    .sort((a, b) => b.lasted.seconds - a.lasted.seconds)[0]
 }
 
 /** What a worker did, in one line: its latest answer's first sentence, else what it was asked. */
@@ -161,7 +161,7 @@ const floorStyle = (color) => (color ? `--floor:${color};--on-floor:${textOn(col
 function coverHtml(week, stats) {
   const { summary } = stats.all
   const git = summary.git
-  const used = stats.weekly ? `<div class="big"><b>${stats.weekly.percentUsed}%</b><span>of the weekly quota${week.to < week.end ? ' so far' : ''}</span></div>` : ''
+  const used = stats.weekly && Date.parse(stats.weekly.resetsAt) === week.end ? `<div class="big"><b>${stats.weekly.percentUsed}%</b><span>of the weekly quota${week.to < week.end ? ' so far' : ''}</span></div>` : ''
   return `<section class="cover">
     <p class="eyebrow">The tower's yearbook</p>
     <h1>The Week</h1>
