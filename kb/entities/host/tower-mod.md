@@ -2,10 +2,10 @@
 {
   "type": "container",
   "name": "tower mod",
-  "summary": "The Claude Code mod loaded into every session, posting Claude's mod events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and two skills, tower:handbook and tower:review.",
+  "summary": "The Claude Code mod loaded into every session, posting Claude's mod events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and three skills, tower:handbook, tower:review and tower:guide.",
   "in": "host",
-  "reviewed": "2026-10-11",
-  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/review/SKILL.md"],
+  "reviewed": "2026-10-12",
+  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/guide/SKILL.md"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock; from the tower command, tower.show and tower.keep" },
     { "to": "tower-server", "verb": "reads", "carries": "from the tower command: GET /board, the first event; /conversations/<id> (agent); /archive/<project> for a callsign no worker on duty has, and for the hire depth; collection items and review threads (kept, read, hire, thread)" },
@@ -13,7 +13,7 @@
   ]
 }
 ---
-The plugin `tower`, loaded add-only with `--plugin-dir src/mod`: its skills are `tower:handbook` and `tower:review`. An event under Claude's name carries Claude's payload; what the
+The plugin `tower`, loaded add-only with `--plugin-dir src/mod`: its skills are `tower:handbook`, `tower:review` and `tower:guide`. An event under Claude's name carries Claude's payload; what the
 mod derives is posted under `tower.*`, a namespace Claude's own events never use. Payloads that would repeat the
 conversation are cut: `tool.check` leaves out the tool input its `tool.call` carries, and `session.compact`
 posts `trigger`, `instructions` and a `messageCount` in place of the messages it summarizes (the whole
@@ -40,4 +40,6 @@ everyday recipes, and the `tower:handbook` skill is the handbook beside it ([[br
 to show the user a page ([[agent-show]]) or open a file on their desktop ([[open-files]]), keep an item ([[agent-keep]]), answer review notes ([[review-threads]]), hire
 a reviewer ([[reviewer]]) or a worker, within the floor's limits ([[hiring-limits]]), and send a crew home ([[crews]]); and, in a worktree the tower cut,
 how to keep to it ([[tower-cuts-worktrees]]). Its `review` skill is what a reviewer starts on
-(`/tower:review <CALLSIGN> [tell]`).
+(`/tower:review <CALLSIGN> [tell]`). Its `guide` skill is for the user, not for work: when they ask how to use the
+tower or for a tour, the session reads [[docs-usage]] from the checkout and the live system (`whoami`, `agents
+--all`, `kept`), tours their own floors, and offers one live demo.
