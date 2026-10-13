@@ -78,6 +78,13 @@
           },
           "description": "Who waits on you, in the order to go to them."
         },
+        "offers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Offer"
+          },
+          "description": "Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot."
+        },
         "archiveAt": {
           "type": "number",
           "description": "The latest change to any archived card (epoch ms; 0 with none archived): a renderer holding a floor's archive reads it again when this or the floor's `archived` moves."
@@ -246,6 +253,7 @@
         "keys",
         "floors",
         "waiting",
+        "offers",
         "archiveAt",
         "rateLimits",
         "probes",
@@ -310,6 +318,13 @@
             "$ref": "#/definitions/FloorThread"
           },
           "description": "The review thread of each checkout that has one, when the floor keeps the `reviews` collection."
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyView"
+          },
+          "description": "Its policies, in id order, when the floor keeps the `policies` collection (decision `policies`)."
         },
         "gallery": {
           "type": "array",
@@ -402,6 +417,7 @@
         "hub",
         "id",
         "name",
+        "policies",
         "repos",
         "threads",
         "tidy",
@@ -679,6 +695,10 @@
         "onDuty": {
           "type": "boolean",
           "description": "Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go."
+        },
+        "run": {
+          "$ref": "#/definitions/CardRun",
+          "description": "The run of a policy it is, through every resume: a run fact names the first session of its lineage."
         },
         "seat": {
           "$ref": "#/definitions/Seat",
@@ -1224,6 +1244,81 @@
       ],
       "additionalProperties": false,
       "description": "A session by id, with the callsign of the worker it ran as."
+    },
+    "CardRun": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "n": {
+          "type": "number"
+        },
+        "slot": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "start": {
+          "$ref": "#/definitions/RunStart"
+        },
+        "by": {
+          "type": "string"
+        },
+        "check": {
+          "$ref": "#/definitions/CheckResult"
+        }
+      },
+      "required": [
+        "policy",
+        "tag",
+        "n",
+        "slot",
+        "start"
+      ],
+      "additionalProperties": false,
+      "description": "The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check."
+    },
+    "RunStart": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "offer",
+        "hand"
+      ],
+      "description": "How a run started: on its own at its slot, an offer accepted, or by hand with no slot."
+    },
+    "CheckResult": {
+      "type": "object",
+      "properties": {
+        "exit": {
+          "type": "number"
+        },
+        "ms": {
+          "type": "number"
+        },
+        "out": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ms"
+      ],
+      "additionalProperties": false,
+      "description": "A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error` saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr when it failed (at most 500)."
     },
     "Seat": {
       "anyOf": [
@@ -1927,6 +2022,338 @@
       },
       "additionalProperties": false
     },
+    "PolicyView": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "header": {
+          "$ref": "#/definitions/PolicyHeader"
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Problem"
+          }
+        },
+        "rule": {
+          "type": "string"
+        },
+        "next": {
+          "type": "number"
+        },
+        "approved": {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "number"
+            },
+            "by": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        "live": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last": {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "number"
+            },
+            "at": {
+              "type": "number"
+            },
+            "slot": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "callsign": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "n",
+            "at",
+            "slot",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "passed": {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "number"
+            },
+            "slot": {
+              "type": "number"
+            },
+            "outcome": {
+              "$ref": "#/definitions/Outcome"
+            },
+            "check": {
+              "$ref": "#/definitions/CheckResult"
+            }
+          },
+          "required": [
+            "at",
+            "slot",
+            "outcome"
+          ],
+          "additionalProperties": false
+        },
+        "seen": {
+          "type": "number"
+        },
+        "offer": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "number"
+            },
+            "since": {
+              "type": "number"
+            },
+            "until": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "slot",
+            "since",
+            "until"
+          ],
+          "additionalProperties": false
+        },
+        "needs": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "reapprove"
+                },
+                "approved": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "approved"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "invalid"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "calls": {
+          "type": "object",
+          "properties": {
+            "run": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "policy/run"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            },
+            "approve": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "policy/approve"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "tag",
+        "hash",
+        "live",
+        "calls"
+      ],
+      "additionalProperties": false,
+      "description": "A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
+    },
+    "PolicyHeader": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "$ref": "#/definitions/When"
+        },
+        "check": {
+          "type": "string",
+          "description": "A shell line run at the slot from the floor's hub: exit 0, there is work; 1, none; anything else, it failed."
+        },
+        "start": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "auto"
+          ],
+          "description": "`ask`: each slot is offered. `auto`: started while the file's current hash has an approval, offered otherwise."
+        },
+        "live": {
+          "type": "number",
+          "description": "The most runs of this policy whose workers run at once; a slot due while full is held."
+        },
+        "hire": {
+          "$ref": "#/definitions/Hire"
+        },
+        "runner": {
+          "type": "string",
+          "description": "The runner that acts on it; the tower's acts on the policies that name none."
+        },
+        "x": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Each runner's own attributes, under its name."
+        }
+      },
+      "required": [
+        "when",
+        "start",
+        "live",
+        "hire"
+      ],
+      "additionalProperties": false,
+      "description": "A policy's header, its defaults filled in."
+    },
+    "When": {
+      "type": "object",
+      "properties": {
+        "cron": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tz": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cron"
+      ],
+      "additionalProperties": false,
+      "description": "A policy's slots: the union of its crons', read in `tz` (an IANA zone), else in the tower machine's zone."
+    },
+    "Hire": {
+      "type": "object",
+      "properties": {
+        "cwd": {
+          "type": "string"
+        },
+        "cut": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "base": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "model": {
+          "type": "string"
+        },
+        "effort": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Where a run's worker starts and on what model: the spawn verb's own fields (`SPAWN_FIELDS`), which its schema picks."
+    },
+    "Problem": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "What makes a file no policy, at its path as `tower config check` prints one: `when.cron[1]`, `header`, `prose`."
+    },
+    "Outcome": {
+      "type": "string",
+      "enum": [
+        "offered",
+        "no-work",
+        "held",
+        "check-failed"
+      ],
+      "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
+    },
     "GalleryShowing": {
       "type": "object",
       "properties": {
@@ -2311,6 +2738,71 @@
         "done"
       ],
       "description": "Why a worker waits on you: `blocked` by a screen, `asks` a question, or holds an outcome nobody has typed to since, `failed` or `done`."
+    },
+    "Offer": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "project": {
+          "type": "string"
+        },
+        "policy": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "slot": {
+          "type": "number"
+        },
+        "since": {
+          "type": "number"
+        },
+        "until": {
+          "type": "number"
+        },
+        "calls": {
+          "type": "object",
+          "properties": {
+            "accept": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "policy/run"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "accept"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "key",
+        "project",
+        "policy",
+        "tag",
+        "slot",
+        "since",
+        "until",
+        "calls"
+      ],
+      "additionalProperties": false,
+      "description": "A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`."
     },
     "RateLimit": {
       "type": "object",

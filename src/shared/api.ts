@@ -5,13 +5,14 @@
  */
 import { z } from 'zod'
 import { AUTHOR, WORKTREE_NAME } from './model.ts'
+import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
 
 /**
  * `<major>.<minor>`. The minor moves when the API adds something an older renderer reads past: a board field, a verb,
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.48'
+export const API_VERSION = '1.49'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -63,22 +64,41 @@ const cut = z
 /** What a cut made, and from what: each repo's base, and why it is that one. */
 const cutReply = z.object({ name: z.string(), branch: z.string(), bases: z.array(z.object({ dir: z.string(), base: z.string(), why: z.string() })) })
 
+/** A spawn's fields, before the rules between them: a policy's `hire` picks from them. */
+export const SPAWN_FIELDS = z.strictObject({
+  project: id,
+  cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),
+  cut: cut.optional(),
+  ...launch,
+  by,
+  hire: z
+    .literal(true)
+    .optional()
+    .describe(
+      "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer. Hires of one worker are taken one at a time, each counted before the next is weighed.",
+    ),
+})
+
+/** A policy's item id in its project's `policies` collection. */
+const policy = z.string().regex(ITEM_ID).describe("The policy: its item's id in the project's `policies` collection.")
+
+/** What a policy's check did at a slot (decision `policies`). */
+const checkResult = z.strictObject({
+  exit: z.int().optional().describe('Its exit code: 0, there is work; 1, none; absent when it timed out or never started.'),
+  ms: z.int().nonnegative(),
+  out: z.string().max(2048).optional().describe('Its stdout when it found work, at most 2,048 characters.'),
+  stderr: z.string().max(500).optional().describe('The end of its stderr when it failed, at most 500 characters.'),
+  error: z.string().optional().describe('Why it has no exit code: it timed out, or could not start.'),
+}) satisfies z.ZodType<CheckResult>
+
+const OUTCOMES = ['offered', 'no-work', 'held', 'check-failed'] as const satisfies Outcome[]
+const RUN_STARTS = ['auto', 'offer', 'hand'] as const satisfies RunStart[]
+
+const slot = z.int().nonnegative().describe("One of the policy's slots, epoch ms, at or before now.")
+
 export const VERBS = {
   spawn: {
-    input: z
-      .strictObject({
-        project: id,
-        cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),
-        cut: cut.optional(),
-        ...launch,
-        by,
-        hire: z
-          .literal(true)
-          .optional()
-          .describe(
-            "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer. Hires of one worker are taken one at a time, each counted before the next is weighed.",
-          ),
-      })
+    input: SPAWN_FIELDS
       .refine((s) => s.cwd === undefined || s.cut === undefined, { message: 'A spawn takes `cwd` or `cut`, not both', path: ['cut'] })
       .refine((s) => !s.hire || s.by !== undefined, { message: 'A hire names its hirer: `by`', path: ['by'] })
       .meta({ not: { required: ['cwd', 'cut'] } })
@@ -275,6 +295,39 @@ export const VERBS = {
       streams: z.array(z.string()).describe('The stream month files archived, by path under `streams/`.'),
     }),
   },
+  'policy/run': {
+    input: z
+      .strictObject({
+        project: id,
+        policy,
+        start: z.enum(RUN_STARTS).describe('How it starts: `auto`, a runner at its slot; `offer`, an open offer accepted; `hand`, now, with no slot.'),
+        slot: slot.optional().describe("The slot it runs for, epoch ms: one of the policy's, at or before now. Left out by hand."),
+        by: actor('named on the run fact as the session that accepted or started it.'),
+        check: checkResult.optional().describe('The check that let it run.'),
+      })
+      .refine((r) => (r.start === 'hand') === (r.slot === undefined), { message: 'A run by hand takes no slot, and any other run takes one', path: ['slot'] })
+      .describe(
+        "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval: the caller consents. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
+      ),
+    reply: z.object({ t: z.literal('ran'), id: z.string().describe("The worker's session."), n: z.int().describe("The run's number among the policy's runs."), hash: z.string() }),
+  },
+  'policy/pass': {
+    input: z
+      .strictObject({ project: id, policy, slot, outcome: z.enum(OUTCOMES), check: checkResult.optional().describe('The check, when one ran.') })
+      .describe("Record a slot of a policy the runner saw and didn't start, and why: `offered`, `no-work`, `held` (live was full), `check-failed`. Refused once the slot has a fact."),
+    reply: ok,
+  },
+  'policy/approve': {
+    input: z
+      .strictObject({
+        project: id,
+        policy,
+        hash: z.string().regex(/^sha256:[0-9a-f]{64}$/).describe("The hash of the policy's file as the approver read it, `sha256:<hex>`."),
+        by: actor('named on the approval fact.'),
+      })
+      .describe("Approve a policy's current words for the runner to start on its own (`start: auto`): refused unless `hash` is the file's hash now. Any edit needs a new approval."),
+    reply: ok,
+  },
 }
 
 /**
@@ -301,6 +354,9 @@ export const QUERIES = {
   'probe/<name>': z
     .object({ last: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest reads, newest first.') })
     .describe("One probe of the config's: its status as the board shows it, and its latest reads as its stream keeps them, each Claude's answer as it came or why there is none."),
+  'runs/<project>': z
+    .object({ policy, limit: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest runs, newest first.') })
+    .describe("A policy's runs, newest first: each run's number, slot, how it started and on which hash, its check, and its worker as it is now, its latest answer in full."),
   landing: z
     .object({ project: id, branch: z.string().min(1).describe('A branch of a worktree or a kept branch, `carried` on the board.') })
     .describe(

@@ -10,7 +10,7 @@ export type SystemPaths = {
   cache: string
   /**
    * Logs of facts the tower observes that belong to no session, one writer each: `system/<stream>/YYYY-MM.jsonl`, the
-   * system's (`probe.quota`), and `projects/<project>/<stream>/…`, reserved for a project's.
+   * system's (`probe.quota`), and `projects/<project>/<stream>/…`, a project's (`runs`, `approvals`).
    */
   streams: string
   control: string
@@ -58,3 +58,9 @@ export const sessionLogPath = (paths: SystemPaths, id: string): string => path.j
 
 /** The directory of the system's streams, one directory each. */
 export const systemStreamsPath = (paths: SystemPaths): string => path.join(paths.streams, 'system')
+
+/** The directory of every project's streams: `<project>/<stream>/`, one directory each. */
+export const projectsStreamsPath = (paths: SystemPaths): string => path.join(paths.streams, 'projects')
+
+/** The directory of a project's stream. */
+export const projectStreamPath = (paths: SystemPaths, project: string, stream: string): string => path.join(projectsStreamsPath(paths), project, stream)

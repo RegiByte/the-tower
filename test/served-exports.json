@@ -574,6 +574,24 @@
       "toaster",
       "toastsCss",
       "toldTimes"
+    ],
+    "/policies.js": [
+      "ON_TIME_MS",
+      "POLICIES",
+      "checkKey",
+      "checkWhy",
+      "cronFields",
+      "cronProblem",
+      "decide",
+      "nextSlot",
+      "onTimeSlot",
+      "policyLine",
+      "ruleWords",
+      "slotWords",
+      "slotsBetween",
+      "standing",
+      "standingWords",
+      "zoneCity"
     ]
   }
 }

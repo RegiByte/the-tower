@@ -17,6 +17,7 @@
  *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
+ *   GET  /runs/<project>?policy&limit  a policy's runs, newest first, each with its worker as it is now (src/bridge/policies.ts)
  *   GET  /probe/<name>?last  one probe's status as the board shows it, and its latest reads, newest first (src/bridge/probes.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
  *                                        branches, read from git now (src/bridge/stats.ts), the query by its schema
@@ -34,6 +35,7 @@
  *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)
  *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
  *   GET  /reviews.js    the review threads' format (src/shared/reviews.ts)
+ *   GET  /policies.js   what renderers say and decide about policies: rules and slots in words, standing (src/shared/policies.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /fonts/<file>  a face the design names
@@ -48,6 +50,8 @@
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
+ *   POST /policy/run {project, policy, start, slot?, by?, check?} | /policy/pass {project, policy, slot, outcome, check?}
+ *        | /policy/approve {project, policy, hash, by?}   a policy's facts in its project's streams (decision `policies`)
  *   POST /probe/run {name}   read a probe now (refused while off, while a read is in flight or within 60 s of the last start)
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
@@ -76,18 +80,24 @@ import { freshId } from '../shared/callsign.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
 import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, landingOf, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
-import { configPath, projectCollectionsPath, systemPaths } from '../shared/paths.ts'
+import { configPath, projectCollectionsPath, projectStreamPath, systemPaths } from '../shared/paths.ts'
 import { attachShell } from '../shared/client.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { SHELL_SIZE, type FromTerms, type ShellStream, type ToTerms } from '../shared/terms.ts'
 import { readConfig as readConfigFile, watchSystem } from '../system.ts'
 import { runProbes } from '../probes.ts'
+import { runPolicies } from '../policies.ts'
 import { probeView } from '../bridge/probes.ts'
+import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, runsRead, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../bridge/policies.ts'
+import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
+import { POLICIES, ruleWords, slotsBetween } from '../shared/policies.ts'
+import { tagOf } from '../shared/tags.ts'
+import { appendFact } from '../streams.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
-import { allCards, archiveOf, board, occupantsOf, type TidyPlan } from '../bridge/board.ts'
+import { allCards, archiveOf, board, occupantsOf, type Policies, type TidyPlan } from '../bridge/board.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import type { Resource } from '../bridge/resources.ts'
@@ -212,10 +222,12 @@ const currentBoard = (): string => {
   }
 }
 
-const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), system.streamMonths(), paths, Date.now())
+const policiesNow = (): Policies => ({ files: system.policies(), facts: system.policyFacts() })
+
+const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), system.streamMonths(), policiesNow(), paths, Date.now())
 
 /** Every session's card, the ones the board leaves out included. */
-const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), now)
+const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), policiesNow(), now)
 
 function archive(res: http.ServerResponse, project: string) {
   if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
@@ -273,6 +285,18 @@ function probeRead(res: http.ServerResponse, name: string, search: string) {
   const status = probes.find((p) => p.name === name)
   if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), query.data.last)))
+}
+
+function runsOfPolicy(res: http.ServerResponse, project: string, search: string) {
+  const query = QUERIES['runs/<project>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
+  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+  if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
+  const { policy, limit } = query.data
+  const facts = policyFactsOf(project)
+  const hash = system.policies().find((p) => p.project === project && p.id === policy)?.hash
+  if (hash === undefined && !facts.runs.some(([, r]) => r.policy === policy)) return fail(res, 'not_found', `${project} has no policy "${policy}", and no runs of one`)
+  const answerOf = (id: string) => system.session(id)?.facts.conversations.findLast((c) => c.answer !== undefined)?.answer
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(runsRead(policy, hash, facts, everyCard(Date.now()), answerOf, limit)))
 }
 
 async function statsRead(res: http.ServerResponse, search: string) {
@@ -1157,6 +1181,95 @@ const tidyProject = (projectId: string, plan: TidyPlan) =>
     }
   })
 
+/** A policy's file as it is now: its text's hash and its parse. */
+const policyFile = (project: string, policy: string): { hash: string; parsed: Parsed } | ApiError => {
+  if (!isDeclared(project, POLICIES)) return apiError('not_found', `"${project}" keeps no policies: the \`${POLICIES}\` collection is declared in the config`)
+  const text = readItem(paths, project, POLICIES, policy)
+  if (text === undefined) return apiError('not_found', `${project}/${POLICIES} holds no policy "${policy}"`)
+  return { hash: hashOf(text), parsed: parsePolicy(text) }
+}
+
+const policyFactsOf = (project: string) => system.policyFacts().get(project) ?? NO_POLICY_FACTS
+
+/** Why a policy can't take a fact for `slot`: it isn't valid, another runner acts on it, or `slot` is none of its slots up to now. */
+const slotRefusal = (policy: string, parsed: Parsed, slot: number | undefined): ApiError | undefined => {
+  if (!parsed.ok) return apiError('refused', `The policy ${tagOf(policy)} is invalid: ${parsed.problems.map((p) => `${p.path}: ${p.message}`).join('; ')}`)
+  if (parsed.header.runner !== undefined) return apiError('refused', `The policy ${tagOf(policy)} is left to the runner "${parsed.header.runner}"`)
+  if (slot === undefined) return undefined
+  if (slot > Date.now()) return apiError('refused', `${slotName(slot)} is still to come`)
+  return slotsBetween(parsed.header.when, slot - 1, slot).includes(slot) ? undefined : apiError('invalid', `${slotName(slot)} is not one of the slots of ${tagOf(policy)} (${ruleWords(parsed.header.when)})`)
+}
+
+/** Appends a policy fact to its project's stream, and resolves once the system holds it, so the next request reads it. */
+const appendPolicyFact = async (project: string, stream: string, code: string, fact: object, held: (facts: PolicyFacts) => boolean) => {
+  appendFact(projectStreamPath(paths, project, stream), stream, Date.now(), code, fact)
+  await system.until(() => held(policyFactsOf(project)), TRACK_TIMEOUT_MS)
+}
+
+/** A policy's runs, passes and approvals are taken one at a time, each until the system holds its fact. */
+const onPolicy = (project: string, policy: string, act: () => Promise<Answer>) => inTurn(`policy ${project}/${policy}`, act)
+
+/**
+ * A run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and the run fact appended. A
+ * worker whose fact can't be appended is killed, so no run goes uncounted.
+ */
+const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['policy/run']) =>
+  fromWorker(by, () =>
+    onPolicy(project, policy, async () => {
+      const file = policyFile(project, policy)
+      if ('t' in file) return file
+      const refused = slotRefusal(policy, file.parsed, slot)
+      if (refused) return refused
+      const { header, prompt } = file.parsed as Extract<Parsed, { ok: true }>
+      if (slot !== undefined && policyFactsOf(project).runs.some(([, r]) => r.policy === policy && r.slot === slotName(slot))) return apiError('refused', `${tagOf(policy)} already ran for ${slotName(slot)}`)
+      if (!system.live()) return apiError('unavailable', 'No host runs, so no worker can start: the user starts it with `tower up`')
+      await system.refreshLive()
+      const live = liveRuns(policy, policyFactsOf(project), everyCard(Date.now()))
+      if (live.length >= header.live) return apiError('limited', `${live.map((c) => c.callsign).join(', ')} still run${live.length === 1 ? 's' : ''}: ${tagOf(policy)} runs at most ${header.live} at once (its \`live\`)`)
+      const launch = { model: header.hire.model, effort: header.hire.effort, prompt }
+      const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, launch) : await spawnIn(project, header.hire.cwd, launch)
+      if (answer.t !== 'spawned') return answer
+      const { id } = answer as Replies['spawn']
+      const fact: RunFact = { policy, hash: file.hash, slot: slot === undefined ? null : slotName(slot), id, start, ...(by && { by }), ...(check && { check }) }
+      try {
+        await appendPolicyFact(project, RUNS_STREAM, 'r', fact, (facts) => facts.runs.some(([, r]) => r.id === id))
+      } catch (err) {
+        await host({ t: 'kill', id })
+        return apiError('internal', `Session ${id} started but its run couldn't be recorded, so it was killed (it can be resumed): ${(err as Error).message}`)
+      }
+      await system.tracked(id, TRACK_TIMEOUT_MS)
+      return { t: 'ran', id, n: policyFactsOf(project).runs.filter(([, r]) => r.policy === policy).length, hash: file.hash }
+    }),
+  )
+
+/** A slot the runner saw and didn't start, and why: refused once the slot has a fact. */
+const passPolicy = ({ project, policy, slot, outcome, check }: RouteInput['policy/pass']) =>
+  onPolicy(project, policy, async () => {
+    const file = policyFile(project, policy)
+    if ('t' in file) return file
+    const refused = slotRefusal(policy, file.parsed, slot)
+    if (refused) return refused
+    if (slotSeen(policy, slot, policyFactsOf(project))) return apiError('refused', `${slotName(slot)} of ${tagOf(policy)} already has a fact`)
+    const fact: PassFact = { policy, hash: file.hash, slot: slotName(slot), outcome, ...(check && { check }) }
+    await appendPolicyFact(project, RUNS_STREAM, 's', fact, (facts) => slotSeen(policy, slot, facts))
+    return OK
+  })
+
+/** An approval of the words the approver read: refused unless `hash` is the file's now. */
+const approvePolicy = ({ project, policy, hash, by }: RouteInput['policy/approve']) =>
+  fromWorker(by, () =>
+    onPolicy(project, policy, async () => {
+      const file = policyFile(project, policy)
+      if ('t' in file) return file
+      if (file.hash !== hash) return apiError('refused', `${tagOf(policy)} changed since it was read: its hash is ${shortHash(file.hash)} now, not ${shortHash(hash)}. Read it again, then approve what you read`)
+      if (!file.parsed.ok) return apiError('refused', `The policy ${tagOf(policy)} is invalid: ${file.parsed.problems.map((p) => `${p.path}: ${p.message}`).join('; ')}`)
+      const count = policyFactsOf(project).approvals.length
+      const fact: ApprovalFact = { policy, hash, ...(by && { by }) }
+      await appendPolicyFact(project, APPROVALS_STREAM, 'a', fact, (facts) => facts.approvals.length > count)
+      return OK
+    }),
+  )
+
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
   spawn: ({ project, cwd, cut, model, effort, prompt, by, hire }) => {
     const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by)
@@ -1207,6 +1320,9 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
   'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
   tidy: ({ project, plan }) => tidyProject(project, plan),
   'review/append': appendReview,
+  'policy/run': runPolicy,
+  'policy/pass': passPolicy,
+  'policy/approve': approvePolicy,
   'mux/watch': muxWatch,
   'mux/unwatch': muxUnwatch,
 }
@@ -1298,6 +1414,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (req.method === 'GET' && rendering) return rendered(res, rendering[1], rendering[2] === undefined ? undefined : decodeURIComponent(rendering[2]), query)
   if (req.method === 'GET' && pathname === '/stats') return statsRead(res, search ?? '')
   if (req.method === 'GET' && pathname === '/landing') return landingRead(res, search ?? '')
+  const policyRuns = /^\/runs\/([\w-]+)$/.exec(pathname)?.[1]
+  if (req.method === 'GET' && policyRuns) return runsOfPolicy(res, policyRuns, search ?? '')
   const probed = /^\/probe\/([\w-]+)$/.exec(pathname)?.[1]
   if (req.method === 'GET' && probed) return probeRead(res, probed, search ?? '')
   const ran = /^\/run\/([\w-]+)\/(\d+)(?:\/(.+))?$/.exec(pathname)
@@ -1318,5 +1436,7 @@ const server = http.createServer((req, res) => {
     else send(res, errorOf(err))
   })
 })
+
+runPolicies(boardOf, { run: (input) => HANDLERS['policy/run'](input) as Promise<Answer>, pass: (input) => HANDLERS['policy/pass'](input) as Promise<Answer> })
 
 server.listen(PORT, '127.0.0.1', () => console.log(`tower up: http://127.0.0.1:${PORT}  (${paths.config})`))

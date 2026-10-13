@@ -1,6 +1,6 @@
 /**
  * A running view of the whole system: every session folded from its log and kept current as the host appends
- * to it, every probe's stream folded, the items of every collection, the host's live set, the terms daemon's shells,
+ * to it, every probe's stream folded, every policy parsed and each project's policy facts folded, the items of every collection, the host's live set, the terms daemon's shells,
  * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
@@ -10,12 +10,16 @@ import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
 import { foldLog } from './checkpoints.ts'
 import { probeFacts, readingsOf, type ProbeFacts, type ProbeReading, type StreamFile } from './bridge/probes.ts'
+import { APPROVALS_STREAM, policyFacts, RUNS_STREAM, type PolicyFacts, type PolicyFile } from './bridge/policies.ts'
+import { hashOf, parsePolicy } from './bridge/policy-file.ts'
+import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
 import { readItem, scanCollections } from './collections.ts'
 import { hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
-import { systemStreamsPath, type SystemPaths } from './shared/paths.ts'
+import { projectsStreamsPath, systemStreamsPath, type SystemPaths } from './shared/paths.ts'
+import { POLICIES } from './shared/policies.ts'
 import type { HostLive } from './shared/protocol.ts'
 import { parseThread, REVIEWS, type ReviewThread } from './shared/reviews.ts'
 import type { Shell } from './shared/terms.ts'
@@ -79,6 +83,17 @@ const threadsIn = (paths: SystemPaths, items: CollectionItem[], held: ThreadFile
       return text === undefined ? [] : [{ project, id, modifiedAt, thread: parseThread(text) }]
     })
 
+/** Each item of the policies collections, parsed and hashed: a file `held` at the same version is not read again. */
+const policyFilesIn = (paths: SystemPaths, items: CollectionItem[], held: PolicyFile[]): PolicyFile[] =>
+  items
+    .filter((i) => i.collection === POLICIES)
+    .flatMap(({ project, id, modifiedAt }) => {
+      const same = held.find((p) => p.project === project && p.id === id && p.modifiedAt === modifiedAt)
+      if (same) return [same]
+      const text = readItem(paths, project, POLICIES, id)
+      return text === undefined ? [] : [{ project, id, modifiedAt, hash: hashOf(text), parsed: parsePolicy(text) }]
+    })
+
 const PROBE_STREAM = /^probe\.([\w-]+)$/
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
@@ -90,6 +105,41 @@ const readStream = (file: string, bytes: number): HeldStream => {
   const read = readingsOf(logBytes(file).toString('utf8'))
   if (read.unreadable) console.error(`${file}: ${read.unreadable} line(s) are no JSON, each a read passed over`)
   return { ...read, bytes }
+}
+
+/** A stream file's facts, as of its size. */
+type HeldFacts = StreamText & { bytes: number }
+
+const readFacts = (file: string, bytes: number): HeldFacts => {
+  const read = streamFacts(logBytes(file).toString('utf8'))
+  if (read.unreadable) console.error(`${file}: ${read.unreadable} line(s) are no JSON, each a fact passed over`)
+  return { ...read, bytes }
+}
+
+/** One stream's facts, from its month files in order, each read again only once its size changed. */
+const streamIn = (dir: string, held: Map<string, HeldFacts>, files: Map<string, HeldFacts>): StreamFact[] =>
+  existsSync(dir)
+    ? logFilesIn(readdirSync(dir).filter((f) => MONTH_FILE.test(f)))
+        .sort()
+        .flatMap((f) => {
+          const file = path.join(dir, f)
+          const bytes = statSync(file).size
+          const read = held.get(file)?.bytes === bytes ? held.get(file)! : readFacts(file, bytes)
+          files.set(file, read)
+          return read.facts
+        })
+    : []
+
+/** Each project's policy facts, from its `runs` and `approvals` streams, and the files as read. */
+const policyStreamsIn = (root: string, held: Map<string, HeldFacts>): { facts: Map<string, PolicyFacts>; files: Map<string, HeldFacts> } => {
+  const files = new Map<string, HeldFacts>()
+  const facts = new Map(
+    readdirSync(root).map((project) => [
+      project,
+      policyFacts(streamIn(path.join(root, project, RUNS_STREAM), held, files), streamIn(path.join(root, project, APPROVALS_STREAM), held, files)),
+    ]),
+  )
+  return { facts, files }
 }
 
 /**
@@ -126,6 +176,10 @@ export type System = {
   items: () => CollectionItem[]
   /** Every review thread on disk, parsed, read again when its file changes. */
   threads: () => ThreadFile[]
+  /** Every item of the policies collections, parsed and hashed, read again when its file changes. */
+  policies: () => PolicyFile[]
+  /** Each project's policy facts, by project, from its `runs` and `approvals` streams, read again when they grow. */
+  policyFacts: () => Map<string, PolicyFacts>
   /** Each probe's stream folded, by probe name, read again when it grows. */
   probes: () => Map<string, ProbeFacts>
   /** A probe's reads, oldest first: none for a probe with no stream. */
@@ -176,6 +230,9 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   const tails = new Map<string, () => void>()
   let items: CollectionItem[] = []
   let threads: ThreadFile[] = []
+  let policyFiles: PolicyFile[] = []
+  let policyStreamFiles = new Map<string, HeldFacts>()
+  let policies = new Map<string, PolicyFacts>()
   let streamFiles = new Map<string, HeldStream>()
   let probeStreams = new Map<string, ProbeReading[]>()
   let probes = new Map<string, ProbeFacts>()
@@ -269,6 +326,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         if (asJson(next) === asJson(items)) return
         items = next
         threads = threadsIn(paths, items, threads)
+        policyFiles = policyFilesIn(paths, items, policyFiles)
         onChange()
       }),
       RESCAN_DEBOUNCE_MS,
@@ -289,6 +347,19 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   }
   const scheduleStreams = () => {
     streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams())), RESCAN_DEBOUNCE_MS)
+  }
+
+  /** A policy's fact appends a line: its project's streams are folded again once the write settles. */
+  let policyStreamsTimer: NodeJS.Timeout | undefined
+  const rescanPolicyStreams = () => {
+    const next = policyStreamsIn(projectsStreamsPath(paths), policyStreamFiles)
+    policyStreamFiles = next.files
+    if (asJson(next.facts) === asJson(policies)) return
+    policies = next.facts
+    onChange()
+  }
+  const schedulePolicyStreams = () => {
+    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams())), RESCAN_DEBOUNCE_MS)
   }
 
   /** Every read below that fails keeps its last read, and the failure goes to the tower's log: the next poll reads again. */
@@ -394,10 +465,14 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)
+  policyFiles = policyFilesIn(paths, items, policyFiles)
   watchedOrExit(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
   mkdirSync(systemStreamsPath(paths), { recursive: true })
   rescanStreams()
   watchedOrExit(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
+  mkdirSync(projectsStreamsPath(paths), { recursive: true })
+  rescanPolicyStreams()
+  watchedOrExit(watch(projectsStreamsPath(paths), { recursive: true }, schedulePolicyStreams), projectsStreamsPath(paths))
   watchedOrExit(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
   await refreshShells()
@@ -410,6 +485,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     logs: () => logs,
     items: () => items,
     threads: () => threads,
+    policies: () => policyFiles,
+    policyFacts: () => policies,
     probes: () => probes,
     probeReads: (name) => probeStreams.get(name) ?? [],
     streamMonths: () =>

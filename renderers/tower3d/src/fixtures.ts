@@ -201,7 +201,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
         ...(f.games ? gamesCollection(f.id, f.games, cards, now) : []),
       ],
       worktrees, branches: [], bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
-      tidy, threads, cards,
+      tidy, threads, cards, policies: [],
       ...floorOffers(f.id, true, true, false, tidy),
     }
   })
@@ -217,6 +217,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
       return { ...f, cards: present, archived: cards.length - present.length, gallery: galleryOf(cards) }
     }),
     waiting: waitingOrder(seated),
+    offers: [],
     archiveAt: archiveAtOf(seated, seated.filter((c) => !kept(c))),
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board, unresumableAt, type Card } from '../src/bridge/board.ts'
+import { board, NO_POLICIES, unresumableAt, type Card } from '../src/bridge/board.ts'
 import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf, statusName } from '../src/shared/cards.ts'
@@ -28,11 +28,11 @@ const hostWith = (...ids: string[]): HostLive => ({ ids: new Set(ids), protocol:
 const homed = (log: SessionLog, cwd = CONFIG.projects[log.header.project].hub): SessionLog => ({ ...log, header: { ...log.header, cwd } })
 
 const cardsOf = (logs: SessionLog[], host = hostWith()) =>
-  board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host, [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors.flatMap((f) => f.cards)
+  board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host, [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors.flatMap((f) => f.cards)
 
 test('a session card carries its prompt, context and cost', () => {
   const log = fixture('tool-turn')
-  const [card] = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[0].cards
+  const [card] = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards
   assert.equal(card.status, 'exited')
   assert.equal(card.conversations.at(-1)!.prompt, 'List the files in src/bridge with ls, then tell me in one sentence what status.ts does.')
   assert.equal(card.context, 22)
@@ -79,17 +79,17 @@ test('steps logged without their text say nothing', () => {
 test('the latest rate-limit reading of any session stands for the account', () => {
   const sessions = ['api-error', 'interrupts'].map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) }))
   const latest = sessions.map((s) => s.facts.rateLimits!).sort((a, b) => b.at - a.at)[0]
-  assert.deepEqual(board(CONFIG, sessions, hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).rateLimits, latest.limits)
+  assert.deepEqual(board(CONFIG, sessions, hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).rateLimits, latest.limits)
 })
 
 test('a session without a logged exit is lost once the host stops running it', () => {
   const log = fixture('interrupts')
   const running = { ...log, events: log.events.filter((e) => e[1] !== 'x') }
   const header = log.header
-  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], hostWith(header.id), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[1].cards[0].status, 'done')
-  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[1].cards[0].status, 'lost')
-  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], undefined, [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).hostUp, false)
-  assert.equal(board(CONFIG, [], { ids: new Set(), protocol: HOST_PROTOCOL - 1 }, [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).hostOutdated, true)
+  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], hostWith(header.id), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[1].cards[0].status, 'done')
+  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[1].cards[0].status, 'lost')
+  assert.equal(board(CONFIG, [{ header, facts: factsOf(running) }], undefined, [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).hostUp, false)
+  assert.equal(board(CONFIG, [], { ids: new Set(), protocol: HOST_PROTOCOL - 1 }, [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).hostOutdated, true)
 })
 
 test('a resumed session links to the session whose conversation it continues', () => {
@@ -130,7 +130,7 @@ test('a done session waits on you until someone types to it; moving the mouse ov
 
 test('waits: a screen that blocks first, then a question, then an answer, each keyed by its worker and when it began', () => {
   const logs = [until(fixture('resumed'), 20), until(fixture('interrupts'), 140), until(fixture('trust-dialog'), 10)]
-  const { waiting } = board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(...logs.map((l) => l.header.id)), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0)
+  const { waiting } = board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(...logs.map((l) => l.header.id)), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0)
   assert.deepEqual(waiting, [
     { id: '20261006-215201-f54e', key: '20261006-215201-f54e@1791323522082', reason: 'blocked', since: 1791323522082, detail: 'trust' },
     { id: '20261002-024020-385b', key: '20261002-024020-385b@1790908953237', reason: 'asks', since: 1790908953237, detail: 'Write /Users/developer/mc-deny-probe.txt' },
@@ -229,7 +229,7 @@ test("a stranded worker holds its worktree until it is resumed or let go: Tidy n
   const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }
   const letGo = { ...lost, events: [...lost.events, [150, 'h', { hook_event_name: 'tower.letGo' }] as SessionLog['events'][number]] }
   const floorOf = (session: SessionLog, present = true, host = hostWith()) =>
-    board(CONFIG, [{ header: session.header, facts: factsOf(session) }], host, [], [], [], [], [], repos(present), new Map(), new Map(), [], PATHS, 0).floors.find((f) => f.id === 'lab')!
+    board(CONFIG, [{ header: session.header, facts: factsOf(session) }], host, [], [], [], [], [], repos(present), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors.find((f) => f.id === 'lab')!
   const said = (f: ReturnType<typeof floorOf>) => [f.worktrees[0].state, f.worktrees[0].sessions, f.tidy.worktrees]
   const id = log.header.id
   assert.deepEqual(said(floorOf(lost, true, hostWith(id))), ['live', [id], []])
@@ -251,7 +251,7 @@ test('verbs: a stopped session resumes its conversation; once resumed, it leads 
 test('verbs: what a session left running makes it reapable', () => {
   const log = homed(fixture('tool-turn'))
   const leftover = { pid: 4242, session: log.header.id, command: 'npm run dev', ports: [3000], orphan: true }
-  const [card] = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [leftover], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[0].cards
+  const [card] = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [leftover], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
@@ -260,7 +260,7 @@ test('a past worker can be resumed only where its floor still has its folder: el
   const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
   const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
   const cardAt = (session: SessionLog, repos: Map<string, RepoRead>) =>
-    board(CONFIG, [{ header: session.header, facts: factsOf(session) }], hostWith(), [], [], [], [], [], repos, new Map(), new Map(), [], PATHS, 0).floors[0].cards[0]
+    board(CONFIG, [{ header: session.header, facts: factsOf(session) }], hostWith(), [], [], [], [], [], repos, new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards[0]
   const inTree = homed(log, tree.path)
   const said = (c: { unresumable?: string; verbs: string[]; conversations: { verbs: string[] }[] }) => [c.unresumable, c.verbs.includes('resume'), c.conversations.map((conv) => conv.verbs)]
   assert.deepEqual(said(cardAt(log, new Map())), [undefined, true, [['resume']]])
@@ -275,7 +275,7 @@ test('a past worker can be resumed only where its floor still has its folder: el
     [true, true, false, false, false],
   )
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
-  const liveGone = board(CONFIG, [{ header: running.header, facts: factsOf(running) }], hostWith(running.header.id), [], [], [], [], [], reads([]), new Map(), new Map(), [], PATHS, 0).floors[0].cards[0]
+  const liveGone = board(CONFIG, [{ header: running.header, facts: factsOf(running) }], hostWith(running.header.id), [], [], [], [], [], reads([]), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards[0]
   assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone, liveGone.verbs.includes('review')], [true, undefined, true, false])
   const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
   assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
@@ -303,7 +303,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
   ])
   const live = cardsOf([{ ...log, events: log.events.filter((e) => e[1] !== 'x') }], hostWith(log.header.id))[0]
   assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], kill: ['kill', { id: log.header.id }] })
-  assert.deepEqual(board(CONFIG, [], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[0].calls, {
+  assert.deepEqual(board(CONFIG, [], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].calls, {
     spawn: ['spawn', { project: 'tower' }],
     shell: ['shell/spawn', { project: 'tower' }],
     editor: ['open', {}],
@@ -311,7 +311,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
 })
 
 test('verbs: a floor spawns while the host is up and opens shells while the terms daemon is', () => {
-  const floorVerbs = (live: HostLive | undefined, shells: [] | undefined) => board(CONFIG, [], live, [], [], shells, [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors[0].verbs
+  const floorVerbs = (live: HostLive | undefined, shells: [] | undefined) => board(CONFIG, [], live, [], [], shells, [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].verbs
   assert.deepEqual(floorVerbs(hostWith(), []), ['spawn', 'shell', 'editor'])
   assert.deepEqual(floorVerbs(undefined, []), ['shell', 'editor'])
   assert.deepEqual(floorVerbs(hostWith(), undefined), ['spawn', 'editor'])
@@ -322,7 +322,7 @@ test('collections: a floor holds every project’s collections, then its own, ea
   config.projects = { ...CONFIG.projects, lab: { ...CONFIG.projects.lab, collections: { notes: { label: 'Notes' } } } }
   const item = (project: string, collection: string, id: string) => ({ project, collection, id, size: 3, modifiedAt: 1000 })
   const items = [item('tower', 'drafts', 'a.md'), item('lab', 'drafts', 'b.md'), item('lab', 'notes', 'c.edn'), item('lab', 'stray', 'd.md')]
-  const floors = board(config, [], hostWith(), [], [], [], items, [], new Map(), new Map(), new Map(), [], PATHS, 0).floors
+  const floors = board(config, [], hostWith(), [], [], [], items, [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors
   const shape = (id: string) => floors.find((f) => f.id === id)!.collections.map((c) => [c.id, c.label, c.items.map((i) => i.id)])
   assert.deepEqual(shape('tower'), [['drafts', 'Drafts', ['a.md']]])
   assert.deepEqual(shape('lab'), [['drafts', 'Drafts', ['b.md']], ['notes', 'Notes', ['c.edn']]])
@@ -333,7 +333,7 @@ test('collections: a floor holds every project’s collections, then its own, ea
 test('collections: one declared for every project and again for one of them is a config error', () => {
   const config: Config = { ...CONFIG, collections: { drafts: { label: 'Drafts' } } }
   config.projects = { ...CONFIG.projects, lab: { ...CONFIG.projects.lab, collections: { drafts: { label: 'Mine' } } } }
-  assert.throws(() => board(config, [], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0), /projects.lab.collections.drafts in the config: "drafts" is declared under collections for every project already/)
+  assert.throws(() => board(config, [], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0), /projects.lab.collections.drafts in the config: "drafts" is declared under collections for every project already/)
 })
 
 test('a card carries what its worker showed, oldest first, a target shown again moved last', () => {
@@ -403,7 +403,7 @@ test('a resume runs under its worker’s callsign when it carries the worker on,
 test('the config’s callsigns name every worker; a list that can’t name them is a config error', () => {
   const log = fixture('tool-turn')
   const named = (callsigns?: unknown) =>
-    board({ ...CONFIG, callsigns } as Config, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors.flatMap((f) => f.cards)[0].callsign
+    board({ ...CONFIG, callsigns } as Config, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors.flatMap((f) => f.cards)[0].callsign
   assert.equal(callsigns(['ALPHA', 'BRAVO'])('20261005-120000-0000'), 'ALPHA-51')
   assert.equal(callsigns(['ALPHA', 'BRAVO'])('20261008-141236-9772'), 'BRAVO-85')
   assert.equal(named(['ALPHA', 'BRAVO']), callsigns(['ALPHA', 'BRAVO'])(log.header.id))
@@ -415,7 +415,7 @@ test('the config’s callsigns name every worker; a list that can’t name them 
 
 test('a worker keeps the callsign it ran under, whatever the list says now; a continuation keeps its first session’s', () => {
   const named = (fixtures: string[], callsigns: string[]) =>
-    board({ ...CONFIG, callsigns } as Config, fixtures.map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0).floors.flatMap((f) => f.cards).map((c) => c.callsign)
+    board({ ...CONFIG, callsigns } as Config, fixtures.map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors.flatMap((f) => f.cards).map((c) => c.callsign)
   assert.deepEqual(named(['peer-receiver'], ['ALPHA', 'BRAVO']), ['BISHOP-44'])
   assert.deepEqual(named(['lineage-root', 'lineage-heir'], ['ALPHA', 'BRAVO']).sort(), ['MORIARTY-05', 'MORIARTY-05'])
 })
@@ -450,7 +450,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
       ['/hub', { dir: '/hub', git: true, bases: [], main: { dirty, ahead: 0 }, trees: [], kept: [] }],
       ['/lab', { dir: '/lab', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [tree(absorbed)], kept: [] }],
     ])
-  const floors = (dirty: number, absorbed: boolean) => board(config, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], threads, repos(dirty, absorbed), new Map(), new Map(), [], PATHS, 0).floors
+  const floors = (dirty: number, absorbed: boolean) => board(config, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], threads, repos(dirty, absorbed), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors
   const [tower, lab] = floors(0, true)
   assert.deepEqual([tower.cards[0].checkout, tower.cards[0].unseen], ['main', 2])
   assert.deepEqual(tower.threads, [{
@@ -462,7 +462,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.ok(lab.verbs.includes('tidy'))
   const [dirtyTower, unmergedLab] = floors(1, false)
   assert.deepEqual([dirtyTower.threads[0].landed, unmergedLab.threads[0].landed], [false, false])
-  assert.deepEqual(board(CONFIG, [], hostWith(), [], [], [], [], threads, new Map(), new Map(), new Map(), [], PATHS, 0).floors[0].threads, [])
+  assert.deepEqual(board(CONFIG, [], hostWith(), [], [], [], [], threads, new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].threads, [])
 })
 
 test('a card says where its checkout’s work stands, and offers a note on its thread only while that work goes on', () => {
@@ -472,7 +472,7 @@ test('a card says where its checkout’s work stands, and offers a note on its t
   const reads = (trees: TreeRead[], kept: BranchRead[] = []) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept }]])
   const filed = (at: string) => ({ project: 'tower', id: `odin-42@${at}.md`, thread: { checkout: 'odin-42', messages: [] } })
   const cardOf = (session: SessionLog, repos: Map<string, RepoRead>, threads: { project: string; id: string; thread: ReviewThread }[] = [], host = hostWith()) =>
-    board(config, [{ header: session.header, facts: factsOf(session) }], host, [], [], [], [], threads, repos, new Map(), new Map(), [], PATHS, 0).floors[0].cards[0]
+    board(config, [{ header: session.header, facts: factsOf(session) }], host, [], [], [], [], threads, repos, new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards[0]
   const said = (c: Card) => [c.checkoutState, c.threadState, c.verbs.includes('note')]
   const inTree = homed(log, tree.path)
   assert.deepEqual(said(cardOf(log, reads([]))), [{ is: 'live' }, { is: 'live' }, true])
@@ -498,7 +498,7 @@ test('a card says where its checkout’s work stands, and offers a note on its t
   const later = filed('2099-01-01-0000')
   assert.deepEqual(cardOf(inTree, reads([]), [filed('2000-01-01-0000'), later]).threadState, { is: 'landed', filed: { id: later.id, tag: tagOf(later.id), at: '2099-01-01 00:00' } })
   assert.deepEqual(cardOf(inTree, reads([]), [filed('2000-01-01-0000')]).threadState, { is: 'gone' })
-  const noThreads = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], reads([]), new Map(), new Map(), [], PATHS, 0).floors[0].cards[0]
+  const noThreads = board(CONFIG, [{ header: log.header, facts: factsOf(log) }], hostWith(), [], [], [], [], [], reads([]), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].cards[0]
   assert.deepEqual([noThreads.threadState, noThreads.verbs.includes('note')], [{ is: 'live' }, false])
 })
 
@@ -506,7 +506,7 @@ test('a watching worker is quiet and waits on nobody; the turn that ends done wa
   const log = fixture('background-shell')
   const at = (t: number) => {
     const running = until(log, t)
-    return board(CONFIG, [{ header: log.header, facts: factsOf(running) }], hostWith(log.header.id), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0)
+    return board(CONFIG, [{ header: log.header, facts: factsOf(running) }], hostWith(log.header.id), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0)
   }
   const watching = cardsOf([until(log, 40)], hostWith(log.header.id))[0]
   assert.deepEqual([watching.status, watching.waiting, watching.attention, watching.verbs.includes('submit')], ['watching', false, 'quiet', true])
@@ -521,7 +521,7 @@ test('a hire’s answer to its hirer’s prompt waits on the hirer while it runs
   const idle = until(fixture('interrupts'), 110)
   const hirer = { ...idle, events: [...idle.events, [110, 'h', { hook_event_name: 'tower.hire', id: hire.header.id }]] } as SessionLog
   const at = (logs: SessionLog[], live: string[]) => {
-    const b = board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(...live), [], [], [], [], [], new Map(), new Map(), new Map(), [], PATHS, 0)
+    const b = board(CONFIG, logs.map((log) => ({ header: log.header, facts: factsOf(log) })), hostWith(...live), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0)
     const card = b.floors.flatMap((f) => f.cards).find((c) => c.id === hire.header.id)!
     return { card, waits: b.waiting.map((w) => w.id) }
   }
