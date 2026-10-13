@@ -188,7 +188,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
 const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees), logs: [], streams: [] })
 
-function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'probes' | 'shells' | 'today'>> = {}): Board {
+function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'probes' | 'extraUsage' | 'shells' | 'today'>> = {}): Board {
   const built = floors.map((f) => {
     const { threads, cards } = withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers)))
     const worktrees = worktreesOf(f)
@@ -221,6 +221,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,
     probes: extra.probes ?? [],
+    ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
     hostOutdated: false,
@@ -364,6 +365,7 @@ const party = (now: number) => boardOf(PARTY_GUESTS.map((guests, i) => ({
     { kind: 'seven_day', percentUsed: 71, resetsAt: new Date(now + 84 * 60 * MIN).toISOString() },
   ],
   rateLimitsAt: now - 40 * MIN,
+  extraUsage: { at: now - 4 * MIN, enabled: true, used: 37, limit: 50, currency: 'USD', reached: false },
   probes: [{ name: 'quota', reads: 'claude.usage', every: 10 * MIN, state: 'backoff', lastAt: now - 4 * MIN, error: 'no answer within 30s', answeredAt: now - 40 * MIN, failsInRow: 4, wait: 20 * MIN, nextAt: now + 16 * MIN, held: false }],
   today: {
     since: now - 15 * 60 * MIN, spend: 212.4, agentHours: 11.3, waits: { n: 41, p50: 340 },

@@ -9,7 +9,7 @@ import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
-import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ProbeFacts, type ProbeStatus } from './probes.ts'
+import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ExtraUsage, type ProbeFacts, type ProbeStatus } from './probes.ts'
 import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
@@ -297,6 +297,8 @@ export type Board = {
   rateLimitsFrom?: LimitsFrom
   /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`). */
   probes: ProbeStatus[]
+  /** The account's extra usage, as the probes' newest answer that had it said. */
+  extraUsage?: ExtraUsage
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
   today: Today
   hostUp: boolean
@@ -667,6 +669,12 @@ export const allCards = (
   return withSeats(withCrews(withCheckouts(config, placed, shells, repos, threadFiles)))
 }
 
+/** The newest answer's extra usage among the probes'. */
+const extraUsageOf = (probes: ProbeFacts[]): { extraUsage?: ExtraUsage } => {
+  const newest = probes.reduce<ExtraUsage | undefined>((a, p) => (p.extraUsage && (!a || p.extraUsage.at > a.at) ? p.extraUsage : a), undefined)
+  return newest ? { extraUsage: newest } : {}
+}
+
 /**
  * `repos`: what git says in each project dir (`src/worktrees.ts`), by dir; a floor shows no worktrees until all its dirs
  * are read. `logs`: each session's log file, by session id. `paths`: where the system keeps its config and its
@@ -736,6 +744,7 @@ export const board = (
     waiting: waitingOrder(cards),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
+    ...extraUsageOf([...probes.values()]),
     probes: probesOf(config).map((p) => probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits)))),
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,

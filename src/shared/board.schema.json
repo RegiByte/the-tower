@@ -103,6 +103,10 @@
           },
           "description": "Every probe the config runs, the core's first, as its stream says it stands (decision `probes`)."
         },
+        "extraUsage": {
+          "$ref": "#/definitions/ExtraUsage",
+          "description": "The account's extra usage, as the probes' newest answer that had it said."
+        },
         "today": {
           "$ref": "#/definitions/Today",
           "description": "Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change."
@@ -2337,6 +2341,39 @@
         "unavailable"
       ],
       "description": "How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing` after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while its last answer said the account has no rate limits to read, `off` by the config."
+    },
+    "ExtraUsage": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "number"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "used": {
+          "type": "number"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "reached": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "at",
+        "enabled",
+        "used",
+        "limit",
+        "currency",
+        "reached"
+      ],
+      "additionalProperties": false,
+      "description": "Extra usage: credits spent past the plan's limits, up to a monthly limit, in `currency` units, as read `at` (epoch ms). `reached`: the monthly limit is spent."
     },
     "Today": {
       "type": "object",

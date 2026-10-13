@@ -39,6 +39,8 @@ test("a read's limits are the session's shape, its reset to the second, so a win
     ],
   })
   assert.deepEqual(facts.limitReadings.seven_day, [[NOW, 89, '2026-10-11T22:00:00.000Z']])
+  assert.deepEqual(facts.extraUsage, { at: NOW, enabled: true, used: 0, limit: 1000, currency: 'USD', reached: false }, 'extra usage in currency units, from minor units')
+  assert.deepEqual(probeFacts([[NOW, { reads: 'claude.usage', ms: 1, ok: true, answer: read.answer }], [NOW + MIN, { reads: 'claude.usage', ms: 1, ok: true, answer: {} }]]).extraUsage?.at, NOW, 'an answer without it keeps the last')
 })
 
 test('the board reads the newest of the sessions and the probes, and says whose it is', () => {

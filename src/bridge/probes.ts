@@ -37,7 +37,15 @@ export type ProbeFacts = {
   rateLimits?: Facts['rateLimits']
   /** By limit kind, each climb between two answers in a row of the same window: the reads of one source round alike. */
   rises: Record<string, Rise[]>
+  /** The account's extra usage as the last answer that had it said. */
+  extraUsage?: ExtraUsage
 }
+
+/**
+ * Extra usage: credits spent past the plan's limits, up to a monthly limit, in `currency` units, as read `at` (epoch
+ * ms). `reached`: the monthly limit is spent.
+ */
+export type ExtraUsage = { at: number; enabled: boolean; used: number; limit: number; currency: string; reached: boolean }
 
 /** A limit's percent climbed `points` from the answer at `from` to the next at `to` (epoch ms), in the window resetting at `resetsAt`. */
 export type Rise = [from: number, to: number, points: number, resetsAt: string]
@@ -92,7 +100,20 @@ type UsageWindow = { utilization?: number; resets_at?: string }
 /** Claude's answer to `get_usage`, as much of it as the fold reads: a model's own weekly limit is in `model_scoped`. */
 type UsageAnswer = {
   rate_limits_available?: boolean
-  rate_limits?: { five_hour?: UsageWindow; seven_day?: UsageWindow; model_scoped?: (UsageWindow & { display_name?: string })[] }
+  rate_limits?: {
+    five_hour?: UsageWindow
+    seven_day?: UsageWindow
+    model_scoped?: (UsageWindow & { display_name?: string })[]
+    /** Amounts in the currency's minor units, `decimal_places` of them. */
+    extra_usage?: { is_enabled?: boolean; monthly_limit?: number; used_credits?: number; currency?: string; decimal_places?: number; spend_limit_reached?: boolean }
+  }
+}
+
+const extraUsageOf = (answer: unknown, at: number): ExtraUsage | undefined => {
+  const extra = (answer as UsageAnswer).rate_limits?.extra_usage
+  if (extra?.is_enabled === undefined || extra.monthly_limit === undefined || extra.used_credits === undefined) return undefined
+  const unit = 10 ** (extra.decimal_places ?? 0)
+  return { at, enabled: extra.is_enabled, used: extra.used_credits / unit, limit: extra.monthly_limit / unit, currency: extra.currency ?? 'USD', reached: extra.spend_limit_reached === true }
 }
 
 /** A model's weekly limit as a kind, the way a session names one: `seven_day_opus`. */
@@ -105,7 +126,12 @@ const limitOf = (kind: string, window: UsageWindow | undefined): RateLimit[] =>
 const toSecond = (iso: string): string => new Date(Math.round(Date.parse(iso) / 1000) * 1000).toISOString()
 
 /** What each reader's answer says, and when its read can wait: pure, so the fold and `due` read them. */
-const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavailable: (answer: unknown) => boolean; heldUntil: (sessions: Facts['rateLimits'], facts: ProbeFacts, every: number) => number | undefined }> = {
+const READ_AS: Record<Reader, {
+  limits: (answer: unknown) => RateLimit[]
+  unavailable: (answer: unknown) => boolean
+  extraUsage: (answer: unknown, at: number) => ExtraUsage | undefined
+  heldUntil: (sessions: Facts['rateLimits'], facts: ProbeFacts, every: number) => number | undefined
+}> = {
   'claude.usage': {
     limits: (answer) => {
       const limits = (answer as UsageAnswer).rate_limits
@@ -116,6 +142,7 @@ const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavai
       ]
     },
     unavailable: (answer) => (answer as UsageAnswer).rate_limits_available === false,
+    extraUsage: extraUsageOf,
     /**
      * A session's turn measures the five-hour and weekly limits: no read while its reading is newer than `every`,
      * unless the probe's last answer had a limit the sessions don't measure (a model's own week).
@@ -129,6 +156,7 @@ export const probeFacts = (readings: ProbeReading[]): ProbeFacts =>
   readings.reduce<ProbeFacts>((facts, [at, read]) => {
     if (!read.ok) return { ...facts, lastAt: at, error: read.error, failsInRow: facts.failsInRow + 1 }
     const limits = READ_AS[read.reads].limits(read.answer)
+    const extraUsage = READ_AS[read.reads].extraUsage(read.answer, at) ?? facts.extraUsage
     return {
       lastAt: at,
       answeredAt: at,
@@ -137,6 +165,7 @@ export const probeFacts = (readings: ProbeReading[]): ProbeFacts =>
       limitReadings: limitsRead(facts.limitReadings, at, limits),
       rateLimits: limits.length ? { at, limits } : facts.rateLimits,
       rises: risesTo(facts.rises, facts.rateLimits, at, limits),
+      ...(extraUsage && { extraUsage }),
     }
   }, NO_READS)
 

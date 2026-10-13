@@ -711,6 +711,16 @@ export const probeTitle = (p: ProbeStatus, now: number) =>
     p.error !== undefined && p.answeredAt !== undefined && `last answered ${span(now - p.answeredAt)} ago`,
   ].filter(Boolean).join('\n')
 
+/** Extra usage spent of its monthly limit: `$12 of $1,000`. */
+export const extraUsageAmounts = (e: NonNullable<Board['extraUsage']>) => {
+  const money = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currency, maximumFractionDigits: 0 }).format(v)
+  return `${money(e.used)} of ${money(e.limit)}`
+}
+
+/** Extra usage in a line: `extra usage · $12 of $1,000 this month`, or that its limit is spent. */
+export const extraUsageLine = (e: NonNullable<Board['extraUsage']>) =>
+  !e.enabled ? 'extra usage off' : `extra usage · ${extraUsageAmounts(e)} this month${e.reached ? ', spent' : ''}`
+
 /** Whose reading the board's limits are, for the line that says how old they are. */
 export const limitsFromTitle = (b: Pick<Board, 'rateLimitsFrom'>) =>
   b.rateLimitsFrom === 'probe' ? "read by the tower's quota probe, while no session's turn reads them" : "read during a session's turn; the quota probe reads them while none does"

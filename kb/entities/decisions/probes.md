@@ -86,7 +86,10 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   one answer to the next in the same window, which the stats read as use from outside the tower ([[stats]]). The board's `rateLimits` are the newest
   of sessions ∪ probes ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)), with `rateLimitsFrom`
   (`session` or `probe`), and beside them each limit only the other reads, as of its newest reading (a model's week
-  stays on the board while a session's turn is the newest); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
+  stays on the board while a session's turn is the newest), and `extraUsage`, the account's credits past the plan's
+  limits from `rate_limits.extra_usage` (spent and the monthly limit in currency units, whether it is on or spent)
+  as the newest answer that had it said, drawn under the limits (the tower page while on, Tower 3D once spent from;
+  `extraUsageLine` in `/cards.js`); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
 
 - *How a probe stands, derived.* [`probeStatus`](ref:hub/src/bridge/probes.ts#probeStatus) folds each probe of
   the config with its stream's facts and the board's limits into a
@@ -118,4 +121,4 @@ the user, and these are observed facts.
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
 session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
-the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week. Not built yet: extra usage, `POST /probe/run`.
+the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week, extra usage. Not built yet: `POST /probe/run`.

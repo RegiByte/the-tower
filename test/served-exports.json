@@ -287,6 +287,8 @@
       "dutyOrder",
       "editedRows",
       "esc",
+      "extraUsageAmounts",
+      "extraUsageLine",
       "findCard",
       "gistLine",
       "gistOf",
