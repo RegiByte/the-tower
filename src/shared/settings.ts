@@ -40,10 +40,11 @@ export const RING_MEANS: Record<Ring, string> = {
   off: 'no sound',
 }
 
-export const SOUND_LABEL: Record<Sound, string> = { question: 'Question', done: 'Answer' }
+export const SOUND_LABEL: Record<Sound, string> = { question: 'Question', done: 'Answer', offer: 'Offer' }
 export const SOUND_MEANS: Record<Sound, string> = {
   question: 'play the sound of a wait to answer: a screen, a tool to allow or a failure',
   done: 'play the sound of an answer to read',
+  offer: "play the sound of a policy's slot offered: a run to start or let pass",
 }
 
 export const SCHEME_CHOICES: SchemeChoice[] = ['', 'light', 'dark']
@@ -70,9 +71,9 @@ export const alertsSection = (alerts: Alerts) =>
 
 /** How often a wait rings, and each sound to hear. */
 export const soundSection = (ring: Ring) =>
-  section('Sound', 'when a worker waits on you',
+  section('Sound', 'when a worker waits on you, or a policy offers a slot',
     `<div class="seg" role="group" aria-label="ring">${RINGS.map((r) => choice('data-ring-choice', r, RING_LABEL[r], RING_MEANS[r], r === ring)).join('')}</div>` +
-    `<div class="row plays">${(['question', 'done'] as Sound[]).map((s) =>
+    `<div class="row plays">${(['question', 'done', 'offer'] as Sound[]).map((s) =>
       `<button data-sound-play="${s}" data-tip="${esc(SOUND_MEANS[s])}">${ICON.play}${SOUND_LABEL[s]}</button>`).join('')}</div>`)
 
 /** @deprecated `prefSections` draws the scheme beside the rest of the viewer's appearance, wired by `wirePrefs`. */

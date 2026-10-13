@@ -2,6 +2,7 @@ import type { Attention, Board, Card, CardSubagent, Floor, TidyPlan, Unresumable
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
 import type { Exposure, FloorWorktree, LandingRead, WorktreeState } from '../bridge/worktrees.ts'
+import type { Offer } from '../bridge/policies.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
@@ -392,30 +393,46 @@ export const DISMISSED_KEY = 'waits.dismissed'
 /** The waits a viewer hasn't dismissed, in the board's order. */
 export const heededWaits = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.waiting.filter((w) => !heed.dismissed.has(w.key))
 
-/** The dismissed keys to store once `key` is dismissed too: those of waits that are over drop out. */
+/** The offers a viewer hasn't dismissed, oldest first. A dismissed offer stays open, and stays acceptable, until its policy's next slot. */
+export const heededOffers = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.offers.filter((o) => !heed.dismissed.has(o.key))
+
+/** What asks for you: a worker's wait, or a policy's slot offered (`board.offers`), which has no worker yet. */
+export type Attended = Wait | Offer
+
+export const isOffer = (a: Attended): a is Offer => 'policy' in a
+
+/** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, then the offers. */
+export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededOffers(board, heed)]
+
+/** The dismissed keys to store once `key` (a wait's or an offer's) is dismissed too: those of waits and offers that are over drop out. */
 export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: string) =>
-  board.waiting.map((w) => w.key).filter((k) => k === key || dismissed.has(k))
+  [...board.waiting, ...board.offers].map((a) => a.key).filter((k) => k === key || dismissed.has(k))
 
 /**
  * The waits that began and the waits that ended between two boards. On the first board a renderer sees nothing begins
  * or ends: what already waited when it opened is not news.
  */
-export const transitions = (prev: Board | undefined, next: Board): { began: Wait[]; ended: Wait[] } => {
-  if (!prev) return { began: [], ended: [] }
-  const before = new Set(prev.waiting.map((w) => w.key))
-  const after = new Set(next.waiting.map((w) => w.key))
-  return { began: next.waiting.filter((w) => !before.has(w.key)), ended: prev.waiting.filter((w) => !after.has(w.key)) }
+export const transitions = (prev: Board | undefined, next: Board): { began: Wait[]; ended: Wait[] } => (prev ? keyed(prev.waiting, next.waiting) : { began: [], ended: [] })
+
+/** The offers that opened and the offers that closed between two boards, as `transitions` reads waits. */
+export const offerTransitions = (prev: Board | undefined, next: Board): { began: Offer[]; ended: Offer[] } => (prev ? keyed(prev.offers, next.offers) : { began: [], ended: [] })
+
+const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
+  const before = new Set(prev.map((a) => a.key))
+  const after = new Set(next.map((a) => a.key))
+  return { began: next.filter((a) => !before.has(a.key)), ended: prev.filter((a) => !after.has(a.key)) }
 }
 
 /**
  * The next wait to go to from the worker `here`, round-robin: the first in `waits` that isn't `here`'s and wasn't
  * visited this round, and the visited keys to keep once there. `here`'s own wait counts as visited. When every other
- * wait was visited, a new round starts at the first.
+ * wait was visited, a new round starts at the first. An offer (`attentionOrder`) is no worker's: it is never `here`'s.
  */
-export const nextWait = (waits: Wait[], visited: ReadonlySet<string>, here: string | undefined): { to?: Wait; visited: Set<string> } => {
-  const at = waits.filter((w) => w.id === here).map((w) => w.key)
+export const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } => {
+  const heres = (w: T) => w.id !== undefined && w.id === here
+  const at = waits.filter(heres).map((w) => w.key)
   const seen = new Set([...at, ...waits.map((w) => w.key).filter((k) => visited.has(k))])
-  const others = waits.filter((w) => w.id !== here)
+  const others = waits.filter((w) => !heres(w))
   const fresh = others.find((w) => !seen.has(w.key))
   const to = fresh ?? others[0]
   if (!to) return { visited: seen }
@@ -441,18 +458,33 @@ export const waitsBeganLine = (began: Wait[], callsignOf: (id: string) => string
 
 export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worker waits again'
 
-/** A question to answer (a screen, a tool, a failure to look at) rings apart from an answer to read. */
-export type Sound = 'question' | 'done'
+/** What a renderer's polite live region says as `began` offers open (`offerTransitions`): one sentence per offer, empty for none. */
+export const offersBeganLine = (began: Offer[]) => began.map((o) => `${o.title ?? o.tag} is offered: a slot to start.`).join(' ')
+
+export const DISMISS_OFFER_TITLE = 'dismiss this offer: out of your way, still open until its next slot'
+
+/**
+ * A question to answer (a screen, a tool, a failure to look at) rings apart from an answer to read, and both apart
+ * from a policy's slot offered: no worker waits on that one yet.
+ */
+export type Sound = 'question' | 'done' | 'offer'
 export const soundOf = (w: Wait): Sound => (w.reason === 'done' ? 'done' : 'question')
 
 /** Each sound as a score every renderer plays its own way: notes in Hz, one after another `step` seconds apart. */
 export const SOUNDS: Record<Sound, { notes: number[]; wave: 'sine' | 'triangle'; step: number }> = {
   question: { notes: [880, 1174.66, 880, 1174.66], wave: 'triangle', step: 0.11 },
   done: { notes: [659.25, 987.77], wave: 'sine', step: 0.14 },
+  offer: { notes: [523.25, 659.25, 783.99], wave: 'sine', step: 0.16 },
 }
 
 /** The wait to ring for among `waits`: the first one not of the worker being watched. */
 export const ringing = (waits: Wait[], watched: string | undefined) => waits.find((w) => w.id !== watched)
+
+/** The sound to ring among `attended` (in `attentionOrder`): the first wait not of the worker being watched, else the first offer. */
+export const ringingSound = (attended: Attended[], watched: string | undefined): Sound | undefined => {
+  const a = attended.find((a) => isOffer(a) || a.id !== watched)
+  return a && (isOffer(a) ? 'offer' : soundOf(a))
+}
 
 /**
  * One line of what a worker is up to: the tool it asks for, its compaction, the tool it runs, the prompt it works on,

@@ -18,6 +18,9 @@
     "hub/src/shared/cards.ts#nextWait",
     "hub/src/shared/cards.ts#heededWaits",
     "hub/src/shared/cards.ts#SOUNDS",
+    "hub/src/shared/cards.ts#attentionOrder",
+    "hub/src/shared/cards.ts#offerTransitions",
+    "hub/src/shared/cards.ts#ringingSound",
     "hub/renderers/tower3d/src/compass.ts#pointers",
     "hub/renderers/page/index.html"
   ]
@@ -83,6 +86,23 @@ wait alike, so "done, your turn" read as alarm.
   you. Keying on `card.reportsTo`: an untold reviewer reports to its author yet its notes are for the user; `hiredBy`
   (who ran `tower review` or `tower hire`) is who asked. A `ready` reason the renderers colour: colour would be derived
   in each renderer ([[design-system]]).
+
+**Offers join the list** (2026-10-13). A policy's slot offered (`board.offers`, [[policies]]) asks for you
+before any worker exists, so it can't be a `Wait`: every renderer looks a wait's card up by its `id`.
+- [`attentionOrder`](ref:hub/src/shared/cards.ts#attentionOrder): the heeded waits, then the heeded offers (oldest
+  first). A worker held mid-task costs more than a slot not yet taken, and an offer stays open until its policy's next
+  slot. `nextWait` takes either (an offer is never `here`'s); N on an offer opens the policies of its floor.
+- Dismissing an offer is `dismissing` with its key (`policy@slot`), in the same `waits.dismissed`: a dismissed offer
+  stays open and acceptable in the policies panel ([[shared-panels]]), out of the count, the order and the rings.
+- [`offerTransitions`](ref:hub/src/shared/cards.ts#offerTransitions) reads offers as `transitions` reads waits;
+  `offersBeganLine` is the live region's sentence. An offer rings with a score of its own, `offer` in `SOUNDS`
+  (a rising triad), so it isn't taken for a worker waiting
+  ([`ringingSound`](ref:hub/src/shared/cards.ts#ringingSound): the first wait not watched, else the first offer). It
+  can be played in the settings popover beside the other two.
+- An auto policy that lost its approval ("needs you") is a change of state, not a request: it never rings and isn't in
+  the list.
+- Alternatives: a `Wait.reason` of `offer` (a wait with no card breaks every renderer, an API major); offers merged
+  with waits by `since` (an offer opened an hour ago would jump a blocked screen).
 
 **Impact.** A breaking board change (`waiting` from ids to waits; `neighbours` takes the viewer's `Heed`): both
 renderers moved in the same change. `Status` gains `blocked`, live and not at its composer (no `submit`). Seats and
