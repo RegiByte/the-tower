@@ -4,6 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { accountLimits, due, NO_READS, probeFacts, probesOf, probeStatus, probeView, readingsOf, usageAnswer, type Probe, type ProbeFacts } from '../src/bridge/probes.ts'
 import { oldStreams } from '../src/bridge/retention.ts'
+import { probeOffers } from '../src/bridge/verbs.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
 import { ConfigError, type Config } from '../src/shared/model.ts'
 
@@ -151,7 +152,9 @@ test("a probe's next read waits for a session's newer reading, and an off probe 
 
 test("GET /probe/<name> reads the latest reads, newest first, each at its moment", () => {
   const { readings } = readingsOf(text('probe-quota.jsonl'))
-  const view = probeView(probeStatus(QUOTA, probeFacts(readings), NO_LIMITS), readings, 2)
+  const view = probeView({ ...probeStatus(QUOTA, probeFacts(readings), NO_LIMITS), ...probeOffers(QUOTA.name, QUOTA.off) }, readings, 2)
+  assert.deepEqual(view.status.calls, { run: ['probe/run', { name: 'quota' }] })
+  assert.deepEqual(probeOffers('quota', true), { verbs: [], calls: {} }, 'an off probe offers no read')
   assert.deepEqual(view.reads.map((r) => [r.at, r.ok]), [[readings[4][0], false], [readings[3][0], false]])
 })
 

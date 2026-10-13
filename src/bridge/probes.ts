@@ -251,9 +251,9 @@ export type ProbeStatus = {
 }
 
 /** GET `/probe/<name>`: a probe's status and its latest reads, newest first. */
-export type ProbeView = { status: ProbeStatus; reads: ({ at: number } & ProbeRead)[] }
+export type ProbeView = { status: Board['probes'][number]; reads: ({ at: number } & ProbeRead)[] }
 
-export const probeView = (status: ProbeStatus, readings: ProbeReading[], last: number): ProbeView => ({
+export const probeView = (status: Board['probes'][number], readings: ProbeReading[], last: number): ProbeView => ({
   status,
   reads: readings.slice(-last).reverse().map(([at, read]) => ({ at, ...read })),
 })

@@ -9,8 +9,9 @@ import path from 'node:path'
 import type { Session } from './bridge/facts.ts'
 import {
   due, eventLine, newestReading, FLOOR_MS, monthFile, monthStart, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
-  type ProbeFacts, type ProbeRead, type Reader, type StreamHeader,
+  type Probe, type ProbeFacts, type ProbeRead, type Reader, type StreamHeader,
 } from './bridge/probes.ts'
+import { apiError, type ApiError } from './shared/api.ts'
 import { withoutParentSession } from './shared/env.ts'
 import type { Config } from './shared/model.ts'
 import { systemStreamsPath, type SystemPaths } from './shared/paths.ts'
@@ -82,11 +83,24 @@ const append = (paths: SystemPaths, probe: string, at: number, read: ProbeRead) 
 
 /**
  * Runs the probes until the process ends. The one read in flight and when the last one started are all it holds:
- * whatever the config or a stream says, reads start at least `FLOOR_MS` apart.
+ * whatever the config or a stream says, reads start at least `FLOOR_MS` apart. `readNow` reads a probe at once.
  */
 export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions: () => Session[], probes: () => Map<string, ProbeFacts>) => {
   let reading = false
   let lastStart = -Infinity
+  const read = async (probe: Probe, config: Config, now: number): Promise<ProbeRead> => {
+    reading = true
+    lastStart = now
+    try {
+      const answer = await READS[probe.reads](config)
+      const ms = Date.now() - now
+      const read: ProbeRead = 'answer' in answer ? { reads: probe.reads, ms, ok: true, answer: answer.answer } : { reads: probe.reads, ms, ok: false, error: answer.error }
+      append(paths, probe.name, now, read)
+      return read
+    } finally {
+      reading = false
+    }
+  }
   const tick = async () => {
     const now = Date.now()
     if (reading || now - lastStart < FLOOR_MS) return
@@ -94,16 +108,20 @@ export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions
     const facts = probes()
     const measured = newestReading(sessions().map((s) => s.facts.rateLimits))
     const probe = probesOf(config).find((p) => due(p, facts.get(p.name) ?? NO_READS, measured, now))
-    if (!probe) return
-    reading = true
-    lastStart = now
-    try {
-      const read = await READS[probe.reads](config)
-      const ms = Date.now() - now
-      append(paths, probe.name, now, 'answer' in read ? { reads: probe.reads, ms, ok: true, answer: read.answer } : { reads: probe.reads, ms, ok: false, error: read.error })
-    } finally {
-      reading = false
-    }
+    if (probe) await read(probe, config, now)
   }
   setInterval(() => void tick().catch((err) => console.error('probes:', err)), TICK_MS)
+
+  /** The probe named, read now: refused while it is off, while a read is in flight, or within the floor of the last start. */
+  const readNow = async (name: string): Promise<{ at: number; read: ProbeRead } | ApiError> => {
+    const config = readConfig()
+    const probe = probesOf(config).find((p) => p.name === name)
+    if (!probe) return apiError('not_found', `No probe "${name}": the config runs ${probesOf(config).map((p) => p.name).join(', ')}`)
+    if (probe.off) return apiError('refused', `The probe "${name}" is off in the config (probes.${name}.off)`)
+    if (reading) return apiError('refused', 'A probe is reading now: one read at a time')
+    const now = Date.now()
+    if (now - lastStart < FLOOR_MS) return apiError('refused', `Reads start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((lastStart + FLOOR_MS - now) / 1000)}s`)
+    return { at: now, read: await read(probe, config, now) }
+  }
+  return { readNow }
 }

@@ -48,6 +48,7 @@
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
+ *   POST /probe/run {name}   read a probe now (refused while off, while a read is in flight or within 60 s of the last start)
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
@@ -358,7 +359,7 @@ const schedulePublish = () => {
 }
 
 const system = await watchSystem(paths, schedulePublish)
-runProbes(paths, readConfig, system.sessions, system.probes)
+const probeRunner = runProbes(paths, readConfig, system.sessions, system.probes)
 setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
 /** A board client observes the machine while it holds the board, so its first board already says what runs. */
@@ -1132,6 +1133,11 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
   resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
   kill: ({ id, by }) => kill(id, by),
   'let-go': ({ id }) => letGo(id),
+  'probe/run': async ({ name }) => {
+    const ran = await probeRunner.readNow(name)
+    if ('t' in ran) return ran
+    return { t: 'probed', at: ran.at, ms: ran.read.ms, ok: ran.read.ok, ...(!ran.read.ok && { error: ran.read.error }) }
+  },
   reap: ({ id }) => reapSession(id),
   'reap/process': ({ id, pid }) => reapProcess(id, pid),
   open: ({ dir }) => openDir(dir),

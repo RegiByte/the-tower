@@ -10,7 +10,8 @@
  *   tower agents         the workers on duty on this session's floor
  *   tower agents --all   the workers on duty on every floor
  *   tower agent <CALLSIGN>  one worker: its latest prompt and answer in full, per conversation
- *   tower probes         each probe the tower runs: its state, last read, why it failed and when it reads next
+ *   tower probes [run <name>]  each probe the tower runs: its state, last read, why it failed and when it reads next;
+ *                        `run` reads one now (refused while off, while a read is in flight or within a minute of the last)
  *   tower show <file|url> [title]   put a file this session wrote, or a web page, in front of the user beside this session
  *   tower open <url> [title]        ask the user to open a page in a browser tab (one that can't be shown in place)
  *   tower reveal <path>             show a file or folder to the user selected in a Finder window
@@ -46,7 +47,7 @@ import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, base, crewOf, PROBE_STATE_NAME, probeLine, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -475,7 +476,7 @@ const USAGES: Record<string, string> = {
   whoami: 'whoami',
   agents: 'agents [--all]',
   agent: 'agent <CALLSIGN>',
-  probes: 'probes',
+  probes: 'probes [run <name>]',
   show: 'show <file|url> [title]',
   open: 'open <url> [title]',
   reveal: 'reveal <path>',
@@ -531,9 +532,15 @@ switch (verb) {
     console.log(agent(board, card, cards, await readThreads(card.id), now).join('\n'))
     break
   }
-  case 'probes':
-    console.log((await readBoard()).probes.map((p) => probeCliLine(p, now)).join('\n'))
+  case 'probes': {
+    if (!flag) {
+      console.log((await readBoard()).probes.map((p) => probeCliLine(p, now)).join('\n'))
+      break
+    }
+    if (flag !== 'run' || !rest[0]) throw new CliError(`Usage: tower ${USAGES.probes}`)
+    console.log(probedLine(rest[0], await command<Replies['probe/run']>('probe/run', { name: rest[0] })))
     break
+  }
   case 'show':
   case 'open': {
     if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')

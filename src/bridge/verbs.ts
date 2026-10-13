@@ -114,6 +114,15 @@ type Offers<V extends string, C> = { verbs: V[]; calls: C }
 const callsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): C =>
   Object.fromEntries(verbs.flatMap((v) => (requests[v] ? [[v, requests[v]()]] : []))) as C
 
+/** A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor. */
+export type ProbeVerb = 'run'
+export type ProbeCalls = { run?: Call<'probe/run'> }
+
+export const probeOffers = (name: string, off: boolean): Offers<ProbeVerb, ProbeCalls> => {
+  const verbs: ProbeVerb[] = off ? [] : ['run']
+  return { verbs, calls: callsOf(verbs, { run: (): Call<'probe/run'> => ['probe/run', { name }] }) }
+}
+
 export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
   const verbs = conversationVerbs(live, resumable, resumedBy)
   return { verbs, calls: callsOf(verbs, { resume: (): Call<'resume'> => ['resume', { id: session, conversation }] }) }

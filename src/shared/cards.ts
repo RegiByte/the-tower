@@ -711,6 +711,10 @@ export const probeTitle = (p: ProbeStatus, now: number) =>
     p.error !== undefined && p.answeredAt !== undefined && `last answered ${span(now - p.answeredAt)} ago`,
   ].filter(Boolean).join('\n')
 
+/** What a read now came to: `quota probe answered in 1.4s`, or why it has no answer. */
+export const probedLine = (name: string, r: Replies['probe/run']) =>
+  r.ok ? `${name} probe answered in ${(r.ms / 1000).toFixed(1)}s` : `${name} probe failed: ${r.error}`
+
 /** Extra usage spent of its monthly limit: `$12 of $1,000`. */
 export const extraUsageAmounts = (e: NonNullable<Board['extraUsage']>) => {
   const money = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: e.currency, maximumFractionDigits: 0 }).format(v)

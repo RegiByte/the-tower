@@ -108,6 +108,12 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   tower for the quota probe ([`quotaProbe`](ref:hub/src/doctor.ts#quotaProbe)): ok while it answers, else a warning
   with one fix by what failed (the command not found, no answer in time, anything else; no limits to read; overdue
   past its `nextAt`).
+- *A read now.* `POST /probe/run {name}` ([`runProbes`](ref:hub/src/probes.ts#runProbes)'s `readNow`) reads a
+  probe at once through the same path a tick takes, its read appended to its stream like any, and answers when it
+  ends (`probed`: when it started, how long it took, whether it answered, why not). Refused while the probe is off,
+  while a read is in flight, or within the 60 s floor of the last start, so a press can't read more often than the
+  tick could. Each of `board.probes` offers it as `run` ([[board-verbs]]); the tower page has "read now" beside the
+  probe's line, Tower 3D a press on its lamp, and `tower probes run <name>`.
 - *Closed months archived.* Tidy offers a stream's months closed more than `retention.days` ago, gzipped in place
   and read the same ([[log-retention]]).
 
@@ -121,4 +127,4 @@ the user, and these are observed facts.
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
 session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
-the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week, extra usage. Not built yet: `POST /probe/run`.
+the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week, extra usage, `POST /probe/run`.

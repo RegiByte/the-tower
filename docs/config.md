@@ -72,7 +72,8 @@ a new name adds a probe. The tower reads the file again on every change.
 project's own will go under `projects.<id>.probes`, not read yet.
 
 How each probe stands (its last read, why it failed, when it reads next) is on the board under the limits in both
-renderers, in `tower probes`, at `GET /probe/<name>` with its latest reads, and in `tower doctor`.
+renderers, in `tower probes`, at `GET /probe/<name>` with its latest reads, and in `tower doctor`. A press of
+"read now" in either renderer, `tower probes run <name>` or `POST /probe/run` reads one at once, at most once a minute.
 
 ## Projects
 

@@ -79,7 +79,10 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   /** A probe as a lamp and its name, and its state while that asks for you: the whole line on hover. */
   const probes = board.probes.map((p) => {
     const said = PROBE_ATTENTION[p.state] === 'quiet' ? p.name : `${p.name} ${PROBE_STATE_NAME[p.state]}`
-    return `<span class="hud-probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span><small>${esc(said)}</small></span>`
+    const inner = `<span class="lamp"></span><small>${esc(said)}</small>`
+    return p.calls.run
+      ? `<button class="hud-probe ${PROBE_ATTENTION[p.state]}" data-probe-run="${esc(p.name)}" data-tip="${esc(`${probeTitle(p, now)}\n\nclick to read it now: at most once a minute`)}">${inner}</button>`
+      : `<span class="hud-probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}">${inner}</span>`
   })
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
     ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}

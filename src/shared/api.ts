@@ -109,6 +109,18 @@ export const VERBS = {
     input: z.object({ id }).describe("Take a stranded worker (stopped or lost with the host, waiting to be resumed) off duty: a fact in its log, appended by the host. Its conversation stays resumable from the floor's archive."),
     reply: ok,
   },
+  'probe/run': {
+    input: z.object({ name: id }).describe(
+      "Read the probe now, whatever its stream says, its read appended to its stream as any read is. Refused while it is off, while a read is in flight, or within 60 s of the last read's start.",
+    ),
+    reply: z.object({
+      t: z.literal('probed'),
+      at: z.int().describe('When the read started, epoch ms.'),
+      ms: z.int().nonnegative(),
+      ok: z.boolean(),
+      error: z.string().optional().describe('Why the read has no answer.'),
+    }),
+  },
   reap: { input: z.object({ id }).describe('End what the session left running.'), reply: ok },
   'reap/process': { input: z.object({ id, pid: z.int().positive() }).describe('End one process the session left running.'), reply: ok },
   open: { input: z.object({ dir: id }).describe("Open a project directory in a new window of the user's editor (the config's `editor.window`)."), reply: ok },

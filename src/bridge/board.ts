@@ -24,9 +24,12 @@ import {
   floorOffers,
   isLive,
   noteOffers,
+  probeOffers,
   resourceOffers,
   sendHomeOffer,
   type CardCalls,
+  type ProbeCalls,
+  type ProbeVerb,
   type CardVerb,
   type ConversationCalls,
   type ConversationVerb,
@@ -295,8 +298,8 @@ export type Board = {
   rateLimitsAt?: number
   /** Whose reading the rate limits are: a session's turn, or a probe's read. */
   rateLimitsFrom?: LimitsFrom
-  /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`). */
-  probes: ProbeStatus[]
+  /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`), and `run`, a read now. */
+  probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls })[]
   /** The account's extra usage, as the probes' newest answer that had it said. */
   extraUsage?: ExtraUsage
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
@@ -745,7 +748,7 @@ export const board = (
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
     ...extraUsageOf([...probes.values()]),
-    probes: probesOf(config).map((p) => probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits)))),
+    probes: probesOf(config).map((p) => ({ ...probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits))), ...probeOffers(p.name, p.off) })),
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,

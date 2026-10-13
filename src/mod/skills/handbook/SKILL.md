@@ -15,7 +15,7 @@ The tower runs every Claude Code session the user works with. Each project is a 
 - `tower whoami`: your callsign, session id, the name other sessions message you by, your floor and its directories, your worktree and branch, who hired you, the floor's shelf and collections, and where the tower's config is.
 - `tower agents [--all]`: the workers on duty on your floor (or every floor), as crews: a worker hired by another, or reviewing another's work, is listed under it (`└`). Each line gives the callsign, status, the name to message it by, its directory, and what it is up to (`❯` its prompt, `↳` its latest answer, `⚙` the tool it runs, `⚠` what it asks permission for).
 - `tower agent <CALLSIGN>`: one worker in full: its last prompts from the user, each with its answer, per conversation.
-- `tower probes`: each probe the tower runs on its own (`quota` reads the account's rate limits while no session's turn does): its state, last read, why it failed, and when it reads next. `GET <address>/probe/<name>` adds its latest reads.
+- `tower probes`: each probe the tower runs on its own (`quota` reads the account's rate limits while no session's turn does): its state, last read, why it failed, and when it reads next. `GET <address>/probe/<name>` adds its latest reads; `tower probes run <name>` reads one now (at most once a minute), when the user asks.
 
 ## Reaching out
 

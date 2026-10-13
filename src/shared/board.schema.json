@@ -99,9 +99,72 @@
         "probes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProbeStatus"
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "verbs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ProbeVerb"
+                }
+              },
+              "calls": {
+                "$ref": "#/definitions/ProbeCalls"
+              },
+              "name": {
+                "type": "string"
+              },
+              "reads": {
+                "$ref": "#/definitions/Reader"
+              },
+              "every": {
+                "type": "number",
+                "description": "How often it reads while nothing else holds it, ms."
+              },
+              "state": {
+                "$ref": "#/definitions/ProbeState"
+              },
+              "lastAt": {
+                "type": "number",
+                "description": "When it last read, answered or not."
+              },
+              "error": {
+                "type": "string",
+                "description": "Why its last read has no answer."
+              },
+              "answeredAt": {
+                "type": "number",
+                "description": "When a read last answered."
+              },
+              "failsInRow": {
+                "type": "number"
+              },
+              "wait": {
+                "type": "number",
+                "description": "How long it waits after its last read, ms: `every`, longer while backing off or unavailable."
+              },
+              "nextAt": {
+                "type": "number",
+                "description": "When it reads next: its wait after its last read, or later while `held`; a moment past (0 before its first read) means at the tower's next tick. Absent while off."
+              },
+              "held": {
+                "type": "boolean",
+                "description": "`nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after."
+              }
+            },
+            "required": [
+              "calls",
+              "every",
+              "failsInRow",
+              "held",
+              "name",
+              "reads",
+              "state",
+              "verbs",
+              "wait"
+            ]
           },
-          "description": "Every probe the config runs, the core's first, as its stream says it stands (decision `probes`)."
+          "description": "Every probe the config runs, the core's first, as its stream says it stands (decision `probes`), and `run`, a read now."
         },
         "extraUsage": {
           "$ref": "#/definitions/ExtraUsage",
@@ -2270,61 +2333,31 @@
         "probe"
       ]
     },
-    "ProbeStatus": {
+    "ProbeVerb": {
+      "type": "string",
+      "const": "run",
+      "description": "A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor."
+    },
+    "ProbeCalls": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "reads": {
-          "$ref": "#/definitions/Reader"
-        },
-        "every": {
-          "type": "number",
-          "description": "How often it reads while nothing else holds it, ms."
-        },
-        "state": {
-          "$ref": "#/definitions/ProbeState"
-        },
-        "lastAt": {
-          "type": "number",
-          "description": "When it last read, answered or not."
-        },
-        "error": {
-          "type": "string",
-          "description": "Why its last read has no answer."
-        },
-        "answeredAt": {
-          "type": "number",
-          "description": "When a read last answered."
-        },
-        "failsInRow": {
-          "type": "number"
-        },
-        "wait": {
-          "type": "number",
-          "description": "How long it waits after its last read, ms: `every`, longer while backing off or unavailable."
-        },
-        "nextAt": {
-          "type": "number",
-          "description": "When it reads next: its wait after its last read, or later while `held`; a moment past (0 before its first read) means at the tower's next tick. Absent while off."
-        },
-        "held": {
-          "type": "boolean",
-          "description": "`nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after."
+        "run": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "probe/run"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
         }
       },
-      "required": [
-        "name",
-        "reads",
-        "every",
-        "state",
-        "failsInRow",
-        "wait",
-        "held"
-      ],
-      "additionalProperties": false,
-      "description": "A probe as the board shows it: what it reads and how often, its last read, and when it reads next. Times in epoch ms."
+      "additionalProperties": false
     },
     "Reader": {
       "type": "string",

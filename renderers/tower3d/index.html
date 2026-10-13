@@ -54,6 +54,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 .hud-limits small { color: var(--faint); font-weight: 400; }
 .hud-limits.stale > span:not(.hud-probe) { opacity: .5; }
 .hud-probe.working small, .hud-probe.broken small { color: var(--c-text); }
+button.hud-probe { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+button.hud-probe:hover small { color: var(--ink); }
 .hud-music { color: var(--faint); }
 .hud-music.on { color: var(--ink); }
 .hud-host.working, .hud-host.broken { color: var(--c-text); }
