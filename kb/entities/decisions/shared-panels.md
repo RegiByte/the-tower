@@ -1,7 +1,7 @@
 ---
 {
   "type": "decision",
-  "name": "Shared panels: one Changes, one Reviews and one Stats for every renderer",
+  "name": "Shared panels: one Changes, one Reviews, one Stats and one Policies for every renderer",
   "summary": "The Changes, Reviews and Stats panels are pure views in one shared module (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "web-tower",
   "status": "accepted",
@@ -14,6 +14,7 @@
     "hub/src/shared/panels.ts#threadViewOf",
     "hub/src/shared/panels.ts#statsHtml",
     "hub/src/shared/panels.ts#statsQuery",
+    "hub/src/shared/panels.ts#policiesHtml",
     "hub/src/shared/panels.ts#drawPanel",
     "hub/src/shared/panels.ts#watchPickDrag",
     "hub/src/shared/panels.ts#keepingFocus",
@@ -86,6 +87,15 @@ panels are the same view in both renderers. Only where they sit, their state and
   renderer's handlers on the same attributes. The page re-reads Changes while its pane is open and when a turn
   ends; Tower 3D every 30 s while either tab is open. A note picked in Tower 3D goes to the thread its Reviews tab
   shows (the author's, for a reviewer); the page writes on the selected worker's own checkout.
+
+- *Policies* (2026-10-13). [`policiesHtml`](ref:hub/src/shared/panels.ts#policiesHtml) draws a floor's
+  `floor.policies` and its open `board.offers` ([[policies]]): a "Needs you" section (an auto policy edited since
+  its approval, with Approve; one approved once and invalid now, with its problems at their paths), the offers (Accept,
+  and ✕ for this viewer, a dismissed one marked), then every policy with its rule and next slot in words, where it
+  stands (`standingWords` of `/policies.js`, the reason the runner acts on), its approval, live runs and last run, Run
+  now and Approve. Every press is a call the board offered (`data-policy-call`); Run now drawn off says why (live full,
+  another runner's, the host down). The page opens it in the main pane per floor; Tower 3D can draw it as it draws the
+  others.
 
 **Alternatives considered.**
 - *Rewriting relative specifiers in served code* (`./x.ts` → `/x.js`), keeping one browser instance per module: a

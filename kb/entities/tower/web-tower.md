@@ -5,7 +5,7 @@
   "summary": "The disposable web renderer: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf, on 127.0.0.1:4317.",
   "in": "tower",
   "reviewed": "2026-10-13",
-  "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-server]] turns the
@@ -59,3 +59,9 @@ waiting on you: done."), the worker you are watching included. Landmarks: the si
 carry an `aria-label` and glyphs beside words are hidden from screen readers. Still mouse-only: picking lines for a
 note in Changes, a showing tab's ↗ and ×, a shell tab's ×, a file's Finder and editor buttons (spans, so they can sit
 inside a tab), live threads and shelf files in their lists, and the dock's grip (drafts and kept items are buttons).
+
+*Policies* (2026-10-13). A floor that keeps policies shows a tray of their count, what is offered and what needs you,
+which opens the shared policies panel in the main pane at `#policies/<floor>` ([[shared-panels]]). Its open offers that
+you heed sit above its workers, each with Accept and ✕, counted beside the waits in the tally and the tab title, and N
+goes to them after the workers waiting on you ([[attention-list]]). A worker a run started says so under its callsign,
+"run 3 · Bug hunt", from `card.run`. Accept and Run now open the new worker once the board carries it.

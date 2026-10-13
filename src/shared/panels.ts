@@ -46,6 +46,13 @@
  *   data-stats-range="<r>"     read the stats again over another range (`statsQuery`)
  *   data-stats-read            read the stats again
  *   data-tip="<text>"          a bar's readout, shown by the renderer's tooltip (`watchTips`, src/shared/tips.ts)
+ *
+ *   Policies
+ *   data-policy-call="<json>"  run the call: a policy's Run now or Approve, an offer's Accept (`policyDoneLine` says what it did)
+ *   data-policy-open="<id>"    open the policy's file, an item of the floor's `policies` collection
+ *   data-offer-dismiss="<key>" dismiss the offer for this viewer, as a wait is (`dismissing`, `DISMISSED_KEY`)
+ *   data-worker="<id>"         go to the worker: a run's
+ *   data-copy="<text>"         copy the text (a policy's tag)
  */
 import type { RepoChanges } from '../changes.ts'
 import type { CheckoutState } from '../bridge/reviews.ts'
@@ -54,8 +61,10 @@ import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import type { Board, Card, Floor } from '../bridge/board.ts'
 import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteCalls } from '../bridge/verbs.ts'
-import type { Call } from './api.ts'
-import { esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
+import { shortHash, type Offer, type PolicyView } from '../bridge/policies.ts'
+import type { Call, Replies } from './api.ts'
+import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
+import { POLICIES, slotWords, standingWords } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
@@ -839,6 +848,99 @@ export function statsHtml(v: StatsView) {
     <p class="as-of">read <span data-since="${v.at}"></span> ago · waits run from a turn's end to your next prompt</p></div>`
 }
 
+/** A floor's policies as the panel draws them, at `now`, and the offers this viewer dismissed (`DISMISSED_KEY`). */
+export type PoliciesView = { board: Board; floor: Floor; now: number; dismissed: ReadonlySet<string> }
+
+/** A worker by its session id, as a link the renderer wires (`data-worker`). */
+const workerHtml = (board: Board, id: string) => {
+  const c = board.floors.flatMap((f) => f.cards).find((c) => c.id === id)
+  return `<button class="worker" data-worker="${esc(id)}" data-tip="go to it">${esc(c?.callsign ?? id)}</button>`
+}
+
+const tzOf = (p: PolicyView) => p.header?.when.tz
+
+/** A slot offered, in words: `today 15:00 offered, open until Fri 15:00`. */
+export const offerWords = (board: Board, offer: Offer, now: number) => {
+  const tz = tzOf(board.floors.find((f) => f.id === offer.project)!.policies.find((p) => p.id === offer.policy)!)
+  return `${slotWords(offer.slot, tz, now)} offered, open until ${slotWords(offer.until, tz, now)}`
+}
+
+/** Whether the policy may start on its own, and whose approval lets it. */
+const approvalHtml = (board: Board, p: PolicyView & { header: NonNullable<PolicyView['header']> }) => {
+  if (p.header.start === 'ask') return `<span data-tip="every slot is offered: start: &quot;ask&quot;">asks at each slot</span>`
+  if (p.approved) return `<span>auto · approved ${esc(shortHash(p.hash))} by ${p.approved.by ? workerHtml(board, p.approved.by) : esc(board.user.name)}</span>`
+  if (p.needs?.kind === 'reapprove') return `<span class="unapproved">auto · not approved: edited since ${esc(shortHash(p.needs.approved))}</span>`
+  return `<span class="unapproved" data-tip="its slots are offered until its words are approved">auto · not approved</span>`
+}
+
+/** The policy's latest run: its number, its slot or by hand, and its worker. */
+const lastHtml = (board: Board, p: PolicyView, now: number) =>
+  p.last ? `<span>last: run ${p.last.n}, ${p.last.slot === null ? `by hand ${esc(slotWords(p.last.at, undefined, now))}` : esc(slotWords(p.last.slot, tzOf(p), now))}, ${workerHtml(board, p.last.id)}</span>` : '<span>never run</span>'
+
+/** Why Run now is off: what the bridge read when it left the call out. */
+const runHeld = (p: PolicyView & { header: NonNullable<PolicyView['header']> }) =>
+  p.header.runner !== undefined ? `left to the runner "${p.header.runner}"` : p.live.length >= p.header.live ? `live is full: ${p.live.length} of ${p.header.live} run` : 'the host is down'
+
+const callHtml = (call: Call<'policy/run' | 'policy/approve'>, label: string, tip: string, cls = '') =>
+  `<button class="${cls}" data-policy-call="${esc(JSON.stringify(call))}" data-tip="${esc(tip)}">${label}</button>`
+
+const approveHtml = (p: PolicyView) =>
+  p.calls.approve ? callHtml(p.calls.approve, 'Approve', `approve these words (${shortHash(p.hash)}): ${p.header?.start === 'auto' ? 'its slots then start on their own, until it is edited' : 'they start on their own once start is "auto"'}`) : ''
+
+const problemsHtml = (p: PolicyView) =>
+  `<ul class="problems">${p.problems!.map((x) => `<li><code>${esc(x.path)}</code> ${esc(x.message)}</li>`).join('')}</ul>`
+
+const policyHeadHtml = (v: PoliciesView, p: PolicyView, acts: string) => {
+  const dir = v.floor.collections.find((c) => c.id === POLICIES)!.dir
+  return `<header><button class="title" data-policy-open="${esc(p.id)}" data-tip="open its file">${esc(p.title ?? p.id)}</button>
+    <button class="tag" data-copy="${esc(p.tag)}" data-tip="copy its tag">${esc(p.tag)}</button>${fileButtonsHtml(`${dir}/${p.id}`)}<span class="acts">${acts}</span></header>`
+}
+
+function policyHtml(v: PoliciesView, p: PolicyView) {
+  if (!p.header) return `<article class="policy invalid">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p)}</article>`
+  const valid = p as PolicyView & { header: NonNullable<PolicyView['header']> }
+  const run = p.calls.run ? callHtml(p.calls.run, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(valid))}">Run now</button>`
+  const next = p.next === undefined ? 'no slot ahead' : `next ${slotWords(p.next, tzOf(p), v.now)}`
+  const live = `<span>live ${p.live.length}/${valid.header.live}${p.live.length ? `: ${p.live.map((id) => workerHtml(v.board, id)).join(', ')}` : ''}</span>`
+  return `<article class="policy">${policyHeadHtml(v, p, approveHtml(p) + run)}
+    <p class="rule">${esc(p.rule!)} · ${esc(next)}</p>
+    <p class="now">${esc(standingWords(p, v.board, v.now))}</p>
+    <p class="facts">${approvalHtml(v.board, valid)}${live}${lastHtml(v.board, p, v.now)}</p></article>`
+}
+
+/** An auto policy that lost the right to run on its own: Approve for an edit, its problems for an invalid file. Nothing rings for it. */
+const needsHtml = (v: PoliciesView, p: PolicyView) =>
+  p.needs!.kind === 'reapprove'
+    ? `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
+    : `<div class="need">${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p)}</div>`
+
+const offerRowHtml = (v: PoliciesView, o: Offer) => {
+  const dismissed = v.dismissed.has(o.key)
+  const dismiss = dismissed ? '<small>dismissed</small>' : `<button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button>`
+  return `<div class="offer${dismissed ? ' dismissed' : ''}"><span class="lamp"></span><button class="title" data-policy-open="${esc(o.policy)}" data-tip="open its file">${esc(o.title ?? o.tag)}</button>
+    <span class="when">${esc(offerWords(v.board, o, v.now))}</span><span class="acts">${callHtml(o.calls.accept, 'Accept', 'start the run this slot offers, on the file as it is now', 'primary')}${dismiss}</span></div>`
+}
+
+/**
+ * A floor's policies: those that need you (an auto policy edited since its approval, or turned invalid), the slots
+ * offered now, then every policy with its rule and next slot in words, where it stands, its approval, live runs and
+ * last run, and Run now and Approve.
+ */
+export function policiesHtml(v: PoliciesView) {
+  const needs = v.floor.policies.filter((p) => p.needs)
+  const offers = v.board.offers.filter((o) => o.project === v.floor.id)
+  const section = (title: string, tip: string, body: string) => `<section><h3 data-tip="${esc(tip)}">${title}</h3>${body}</section>`
+  return `<div class="policies-panel">
+    ${needs.length ? section('Needs you', 'auto policies that lost the right to run on its own: their slots are offered meanwhile', needs.map((p) => needsHtml(v, p)).join('')) : ''}
+    ${offers.length ? section('Offered', 'slots offered and not yet started: each stays open until its policy\'s next slot', offers.map((o) => offerRowHtml(v, o)).join('')) : ''}
+    ${section(`${v.floor.policies.length} ${v.floor.policies.length === 1 ? 'policy' : 'policies'}`, 'standing work the tower runs at its slots, kept as files in the floor\'s policies collection',
+      v.floor.policies.map((p) => policyHtml(v, p)).join('') || '<p class="none">no policies: keep one with <code>tower keep policies</code></p>')}</div>`
+}
+
+/** What a press of `data-policy-call` did, as a toast says it. */
+export const policyDoneLine = (call: Call<'policy/run' | 'policy/approve'>, title: string, reply: Replies['policy/run'] | Replies['policy/approve']) =>
+  call[0] === 'policy/approve' ? `Approved ${title}` : `Started run ${(reply as Replies['policy/run']).n} of ${title}`
+
 /** The text boxes a panel holds, by their attribute: their text lives in the renderer, never in the html. */
 export type TextBox = 'pick-text' | 'note-text'
 
@@ -1069,4 +1171,32 @@ ${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer {
 .stats-panel .spreads th { color: var(--muted); font-weight: 400; } .stats-panel .spreads tr > th:first-child { text-align: left; color: var(--ink); }
 .stats-panel .spreads tr:first-child th { color: var(--faint); font-size: var(--fs-xs); }
 .stats-panel .as-of { margin: var(--sp-l) 0 0; color: var(--faint); font-size: var(--fs-xs); }
+.policies-panel { font: var(--fs-m)/1.45 var(--ui); color: var(--ink); }
+.policies-panel section { margin: 0 0 var(--sp-xl); }
+.policies-panel h3 { margin: var(--sp-l) 0 var(--sp-s); color: var(--muted); font: 700 var(--fs-xs)/1.3 var(--ui); letter-spacing: .08em; text-transform: uppercase; }
+.policies-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
+.policies-panel code { font: var(--fs-s) var(--mono); }
+.policies-panel .policy, .policies-panel .need { margin: 0 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.policies-panel .need { border-left: 3px solid var(--accent); }
+.policies-panel .policy.invalid { border-left: 3px solid var(--broken); }
+.policies-panel header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s); }
+.policies-panel button.title { padding: 0; border: 0; background: none; color: var(--ink); font: 700 var(--fs-l)/1.3 var(--ui); cursor: pointer; text-align: left; }
+.policies-panel button.title:hover { text-decoration: underline; }
+.policies-panel .tag { padding: 1px var(--sp-s); border: 0; border-radius: var(--radius-pill); background: var(--panel-2); color: var(--muted); font: var(--fs-xs) var(--mono); cursor: copy; }
+.policies-panel .acts { display: flex; align-items: center; gap: var(--sp-s); margin-left: auto; }
+.policies-panel p { margin: var(--sp-xs) 0 0; }
+.policies-panel .rule { color: var(--ink); }
+.policies-panel .now { color: var(--muted); }
+.policies-panel .need p { color: var(--muted); }
+.policies-panel .facts { display: flex; flex-wrap: wrap; gap: var(--sp-xs) var(--sp-l); color: var(--faint); font-size: var(--fs-s); }
+.policies-panel .unapproved { color: var(--needs-text); }
+.policies-panel .worker { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.policies-panel .worker:hover { text-decoration: underline; }
+.policies-panel .problems { margin: var(--sp-s) 0 0; padding-left: var(--sp-xl); color: var(--broken-text); font-size: var(--fs-s); }
+.policies-panel .problems code { color: var(--ink); }
+.policies-panel .offer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-m); margin: 0 0 var(--sp-s); padding: var(--sp-s) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); }
+.policies-panel .offer.dismissed { border-color: var(--line); }
+.policies-panel .offer .lamp { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.policies-panel .offer .when { color: var(--muted); }
+.policies-panel .offer small { color: var(--faint); font-size: var(--fs-xs); }
 `
