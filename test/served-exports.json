@@ -595,6 +595,7 @@
       "cronFields",
       "cronProblem",
       "decide",
+      "heldWords",
       "nextSlot",
       "onTimeSlot",
       "policyLine",

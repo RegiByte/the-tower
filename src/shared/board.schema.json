@@ -2183,6 +2183,30 @@
                 "kind"
               ],
               "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "held"
+                },
+                "slot": {
+                  "type": "number"
+                },
+                "by": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/HeldBy"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "slot",
+                "by"
+              ],
+              "additionalProperties": false
             }
           ]
         },
@@ -2231,7 +2255,7 @@
         "calls"
       ],
       "additionalProperties": false,
-      "description": "A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
+      "description": "A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
     },
     "PolicyHeader": {
       "type": "object",
@@ -2356,6 +2380,30 @@
         "check-failed"
       ],
       "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
+    },
+    "HeldBy": {
+      "type": "object",
+      "properties": {
+        "n": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        },
+        "since": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "n",
+        "id",
+        "since"
+      ],
+      "additionalProperties": false,
+      "description": "A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms)."
     },
     "GalleryShowing": {
       "type": "object",

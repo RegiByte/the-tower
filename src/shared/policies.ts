@@ -393,6 +393,12 @@ export const standingWords = (policy: PolicyView, board: Board, now: number): st
   return [passed, next].filter(Boolean).join(' · ')
 }
 
+/** A held slot, in words: `Fri 17:00 held: run 1 (PETER-85) on duty since Tue 18:52`. */
+export const heldWords = (policy: PolicyView, held: Extract<NonNullable<PolicyView['needs']>, { kind: 'held' }>, now: number): string => {
+  const tz = policy.header?.when.tz
+  return `${slotWords(held.slot, tz, now)} held: ${listed(held.by.map((h) => `run ${h.n} (${h.callsign ?? h.id}) on duty since ${slotWords(h.since, tz, now)}`))}`
+}
+
 /** A policy in a line, as a tray lists it: its rule in words, or why it is invalid. */
 export const policyLine = (policy: PolicyView): string =>
   policy.header ? ruleWords(policy.header.when) : `invalid · ${policy.problems!.map((p) => `${p.path}: ${p.message}`).join(' · ')}`

@@ -74,7 +74,7 @@ A **policy** is standing work a floor keeps in its `policies` collection: the to
 
 `when.cron` lists crons the tower can say in words (`tower policies` says them back); `check` is a shell line run from the hub at the slot (exit 0: work, 1: none); `start` is `ask` (each slot is offered to the user) or `auto` (started on its own while its words are approved; any edit needs a new approval); `live` is how many of its runs may run at once (1); `hire` takes the spawn's `cwd`, `cut`, `model` and `effort`. An unknown key makes the policy invalid; a runner's own data goes under `x`.
 
-- `tower policies`: each policy's rule in words, approval, live runs, last run and where it stands now, the same reason the tower acts on.
+- `tower policies`: each policy's rule in words, approval, live runs, last run and where it stands now, the same reason the tower acts on. A slot a run on duty holds (`live` full) shows as `needs you`: end that run for the next slot to start.
 - `tower policies approve <tag>`: approves its words as they are now. Read it first (`tower read <tag>`): you approve what you read. Only when the user asks.
 - `tower policies run <tag>`: starts it now, or takes its open offer.
 

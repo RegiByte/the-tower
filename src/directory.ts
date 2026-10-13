@@ -55,7 +55,7 @@ import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
 import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
-import { slotWords, standingWords } from './shared/policies.ts'
+import { heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
 import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
@@ -536,7 +536,7 @@ const policyLines = (board: Board, p: PolicyView, cards: Card[], width: number[]
     `live ${p.live.length}/${p.header.live}`,
     ...(p.last ? [`last: run ${p.last.n}, ${p.last.slot === null ? 'by hand' : slotWords(p.last.slot, p.header.when.tz, now)}${last ? `, ${last.callsign} ${statusName(last)}` : ''}`] : []),
   ]
-  return [`${head}${p.rule}`, `${indent}${facts.join(' · ')}`, `${indent}now: ${standingWords(p, board, now)}`]
+  return [`${head}${p.rule}`, `${indent}${facts.join(' · ')}`, `${indent}now: ${standingWords(p, board, now)}`, ...(p.needs?.kind === 'held' ? [`${indent}needs you: ${heldWords(p, p.needs, now)}`] : [])]
 }
 
 /** How many of an answer's lines and characters `tower runs` shows. */

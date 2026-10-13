@@ -64,7 +64,7 @@ import type { NoteCalls } from '../bridge/verbs.ts'
 import { shortHash, type Offer, type PolicyView } from '../bridge/policies.ts'
 import type { Call, Replies } from './api.ts'
 import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
-import { POLICIES, slotWords, standingWords } from './policies.ts'
+import { heldWords, POLICIES, slotWords, standingWords } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines } from './highlight.ts'
@@ -914,9 +914,11 @@ function policyHtml(v: PoliciesView, p: PolicyView) {
     <p class="facts">${approvalHtml(v.board, valid)}${live}${lastHtml(v.board, p, v.now)}</p></article>`
 }
 
-/** An auto policy that lost the right to run on its own: Approve for an edit, its problems for an invalid file. Nothing rings for it. */
+/** A policy that needs you: Approve for an auto policy edited since its approval, its problems for an invalid file, the holding runs for a slot held while live is full. Nothing rings for it. */
 const needsHtml = (v: PoliciesView, p: PolicyView) =>
-  p.needs!.kind === 'reapprove'
+  p.needs!.kind === 'held'
+    ? `<div class="need">${policyHeadHtml(v, p, '')}<p>${esc(heldWords(p, p.needs!, v.now))}${p.next === undefined ? '' : `: end a run for ${esc(slotWords(p.next, tzOf(p), v.now))} to start`}</p></div>`
+    : p.needs!.kind === 'reapprove'
     ? `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
     : `<div class="need">${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p)}</div>`
 
@@ -928,7 +930,7 @@ const offerRowHtml = (v: PoliciesView, o: Offer) => {
 }
 
 /**
- * A floor's policies: those that need you (an auto policy edited since its approval, or turned invalid), the slots
+ * A floor's policies: those that need you (an auto policy edited since its approval, or turned invalid; a slot held by runs still on duty), the slots
  * offered now, then every policy with its rule and next slot in words, where it stands, its approval, live runs and
  * last run, and Run now and Approve.
  */
@@ -937,7 +939,7 @@ export function policiesHtml(v: PoliciesView) {
   const offers = v.board.offers.filter((o) => o.project === v.floor.id)
   const section = (title: string, tip: string, body: string) => `<section><h3 data-tip="${esc(tip)}">${title}</h3>${body}</section>`
   return `<div class="policies-panel">
-    ${needs.length ? section('Needs you', 'auto policies that lost the right to run on its own: their slots are offered meanwhile', needs.map((p) => needsHtml(v, p)).join('')) : ''}
+    ${needs.length ? section('Needs you', 'auto policies that lost the right to run on its own (their slots are offered meanwhile), and slots held by runs still on duty', needs.map((p) => needsHtml(v, p)).join('')) : ''}
     ${offers.length ? section('Offered', 'slots offered and not yet started: each stays open until its policy\'s next slot', offers.map((o) => offerRowHtml(v, o)).join('')) : ''}
     ${section(`${v.floor.policies.length} ${v.floor.policies.length === 1 ? 'policy' : 'policies'}`, 'standing work the tower runs at its slots, kept as files in the floor\'s policies collection',
       v.floor.policies.map((p) => policyHtml(v, p)).join('') || '<p class="none">no policies: keep one with <code>tower keep policies</code></p>')}</div>`

@@ -82,7 +82,8 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
 - *Derived on the board.* [`policyViews`](ref:hub/src/bridge/policies.ts#policyViews): each floor's `policies` (rule,
   next slot, approval of the current hash, live runs followed through resumes
   ([`liveRuns`](ref:hub/src/bridge/policies.ts#liveRuns)), last run, last pass, the newest slot with a fact, the open
-  offer, `needs`: `reapprove` for an auto policy edited since its approval, `invalid` for one approved once), with
+  offer, `needs`: `reapprove` for an auto policy edited since its approval, `invalid` for one approved once, `held` for the latest pass's slot while it is open and a run still runs: the
+  runs holding it, `heldSlot`; derived and shown (`tower policies`, the panel's Needs you), never rung or notified), with
   `run` and `approve` calls; `board.offers` ([`offersOf`](ref:hub/src/bridge/policies.ts#offersOf)), an offered slot
   open until the policy's next slot or its run, carrying its check's output onto the run that accepts it; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
   the run fact naming the first session of a worker's lineage. `GET /runs/<project>?policy&limit`
@@ -106,7 +107,7 @@ verb (a run could go unrecorded between the two). A new `Wait.reason` for offers
 major). Ignoring unknown header keys (fails open on the keys that restrict). A version key. cronstrue for the words
 (English that drifts from ours, and a dependency for about 60 lines).
 
-**Impact.** API 1.49: `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>` and
+**Impact.** API 1.50 (the `held` kind of `needs`; 1.49 brought): `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>` and
 `/policies.js`. The first project streams ([[probes]]). A second collection with a meaning in the core
 ([[collections]]). croner joins the dependencies. A run that nobody watches ends itself with `tower home <own
 callsign>` ([[leave]]), its last answer kept for the next. Renderers draw policies with the shared policies panel

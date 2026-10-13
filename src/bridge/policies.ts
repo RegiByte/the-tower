@@ -62,12 +62,15 @@ export type PolicyFile = { project: string; id: string; modifiedAt: number; hash
 /** The hash as people read it: its first 8 hex. */
 export const shortHash = (hash: string) => hash.replace(/^sha256:/, '').slice(0, 8)
 
+/** A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms). */
+export type HeldBy = { n: number; id: string; callsign?: string; since: number }
+
 /**
  * A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot
  * (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its
  * latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names;
  * `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval,
- * or invalid once approved). `calls.run` runs it now, by hand; `calls.approve` approves its current hash.
+ * or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash.
  */
 export type PolicyView = {
   id: string
@@ -84,7 +87,7 @@ export type PolicyView = {
   passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
   seen?: number
   offer?: { slot: number; since: number; until: number; check?: CheckResult }
-  needs?: { kind: 'reapprove'; approved: string } | { kind: 'invalid' }
+  needs?: { kind: 'reapprove'; approved: string } | { kind: 'invalid' } | { kind: 'held'; slot: number; by: HeldBy[] }
   calls: { run?: Call<'policy/run'>; approve?: Call<'policy/approve'> }
 }
 
@@ -132,6 +135,23 @@ const openOffer = (header: PolicyHeader, runs: RunFact[], passes: [number, PassF
 }
 
 /**
+ * The slot a policy's latest pass held, while it is open (before the policy's next slot) and a run still runs: that
+ * slot and the runs that hold it. Held means live was full, so it clears when the slot passes or the holders end.
+ */
+const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, now: number): { kind: 'held'; slot: number; by: HeldBy[] } | undefined => {
+  const passed = passes.at(-1)
+  if (passed?.[1].outcome !== 'held') return undefined
+  const slot = slotOf(passed[1].slot)
+  const until = nextSlot(header.when, slot)
+  if (until === undefined || now >= until) return undefined
+  const by = runs.flatMap(([at, r], i): HeldBy[] => {
+    const worker = currentCard(byId, r.id)
+    return worker?.live ? [{ n: i + 1, id: worker.id, callsign: worker.callsign, since: at }] : []
+  })
+  return by.length ? { kind: 'held', slot, by } : undefined
+}
+
+/**
  * The views of a floor's policies. `cards`: every card, archived ones too, which a run's worker is looked up among.
  * `canSpawn`: the host runs, so a run can start.
  */
@@ -152,7 +172,7 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
         ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash }
         : !header && approvals.length
           ? { kind: 'invalid' }
-          : undefined
+          : header && heldSlot(header, runs, passes, byId, now)
     const runnable = header !== undefined && header.runner === undefined && canSpawn && live.length < header.live
     return {
       id,
