@@ -135,10 +135,10 @@ const openOffer = (header: PolicyHeader, runs: RunFact[], passes: [number, PassF
 }
 
 /**
- * The slot a policy's latest pass held, while it is open (before the policy's next slot) and a run still runs: that
- * slot and the runs that hold it. Held means live was full, so it clears when the slot passes or the holders end.
+ * The slot a policy's latest pass held, while it is open (before the policy's next slot) and live is still full: that
+ * slot and the runs that hold it. It clears when the slot passes or a holder ends.
  */
-const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, now: number): { kind: 'held'; slot: number; by: HeldBy[] } | undefined => {
+const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, live: string[], now: number): { kind: 'held'; slot: number; by: HeldBy[] } | undefined => {
   const passed = passes.at(-1)
   if (passed?.[1].outcome !== 'held') return undefined
   const slot = slotOf(passed[1].slot)
@@ -146,9 +146,9 @@ const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [numb
   if (until === undefined || now >= until) return undefined
   const by = runs.flatMap(([at, r], i): HeldBy[] => {
     const worker = currentCard(byId, r.id)
-    return worker?.live ? [{ n: i + 1, id: worker.id, callsign: worker.callsign, since: at }] : []
+    return worker && live.includes(worker.id) ? [{ n: i + 1, id: worker.id, callsign: worker.callsign, since: at }] : []
   })
-  return by.length ? { kind: 'held', slot, by } : undefined
+  return by.length >= header.live ? { kind: 'held', slot, by } : undefined
 }
 
 /**
@@ -172,7 +172,7 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
         ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash }
         : !header && approvals.length
           ? { kind: 'invalid' }
-          : header && heldSlot(header, runs, passes, byId, now)
+          : header && heldSlot(header, runs, passes, byId, live, now)
     const runnable = header !== undefined && header.runner === undefined && canSpawn && live.length < header.live
     return {
       id,
