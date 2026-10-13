@@ -12,6 +12,11 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.31.1
+
+The shelf's file buttons draw their icon centred in the box on hover. No host restart, no config change. The renderer
+API stays at 1.47. Restart the tower (`tower down tower && tower up tower`) and reload it.
+
 ## v1.31.0
 
 Shelf entries offer the Finder and editor buttons the panels already have, for their folder and their files, and the
