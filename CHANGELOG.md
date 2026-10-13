@@ -12,6 +12,45 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.0
+
+Policies: standing work the tower starts on a schedule. A worker can also end its own session once its turn ends.
+**config**: a floor runs policies once its config declares a `policies` collection. No host restart. The renderer API
+moves to 1.49, additions only. Restart the tower (`tower down tower && tower up tower`), run `npm install` (croner is
+new), rebuild Tower 3D (`npm run tower3d`) and reload it.
+
+- A policy is a markdown item in a floor's `policies` collection: a `# Title` line, then a fenced `json` header, then
+  the prose that becomes the worker's prompt. The header takes these keys:
+  - `when`: a list of crons and a time zone. Only crons the tower can say in words are accepted.
+  - `check`: a shell line run at the slot. Exit 0 means there is work.
+  - `start`: `ask` or `auto`.
+  - `live`: how many runs of the policy can work at once.
+  - `hire`: the spawn verb's own fields.
+  - `runner` and `x.<runner>`: for a runner of your own.
+
+  An unknown key makes the policy invalid. `docs/config.md` and the handbook ("Policies and runs") describe it.
+- The tower's runner checks each policy's slots every 30 s. It starts an `auto` policy whose current file is approved.
+  Otherwise it offers the slot to you, open until the next slot. Any edit to a policy drops its approval.
+- Each run is a fact in `streams/projects/<floor>/runs/`, and each approval is one in `approvals/`. Everything else is
+  derived from those facts and the worker's own log.
+- New commands:
+  - `tower policies` lists each policy, its rule in words, the next slot and why it would or wouldn't run now.
+  - `tower policies approve <tag>` approves the policy as its file reads now.
+  - `tower policies run <tag>` starts a policy by hand.
+  - `tower runs [<tag>] [--limit n]` lists a policy's latest runs, each with its latest answer cut short.
+
+  `tower whoami` tells a run which policy started it.
+- The tower page has a Policies panel per floor, opened from the line under the floor. It lists:
+  - **Needs you:** an auto policy edited since its approval, or one turned invalid.
+  - **Offered:** slots you can accept.
+  - **Every policy:** its rule and next slot in words, its approval, live count and last run, with Run now and
+    Approve buttons.
+
+  Offers sit above the floor's workers. They count with the waits, `N` reaches them, and they ring with a sound of
+  their own. A run's card says "run 3 · Bug hunt".
+- `tower home <your own callsign>` sends a worker home once its current turn ends, keeping its last answer. A prompt
+  sent before then cancels it, and the card reads "going home" meanwhile. A bare `tower home` is a usage error.
+
 ## v1.31.1
 
 The shelf's file buttons draw their icon centred in the box on hover. No host restart, no config change. The renderer
