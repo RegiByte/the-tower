@@ -85,8 +85,10 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   `seven_day_<model>`, each reset rounded to the second as the mod reports it, so a window is one whichever read it), the last read, failures in a row, and `rises`: each limit's climb from
   one answer to the next in the same window, which the stats read as use from outside the tower ([[stats]]). The board's `rateLimits` are the newest
   of sessions ∪ probes ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)), with `rateLimitsFrom`
-  (`session` or `probe`), and beside them each limit only the other reads, as of its newest reading (a model's week
-  stays on the board while a session's turn is the newest), and `extraUsage`, the account's credits past the plan's
+  (`session` or `probe`), and beside them each limit only the other reads, from the other's newest reading while that
+  is at most 15 min older and its window had not reset by the newest (a model's week stays on the board while a
+  session's turn is the newest and the probe reads at its interval; off or backing off, it leaves rather than show
+  under a fresh reading's age), and `extraUsage`, the account's credits past the plan's
   limits from `rate_limits.extra_usage` (spent and the monthly limit in currency units, whether it is on or spent)
   as the newest answer that had it said, drawn under the limits (the tower page while on, Tower 3D once spent from;
   `extraUsageLine` in `/cards.js`); `weeklyBudget` and `pace` read the readings of both ([[stats]]).

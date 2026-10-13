@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { accountLimits, due, NO_READS, probeFacts, probesOf, probeStatus, probeView, readingsOf, usageAnswer, type Probe, type ProbeFacts } from '../src/bridge/probes.ts'
+import type { RateLimit } from '../src/bridge/facts.ts'
 import { oldStreams } from '../src/bridge/retention.ts'
 import { probeOffers } from '../src/bridge/verbs.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
@@ -53,7 +54,10 @@ test('the board reads the newest of the sessions and the probes, and says whose 
   assert.deepEqual(accountLimits([], []), { rateLimits: [], rateLimitsAt: undefined, rateLimitsFrom: undefined })
   const opus = { kind: 'seven_day_opus', percentUsed: 5 }
   const newerSession = { rateLimits: { at: NOW + MIN, limits } }
-  assert.deepEqual(accountLimits([newerSession], [readAt(NOW, { rateLimits: { at: NOW, limits: [{ kind: 'seven_day', percentUsed: 89 }, opus] } })]).rateLimits, [...limits, opus], "a limit only the probe reads stays beside a newer session's")
+  const probeAt = (at: number, week: RateLimit = opus) => [readAt(at, { rateLimits: { at, limits: [{ kind: 'seven_day', percentUsed: 89 }, week] } })]
+  assert.deepEqual(accountLimits([newerSession], probeAt(NOW)).rateLimits, [...limits, opus], "a limit only the probe reads stays beside a newer session's")
+  assert.deepEqual(accountLimits([newerSession], probeAt(NOW + MIN - 16 * MIN)).rateLimits, limits, 'not once the probe has not read for longer than it would at its interval')
+  assert.deepEqual(accountLimits([newerSession], probeAt(NOW, { ...opus, resetsAt: new Date(NOW).toISOString() })).rateLimits, limits, 'nor once its window reset')
 })
 
 test('a probe is due with no read yet, then once every `every` after its last read', () => {

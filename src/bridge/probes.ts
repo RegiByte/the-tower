@@ -179,14 +179,22 @@ export const newestReading = (readings: Facts['rateLimits'][]): Facts['rateLimit
   readings.reduce<Facts['rateLimits']>((latest, r) => (r && (!latest || r.at > latest.at) ? r : latest), undefined)
 
 /**
+ * How much older than the newest reading a limit only the other source reads may be and stay beside it, under the
+ * newest reading's age: the quota probe at its interval keeps a model's week there; off or backing off, it leaves.
+ */
+const CARRIED_MS = 15 * 60_000
+
+/**
  * Rate limits belong to the account: the newest reading, a session's or a probe's, stands for every limit it has; a
- * limit only the other reads (a model's own week, which only the probe reads) is the other's newest.
+ * limit only the other reads (a model's own week, which only the probe reads) is the other's newest, while that is
+ * at most `CARRIED_MS` older and its window had not reset as of the newest.
  */
 export const accountLimits = (sessions: Pick<Facts, 'rateLimits'>[], probes: ProbeFacts[]): LimitsRead => {
   const [session, probe] = [newestReading(sessions.map((f) => f.rateLimits)), newestReading(probes.map((f) => f.rateLimits))]
   const [latest, other, from] = session && (!probe || session.at >= probe.at) ? [session, probe, 'session' as const] : [probe, session, 'probe' as const]
   if (!latest) return { rateLimits: [], rateLimitsAt: undefined, rateLimitsFrom: undefined }
-  const only = (other?.limits ?? []).filter((l) => !latest.limits.some((n) => n.kind === l.kind))
+  const carried = other && latest.at - other.at <= CARRIED_MS ? other.limits : []
+  const only = carried.filter((l) => !latest.limits.some((n) => n.kind === l.kind) && (!l.resetsAt || Date.parse(l.resetsAt) > latest.at))
   return { rateLimits: [...latest.limits, ...only], rateLimitsAt: latest.at, rateLimitsFrom: from }
 }
 
