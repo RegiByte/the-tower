@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.1
+
+Fixes found by the first real policy run. No host restart, no config change. The renderer API moves to 1.50, additions
+only. Restart the tower (`tower down tower && tower up tower`) and reload it.
+
+- `tower kill` takes a callsign as well as a session id.
+- `tower <verb> --help` (or `-h`) prints every verb's usage, the user's verbs included.
+- `tower home <CALLSIGN>` also sends home a worker in no crew, a policy's run for one: it ends, and can be resumed.
+- A slot held because `live` is full shows under "Needs you", in `tower policies` and the Policies panel: which run
+  holds it and since when. It doesn't ring.
+
 ## v1.32.0
 
 Policies: standing work the tower starts on a schedule. A worker can also end its own session once its turn ends.
