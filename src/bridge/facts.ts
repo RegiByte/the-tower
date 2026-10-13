@@ -117,6 +117,11 @@ export type Facts = {
   keyedBy?: [at: number, by: string]
   /** The worker that killed the session (`tower.kill`): a kill no worker named is the user's. */
   killedBy?: string
+  /**
+   * When the worker asked to go home (`tower.leave`), in seconds since the session's start: the tower sends it home once
+   * its main loop's turn completes. A prompt after it keeps the worker on duty.
+   */
+  leaveAt?: number
   /** When Claude showed the user a permission dialog (epoch ms): a check settled without one is not an ask. */
   asks: number[]
   /** When a tool call failed (epoch ms). */
@@ -154,6 +159,12 @@ export const initialFacts = (header: SessionHeader): Facts => ({
 
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
+
+/** The fact a worker logs in its own log to go home once its turn ends (`tower home <its callsign>`). */
+export const LEAVE = 'tower.leave'
+
+/** The worker asked to go home and no turn of its main loop runs: its latest answer is folded, so it can go. */
+export const leavesNow = (facts: Facts): boolean => facts.leaveAt !== undefined && facts.turnStartedAt === undefined
 
 /** The fact the tower appends before a worker's prompt reaches a session through its composer (`submit`, `spawn` with `by`). */
 export const PROMPTED_BY = 'tower.prompt'
@@ -261,7 +272,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       const { kind } = hook.origin as { kind: string }
       const byWorker = facts.promptedBy !== undefined && USER_ORIGINS.has(kind)
       const origin = byWorker ? 'peer' : promptOrigin(kind, String(hook.text))
-      const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy }
+      const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy, leaveAt: undefined }
       return facts.stoppedAt === undefined || !USER_ORIGINS.has(origin)
         ? prompted
         : { ...prompted, waits: [...facts.waits, [at, t - facts.stoppedAt]], stoppedAt: undefined }
@@ -320,6 +331,8 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, keyedBy: [t, String(hook.by)] }
     case KILLED_BY:
       return { ...facts, killedBy: String(hook.by) }
+    case LEAVE:
+      return { ...facts, leaveAt: t }
     default:
       return facts
   }

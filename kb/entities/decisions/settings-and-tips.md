@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": [
     "hub/src/shared/settings.ts",
     "hub/src/shared/settings.ts#settingsHtml",

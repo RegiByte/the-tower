@@ -6,7 +6,7 @@
   "in": "web-tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": [
     "hub/src/tower/tower.js",
     "hub/src/shared/shelf-page.ts#FromPage",

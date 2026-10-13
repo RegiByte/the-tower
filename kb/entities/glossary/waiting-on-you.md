@@ -4,13 +4,13 @@
   "name": "Waiting on you",
   "summary": "A session held by a screen (blocked) or a question (needs_input), or holding an answer or failure that nobody has typed into the session since it arrived, unless the answer is a hire's to its running hirer's prompt; on the board, one wait per such session, in the order to go to them.",
   "in": "tower",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": ["hub/src/bridge/status.ts#waitsOnSomeone", "hub/src/bridge/board.ts#attentionOf", "hub/src/bridge/board.ts#waitingOrder", "hub/src/shared/cards.ts#transitions", "hub/src/shared/cards.ts#nextWait", "hub/src/shared/cards.ts#heededWaits"]
 }
 ---
 [`waitsOnSomeone`](ref:hub/src/bridge/status.ts#waitsOnSomeone) decides from the log that a session waits; typing into
 the session ends an answer's or a failure's wait. A `watching` session ([[watching-status]]) never waits: something it
-started will wake it. Whom it waits on is the board's: an answer is read by whoever asked, so a hire's answer to its
+started will wake it. Nor does a `leaving` one, which goes home as its turn ends ([[leave]]). Whom it waits on is the board's: an answer is read by whoever asked, so a hire's answer to its
 hirer's prompt (`promptBy` on its latest conversation) waits on its hirer while the hirer runs. The card then has
 `waiting: false` and `waitsOn` (the hirer's current card and callsign), its status word says "waiting on
 <CALLSIGN>", and it leaves `board.waiting`, the rings, N and the counts. A screen, a question or a failure of a hire still

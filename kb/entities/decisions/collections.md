@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "supersedes": "drafts",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": [
     "hub/src/shared/model.ts#CollectionType",
     "hub/src/shared/model.ts#projectCollections",

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-10",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": ["hub/src/shared/callsign.ts#freshId", "hub/src/shared/callsign.ts#nameIn", "hub/src/bridge/chains.ts#heldNames", "hub/src/tower/server.ts#workerIds", "hub/src/tower/server.ts#freeName", "hub/src/cli.ts#workerId"]
 }
 ---

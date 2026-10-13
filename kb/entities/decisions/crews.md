@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": [
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
@@ -58,7 +58,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   `tower.store` (`crews.unfolded`). A member gone home with someone on duty under it stays drawn, so the tree holds.
   The header offers Send home, and its confirm names everyone it ends and who is working. `tower agents` lists crews
   with `└` and whom each reports to; `tower agent` lists who is under a worker; `tower home <CALLSIGN>` runs the
-  card's call. Tower 3D (kept small): X on a worker in a crew sends the crew home, its label naming them.
+  card's call; with the caller's own callsign it logs a leave the tower acts on once the turn ends ([[leave]]). Tower 3D (kept small): X on a worker in a crew sends the crew home, its label naming them.
 
 **Alternatives considered.**
 - *A derived `tasks` list on the board.* Rejected by the user: nothing in the hierarchy says what is a task, and a

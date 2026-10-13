@@ -63,10 +63,10 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
 
 /**
  * A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says,
- * until the user lets it go, `mid-turn` when the host cut it off (`cutOff`).
+ * until the user lets it go, `mid-turn` when the host cut it off (`cutOff`). A leaving worker is `going home` too.
  */
 export const statusName = (c: Card) =>
-  c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}${c.cutOff ? ' mid-turn' : ''}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : c.stuck ? 'stuck' : STATUS_NAME[c.status]
+  c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}${c.cutOff ? ' mid-turn' : ''}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : `${c.stuck ? 'stuck' : STATUS_NAME[c.status]}${c.leaving ? ', going home' : ''}`
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')

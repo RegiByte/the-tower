@@ -113,7 +113,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     checkoutState: { is: 'live' }, threadState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
-    status: f.status, blocked: f.blocked, live, waiting,
+    status: f.status, blocked: f.blocked, live, waiting, leaving: false,
     ...(f.waitsOn !== undefined && { reportsTo: idOf(project, f.waitsOn), waitsOn: { id: idOf(project, f.waitsOn), callsign: callsign(idOf(project, f.waitsOn)) } }),
     ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)) } }),
     attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,

@@ -495,6 +495,10 @@
           "type": "boolean",
           "description": "Waiting on the user since `enteredAt`: held by a screen or a question, or an outcome nobody has typed to since, unless that outcome is an answer its running hirer is to read (`waitsOn`)."
         },
+        "leaving": {
+          "type": "boolean",
+          "description": "It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the tower runs its `send-home`, or its `kill` when it is in no crew. A leaving worker waits on nobody."
+        },
         "waitsOn": {
           "type": "object",
           "properties": {
@@ -701,6 +705,7 @@
         "status",
         "live",
         "waiting",
+        "leaving",
         "attention",
         "enteredAt",
         "stuck",

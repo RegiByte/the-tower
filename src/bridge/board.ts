@@ -128,6 +128,11 @@ export type Card = {
    * unless that outcome is an answer its running hirer is to read (`waitsOn`).
    */
   waiting: boolean
+  /**
+   * It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the
+   * tower runs its `send-home`, or its `kill` when it is in no crew. A leaving worker waits on nobody.
+   */
+  leaving: boolean
   /** The worker whose prompt a hire's unread answer answers: its hirer as it runs now, while that runs. */
   waitsOn?: { id: string; callsign: string }
   attention: Attention
@@ -386,8 +391,9 @@ const card = (
   const state = withLiveness(facts.state, header.id, liveIds)
   const stranded = state.status === 'lost' || facts.hostStopped === true
   const cutOff = stranded && !facts.broken && isMidTurn(facts.exitedFrom ?? facts.state.status)
-  const waiting = !facts.broken && waitsOnSomeone(state, facts.typedAt)
   const live = isLive(state.status)
+  const leaving = live && facts.leaveAt !== undefined
+  const waiting = !facts.broken && !leaving && waitsOnSomeone(state, facts.typedAt)
   const held = threads(session, sessions, nameOf)
   const unresumable = !live && held.some((t) => !t.resumedBy) ? unresumableHere : undefined
   const conversations = held.map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
@@ -423,6 +429,7 @@ const card = (
     blocked: state.blocked,
     live,
     waiting,
+    leaving,
     attention: facts.broken ? 'broken' : attentionOf(state.status, waiting),
     enteredAt: header.startedAt + state.since * 1000,
     typedAt: facts.typedAt === undefined ? undefined : header.startedAt + facts.typedAt * 1000,

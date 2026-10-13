@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-13",
   "refs": ["hub/src/directory.ts#USAGES", "hub/src/directory.ts", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/cards.ts#spawnCall"]
 }
 ---
@@ -45,7 +45,7 @@ name belongs to which callsign, floor or task.
 - `tower reveal <path>` and `tower edit <path> [line]` show a file the system names in the user's Finder or open it
   in their editor, through the renderer API's `reveal` and `edit` ([[open-files]]).
 - `tower agents` lists crews, each worker under the one it reports to, and `tower home <CALLSIGN>` sends a worker
-  home with everyone under it ([[crews]]).
+  home with everyone under it ([[crews]]); naming one's own callsign, the caller goes home once its turn ends ([[leave]]).
 - `tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>]` starts a worker on the hirer's
   floor, on a prompt read from stdin or from any item of the floor's collections by its tag: the core reads an
   item's text and never what a draft means ([[collections]]). It sends what a quick hire in a renderer sends, built

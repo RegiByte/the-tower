@@ -26,16 +26,17 @@
  *   tower send <CALLSIGN>           submit into a worker a pointer to the notes on its checkout's thread new to it
  *   tower review <CALLSIGN> [tell]  hire a reviewer of a worker's work, in a fork of its checkout (its card's `review`);
  *                                   with `tell`, the reviewer sends its notes to that worker when done
- *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed (its card's `send-home`)
+ *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed (its card's `send-home`);
+ *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
  *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
  *   tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>]   start a worker on this floor, placed
  *                                   as a quick hire in a renderer places it, on a prompt: the text of an item of the
  *                                   floor's collections, or stdin; refused past the floor's `hiring` limits
  *
- * `show`, `open` and `keep` are facts about this session: they go to the host, which logs them (`tower.show`,
- * `tower.keep`), and every renderer draws them from the board. `hire` and `review` spawn with `hire`: the tower weighs
- * the hire against the limits and logs `tower.hire` in this session's log. An item is called by its tag, as
- * every renderer shows it.
+ * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go to the host, which logs them
+ * (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board. `hire` and `review` spawn
+ * with `hire`: the tower weighs the hire against the limits and logs `tower.hire` in this session's log. An item is
+ * called by its tag, as every renderer shows it.
  * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
  * written only through `tower note`, which appends.
  */
@@ -659,6 +660,13 @@ switch (verb) {
     if (!flag) throw new CliError('Usage: tower home <CALLSIGN>')
     const board = await readBoard()
     const card = await cardNamed(board, flag)
+    if (card.id === me) {
+      if (!process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+      await postToHost(me, { hook_event_name: 'tower.leave' })
+      const crew = card.calls['send-home'] ? crewOf(board.floors.find((f) => f.id === card.project)!.cards, card).filter((c) => c.live) : []
+      console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
+      break
+    }
     const calls = card.calls['send-home']
     if (!calls) throw new CliError(`${card.callsign} has nobody to send home: it is in no crew, or nobody in its crew runs. \`tower agents\` shows the crews; a lone worker ends with \`kill\`.`)
     for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })

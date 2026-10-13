@@ -64,7 +64,7 @@ import { carriesOn, heldBy, heldNames, resumeName, runsAs } from '../bridge/chai
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
-import { HIRED, KEYED_BY, KILLED_BY, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
+import { HIRED, KEYED_BY, KILLED_BY, LET_GO, leavesNow, PROMPTED_BY, type Session } from '../bridge/facts.ts'
 import { hostRequest, revealInFinder, originUrl, reap, runEditor, submitText, termsRequest } from '../machine.ts'
 import { changesIn } from '../changes.ts'
 import { readLanded } from '../landed.ts'
@@ -358,7 +358,19 @@ const schedulePublish = () => {
   }, PUBLISH_DEBOUNCE_MS)
 }
 
-const system = await watchSystem(paths, schedulePublish)
+let leaveTimer: NodeJS.Timeout | undefined
+const scheduleLeaves = () => {
+  leaveTimer ??= setTimeout(() => {
+    leaveTimer = undefined
+    sendLeaversHome()
+  }, PUBLISH_DEBOUNCE_MS)
+}
+
+const system = await watchSystem(paths, () => {
+  schedulePublish()
+  scheduleLeaves()
+})
+scheduleLeaves()
 const probeRunner = runProbes(paths, readConfig, system.sessions, system.probes)
 setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
@@ -731,6 +743,27 @@ const kill = (id: string, by: string | undefined) =>
   withSession(id, () =>
     namedFirst(id, KILLED_BY, system.live()?.ids.has(id) ? by : undefined, 'name the worker that kills a session', () => host({ t: 'kill', id })),
   )
+
+/** The workers being sent home because they asked to, by session id: each is sent once while it is leaving. */
+const departing = new Set<string>()
+
+/**
+ * A leaving worker whose turn has completed goes home through its card's calls, each kill named as its own act: its
+ * `send-home` (everyone under it, then itself) when it is in a crew, else its `kill`.
+ */
+const sendLeaversHome = () => {
+  const cards = everyCard(Date.now())
+  for (const id of departing) if (!cards.some((c) => c.id === id && c.leaving)) departing.delete(id)
+  for (const c of cards.filter((c) => c.leaving && !departing.has(c.id) && leavesNow(system.session(c.id)!.facts))) {
+    departing.add(c.id)
+    void (async () => {
+      for (const [verb, body] of c.calls['send-home'] ?? [c.calls.kill!]) {
+        const answer = await HANDLERS[verb](ROUTES[verb].input.parse({ ...body, by: c.id }))
+        if (answer.t === 'error') console.error(`${c.callsign} asked to go home, and killing ${body.id} failed: ${(answer as ApiError).message}`)
+      }
+    })()
+  }
+}
 
 /** A worker's keys are named once per burst: again when another worker typed last, or after a minute. */
 const KEYS_BURST_MS = 60_000
