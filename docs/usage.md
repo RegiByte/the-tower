@@ -62,6 +62,9 @@ worker, and a kept draft can start one too.
 A worker reads another's recent prompts and answers with `tower agent <CALLSIGN>`, and messages it by the name
 `tower agents` gives. You see the same in the brief (a worker's last turns) on the tower page.
 
+A worker's terminal is Claude Code's own screen, so its keys are Claude's: drag to select and Ctrl+C copies (⌘C
+doesn't; Claude also copies as you select unless its `copyOnSelect` setting is off), and Ctrl+V pastes text and images.
+
 ## Reviews before anything merges
 
 Every checkout (a worktree, or the main checkout) has a **review thread**: a markdown thread where you, the worker
