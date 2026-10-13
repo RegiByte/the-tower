@@ -33,7 +33,7 @@ answer, and a next run reading its predecessors would find no handoff note.
 - *Only the worker's own callsign.* `tower home <CALLSIGN>` naming the caller's own card (`card.id` is
   `TOWER_SESSION_ID`) posts `{hook_event_name: 'tower.leave'}` to the host's hooks socket under the session's own id,
   as `tower show` does ([[agent-show]]): no host change. A bare `tower home` stays a usage error, so ending oneself
-  takes reading one's callsign (`tower whoami`). Naming anyone else is the crew's `send-home`, unchanged ([[crews]]).
+  takes reading one's callsign (`tower whoami`). Naming anyone else is the crew's `send-home`, unchanged, or the `kill` of a worker in no crew ([[crews]]).
 - *Folded, not stored.* The fold sets `facts.leaveAt`; any later `prompt.submit` clears it, so someone typing to the
   worker keeps it on duty. `card.leaving` is a running card with `leaveAt` set, and a leaving card's outcome
   (`done`, `failed`: [`isOutcome`](ref:hub/src/bridge/status.ts#isOutcome)) waits on nobody, so its `Stop` before going

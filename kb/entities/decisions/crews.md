@@ -52,7 +52,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   drawn and those gone home, with how many the fold holds) say what a renderer may fold.
 - *Sent home together.* A worker in a crew (someone reports to it, or it reports to someone) offers `send-home` while
   any of it runs ([`sendHomeOffer`](ref:hub/src/bridge/verbs.ts#sendHomeOffer)). Its call is a list of `kill` calls, the
-  deepest first, so the API gains no verb and every kill can be resumed. A lone worker offers only `kill`.
+  deepest first, so the API gains no verb and every kill can be resumed. A lone worker offers only `kill`, and `tower home <CALLSIGN>` runs that `kill` for it: sent home, a lone worker ends alone and stays resumable.
 - *Drawn.* Tower page: each crew nests in the sidebar under a rail. Members gone home fold into one line under their
   hirer ("12 gone home") that unfolds them, dimmed with their Resume; the unfolded hirers are kept per viewer in
   `tower.store` (`crews.unfolded`). A member gone home with someone on duty under it stays drawn, so the tree holds.
