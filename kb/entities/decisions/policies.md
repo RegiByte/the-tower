@@ -109,5 +109,6 @@ major). Ignoring unknown header keys (fails open on the keys that restrict). A v
 **Impact.** API 1.49: `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>` and
 `/policies.js`. The first project streams ([[probes]]). A second collection with a meaning in the core
 ([[collections]]). croner joins the dependencies. A run that nobody watches ends itself with `tower home <own
-callsign>` ([[leave]]), its last answer kept for the next. Open: the tower page's panel and the offers' sound (another
-worker); Tidy does not archive project streams yet.
+callsign>` ([[leave]]), its last answer kept for the next. Renderers draw policies with the shared policies panel
+([[shared-panels]]) and put offers in the attention order with a sound of their own ([[attention-list]]). Open: Tidy
+does not archive project streams yet.
