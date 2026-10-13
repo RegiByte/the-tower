@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.29.0
+
+A guide to the tower for new users and their Claudes, the probes' status everywhere, and The Week reads past weeks.
+No host restart, no config change. The renderer API moves to 1.46, additions. Restart the tower
+(`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and reload it. Workers started after
+the update know the new `tower:guide` skill.
+
+- `docs/usage.md` opens with setting up your floors: a floor's hub, where sessions start and its notes live, and the
+  repos it spans, granted as file access only, so their own `CLAUDE.md` and skills stay out. New sections: who's
+  waiting on you, the brief, resume and carry on, Tidy, shells, Stats and The Week, Tower 3D. The README, `tower
+  init` and `npm run setup` point at it. AGENTS.md, the README and `docs/config.md` said repos were passed as
+  `--add-dir`: they are `permissions.additionalDirectories`.
+- `tower:guide`, a third skill in the mod: ask any worker "show me how to use the tower" and it gives a tour of your
+  own floors, shelf and collections, then offers one live demo, run only on a yes.
+- A probe's status is on the board (`board.probes`: off, new, ok, failing, backing off or unavailable, its last read
+  and error, when it is next due) and drawn under the limits in the tower page and Tower 3D. `GET /probe/<name>`
+  and `tower.probe()` read one with its recent reads; `tower probes` lists them; `tower doctor` says whether the
+  quota probe answered lately.
+- Tidy archives a probe stream's closed months, gzipped in place. The row shows on every floor's Tidy; whichever
+  floor applies it archives them.
+- `GET /stats` carries `sessions`, each session's turns, agent-hours, spend, longest turn and longest wait in the
+  window, and `weekly`, the weekly limit as last read in it. The Week draws a past week's quota, each worker's turns
+  and spend, who holds the longest turn and the longest wait, and the most worker-hours.
+- Test fixtures and the kb no longer carry paths from the maintainer's machine.
+
 ## v1.28.5
 
 Name tags on the roof clear every guest's head. No host restart, no config change, the renderer API is unchanged.
