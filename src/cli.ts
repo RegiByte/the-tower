@@ -21,7 +21,7 @@
  *                                tower's resume queue while it runs, else straight to the host. --carry-on tells
  *                                Claude it was cut off mid-turn by the host and to carry on (a card's `carry-on`)
  *   tower submit <id> <text...>  type a prompt and submit it; a worker's prompt (TOWER_SESSION_ID) is named in its log first
- *   tower kill <id>              end a session; a worker's kill (TOWER_SESSION_ID) is named in its log first
+ *   tower kill <id|CALLSIGN>     end a session, by its id or its worker's callsign; a worker's kill (TOWER_SESSION_ID) is named in its log first
  *   tower live                   ids of running sessions
  *   tower ls                     every session, with project, status and what it left running
  *   tower ps                     every process a session left running, with the ports it listens on
@@ -43,7 +43,7 @@ import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
-import { carriesOn, heldBy, heldNames, resumeName, runsAs } from './bridge/chains.ts'
+import { carriesOn, heldBy, heldNames, resumeName, runningNamed, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
@@ -210,8 +210,9 @@ const main = async (): Promise<void> => {
     case 'kill': {
       const by = process.env.TOWER_SESSION_ID
       const live = await liveIds(paths)
-      if (by && live.has(id)) print(await request({ t: 'fact', id, fact: { hook_event_name: KILLED_BY, by } }))
-      print(await request({ t: 'kill', id }))
+      const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfigFile()))?.header.id ?? id)
+      if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: { hook_event_name: KILLED_BY, by } }))
+      print(await request({ t: 'kill', id: target }))
       break
     }
     case 'live':

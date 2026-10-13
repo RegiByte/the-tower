@@ -71,6 +71,10 @@ const workerName = (session: Session, before: (s: Session) => Session | undefine
   return runsAs(first) ?? callsign(first.header.id)
 }
 
+/** The running session of the worker called `name` (a callsign, any case). */
+export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, name: string, callsign: (id: string) => string): Session | undefined =>
+  sessions.find((s) => running.has(s.header.id) && workerName(s, (x) => continues(x, sessions), callsign).toUpperCase() === name.toUpperCase())
+
 /**
  * The names, numbers left out, of the workers of sessions `ids`: a new worker's is drawn apart from them (`freshId`).
  * A session whose log isn't read yet was just spawned, and holds its id's callsign.

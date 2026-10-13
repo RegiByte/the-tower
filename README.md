@@ -46,7 +46,7 @@ tower config check                   # check the config as the tower reads it, e
 tower update                         # move to the newest release, restart the tower, say if the host needs a restart
 tower init [hub] [repos...]          # write a first config, never over one
 tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt>]
-tower ls | live | ps | reap [id] | resume <id> | submit <id> <text> | kill <id> | screen <id> [t] | attach <id>
+tower ls | live | ps | reap [id] | resume <id> | submit <id> <text> | kill <id|CALLSIGN> | screen <id> [t] | attach <id>
 tower app                            # open the tower as a Mac app (built on first use; needs xcode-select --install)
 ```
 
