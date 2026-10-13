@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.31.0
+
+Shelf entries offer the Finder and editor buttons the panels already have, for their folder and their files, and the
+usage guide says what copy and paste do in a worker's terminal. No host restart, no config change. The renderer API
+stays at 1.47. Restart the tower (`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and reload it.
+
+- A markdown glob's folder is on the shelf entry's head: `.regibyte/sessions/*.md` gives `.regibyte/sessions`. Each file
+  the glob lists has its own buttons beside it, in the page and in Tower 3D's reader.
+- An html page's head has its file and its folder.
+- `docs/usage.md`: a worker's terminal is Claude Code's own screen, so drag to select and Ctrl+C copy (⌘C doesn't),
+  and Ctrl+V pastes text and images.
+
 ## v1.30.0
 
 The quota probe tells use outside the tower from the tower's own, reads a model's own week and extra usage, and
