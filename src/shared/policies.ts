@@ -370,9 +370,10 @@ const holders = (policy: PolicyView, board: Board) => {
   return policy.live.length === 1 && last ? `${last} still runs` : `${listed(names)} still run${names.length === 1 ? 's' : ''}`
 }
 
+/** What the runner will do with a slot: a slot due waits for its next tick, a next slot for its moment. */
 const stepWords = (step: Step, policy: Valid, board: Board) => {
-  const after = policy.header.start === 'auto' && policy.approved ? 'starts on its own' : 'is offered'
-  return step === 'held' ? `will be held: ${holders(policy, board)}` : step === 'check' ? `checks for work, then ${after}` : after
+  const after = policy.header.start === 'auto' && policy.approved ? 'start on its own' : 'be offered'
+  return step === 'held' ? `will be held: ${holders(policy, board)}` : step === 'check' ? `will check for work, then ${after}` : `will ${after}`
 }
 
 /**
