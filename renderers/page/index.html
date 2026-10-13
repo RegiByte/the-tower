@@ -470,11 +470,11 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextWait, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
@@ -570,7 +570,7 @@ const sessionHtml = (c) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusName(c)} · <span data-since="${c.enteredAt}"></span>${c.stuck ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · ')))}</div>` : ''}
-    ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
+    ${c.run ? `<div class="run" data-tip="${esc(runTitle(c))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act">${carryOnHtml(c, 'carry on')}${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c)}</div>` : ''}
@@ -578,7 +578,7 @@ const sessionHtml = (c) => {
 }
 
 /** What started a policy's run, on hover. */
-const runTitle = (run) => `run ${run.n} of the policy ${run.title ?? run.tag} (${run.tag}): ${run.start === 'hand' ? 'started by hand' : `${slotWords(run.slot, undefined, pageNow())} slot, ${run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`
+const runTitle = (c) => `run ${c.run.n} of the policy ${c.run.title ?? c.run.tag} (${c.run.tag}): ${c.run.start === 'hand' ? 'started by hand' : `${slotWords(c.run.slot, policyZone(board, c.project, c.run.policy), pageNow())} slot, ${c.run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`
 
 /**
  * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an
@@ -770,7 +770,7 @@ function policiesTrayHtml(f) {
 /** The floor's offers this viewer heeds, in the attention order: Accept starts the run, ✕ dismisses it for this viewer. */
 const offersHtml = (f) => {
   const offers = heededOffers(board, heed).filter((o) => o.project === f.id)
-  return offers.length ? `<div class="offers">${offers.map((o) => `<div class="offer-row" data-hold="offer:${esc(o.key)}"><button class="what" data-policies="${f.id}" data-tip="${esc(`${o.title ?? o.tag}: ${offerWords(board, o, Date.now())}`)}"><b>${esc(o.title ?? o.tag)}</b> <span>offered · ${esc(slotWords(o.slot, undefined, Date.now()))}</span></button>
+  return offers.length ? `<div class="offers">${offers.map((o) => `<div class="offer-row" data-hold="offer:${esc(o.key)}"><button class="what" data-policies="${f.id}" data-tip="${esc(`${o.title ?? o.tag}: ${offerWords(board, o, Date.now())}`)}"><b>${esc(o.title ?? o.tag)}</b> <span>offered · ${esc(slotWords(o.slot, policyZone(board, o.project, o.policy), Date.now()))}</span></button>
     <button class="primary" data-policy-call="${esc(JSON.stringify(o.calls.accept))}" data-tip="start the run this slot offers">Accept</button>
     <button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button></div>`).join('')}</div>` : ''
 }
@@ -977,7 +977,7 @@ function movesHtml(c) {
     if (!card || card.id === c.id) return ''
     return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" data-tip="${withKeys(MOVE_TITLE[m], MOVE_COMMAND[m])}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND[m])}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ""}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
   }
-  const next = nextWait(attentionOrder(board, heed), heed.visited, c.id).to
+  const next = nextAttended(attentionOrder(board, heed), heed.visited, { id: c.id }).to
   const offer = next && isOffer(next) && `<button class="move waiting" data-move="waiting" aria-label="${MOVE_TITLE.waiting}: ${esc(next.title ?? next.tag)}, offered" data-tip="${withKeys(MOVE_TITLE.waiting, MOVE_COMMAND.waiting)}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND.waiting)}"><small>${board.keys[MOVE_COMMAND.waiting].length ? chordLabel(board.keys[MOVE_COMMAND.waiting][0]) : ''}</small><span class="lamp offered"></span><span class="call">${esc(next.title ?? next.tag)}</span></button>`
   const moves = dismiss + ['prev', 'next'].map(move).join('') + (offer || move('waiting'))
   return moves && `<span class="moves">${moves}</span>`
@@ -1663,7 +1663,7 @@ function go(move) {
     return to ? moveTo(to.id) : toast('Nobody is on duty')
   }
   const attended = attentionOrder(board, heed)
-  const step = nextWait(attended, heed.visited, selected)
+  const step = nextAttended(attended, heed.visited, { id: selected, policies: policiesOpen?.project })
   heed = { ...heed, visited: step.visited }
   if (step.to) return isOffer(step.to) ? openPolicies(step.to.project) : moveTo(step.to.id)
   toast(attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you')

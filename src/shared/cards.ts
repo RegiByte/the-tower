@@ -426,10 +426,19 @@ const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
 /**
  * The next wait to go to from the worker `here`, round-robin: the first in `waits` that isn't `here`'s and wasn't
  * visited this round, and the visited keys to keep once there. `here`'s own wait counts as visited. When every other
- * wait was visited, a new round starts at the first. An offer (`attentionOrder`) is no worker's: it is never `here`'s.
+ * wait was visited, a new round starts at the first. An offer is no worker's: it is never `here`'s (`nextAttended` places a viewer at a floor's offers).
  */
-export const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } => {
-  const heres = (w: T) => w.id !== undefined && w.id === here
+export const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } =>
+  nextIn(waits, visited, (w) => w.id !== undefined && w.id === here)
+
+/**
+ * `nextWait` over `attentionOrder` from where the viewer is: the worker `here.id`, or the floor `here.policies` whose
+ * policies are open, whose offers count as visited as a worker's own wait does.
+ */
+export const nextAttended = (attended: Attended[], visited: ReadonlySet<string>, here: { id?: string; policies?: string }) =>
+  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : here.id !== undefined && a.id === here.id))
+
+const nextIn = <T extends { key: string }>(waits: T[], visited: ReadonlySet<string>, heres: (w: T) => boolean): { to?: T; visited: Set<string> } => {
   const at = waits.filter(heres).map((w) => w.key)
   const seen = new Set([...at, ...waits.map((w) => w.key).filter((k) => visited.has(k))])
   const others = waits.filter((w) => !heres(w))

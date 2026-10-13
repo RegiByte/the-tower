@@ -859,9 +859,15 @@ const workerHtml = (board: Board, id: string) => {
 
 const tzOf = (p: PolicyView) => p.header?.when.tz
 
+/** The zone a policy's slots are said in (`slotWords`): its `when.tz`; none for a policy deleted or invalid since, read in the viewer's. */
+export const policyZone = (board: Board, project: string, policy: string) => {
+  const p = board.floors.find((f) => f.id === project)?.policies.find((p) => p.id === policy)
+  return p && tzOf(p)
+}
+
 /** A slot offered, in words: `today 15:00 offered, open until Fri 15:00`. */
 export const offerWords = (board: Board, offer: Offer, now: number) => {
-  const tz = tzOf(board.floors.find((f) => f.id === offer.project)!.policies.find((p) => p.id === offer.policy)!)
+  const tz = policyZone(board, offer.project, offer.policy)
   return `${slotWords(offer.slot, tz, now)} offered, open until ${slotWords(offer.until, tz, now)}`
 }
 
