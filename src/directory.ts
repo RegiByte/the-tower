@@ -507,7 +507,7 @@ const policyNamed = (floor: Floor, name: string): PolicyView => {
   if (!policy)
     throw new CliError(
       floor.policies.length ? `No policy "${name}" on ${floorTitle(floor)}. \`tower policies\` lists them.` : `${floorTitle(floor)} has no policies.`,
-      `a policy is a markdown item of the floor's \`policies\` collection: \`tower keep policies\`, and the handbook's "Runs" says what it holds`,
+      `a policy is a markdown item of the floor's \`policies\` collection: \`tower keep policies\`, and the handbook's "Policies and runs" says what it holds`,
     )
   return policy
 }
