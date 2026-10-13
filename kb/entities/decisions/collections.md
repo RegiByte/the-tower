@@ -72,10 +72,13 @@ primitives every renderer can reach.
   placeholder and submits it wrapped in `<pasted_content>`, which the model treats as material handed to it, not
   as the user's words: Haiku asked whether to follow the instruction inside one. Smaller pastes land in the
   composer as typed text. Claude expands tabs to spaces in pastes.
-- One collection has meaning in the core: `reviews`, the review threads ([[review-threads]]), named once in
+- A collection with meaning in the core: `reviews`, the review threads ([[review-threads]]), named once in
   `src/shared/reviews.ts`. Its items are named by checkout (`<checkout>.md`), parsed onto the board as
   `floor.threads`, and written only by appending, through `review/append` (`putItem` makes or replaces an item under a
   name of the caller's, by rename). Undeclared, it is not on the board and the verb refuses.
+- A second has meaning in the core since: `policies`, standing work the tower starts at its slots ([[policies]]).
+  Each item is parsed and hashed onto the board as `floor.policies`; the files are written and edited like any
+  item, and the facts about them (runs, passes, approvals) live in the project's streams, never beside the file.
 - A drafts feature is a fold in a renderer: send is read, then `spawn` with the text as `Launch.prompt`, then
   delete; transfer is read, then `submit`, then delete. Its editing is one module renderers import,
   `src/shared/drafts.ts` ([[corkboard]]); nothing in the core imports it. Which collection a feature works on is named once, in

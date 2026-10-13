@@ -4,7 +4,7 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-13",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts"]
 }
 ---
@@ -18,8 +18,8 @@
   `retention.days` ago, read the same as the plain log ([[log-retention]]).
 - `streams/system/<stream>/YYYY-MM.jsonl`: logs of facts the tower observes that belong to no session, one writer
   (the tower), one file per UTC month: a header `{stream, startedAt, version}`, then `[t, code, data]` events. The
-  quota probe's reads are `streams/system/probe.quota/` ([[probes]]). `streams/projects/<project>/<stream>/` is
-  reserved for a project's streams. Logs like the session logs, not a fourth kind of state ([[logs-are-facts]]).
+  quota probe's reads are `streams/system/probe.quota/` ([[probes]]). `streams/projects/<project>/<stream>/` are a
+  project's: `runs/` and `approvals/`, a floor's policies' facts ([[policies]]). Logs like the session logs, not a fourth kind of state ([[logs-are-facts]]).
 - `collections/<project>/<collection>/<item>`: the files of each project's [[collections]], any format, written
   by the tower ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are the
   store's staging files and are never items. The `reviews` collection's threads are written only by the

@@ -78,7 +78,8 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   passes over it and counts it, and the tower's log names the file. An append after a torn line starts a line of its
   own. A session's log stops at its break ([[broken-logs]]), because its events build on each other; a stream's reads
   don't. Project
-  streams are reserved at `streams/projects/<project>/<stream>/`, none written yet.
+  streams live at `streams/projects/<project>/<stream>/`: the first are a floor's policies' `runs` and `approvals`
+  ([[policies]]), read and appended through the same stream code (`src/bridge/streams.ts`, `src/streams.ts`).
 - *Folded beside the sessions.* [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches `streams/system/` and
   folds each probe's months in order ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts)): `limitReadings` and
   `rateLimits` in the sessions' shape (`five_hour`, `seven_day`, and each model's own week from `model_scoped` as
