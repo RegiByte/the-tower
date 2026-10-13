@@ -145,9 +145,35 @@ const resumeAtHost = async (log: SessionLog, conversation: string, prompt: strin
   return request(resumeRequest(log.header, conversation, prompt, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
 }
 
+/** What each of the user's verbs takes: `tower <verb> --help` prints it. */
+const USAGES: Record<string, string> = {
+  init: 'init [hub] [repos...]',
+  doctor: 'doctor',
+  config: 'config check',
+  up: 'up [host|terms|tower...]',
+  down: 'down [host|terms|tower...]',
+  update: 'update',
+  spawn: 'spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]',
+  resume: 'resume <id> [--carry-on]',
+  submit: 'submit <id> <text...>',
+  kill: 'kill <id|CALLSIGN>',
+  live: 'live',
+  ls: 'ls',
+  ps: 'ps',
+  reap: 'reap [id]',
+  screen: 'screen <id> [seconds]',
+  attach: 'attach <id>',
+  app: 'app',
+}
+
 const [command, id, ...rest] = process.argv.slice(2)
+const asksUsage = command in USAGES && (id === '--help' || id === '-h')
 
 const main = async (): Promise<void> => {
+  if (asksUsage) {
+    console.log(`Usage: tower ${USAGES[command]}`)
+    return
+  }
   switch (command) {
     case 'init': {
       const [hub = process.cwd(), ...repos] = process.argv.slice(3)
