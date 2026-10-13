@@ -13,6 +13,8 @@
     "hub/src/bridge/stats.ts#overlap",
     "hub/src/bridge/stats.ts#weeklyBudget",
     "hub/src/bridge/stats.ts#weeklyRead",
+    "hub/src/bridge/stats.ts#outsideUse",
+    "hub/src/bridge/stats.ts#outsideIn",
     "hub/src/bridge/stats.ts#pace",
     "hub/src/bridge/stats.ts#today",
     "hub/src/bridge/probes.ts#probeFacts",
@@ -63,8 +65,19 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   (it is the account's, so `/stats?project=` filters the stats and never the budget), and
   [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) the latest of those readings taken in the window (`weekly`:
   the percent used then and the reset it counts to), so a past week shows how far its quota went: over the window it is in, the spend from its first reading to the
-  latest where it moved, divided by the percent it climbed, is what 1% buys; the percent left times that is "$ left
-  this week". Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
+  latest where it moved, divided by the percent it climbed for the tower, is what 1% buys; the percent left times that
+  is "$ left this week".
+- *Use from outside the tower.* The weekly limit is the account's: claude.ai, the desktop app or another machine
+  move it too, and counting that against the tower's spend made 1% look cheaper than it is.
+  [`outsideUse`](ref:hub/src/bridge/stats.ts#outsideUse) sums the climbs between two probe answers in a row
+  (`ProbeFacts.rises`) while no session used the API (no model step, no spend, no main-loop turn over the span, a turn
+  still running included). Only the probe's answers are compared with each other: a session's reading and the probe's
+  can differ by a point for the same use (observed: the probe's answer a point above a session's reading minutes
+  apart, nothing spent between, as if one rounds up and the other down), so a session's reading then a probe's could
+  look like a climb. Use outside
+  the tower while the tower works counts as the tower's: the estimate errs low. The budget's `outside` is this
+  week's; it leaves the climb that makes the rate. `/stats`'s `outside` ([`outsideIn`](ref:hub/src/bridge/stats.ts#outsideIn))
+  sums the climbs that ended in the window, of any week, which The Week shows beside a week's quota. Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
   even daily spend that spends what is left at the reset, and `runsOutAt`, when what is left runs out at today's rate
   (today's spend over the hours since the day began, at least one), only when that is before the reset. Both are
   absent while what is left is unknown.

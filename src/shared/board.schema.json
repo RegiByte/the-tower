@@ -2394,8 +2394,13 @@
         "spent": {
           "type": "number"
         },
+        "outside": {
+          "type": "number",
+          "description": "Points of the week used outside the tower (claude.ai, the desktop app, another machine): `outsideUse`."
+        },
         "usdPerPercent": {
-          "type": "number"
+          "type": "number",
+          "description": "What 1% buys, from the climb less `outside`."
         },
         "usdLeft": {
           "type": "number"
@@ -2408,10 +2413,11 @@
         "percentUsed",
         "resetsAt",
         "since",
-        "spent"
+        "spent",
+        "outside"
       ],
       "additionalProperties": false,
-      "description": "The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where its percent moved, what was spent and how far the percent climbed, so what 1% buys and what the percent left buys at that rate. The rate is unknown until the percent has climbed."
+      "description": "The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where its percent moved, what was spent and how far the percent climbed for it, so what 1% buys and what the percent left buys at that rate. The rate is unknown until the percent has climbed for the tower's spend."
     },
     "Pace": {
       "type": "object",

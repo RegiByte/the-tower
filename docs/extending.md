@@ -214,7 +214,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
-  weekly limit as last read in the window (`weekly`). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
+  weekly limit as last read in the window (`weekly`), and the points of it used outside the tower in the window (`outside`: claude.ai, the desktop app, another machine, as the quota probe saw it climb while no session worked; the budget's `outside` is this week's, and what 1% buys leaves it out). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
   workers of any past window are the board's cards and the archive's together.
 - **Streams**: a session's screen, an interactive terminal, a shell (`screen/<id>`, `terminal/<id>`, `shell/<id>`),
   multiplexed on one connection, `GET /mux`.

@@ -329,7 +329,7 @@ const busyBoard = (floors: FloorFacts[], now: number): Board =>
     probes: [{ name: 'quota', reads: 'claude.usage', every: 10 * MIN, state: 'ok', lastAt: now - 52 * MIN, answeredAt: now - 52 * MIN, failsInRow: 0, wait: 10 * MIN, nextAt: now + 7 * MIN, held: true }],
     today: {
       since: now - 15 * 60 * MIN, spend: 84.6, agentHours: 5.2, waits: { n: 23, p50: 260 },
-      budget: { percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString(), since: now - 4 * 24 * 60 * MIN, spent: 310, usdPerPercent: 14.1, usdLeft: 1029.3, pace: { perDay: 343.1, runsOutAt: now + 40 * 60 * MIN } },
+      budget: { percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString(), since: now - 4 * 24 * 60 * MIN, spent: 310, outside: 0, usdPerPercent: 14.1, usdLeft: 1029.3, pace: { perDay: 343.1, runsOutAt: now + 40 * 60 * MIN } },
     },
     shells: [SHELL('alpha', 0, 'npm run dev', now), SHELL('alpha', 1, 'user@host:~/work/alpha', now), SHELL('gamma', 0, 'vim README.md', now)],
   })
@@ -367,7 +367,7 @@ const party = (now: number) => boardOf(PARTY_GUESTS.map((guests, i) => ({
   probes: [{ name: 'quota', reads: 'claude.usage', every: 10 * MIN, state: 'backoff', lastAt: now - 4 * MIN, error: 'no answer within 30s', answeredAt: now - 40 * MIN, failsInRow: 4, wait: 20 * MIN, nextAt: now + 16 * MIN, held: false }],
   today: {
     since: now - 15 * 60 * MIN, spend: 212.4, agentHours: 11.3, waits: { n: 41, p50: 340 },
-    budget: { percentUsed: 71, resetsAt: new Date(now + 84 * 60 * MIN).toISOString(), since: now - 5 * 24 * 60 * MIN, spent: 1080, usdPerPercent: 15.2, usdLeft: 440.8 },
+    budget: { percentUsed: 71, resetsAt: new Date(now + 84 * 60 * MIN).toISOString(), since: now - 5 * 24 * 60 * MIN, spent: 1080, outside: 6, usdPerPercent: 15.2, usdLeft: 440.8 },
   },
 })
 

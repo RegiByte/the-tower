@@ -5,7 +5,8 @@ import { conversationsOf } from '../src/bridge/conversation.ts'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { extensionOf, landed as landing, parseLog, type RepoLanded } from '../src/bridge/landed.ts'
-import { bucketStart, pace, stats, today, weeklyBudget, weeklyRead } from '../src/bridge/stats.ts'
+import { bucketStart, outsideIn, outsideUse, pace, stats, today, weeklyBudget, weeklyRead } from '../src/bridge/stats.ts'
+import { probeFacts, type ProbeReading } from '../src/bridge/probes.ts'
 import { fixture } from './replay.ts'
 
 const session = (name: string): Session => {
@@ -171,4 +172,26 @@ test("a prompt a worker typed through the tower is the worker's: it answers no w
   assert.equal(facts.promptedBy, undefined)
   assert.deepEqual(factsOf(log).waits.map(([, seconds]) => +seconds.toFixed(3)), [21.197])
   assert.equal(conversationsOf(marked).at(-1)?.prompt, conversationsOf(log).at(-1)?.prompt)
+})
+
+test("a climb between two probe answers while no session used the API is outside use, and what 1% buys leaves it out", () => {
+  const s = session('clear')
+  const start = s.header.startedAt
+  const MIN = 60_000
+  const resetsAt = '2026-10-04T22:00:00.000Z'
+  const answer = (utilization: number, resets_at = resetsAt) => ({ rate_limits: { seven_day: { utilization, resets_at } } })
+  const read = (at: number, utilization: number, resets?: string): ProbeReading => [at, { reads: 'claude.usage', ms: 1000, ok: true, answer: answer(utilization, resets) }]
+  const probe = probeFacts([read(start - 60 * MIN, 15), read(start - 30 * MIN, 16), read(start + 30 * MIN, 18), read(start + 60 * MIN, 18)])
+  assert.deepEqual(probe.rises.seven_day, [[start - 60 * MIN, start - 30 * MIN, 1, resetsAt], [start - 30 * MIN, start + 30 * MIN, 2, resetsAt]])
+  const now = start + 90 * MIN
+  const budget = weeklyBudget([s], [probe], now)!
+  const spent = s.facts.spend.reduce((a, [, usd]) => a + usd, 0)
+  assert.deepEqual([budget.percentUsed, budget.since, budget.outside], [18, start - 60 * MIN, 1])
+  close(budget.usdPerPercent!, spent / 2)
+  assert.equal(outsideIn([s], [probe], { from: start - 40 * MIN, to: now }), 1)
+  assert.equal(outsideIn([s], [probe], { from: start, to: now }), 0)
+  const working = { ...s, facts: { ...s.facts, spend: [], tokens: [], turnSpans: [], turnStartedAt: 0 } }
+  assert.equal(outsideUse([working], [probe], () => true), 1, "a turn still running holds every climb after its start, though it hasn't spent yet")
+  const otherWeek = probeFacts([read(start - 60 * MIN, 90, '2026-09-27T22:00:00.000Z'), read(start - 50 * MIN, 95, '2026-09-27T22:00:00.000Z'), read(start - 40 * MIN, 1)])
+  assert.equal(weeklyBudget([s], [otherWeek], now)!.outside, 0, "another week's climb is not this week's, nor is a reset a climb")
 })

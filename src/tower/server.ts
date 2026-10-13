@@ -88,7 +88,7 @@ import { archiveLog, archiveStream } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { allCards, archiveOf, board, occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import type { Prune } from '../bridge/prunable.ts'
-import { bucketStart, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
+import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import type { Resource } from '../bridge/resources.ts'
 import type { BoardMsg, Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Replies, type Route, type RouteInput } from '../shared/api.ts'
@@ -290,7 +290,7 @@ async function statsRead(res: http.ServerResponse, search: string) {
   const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
   const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
   const probes = [...system.probes().values()]
-  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }) } satisfies Stats))
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
 }
 
 /** The contract for renderers in any language. */

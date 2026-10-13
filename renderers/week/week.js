@@ -161,7 +161,7 @@ const floorStyle = (color) => (color ? `--floor:${color};--on-floor:${textOn(col
 function coverHtml(week, stats) {
   const { summary } = stats.all
   const git = summary.git
-  const used = stats.weekly && Date.parse(stats.weekly.resetsAt) === week.end ? `<div class="big"><b>${stats.weekly.percentUsed}%</b><span>of the weekly quota${week.to < week.end ? ' so far' : ''}</span></div>` : ''
+  const used = stats.weekly && Date.parse(stats.weekly.resetsAt) === week.end ? `<div class="big"><b>${stats.weekly.percentUsed}%</b><span>of the weekly quota${week.to < week.end ? ' so far' : ''}${stats.outside ? `, ${stats.outside}% of it outside the tower` : ''}</span></div>` : ''
   return `<section class="cover">
     <p class="eyebrow">The tower's yearbook</p>
     <h1>The Week</h1>

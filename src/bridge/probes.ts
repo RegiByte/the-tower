@@ -35,9 +35,22 @@ export type ProbeFacts = {
   unavailable: boolean
   limitReadings: Facts['limitReadings']
   rateLimits?: Facts['rateLimits']
+  /** By limit kind, each climb between two answers in a row of the same window: the reads of one source round alike. */
+  rises: Record<string, Rise[]>
 }
 
-export const NO_READS: ProbeFacts = { failsInRow: 0, unavailable: false, limitReadings: {} }
+/** A limit's percent climbed `points` from the answer at `from` to the next at `to` (epoch ms), in the window resetting at `resetsAt`. */
+export type Rise = [from: number, to: number, points: number, resetsAt: string]
+
+export const NO_READS: ProbeFacts = { failsInRow: 0, unavailable: false, limitReadings: {}, rises: {} }
+
+/** The climbs from the limits of one answer to the next's, by kind. */
+const risesTo = (rises: ProbeFacts['rises'], before: Facts['rateLimits'], at: number, limits: RateLimit[]): ProbeFacts['rises'] =>
+  limits.reduce((next, { kind, percentUsed, resetsAt }) => {
+    const was = before?.limits.find((l) => l.kind === kind)
+    if (!before || !was || !resetsAt || was.resetsAt !== resetsAt || percentUsed <= was.percentUsed) return next
+    return { ...next, [kind]: [...(next[kind] ?? []), [before.at, at, percentUsed - was.percentUsed, resetsAt] as Rise] }
+  }, rises)
 
 export const streamName = (probe: string): string => `probe.${probe}`
 
@@ -107,6 +120,7 @@ export const probeFacts = (readings: ProbeReading[]): ProbeFacts =>
       unavailable: READ_AS[read.reads].unavailable(read.answer),
       limitReadings: limitsRead(facts.limitReadings, at, limits),
       rateLimits: limits.length ? { at, limits } : facts.rateLimits,
+      rises: risesTo(facts.rises, facts.rateLimits, at, limits),
     }
   }, NO_READS)
 

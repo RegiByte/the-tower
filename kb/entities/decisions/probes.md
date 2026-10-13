@@ -81,7 +81,8 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
 - *Folded beside the sessions.* [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches `streams/system/` and
   folds each probe's months in order ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts)): `limitReadings` and
   `rateLimits` in the sessions' shape (`five_hour`, `seven_day`, each reset rounded to the second as the mod reports
-  it, so a window is one whichever read it), the last read, failures in a row. The board's `rateLimits` are the newest
+  it, so a window is one whichever read it), the last read, failures in a row, and `rises`: each limit's climb from
+  one answer to the next in the same window, which the stats read as use from outside the tower ([[stats]]). The board's `rateLimits` are the newest
   of sessions ∪ probes ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)), with `rateLimitsFrom`
   (`session` or `probe`); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
 
@@ -115,4 +116,4 @@ the user, and these are observed facts.
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
 session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
-the Tidy plan's `streams`. Not built yet: per-model weeks, extra usage and outside use as stats, `POST /probe/run`.
+the Tidy plan's `streams`. API 1.47: outside use as a stat. Not built yet: per-model weeks, extra usage, `POST /probe/run`.

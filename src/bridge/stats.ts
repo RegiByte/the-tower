@@ -4,7 +4,7 @@
  */
 import { addTokens, type LimitReading, type Session, type Tokens } from './facts.ts'
 import { extensionOf, type RepoLanded } from './landed.ts'
-import type { ProbeFacts } from './probes.ts'
+import type { ProbeFacts, Rise } from './probes.ts'
 
 export type Bucket = 'hour' | 'day'
 
@@ -74,14 +74,17 @@ export type ScopeStats = {
 
 /**
  * The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where
- * its percent moved, what was spent and how far the percent climbed, so what 1% buys and what the percent left buys
- * at that rate. The rate is unknown until the percent has climbed.
+ * its percent moved, what was spent and how far the percent climbed for it, so what 1% buys and what the percent left
+ * buys at that rate. The rate is unknown until the percent has climbed for the tower's spend.
  */
 export type WeeklyBudget = {
   percentUsed: number
   resetsAt: string
   since: number
   spent: number
+  /** Points of the week used outside the tower (claude.ai, the desktop app, another machine): `outsideUse`. */
+  outside: number
+  /** What 1% buys, from the climb less `outside`. */
   usdPerPercent?: number
   usdLeft?: number
   pace?: Pace
@@ -119,6 +122,8 @@ export type Stats = StatsQuery & {
   sessions: Record<string, SessionShare>
   budget?: WeeklyBudget
   weekly?: WeeklyRead
+  /** Points of the weekly limit used outside the tower in the window (`outsideUse`), of any week it spans. */
+  outside: number
 }
 
 export const WEEKLY = 'seven_day'
@@ -288,9 +293,30 @@ export const weeklyRead = (sessions: Session[], probes: ProbeFacts[], q: Pick<St
   return latest && { at: latest[0], percentUsed: latest[1], resetsAt: latest[2] }
 }
 
+/** Whether a session used the API from `from` to `to` (epoch ms): a model step, a spend, or a main-loop turn over any of it. */
+const towerActive = (sessions: Session[], from: number, to: number) =>
+  sessions.some(({ header, facts }) => {
+    const inSpan = ([at]: [number, ...unknown[]]) => at > from && at <= to
+    const turn = facts.turnStartedAt === undefined ? [] : [[header.startedAt + facts.turnStartedAt * 1000, Infinity] as const]
+    return facts.tokens.some(inSpan) || facts.spend.some(inSpan) || [...facts.turnSpans.map(([at, s]) => [at, at + s * 1000] as const), ...turn].some(([start, end]) => start < to && end > from)
+  })
+
+/**
+ * Use of the weekly limit from outside the tower: each climb between two probe answers in a row while no session used
+ * the API. Readings of one source round alike, and a session's and the probe's can differ by a point for the same use,
+ * so only the probe's are compared with each other. Use outside the tower while it also works counts as the tower's.
+ * Of the climbs `keep` picks.
+ */
+export const outsideUse = (sessions: Session[], probes: ProbeFacts[], keep: (rise: Rise) => boolean): number =>
+  sum(probes.flatMap((p) => p.rises[WEEKLY] ?? []).filter((r) => keep(r) && !towerActive(sessions, r[0], r[1])).map((r) => r[2]))
+
+/** Use of the weekly limit from outside the tower in the window: the climbs that ended in it. */
+export const outsideIn = (sessions: Session[], probes: ProbeFacts[], q: Pick<StatsQuery, 'from' | 'to'>): number => outsideUse(sessions, probes, (r) => within(q)(r[1]))
+
 /**
  * The weekly budget from every reading of the weekly limit, a session's or a probe's: the account's, whatever read
- * them. None once the window of the latest reading has reset by `now`.
+ * them. What 1% buys is read from the climb the tower's spend made, less use from outside it. None once the window of
+ * the latest reading has reset by `now`.
  */
 export const weeklyBudget = (sessions: Session[], probes: ProbeFacts[], now: number): WeeklyBudget | undefined => {
   const readings = weeklyReadings(sessions, probes)
@@ -299,12 +325,13 @@ export const weeklyBudget = (sessions: Session[], probes: ProbeFacts[], now: num
   const [at, percentUsed, resetsAt] = latest
   const first = readings.filter((r) => r[2] === resetsAt).reduce((a, r) => (r[0] < a[0] ? r : a))
   const spent = sum(sessions.flatMap((s) => s.facts.spend.filter(([t]) => t >= first[0] && t <= at).map(([, usd]) => usd)))
-  const climbed = percentUsed - first[1]
+  const outside = outsideUse(sessions, probes, (r) => r[3] === resetsAt)
+  const climbed = percentUsed - first[1] - outside
   const usdPerPercent = climbed > 0 ? spent / climbed : undefined
   const usdLeft = usdPerPercent && (100 - percentUsed) * usdPerPercent
   const from = bucketStart(now, 'day')
   const daySpend = sum(sessions.flatMap((s) => s.facts.spend.filter(([t]) => t >= from && t <= now).map(([, usd]) => usd)))
-  const budget = { percentUsed, resetsAt, since: first[0], spent, usdPerPercent, usdLeft }
+  const budget = { percentUsed, resetsAt, since: first[0], spent, outside, usdPerPercent, usdLeft }
   return { ...budget, pace: pace(budget, { since: from, spend: daySpend }, now) }
 }
 
@@ -323,9 +350,9 @@ export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { 
 
 /**
  * The sessions' stats over the window, with what landed on each project's repos (`landed`, by project). The weekly
- * budget is the account's, so it is read apart, from every session.
+ * budget and outside use are the account's, so they are read apart, from every session and probe.
  */
-export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>, q: StatsQuery): Omit<Stats, 'budget' | 'weekly'> => {
+export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>, q: StatsQuery): Omit<Stats, 'budget' | 'weekly' | 'outside'> => {
   const buckets = bucketsOf(q)
   const projects = [...new Set([...sessions.map((s) => s.header.project), ...Object.keys(landed)])].sort()
   return {
