@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.30.0
+
+The quota probe tells use outside the tower from the tower's own, reads a model's own week and extra usage, and
+reads on request. No host restart, no config change. The renderer API moves to 1.47, additions. Restart the tower
+(`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and reload it.
+
+- Outside use: a climb in the weekly quota between two consecutive probe answers, over a span in which no session
+  made a model call, spent or had a turn, is use from outside the tower (claude.ai, the desktop app, a phone). The
+  weekly budget's `outside` is this week's, `GET /stats` carries it for any window, and the Stats panel and The
+  Week's cover show it. What 1% buys (`usdPerPercent`) now comes from the tower's own climb, outside use left out.
+  Outside use during a span the tower also works counts as the tower's: the stat errs low.
+- A model's own weekly limit, when the account has one, is on the board as `seven_day_<model>`, kept while its
+  reading is fresh and its window hasn't reset. On such an account the quota probe reads every 10 minutes while
+  sessions work too, so that week doesn't go stale while it is spent.
+- Extra usage: `board.extraUsage`, drawn under the limits on the tower page and in Tower 3D's HUD once some is spent.
+- `POST /probe/run` reads a probe now: offered as `run` on each probe, refused while off, while a read runs, or
+  within 60 s of the last start. "Read now" on the tower page, a click on Tower 3D's lamp, `tower probes run
+  <name>`.
+- Fixed: a turn cut short by an exit no longer stays open for outside use.
+
 ## v1.29.0
 
 A guide to the tower for new users and their Claudes, the probes' status everywhere, and The Week reads past weeks.
