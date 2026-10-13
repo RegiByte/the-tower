@@ -259,6 +259,8 @@ button.wide { width: 100%; }
 .doc-file:hover { color: var(--ink); background: var(--panel-2); }
 .doc-file.on { color: var(--ink); background: var(--sunk); font-weight: 700; }
 button.doc-file { display: block; width: 100%; border: none; background: none; font-weight: 400; text-align: left; }
+.doc-file-row { display: flex; align-items: center; }
+.doc-file-row > button.doc-file { flex: 1; min-width: 0; }
 .doc-frame { flex: 1; min-width: 0; border: 0; background: var(--panel); }
 .kept-image { flex: 1; min-width: 0; display: grid; place-items: center; overflow: auto; background: var(--panel); }
 .kept-image img { max-width: 100%; max-height: 100%; }

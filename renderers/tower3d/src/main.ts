@@ -715,7 +715,7 @@ async function openShelf(project: string, n: number, file?: string) {
   const text = shown ? await shelfText(project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
   if (s.panel?.kind !== 'doc' || s.panel.project !== project || s.panel.n !== n) return
   s.panel.file = shown
-  $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? '') }, tower.prefs.attributes())
+  $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: s.board!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
 }
 onAppearance(() => s.panel?.kind === 'doc' && s.panel.file && openShelf(s.panel.project, s.panel.n, s.panel.file))
 
