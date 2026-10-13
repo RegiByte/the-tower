@@ -752,6 +752,8 @@ const departing = new Set<string>()
  * `send-home` (everyone under it, then itself) when it is in a crew, else its `kill`.
  */
 const sendLeaversHome = () => {
+  const live = system.live()?.ids
+  if (!departing.size && !system.sessions().some((s) => live?.has(s.header.id) && leavesNow(s.facts))) return
   const cards = everyCard(Date.now())
   for (const id of departing) if (!cards.some((c) => c.id === id && c.leaving)) departing.delete(id)
   for (const c of cards.filter((c) => c.leaving && !departing.has(c.id) && leavesNow(system.session(c.id)!.facts))) {

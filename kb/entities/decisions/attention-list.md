@@ -72,8 +72,8 @@ wait alike, so "done, your turn" read as alarm.
   prompt is the hirer's (`promptBy`), while the hirer's current card is live, gets `waiting: false` and `waitsOn` (the
   hirer's id and callsign). Everything that keys on `board.waiting` or `card.waiting` (rings, notifications, N, counts,
   the tab title) leaves it alone with no renderer change; `statusName` says "waiting on <CALLSIGN>".
-- A worker that asked to go home (`card.leaving`) waits on nobody: its turn's end is when the tower sends it home
-  ([[leave]]).
+- A worker that asked to go home (`card.leaving`): its outcome waits on nobody, as the tower sends it home when its
+  turn ends; a screen or a question still waits on the user ([[leave]]).
 - Attention splits: `needs` is a screen or a question (red, blinks), `ready` an unread answer (a calm green, still),
   `broken` a failure, read or not. `ready` holds whomever the answer waits on: the colour says what the worker holds,
   `waiting` whether it's yours. A count of waits is coloured by its loudest card

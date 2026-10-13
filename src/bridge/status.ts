@@ -106,12 +106,15 @@ export const nextState = (state: SessionState, event: LogEvent): SessionState =>
   return { status, since: status === state.status ? state.since : event[0], compaction, ...(blocked && { blocked }) }
 }
 
+/** The main loop's turn ended, answered or failed: an outcome for someone to read. */
+export const isOutcome = (status: Status): boolean => status === 'done' || status === 'failed'
+
 /**
  * Held by a screen or a question, or holding an outcome (an answer or a failure) that nobody has typed to since it
  * arrived. `typedAt` is when someone last typed into the session. Whom it waits on is the board's (`Card.waitsOn`).
  */
 export const waitsOnSomeone = ({ status, since }: SessionState, typedAt: number | undefined): boolean =>
-  status === 'blocked' || status === 'needs_input' || ((status === 'done' || status === 'failed') && (typedAt === undefined || typedAt < since))
+  status === 'blocked' || status === 'needs_input' || (isOutcome(status) && (typedAt === undefined || typedAt < since))
 
 /** The main loop's turn started and hasn't ended: Claude works on it, compacts inside it, or asks the user about it. */
 export const isMidTurn = (status: Status): boolean => status === 'working' || status === 'needs_input'

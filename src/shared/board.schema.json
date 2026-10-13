@@ -497,7 +497,7 @@
         },
         "leaving": {
           "type": "boolean",
-          "description": "It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the tower runs its `send-home`, or its `kill` when it is in no crew. A leaving worker waits on nobody."
+          "description": "It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the tower runs its `send-home`, or its `kill` when it is in no crew. Its outcome waits on nobody; a screen or a question still waits on the user, since the turn can't end until someone answers it."
         },
         "waitsOn": {
           "type": "object",

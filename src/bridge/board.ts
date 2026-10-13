@@ -13,7 +13,7 @@ import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type Lim
 import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
-import { isMidTurn, waitsOnSomeone, withLiveness, type Status } from './status.ts'
+import { isMidTurn, isOutcome, waitsOnSomeone, withLiveness, type Status } from './status.ts'
 import type { BlockedKind } from './blocked.ts'
 import { isStuck, prunable, type Prune } from './prunable.ts'
 import { oldLogs, oldStreams, type LogFile, type OldLog, type OldStream, type StreamMonth } from './retention.ts'
@@ -130,7 +130,8 @@ export type Card = {
   waiting: boolean
   /**
    * It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the
-   * tower runs its `send-home`, or its `kill` when it is in no crew. A leaving worker waits on nobody.
+   * tower runs its `send-home`, or its `kill` when it is in no crew. Its outcome waits on nobody; a screen or a question
+   * still waits on the user, since the turn can't end until someone answers it.
    */
   leaving: boolean
   /** The worker whose prompt a hire's unread answer answers: its hirer as it runs now, while that runs. */
@@ -393,7 +394,7 @@ const card = (
   const cutOff = stranded && !facts.broken && isMidTurn(facts.exitedFrom ?? facts.state.status)
   const live = isLive(state.status)
   const leaving = live && facts.leaveAt !== undefined
-  const waiting = !facts.broken && !leaving && waitsOnSomeone(state, facts.typedAt)
+  const waiting = !facts.broken && waitsOnSomeone(state, facts.typedAt) && !(leaving && isOutcome(state.status))
   const held = threads(session, sessions, nameOf)
   const unresumable = !live && held.some((t) => !t.resumedBy) ? unresumableHere : undefined
   const conversations = held.map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
