@@ -15,7 +15,8 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
   "user": { "name": "Your Name" },
   "collections": {
     "drafts": { "label": "Drafts", "description": "Prompts waiting to start a worker or be sent to one." },
-    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written through tower note." }
+    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written through tower note." },
+    "policies": { "label": "Policies", "description": "Standing work the tower starts on a schedule: one markdown file each, a # Title, a json header, then the prompt." }
   },
   "projects": {
     "my-app": {
@@ -113,7 +114,9 @@ away. The shelf is not a collection, though an `item` entry shows one of a colle
 A collection is a kind of file a floor keeps in the system root, `collections/<project>/<collection>/<item>`, declared
 by id with a `label` (the name it is shown by) and an optional `description` (what it is for, in a sentence or two,
 shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. One id means
-something to the tower itself: `reviews`, one review thread per checkout, written only through `tower note`. The
+something to the tower itself: `reviews`, one review thread per checkout, written only through `tower note`. A second
+does too: `policies`, standing work the tower starts at its slots (`tower policies` lists them, the handbook's
+"Policies and runs" says what a policy holds); on a floor without it, nothing runs on a schedule. The
 renderers that ship read `drafts` as prompts waiting to start a worker or be sent to one. A floor keeping `games` shows each item as an arcade cabinet in
 Tower 3D.
 

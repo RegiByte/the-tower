@@ -319,8 +319,10 @@ deletes them (`collection/create`, `collection/write`, `collection/delete`), and
 (`collection/restore`, an undo). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
 `/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
-Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through
-`review/append`.
+Workers add with `tower keep <collection>`. Two ids mean something to the core: `reviews`, written only through
+`review/append`; and `policies`, standing work the tower runs at its slots: the board carries each floor's
+`policies` (parsed, with where each stands) and `board.offers`, `/policies.js` says rules and slots in words and
+where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `policy/approve` write its facts.
 
 ## Claude plugins
 

@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import type { Config } from './shared/model.ts'
+import { POLICIES } from './shared/policies.ts'
 import { REVIEWS } from './shared/reviews.ts'
 import { CliError } from './cli-error.ts'
 
@@ -19,6 +20,7 @@ export const initialConfig = (hub: string, repos: string[], user: string | undef
   collections: {
     drafts: { label: 'Drafts', description: 'Prompts kept for later: each starts a new session or is typed into a worker, then is deleted.' },
     [REVIEWS]: { label: 'Reviews', description: 'One review thread per checkout, written only with `tower note`: not a place for write-ups.' },
+    [POLICIES]: { label: 'Policies', description: 'Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower policies` lists them.' },
   },
   ...(user ? { user: { name: user } } : {}),
 })
