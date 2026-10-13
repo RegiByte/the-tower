@@ -8,7 +8,7 @@ import os from 'node:os'
 import path from 'node:path'
 import type { Session } from './bridge/facts.ts'
 import {
-  accountLimits, due, eventLine, FLOOR_MS, monthFile, monthStart, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
+  due, eventLine, newestReading, FLOOR_MS, monthFile, monthStart, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
   type ProbeFacts, type ProbeRead, type Reader, type StreamHeader,
 } from './bridge/probes.ts'
 import { withoutParentSession } from './shared/env.ts'
@@ -92,8 +92,8 @@ export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions
     if (reading || now - lastStart < FLOOR_MS) return
     const config = readConfig()
     const facts = probes()
-    const board = accountLimits(sessions().map((s) => s.facts), [...facts.values()])
-    const probe = probesOf(config).find((p) => due(p, facts.get(p.name) ?? NO_READS, board, now))
+    const measured = newestReading(sessions().map((s) => s.facts.rateLimits))
+    const probe = probesOf(config).find((p) => due(p, facts.get(p.name) ?? NO_READS, measured, now))
     if (!probe) return
     reading = true
     lastStart = now

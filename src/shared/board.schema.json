@@ -2307,7 +2307,7 @@
         },
         "held": {
           "type": "boolean",
-          "description": "`nextAt` is set by what the board already has: a session's turn read the same limits, and it reads no sooner than `every` after."
+          "description": "`nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after."
         }
       },
       "required": [

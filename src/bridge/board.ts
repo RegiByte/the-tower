@@ -9,7 +9,7 @@ import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
-import { accountLimits, NO_READS, probesOf, probeStatus, type LimitsFrom, type ProbeFacts, type ProbeStatus } from './probes.ts'
+import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ProbeFacts, type ProbeStatus } from './probes.ts'
 import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
@@ -736,7 +736,7 @@ export const board = (
     waiting: waitingOrder(cards),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
-    probes: probesOf(config).map((p) => probeStatus(p, probes.get(p.name) ?? NO_READS, limits)),
+    probes: probesOf(config).map((p) => probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits)))),
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,

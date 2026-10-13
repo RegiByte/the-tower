@@ -62,8 +62,9 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   ([`usageAnswer`](ref:hub/src/bridge/probes.ts#usageAnswer)). No reader sends a prompt, starts a session or calls a
   verb. A reader a program the user writes could be is left for later: the core can't promise it only reads.
 - *Due, from facts.* Every 30 s the tower runs the first probe [`due`](ref:hub/src/bridge/probes.ts#due) at `now`:
-  never while `off`, nor while its reader can wait on the board (`claude.usage`: a session's reading newer than
-  `every`); else once its wait ([`waitOf`](ref:hub/src/bridge/probes.ts#waitOf)) has passed since its stream's last
+  never while `off`, nor while its reader can wait on the sessions (`claude.usage`: the sessions' newest reading is
+  newer than `every` and has every limit the probe's last answer had: an account with a model's own weekly limit,
+  which no session measures, is read every `every` while sessions work too); else once its wait ([`waitOf`](ref:hub/src/bridge/probes.ts#waitOf)) has passed since its stream's last
   read: `every`; after 3 failures in a row 10 min doubling to 1 h; 6 h after an answer saying the account has no rate
   limits (`rate_limits_available: false`: an API key, a cloud provider, signed out). Backoff is read from the
   stream, so a restart doesn't reset it. A last read dated after `now` (the clock moved back) is due. The tower holds
@@ -80,11 +81,12 @@ fixture). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
   streams are reserved at `streams/projects/<project>/<stream>/`, none written yet.
 - *Folded beside the sessions.* [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches `streams/system/` and
   folds each probe's months in order ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts)): `limitReadings` and
-  `rateLimits` in the sessions' shape (`five_hour`, `seven_day`, each reset rounded to the second as the mod reports
-  it, so a window is one whichever read it), the last read, failures in a row, and `rises`: each limit's climb from
+  `rateLimits` in the sessions' shape (`five_hour`, `seven_day`, and each model's own week from `model_scoped` as
+  `seven_day_<model>`, each reset rounded to the second as the mod reports it, so a window is one whichever read it), the last read, failures in a row, and `rises`: each limit's climb from
   one answer to the next in the same window, which the stats read as use from outside the tower ([[stats]]). The board's `rateLimits` are the newest
   of sessions ∪ probes ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)), with `rateLimitsFrom`
-  (`session` or `probe`); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
+  (`session` or `probe`), and beside them each limit only the other reads, as of its newest reading (a model's week
+  stays on the board while a session's turn is the newest); `weeklyBudget` and `pace` read the readings of both ([[stats]]).
 
 - *How a probe stands, derived.* [`probeStatus`](ref:hub/src/bridge/probes.ts#probeStatus) folds each probe of
   the config with its stream's facts and the board's limits into a
@@ -116,4 +118,4 @@ the user, and these are observed facts.
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
 session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
-the Tidy plan's `streams`. API 1.47: outside use as a stat. Not built yet: per-model weeks, extra usage, `POST /probe/run`.
+the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week. Not built yet: extra usage, `POST /probe/run`.

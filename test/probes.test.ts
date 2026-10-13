@@ -12,7 +12,9 @@ const text = (name: string) => readFileSync(path.join(import.meta.dirname, 'fixt
 const MIN = 60_000
 const QUOTA: Probe = { name: 'quota', reads: 'claude.usage', every: 10 * MIN, off: false }
 const NOW = Date.parse('2026-10-11T12:00:00Z')
-const NO_LIMITS = { rateLimitsAt: undefined, rateLimitsFrom: undefined }
+const NO_LIMITS = undefined
+const WEEKS = [{ kind: 'five_hour', percentUsed: 10 }, { kind: 'seven_day', percentUsed: 40 }]
+const measured = (at: number) => ({ at, limits: WEEKS })
 const readAt = (at: number, rest: Partial<ProbeFacts> = {}): ProbeFacts => ({ ...NO_READS, lastAt: at, ...rest })
 
 test("get_usage answers with the account's limits and costs nothing: no API time, $0", () => {
@@ -25,7 +27,7 @@ test("get_usage answers with the account's limits and costs nothing: no API time
   assert.deepEqual(usageAnswer(''), { error: 'claude printed no answer to get_usage' })
 })
 
-test("a read's limits are the session's shape, its reset to the second, so a window is one whichever read it", () => {
+test("a read's limits are the session's shape, its reset to the second, so a window is one whichever read it; a model's own week is seven_day_<model>", () => {
   const read = usageAnswer(text('probe-usage.out')) as { answer: unknown }
   const facts = probeFacts([[NOW, { reads: 'claude.usage', ms: 1411, ok: true, answer: read.answer }]])
   assert.deepEqual(facts.rateLimits, {
@@ -33,6 +35,7 @@ test("a read's limits are the session's shape, its reset to the second, so a win
     limits: [
       { kind: 'five_hour', percentUsed: 11, resetsAt: '2026-10-11T15:40:00.000Z' },
       { kind: 'seven_day', percentUsed: 89, resetsAt: '2026-10-11T22:00:00.000Z' },
+      { kind: 'seven_day_fable', percentUsed: 0, resetsAt: '2026-10-11T22:00:00.000Z' },
     ],
   })
   assert.deepEqual(facts.limitReadings.seven_day, [[NOW, 89, '2026-10-11T22:00:00.000Z']])
@@ -45,6 +48,9 @@ test('the board reads the newest of the sessions and the probes, and says whose 
   assert.deepEqual(accountLimits([session], [probe]), { rateLimits: probe.rateLimits!.limits, rateLimitsAt: NOW, rateLimitsFrom: 'probe' })
   assert.deepEqual(accountLimits([session], [NO_READS]), { rateLimits: limits, rateLimitsAt: NOW - MIN, rateLimitsFrom: 'session' })
   assert.deepEqual(accountLimits([], []), { rateLimits: [], rateLimitsAt: undefined, rateLimitsFrom: undefined })
+  const opus = { kind: 'seven_day_opus', percentUsed: 5 }
+  const newerSession = { rateLimits: { at: NOW + MIN, limits } }
+  assert.deepEqual(accountLimits([newerSession], [readAt(NOW, { rateLimits: { at: NOW, limits: [{ kind: 'seven_day', percentUsed: 89 }, opus] } })]).rateLimits, [...limits, opus], "a limit only the probe reads stays beside a newer session's")
 })
 
 test('a probe is due with no read yet, then once every `every` after its last read', () => {
@@ -54,10 +60,12 @@ test('a probe is due with no read yet, then once every `every` after its last re
   assert.equal(due({ ...QUOTA, off: true }, NO_READS, NO_LIMITS, NOW), false)
 })
 
-test("the quota probe waits while a session's reading is newer than its interval, and not on its own reading", () => {
-  assert.equal(due(QUOTA, NO_READS, { rateLimitsAt: NOW - 5 * MIN, rateLimitsFrom: 'session' }, NOW), false)
-  assert.equal(due(QUOTA, NO_READS, { rateLimitsAt: NOW - 10 * MIN, rateLimitsFrom: 'session' }, NOW), true)
-  assert.equal(due(QUOTA, readAt(NOW - 10 * MIN), { rateLimitsAt: NOW - 10 * MIN, rateLimitsFrom: 'probe' }, NOW), true)
+test("the quota probe waits while a session's reading is newer than its interval and has every limit the probe read", () => {
+  assert.equal(due(QUOTA, NO_READS, measured(NOW - 5 * MIN), NOW), false)
+  assert.equal(due(QUOTA, NO_READS, measured(NOW - 10 * MIN), NOW), true)
+  assert.equal(due(QUOTA, readAt(NOW - 10 * MIN), NO_LIMITS, NOW), true)
+  const modelWeek = readAt(NOW - 10 * MIN, { rateLimits: { at: NOW - 10 * MIN, limits: [...WEEKS, { kind: 'seven_day_opus', percentUsed: 5 }] } })
+  assert.equal(due(QUOTA, modelWeek, measured(NOW - MIN), NOW), true, 'no session measures a model of its own week')
 })
 
 test('failures in a row back off from the third: 10 min, doubling to an hour; an account with no limits waits 6 h', () => {
@@ -94,6 +102,7 @@ test("a probe's stream, read by a tower: two answers, then three failures; the f
   assert.deepEqual(facts.limitReadings, {
     five_hour: [[at(0), 12, '2026-10-11T15:40:00.000Z'], [at(1), 13, '2026-10-11T15:40:00.000Z']],
     seven_day: [[at(0), 89, '2026-10-11T22:00:00.000Z']],
+    seven_day_fable: [[at(0), 0, '2026-10-11T22:00:00.000Z']],
   })
   assert.equal(facts.rateLimits?.at, at(1))
   const every2m = { ...QUOTA, every: 2 * MIN }
@@ -130,7 +139,7 @@ test("a probe's status says how its stream stands: three failures back off, with
 
 test("a probe's next read waits for a session's newer reading, and an off probe has none", () => {
   const facts = readAt(NOW - 9 * MIN)
-  assert.deepEqual(probeStatus(QUOTA, facts, { rateLimitsAt: NOW - 2 * MIN, rateLimitsFrom: 'session' }), { ...probeStatus(QUOTA, facts, NO_LIMITS), nextAt: NOW + 8 * MIN, held: true })
+  assert.deepEqual(probeStatus(QUOTA, facts, measured(NOW - 2 * MIN)), { ...probeStatus(QUOTA, facts, NO_LIMITS), nextAt: NOW + 8 * MIN, held: true })
   assert.deepEqual([probeStatus(QUOTA, NO_READS, NO_LIMITS).state, probeStatus(QUOTA, NO_READS, NO_LIMITS).nextAt], ['new', 0])
   const off = probeStatus({ ...QUOTA, off: true }, facts, NO_LIMITS)
   assert.deepEqual([off.state, off.nextAt, off.held], ['off', undefined, false])

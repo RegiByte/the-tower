@@ -87,25 +87,41 @@ export const readingsOf = (text: string): StreamFile => {
   return { readings, unreadable: events.length + 1 - readings.length - (header ? 1 : 0) }
 }
 
-/** Claude's answer to `get_usage`, as much of it as the fold reads. */
-type UsageAnswer = { rate_limits_available?: boolean; rate_limits?: Record<string, { utilization?: number; resets_at?: string } | undefined> }
+type UsageWindow = { utilization?: number; resets_at?: string }
 
-const USAGE_WINDOWS = ['five_hour', 'seven_day']
+/** Claude's answer to `get_usage`, as much of it as the fold reads: a model's own weekly limit is in `model_scoped`. */
+type UsageAnswer = {
+  rate_limits_available?: boolean
+  rate_limits?: { five_hour?: UsageWindow; seven_day?: UsageWindow; model_scoped?: (UsageWindow & { display_name?: string })[] }
+}
+
+/** A model's weekly limit as a kind, the way a session names one: `seven_day_opus`. */
+const modelWeek = (model: string): string => `seven_day_${model.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`
+
+const limitOf = (kind: string, window: UsageWindow | undefined): RateLimit[] =>
+  window?.utilization === undefined ? [] : [{ kind, percentUsed: window.utilization, ...(window.resets_at && { resetsAt: toSecond(window.resets_at) }) }]
 
 /** Claude answers a window's reset to the microsecond and a session measures it to the second: a window is known by its reset in both. */
 const toSecond = (iso: string): string => new Date(Math.round(Date.parse(iso) / 1000) * 1000).toISOString()
 
 /** What each reader's answer says, and when its read can wait: pure, so the fold and `due` read them. */
-const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavailable: (answer: unknown) => boolean; heldUntil: (board: LimitsAge, every: number) => number | undefined }> = {
+const READ_AS: Record<Reader, { limits: (answer: unknown) => RateLimit[]; unavailable: (answer: unknown) => boolean; heldUntil: (sessions: Facts['rateLimits'], facts: ProbeFacts, every: number) => number | undefined }> = {
   'claude.usage': {
-    limits: (answer) =>
-      USAGE_WINDOWS.flatMap((kind) => {
-        const window = (answer as UsageAnswer).rate_limits?.[kind]
-        return window?.utilization === undefined ? [] : [{ kind, percentUsed: window.utilization, ...(window.resets_at && { resetsAt: toSecond(window.resets_at) }) }]
-      }),
+    limits: (answer) => {
+      const limits = (answer as UsageAnswer).rate_limits
+      return [
+        ...limitOf('five_hour', limits?.five_hour),
+        ...limitOf('seven_day', limits?.seven_day),
+        ...(limits?.model_scoped ?? []).flatMap((m) => (m.display_name ? limitOf(modelWeek(m.display_name), m) : [])),
+      ]
+    },
     unavailable: (answer) => (answer as UsageAnswer).rate_limits_available === false,
-    /** A session's turn measures the same limits: no read while its reading is newer than `every`. */
-    heldUntil: (board, every) => (board.rateLimitsFrom === 'session' && board.rateLimitsAt !== undefined ? board.rateLimitsAt + every : undefined),
+    /**
+     * A session's turn measures the five-hour and weekly limits: no read while its reading is newer than `every`,
+     * unless the probe's last answer had a limit the sessions don't measure (a model's own week).
+     */
+    heldUntil: (sessions, facts, every) =>
+      sessions && (facts.rateLimits?.limits ?? []).every((l) => sessions.limits.some((s) => s.kind === l.kind)) ? sessions.at + every : undefined,
   },
 }
 
@@ -129,16 +145,20 @@ export type LimitsFrom = 'session' | 'probe'
 /** The board's account limits: the newest reading of any session's measure or any probe's read. */
 export type LimitsRead = Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'rateLimitsFrom'>
 
-/** Rate limits belong to the account: the newest reading, a session's or a probe's, stands for every one. */
-/** How old the board's limits are, and whose reading they are. */
-type LimitsAge = Pick<LimitsRead, 'rateLimitsAt' | 'rateLimitsFrom'>
+/** The newest of the readings. */
+export const newestReading = (readings: Facts['rateLimits'][]): Facts['rateLimits'] =>
+  readings.reduce<Facts['rateLimits']>((latest, r) => (r && (!latest || r.at > latest.at) ? r : latest), undefined)
 
+/**
+ * Rate limits belong to the account: the newest reading, a session's or a probe's, stands for every limit it has; a
+ * limit only the other reads (a model's own week, which only the probe reads) is the other's newest.
+ */
 export const accountLimits = (sessions: Pick<Facts, 'rateLimits'>[], probes: ProbeFacts[]): LimitsRead => {
-  const newest = (from: LimitsFrom, readings: Facts['rateLimits'][]) =>
-    readings.reduce<{ at: number; limits: RateLimit[]; from: LimitsFrom } | undefined>((latest, r) => (r && (!latest || r.at > latest.at) ? { ...r, from } : latest), undefined)
-  const [session, probe] = [newest('session', sessions.map((f) => f.rateLimits)), newest('probe', probes.map((f) => f.rateLimits))]
-  const latest = session && (!probe || session.at >= probe.at) ? session : probe
-  return { rateLimits: latest?.limits ?? [], rateLimitsAt: latest?.at, rateLimitsFrom: latest?.from }
+  const [session, probe] = [newestReading(sessions.map((f) => f.rateLimits)), newestReading(probes.map((f) => f.rateLimits))]
+  const [latest, other, from] = session && (!probe || session.at >= probe.at) ? [session, probe, 'session' as const] : [probe, session, 'probe' as const]
+  if (!latest) return { rateLimits: [], rateLimitsAt: undefined, rateLimitsFrom: undefined }
+  const only = (other?.limits ?? []).filter((l) => !latest.limits.some((n) => n.kind === l.kind))
+  return { rateLimits: [...latest.limits, ...only], rateLimitsAt: latest.at, rateLimitsFrom: from }
 }
 
 /** A probe as the tower runs it: `every` in ms. */
@@ -160,12 +180,12 @@ export const waitOf = (probe: Probe, facts: ProbeFacts): number =>
       : probe.every
 
 /**
- * Whether the probe reads at `now`, from its stream and the board: never while off or while its reader can wait on
- * the board; otherwise once its wait has passed since its last read. A last read dated after `now` (the clock moved
+ * Whether the probe reads at `now`, from its stream and the sessions' newest reading: never while off or while its
+ * reader can wait on the sessions; otherwise once its wait has passed since its last read. A last read dated after `now` (the clock moved
  * back) makes it due: the tower's floor keeps reads apart.
  */
-export const due = (probe: Probe, facts: ProbeFacts, board: LimitsAge, now: number): boolean => {
-  if (probe.off || now < (READ_AS[probe.reads].heldUntil(board, probe.every) ?? -Infinity)) return false
+export const due = (probe: Probe, facts: ProbeFacts, sessions: Facts['rateLimits'], now: number): boolean => {
+  if (probe.off || now < (READ_AS[probe.reads].heldUntil(sessions, facts, probe.every) ?? -Infinity)) return false
   return facts.lastAt === undefined || facts.lastAt > now || now - facts.lastAt >= waitOf(probe, facts)
 }
 
@@ -197,7 +217,7 @@ export type ProbeStatus = {
    * means at the tower's next tick. Absent while off.
    */
   nextAt?: number
-  /** `nextAt` is set by what the board already has: a session's turn read the same limits, and it reads no sooner than `every` after. */
+  /** `nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after. */
   held: boolean
 }
 
@@ -222,10 +242,10 @@ const stateOf = (probe: Probe, facts: ProbeFacts): ProbeState =>
             ? 'unavailable'
             : 'ok'
 
-export const probeStatus = (probe: Probe, facts: ProbeFacts, board: LimitsAge): ProbeStatus => {
+export const probeStatus = (probe: Probe, facts: ProbeFacts, sessions: Facts['rateLimits']): ProbeStatus => {
   const wait = waitOf(probe, facts)
   const after = facts.lastAt === undefined ? 0 : facts.lastAt + wait
-  const heldUntil = READ_AS[probe.reads].heldUntil(board, probe.every) ?? 0
+  const heldUntil = READ_AS[probe.reads].heldUntil(sessions, facts, probe.every) ?? 0
   return {
     name: probe.name,
     reads: probe.reads,
