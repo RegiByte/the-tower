@@ -2140,6 +2140,9 @@
             },
             "until": {
               "type": "number"
+            },
+            "check": {
+              "$ref": "#/definitions/CheckResult"
             }
           },
           "required": [
@@ -2766,6 +2769,9 @@
         "until": {
           "type": "number"
         },
+        "check": {
+          "$ref": "#/definitions/CheckResult"
+        },
         "calls": {
           "type": "object",
           "properties": {
@@ -2802,7 +2808,7 @@
         "calls"
       ],
       "additionalProperties": false,
-      "description": "A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`."
+      "description": "A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check found, which the run accepting it records."
     },
     "RateLimit": {
       "type": "object",

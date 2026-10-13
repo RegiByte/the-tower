@@ -307,7 +307,7 @@ export const VERBS = {
       })
       .refine((r) => (r.start === 'hand') === (r.slot === undefined), { message: 'A run by hand takes no slot, and any other run takes one', path: ['slot'] })
       .describe(
-        "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval: the caller consents. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
+        "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval (the caller consents), except `auto`, refused unless the file's words as read now are approved. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
       ),
     reply: z.object({ t: z.literal('ran'), id: z.string().describe("The worker's session."), n: z.int().describe("The run's number among the policy's runs."), hash: z.string() }),
   },

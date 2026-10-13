@@ -75,7 +75,7 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   ([`appendFact`](ref:hub/src/streams.ts#appendFact)), through one verb each:
   [`policy/run`](ref:hub/src/tower/server.ts#runPolicy) (parses the file now, spawns on `hire` and the prose,
   appends `r`, kills the worker if the append fails; refuses an invalid policy, another runner's, a slot already
-  run, runs past `live`; needs no approval, since the caller consents),
+  run, runs past `live`; needs no approval, since the caller consents, except `start: auto`, refused unless the hash read now is approved),
   [`policy/pass`](ref:hub/src/tower/server.ts#passPolicy) (refused once the slot has a fact) and
   [`policy/approve`](ref:hub/src/tower/server.ts#approvePolicy) (refused unless the hash is the file's now). A
   policy's verbs are taken one at a time, each until the system holds its fact.
@@ -84,7 +84,7 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   ([`liveRuns`](ref:hub/src/bridge/policies.ts#liveRuns)), last run, last pass, the newest slot with a fact, the open
   offer, `needs`: `reapprove` for an auto policy edited since its approval, `invalid` for one approved once), with
   `run` and `approve` calls; `board.offers` ([`offersOf`](ref:hub/src/bridge/policies.ts#offersOf)), an offered slot
-  open until the policy's next slot or its run; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
+  open until the policy's next slot or its run, carrying its check's output onto the run that accepts it; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
   the run fact naming the first session of a worker's lineage. `GET /runs/<project>?policy&limit`
   ([`runsRead`](ref:hub/src/bridge/policies.ts#runsRead)) reads a policy's runs, each worker as it is now.
 - *The runner.* [`standing`](ref:hub/src/shared/policies.ts#standing) says where a policy stands, and

@@ -83,13 +83,16 @@ export type PolicyView = {
   last?: { n: number; at: number; slot: number | null; id: string; callsign?: string }
   passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
   seen?: number
-  offer?: { slot: number; since: number; until: number }
+  offer?: { slot: number; since: number; until: number; check?: CheckResult }
   needs?: { kind: 'reapprove'; approved: string } | { kind: 'invalid' }
   calls: { run?: Call<'policy/run'>; approve?: Call<'policy/approve'> }
 }
 
-/** A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. */
-export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; calls: { accept: Call<'policy/run'> } }
+/**
+ * A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check
+ * found, which the run accepting it records.
+ */
+export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult; calls: { accept: Call<'policy/run'> } }
 
 /** The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check. */
 export type CardRun = { policy: string; tag: string; title?: string; n: number; slot: number | null; start: RunStart; by?: string; check?: CheckResult }
@@ -125,7 +128,7 @@ const openOffer = (header: PolicyHeader, runs: RunFact[], passes: [number, PassF
   const slot = slotOf(offered[1].slot)
   const until = nextSlot(header.when, slot)
   if (until === undefined || now >= until || runs.some((r) => r.slot === offered[1].slot)) return undefined
-  return { slot, since: offered[0], until }
+  return { slot, since: offered[0], until, ...(offered[1].check && { check: offered[1].check }) }
 }
 
 /**
@@ -177,7 +180,7 @@ export const offersOf = (project: string, views: PolicyView[]): Offer[] =>
   views
     .flatMap((v) =>
       v.offer
-        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, calls: { accept: ['policy/run', { project, policy: v.id, slot: v.offer.slot, start: 'offer' }] as Call<'policy/run'> } }]
+        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, calls: { accept: ['policy/run', { project, policy: v.id, slot: v.offer.slot, start: 'offer', ...(v.offer.check && { check: v.offer.check }) }] as Call<'policy/run'> } }]
         : [],
     )
     .sort((a, b) => a.since - b.since)

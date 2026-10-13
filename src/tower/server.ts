@@ -1221,6 +1221,7 @@ const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['poli
       const refused = slotRefusal(policy, file.parsed, slot)
       if (refused) return refused
       const { header, prompt } = file.parsed as Extract<Parsed, { ok: true }>
+      if (start === 'auto' && !policyFactsOf(project).approvals.some(([, a]) => a.policy === policy && a.hash === file.hash)) return apiError('refused', `${tagOf(policy)} is not approved as it is now (${shortHash(file.hash)}): it starts on its own only on approved words`)
       if (slot !== undefined && policyFactsOf(project).runs.some(([, r]) => r.policy === policy && r.slot === slotName(slot))) return apiError('refused', `${tagOf(policy)} already ran for ${slotName(slot)}`)
       if (!system.live()) return apiError('unavailable', 'No host runs, so no worker can start: the user starts it with `tower up`')
       await system.refreshLive()
