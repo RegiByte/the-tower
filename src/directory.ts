@@ -12,6 +12,11 @@
  *   tower agent <CALLSIGN>  one worker: its latest prompt and answer in full, per conversation
  *   tower probes [run <name>]  each probe the tower runs: its state, last read, why it failed and when it reads next;
  *                        `run` reads one now (refused while off, while a read is in flight or within a minute of the last)
+ *   tower policies [approve|run <tag|id>]  the floor's policies: each one's rule, approval, live runs, last run and
+ *                        where it stands now; `approve` approves its words as they are, `run` starts it now (an open
+ *                        offer's slot when it has one)
+ *   tower runs [<tag|id>] [--limit n]  a policy's latest runs (5 unless told), each with its worker, what it showed and
+ *                        its latest answer cut short; no policy named, the one this session is a run of
  *   tower show <file|url> [title]   put a file this session wrote, or a web page, in front of the user beside this session
  *   tower open <url> [title]        ask the user to open a page in a browser tab (one that can't be shown in place)
  *   tower reveal <path>             show a file or folder to the user selected in a Finder window
@@ -47,6 +52,9 @@ import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/bo
 import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
+import type { PolicyView, RunRead } from './bridge/policies.ts'
+import { shortHash } from './bridge/policies.ts'
+import { slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
 import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
@@ -153,12 +161,27 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     `You are ${card.callsign}, session ${card.id}, a worker on ${floorTitle(floor)}.`,
     card.peer ? `Other Claude sessions message you as "${card.peer}".` : 'Your Claude session name is not known to the tower yet.',
     ...(card.hiredBy ? [`${card.hiredBy.callsign} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
+    ...(card.run ? runLines(floor, card.run) : []),
     ...(card.worktree ? worktreeLines(floor, card.worktree) : [`You work in ${card.cwd}.`]),
     `The floor's hub is ${floor.hub}${floor.repos?.length ? `, with repos ${floor.repos.map(base).join(', ')}` : ''}.`,
     `The tower answers at ${TOWER}: the user's page, and the API (\`tower api\` lists it).`,
     shelfLine(floor),
     ...collectionsLines(floor),
     `The tower's config is ${board.config}: \`tower config check\` checks it.`,
+  ]
+}
+
+/** A run's start in words. */
+const startWords = (start: RunRead['start'], by: string | undefined) => (start === 'auto' ? 'auto' : start === 'hand' ? `by hand${by ? `, ${by}` : ''}` : `offer, ${by ?? 'the user'}`)
+
+/** What a run knows of itself (`card.run`): its policy, its slot, how it started, and what its check found. */
+const runLines = (floor: Floor, run: NonNullable<Card['run']>): string[] => {
+  const tz = floor.policies.find((p) => p.id === run.policy)?.header?.when.tz
+  const slot = run.slot === null ? 'with no slot' : `for its slot ${slotWords(run.slot, tz, Date.now())}`
+  return [
+    `You are run ${run.n} of policy "${run.title ?? run.tag}" (${run.tag}), ${slot}, started ${run.start === 'auto' ? 'on its own' : run.start === 'hand' ? 'by hand' : 'from an offer'}.`,
+    `\`tower runs\` lists its earlier runs and what each left; \`tower read ${run.tag}\` is the policy. When the policy says nobody watches, end with \`tower home <your callsign>\`.`,
+    ...(run.check?.out ? [`Its check found: ${run.check.out}`] : []),
   ]
 }
 
@@ -278,6 +301,12 @@ const command = async <T>(verb: string, body: unknown): Promise<T> => {
   if (isFailure(reply)) throw new CliError(refusedLine(verb, reply))
   return reply
 }
+
+/** A call made by this session, when a session makes it. */
+const withBy = <V extends string, I extends object>([verb, body]: [V, I]): [V, I & { by?: string }] => [verb, { ...body, ...(me && { by: me }) }]
+
+/** Every card of a floor, its archive's too. */
+const floorCards = async (floor: Floor): Promise<Card[]> => [...floor.cards, ...(floor.archived ? await readArchive(floor.id) : [])]
 
 const ownFloor = (board: Board, me: string | undefined): Floor => board.floors.find((f) => f.id === ownCard(board, me).project)!
 
@@ -472,12 +501,89 @@ const apiLines = (schema: ApiSchema): string[] => {
   ]
 }
 
+/** A policy of the floor by its tag or its id. */
+const policyNamed = (floor: Floor, name: string): PolicyView => {
+  const policy = floor.policies.find((p) => p.id === name || p.tag === name)
+  if (!policy)
+    throw new CliError(
+      floor.policies.length ? `No policy "${name}" on ${floorTitle(floor)}. \`tower policies\` lists them.` : `${floorTitle(floor)} has no policies.`,
+      `a policy is a markdown item of the floor's \`policies\` collection: \`tower keep policies\`, and the handbook's "Runs" says what it holds`,
+    )
+  return policy
+}
+
+/** A session by its callsign, among every card: `the user` for none. */
+const whoIs = (cards: Card[], id: string | undefined) => (id === undefined ? 'the user' : (cards.find((c) => c.id === id)?.callsign ?? id))
+
+/** How a policy's approval stands, in words. */
+const approvalWords = (p: PolicyView, cards: Card[]) =>
+  p.approved
+    ? `approved ${shortHash(p.hash)} by ${whoIs(cards, p.approved.by)}`
+    : p.needs?.kind === 'reapprove'
+      ? `NOT approved (edited since ${shortHash(p.needs.approved)})`
+      : 'not approved: its slots are offered'
+
+/** A policy's lines in `tower policies`. `cards`: every card of the floor, archived ones too. */
+const policyLines = (board: Board, p: PolicyView, cards: Card[], width: number[], now: number): string[] => {
+  const head = `${p.tag.padEnd(width[0])}  ${(p.title ?? '(untitled)').padEnd(width[1])}  `
+  const indent = ' '.repeat(width[0] + 2)
+  if (!p.header) return [`${head}${standingWords(p, board, now)}${p.needs ? ' (it used to run on its own)' : ''}`]
+  const last = p.last && cards.find((c) => c.lineage.some((l) => l.id === p.last!.id) && !c.continuedBy)
+  const facts = [
+    p.header.runner !== undefined ? `runner "${p.header.runner}"` : p.header.start,
+    ...(p.header.start === 'auto' ? [approvalWords(p, cards)] : []),
+    `live ${p.live.length}/${p.header.live}`,
+    ...(p.last ? [`last: run ${p.last.n}, ${p.last.slot === null ? 'by hand' : slotWords(p.last.slot, p.header.when.tz, now)}${last ? `, ${last.callsign} ${statusName(last)}` : ''}`] : []),
+  ]
+  return [`${head}${p.rule}`, `${indent}${facts.join(' · ')}`, `${indent}now: ${standingWords(p, board, now)}`]
+}
+
+/** How many of an answer's lines and characters `tower runs` shows. */
+const ANSWER_LINES = 15
+const ANSWER_CHARS = 1500
+
+const answerLines = (answer: string): string[] => {
+  const cut = answer.length > ANSWER_CHARS ? answer.slice(0, ANSWER_CHARS) : answer
+  const lines = cut.trimEnd().split('\n')
+  const shown = lines.slice(0, ANSWER_LINES)
+  return [...shown.map((l) => `        │ ${l}`), ...(shown.length < lines.length || cut !== answer ? ['        │ … (cut: `tower agent <CALLSIGN>` reads it whole)'] : [])]
+}
+
+const runReadLines = (run: RunRead, tz: string | undefined, now: number): string[] => [
+  [
+    `run ${run.n}`.padEnd(7),
+    (run.slot === null ? 'by hand' : slotWords(run.slot, tz, now)).padEnd(13),
+    startWords(run.start, run.by?.callsign).padEnd(16),
+    run.worker.callsign,
+    run.worker.live ? 'on duty' : run.worker.status,
+    ...(run.worker.cost !== undefined ? [`$${run.worker.cost.toFixed(2)}`] : []),
+    ...(run.current ? [] : [`older version ${shortHash(run.hash)}`]),
+  ].join('  '),
+  ...run.worker.shown.map((s) => `        showed ${s}`),
+  ...(run.check?.out ? [`        its check found: ${run.check.out.split('\n').join(' ')}`] : []),
+  ...(run.worker.answer ? answerLines(run.worker.answer) : []),
+]
+
+const RUNS_USAGE = 'Usage: tower runs [<tag|id>] [--limit n]'
+const RUNS_SHOWN = 5
+
+const runsArgs = (args: string[]): { policy?: string; limit: number } => {
+  const at = args.indexOf('--limit')
+  const limit = at === -1 ? RUNS_SHOWN : Number(args[at + 1])
+  if (at !== -1 && !(Number.isInteger(limit) && limit > 0)) throw new CliError(RUNS_USAGE)
+  const rest = at === -1 ? args : [...args.slice(0, at), ...args.slice(at + 2)]
+  if (rest.length > 1) throw new CliError(RUNS_USAGE)
+  return { policy: rest[0], limit }
+}
+
 /** What each worker verb takes, one line each: `tower <verb> --help` prints it, and an unknown verb lists them. */
 const USAGES: Record<string, string> = {
   whoami: 'whoami',
   agents: 'agents [--all]',
   agent: 'agent <CALLSIGN>',
   probes: 'probes [run <name>]',
+  policies: 'policies [approve|run <tag|id>]',
+  runs: 'runs [<tag|id>] [--limit n]',
   show: 'show <file|url> [title]',
   open: 'open <url> [title]',
   reveal: 'reveal <path>',
@@ -540,6 +646,56 @@ switch (verb) {
     }
     if (flag !== 'run' || !rest[0]) throw new CliError(`Usage: tower ${USAGES.probes}`)
     console.log(probedLine(rest[0], await command<Replies['probe/run']>('probe/run', { name: rest[0] })))
+    break
+  }
+  case 'policies': {
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    if (!flag) {
+      if (!floor.policies.length) {
+        console.log(`${floorTitle(floor)} has no policies.`)
+        break
+      }
+      const cards = await floorCards(floor)
+      const width = [Math.max(...floor.policies.map((p) => p.tag.length)), Math.max(...floor.policies.map((p) => (p.title ?? '(untitled)').length))]
+      console.log(floor.policies.flatMap((p) => policyLines(board, p, cards, width, now)).join('\n'))
+      break
+    }
+    if ((flag !== 'approve' && flag !== 'run') || !rest[0]) throw new CliError(`Usage: tower ${USAGES.policies}`)
+    const policy = policyNamed(floor, rest[0])
+    const name = `"${policy.title ?? policy.tag}" (${policy.tag})`
+    if (flag === 'approve') {
+      if (!policy.calls.approve) throw new CliError(policy.header ? `${name} is approved as it is now (${shortHash(policy.hash)})` : `${name} is invalid: ${standingWords(policy, board, now)}`)
+      await command(...withBy(policy.calls.approve))
+      const words = policy.header!.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
+      console.log(`Approved ${name} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}`)
+      break
+    }
+    const offer = board.offers.find((o) => o.project === floor.id && o.policy === policy.id)
+    const call = offer?.calls.accept ?? policy.calls.run
+    if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.header && policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
+    const ran = await command<Replies['policy/run']>(...withBy(call))
+    console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header!.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
+    break
+  }
+  case 'runs': {
+    const args = runsArgs([flag, ...rest].filter((a) => a !== undefined))
+    const board = await readBoard()
+    const floor = ownFloor(board, me)
+    const own = ownCard(board, me).run
+    if (!args.policy && !own) throw new CliError(`You are no run of a policy: name one. ${RUNS_USAGE}`)
+    const policy = args.policy ? policyNamed(floor, args.policy) : floor.policies.find((p) => p.id === own!.policy)
+    const id = policy?.id ?? own!.policy
+    const res = await towerGet(`/runs/${floor.id}?policy=${encodeURIComponent(id)}&limit=${args.limit}`)
+    if (!res.ok) throw new CliError(`The tower answered ${res.status} for the runs of ${id}: ${await res.text()}`)
+    const runs: RunRead[] = await res.json()
+    const title = `${policy?.title ?? own?.title ?? id} (${policy?.tag ?? own!.tag})${policy?.rule ? ` · ${policy.rule}` : ''}`
+    if (!runs.length) {
+      console.log(`${title} · no runs yet`)
+      break
+    }
+    const tz = policy?.header?.when.tz
+    console.log([`${title} · runs ${runs[0].n} to ${runs.at(-1)!.n} of ${runs[0].n}`, ...runs.flatMap((r) => runReadLines(r, tz, now)), '`tower agent <CALLSIGN>` reads a run\'s whole brief.'].join('\n'))
     break
   }
   case 'show':

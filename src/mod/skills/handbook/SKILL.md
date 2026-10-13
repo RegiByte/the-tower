@@ -1,7 +1,7 @@
 ---
 name: handbook
 allowed-tools: Bash(tower *)
-description: The handbook of the tower, the user's HQ for their Claude Code sessions, where this session is one of the workers. Workers are named by callsigns (HOLMES-42, ODIN-07), which are not SendMessage names. Use before ListAgents or SendMessage, and when the user mentions a callsign (a name like ODIN-07 or HOLMES-42), a worker, a floor or "the tower", or asks you to reach out to, message, ask or coordinate with another agent or session. Also for review threads and notes, hiring a worker or a reviewer, crews and sending workers home, kept items and collections, the floor's shelf (putting a page on it), the tower's config and checking an edit to it, worktree rules, the tower's API, and customizing the tower or building a renderer of one's own.
+description: The handbook of the tower, the user's HQ for their Claude Code sessions, where this session is one of the workers. Workers are named by callsigns (HOLMES-42, ODIN-07), which are not SendMessage names. Use before ListAgents or SendMessage, and when the user mentions a callsign (a name like ODIN-07 or HOLMES-42), a worker, a floor or "the tower", or asks you to reach out to, message, ask or coordinate with another agent or session. Also for review threads and notes, hiring a worker or a reviewer, crews and sending workers home, kept items and collections, policies and their runs (standing work on a schedule), the floor's shelf (putting a page on it), the tower's config and checking an edit to it, worktree rules, the tower's API, and customizing the tower or building a renderer of one's own.
 ---
 
 # The tower
@@ -63,6 +63,24 @@ A collection is a set of files a floor keeps for later, declared in the tower's 
 Every item has a **tag**, two words like `ivory-otter`, shown wherever the user sees it. Name items by tag and title (`ivory-otter` "Night shift v2"), never by file name. Items are plain files your session edits without asking: when one goes stale or the user adjusts it, edit it in place. Never delete one: that is the user's.
 
 A floor keeping `games` shows each as an arcade cabinet in Tower 3D's control room, played in a sandboxed frame beside it. A game is one `.html` file with its CSS and JS inline and no network (no CDN, no fetch), named by its `<title>`. It runs at an opaque origin: no localStorage, `alert` or forms (keep scores in memory). Play it with the keyboard and the mouse, and fit any frame size, since the frame is half the screen and resizes. Preview it with `tower show <file>.html`, then keep it with `tower keep games <file>.html`.
+
+## Policies and runs
+
+A **policy** is standing work a floor keeps in its `policies` collection: the tower starts a worker on it at its slots. Each is one markdown file: a `# Title` line, then a fenced ```json header, then the prose that is the worker's whole prompt.
+
+```json
+{ "when": { "cron": ["30 9 * * 1-5", "0 15 * * 1-5"], "tz": "America/New_York" }, "start": "auto", "hire": { "model": "opus" } }
+```
+
+`when.cron` lists crons the tower can say in words (`tower policies` says them back); `check` is a shell line run from the hub at the slot (exit 0: work, 1: none); `start` is `ask` (each slot is offered to the user) or `auto` (started on its own while its words are approved; any edit needs a new approval); `live` is how many of its runs may run at once (1); `hire` takes the spawn's `cwd`, `cut`, `model` and `effort`. An unknown key makes the policy invalid; a runner's own data goes under `x`.
+
+- `tower policies`: each policy's rule in words, approval, live runs, last run and where it stands now, the same reason the tower acts on.
+- `tower policies approve <tag>`: approves its words as they are now. Read it first (`tower read <tag>`): you approve what you read. Only when the user asks.
+- `tower policies run <tag>`: starts it now, or takes its open offer.
+
+Write a policy with `tower keep policies` (markdown on stdin) and edit it in place like any item.
+
+**Runs.** When you are a run, `tower whoami` says so: which policy, which slot, how it started. `tower runs` lists your policy's last five runs, newest first, each with its worker, what it showed and its latest answer cut short: read it before starting, for what earlier runs did and left (`--limit n` for more, `tower agent <CALLSIGN>` for one in full). Your latest answer is what the next run reads, so end with what it needs to know. When the policy says nobody watches the run, end yourself with `tower home <your own callsign>` once your work is done.
 
 ## The shelf and the config
 
