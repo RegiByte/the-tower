@@ -190,8 +190,10 @@ test("a climb between two probe answers while no session used the API is outside
   close(budget.usdPerPercent!, spent / 2)
   assert.equal(outsideIn([s], [probe], { from: start - 40 * MIN, to: now }), 1)
   assert.equal(outsideIn([s], [probe], { from: start, to: now }), 0)
-  const working = { ...s, facts: { ...s.facts, spend: [], tokens: [], turnSpans: [], turnStartedAt: 0 } }
-  assert.equal(outsideUse([working], [probe], () => true), 1, "a turn still running holds every climb after its start, though it hasn't spent yet")
+  const working = { ...s, facts: { ...s.facts, spend: [], tokens: [], turnSpans: [], turnStartedAt: 0, heardAt: 0, exitedFrom: undefined } }
+  assert.equal(outsideUse([working], [probe], () => true), 1, "a turn still running holds the climbs it overlaps, though it hasn't spent yet")
+  const lost = probeFacts([read(start + 60 * MIN, 18), read(start + 90 * MIN, 21)])
+  assert.equal(outsideUse([working], [lost], () => true), 3, 'a turn silent past the stuck threshold, or lost with the host, holds nothing after it')
   const otherWeek = probeFacts([read(start - 60 * MIN, 90, '2026-09-27T22:00:00.000Z'), read(start - 50 * MIN, 95, '2026-09-27T22:00:00.000Z'), read(start - 40 * MIN, 1)])
   assert.equal(weeklyBudget([s], [otherWeek], now)!.outside, 0, "another week's climb is not this week's, nor is a reset a climb")
 })

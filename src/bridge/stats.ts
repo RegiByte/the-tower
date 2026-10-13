@@ -5,6 +5,7 @@
 import { addTokens, type LimitReading, type Session, type Tokens } from './facts.ts'
 import { extensionOf, type RepoLanded } from './landed.ts'
 import type { ProbeFacts, Rise } from './probes.ts'
+import { STUCK_MS } from './prunable.ts'
 
 export type Bucket = 'hour' | 'day'
 
@@ -293,11 +294,18 @@ export const weeklyRead = (sessions: Session[], probes: ProbeFacts[], q: Pick<St
   return latest && { at: latest[0], percentUsed: latest[1], resetsAt: latest[2] }
 }
 
+/**
+ * When a turn left open ends, as far as the API is concerned: at Claude's last event once the session exited (an exit
+ * cuts a turn short without ending it), else at the stuck threshold after it, which a running turn passes only when it
+ * is stuck, and a session lost with the host never logs its exit.
+ */
+const openTurnEnd = (facts: Session['facts'], startedAt: number) => startedAt + (facts.heardAt ?? 0) * 1000 + (facts.exitedFrom === undefined ? STUCK_MS : 0)
+
 /** Whether a session used the API from `from` to `to` (epoch ms): a model step, a spend, or a main-loop turn over any of it. */
 const towerActive = (sessions: Session[], from: number, to: number) =>
   sessions.some(({ header, facts }) => {
     const inSpan = ([at]: [number, ...unknown[]]) => at > from && at <= to
-    const turn = facts.turnStartedAt === undefined ? [] : [[header.startedAt + facts.turnStartedAt * 1000, Infinity] as const]
+    const turn = facts.turnStartedAt === undefined ? [] : [[header.startedAt + facts.turnStartedAt * 1000, openTurnEnd(facts, header.startedAt)] as const]
     return facts.tokens.some(inSpan) || facts.spend.some(inSpan) || [...facts.turnSpans.map(([at, s]) => [at, at + s * 1000] as const), ...turn].some(([start, end]) => start < to && end > from)
   })
 
