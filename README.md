@@ -86,7 +86,8 @@ live). `tower init` writes the smallest one; this is it with more of what a proj
   "user": { "name": "Your Name" },
   "collections": {
     "drafts": { "label": "Drafts", "description": "Prompts kept for later: each starts a new session or is typed into a worker, then is deleted." },
-    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written only with `tower note`: not a place for write-ups." }
+    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written only with `tower note`: not a place for write-ups." },
+    "policies": { "label": "Policies", "description": "Standing work the tower starts on a schedule: one markdown file each, a # Title, a json header, then the prompt. `tower policies` lists them." }
   },
   "projects": {
     "my-app": {
@@ -105,7 +106,9 @@ live). `tower init` writes the smallest one; this is it with more of what a proj
 
 A project's sessions start in its `hub`; its `repos` are granted as file access only, so their own `CLAUDE.md` and
 skills stay out. The `shelf` keeps pages beside its sessions. `collections` are sets of files the project keeps for later, every project's at the top level and a
-project's own under it; each `description` says what its collection is for, to the user and to every worker.
+project's own under it; each `description` says what its collection is for, to the user and to every worker. Three ids
+drive features, so keep them on every setup: `reviews` holds the review threads, `policies` the work the tower starts on
+a schedule (without it nothing runs on one), and the renderers that ship read `drafts` as prompts waiting for a worker.
 `port` is where the tower serves (`http://127.0.0.1:<port>`): set another when 4317 is taken, then `tower down` and
 `tower up`. Every
 key the config takes is in [`docs/config.md`](docs/config.md); `tower config check` checks an edit, each problem at
