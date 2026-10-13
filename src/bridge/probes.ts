@@ -6,18 +6,14 @@
 import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import type { Board } from './board.ts'
 import { limitsRead, type Facts, type RateLimit } from './facts.ts'
+import { streamFacts } from './streams.ts'
 
 /** The readers the core knows, a closed set: each only reads, and none sends a prompt, starts a session or calls a verb. */
 export const READERS = ['claude.usage'] as const
 export type Reader = (typeof READERS)[number]
 
-/** A stream's first line: each event's `t` is seconds since `startedAt` (epoch ms), the start of the file's UTC month. */
-export type StreamHeader = { stream: string; startedAt: number; version: 1 }
-
 /** One read: the reader's answer as it came (nulls dropped), or why there is none, and how long it took. */
 export type ProbeRead = { reads: Reader; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
-
-export type StreamEvent = [t: number, code: 'p', read: ProbeRead]
 
 /** A read at its moment, epoch ms. */
 export type ProbeReading = [at: number, read: ProbeRead]
@@ -62,37 +58,13 @@ const risesTo = (rises: ProbeFacts['rises'], before: Facts['rateLimits'], at: nu
 
 export const streamName = (probe: string): string => `probe.${probe}`
 
-/** The start of `at`'s UTC month: a stream's file is named by it, and its events counted from it. */
-export const monthStart = (at: number): number => {
-  const d = new Date(at)
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)
-}
-
-export const monthFile = (at: number): string => `${new Date(at).toISOString().slice(0, 7)}.jsonl`
-
-/** The line a read is appended as, to the file of its month. */
-export const eventLine = (at: number, read: ProbeRead): string => JSON.stringify([Math.round(at - monthStart(at)) / 1000, 'p', read] satisfies StreamEvent)
-
 /** A stream file's reads, and how many of its lines are no JSON. */
 export type StreamFile = { readings: ProbeReading[]; unreadable: number }
 
-const parsed = (line: string): unknown => {
-  try {
-    return JSON.parse(line)
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * A stream file's reads; the text after the last newline is a line still being written. Each read stands alone, so a
- * line that is no JSON (an append torn by a crash, a hand edit) costs that read only: it is counted and passed over.
- * A header that is no JSON leaves no read to place in time.
- */
+/** A probe stream's reads (`streamFacts`): a line that is no JSON costs that read only. */
 export const readingsOf = (text: string): StreamFile => {
-  const [header, ...events] = text.split('\n').slice(0, -1).map(parsed) as [StreamHeader | undefined, ...(StreamEvent | undefined)[]]
-  const readings = header ? events.flatMap((e): ProbeReading[] => (e ? [[header.startedAt + e[0] * 1000, e[2]]] : [])) : []
-  return { readings, unreadable: events.length + 1 - readings.length - (header ? 1 : 0) }
+  const { facts, unreadable } = streamFacts(text)
+  return { readings: facts.map(([at, , read]) => [at, read as ProbeRead]), unreadable }
 }
 
 type UsageWindow = { utilization?: number; resets_at?: string }

@@ -3,18 +3,18 @@
  * what it read is appended to its stream. A read only reads: none sends a prompt, starts a session or calls a verb.
  */
 import { spawn } from 'node:child_process'
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import type { Session } from './bridge/facts.ts'
 import {
-  due, eventLine, newestReading, FLOOR_MS, monthFile, monthStart, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
-  type Probe, type ProbeFacts, type ProbeRead, type Reader, type StreamHeader,
+  due, newestReading, FLOOR_MS, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
+  type Probe, type ProbeFacts, type ProbeRead, type Reader,
 } from './bridge/probes.ts'
 import { apiError, type ApiError } from './shared/api.ts'
 import { withoutParentSession } from './shared/env.ts'
 import type { Config } from './shared/model.ts'
 import { systemStreamsPath, type SystemPaths } from './shared/paths.ts'
+import { appendFact } from './streams.ts'
 
 const TICK_MS = 30_000
 const READ_TIMEOUT_MS = 30_000
@@ -54,32 +54,9 @@ const readUsage = (config: Config): Promise<{ answer: unknown } | { error: strin
 
 const READS: Record<Reader, (config: Config) => Promise<{ answer: unknown } | { error: string }>> = { 'claude.usage': readUsage }
 
-/** Whether the file's last byte ends a line: an append torn by a crash leaves it open. */
-const endsLine = (file: string): boolean => {
-  const { size } = statSync(file)
-  if (size === 0) return true
-  const fd = openSync(file, 'r')
-  try {
-    const last = Buffer.alloc(1)
-    readSync(fd, last, 0, 1, size - 1)
-    return last[0] === 0x0a
-  } finally {
-    closeSync(fd)
-  }
-}
-
-/**
- * Appends a read to its probe's stream, in the file of its month, which starts with its header. After a torn append
- * the read starts a line of its own, so the torn text costs only its own read.
- */
-const append = (paths: SystemPaths, probe: string, at: number, read: ProbeRead) => {
-  const dir = path.join(systemStreamsPath(paths), streamName(probe))
-  const file = path.join(dir, monthFile(at))
-  mkdirSync(dir, { recursive: true })
-  const header: StreamHeader = { stream: streamName(probe), startedAt: monthStart(at), version: 1 }
-  const before = !existsSync(file) ? `${JSON.stringify(header)}\n` : endsLine(file) ? '' : '\n'
-  appendFileSync(file, `${before}${eventLine(at, read)}\n`)
-}
+/** Appends a read to its probe's stream. */
+const append = (paths: SystemPaths, probe: string, at: number, read: ProbeRead) =>
+  appendFact(path.join(systemStreamsPath(paths), streamName(probe)), streamName(probe), at, 'p', read)
 
 /**
  * Runs the probes until the process ends. The one read in flight and when the last one started are all it holds:
