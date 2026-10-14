@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.2
+
+Two small fixes to what renderers draw. No host restart, no config change, the renderer API unchanged. Restart the
+tower (`tower down tower && tower up tower`) and reload it.
+
+- A policy opened from the Policies panel has a back button beside its label, to the floor's policies.
+- The Changes panel highlights JSX in TypeScript, and the scripts and styles embedded in html, where they read as
+  plain text before.
+
 ## v1.32.1
 
 Fixes found by the first real policy run. No host restart, no config change. The renderer API moves to 1.50, additions
