@@ -102,6 +102,11 @@ is **waiting on you**. The tower page lists them in order, notifies you and ring
 goes to the next one, and `?` shows every key. `tower app` puts the same tower in a Mac window of its own, with who
 waits on you on its Dock icon and in the menu bar.
 
+A worker left waiting a long time can have its conversation compacted while it waits: Claude Code's idle compaction
+(2.1.299) summarizes a conversation of 200K tokens or more after about 54 minutes idle. The worker keeps its place and
+its wait on you, but its next turn starts from the summary. `"idleCompaction": false` in `~/.claude/settings.json`
+turns it off; the tower leaves it as Claude sets it.
+
 ## A worker's brief
 
 A worker's **Brief** tab (⌃2) reads its last turns as a chat, your prompts and its answers, in every conversation it
