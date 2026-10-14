@@ -2259,7 +2259,8 @@ function drawItem() {
   const f = floorOf(itemOpen.project)
   const file = itemFile(c, item.id)
   const by = item.keptBy ? ` · kept by <a href="#${item.keptBy.session}" data-tip="go to the worker that kept it">${esc(item.keptBy.callsign)}</a>` : ''
-  repaint($('item-head'), `<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
+  const back = c.id === POLICIES ? `<button class="icon-btn" data-policies="${esc(f.id)}" aria-label="back to the policies" data-tip="back to the floor's policies">${ICON.back}</button>` : ''
+  repaint($('item-head'), `${back}<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
     <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
     <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">${ICON.remote} new tab</a>
       <button class="danger" data-item-act="delete">Delete</button>
