@@ -50,7 +50,8 @@ or one event at a time as it is tailed:
   `background`, the subagent that spawned it, its model, and its `agentId`, which the mod reads from Claude's
   answer), followed by that id through its loop's events: each `turn.step` adds its tokens, and a `turn.complete`
   ends it with its `reason` (`answer`, or `aborted` when TaskStop stopped it) until it steps again (background work
-  it left, or a message, wakes it). A spawn an older mod posted has no id and is counted, never followed. The card
+  it left, or a message, wakes it). A message to a subagent whose turn ended raises `agent.spawn` again with
+  `resume` and the same id (Claude 2.1.299 on): it reopens that run, and a run the log never saw start begins there. A spawn an older mod posted has no id and is counted, never followed. The card
   carries the followed ones as `subagentRuns`, each `running` while its loop is mid-turn in a live session.
   A prompt of Claude's peer origin without that wrapper is a subagent's hand-back, counted under `prompts` as
   `hand-back`. A prompt a worker typed through the tower (`submit` or `spawn` with `by`) reaches Claude as the

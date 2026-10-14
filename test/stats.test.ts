@@ -66,6 +66,19 @@ test("each subagent is a run: its spawn names its loop, whose steps add its toke
   ])
 })
 
+test('a subagent resumed by SendMessage is the same run, open again until its resumed turn ends', () => {
+  const log = fixture('subagent-resume')
+  const at = (t: number) => log.header.startedAt + t * 1000
+  const resumed = factsOf({ header: log.header, events: log.events.filter(([t]) => t < 23) })
+  assert.deepEqual(resumed.subagentRuns.map((run) => [run.id, run.endedAt, run.ended]), [['a71ae6614444fc5f0', undefined, undefined]])
+  assert.deepEqual(factsOf(log).subagentRuns, [
+    {
+      id: 'a71ae6614444fc5f0', type: 'general-purpose', description: 'Read facts.txt and report', background: true, parent: undefined, model: 'claude-haiku-5-5',
+      startedAt: at(13.62), endedAt: at(25.366), ended: 'answer', tokens: { input: 10, output: 290, cacheRead: 126752, cacheWrite: 20071 },
+    },
+  ])
+})
+
 test('a subagent stopped mid-turn ends aborted', () => {
   const log = fixture('subagent-stopped')
   const [run] = factsOf(log).subagentRuns

@@ -251,6 +251,17 @@ const spawned = (hook: Record<string, unknown>, at: number): SubagentRun => {
 const runOf = (runs: SubagentRun[], id: unknown, change: (run: SubagentRun) => SubagentRun): SubagentRun[] =>
   runs.some((run) => run.id === id) ? runs.map((run) => (run.id === id ? change(run) : run)) : runs
 
+/**
+ * A message to a subagent whose turn ended resumes its loop, raising `agent.spawn` again with `resume` and the same
+ * `agentId`: the run it resumes is open again. A run this log never saw start begins here.
+ */
+const runsSpawned = (runs: SubagentRun[], hook: Record<string, unknown>, at: number): SubagentRun[] => {
+  const resumed = (hook.resume as { agentId: string } | undefined)?.agentId
+  return runs.some((run) => run.id !== undefined && run.id === resumed)
+    ? runOf(runs, resumed, (run) => ({ ...run, endedAt: undefined, ended: undefined }))
+    : [...runs, spawned(hook, at)]
+}
+
 const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<string, unknown>): Facts => {
   const mainLoop = hook.agentId === undefined
   const at = startedAt + t * 1000
@@ -295,7 +306,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     case 'PostToolUseFailure':
       return { ...facts, failures: [...facts.failures, at] }
     case 'agent.spawn':
-      return (hook.result as SpawnResult | undefined)?.deny ? facts : { ...facts, subagentRuns: [...facts.subagentRuns, spawned(hook, at)] }
+      return (hook.result as SpawnResult | undefined)?.deny ? facts : { ...facts, subagentRuns: runsSpawned(facts.subagentRuns, hook, at) }
     case 'turn.step': {
       const { answer, usage } = hook.result as { answer?: string; usage?: Usage }
       const counted = usage ? { ...facts, tokens: [...facts.tokens, [at, String(hook.model), tokensOf(usage)] as Facts['tokens'][number]] } : facts
