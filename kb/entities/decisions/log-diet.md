@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-14",
   "refs": ["hub/src/host/session.ts#hookFact", "hub/src/host/main.ts#hooks", "hub/src/bridge/status.ts#HOOK_STATUS"]
 }
 ---
