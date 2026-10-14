@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.3
+
+Claude Code 2.1.300 is tested, and the board's "untested" notice clears. No host restart, no config change, the
+renderer API unchanged. Each worker reads the mod as its Claude starts, so restart the tower
+(`tower down tower && tower up tower`) and new or resumed workers pick it up.
+
+- A compaction starts from Claude's classic `PreCompact` hook. Since 2.1.299, for a Team or Enterprise organization
+  or a machine with managed settings, Claude's built-in `sec-default` mod keeps the mod event `session.compact` from
+  every user mod, the tower's included, and a worker read `idle` in the middle of an automatic compaction. Only a
+  manual `/compact` moves the status, so an idle compaction of a waiting worker keeps its wait.
+- A subagent resumed through `SendMessage` reopens its run, where it was counted twice.
+- `docs/usage.md` says what Claude's idle compaction does to a waiting worker, and how to turn it off.
+
 ## v1.32.2
 
 Two small fixes to what renderers draw. No host restart, no config change, the renderer API unchanged. Restart the
