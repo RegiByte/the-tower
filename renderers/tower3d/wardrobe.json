@@ -1,8 +1,29 @@
 {
   "fits": {
+    "1H_Wand": {
+      "Skeleton_Mage_Skull": {
+        "at": [0, 0, 0.0517],
+        "turn": [-10.5, 0, 0]
+      }
+    },
+    "Clanker_Beacon": {
+      "Clanker_Head": {
+        "at": [0, -0.0058, 0.3726]
+      }
+    },
+    "Clanker_TopHat": {
+      "Clanker_Head": {
+        "at": [0.0025, -0.0705, 0.0138],
+        "turn": [6.8, 2.2, -3.4],
+        "scale": 0.917
+      }
+    },
     "Face_RoundGlasses": {
       "*": {
         "at": [0, 0, -0.05]
+      },
+      "CombatMech_Head": {
+        "at": [0, -0.0695, -0.05]
       },
       "Mage_Head": {
         "at": [0, -0.0477, -0.077]
@@ -12,6 +33,10 @@
       }
     },
     "Gear_CoffeeMug": {
+      "CombatMech_Head": {
+        "at": [0, 0.0111, 0.0677],
+        "turn": [-101.5, 0, 0]
+      },
       "Mage_Head": {
         "at": [0, 0.0126, 0.0561],
         "turn": [77.3, 0, 0]
@@ -34,8 +59,15 @@
         "at": [0, 0.02, -0.12],
         "scale": 0.82
       },
+      "Clanker_Head": {
+        "at": [0, 0.02, 0.0301],
+        "scale": [0.993, 0.82, 0.82]
+      },
       "Rogue_Head_Hooded": {
         "scale": 0.74
+      },
+      "Skeleton_Mage_Skull": {
+        "at": [0, -0.0216, -0.12]
       },
       "bot": {
         "at": [0, 0.02, 0.0289]
@@ -45,6 +77,13 @@
       "*": {
         "at": [0, 0.02, -0.12],
         "scale": 0.82
+      },
+      "Clanker_Head": {
+        "at": [0, 0.02, -0.0428],
+        "scale": 1.17
+      },
+      "CombatMech_Head": {
+        "at": [0, -0.0721, -0.12]
       },
       "Rogue_Head_Hooded": {
         "scale": 0.74
@@ -256,6 +295,27 @@
         "Outfit": null
       }
     },
+    "fixerclankr": {
+      "body": "Clanker",
+      "paint": "Clanker_Sentinel",
+      "skin": "#efbf98",
+      "hair": "#e2c784",
+      "wear": "#b388ff",
+      "build": {
+        "width": 1,
+        "height": 1
+      },
+      "slots": {
+        "Head": "Clanker_Head",
+        "Helm": null,
+        "Hat": "Clanker_TopHat",
+        "Face": null,
+        "Cape": "Clanker_Exhausts",
+        "Gear": "Clanker_Wrench",
+        "Prop": "Clanker_Beacon",
+        "Outfit": null
+      }
+    },
     "frostbyte": {
       "body": "Clanker",
       "paint": "Clanker_Frostbyte",
@@ -288,6 +348,48 @@
         "Cape": "Clanker_Exhausts",
         "Gear": null,
         "Prop": "Clanker_ArmCannon",
+        "Outfit": null
+      }
+    },
+    "mageskeleton": {
+      "body": "Skeleton_Mage",
+      "paint": "Skeleton",
+      "skin": "#d9a077",
+      "hair": "#4a3021",
+      "wear": "#06d6a0",
+      "build": {
+        "width": 1,
+        "height": 1
+      },
+      "slots": {
+        "Head": "Skeleton_Mage_Skull",
+        "Helm": "Skeleton_Mage_Hat",
+        "Hat": null,
+        "Face": "face_glasses",
+        "Cape": "Rogue_Cape",
+        "Gear": "1H_Wand",
+        "Prop": null,
+        "Outfit": null
+      }
+    },
+    "mechwizz": {
+      "body": "CombatMech",
+      "paint": "CombatMech",
+      "skin": "#efbf98",
+      "hair": "#4a3021",
+      "wear": "#2b2d42",
+      "build": {
+        "width": 1,
+        "height": 1
+      },
+      "slots": {
+        "Head": "CombatMech_Head",
+        "Helm": "Skeleton_Mage_Hat",
+        "Hat": null,
+        "Face": "face_shades",
+        "Cape": null,
+        "Gear": "Gear_CoffeeMug",
+        "Prop": null,
         "Outfit": null
       }
     },
@@ -343,48 +445,6 @@
         "Cape": "Clanker_ExhaustLeft",
         "Gear": null,
         "Prop": "Clanker_Canister",
-        "Outfit": null
-      }
-    },
-    "test1": {
-      "body": "Mage",
-      "paint": "Knight",
-      "skin": "#bd8259",
-      "hair": "#f2efe9",
-      "wear": "#4cc9f0",
-      "build": {
-        "width": 0.9406595215015113,
-        "height": 0.9991459087934345
-      },
-      "slots": {
-        "Head": "Rogue_Head",
-        "Helm": "Helm_Headset",
-        "Hat": null,
-        "Face": "Face_RoundGlasses",
-        "Cape": null,
-        "Gear": "1H_Axe",
-        "Prop": null,
-        "Outfit": null
-      }
-    },
-    "test2": {
-      "body": "Mage",
-      "paint": "Barbarian",
-      "skin": "#bd8259",
-      "hair": "#e2c784",
-      "wear": "#b388ff",
-      "build": {
-        "width": 1.0315995078533888,
-        "height": 1.0196183418948204
-      },
-      "slots": {
-        "Head": "Mage_Head",
-        "Helm": null,
-        "Hat": "hat_crown",
-        "Face": "Face_RoundGlasses",
-        "Cape": "Knight_Cape",
-        "Gear": "Mug",
-        "Prop": null,
         "Outfit": null
       }
     },
