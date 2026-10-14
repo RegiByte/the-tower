@@ -4,7 +4,7 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after the fixture set is recorded again on it and replays clean.",
   "in": "tower",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-14",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
 }
 ---
@@ -31,6 +31,10 @@ What says a release is new to the tower:
 **Where to look first.** Compare what the new release posts with what the fixtures hold: every
 `hook_event_name` and its top-level keys, in a fresh recording and in `test/fixtures/*.jsonl`. Then compare
 the screens a fresh directory raises with [`blocked.ts`](ref:hub/src/bridge/blocked.ts).
+A mod event missing from the recording may be missing only for some accounts: inside a Team or Enterprise
+organization, Claude's built-in `sec-default` mod can keep an event from user mods, as it keeps `session.compact`
+since 2.1.299 ([[claude-code]]). Run Claude with `--debug-file`: it logs `<mod>: <event> bypassed by
+cc-plugin-sec-default`. Then read the same moment from a classic hook, which still fires.
 
 **Fix: move the range.**
 1. A throwaway system with a short root (`/tmp/tower-<callsign>`): a git repo for the hub, a config whose

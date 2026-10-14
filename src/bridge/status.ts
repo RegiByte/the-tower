@@ -56,9 +56,18 @@ const isFailure = (hook: ClaudeHookInput | ModEvent): boolean =>
   hook.agentId === undefined && hook.hook_event_name === 'turn.complete' && (hook.reason === 'error' || hook.reason === 'refusal')
 
 /**
- * Claude is busy while it compacts, and raises `SessionStart` with `source: compact` when done. A manual `/compact`
- * runs between turns and leaves the session idle; an automatic one runs inside a turn, which carries on after it.
- * An automatic one can also give up, with no `SessionStart`: the turn carries on all the same.
+ * A compaction starts with the classic `PreCompact`, and outside a Team or Enterprise organization also with the mod's
+ * `session.compact` (Claude's built-in `sec-default` mod keeps it from user mods inside one): both carry the trigger,
+ * and the second changes nothing.
+ */
+const isCompactionStart = (hook: ClaudeHookInput | ModEvent): boolean =>
+  hook.hook_event_name === 'PreCompact' || hook.hook_event_name === 'session.compact'
+
+/**
+ * Claude raises `SessionStart` with `source: compact` when a compaction is done. A manual `/compact` works between
+ * turns and leaves the session idle. Any other leaves the status as it was: an automatic one runs inside a turn,
+ * which carries on after it, or gives up with no `SessionStart`, and an idle one (its `PreCompact` says `auto`)
+ * summarizes the conversation of a session that waits, which keeps waiting.
  */
 const isCompactionEnd = (hook: ClaudeHookInput | ModEvent): boolean =>
   hook.hook_event_name === 'SessionStart' && hook.source === 'compact'
@@ -77,8 +86,8 @@ const statusAfter = ({ status, compaction }: SessionState, event: LogEvent, scre
   if (hook.agent_id !== undefined) return status
   if (isInterrupt(hook)) return 'idle'
   if (isFailure(hook)) return 'failed'
-  if (hook.hook_event_name === 'session.compact') return 'working'
-  if (isCompactionEnd(hook)) return compaction === 'auto' ? status : 'idle'
+  if (isCompactionStart(hook)) return hook.trigger === 'manual' ? 'working' : status
+  if (isCompactionEnd(hook)) return compaction === 'manual' ? 'idle' : status
   if (hook.hook_event_name === 'Stop') return stopStatus(hook)
   if (hook.hook_event_name === 'Notification') return NOTIFICATION_STATUS[String(hook.notification_type)] ?? status
   return HOOK_STATUS[hook.hook_event_name] ?? status
@@ -89,7 +98,7 @@ const compactionAfter = (compaction: string | undefined, event: LogEvent): strin
   if (event[1] === 'x') return undefined
   if (event[1] !== 'h') return compaction
   const hook = event[2]
-  if (hook.hook_event_name === 'session.compact') return String(hook.trigger)
+  if (isCompactionStart(hook)) return String(hook.trigger)
   const turnMoves = hook.agentId === undefined && (hook.hook_event_name === 'turn.step' || hook.hook_event_name === 'turn.complete')
   return isCompactionEnd(hook) || turnMoves ? undefined : compaction
 }

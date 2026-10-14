@@ -425,14 +425,18 @@ test('a card says it compacts while Claude compacts, by /compact or inside a tur
     const log = fixture(name)
     return cardsOf([until(log, t)], hostWith(log.header.id))[0]
   }
-  assert.equal(at('compact-auto', 6.45).compacting, false)
-  assert.equal(at('compact-auto', 20).compacting, true)
-  assert.equal(gistLine(at('compact-auto', 20)), '≡ compacting the conversation')
-  assert.equal(at('compact-auto', 32).compacting, false)
-  assert.equal(at('compact-auto', 32).status, 'working')
-  assert.equal(at('compact-manual', 10).compacting, true)
-  assert.equal(at('compact-manual', 22).compacting, false)
-  assert.equal(at('compact-manual', 22).status, 'idle')
+  assert.equal(at('compact-auto', 18).compacting, false)
+  assert.equal(at('compact-auto', 19).compacting, true)
+  assert.equal(gistLine(at('compact-auto', 19)), '≡ compacting the conversation')
+  assert.equal(at('compact-auto', 20.4).compacting, false)
+  assert.equal(at('compact-auto', 22).compacting, true)
+  assert.equal(at('compact-auto', 26).compacting, false)
+  assert.equal(at('compact-auto', 26).status, 'working')
+  assert.equal(at('compact-manual', 22).compacting, true)
+  assert.equal(at('compact-manual', 25).compacting, false)
+  assert.equal(at('compact-manual', 25).status, 'idle')
+  assert.equal(at('compact-auto-outside-org', 20).compacting, true)
+  assert.equal(at('compact-manual-outside-org', 10).compacting, true)
 })
 
 test('review threads: each checkout’s on its floor, what each worker hasn’t seen, and whether its work has landed', () => {

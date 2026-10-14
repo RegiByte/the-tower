@@ -58,8 +58,29 @@ test('a resumed session boots idle on its old conversation', () => {
   ])
 })
 
-test('a manual /compact works between turns and leaves the session idle', () => {
+test('a manual /compact works between turns from its PreCompact and leaves the session idle', () => {
   assert.deepEqual(timeline(fixture('compact-manual')), [
+    ['idle', 1.156],
+    ['working', 1.328],
+    ['done', 2.505],
+    ['working', 21.208],
+    ['idle', 24.128],
+    ['exited', 63.402],
+  ])
+})
+
+test('automatic compactions mid-turn, one that gives up and two that finish, keep the turn working', () => {
+  assert.deepEqual(timeline(fixture('compact-auto')), [
+    ['blocked', 0.363],
+    ['idle', 15.867],
+    ['working', 15.918],
+    ['done', 35.891],
+    ['exited', 86.151],
+  ])
+})
+
+test("outside an organization the mod's session.compact starts a compaction too", () => {
+  assert.deepEqual(timeline(fixture('compact-manual-outside-org')), [
     ['idle', 0.796],
     ['working', 2.085],
     ['done', 3.146],
@@ -67,10 +88,7 @@ test('a manual /compact works between turns and leaves the session idle', () => 
     ['idle', 21.574],
     ['exited', 25.908],
   ])
-})
-
-test('an automatic compaction mid-turn keeps the turn working', () => {
-  assert.deepEqual(timeline(fixture('compact-auto')), [
+  assert.deepEqual(timeline(fixture('compact-auto-outside-org')), [
     ['idle', 0.761],
     ['working', 2.114],
     ['done', 93.18],

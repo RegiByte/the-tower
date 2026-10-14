@@ -84,6 +84,16 @@
         ]
       }
     ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sSf -m 2 --unix-socket \"$TOWER_HOOKS_SOCKET\" -H 'content-type: application/json' --data-binary @- \"http://host/hooks/$TOWER_SESSION_ID\" >/dev/null"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

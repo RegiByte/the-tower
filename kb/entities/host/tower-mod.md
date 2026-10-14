@@ -4,7 +4,7 @@
   "name": "tower mod",
   "summary": "The Claude Code mod loaded into every session, posting Claude's mod events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and three skills, tower:handbook, tower:review and tower:guide.",
   "in": "host",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-14",
   "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/guide/SKILL.md"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock; from the tower command, tower.show and tower.keep" },
@@ -31,8 +31,9 @@ events reach the log in the order Claude raised them.
 event: the abandoned call is remembered and posted at the loop's `turn.complete`.
 
 Classic hooks (curl), declared in the same `hooks/hooks.json`, still deliver the classic events
-(`SessionStart`, `Stop`, ...) because the mods API's `classic.*` events never fire: two transports into one
-socket. Until 2026-10-06 the host passed that list as settings hooks, so changing it meant a host restart; in
+(`SessionStart`, `Stop`, `PreCompact`, ...) because the mods API's `classic.*` events never fire: two transports into one
+socket. A classic hook also reaches the log when Claude's built-in `sec-default` mod keeps a mod event from user
+mods, as it keeps `session.compact` inside an organization ([[claude-code]]). Until 2026-10-06 the host passed that list as settings hooks, so changing it meant a host restart; in
 the plugin, each Claude reads it as it starts ([[host-knows-no-flags]]).
 
 The plugin's `bin/tower` is on the Bash tool's PATH in every session. The brief in the system prompt gives the
