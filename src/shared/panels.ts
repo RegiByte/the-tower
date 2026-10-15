@@ -420,7 +420,7 @@ export function anchorOf(thread: ReviewThread, value: string): Anchor | undefine
   return thread.messages.find((m) => m.n === n)?.anchors[i]
 }
 
-/** The highlighted code of a file's rows, by its path and diff hash: a file is highlighted once per version of its diff. */
+/** The highlighted code of a file's rows, by its path, diff hash and whether it came with the lines before its hunks: a file is highlighted once per version of its diff. */
 const highlighted = new Map<string, string[]>()
 const HIGHLIGHTED_KEPT = 500
 
@@ -431,7 +431,8 @@ const HIGHLIGHTED_KEPT = 500
  * marked over the syntax (`wordRanges`).
  */
 function rowCode(f: DiffFile): string[] {
-  const id = `${f.path}\n${f.hash}`
+  // The same diff comes with or without the lines before its hunks, as the read's budget falls: each is its own.
+  const id = `${f.path}\n${f.hash}\n${f.hunks?.[0]?.before ? 'before' : ''}`
   const kept = highlighted.get(id)
   if (kept) return kept
   const lang = langOf(f.path)
