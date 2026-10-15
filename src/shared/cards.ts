@@ -240,7 +240,7 @@ export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's a
 export const letGoAsk = (c: Card) => `Let ${c.callsign} go?\n\nIt goes ${LET_GO_MEANS}.`
 export const letGoneLine = (c: Card) => `Let ${c.callsign} go: it is in the archive`
 
-/** What carrying on does, said where a renderer offers a cut-off worker's `carry-on`. */
+/** What carrying on does, said where a renderer resumes a cut-off worker through its `carry-on`. */
 export const CARRY_ON_MEANS = 'resume it on a prompt that tells it the host cut it off mid-turn, and to carry on where it left off'
 
 /** How a stranded worker is resumed with the rest of its floor: carried on when cut off mid-turn, else plainly. */
@@ -248,7 +248,8 @@ const resumeCallOf = (c: Card) => c.calls['carry-on'] ?? c.calls.resume!
 
 /** What a renderer asks before resuming every stranded worker of a floor (`strandedOf`), naming each and how it resumes. */
 export const resumeAllAsk = (f: Floor, stranded: Card[]) =>
-  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)} · ${c.calls['carry-on'] ? 'carry on' : 'resume'}`).join('\n')}`
+  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)} · ${c.calls['carry-on'] ? 'carry on' : 'resume'}`).join('\n')}${
+    stranded.some((c) => c.calls['carry-on']) ? `\n\nCarry on: ${CARRY_ON_MEANS}.` : ''}`
 
 /** Resumes each of `stranded` in turn through `run`, past any that fails, carrying on the cut-off; answers what to tell the user. */
 export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) => Promise<unknown>) {

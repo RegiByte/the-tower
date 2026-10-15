@@ -52,10 +52,9 @@ storing, and the capability belongs in the core, where every renderer and worker
   Carry on where you left off." It says "stopped": a crash or a `down` without an `up` cuts off too.
 - **Everywhere resume is.** The status reads "stopped mid-turn" or "lost mid-turn"
   ([`statusName`](ref:hub/src/shared/cards.ts#statusName)); a sidebar card, short of room, says "stranded"
-  ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. The tower page offers carry on on the card (while it is selected or hovered) and as the bar's
-  primary verb, Tower 3D first in the desk panel, both with [`CARRY_ON_MEANS`](ref:hub/src/shared/cards.ts#CARRY_ON_MEANS)
-  as the tip; the floor's "resume all N stranded" carries on the cut-off ones and resumes the rest, its ask naming
-  which ([`resumeAllAsk`](ref:hub/src/shared/cards.ts#resumeAllAsk),
+  ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. No renderer draws carry on on a card: a stranded card offers resume and let go, and the
+  floor's "resume all N stranded" carries on the cut-off ones and resumes the rest, its ask naming which and saying
+  what carrying on does ([`CARRY_ON_MEANS`](ref:hub/src/shared/cards.ts#CARRY_ON_MEANS)) ([`resumeAllAsk`](ref:hub/src/shared/cards.ts#resumeAllAsk),
   [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded)); `tower resume <id> --carry-on` from the CLI.
 - `test/fixtures/host-stopped-mid-turn.jsonl` and `host-stopped-done.jsonl` are sandbox sessions the sandbox host
   stopped, one mid-tool-call and one after its `Stop`.
@@ -65,6 +64,10 @@ storing, and the capability belongs in the core, where every renderer and worker
   tower (or a renderer), and a race with a startup screen; the first prompt as an argument has neither.
 - A separate `carry-on` server verb. It would be `resume` with a prompt; one verb with an optional field keeps one
   queue and one set of refusals.
+- *Carry on on each card, beside resume.* Built first (2026-10-09), in the tower page's card and header and Tower 3D's
+  desk panel. Three buttons on a stranded card for one moment after a restart; the user kept resume all as where it
+  lives (2026-10-15): it prompts only the workers cut off mid-turn and resumes the rest plainly, so a worker kept
+  alive on purpose is never prompted. `calls['carry-on']` stays on the board for any renderer or worker.
 - A separate "carry on all" beside "resume all". Two floor buttons for one moment after a restart; the ask lists who
   carries on.
 - Storing that a session was cut off. It is computed from the log.
