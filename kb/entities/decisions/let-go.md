@@ -41,7 +41,7 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
 
 **How.**
 - The fact is `[t, 'h', {hook_event_name: 'tower.letGo'}]`: an `h` event in the `tower.*` namespace, so the log
-  format is unchanged. Old logs don't have it, and a bridge that predates it skips it as an unknown hook.
+  format is unchanged.
 - The host takes a control message `fact {id, fact}`, for `tower.*` facts only
   ([`appendFact`](ref:hub/src/host/main.ts#appendFact)). For a running session it is appended like a hook. Any other
   session's plain log gets it with `appendFileSync`, at seconds since the header's `startedAt` (the first line, read
@@ -50,7 +50,7 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   ([`wholeLinesLength`](ref:hub/src/shared/log-file.ts#wholeLinesLength)): the fragment holds no fact, and the fact
   appended after it would end it as a whole line that isn't JSON ([[broken-logs]]). It refuses a session with no plain log (unknown, or
   archived) and one still flushing its exit. A stranded id never runs again (a resume is a new session), so
-  nothing else writes that file. `HOST_PROTOCOL` is 2, and `POST /let-go` refuses with `unavailable` and the
+  nothing else writes that file. `POST /let-go` refuses with `unavailable` and the
   restart to do while the running host is older ([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as a
   worker's prompt does).
 - The bridge folds it as `letGoAt` without counting it as Claude heard from. The card carries `letGoAt`, is off duty
@@ -63,9 +63,8 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
 - "Resume all N" on a floor is composed in the renderer from the stranded cards' `calls.resume`
   ([`strandedOf`](ref:hub/src/shared/cards.ts#strandedOf), run in turn by
   [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded), each cut off mid-turn carried on: [[carry-on]]),
-  asked first with the list. Both renderers offer
-  let go and resume all, asking in the same words (`letGoAsk`, `resumeAllAsk`): the tower page on the card (hovered while not selected: selected, the header has them), the header and
-  the floor's trays; Tower 3D in the desk panel beside Resume, as X held at the desk, and in the floor panel.
+  asked first with the list. Both renderers offer let go and resume all, asking in the same words (`letGoAsk`,
+  `resumeAllAsk`).
 
 **Alternatives considered.**
 - The tower appends to the stranded log itself. It needs no host restart and has no race, but it makes a second

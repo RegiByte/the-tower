@@ -24,10 +24,8 @@
   ]
 }
 ---
-**Problem.** A board the tower couldn't build failed `GET /board` with an empty 500 and wrote the reason only to
-`tower.log`: the tower page and Tower 3D stayed empty. The case that showed it is a hand-edited `user.name` no
-review note can carry ([[the-user]]). Worse, a config that isn't JSON ended the tower process: the repos read
-rejected unhandled, and the first change after the config broke, with a board client open, threw inside the debounced publish.
+**Problem.** A board the tower can't build (a hand-edited config with a value it can't use, or JSON that doesn't
+parse) must not leave every renderer empty with the reason only in `tower.log`, nor end the tower process.
 
 **Why.** A renderer that can't get a board should say why, and every renderer should be able to, so the reason
 belongs to the API, not to one page. The fix is the user's (a typo in the config): the message has to name it.
@@ -50,7 +48,7 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
 - **A lost tower is a board error too.** When `/board` drops, `tower.js` tells `onBoardError` an error of code
   `disconnected` ([`BoardError`](ref:hub/src/shared/shelf-page.ts#BoardError): told by the client, never sent by the
   tower), once until a board comes back. The browser's `EventSource` reconnects by itself after a dropped connection;
-  one it gave up on (an error answer) `tower.js` opens again after 3 s, `/mux` alike, whose next id re-watches every
+  one it gave up on (an error answer) `tower.js` opens again after a pause, `/mux` alike, whose next id re-watches every
   stream. The board through `subscribe` clears it, as for the tower's own errors, and the tower page relays it to a
   framed page. Renderers head it with [`boardErrorTitle`](ref:hub/src/shared/cards.ts#boardErrorTitle); the tower
   page also dims the board and its counts, reads the host as `unknown` (`HostState`), and stops its `data-since`
@@ -58,16 +56,14 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
 - **Recovery without a reload.** [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches the config's directory
   for the config file (editors replace it on save, which a watch on the file itself would lose), so a fix publishes
   the board at once. A config the tower can't read keeps the repos' last git read.
-- An API major: an older page would hand `undefined` to its subscribers; it stops at the version check.
 
 **Alternatives considered.**
 - *An SSE `event: error`.* `EventSource` raises its own `error` on every dropped connection, on the same listener: a
   renderer couldn't tell the tower's word from a restart.
 - *A fallback board (empty floors, `error` field).* A board that looks real while saying nothing; renderers would draw
   an empty tower.
-- *Validating the whole config with a schema.* Would turn unknown or missing project fields into `config` errors with
-  good messages; larger than this change. Such a config fails where it is first read, as `internal` with
-  JavaScript's message, shown the same way. `tower config check` and `tower doctor` read a config as the tower
+- *Validating the whole config with a schema on every read.* A config the tower's readers don't foresee fails where it
+  is first read, as `internal` with JavaScript's message, shown the same way. `tower config check` and `tower doctor` read a config as the tower
   does and name each problem at its key path ([`configProblems`](ref:hub/src/config-check.ts#configProblems)),
   outside the board.
 - *Retrying on a timer.* The config watch is the event the board waits for; nothing else can fix it.

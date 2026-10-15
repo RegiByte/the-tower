@@ -10,9 +10,9 @@
   "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#daemonsNamed", "hub/src/cli.ts", "hub/package.json", "hub/README.md"]
 }
 ---
-**Problem.** Starting the tower meant writing `config.json` by hand with absolute paths, then `npm run up`, then
-`npm run tower` in a terminal of its own. Nothing said what a machine lacked until something failed deep inside a
-session.
+**Problem.** A tower that starts only after writing `config.json` by hand with absolute paths and running each
+process in a terminal of its own, and that says nothing of what a machine lacks until something fails deep inside a
+session, is closed to anyone but its author.
 
 **Why.** The tower is shared with people who have Claude Code on a Mac and nothing else of ours: no config, no global
 `CLAUDE.md`. A clone and one command should reach a running tower with a worker to spawn.
@@ -44,17 +44,16 @@ session.
 
 **Alternatives considered.**
 
-- *An interactive wizard.* Rejected: one first project is all a config needs to run, and the README shows the rest.
+- *An interactive wizard.* One first project is all a config needs to run, and the README shows the rest.
   Questions in a terminal are a second way to edit the config.
-- *`doctor --fix`.* Rejected: every fix touches the user's machine (installing Node, signing in, the editor command),
+- *`doctor --fix`.* Every fix touches the user's machine (installing Node, signing in, the editor command),
   which is theirs to run.
 - *A curl | sh installer with release tarballs.* Deferred: the audience clones repos and has Node.
 - *Telling our tower apart by asking it.* The tower's port is ours while a process running the tower's server with this
   system's config (`TOWER_CONFIG`, or `~/.tower/config.json` under its `HOME`) listens on it, read from `lsof` and
   `ps -E`: no API change, and a tower started by hand (`npm run tower`) counts as ours too.
 
-**Impact.** The user's routine: `tower up` brings the tower up with the daemons, and `npm run tower` in a terminal of
-its own is no longer needed. A tower started by hand still answers `tower up` as already up, but `tower down` refuses
-it (no pid file), as it does a host started by hand, and still stops the daemons it did start. The sandbox starts and stops its tower through the same daemons.
-A fresh account crashed the tower's first board, reading `~/.claude/sessions` before Claude ever made it; that
-directory missing now means no peers.
+**Impact.** The user's routine is `tower up`, which brings the tower up with the daemons. A tower started by hand
+(`npm run tower`) still answers `tower up` as already up, but `tower down` refuses it (no pid file), as it does a host
+started by hand, and still stops the daemons it did start. The sandbox starts and stops its tower through the same
+daemons. On a fresh account, a missing `~/.claude/sessions` means no peers.

@@ -29,40 +29,36 @@ the easy path stops them, as long as it is named for what it is.
   callsign); a card's `hiredBy` is the hirer of the first session of its worker's lineage, so it survives resumes.
   `floor.hiring` is the floor's limits.
 - *The limits* (config `hiring: {depth, live}`, top level and per project, the project's winning per key, through
-  [`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig); defaults 2 and 3). A worker nobody hired stands at
+  [`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig); defaults in [[docs-config]]). A worker nobody hired stands at
   depth 0, a hire one deeper than its hirer ([`hireDepth`](ref:hub/src/shared/cards.ts#hireDepth)); a hire may stand
   at most `depth` deep. At most `live` of a worker's hires run at once, reviewers aside
   ([`liveHires`](ref:hub/src/shared/cards.ts#liveHires)). [`hireRefusal`](ref:hub/src/shared/cards.ts#hireRefusal)
   says why a worker may not hire, as a sentence; the tower answers a hire past the spawn's floor's limits with it,
   as error `limited`, and `tower hire` tells the worker to ask the user.
-- *One at a time.* Claude runs a worker's Bash calls in parallel: three `tower hire` that each read the board first
-  all passed a `live` of 1. The tower takes a hirer's hires in turn, by its callsign
+- *One at a time.* Claude runs a worker's Bash calls in parallel, so hires that each read the board first would all
+  pass. The tower takes a hirer's hires in turn, by its callsign
   ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), each holding the turn until the system counts it (its log tracked,
   the hirer's log naming it, the host running it), so the next is weighed against it. Nothing is stored for it: the
   turn waits on what the logs already say.
 - *Reviews are never refused.* A self-review must stay possible at any depth: the system enables workflows, it
   doesn't enforce them. A hire whose prompt starts a reviewer (`reviewedIn`, as `liveHires` leaves it out) is not
   weighed, and still logs `tower.hire`, so the pair is attributed.
-- *Drawn.* `tower whoami` tells a hired worker who hired it; `tower agent`, the tower page (sidebar and worker header)
-  and Tower 3D (desk tag and aim card) say "hired by X" through [`pairLine`](ref:hub/src/shared/cards.ts#pairLine),
-  left out when the hirer is the author a reviewer reviews, and on the tower page's sidebar when the card sits under its hirer's.
+- *Drawn.* `tower whoami` tells a hired worker who hired it, and every renderer says "hired by X" through
+  [`pairLine`](ref:hub/src/shared/cards.ts#pairLine).
 - *Whose prompt.* A conversation's `promptBy` is the hirer while its latest prompt is still the one the worker was
   hired on (the first session's launch prompt, as `card.reviews` reads it); `tower agent` and both renderers' Brief
   name it in place of the user. A prompt typed later is the user's again.
 
 **Alternatives considered.**
-- *Trust the skill's rule of when to hire.* Rejected: no worker sees the chain it is part of.
-- *Refuse in the command, against a board it read earlier* (the first version). Parallel hires all read the same
-  board and all passed, and the fact was a second post after the spawn: a failed post left a hire uncounted. Moved
-  into the tower once `spawn` took `by` ([[worker-prompts]]) (2026-10-10).
-- *Refuse every `spawn` with `by`.* Rejected: `by` says whose prompt it is; a hire is a further claim. The user's own
+- *Trust the skill's rule of when to hire.* No worker sees the chain it is part of.
+- *Refuse in the command, against a board it read earlier*: parallel hires all read the same board and all pass, and
+  a fact posted after the spawn can fail and leave a hire uncounted.
+- *Refuse every `spawn` with `by`.* `by` says whose prompt it is; a hire is a further claim. The user's own
   spawns pass neither and are never limited.
-- *Count accepted hires in a set the tower keeps.* Rejected: state the logs already hold a moment later; waiting for
+- *Count accepted hires in a set the tower keeps.* State the logs already hold a moment later; waiting for
   the system to count the hire keeps the turn on observed facts.
-- *A depth counter passed down in each child's environment.* Rejected: stored state the logs can derive, invisible
+- *A depth counter passed down in each child's environment.* Stored state the logs can derive, invisible
   to renderers, and lost on resume.
-- *Offering `hire` as a card verb within limits.* Not now: a renderer has no hire of its own to offer; the shared
-  function is there when one wants to show it.
 
 **Impact.** Hiring is attributed and bounded in the core, for every caller that marks a spawn as a hire: API `spawn`
 field `hire`, error code `limited`. A worker that calls `spawn` without `hire` is neither logged nor limited: the

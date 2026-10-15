@@ -27,10 +27,10 @@
   ]
 }
 ---
-**Problem.** One malformed event in one session's log took the whole tower down, and kept doing so on every
-restart. A `Stop` hook posted without `background_tasks` and `session_crons` throws in the status step (Claude's
-own `Stop` always carries both); the event is in the log, so every start re-folded it and died again, as did
-`tower ls`, `tower resume` and archiving. The only way out was editing the log by hand.
+**Problem.** One malformed event in one session's log (a `Stop` hook posted without the fields Claude's own always
+carries, or a line cut short by a crash and then appended after) threw in the fold. The event is in the log, so every
+start re-folded it and died again, as did `tower ls`, `tower resume` and archiving: one log took the whole tower down,
+with editing the log by hand the only way out.
 
 **Why.** The user's call: one log failing is said clearly, and costs no other session. A log is a fact
 ([[logs-are-facts]]): the tower may not read past a line it can't follow, but it may not lose the rest of the system
@@ -63,10 +63,8 @@ it or kill it; once it no longer runs, resume its conversation, which starts a n
 same callsign. Off duty, Tidy archives it like any ended worker's log.
 
 [`test/board.test.ts`](ref:hub/test/board.test.ts) replays
-[`stop-without-tasks`](ref:hub/test/fixtures/stop-without-tasks.jsonl), a sandbox session sent a `Stop` without
-either field and a prompt after it: facts stop at the `Stop` (8.056 s), the card reads broken with the reason, and
-offers drive and kill while running, resume once not. Every fixture's checkpoint test resumes it before and after the
-break.
+[`stop-without-tasks`](ref:hub/test/fixtures/stop-without-tasks.jsonl) to hold this, and
+[`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) resumes every fixture's fold before and after a break.
 
 **Alternatives considered.**
 - `?? []` at `stopStatus`: fixes the one shape found, leaves the next fatal, and AGENTS.md rules out defensive checks.
@@ -78,20 +76,12 @@ break.
 **Impact.** A bad line costs its own session's facts from that line on, said on its card; the tower, every other
 session and `tower ls` carry on, and a restart meets the same break in the same place.
 
-*A line that isn't JSON* (2026-10-09). A write cut short by a crash is the log's last bytes, an incomplete line every
-reader leaves unread, until something appends after it: letting the worker go has the host append `tower.letGo` to
-the log ([[let-go]]) on a line of its own, which ends the fragment as a complete line that isn't JSON. Its parse
-threw inside the tail's watch callback and ended the tower, and every start folded it again and died: a crash loop.
-The fact filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) now reads such a line as
-[`Unreadable`](ref:hub/src/bridge/facts.ts#Unreadable): its time and code as far as its prefix reads (the session's
-start and `?` if it was cut before them), for `factsAfter` to break on like any event it can't follow, the reason
-"a line that isn't JSON" with the parser's error; only a line the filter parses can break the fold, so a torn
-output line past the session's start costs nothing. After a break the filter keeps what
-[`afterBreak`](ref:hub/src/tail.ts#afterBreak) keeps, so the let-go that ended the fragment is folded; a live tail
-stops at the break before what came in the same append, so the log is folded again from its checkpoint
-([`watchSystem`](ref:hub/src/system.ts#watchSystem)). The screen and every-event readers skip the line: a screen has
-no facts to break, and a brief reads hooks. [`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) folds a
-fixture with a torn hook line and a let-go appended, from a checkpoint before them and from the start. The writer no
-longer makes such a line: before it appends a fact to a log it doesn't run, the host cuts an unfinished last line back
-to the log's whole lines ([`appendFact`](ref:hub/src/host/main.ts#appendFact), [[let-go]]), so the fold's tolerance
-covers the logs an earlier host extended and any other line no reader can follow.
+*A line that isn't JSON.* A write cut short by a crash leaves an incomplete last line every reader leaves unread
+until something appends after it. The fact filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) reads such a
+complete line as [`Unreadable`](ref:hub/src/bridge/facts.ts#Unreadable) (its time and code as far as its prefix
+reads), for `factsAfter` to break on like any event it can't follow; only a line the filter parses can break the
+fold, so a torn output line past the session's start costs nothing. After a break the filter keeps what `afterBreak`
+keeps, and a live tail that stops at a break folds the log again from its checkpoint
+([`watchSystem`](ref:hub/src/system.ts#watchSystem)). The screen and every-event readers skip the line. The host
+itself makes no such line: before it appends a fact to a log it doesn't run, it cuts an unfinished last line back to
+the log's whole lines ([`appendFact`](ref:hub/src/host/main.ts#appendFact), [[let-go]]).

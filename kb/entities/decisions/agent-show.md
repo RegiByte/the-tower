@@ -33,27 +33,23 @@ worker that made it.
   While the worker has run as more than one session, both renderers mark a showing's tab with its session (`s1`,
   "session 1 of 2 · Oct 6, 21:40" in its title) from `card.lineage` ([[brief-turns]]).
 - What a worker made and didn't show is derived beside it: `card.pages` lists each html file the worker wrote
-  (`Write`), at its first write, with `shown` true when the worker showed that path. Oct 3–7, 7 of the 21 pages
-  written once the system prompt taught `tower show` were never shown.
+  (`Write`), at its first write, with `shown` true when the worker showed that path.
 - `GET /shown/<id>/<path>` serves a file the session showed, anything beside or below an html file it showed
   (the shelf's rule), or an image beside or below a markdown one ([[blob-reads]]), with the shelf's CSP `sandbox`
   (a video with `nosniff` instead, which both renderers play in a `<video>` with controls).
-- The tower page adds a tab per showing after Terminal, Brief, Changes and, on a floor keeping review threads, Reviews. A new one opens its tab when you are on that
-  worker, and raises a browser notification when you are not looking at it. Markdown renders in the
-  scheme; an image is an `<img>` fitted to the pane (a framed image keeps its natural size and scrolls); any other
-  file is framed as served; a `link` is one Open ↗, since a browser opens no tab by itself. ×
-  closes a showing for this viewer (kept in the browser); a new showing of it comes back.
-- Tower 3D draws the latest on a second monitor on the worker's desk (a reviewer seated beside its author has none), holds a new one up as it arrives, and
-  opens every showing as a tab of the desk panel ([[tower3d]]). Each floor's gallery hangs its last nine showings,
-  off-duty workers' included ([[shared-wall]]).
+- The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
+  worker and notifying when you are not; markdown renders, an image fits the pane, any other file is framed as
+  served, and a `link` is one Open ↗, since a browser opens no tab by itself. × closes a showing for this viewer
+  (kept in the browser); a new showing of it comes back.
+- Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk
+  panel ([[tower3d]]); each floor's gallery hangs its latest showings, off-duty workers' included ([[shared-wall]]).
 
 **Alternatives considered.**
-- *A `TowerVerb` relayed to open pages.* Rejected: with no page open, or after a reload, the showing is gone. A
+- *A `TowerVerb` relayed to open pages.* With no page open, or after a reload, the showing is gone. A
   showing is a fact about a session, and facts live in its log ([[logs-are-facts]]).
-- *Showings stay with the session that showed them.* Rejected (it was the first design): the user sees a resume
-  of a worker as the same worker, and a resumed worker came back with empty desk tabs while the gallery named its
-  stopped predecessor (ORION-59 resumed as ODIN-75, 2026-10-05).
-- *Snapshot the file's content when shown.* Rejected: logs stay small, and a worker updates a file and shows it
+- *Showings stay with the session that showed them.* The user sees a resume of a worker as the same worker, and a
+  resumed worker would come back with empty tabs while the gallery named its stopped predecessor.
+- *Snapshot the file's content when shown.* Logs stay small, and a worker updates a file and shows it
   again.
 - *A tower verb that opens things on the user's machine, for showing.* Not needed: showing puts the page beside the
   worker. Opening a file in the user's Finder or editor has its own verbs, `tower reveal` and `tower edit`

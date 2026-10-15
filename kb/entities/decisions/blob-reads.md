@@ -21,11 +21,9 @@
   ]
 }
 ---
-**Problem.** A worker that showed a screenshot or a plot got a poster in Tower 3D: an enamel band reading IMAGE,
-the file's name and the time. A framed renderer runs at an opaque origin, so every URL is cross-origin to it,
-the tower's own `/shown` included: an `<img>` displays, but WebGL refuses to upload it. The renderer API read
-only text. Markdown with `![](plot.png)` showed a broken image in both readers, since only an html showing let
-the files beside it be read.
+**Problem.** A framed renderer runs at an opaque origin, so every URL is cross-origin to it, the tower's own
+`/shown` included: an `<img>` displays, but WebGL refuses to upload it, so a renderer drawing in WebGL can show a
+screenshot only as a poster naming it. And markdown with `![](plot.png)` needs the images beside it served.
 
 **Why.** Most of what workers show the user is visual: screenshots, plots, diagrams. On the shared wall
 ([[shared-wall]]) and the desk's second monitor ([[agent-show]]) a poster says that something was shown, not
@@ -36,9 +34,7 @@ what.
   API serves, as a `Blob` of its type. At the tower's origin it is `fetch(path).then(r => r.blob())`; framed it is
   one new tunnel message, `{t: 'blob', id, path}` ([`FromPage`](ref:hub/src/shared/shelf-page.ts#FromPage)),
   which the tower page answers with a one-line relay. A `Blob` is structured-cloneable: it crosses `postMessage`
-  with its MIME type. The server already served images with their types; who may read what is unchanged.
-  It moved [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION): a page asking a tower without it would wait
-  forever for an answer.
+  with its MIME type. Who may read what is unchanged.
 - **Markdown pulls in its images.** [`shownServes`](ref:hub/src/shelf.ts#shownServes) lets a shown `.md` serve
   the images (png, jpg, gif, webp, svg) beside or below it, and [`shelfServes`](ref:hub/src/shelf.ts#shelfServes)
   does the same for an `md` shelf entry's files. Only images: showing a README doesn't open its repo. Both readers
@@ -46,8 +42,7 @@ what.
   alone, so in-page anchors and links between shelf docs keep working.
 - **Tower 3D** ([`posterOf`](ref:hub/renderers/tower3d/src/showing.ts#posterOf)): an image showing is read as a
   blob, put on a blob URL (same-origin to the page that made it, so the canvas stays clean) and decoded by an
-  `<img>`, which takes every format, SVG included. It is drawn onto a canvas at most 2048 px on its long side. The
-  monitor's sheet is repainted with it letterboxed on the screen's dark; the gallery gets a second texture of the
+  `<img>`, which takes every format, SVG included, and drawn onto a canvas. The monitor's sheet is repainted with it letterboxed on the screen's dark; the gallery gets a second texture of the
   bare image ([`fitPicture`](ref:hub/renderers/tower3d/src/gallery.ts#fitPicture)), as large as its place allows
   at its own proportions, the frame, plaque and ribbon around it. A markdown poster typesets its images,
   shrunk to the room left on the sheet. The poster stands until the read settles; a file gone keeps it.
@@ -62,10 +57,8 @@ what.
 - *An `ArrayBuffer` with a transfer list.* Loses the MIME type that decoding needs.
 - *`createImageBitmap(blob)`.* Chrome refuses SVG blobs; the `<img>` path takes every format.
 - *A `<base href>` in the readers' srcdoc.* Resolves images, but sends `#anchor` links to the base URL.
-- *HTML-in-canvas* (Chrome origin trial). Paints the DOM into a texture, but leaves cross-origin images in that
-  DOM undrawn, so images still need blob reads; and its API is still being renamed. A later spike.
 
 **Impact.** One read mode on the renderer API for every renderer and shelf page. Tower 3D's wall and monitors
 carry the real screenshots and plots workers show, and markdown reports show their figures everywhere. The host
-and the board are unchanged. HTML pages and PDFs stay posters. Videos (`.mp4`, `.webm`) came later the same way: read as a blob,
-played on a blob URL, their frames painted into the world ([[agent-show]]).
+and the board are unchanged. HTML pages and PDFs stay posters. Videos (`.mp4`, `.webm`) go the same way: read as a blob, played on a blob URL,
+their frames painted into the world ([[agent-show]]).
