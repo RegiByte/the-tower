@@ -30,5 +30,6 @@ including one that gives up with no `SessionStart` (`test/fixtures/compact-auto.
 same `PreCompact` and `SessionStart` (`source: compact`) as the main loop's, under the main session's `session_id`
 and the spawning prompt's `prompt_id`, with no `agent_id` (2.1.300, `compact-subagent.jsonl`): nothing tells the two
 apart. Claude 2.1.300 also ends a turn in error when automatic compaction thrashes (the context refills within 3
-turns, 3 times in a row), with no `PreCompact` and no `Stop`. Anthropic's reply on anthropics/claude-code#102134 says `PreCompact`
+turns, 3 times in a row), with no `PreCompact` and no `Stop`; the mod's `turn.complete` still arrives, with
+`reason: error` (`compact-thrashing.jsonl`). Anthropic's reply on anthropics/claude-code#102134 says `PreCompact`
 covers manual, automatic, idle and precomputed compactions; one a plugin triggers may raise none, a known gap.

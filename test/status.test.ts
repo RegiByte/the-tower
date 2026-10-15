@@ -92,6 +92,16 @@ test('a subagent compacting during a manual /compact leaves the main loop idle w
   ])
 })
 
+test('the autocompact breaker ends the turn in error with no PreCompact or Stop: it fails', () => {
+  assert.deepEqual(timeline(fixture('compact-thrashing')), [
+    ['blocked', 0.533],
+    ['idle', 20.285],
+    ['working', 20.404],
+    ['failed', 42.303],
+    ['exited', 92.816],
+  ])
+})
+
 test("outside an organization the mod's session.compact starts a compaction too", () => {
   assert.deepEqual(timeline(fixture('compact-manual-outside-org')), [
     ['idle', 0.796],

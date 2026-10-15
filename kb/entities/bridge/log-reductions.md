@@ -30,7 +30,8 @@ or one event at a time as it is tailed:
   subagent's compaction raises the same hooks with no `agent_id` ([[claude-code]]), so the fold can't tell it apart:
   an automatic start during a manual `/compact` keeps the manual trigger (only a subagent's can come then), while a
   subagent's `SessionStart` can end a manual one early, and its start can show a working main loop as `compacting`
-  until the loop's next step (known gaps). A session without
+  until the loop's next step (known gaps). A turn the autocompact breaker ends is `failed` by the mod's
+  `turn.complete` (`reason: error`). A session without
   an `x` event that the host no longer runs is `lost` ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one
   place a bad event is caught: a step that throws leaves the facts as they were with `broken` (the error, the event's
