@@ -10,7 +10,7 @@
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overscroll-behavior: none; }
-body { display: grid; grid-template-columns: min(20rem, 38vw) minmax(0, 1fr); background: var(--wall); color: var(--ink); font: var(--fs-l)/1.45 var(--ui);
+body { display: grid; grid-template-columns: clamp(min(20rem, 38vw), 22vw, 28rem) minmax(0, 1fr); background: var(--wall); color: var(--ink); font: var(--fs-l)/1.45 var(--ui);
   -webkit-font-smoothing: antialiased; overflow: hidden; }
 button { font: inherit; font-weight: 700; font-size: var(--fs-m); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
   border-radius: var(--radius); padding: var(--sp-xs) var(--sp-l); cursor: pointer; transition: border-color .15s ease-out, background .15s ease-out; }

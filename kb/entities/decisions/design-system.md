@@ -104,7 +104,7 @@ draws with almost no advance, so the next face in the stack draws it.
     nudge is gone. Tower 3D's canvas text draws on the alphabetic line and didn't move (`tool:frames` identical).
   - *Corners* `radius`, `radiusS` (2 px, small marks) and `radiusPill`; *italics are real faces* (Atkinson 400 and 700
     italic, JetBrains Mono 400 italic) where the browser slanted the roman, and weights are the shipped 400 and 700.
-  - *Reflow* (the tower page): the sidebar is `20rem` (at most 38% of the width) and under 900 px a rail, opened over
+  - *Reflow* (the tower page): the sidebar is 22% of the width, held between `20rem` (at most 38% of the width) and `28rem`, and under 900 px a rail, opened over
     the main pane by the sidebar key or its » until a worker is picked; when space is short the whole sidebar scrolls,
     its header with it. The worker bar wraps: the callsign and pill keep their row, the actions move below.
 - **Icons, controls and selection** (2026-10-08). Some fifteen Unicode glyphs stood for icons beside the SVG set
