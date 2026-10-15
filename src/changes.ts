@@ -4,9 +4,10 @@
  * anywhere else, everything since `HEAD`. A scope narrows it to what isn't committed yet, or to one of the commits
  * since the base. Files outside the repos aren't seen. Git is read on every request, never kept.
  */
-import { lstat, readFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
+import { open } from 'node:fs/promises'
 import { join } from 'node:path'
-import { beforeCount, MAX_BEFORE_LINES, parseDiff, withBefore, type DiffFile } from './bridge/diff.ts'
+import { beforeCount, linesThrough, MAX_BEFORE_LINES, parseDiff, withBefore, type DiffFile } from './bridge/diff.ts'
 import { git, gitBytes, run } from './git.ts'
 import { againstFor, isRepo } from './worktrees.ts'
 
@@ -54,20 +55,32 @@ const byPath = (files: DiffFile[]): DiffFile[] => files.sort((a, b) => (a.path <
  * and seconds of highlighting as the pane opens. The files past it go without them.
  */
 const MAX_READ_BEFORE_LINES = 4000
-/** A file past this many bytes isn't read for the lines before its hunks: a log or a data dump, read whole on every poll for a few lines. */
-const MAX_BEFORE_FILE_BYTES = 2 * 1024 * 1024
-/** Bytes one read reads for lines before hunks: a file is read whole even when its hunks sit near its top. */
-const MAX_READ_BEFORE_BYTES = 16 * 1024 * 1024
+/**
+ * Characters of lines before a file's hunks, and of a read's, past which they go without them: a minified bundle or a
+ * data line above a hunk is one line of megabytes, and highlighting it holds the page for seconds.
+ */
+const MAX_BEFORE_FILE_CHARS = 64 * 1024
+const MAX_READ_BEFORE_CHARS = 256 * 1024
+/** Bytes of a working tree's file read for its first lines, past which it goes without them: a long line among them. */
+const MAX_HEAD_BYTES = 256 * 1024
+/** A commit's blob past this many bytes isn't read: `cat-file` answers a blob whole, however few of its lines are needed. */
+const MAX_BEFORE_BLOB_BYTES = 2 * 1024 * 1024
+/** Bytes of a commit's blobs one read reads. */
+const MAX_READ_BEFORE_BLOB_BYTES = 4 * 1024 * 1024
 /** Files read at once for the lines before their hunks. */
 const READS_AT_ONCE = 8
+
+/** A file to read for the lines before its hunks: its path, and how many of its first lines `withBefore` needs. */
+type Wanted = { path: string; lines: number }
 
 /**
  * Each changed file's hunks with the lines before them (`withBefore`). Which files are read is told by their hunk
  * headers first (`beforeCount`): one with lines to buy, up to `MAX_BEFORE_LINES`, in their order until
  * `MAX_READ_BEFORE_LINES`. A file added or deleted is one hunk from its first line, and has none. `newSides` reads
- * those as they now read, as many as their sizes afford.
+ * those as they now read (a text that holds at least the lines wanted, or none), and they keep the lines up to
+ * `MAX_BEFORE_FILE_CHARS` each and `MAX_READ_BEFORE_CHARS` in all.
  */
-const withBeforeAll = async (files: DiffFile[], newSides: (paths: string[]) => Promise<(string | undefined)[]>): Promise<DiffFile[]> => {
+const withBeforeAll = async (files: DiffFile[], newSides: (wanted: Wanted[]) => Promise<(string | undefined)[]>): Promise<DiffFile[]> => {
   let left = MAX_READ_BEFORE_LINES
   const read = files.filter((f) => {
     if (!f.hunks?.length || (f.change !== 'modified' && f.change !== 'renamed')) return false
@@ -77,20 +90,16 @@ const withBeforeAll = async (files: DiffFile[], newSides: (paths: string[]) => P
     return true
   })
   if (!read.length) return files
-  const texts = new Map((await newSides(read.map((f) => f.path))).map((text, i) => [read[i], text]))
+  const texts = new Map((await newSides(read.map((f) => ({ path: f.path, lines: linesThrough(f) })))).map((text, i) => [read[i], text]))
+  let chars = MAX_READ_BEFORE_CHARS
   return files.map((f) => {
     const text = texts.get(f)
-    return text === undefined ? f : withBefore(f, text)
-  })
-}
-
-/** Which of files of these sizes are read, in their order: each up to `MAX_BEFORE_FILE_BYTES`, all until `MAX_READ_BEFORE_BYTES`. */
-const affordable = (sizes: (number | undefined)[]): boolean[] => {
-  let left = MAX_READ_BEFORE_BYTES
-  return sizes.map((size) => {
-    if (size === undefined || size > MAX_BEFORE_FILE_BYTES || size > left) return false
-    left -= size
-    return true
+    if (text === undefined) return f
+    const full = withBefore(f, text)
+    const sent = full.hunks!.reduce((n, h) => n + (h.before ?? []).reduce((m, l) => m + l.length, 0), 0)
+    if (sent > MAX_BEFORE_FILE_CHARS || sent > chars) return f
+    chars -= sent
+    return full
   })
 }
 
@@ -108,50 +117,76 @@ const fewAtOnce = async <T>(tasks: (() => Promise<T>)[]): Promise<T[]> => {
   return results
 }
 
-/** A file read, or none when the worker removed it since `git diff` read it. */
-const unlessGone = <T>(read: Promise<T>): Promise<T | undefined> =>
-  read.catch((err) => {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined
-    throw err
-  })
-
 /**
- * Files of the working tree, as `affordable` allows; none for a symlink (its diff is its target's path, not the file
- * it reads), a submodule, and a file the worker removed since `git diff` read it.
+ * A working tree's file read as far as its first `lines` lines, or none: past `MAX_HEAD_BYTES` before them, or not a
+ * plain file when opened (a symlink, whose diff is its target's path, is never followed; a submodule; a fifo). The
+ * worker may have moved, removed or replaced it since `git diff` read it: any failure to read it is none, for this file.
  */
-const treeFiles = (dir: string) => async (paths: string[]) => {
-  const sizes = await Promise.all(paths.map(async (path) => {
-    const stat = await unlessGone(lstat(join(dir, path)))
-    return stat?.isFile() ? stat.size : undefined
-  }))
-  const read = affordable(sizes)
-  return fewAtOnce(paths.map((path, i) => () => (read[i] ? unlessGone(readFile(join(dir, path), 'utf8')) : Promise.resolve(undefined))))
+async function head(file: string, lines: number): Promise<string | undefined> {
+  const fd = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK).catch(() => undefined)
+  if (!fd) return undefined
+  try {
+    if (!(await fd.stat()).isFile()) return undefined
+    const chunks: Buffer[] = []
+    let size = 0
+    let seen = 0
+    while (seen < lines) {
+      const { bytesRead, buffer } = await fd.read({ buffer: Buffer.alloc(64 * 1024) })
+      if (!bytesRead) break
+      const chunk = buffer.subarray(0, bytesRead)
+      for (let at = chunk.indexOf(10); at !== -1 && seen < lines; at = chunk.indexOf(10, at + 1)) seen++
+      chunks.push(chunk)
+      size += bytesRead
+      if (seen < lines && size > MAX_HEAD_BYTES) return undefined
+    }
+    return Buffer.concat(chunks).toString('utf8')
+  } catch {
+    return undefined
+  } finally {
+    await fd.close()
+  }
 }
 
-/** A `cat-file --batch-check` answer for an object found: its id, type and bytes. Any other (`<name> missing`) doesn't match. */
-const FOUND = /^([0-9a-f]{40,64}) (\S+) (\d+)$/
+const treeFiles = (dir: string) => (wanted: Wanted[]) => fewAtOnce(wanted.map((w) => () => head(join(dir, w.path), w.lines)))
+
+/** A `git diff-tree -z` record's head: `:<mode> <mode> <oid> <oid> <status>`, the new side's oid third. */
+const RAW = /^:\d+ \d+ [0-9a-f]+ ([0-9a-f]+) [A-Z]/
+/** A `cat-file --batch-check` answer for a blob: its id and bytes. */
+const BLOB = /^([0-9a-f]{40,64}) blob (\d+)$/
 
 /**
- * Files as `commit` holds them, as `affordable` allows. A `cat-file --batch-check` names each one's object, type and
- * size, then one `cat-file --batch` reads the blobs by their ids, each answered as a header (`<oid> blob <bytes>`), its
- * bytes and a newline. Anything but a blob (a submodule, an object missing) reads as none. The check asks one name per
- * line, so a path holding a newline isn't asked, and reads as none.
+ * Files as `commit` holds them, by their object ids: one `diff-tree` names each new side's blob (asking `cat-file` by
+ * `<commit>:<path>` walks the trees once per file, seconds on a wide commit of deep paths), a `cat-file --batch-check`
+ * their sizes, and one `cat-file --batch` reads those up to `MAX_BEFORE_BLOB_BYTES` each, `MAX_READ_BEFORE_BLOB_BYTES`
+ * in all, each answered as a header (`<oid> blob <bytes>`), its bytes and a newline. Anything but a blob (a submodule)
+ * reads as none.
  */
-const commitFiles = (dir: string, commit: string) => async (paths: string[]) => {
-  const named = paths.filter((p) => !p.includes('\n'))
-  const heads = (await gitBytes(dir, ['cat-file', '--batch-check'], named.map((p) => `${commit}:${p}\n`).join(''))).toString('utf8').split('\n')
-  const found = named.map((_, i) => FOUND.exec(heads[i]))
-  const read = affordable(found.map((m) => (m?.[2] === 'blob' ? Number(m[3]) : undefined)))
-  const asked = named.flatMap((p, i) => (read[i] ? [{ p, oid: found[i]![1], size: Number(found[i]![3]) }] : []))
-  if (!asked.length) return paths.map(() => undefined)
-  const out = await gitBytes(dir, ['cat-file', '--batch'], asked.map((a) => `${a.oid}\n`).join(''))
+const commitFiles = (dir: string, parent: string, commit: string) => async (wanted: Wanted[]) => {
+  const raw = (await gitBytes(dir, ['diff-tree', '-r', '-z', '--no-renames', '--no-commit-id', parent, commit], '')).toString('utf8').split('\0')
+  const oids = new Map<string, string>()
+  for (let i = 0; i + 1 < raw.length; i += 2) {
+    const m = RAW.exec(raw[i])
+    if (m) oids.set(raw[i + 1], m[1])
+  }
+  const asked = wanted.flatMap((w) => (oids.has(w.path) ? [{ path: w.path, oid: oids.get(w.path)! }] : []))
+  if (!asked.length) return wanted.map(() => undefined)
+  const heads = (await gitBytes(dir, ['cat-file', '--batch-check'], asked.map((a) => `${a.oid}\n`).join(''))).toString('utf8').split('\n')
+  let left = MAX_READ_BEFORE_BLOB_BYTES
+  const blobs = asked.flatMap((a, i) => {
+    const size = Number(BLOB.exec(heads[i])?.[2] ?? Infinity)
+    if (size > MAX_BEFORE_BLOB_BYTES || size > left) return []
+    left -= size
+    return [{ ...a, size }]
+  })
+  if (!blobs.length) return wanted.map(() => undefined)
+  const out = await gitBytes(dir, ['cat-file', '--batch'], blobs.map((b) => `${b.oid}\n`).join(''))
   let at = 0
-  const texts = new Map(asked.map((a) => {
+  const texts = new Map(blobs.map((b) => {
     const start = out.indexOf(10, at) + 1
-    at = start + a.size + 1
-    return [a.p, out.toString('utf8', start, start + a.size)]
+    at = start + b.size + 1
+    return [b.path, out.toString('utf8', start, start + b.size)]
   }))
-  return paths.map((p) => texts.get(p))
+  return wanted.map((w) => texts.get(w.path))
 }
 
 /** The working tree's diff from `from`, untracked files with it. */
@@ -172,7 +207,7 @@ const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChange
   const commit = commits.find((c) => c.sha.startsWith(scope.commit))
   if (!commit) return { ...base, shows: scope.commit, files: [], more: 0 }
   const files = parseDiff(await git(dir, [...DIFF, `${commit.sha}^`, commit.sha]))
-  return { ...base, shows: commit.sha, files: byPath(await withBeforeAll(files, commitFiles(dir, commit.sha))), more: 0 }
+  return { ...base, shows: commit.sha, files: byPath(await withBeforeAll(files, commitFiles(dir, `${commit.sha}^`, commit.sha))), more: 0 }
 }
 
 /** The changes in each of a session's dirs that is a repo, in its order, as `scope` shows them. */

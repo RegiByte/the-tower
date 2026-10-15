@@ -126,6 +126,14 @@ export function beforeCount(file: DiffFile): number {
   return n
 }
 
+/** How many of a file's lines its new side must be read to for `withBefore`: through its last hunk's own lines. */
+export function linesThrough(file: DiffFile): number {
+  const h = file.hunks?.at(-1)
+  if (!h) return 0
+  const own = ownLines(h).length
+  return startOf(h, own) + own
+}
+
 /**
  * A modified or renamed file's hunks, each with the unchanged lines before it, cut from `text`, the file as its new
  * side reads; as they were when `text` isn't what git diffed (a clean filter that changes lines, an edit since the
