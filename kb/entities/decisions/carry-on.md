@@ -52,7 +52,7 @@ storing, and the capability belongs in the core, where every renderer and worker
   Carry on where you left off." It says "stopped": a crash or a `down` without an `up` cuts off too.
 - **Everywhere resume is.** The status reads "stopped mid-turn" or "lost mid-turn"
   ([`statusName`](ref:hub/src/shared/cards.ts#statusName)); a sidebar card, short of room, says "stranded"
-  ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. The tower page offers carry on on the card and as the bar's
+  ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. The tower page offers carry on on the card (while it is selected or hovered) and as the bar's
   primary verb, Tower 3D first in the desk panel, both with [`CARRY_ON_MEANS`](ref:hub/src/shared/cards.ts#CARRY_ON_MEANS)
   as the tip; the floor's "resume all N stranded" carries on the cut-off ones and resumes the rest, its ask naming
   which ([`resumeAllAsk`](ref:hub/src/shared/cards.ts#resumeAllAsk),
