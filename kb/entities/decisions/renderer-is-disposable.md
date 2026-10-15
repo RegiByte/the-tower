@@ -30,8 +30,8 @@ rebuilt, or lost, with the next.
   how it is played. Size is not the measure; a capability only one renderer can reach is.
 - *Capabilities are non-prescriptive primitives.* A want that needs the core enters as the general model of
   its class, composed by renderers. [[collections]] is the model: the core lists, reads, writes and deletes
-  files, and what a draft means is a renderer's. The rejected [[drafts]] decision was the prescriptive
-  version of the same want.
+  files, and what a draft means is a renderer's, where a drafts store in the core would have been the
+  prescriptive version of the same want.
 - *Where a capability lands, in this order:* derived in the bridge ([[log-reductions]], the
   [`board`](ref:hub/src/bridge/board.ts#board)); a generic verb or read on the [[renderer-api]]; a host
   change only as a new general fact in the log, since a host change kills sessions ([[host-owns-ptys]]).
