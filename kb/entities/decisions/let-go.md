@@ -64,7 +64,7 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   ([`strandedOf`](ref:hub/src/shared/cards.ts#strandedOf), run in turn by
   [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded), each cut off mid-turn carried on: [[carry-on]]),
   asked first with the list. Both renderers offer
-  let go and resume all, asking in the same words (`letGoAsk`, `resumeAllAsk`): the tower page on the card (while selected or hovered), the bar and
+  let go and resume all, asking in the same words (`letGoAsk`, `resumeAllAsk`): the tower page on the card (hovered while not selected: selected, the header has them), the header and
   the floor's trays; Tower 3D in the desk panel beside Resume, as X held at the desk, and in the floor panel.
 
 **Alternatives considered.**

@@ -133,7 +133,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 @keyframes satellite-leaves { 0% { opacity: 1; max-height: 2em; } 75% { opacity: .35; max-height: 2em; } 100% { opacity: 0; max-height: 0; } }
 @media (prefers-reduced-motion: reduce) { .sub.ended { animation-timing-function: steps(1, end); } }
 .sess .act { margin-top: var(--sp-s); display: flex; gap: var(--sp-s); }
-.sess:not(.sel) .act.resumes { display: none; }
+.sess .act.resumes { display: none; }
 .sess:not(.sel):is(:hover, :focus-within) .act.resumes { display: flex; position: absolute; inset: auto var(--sp-l) var(--sp-m); margin: 0; background: inherit; }
 .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
 .crew .crew { margin-left: 0; padding-left: var(--sp-s); }
