@@ -28,7 +28,7 @@ Unlike the tower it does not use [[live-system]]: each command reads the logs it
 `resume` fold every log from its checkpoint on, as the tower does ([[fold-checkpoints]]); `resume` asks the
 running tower first and folds only when none answers ([[resume]]).
 `tower submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`; run by a worker (`TOWER_SESSION_ID` set), it first has the host append `tower.prompt` naming it ([[worker-prompts]]).
-`tower kill` takes a session id or a running worker's callsign (`runningNamed`) and speaks to the host, and when a worker runs it (`TOWER_SESSION_ID` set) on a running session, first has the host append `tower.kill` naming that worker ([[worker-acts]]).
+`tower kill` takes a session id or a running worker's callsign (`runningNamed`) and speaks to the host, and when a worker runs it (`TOWER_SESSION_ID` set) on a running session, first has the host append `tower.kill` naming that worker ([[worker-prompts]]).
 `tower attach` puts the terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `tower down`
 stops the daemons `tower up` started ([[bring-up]]); both take daemons by name. `tower init` writes a first config
 and `tower doctor` checks what the tower needs, one fix for each failure ([[setup]]). `tower update` moves the
