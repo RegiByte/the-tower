@@ -10,9 +10,9 @@
   "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts"]
 }
 ---
-**Context.** Office 3D was one html file importing Three.js from a CDN. A first-person tower is several
-times its size. Framed in the tower, a shelf page runs at an opaque origin, where ES-module imports of
-the tower's own files fail (modules always fetch with CORS) and so does fetching a model.
+**Context.** A first-person tower is too large for one html file. Framed in the tower, a page runs at an opaque
+origin, where ES-module imports of the tower's own files fail (modules always fetch with CORS) and so does fetching a
+model.
 
 **Decision.** [[tower3d]]'s source is TypeScript modules, bundled by esbuild into one minified IIFE
 (`out/tower3d.js`) that the page loads as a classic script. A classic script loads cross-origin with no

@@ -25,8 +25,8 @@ from the log) or `tower attach <id>` ([`cli.ts`](ref:hub/src/cli.ts)). Its log h
   It preselects "No, exit".
 - "Allow external CLAUDE.md imports?", or a screen whose copy changed in a new Claude version: add its wording to
   [`blockedBy`](ref:hub/src/bridge/blocked.ts#blockedBy)'s table, with a fixture recorded on a throwaway system.
-- The trust dialog is not raised in a folder inside a trusted one: on 2026-10-06 none of 188 real logs showed it,
-  worktrees included (they live under their trusted repo's `.worktrees/`). A new hub, or a folder outside a trusted
+- The trust dialog is not raised in a folder inside a trusted one, worktrees included (they live under their trusted
+  repo's `.worktrees/`). A new hub, or a folder outside a trusted
   repo, raises it.
 
 **Fix.** Answer the dialog in the session's terminal. For workspace trust: ↓ then Enter, sent as separate

@@ -97,18 +97,17 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   rest out through the verbs, as any other runner could. It acts only on policies naming no `runner`.
 - *Where it shows.* [`standingWords`](ref:hub/src/shared/policies.ts#standingWords) is the one sentence of where a
   policy stands, for the CLI and every renderer. `tower policies` ([`policyLines`](ref:hub/src/directory.ts#policyLines)),
-  `tower policies approve|run <tag>`, `tower runs` (the last 5 runs, each answer cut to 15 lines or 1,500
-  characters), and `tower whoami`'s run lines ([`runLines`](ref:hub/src/directory.ts#runLines)); the handbook's
+  `tower policies approve|run <tag>`, `tower runs` (a policy's latest runs, each answer cut short), and `tower whoami`'s run lines ([`runLines`](ref:hub/src/directory.ts#runLines)); the handbook's
   "Policies and runs".
 
 **Alternatives considered.** Offers as stored state with an expiry (derivable from the passes). Check results
 in the runner's memory alone (lost on restart, a check run twice in a slot). Generic `spawn` plus a separate fact
 verb (a run could go unrecorded between the two). A new `Wait.reason` for offers (a wait is a worker's; an API
-major). Ignoring unknown header keys (fails open on the keys that restrict). A version key. cronstrue for the words
-(English that drifts from ours, and a dependency for about 60 lines).
+major). Ignoring unknown header keys (fails open on the keys that restrict). A version key. A cron-to-English
+library (English that drifts from ours, and a dependency for what a short function says).
 
-**Impact.** API: `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>`, `/policies.js` and the `held` kind of `needs`. The first project streams ([[probes]]). A second collection with a meaning in the core
-([[collections]]). croner joins the dependencies. A run that nobody watches ends itself with `tower home <own
+**Impact.** Project streams beside the system's ([[probes]]), and a second collection with a meaning in the core
+([[collections]]). A run that nobody watches ends itself with `tower home <own
 callsign>` ([[leave]]), its last answer kept for the next. Renderers draw policies with the shared policies panel
 ([[shared-panels]]) and put offers in the attention order with a sound of their own ([[attention-list]]). Open: Tidy
 does not archive project streams yet.

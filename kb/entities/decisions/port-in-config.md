@@ -10,10 +10,9 @@
   "refs": ["hub/src/shared/model.ts#towerPort", "hub/src/shared/model.ts#towerUrl", "hub/src/machine.ts#daemons", "hub/src/machine.ts#startedPid", "hub/src/tower/server.ts", "hub/src/directory.ts", "hub/src/doctor.ts#running", "hub/src/init.ts#initialConfig", "hub/scripts/sandbox.ts", "hub/scripts/sandbox-root.ts"]
 }
 ---
-**Problem.** The port came from the environment (`TOWER_PORT`, 4317 unless set) while everything else about a system
-came from its config. A system served on another port worked only while every process that touched it had the
-variable: a second system on 4400, brought up later without it, reached the first system's tower ("already up").
-What a worker was told named 4317 as the API's address whatever the port was.
+**Problem.** A port read from the environment, while everything else about a system comes from its config, works
+only while every process that touches the system has the variable: a second system brought up without it reaches the
+first one's tower, and what a worker is told names the default port whatever the port is.
 
 **Why.** The config is the system's intent ([[system-root]]); the port is part of it. A fact two processes must agree
 on, kept in each one's environment, is two copies that drift.
@@ -46,5 +45,5 @@ on, kept in each one's environment, is two copies that drift.
 - *Derive the URL into the worker's system prompt.* The prompt is fixed at spawn and outlives a port change;
   `tower whoami` reads it when asked.
 
-**Impact.** A config key (**config** in the changelog's v1.0.0). Two systems on one machine run side by side with
+**Impact.** A config key. Two systems on one machine run side by side with
 nothing in the environment but which config each is (`TOWER_CONFIG`, or `TOWER_SANDBOX` for a sandbox).

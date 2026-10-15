@@ -43,28 +43,23 @@ sequenceDiagram
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read
   from git then ([`briefFor`](ref:hub/src/worktrees.ts#briefFor)). If any of its folders is gone, the resume is
   refused as `lost` until the worktree is recut. A fork resumes in the same `cwd`, so it shares its parent's worktree.
-- **Whether it can be resumed is on the board, before the click.** A worker not running whose `cwd` is no longer a
-  dir of its floor or a worktree of one (`inProject`: the hub moved, or the project left the config) is
-  `unresumable: 'outside'`; one whose worktree git no longer lists with its folder in every repo of the project
-  (removed by Tidy, deleted, or lost: the same folders the tower's resume refuses as `lost` without) is `'gone'` ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), from the config and git's reads,
-  nothing until the floor's git is read once; the same [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone) is
-  `card.worktree.gone`, live or not, which withholds the card's `review`: it would fork that checkout). Only a card holding a conversation nobody resumed says so; it and its conversations offer no `resume`, a stranded one is
-  not on duty, and every renderer and `tower agent` say why in a word or two
+- **Whether it can be resumed is on the board, before the click.** A worker not running whose `cwd` is no longer in
+  its floor is `unresumable: 'outside'`, one whose worktree is gone `'gone'`
+  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone));
+  it offers no `resume`, a stranded one is not on duty, and every renderer and `tower agent` say why
   ([`UNRESUMABLE_NAME`](ref:hub/src/shared/cards.ts#UNRESUMABLE_NAME)). A recut worktree makes it resumable again.
 - **The chain is derived.** [`resumes`](ref:hub/src/bridge/chains.ts#resumes) links a resumed conversation
   to the nearest earlier session that saved it; [`resumedBy`](ref:hub/src/bridge/chains.ts#resumedBy) to the
   nearest later one that resumed it. A conversation resumed twice from one session forks; each link is to the
-  nearest session in time, and names it with its worker's callsign and start (`{id, callsign, startedAt}`, a [`SessionLink`](ref:hub/src/bridge/chains.ts#SessionLink)) on the board
-  and in the brief, so no reader looks the session up.
-- **What carries over.** A resumed session that has no prompt or answer yet shows its source's. A worker's brief
-  holds the conversations of every session it ran as, the earlier ones folded ([[brief-turns]]), and `card.lineage`
-  lists those sessions.
+  nearest session in time, and names it by its worker's callsign
+  ([`SessionLink`](ref:hub/src/bridge/chains.ts#SessionLink)) on the board and in the brief.
+- **What carries over.** A resumed session that has no prompt or answer yet shows its source's; a worker's brief
+  holds every session it ran as ([[brief-turns]]).
 - **Same worker, or a fork.** A session whose first conversation resumes its source's latest saved one
   [`continues`](ref:hub/src/bridge/chains.ts#continues) it: the board gives it the source's [[callsign]] and
   showings ([[agent-show]]), and the source's card names it `continuedBy` (`{id, callsign}`). A resume of an earlier conversation
   (one before a `/clear`) forks a new worker. The resume runs Claude under the name that follows
   ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), so its peer name stays the callsign.
-- **A prompt rides along.** `resume` takes an optional `prompt`, Claude's first in the new session, passed after
-  `--` as a spawn's is: Claude takes it once it starts, so nothing waits for the session to be ready. A worker the host
-  cut off mid-turn offers `carry-on`, a resume on a prompt telling it so ([[carry-on]]); without one it resumes idle.
-  `tower resume <id> [--carry-on]` resumes the latest saved conversation.
+- **A prompt rides along.** `resume` takes an optional `prompt`, passed after `--` as a spawn's is; a worker the host
+  cut off mid-turn offers `carry-on` ([[carry-on]]), and without a prompt it resumes idle. `tower resume <id>
+  [--carry-on]` resumes the latest saved conversation.
