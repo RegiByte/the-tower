@@ -12,7 +12,8 @@ Two tables. *In the repo*: the KayKit Bits models under `renderers/tower3d/kayki
 under `renderers/tower3d/kaykit/Characters/` (each pack's licence beside its files, [[kaykit-workers]]), all CC0.
 *Bundled or served from `node_modules`*: three.js in Tower 3D's bundle, and the packages the tower serves to the
 pages it draws, from `package.json`'s dependencies: xterm.js as [files of its own](ref:hub/src/tower/server.ts#STATIC),
-highlight.js and marked inside the [served modules](ref:hub/src/tower/served.ts#MODULES) that import them, and the
+highlight.js, marked, croner (`/policies.js`) and diff (`/panels.js`) inside the
+[served modules](ref:hub/src/tower/served.ts#MODULES) that import them, and the
 `@fontsource` faces under `/fonts/`.
 
 A new vendored pack under [`kaykit/`](ref:hub/renderers/tower3d/kaykit/) or a new runtime dependency in

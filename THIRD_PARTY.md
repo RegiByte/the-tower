@@ -19,6 +19,8 @@ Installed by `npm ci`. Tower 3D's bundle embeds three.js; the tower serves the o
 | `@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-serialize`, `@xterm/headless` | The xterm.js authors; SourceLair Private Company | MIT |
 | `highlight.js` | Ivan Sagalaev and the highlight.js authors | BSD-3-Clause |
 | `marked` | MarkedJS; Christopher Jeffrey | MIT |
+| `croner` (in `/policies.js`) | Hexagon | MIT |
+| `diff` (in `/panels.js`) | Kevin Decker | BSD-3-Clause |
 | `@fontsource/atkinson-hyperlegible` (Atkinson Hyperlegible) | Braille Institute of America, Inc. | SIL Open Font License 1.1 |
 | `@fontsource/jetbrains-mono` (JetBrains Mono) | The JetBrains Mono Project Authors | SIL Open Font License 1.1 |
 | `@fontsource/overpass` (Overpass) | The Overpass Project Authors | SIL Open Font License 1.1 |
