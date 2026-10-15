@@ -20,7 +20,7 @@
 }
 ---
 **Problem.** A desk said little about its worker beyond the tag, the strip and the bean's pose: a single
-`papers` box grew with context. The KayKit Bits bundle ([[kaykit-playground]]) was measured and explored but
+`papers` box grew with context. The KayKit Bits bundle ([[office-kaykit]]) was measured and explored but
 nothing in the office used it.
 
 **Why.** The first real use of the kit, chosen where state already exists: a desk can tell how long a session has
