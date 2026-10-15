@@ -105,22 +105,29 @@ const parseFile = (block: string[]): DiffFile => {
   }
 }
 
+/** A line as a diff and a file on disk both read it, past a carriage return git's eol conversion may strip from one. */
+const bare = (line: string) => (line.endsWith('\r') ? line.slice(0, -1) : line)
+
 /**
  * A modified or renamed file's hunks, each with the unchanged lines before it, cut from `text`, the file as its new
- * side reads; as they were past `MAX_BEFORE_LINES` of them. A hunk adding nothing starts after its `new` line, not at it.
+ * side reads; as they were past `MAX_BEFORE_LINES` of them, or when `text` isn't what git diffed (a clean filter that
+ * changes lines, an edit since the diff), told by a hunk's own lines not standing where it says in `text`. A hunk adding
+ * nothing starts after its `new` line, not at it.
  */
 export function withBefore(file: DiffFile, text: string): DiffFile {
   if (!file.hunks?.length) return file
   const lines = text.split('\n')
   let at = 0
+  let fits = true
   const hunks = file.hunks.map((h) => {
-    const adds = h.lines.filter((l) => l[0] === ' ' || l[0] === '+').length
-    const start = adds ? h.new - 1 : h.new
+    const own = h.lines.filter((l) => l[0] === ' ' || l[0] === '+').map((l) => l.slice(1))
+    const start = own.length ? h.new - 1 : h.new
     const before = lines.slice(at, start)
-    at = start + adds
+    fits &&= own.every((l, i) => bare(l) === bare(lines[start + i] ?? ''))
+    at = start + own.length
     return { ...h, before }
   })
-  return hunks.reduce((n, h) => n + h.before.length, 0) > MAX_BEFORE_LINES ? file : { ...file, hunks }
+  return !fits || hunks.reduce((n, h) => n + h.before.length, 0) > MAX_BEFORE_LINES ? file : { ...file, hunks }
 }
 
 /** The files of a `git diff` output, in its order. */

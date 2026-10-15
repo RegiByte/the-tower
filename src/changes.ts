@@ -50,16 +50,29 @@ const commitsSince = async (dir: string, since: string): Promise<Commit[]> =>
 const byPath = (files: DiffFile[]): DiffFile[] => files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
 
 /**
+ * Lines before hunks one read sends past this many would be a wide diff of mid-sized files: megabytes on every poll,
+ * and seconds of highlighting as the pane opens. The files past it go without them.
+ */
+const MAX_READ_BEFORE_LINES = 4000
+
+/**
  * Each changed file's hunks with the lines before them (`withBefore`), read by `newSides` from the files as they now
- * read, in their order. A file added or deleted is one hunk from its first line, so only the others are read.
+ * read, in their order, until `MAX_READ_BEFORE_LINES`. A file added or deleted is one hunk from its first line, so only
+ * the others are read.
  */
 const withBeforeAll = async (files: DiffFile[], newSides: (paths: string[]) => Promise<(string | undefined)[]>): Promise<DiffFile[]> => {
   const read = files.filter((f) => f.hunks?.length && (f.change === 'modified' || f.change === 'renamed'))
   if (!read.length) return files
   const texts = new Map((await newSides(read.map((f) => f.path))).map((text, i) => [read[i], text]))
+  let left = MAX_READ_BEFORE_LINES
   return files.map((f) => {
     const text = texts.get(f)
-    return text === undefined ? f : withBefore(f, text)
+    if (text === undefined) return f
+    const full = withBefore(f, text)
+    const sent = full.hunks!.reduce((n, h) => n + (h.before?.length ?? 0), 0)
+    if (sent > left) return f
+    left -= sent
+    return full
   })
 }
 
@@ -79,19 +92,22 @@ const treeFiles = (dir: string) => (paths: string[]) => Promise.all(paths.map(as
 
 /**
  * Files as `commit` holds them, through one `cat-file --batch`: a blob answers a header (`<oid> blob <bytes>`), its
- * bytes and a newline; a submodule (`<oid> submodule`) answers its header alone, and reads as none.
+ * bytes and a newline; a submodule (`<oid> submodule`) answers its header alone, and reads as none. The batch asks one
+ * name per line, so a path holding a newline isn't asked, and reads as none.
  */
 const commitFiles = (dir: string, commit: string) => async (paths: string[]) => {
-  const out = await gitBytes(dir, ['cat-file', '--batch'], paths.map((p) => `${commit}:${p}\n`).join(''))
+  const asked = paths.filter((p) => !p.includes('\n'))
+  const out = await gitBytes(dir, ['cat-file', '--batch'], asked.map((p) => `${commit}:${p}\n`).join(''))
   let at = 0
-  return paths.map(() => {
+  const texts = new Map(asked.map((p) => {
     const eol = out.indexOf(10, at)
     const [, type, size] = out.toString('utf8', at, eol).split(' ')
-    if (type !== 'blob') return (at = eol + 1), undefined
+    if (type !== 'blob') return (at = eol + 1), [p, undefined]
     const end = eol + 1 + Number(size)
     at = end + 1
-    return out.toString('utf8', eol + 1, end)
-  })
+    return [p, out.toString('utf8', eol + 1, end)]
+  }))
+  return paths.map((p) => texts.get(p))
 }
 
 /** The working tree's diff from `from`, untracked files with it. */

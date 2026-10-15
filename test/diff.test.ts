@@ -51,12 +51,14 @@ test('git diff: a file hashes the same until its diff changes', () => {
   assert.equal(edited.find((f) => f.path === 'tail.txt')!.hash, byPath('tail.txt').hash)
 })
 
-test('git diff: each hunk carries the unchanged lines since the one before it', () => {
+test('git diff: each hunk carries the unchanged lines since the one before it, cut from the text git diffed', () => {
   const text = Array.from({ length: 20 }, (_, i) => String(i + 1)).map((l) => (l === '5' ? 'five' : l === '15' ? 'fifteen' : l)).join('\n') + '\n'
   const keep = withBefore(byPath('keep.txt'), text)
   assert.deepEqual(keep.hunks!.map((h) => h.before), [['1'], ['9', '10', '11']])
   const [gap] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -3 +2,0 @@', '-c', ''].join('\n'))
   assert.deepEqual(withBefore(gap, 'a\nb\nd\n').hunks![0].before, ['a', 'b'])
+  assert.equal(withBefore(byPath('keep.txt'), ['header', ...text.split('\n')].join('\n')), byPath('keep.txt'))
+  assert.deepEqual(withBefore(byPath('keep.txt'), text.replaceAll('\n', '\r\n')).hunks!.map((h) => h.before!.length), [1, 3])
   const far = MAX_BEFORE_LINES + 2
   const [deep] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', `@@ -${far} +${far} @@`, '-a', '+b', ''].join('\n'))
   assert.equal(withBefore(deep, 'x\n'.repeat(far - 1) + 'b\n'), deep)
