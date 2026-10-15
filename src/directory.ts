@@ -35,9 +35,10 @@
  *                                   card's `send-home`);
  *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
  *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
- *   tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>]   start a worker on this floor, placed
- *                                   as a quick hire in a renderer places it, on a prompt: the text of an item of the
- *                                   floor's collections, or stdin; refused past the floor's `hiring` limits
+ *   tower hire [<tag|id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]   start a worker on
+ *                                   this floor, placed as a quick hire in a renderer places it, on a prompt: the text
+ *                                   of an item of the floor's collections, or stdin; refused past the floor's `hiring`
+ *                                   limits. `callsign` names the worker, `name` its new worktree
  *
  * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go to the host, which logs them
  * (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board. `hire` and `review` spawn
@@ -452,8 +453,8 @@ const quoted = (floor: Floor, checkout: string, anchor: Omit<Anchor, 'quote'>): 
   return { ...anchor, quote: { lang: langOf(anchor.path), lines: lines.slice(anchor.from - 1, anchor.to) } }
 }
 
-const HIRE_USAGE = 'Usage: tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>], the prompt on stdin when no item names it'
-const HIRE_FIELDS = ['model', 'effort', 'name', 'base'] as const
+const HIRE_USAGE = 'Usage: tower hire [<tag|id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>], the prompt on stdin when no item names it'
+const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
 
 type HireArgs = { item?: string; fields: Partial<Pick<SpawnForm, (typeof HIRE_FIELDS)[number]>> }
 
@@ -471,8 +472,9 @@ const hireArgs = (args: string[]): HireArgs => {
 /** A session's callsign as the tower names it: from the names in the config the board was read from. */
 const callsignOn = (board: Board, id: string) => callsignsOf(JSON.parse(readFileSync(board.config, 'utf8')))(id)
 
+/** `board`: read once the hire is counted, so it holds the hire's card and the callsign it runs under. */
 const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: SpawnForm): string[] => {
-  const who = callsignOn(board, reply.id)
+  const who = board.floors.flatMap((f) => f.cards).find((c) => c.id === reply.id)!.callsign
   const place = reply.cut
     ? `in worktree ${reply.cut.name}, on branch ${reply.cut.branch}, cut from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`
     : `in ${form.where === 'worktree' ? form.worktree : form.checkout}, beside whoever works there`
@@ -810,7 +812,7 @@ switch (verb) {
     const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
     if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. \`tower review\` is never limited.`)
     if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
-    console.log(hiredLines(board, floor, reply, form).join('\n'))
+    console.log(hiredLines(await readBoard(), floor, reply, form).join('\n'))
     break
   }
   case 'home': {

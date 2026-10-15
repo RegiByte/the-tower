@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "A new worker takes a name no worker on duty holds",
-  "summary": "Every spawn that starts a new worker (a spawn, a worktree cut, a forking resume, the tower's and the CLI's) draws session ids until the id's callsign has a name no worker on duty holds; the callsign stays a function of the id.",
+  "summary": "Every spawn that starts a new worker (a spawn, a worktree cut, a forking resume, the tower's and the CLI's) draws session ids until the id's callsign has a name no worker on duty holds; the callsign stays a function of the id. A callsign typed at spawn follows the same rule: refused when its name is held.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-10",
   "reviewed": "2026-10-15",
-  "refs": ["hub/src/shared/callsign.ts#freshId", "hub/src/shared/callsign.ts#nameIn", "hub/src/bridge/chains.ts#heldNames", "hub/src/tower/server.ts#workerIds", "hub/src/tower/server.ts#freeName", "hub/src/cli.ts#workerId"]
+  "refs": ["hub/src/shared/callsign.ts#freshId", "hub/src/shared/callsign.ts#nameIn", "hub/src/shared/callsign.ts#callsignRefused", "hub/src/bridge/chains.ts#heldCallsigns", "hub/src/bridge/chains.ts#heldNames", "hub/src/tower/server.ts#newWorker", "hub/src/tower/server.ts#workerIds", "hub/src/tower/server.ts#freeName", "hub/src/cli.ts#workerId"]
 }
 ---
 **Problem.** Workers on duty together often shared a name (two HOLMES on one floor). Measured over 432 real sessions,
@@ -29,6 +29,13 @@ a host restart both count; the CLI, which reads no board, passes the host's live
 ([`workerId`](ref:hub/src/cli.ts#workerId)). Spawns, worktree cuts (whose draw also needs a free worktree name,
 [`freeName`](ref:hub/src/tower/server.ts#freeName)) and forking resumes draw; a resume that carries a worker on keeps
 its name ([[callsign-from-log]]).
+
+A callsign typed as a worker starts (the spawn verb's `callsign`, the New worker dialog, `tower spawn --callsign`,
+`tower hire … callsign`) is held to the same rule: [`callsignRefused`](ref:hub/src/shared/callsign.ts#callsignRefused)
+refuses it, naming the holder, when a worker on duty has its name, whatever the number
+([`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns), the tower's in
+[`newWorker`](ref:hub/src/tower/server.ts#newWorker)). The dialog checks it against the board's cards on duty as it is
+typed, the tower again at the spawn.
 
 **Alternatives considered.**
 

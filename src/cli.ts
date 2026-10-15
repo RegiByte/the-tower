@@ -14,8 +14,9 @@
  *   tower update                 move this checkout to the newest release (a tag vX.Y.Z): show its CHANGELOG entries,
  *                                check it out, install, rebuild Tower 3D if built, restart the tower if running; say
  *                                when the host needs a restart, never restart it
- *   tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]
- *                                start a session (in the project's hub by default), print its id
+ *   tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]
+ *                                start a session (in the project's hub by default), print its id; --callsign names
+ *                                its worker (NAME-NN, or NAME given the id's number), refused when the name is a running worker's
  *   tower resume <id> [--carry-on]
  *                                start a session that continues <id>'s conversation, print its id; through the
  *                                tower's resume queue while it runs, else straight to the host. --carry-on tells
@@ -43,13 +44,13 @@ import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
-import { carriesOn, heldBy, heldNames, resumeName, runningNamed, runsAs } from './bridge/chains.ts'
+import { carriesOn, heldBy, heldCallsigns, heldNames, resumeName, runningNamed, runsAs } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
-import { freshId } from './shared/callsign.ts'
+import { callsignRefused, freshId, typedCallsign } from './shared/callsign.ts'
 import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
 import { CARRY_ON, newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
@@ -97,6 +98,20 @@ const readSessions = (): Session[] =>
 /** A new worker's session id, its callsign's name held by no running worker (`freshId`). */
 const workerId = (sessions: Session[], live: Set<string>, callsign: (id: string) => string) =>
   freshId(newSessionId, callsign, heldNames(sessions, live, callsign))
+
+/** A new worker's session id and callsign, drawn (`workerId`). */
+const drawnWorker = (sessions: Session[], live: Set<string>, callsign: (id: string) => string): [string, string] => {
+  const id = workerId(sessions, live, callsign)
+  return [id, callsign(id)]
+}
+
+/** A new worker's session id and the callsign typed, refused when it can't be had (`callsignRefused`). */
+const chosenWorker = (typed: string, sessions: Session[], live: Set<string>, callsign: (id: string) => string, usage: string): [string, string] => {
+  const refused = callsignRefused(typed, heldCallsigns(sessions, live, callsign))
+  if (refused) throw new CliError(refused, usage)
+  const id = newSessionId()
+  return [id, typedCallsign(typed, id)]
+}
 
 const summary = (running: Resource[]): string => {
   if (!running.length) return ''
@@ -205,17 +220,19 @@ const main = async (): Promise<void> => {
       const { values, positionals } = parseArgs({
         args: rest,
         allowPositionals: true,
-        options: { cwd: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
+        options: { cwd: { type: 'string' }, callsign: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
       })
+      const usage = 'Usage: tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]'
       const config = readConfigFile()
       const project = config.projects[id]
-      if (!project) throw new CliError(`No project "${id ?? ''}". Projects: ${Object.keys(config.projects).join(', ')}`, 'Usage: tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]')
+      if (!project) throw new CliError(`No project "${id ?? ''}". Projects: ${Object.keys(config.projects).join(', ')}`, usage)
       const prompt = positionals.join(' ') || undefined
       const cwd = values.cwd ?? project.hub
       const outside = outsideProject(project, cwd)
       if (outside) throw new CliError(outside)
-      const session = workerId(readSessions(), await liveIds(paths), callsignsOf(config))
-      print(await request(spawnRequest(session, callsignsOf(config)(session), id, cwd, sessionDirs(project, cwd), { ...values, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
+      const { callsign: typed, ...launch } = values
+      const [session, callsign] = typed === undefined ? drawnWorker(readSessions(), await liveIds(paths), callsignsOf(config)) : chosenWorker(typed, readSessions(), await liveIds(paths), callsignsOf(config), usage)
+      print(await request(spawnRequest(session, callsign, id, cwd, sessionDirs(project, cwd), { ...launch, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
       break
     }
     case 'resume': {

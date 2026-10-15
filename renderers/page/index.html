@@ -482,7 +482,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -2559,12 +2559,15 @@ function openSpawn(projectId, sent) {
   $('spawn').querySelector('[name=prompt]').focus()
 }
 
-/** The form's values as they stand, its branch placeholder and summary redrawn from them. */
+/** The form's values as they stand, its branch placeholder, callsign's refusal and summary redrawn from them. */
 function syncSpawn() {
   const f = floorOf($('spawn').dataset.project)
   const form = $('spawn').querySelector('form')
   const v = spawnForm(f, new FormData(form))
-  form.querySelector('[name=branch]').placeholder = branchPlaceholder(f, v.name)
+  const refused = callsignRefusal(board, v)
+  form.querySelector('[name=branch]').placeholder = branchPlaceholder(f, cutNameOf(v))
+  form.querySelector('[name=callsign]').setCustomValidity(refused)
+  form.querySelector('[data-callsign-why]').textContent = refused
   form.querySelector('[data-summary]').innerHTML = spawnSummaryHtml(f, v)
   return v
 }

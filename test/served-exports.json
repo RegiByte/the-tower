@@ -159,6 +159,7 @@
       ".waits",
       ".watching",
       ".where",
+      ".why",
       ".wide",
       ".working"
     ],
@@ -275,6 +276,7 @@
       "branchPlaceholder",
       "brokenText",
       "bubbleOf",
+      "callsignRefusal",
       "can",
       "cardsOf",
       "carriedLine",
@@ -287,6 +289,7 @@
       "crewOf",
       "crewTree",
       "current",
+      "cutNameOf",
       "defaultWhere",
       "detailsOf",
       "discardAsk",

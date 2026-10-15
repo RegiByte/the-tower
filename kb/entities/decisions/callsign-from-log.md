@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-10",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/bridge/chains.ts#workerName", "hub/src/bridge/chains.ts#runsAs", "hub/src/bridge/chains.ts#namer", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/launch.ts#spawnRequest"]
 }
 ---

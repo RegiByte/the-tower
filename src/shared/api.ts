@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.56'
+export const API_VERSION = '1.57'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -69,6 +69,12 @@ export const SPAWN_FIELDS = z.strictObject({
   project: id,
   cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),
   cut: cut.optional(),
+  callsign: z
+    .string()
+    .optional()
+    .describe(
+      "The new worker's callsign, `NAME` or `NAME-NN`, upper-cased: refused when its name is a worker's on duty. Drawn at random when left out; a cut's worktree is named for it, lowercased, unless `cut.name` names it.",
+    ),
   ...launch,
   by,
   hire: z

@@ -411,6 +411,8 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
 .spawn-form .fields > legend { grid-column: 1 / -1; }
 .spawn-form .fields label { display: grid; gap: var(--sp-s); }
 .spawn-form .fields .wide { grid-column: 1 / -1; }
+.spawn-form .fields .why { color: var(--broken-text); font-size: var(--fs-s); }
+.spawn-form .fields .why:empty { display: none; }
 .spawn-form .picks { display: grid; gap: var(--sp-xs); }
 .spawn-form .pick { display: flex; align-items: baseline; gap: var(--sp-l); padding: var(--sp-s) var(--sp-l); border-radius: var(--radius); cursor: pointer; }
 .spawn-form .pick:hover { background: var(--panel-2); }

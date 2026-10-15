@@ -54,6 +54,10 @@ floor's `hiring` limits. Hires are listed under the worker that hired them (`tow
 are sent home with `tower home <CALLSIGN>` when their work is in. From the tower page, the `+` on a floor starts a
 worker, and a kept draft can start one too.
 
+A worker's callsign is drawn at random unless you type one as it starts: the New worker dialog's Callsign,
+`tower hire … callsign ZECA` or `tower spawn <project> --callsign ZECA`. A name typed without a number gets one
+(`ZECA-63`), and a name a worker on duty already has is refused. The callsign is kept for good, across resumes.
+
 ## Checking on a worker
 
 > "Check on HOLMES-42: why has it been working for an hour?"

@@ -45,6 +45,27 @@ export const freshId = (draw: () => string, callsign: (id: string) => string, he
 /** A name a callsign can start with: it is matched in upper case, and lowercased it names a worktree. */
 export const CALLSIGN_NAME = /^[A-Z][A-Z0-9]*$/
 
+/** A callsign typed for a new worker, upper-cased: a name, and a number if given. */
+const TYPED = /^[A-Z][A-Z0-9]*(-[0-9]+)?$/
+
+/**
+ * Why `typed` can't be a new worker's callsign: it isn't `NAME` or `NAME-NN`, or its name is held by one of `held`
+ * (the callsigns of the workers on duty), the rule a drawn callsign follows (`freshId`); `undefined` when it can.
+ */
+export const callsignRefused = (typed: string, held: Iterable<string>): string | undefined => {
+  const given = typed.trim().toUpperCase()
+  if (!TYPED.test(given)) return `"${typed.trim()}" is not a callsign: a name of letters and digits starting with a letter, and a number after a dash if you like (HOLMES, HOLMES-42)`
+  const name = given.includes("-") ? nameIn(given) : given
+  const holder = [...held].find((h) => nameIn(h) === name)
+  return holder && `${holder} is on duty${holder === given ? "" : `, under the name ${name}`}: pick another name`
+}
+
+/** The callsign typed for session `id`'s worker, upper-cased: as typed with its number, else given the id's (`numberOf`). */
+export const typedCallsign = (typed: string, id: string): string => {
+  const given = typed.trim().toUpperCase()
+  return given.includes("-") ? given : `${given}-${numberOf(id)}`
+}
+
 /**
  * Rendezvous hashing: a session takes the name that scores highest with its id, so a name added to the list
  * takes over only the sessions that score highest with it, and every other session keeps its name.
@@ -62,7 +83,10 @@ const nameOf = (names: readonly string[], id: string): string => {
 /** Naming scores every name, and a board names every session on every build: each list names each id once. */
 const namers = new Map<string, (id: string) => string>()
 
-/** The worker's name in every renderer, from `names`: a callsign and a number, both hashed (FNV-1a) from the session id. */
+/** A callsign's number, two digits hashed (FNV-1a) from the session id. */
+export const numberOf = (id: string): string => String((fnv1a(id) >>> 8) % 100).padStart(2, "0")
+
+/** The worker's name in every renderer, from `names`: a callsign and a number (`numberOf`), both hashed from the session id. */
 export const callsigns = (names: readonly string[]): ((id: string) => string) => {
   const key = names.join(' ')
   const known = namers.get(key)
@@ -70,7 +94,7 @@ export const callsigns = (names: readonly string[]): ((id: string) => string) =>
   const named = new Map<string, string>()
   const callsign = (id: string): string => {
     let name = named.get(id)
-    if (!name) named.set(id, (name = `${nameOf(names, id)}-${String((fnv1a(id) >>> 8) % 100).padStart(2, "0")}`))
+    if (!name) named.set(id, (name = `${nameOf(names, id)}-${numberOf(id)}`))
     return name
   }
   namers.set(key, callsign)

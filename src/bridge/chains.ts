@@ -76,16 +76,20 @@ export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, 
   sessions.find((s) => running.has(s.header.id) && workerName(s, (x) => continues(x, sessions), callsign).toUpperCase() === name.toUpperCase())
 
 /**
- * The names, numbers left out, of the workers of sessions `ids`: a new worker's is drawn apart from them (`freshId`).
- * A session whose log isn't read yet was just spawned, and holds its id's callsign.
+ * The callsigns of the workers of sessions `ids`: a new worker's name is kept apart from theirs (`freshId`,
+ * `chosenCallsign`). A session whose log isn't read yet was just spawned, and holds its id's callsign.
  */
-export const heldNames = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): Set<string> => {
+export const heldCallsigns = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): string[] => {
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
-  return new Set([...ids].map((id) => {
+  return [...ids].map((id) => {
     const session = byId.get(id)
-    return nameIn(session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id))
-  }))
+    return session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id)
+  })
 }
+
+/** The names, numbers left out, of the workers of sessions `ids` (`heldCallsigns`). */
+export const heldNames = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): Set<string> =>
+  new Set(heldCallsigns(sessions, ids, callsign).map(nameIn))
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
 export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>

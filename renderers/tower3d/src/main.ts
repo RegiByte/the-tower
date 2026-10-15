@@ -13,7 +13,7 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
@@ -2565,11 +2565,14 @@ function openSpawn(projectId: string, draft?: { note: Held; text: string }) {
 const spawnField = <E extends HTMLElement = HTMLInputElement>(name: string) => spawn.querySelector<E>(`[name=${name}]`)!
 const spawnFormEl = () => spawn.querySelector('form')!
 
-/** The form's values as they stand, its branch placeholder and summary redrawn from them. */
+/** The form's values as they stand, its branch placeholder, callsign's refusal and summary redrawn from them. */
 function syncSpawn() {
   const f = floorOf(spawn.dataset.project!)
   const v = spawnForm(f, new FormData(spawnFormEl()))
-  spawnField('branch').placeholder = branchPlaceholder(f, v.name)
+  const refused = callsignRefusal(s.board!, v)
+  spawnField('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
+  spawnField('callsign').setCustomValidity(refused)
+  spawn.querySelector('[data-callsign-why]')!.textContent = refused
   spawn.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v)
   return v
 }

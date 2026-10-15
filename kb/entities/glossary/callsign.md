@@ -2,10 +2,10 @@
 {
   "type": "term",
   "name": "Callsign",
-  "summary": "A worker's name in every renderer and its Claude peer name (ODIN-07): drawn when the worker starts, a name from the config's callsigns (CALLSIGNS when it names none) chosen by rendezvous hashing over the session id, and a number from that id's own hash; passed to Claude as --name and read back from the log ever after, so a changed list names new workers only. A resume that continues a worker keeps its callsign.",
+  "summary": "A worker's name in every renderer and its Claude peer name (ODIN-07): typed when the worker starts, or else drawn, a name from the config's callsigns (CALLSIGNS when it names none) chosen by rendezvous hashing over the session id, and a number from that id's own hash; passed to Claude as --name and read back from the log ever after, so a changed list names new workers only. A resume that continues a worker keeps its callsign.",
   "in": "tower",
-  "reviewed": "2026-10-13",
-  "refs": ["hub/src/shared/callsign.ts#callsigns", "hub/src/shared/callsign.ts#CALLSIGNS", "hub/src/shared/callsign.ts#CALLSIGN_NAME", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#workerName", "hub/src/bridge/chains.ts#runsAs", "hub/src/shared/callsign.ts#nameOf", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/callsign.ts#freshId", "hub/src/bridge/chains.ts#heldNames"]
+  "reviewed": "2026-10-15",
+  "refs": ["hub/src/shared/callsign.ts#callsigns", "hub/src/shared/callsign.ts#CALLSIGNS", "hub/src/shared/callsign.ts#CALLSIGN_NAME", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#workerName", "hub/src/bridge/chains.ts#runsAs", "hub/src/shared/callsign.ts#nameOf", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/callsign.ts#freshId", "hub/src/bridge/chains.ts#heldNames", "hub/src/shared/callsign.ts#typedCallsign", "hub/src/shared/callsign.ts#numberOf"]
 }
 ---
 A worker is the chain of sessions it ran as ([[resume]]): a session that resumes its predecessor's latest
@@ -32,7 +32,15 @@ since a worker's callsign no longer moves, they keep pointing at it. A new worke
 callsign's name is one no worker on duty holds ([`freshId`](ref:hub/src/shared/callsign.ts#freshId),
 [[callsign-free-name]]), so workers on duty together have different names while the list has a free one; past that,
 the number tells them apart, and two live workers sharing a whole callsign would share a peer name too. A worktree cut
-also draws until the lowercased callsign is a free worktree name. The default list gives about 15,500. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
+also draws until the lowercased callsign is a free worktree name.
+
+A callsign can instead be chosen as a worker starts, once, and never changed after: typed `NAME-NN`, or `NAME`, given
+the number its new session id hashes to ([`typedCallsign`](ref:hub/src/shared/callsign.ts#typedCallsign),
+[`numberOf`](ref:hub/src/shared/callsign.ts#numberOf), the same number a drawn one takes), so every callsign is
+`NAME-NN`. The name needn't be in the list, only of the list's shape, and is refused while a worker on duty has it
+([[callsign-free-name]]). It is passed as `--name` like a drawn one, so resumes keep it, and a cut's worktree is named
+for it, lowercased, unless named apart; a worktree of that name already there refuses the cut. Forking resumes,
+reviewers and policy runs always draw. The default list gives about 15,500. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
 the naming function for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge,
 the CLI, the tower's spawns and `tower whoami`/`hire`/`review` all name through it, and renderers read
 `card.callsign` from the board, never deriving one. Tower 3D's fixture boards use the default list. Item tags

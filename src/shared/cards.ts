@@ -4,6 +4,7 @@ import type { Status } from '../bridge/status.ts'
 import type { Exposure, FloorWorktree, LandingRead, WorktreeState } from '../bridge/worktrees.ts'
 import type { Offer } from '../bridge/policies.ts'
 import type { Call, Replies, Verbs } from './api.ts'
+import { callsignRefused } from './callsign.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
 
@@ -1009,10 +1010,10 @@ export type Where = 'new' | 'worktree' | 'main'
 
 /**
  * The new-worker form's values, named as its fields are. `worktree`: an existing worktree's first folder; `checkout`:
- * a main checkout. An empty `name`, `branch` or `base` is left to the tower (the callsign, the prefix, origin's
- * default), an empty `model` or `effort` to Claude.
+ * a main checkout. An empty `callsign`, `name`, `branch` or `base` is left to the tower (drawn at random, the callsign,
+ * the prefix, origin's default), an empty `model` or `effort` to Claude.
  */
-export type SpawnForm = { where: Where; worktree: string; checkout: string; name: string; branch: string; base: string; model: string; effort: string; prompt: string }
+export type SpawnForm = { where: Where; worktree: string; checkout: string; callsign: string; name: string; branch: string; base: string; model: string; effort: string; prompt: string }
 
 export const MODELS = ['fable', 'opus', 'sonnet', 'haiku']
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
@@ -1040,7 +1041,7 @@ export const shellPlaces = (floors: Floor[], first?: string): ShellPlace[] =>
 
 /** The form as it opens, and as a quick hire sends it: everything left to its default. */
 export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
-  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, name: '', branch: '', base: '', model: '', effort: '', prompt,
+  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt,
 })
 
 /** The form's values from its fields' entries (`new FormData(form)`), the defaults under them. */
@@ -1049,27 +1050,42 @@ export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValu
 /** The request a form sends: a cut, or a start in the directory picked. */
 export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs['spawn']>] => {
   const given = (o: Record<string, string>) => Object.fromEntries(Object.entries(o).filter(([, x]) => x.trim()).map(([k, x]) => [k, x.trim()]))
-  const launch = given({ model: v.model, effort: v.effort, prompt: v.prompt })
+  const launch = given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt })
   if (v.where === 'new') return [f.calls.cut!, { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) }]
   return [f.calls.spawn!, { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
 
-/** The branch a cut gets when its field is left empty. */
+/** The branch a cut gets when its field is left empty; `name`: the cut's (`cutNameOf`). */
 export const branchPlaceholder = (f: Floor, name: string) => `${f.branchPrefix}${name.trim() || '<callsign>'}`
+
+/** The name a form's cut gets: the one typed, else the callsign typed, lowercased; empty when the tower draws it. */
+export const cutNameOf = (v: SpawnForm) => v.name.trim() || formCallsign(v).toLowerCase()
+
+/** Why the form's callsign can't be had (`callsignRefused`, against the workers on duty); empty when it can, or none is typed. */
+export const callsignRefusal = (board: Board, v: SpawnForm): string =>
+  (v.callsign.trim() && callsignRefused(v.callsign, board.floors.flatMap((f) => f.cards.flatMap((c) => (c.onDuty ? [c.callsign] : []))))) || ''
+
+/** The callsign a form names, as the tower stamps it: a name typed without a number gets the new session id's, at Start. */
+const formCallsign = (v: SpawnForm) => {
+  const given = v.callsign.trim().toUpperCase()
+  return !given || given.includes('-') ? given : `${given}-<nn>`
+}
 
 /** What starting the form as it stands does, as a line of facts. */
 export function spawnSummaryHtml(f: Floor, v: SpawnForm): string {
   const repos = [f.hub, ...f.repos].map(base).join(' + ')
   const joined = joinable(f).find((w) => w.repos[0].path === v.worktree)
   const others = joined?.sessions.length ?? 0
+  const name = cutNameOf(v)
+  const callsign = formCallsign(v)
   const place =
     v.where === 'new'
-      ? [v.name.trim() ? `new worktree <b>${esc(v.name.trim())}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, v.name))}`, `from ${esc(v.base || f.bases[0])}`, `in ${esc(repos)}`]
+      ? [name ? `new worktree <b>${esc(name)}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, name))}`, `from ${esc(v.base || f.bases[0])}`, `in ${esc(repos)}`]
       : v.where === 'worktree' && joined
         ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} on duty in it` : 'nobody else in it']
         : [`main checkout of <b>${esc(base(v.checkout))}</b>`, 'shared with you and every worker there']
   const claude = [v.model || "Claude's model", v.effort ? `${v.effort} effort` : "Claude's effort", v.prompt.trim() ? 'starts on the prompt' : 'starts idle']
-  return [...place, ...claude.map(esc)].map((fact) => `<span>${fact}</span>`).join('')
+  return [...(callsign ? [`as <b>${esc(callsign)}</b>`] : []), ...place, ...claude.map(esc)].map((fact) => `<span>${fact}</span>`).join('')
 }
 
 /** A choice of where, with what picking it means; `aside`: a hint at its right, as "default". */
@@ -1086,7 +1102,8 @@ const optionsHtml = (values: string[], none: string) => [`<option value="">${esc
  * The new-worker form both renderers put in their dialog: the first prompt beside where and how the worker starts,
  * and a line saying what Start will do. `sign`: the floor's sign as the renderer draws it; `draft`: the draft it was
  * opened on. Its buttons carry `data-close` (`cancel`, `start`) and submit nothing; `[data-summary]` is the line to
- * redraw from `spawnSummaryHtml` as the fields change, `[name=branch]`'s placeholder from `branchPlaceholder`.
+ * redraw from `spawnSummaryHtml` as the fields change, `[name=branch]`'s placeholder from `branchPlaceholder`, and
+ * `[data-callsign-why]` and `[name=callsign]`'s validity from `callsignRefusal`.
  */
 export function spawnFormHtml(f: Floor, { sign, draft }: { sign: string; draft?: string }): string {
   const v = spawnDefaults(f)
@@ -1106,7 +1123,7 @@ export function spawnFormHtml(f: Floor, { sign, draft }: { sign: string; draft?:
         ${choiceHtml('main', 'Main checkout', 'shared with you and every worker there', { checked: v.where === 'main', aside: isDefault('main') })}
       </fieldset>
       <div class="if-new fields">
-        <label>${labelHtml('Name', true)}<input name="name" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]*" placeholder="the worker's callsign"></label>
+        <label>${labelHtml('Worktree name', true)}<input name="name" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]*" placeholder="the callsign, by default"></label>
         <label>${labelHtml('Branch', true)}<input name="branch" autocomplete="off" spellcheck="false" placeholder="${esc(branchPlaceholder(f, ''))}"></label>
         <label class="wide">${labelHtml('From')}<select name="base">${f.bases.map((b, i) => `<option value="${i ? esc(b) : ''}">${esc(b)}${i ? '' : " · origin's default"}</option>`).join('')}</select></label>
       </div>
@@ -1115,6 +1132,7 @@ export function spawnFormHtml(f: Floor, { sign, draft }: { sign: string; draft?:
       <fieldset class="if-main picks">${repos.map((dir, i) => `<label class="pick"><input type="radio" name="checkout" value="${esc(dir)}"${i ? '' : ' checked'}>
         <b>${esc(base(dir))}</b><span>${i ? "its own CLAUDE.md, not the hub's" : 'the hub: its CLAUDE.md and skills'}</span></label>`).join('')}</fieldset>
       <div class="fields">
+        <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
         <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, "Claude's default")}</select></label>
         <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, "Claude's default")}</select></label>
       </div>

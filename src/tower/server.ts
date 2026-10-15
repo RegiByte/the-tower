@@ -64,7 +64,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import { carriesOn, heldBy, heldNames, resumeName, runsAs } from '../bridge/chains.ts'
+import { carriesOn, heldBy, heldCallsigns, resumeName, runsAs } from '../bridge/chains.ts'
 import { briefOf } from '../bridge/turns.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { isLive } from '../bridge/verbs.ts'
@@ -76,7 +76,7 @@ import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, rea
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { discardNote } from '../bridge/worktrees.ts'
-import { freshId } from '../shared/callsign.ts'
+import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
 import { briefConfig, callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, shelfItem, towerPort, worktreeName, worktreesConfig, type Config, type EditorAction, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, landingOf, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
@@ -940,23 +940,42 @@ async function worktreeVerb(act: () => Promise<Answer>): Promise<Answer> {
 const occupants = () => occupantsOf(cardsNow(), system.shells())
 const cardsNow = () => boardOf().floors.flatMap((f) => f.cards)
 
-/** Draws new workers' session ids, each callsign's name held by no worker on duty (`freshId`), or just spawned and not on the board yet. */
-const workerIds = async (config: Config): Promise<() => string> => {
+/** The callsigns of the workers on duty, or just spawned and not on the board yet. */
+const heldNow = async (config: Config): Promise<string[]> => {
   await system.refreshLive()
-  const callsign = callsignsOf(config)
   const onDuty = cardsNow().flatMap((c) => (c.onDuty ? [c.id] : []))
-  const held = heldNames(system.sessions(), new Set([...onDuty, ...(system.live()?.ids ?? [])]), callsign)
-  return () => freshId(newSessionId, callsign, held)
+  return heldCallsigns(system.sessions(), new Set([...onDuty, ...(system.live()?.ids ?? [])]), callsignsOf(config))
+}
+
+/** Draws new workers' session ids, each callsign's name held by no worker on duty (`freshId`, `heldNow`). */
+const workerIds = async (config: Config): Promise<() => string> => {
+  const held = new Set((await heldNow(config)).map(nameIn))
+  return () => freshId(newSessionId, callsignsOf(config), held)
+}
+
+/** A new worker's session id and callsign: the callsign typed, if it can be had (`callsignRefused`), else its id's, drawn. */
+const newWorker = async (config: Config, typed: string | undefined): Promise<{ id: string; callsign: string } | ApiError> => {
+  if (typed === undefined) {
+    const id = (await workerIds(config))()
+    return { id, callsign: callsignsOf(config)(id) }
+  }
+  const refused = callsignRefused(typed, await heldNow(config))
+  if (refused) return apiError('refused', refused)
+  const id = newSessionId()
+  return { id, callsign: typedCallsign(typed, id) }
 }
 
 /** A session in `cwd`, or in the hub's main checkout when none is given. */
-const spawnIn = (projectId: string, given: string | undefined, launch: Launch) =>
+const spawnIn = (projectId: string, given: string | undefined, typed: string | undefined, launch: Launch) =>
   withProject(projectId, async (project, config) => {
-    const id = (await workerIds(config))()
     const cwd = given ?? project.hub
     const outside = outsideProject(project, cwd)
     if (outside) return apiError('refused', outside)
-    return lostWorktree(project, cwd) ?? host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+    const lost = lostWorktree(project, cwd)
+    if (lost) return lost
+    const worker = await newWorker(config, typed)
+    if ('t' in worker) return worker
+    return host(spawnRequest(worker.id, worker.callsign, projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
   })
 
 /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -972,21 +991,32 @@ async function freeName(project: Project, branchPrefix: string, draw: () => stri
   throw new WorktreeError('exists', `No free worktree name after ${MAX_NAME_TRIES} callsigns: name it`)
 }
 
+/** A drawn worker's session id and its worktree's name: `named`, or its callsign's if free (`freeName`). */
+const drawnName = async (project: Project, branchPrefix: string, named: string | undefined, config: Config) => {
+  const draw = await workerIds(config)
+  return named ? { id: draw(), name: named } : freeName(project, branchPrefix, draw, callsignsOf(config))
+}
+
 /**
  * A new worktree in every dir of the project, cut from a base on origin or forked from a checkout, then a session in the
- * hub's. The worker is named for the worktree unless the worktree was named: a session id is drawn until its callsign is
- * a free name, and its name one no worker on duty holds. A failed spawn rolls the cut back.
+ * hub's. The worktree is named for the worker unless it was named: for a callsign typed (`typed`), its own, lowercased;
+ * else a session id is drawn until its callsign is a free name, and its name one no worker on duty holds. A failed spawn
+ * rolls the cut back.
  */
-const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, launch: Launch) =>
+const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, typed: string | undefined, launch: Launch) =>
   withProject(projectId, (project, config) =>
     worktreeVerb(async () => {
       const { branchPrefix, links } = worktreesConfig(config, projectId)
-      const draw = await workerIds(config)
-      const { id, name } = request.name ? { id: draw(), name: request.name } : await freeName(project, branchPrefix, draw, callsignsOf(config))
+      const chosen = typed === undefined ? undefined : await newWorker(config, typed)
+      if (chosen && 't' in chosen) return chosen
+      const { id, name } = chosen
+        ? { id: chosen.id, name: request.name ?? chosen.callsign.toLowerCase() }
+        : await drawnName(project, branchPrefix, request.name, config)
+      const callsign = chosen?.callsign ?? callsignsOf(config)(id)
       const branch = request.branch ?? `${branchPrefix}${name}`
       const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
       const cwd = made.made[0].path
-      const answer = await host(spawnRequest(id, callsignsOf(config)(id), projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+      const answer = await host(spawnRequest(id, callsign, projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
       if (answer.t === 'error') {
         await rollback(made.made)
         return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)
@@ -1228,7 +1258,7 @@ const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['poli
       const live = liveRuns(policy, policyFactsOf(project), everyCard(Date.now()))
       if (live.length >= header.live) return apiError('limited', `${live.map((c) => c.callsign).join(', ')} still run${live.length === 1 ? 's' : ''}: ${tagOf(policy)} runs at most ${header.live} at once (its \`live\`)`)
       const launch = { model: header.hire.model, effort: header.hire.effort, prompt }
-      const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, launch) : await spawnIn(project, header.hire.cwd, launch)
+      const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, undefined, launch) : await spawnIn(project, header.hire.cwd, undefined, launch)
       if (answer.t !== 'spawned') return answer
       const { id } = answer as Replies['spawn']
       const fact: RunFact = { policy, hash: file.hash, slot: slot === undefined ? null : slotName(slot), id, start, ...(by && { by }), ...(check && { check }) }
@@ -1272,8 +1302,8 @@ const approvePolicy = ({ project, policy, hash, by }: RouteInput['policy/approve
   )
 
 const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
-  spawn: ({ project, cwd, cut, model, effort, prompt, by, hire }) => {
-    const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, { model, effort, prompt }) : spawnIn(project, cwd, { model, effort, prompt })), prompt, by)
+  spawn: ({ project, cwd, cut, callsign, model, effort, prompt, by, hire }) => {
+    const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, { model, effort, prompt }) : spawnIn(project, cwd, callsign, { model, effort, prompt })), prompt, by)
     return hire ? hired(project, by!, prompt, spawning) : spawning()
   },
   resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
