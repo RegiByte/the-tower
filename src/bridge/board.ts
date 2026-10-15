@@ -754,7 +754,7 @@ export const board = (
         worktrees: worktrees.filter((w) => w.state === 'removable').map((w) => w.name),
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),
         threads: floorThreadsNow.filter((t) => t.landed).map((t) => t.checkout),
-        prune: prunable(floorCards, worktrees),
+        prune: prunable(floorCards, worktrees, cards),
         logs: oldLogs(floorCards, logs, config.retention?.days, now),
         streams: systemStreams,
       }

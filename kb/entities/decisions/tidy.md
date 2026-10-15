@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Tidy: one list of what can go, computed, applied as shown",
-  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose, and the logs of workers ended more than retention.days ago (log-retention): hires quiet between turns (a finished turn even with its answer unread), no running worker reporting to them, their worktree's work landed. A worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
+  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose (their hirer gone), and the logs of workers ended more than retention.days ago (log-retention): hires whose hirer is no longer on duty, quiet between turns (a finished turn even with its answer unread), no running worker reporting to them, their worktree's work landed. A worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-14",
+  "reviewed": "2026-10-15",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -46,8 +46,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - [`prunable`](ref:hub/src/bridge/prunable.ts#prunable), pure over a floor's cards and worktrees:
   - `reap` every process of a session no longer live (exited or lost), orphaned or not; a live session's are never
     listed.
-  - `kill` only a hire (`hiredBy`), once its purpose is done ([`killable`](ref:hub/src/bridge/prunable.ts#killable)):
-    live and quiet between turns: `done` (its turn finished, its answer read or not: `waiting` on the user or
+  - `kill` only a hire (`hiredBy`) whose hirer is no longer on duty, once its purpose is done
+    ([`killable`](ref:hub/src/bridge/prunable.ts#killable)): live and quiet between turns: `done` (its turn finished, its answer read or not: `waiting` on the user or
     `waitsOn` its hirer) or `idle` with no wait; never one asking a question, held on a screen or failed; nobody
     running reports to it ([[crews]]); and its worktree's
     work has [`landed`](ref:hub/src/bridge/prunable.ts#landed): in every repo nothing uncommitted and the branch
@@ -57,6 +57,12 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
     A killed hire resumes, but its next turn reads the whole conversation again, uncached: the rows say so.
   - `logs`: the plain logs of workers ended more than `retention.days` ago, archived (gzipped in place) and read the
     same everywhere ([[log-retention]]).
+  - *The hirer's to send home*: while a hire's hirer (`reportsTo`, carried through the hirer's resumes, on any floor) is
+    live, the hire is never offered, whatever else is true. Landed says nothing of a hire whose output isn't code (a
+    spec, research, a standing advisor): its worktree reads landed from the first minute, and it sits idle like a
+    finished one. The hirer sends it home (`send-home`, whole crew), or Tidy offers it once the hirer is gone. A
+    reviewer reports to its author, so it stays while the author works, to read later versions and new notes. Resuming
+    a hire keeps its hirer through the chain, so it stays unoffered the same way.
   - A worker the user started (no `hiredBy`) is never offered, whatever its status or age. The user's words: "a job
     that is incomplete but needs to expand over time, e.g ADA-12 currently waiting 2 hours on a bunch of PRs to be
     merged, shouldn't be tidied up and the app shouldn't offer it. Top level workers remain until the user sends them
@@ -120,6 +126,9 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   (pull requests to merge, a job that grows over time); its finished turn reads `done` with an answer nobody has
   typed after, so the rule either offered it or, under "never a wait", almost nothing. Whether a hire's purpose is
   done is read from git instead.
+- *Offering a hire whose hirer is on duty when landed*: a design hire kept to answer its implementers' questions was
+  offered, accepted by mistake and sent home twice in one day, its work living outside the repo. Reviewers get no
+  exception, and no explicit "keep" fact is stored: the hirer being on duty is already on the board.
 - *Dismissed waits counting as read*: would need dismissals as a fact (they are per viewer, in `tower.store`).
   Unneeded once only hires are offered.
 - *The stuck threshold in config*: a constant first; a setting once someone wants another number.

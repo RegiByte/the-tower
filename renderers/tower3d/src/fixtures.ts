@@ -186,7 +186,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
   })
 
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
-const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees), logs: [], streams: [] })
+const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
 function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'probes' | 'extraUsage' | 'shells' | 'today'>> = {}): Board {
   const built = floors.map((f) => {

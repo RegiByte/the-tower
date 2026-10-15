@@ -36,17 +36,27 @@ const quiet = (c: Card) => c.status === 'done' || (c.status === 'idle' && !c.wai
 
 /**
  * Only a hire is ever offered: a worker the user started stays until the user sends it home, however long it waits,
- * since its job may grow over time. A hire goes once its purpose is done: quiet, no running worker reporting to it,
- * and its work landed. Landed decides, so a finished hire whose answer nobody has read goes too.
+ * since its job may grow over time. A hire whose hirer is on duty is its hirer's to send home, since landed work says
+ * nothing of a hire whose output isn't code (a spec, research, a standing advisor, a reviewer beside its author). Once
+ * the hirer is gone, a hire goes when its purpose is done: quiet, no running worker reporting to it, and its work
+ * landed. Landed decides, so a finished hire whose answer nobody has read goes too.
  */
-const killable = (c: Card, cards: Card[], worktrees: FloorWorktree[]) =>
-  c.live && c.hiredBy !== undefined && quiet(c) && !cards.some((other) => other.live && other.reportsTo === c.id) && landed(c, worktrees)
+const killable = (c: Card, cards: Card[], worktrees: FloorWorktree[], everyone: Card[]) =>
+  c.live &&
+  c.hiredBy !== undefined &&
+  !everyone.some((other) => other.live && other.id === c.reportsTo) &&
+  quiet(c) &&
+  !cards.some((other) => other.live && other.reportsTo === c.id) &&
+  landed(c, worktrees)
 
-/** Every process of a session no longer live, then every hire done with its purpose, quiet longest first. */
-export const prunable = (cards: Card[], worktrees: FloorWorktree[]): Prune[] => [
+/**
+ * Every process of a session no longer live, then every hire done with its purpose, quiet longest first. `cards` are the
+ * floor's; `everyone` is every floor's, where a hirer may be on duty.
+ */
+export const prunable = (cards: Card[], worktrees: FloorWorktree[], everyone: Card[]): Prune[] => [
   ...cards.filter((c) => !c.live).flatMap((c) => c.resources.map(({ pid }) => ({ t: 'reap' as const, id: c.id, pid }))),
   ...cards
-    .filter((c) => killable(c, cards, worktrees))
+    .filter((c) => killable(c, cards, worktrees, everyone))
     .map((c) => ({ t: 'kill' as const, id: c.id, since: idleSince(c) }))
     .sort((a, b) => a.since - b.since),
 ]

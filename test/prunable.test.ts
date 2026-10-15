@@ -100,18 +100,29 @@ test('typing into an idle hire moves when it went quiet', () => {
   assert.deepEqual(floor.tidy.prune, [{ t: 'kill', id: log.header.id, since: typedAt }])
 })
 
-test("a finished hire whose work has landed is offered with its answer unread: its hirer's or the user's", () => {
+test("a finished hire whose work has landed is offered with its answer unread once its hirer is gone: the hirer's or the user's", () => {
   const log = until(fixture('tool-turn'), 30)
   const doneAt = at(log, 18.298)
   const prompt = 'List the files in src/bridge with ls, then tell me in one sentence what status.ts does.'
   const launched = { ...log, header: { ...log.header, argv: [...log.header.argv, '--', prompt] } }
   const forHirer = towerAt(hired(launched, 'worktree', 10), at(log, 0) + DAY, repos(true, 0), true)
   const holding = forHirer.cards.find((c) => c.id === log.header.id)!
-  assert.deepEqual([holding.status, holding.waitsOn?.callsign !== undefined, forHirer.tidy.prune], ['done', true, [{ t: 'kill', id: log.header.id, since: doneAt }]])
+  assert.deepEqual([holding.status, holding.waitsOn?.callsign !== undefined, forHirer.tidy.prune], ['done', true, []])
+  const hirerGone = towerAt(hired(launched, 'worktree', 10), at(log, 0) + DAY, repos(true, 0))
+  assert.deepEqual(hirerGone.tidy.prune, [{ t: 'kill', id: log.header.id, since: doneAt }])
   const forUser = towerAt(hired(log, 'worktree'), at(log, 0) + DAY, repos(true, 0))
   const waiting = forUser.cards.find((c) => c.id === log.header.id)!
   assert.deepEqual([waiting.waiting, forUser.tidy.prune], [true, [{ t: 'kill', id: log.header.id, since: doneAt }]])
   assert.deepEqual(towerAt(hired(log, 'worktree'), at(log, 0) + DAY, repos(false, 0)).tidy.prune, [])
+})
+
+test('a hire whose hirer is on duty is never offered, a resumed one included; it is offered once the hirer is gone', () => {
+  const log = until(fixture('tool-turn'), 5)
+  const later = at(log, 0) + DAY
+  const offered = (floor: ReturnType<typeof towerAt>) => floor.tidy.prune.some((p) => p.t === 'kill' && p.id === log.header.id)
+  const [hirer, hire] = hired(log, 'worktree', 10)
+  assert.equal(offered(towerAt([hirer, hire], later, repos(true, 0), true)), false)
+  assert.equal(offered(towerAt([hirer, hire], later, repos(true, 0))), true)
 })
 
 test('a hire asking a question is never offered, its work landed or not', () => {
