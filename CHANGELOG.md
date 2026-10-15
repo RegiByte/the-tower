@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.36.1
+
+A callsign typed with its number starts beside a worker of the same name. No host restart, no config change, the
+renderer API unchanged. Restart the tower (`tower down tower && tower up tower`) and reload it.
+
+- `PEDRINHO-12` is refused only while `PEDRINHO-12` itself is on duty, so it starts beside `PEDRINHO-33`. A bare
+  `PEDRINHO` still takes its number at the start, so it's refused while any PEDRINHO is on duty, and the refusal
+  suggests adding a number.
+
 ## v1.36.0
 
 Name a worker yourself when you start it. No host restart, no config change. The renderer API moves to 1.57,
