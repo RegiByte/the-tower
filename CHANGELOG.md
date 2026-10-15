@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.5
+
+Tidy keeps a hire while the worker that hired it is on duty. No host restart, no config change, the renderer API
+unchanged. Restart the tower (`tower down tower && tower up tower`) to pick it up.
+
+- Tidy no longer offers to send home a hire whose hirer is still on duty, however finished it looks: a hire whose
+  work isn't code (a spec, research, an advisor) reads as landed from its first minute. The hirer sends it home, or
+  Tidy offers it once the hirer is gone. A reviewer stays while its author works. The hirer is followed through its
+  resumes and across floors.
+- For contributors: a sandbox's sessions run the sandbox checkout's own `tower` command, ahead of a global one.
+
 ## v1.32.4
 
 New looks for Tower 3D's workers, made in the dresser. No host restart, no config change, the renderer API
