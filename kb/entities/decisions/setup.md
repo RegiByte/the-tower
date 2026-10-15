@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Setup in one command",
-  "summary": "npm run setup takes a fresh clone to a running tower: npm ci, tower init writes a first config unless one exists, the doctor's checks stop it on a failure, and tower up starts the host, the terms daemon and now the tower too, detached.",
+  "summary": "npm run setup takes a fresh clone to a running tower: npm ci, tower init writes a first config unless one exists, the doctor's checks stop it on a failure, and tower up starts the host, the terms daemon and the tower, detached.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -21,8 +21,8 @@ session.
 
 - **`tower init [hub] [repos...]`** ([`init`](ref:hub/src/init.ts#init)) writes a first config and refuses to touch one
   that exists: `argv: ["claude"]`, one project whose hub is the current directory or `hub` (its id the folder's name),
-  `repos` beside it, the `drafts` and `reviews` collections every project has (review threads are kept in `reviews`,
-  [[review-threads]]), and `user.name` from `git config user.name` when set
+  `repos` beside it, the `drafts`, `reviews` and `policies` collections every project has (review threads are kept in
+  `reviews`, [[review-threads]]; standing work in `policies`, [[policies]]), and `user.name` from `git config user.name` when set
   ([`initialConfig`](ref:hub/src/init.ts#initialConfig)). The rest of the config keeps its defaults (`renderer` is
   `page`, `editor` VS Code's) and the README shows it.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing: each check is `ok`, `warn`

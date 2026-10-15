@@ -36,7 +36,7 @@
 work the floor did, how long workers wait on the user, how far the weekly limit's pace will carry. A spike over the
 logs showed all of it is in events the live fold already reads, and that the
 obvious sum is wrong: each card's `costUsd` is Claude's running total for the conversation, carried into a resume,
-so summing cards gave $901 where $694 was spent.
+so summing cards overstated the spend by about a third.
 
 **Why.** Stats are a capability: every renderer and every worker should reach them ([[renderer-is-disposable]]),
 and they are computable from the logs, so they are computed ([[logs-are-facts]]).
@@ -112,18 +112,19 @@ grows slow; the 5 s board poll of `repos` is the wrong cadence for it (it runs w
   its two conversations shows no drop, and the new conversation's cost was lost (the `clear` fixture); keying the
   baseline on the conversation counts it.
 - *Waits from a `Stop` to the next turn* (the spike's). A turn a task's notification, a schedule or a peer starts is
-  not the user answering; 60 of 332 waits were those.
-- *Asks from `tool.check` with decision `ask`.* 9,225 of them, nearly all settled by auto mode without a dialog;
-  `PermissionRequest` (131) is what the user saw.
+  not the user answering; nearly one wait in five was one of those.
+- *Asks from `tool.check` with decision `ask`.* About seventy for every dialog the user saw, nearly all settled by
+  auto mode; `PermissionRequest` is what the user saw.
 - *Lines from the log's Edit/Write hooks* (the spike's first look): they miss every edit made through Bash and
-  would need `PostToolUse` bodies the live fold skips. Git saw +45.8k −9.8k where the hooks saw +30.4k −1.3k.
+  would need `PostToolUse` bodies the live fold skips. Git saw half again as many lines added as the hooks did, and
+  several times as many removed.
 - *Commits by committer time* (`git log --numstat` without `--first-parent`, phase 2's first cut): in a repo that
   lands through merges, a branch's commits counted on the days they were written and dropped when that fell before
-  the window; on the cfi repos it read 16 and 21 commits in two days where 31 and 63 reached main.
+  the window; on repos landing through merges it read a half to a third of the commits that reached main in two days.
 - *Attributing commits to workers* by matching `git commit` commands or commit messages (79% in the spike): a policy
   about who made what, which the tower doesn't declare.
 - *Concurrency counting every `turn.complete`* (the survey's `extract.py`): subagents' turns counted as workers,
-  which read Oct 3–7 as 1.2 at once with a peak of 8; the main loops alone are 1.14 with a peak of 3.
+  which nearly tripled the peak of workers at once against the main loops alone.
 - *History on the board.* It is pushed on every change to every renderer; a week of series doesn't belong there.
 - *Prompt texts or per-turn records in facts.* Only times and numbers are folded: the brief reads texts from the logs
   when asked ([[brief-turns]]).

@@ -75,7 +75,7 @@ and how its findings reach the author.
 - *Delivery.* By default the notes wait on the thread for the user, who reads them in the Reviews tab and sends them on.
   With `tell` (`/tower:review <CALLSIGN> tell`), the reviewer runs `tower send <CALLSIGN>`, which submits
   [`sendText`](ref:hub/src/shared/reviews.ts#sendText): a pointer naming the reviewer's callsign and the notes new to
-  the author. `submit` doesn't log who sent it yet, so the text carries the name. An author hiring its own reviewer
+  the author. `submit` takes the reviewer as `by` and names it in the author's log first ([[worker-prompts]]). An author hiring its own reviewer
   passes `tell`.
 - *A hire.* `tower review` spawns with `hire` like `tower hire`, so the tower logs `tower.hire` in the hirer's log and the
   reviewer's card names who hired it; the floor's hiring limits never refuse a review ([[hiring-limits]]).

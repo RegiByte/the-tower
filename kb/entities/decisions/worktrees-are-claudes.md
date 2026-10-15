@@ -4,7 +4,7 @@
   "name": "Worktrees are Claude's, their setup is the repo's",
   "summary": "The tower builds no worktree machinery: a session in a worktree is one optional Launch field passed as Claude's own --worktree flag, and preparing a fresh worktree (env files, dependencies) belongs to each repo.",
   "in": "tower",
-  "status": "proposed",
+  "status": "rejected",
   "date": "2026-10-04",
   "reviewed": "2026-10-09",
   "refs": ["hub/src/shared/launch.ts"]

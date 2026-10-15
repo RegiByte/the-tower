@@ -37,7 +37,7 @@ moving.
     they are new to (`send`, on the papers and a pigeonhole slot)
 
   Verbs sharing a key are never offered together. Keys are bound to verbs, never to objects.
-- [`HELD`](ref:hub/renderers/tower3d/src/acts.ts#HELD) verbs (kill, stop, reap) run only after 1.2 s held (700 ms proved too quick to trust with sending a worker home).
+- [`HELD`](ref:hub/renderers/tower3d/src/acts.ts#HELD) verbs (kill, let go, stop, reap) run only after 1.2 s held (700 ms proved too quick to trust with sending a worker home).
   A ring fills on the key cap, and releasing early cancels. The hold is the confirmation.
 - The mouse path: the wheel marks a verb, a click runs it, and a held click runs a held verb. In the overview
   the list follows the cursor and the keys work on what's under it.

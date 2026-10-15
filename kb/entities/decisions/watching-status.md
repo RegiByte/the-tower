@@ -53,5 +53,5 @@ nothing in the log can end it.
 `watching` attention of its own: a fifth colour every renderer and tally would carry, for a state that asks nothing of
 you. Ending a watch on a timer: a guess, wrong for a cron an hour away.
 
-**Impact.** A new `Status` value on the board (API v10). `waitsOnSomeone`, `board.waiting` and rings are unchanged:
+**Impact.** A new `Status` value on the board. `waitsOnSomeone`, `board.waiting` and rings are unchanged:
 `watching` is in none of them.

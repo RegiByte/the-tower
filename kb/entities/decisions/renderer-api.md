@@ -32,7 +32,7 @@ page → tower  {t: 'remember', value}        localStorage, keyed by the page's 
 page → tower  {t: 'recall', id}             localStorage, keyed by the page's path
 page → tower  {t: 'store', key, value}      localStorage, keyed by `key`, shared by every page
 page → tower  {t: 'stored', id, key}        localStorage, keyed by `key`, shared by every page
-tower → page  board v14 · answer · event     GET /board {v, board | error} · replies · GET /mux
+tower → page  {v, board} · answer · event    GET /board {v, board | error} · replies · GET /mux
 tower → page  {t: 'prefs', prefs}           localStorage `tower.prefs`, the viewer's appearance
 tower → page  {t: 'scheme', scheme}         its scheme alone, for a `url` entry's frame
 ```
@@ -47,7 +47,7 @@ with every message, and nothing reaches the page before its `hello`. A document 
 the token, and a frame that loads without a `hello` ends the relay, so a page followed by a link neither reads the
 board nor drives the routes. Streams are multiplexed on one SSE connection per client
 ([`openMux`](ref:hub/src/tower/server.ts#openMux)): a browser holds at most six connections to a host, and a
-renderer with a live screen per desk would otherwise starve. The tower page itself now streams through
+renderer with a live screen per desk would otherwise starve. The tower page itself streams through
 `tower.js`. A declared renderer runs at the tower's origin at `/r/<name>/` ([[renderers-in-config]]), and
 [`/run/<project>/<n>`](ref:hub/src/tower/server.ts#run) serves a shelf's `html` entry there too, so it runs on its
 own, full screen. [[tower3d]] is a full-parity renderer.
@@ -72,10 +72,10 @@ storage: what one renderer marks (the files viewed in a diff), another reads in 
 the root's `data-scheme`, so a page linking `/design.css` follows the tower's toggle as well as the system. A
 `url` entry's frame is sent the same `scheme` message on each load and change (its only message: the choice is
 not private), so a separately served app can follow the toggle by setting its own `data-scheme`.
-The choice behind it is a field of the viewer's appearance, `tower.prefs` (API 1.13, [[viewer-prefs]]): at the
+The choice behind it is a field of the viewer's appearance, `tower.prefs` ([[viewer-prefs]]): at the
 tower's origin `tower.js` keeps the record in localStorage `tower.prefs`, framed it asks the framing page (`{t: 'tower',
 verb: 'prefs'}`), which keeps it and sends `prefs` back, so any renderer's settings change every page's appearance
-([[settings-and-tips]]). `tower.schemeChoice()`/`chooseScheme(c)` (API 1.3) and the `scheme` verb stay, deprecated.
+([[settings-and-tips]]). `tower.schemeChoice()`/`chooseScheme(c)` and the `scheme` verb stay, deprecated.
 
 **Alternatives considered.**
 - A semantic message set per verb: a second vocabulary to keep in step with the routes, for no gain.
@@ -86,5 +86,5 @@ verb: 'prefs'}`), which keeps it and sends `prefs` back, so any renderer's setti
 
 **Consequences.** The tower *server* is no longer disposable: its routes are the contract, and only the tower
 *page* is a disposable renderer. A page's remote scripts can type into PTYs. `v` ([[renderer-api-contract]], declared once in `api.ts`), carried by both transports and checked by `tower.js`; a breaking change to
-the routes or the board bumps it. Three.js loads as ES modules from a CORS-enabled CDN inside the opaque
-frame; only the tower's own files can't be imported as modules there.
+the routes or the board bumps it. A framed page sits at an opaque origin, where modules load only with CORS: the tower serves its shared modules,
+stylesheet and faces to any origin ([`ANY_ORIGIN`](ref:hub/src/tower/server.ts#ANY_ORIGIN)).

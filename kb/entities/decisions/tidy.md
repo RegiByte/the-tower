@@ -139,6 +139,6 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - *Tidying on a timer*: whoever ended a worker must be a fact in a log, and the tower writes no logs. Designed when
   wanted.
 
-**Impact.** A stranded worker's worktree reads `live` until it is resumed or let go, no API change. API 1.4: a `tidyRows` row carries `call`, and `POST /tidy` takes any part of the plan. API v13: `floor.tidy`, `Card.stuck`, `typedAt`, `heardAt`; `tidy` takes the plan and its reply adds
+**Impact.** A stranded worker's worktree reads `live` until it is resumed or let go, no API change. API 1.4: a `tidyRows` row carries `call`, and `POST /tidy` takes any part of the plan. The board gains `floor.tidy`, `Card.stuck`, `typedAt`, `heardAt`; `tidy` takes the plan and its reply adds
 `reaped`, `killed` and `skipped`. The worktrees and threads trays lost their own tidy buttons. No host change. A `tidy` fixture
 board in Tower 3D and the frames walk.

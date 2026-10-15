@@ -126,7 +126,7 @@ GitHub: a prescriptive integration. Removing on exit: removal waits until a kill
 folders: they diverge. A global `git worktree prune` in the cut: erases other names' `lost`.
 
 **Impact.** API 1.37: `kept` on the replies of `worktree/remove`, `worktree/prune`, `branch/delete` and
-`worktree/discard`, and `head` on each repo of a kept branch. A host change (`sessionDirs`). API v8: `spawn.cut`, verbs `worktree/recut | prune | remove`,
+`worktree/discard`, and `head` on each repo of a kept branch. A host change (`sessionDirs`). The API gains `spawn.cut`, verbs `worktree/recut | prune | remove`,
 `branch/recut`, `branch/delete`, `tidy`, errors `exists`, `would_lose`, `lost`, `offline`, `worktree_failed`. The board gains
 `floor.worktrees`, `floor.branches`, `floor.bases`, `floor.branchPrefix`, `floor.cutByDefault` and `card.worktree` ([[board-verbs]]).
 Config gains `worktrees: { branchPrefix, links, cutByDefault }`, top level and per project. No new stored state.

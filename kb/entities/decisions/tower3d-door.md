@@ -15,8 +15,8 @@ synthetic mouse moves, priming dropped keys, seeding localStorage to place the w
 timing screenshots of animations.
 
 **Why.** The project is built by agents; what they cannot check, they build slowly. Asset work (models,
-materials, layouts) needs repeatable views more than anything, and the coming cut of `main.ts` into registries
-needs a before/after it can be checked against.
+materials, layouts) needs repeatable views more than anything, and a refactor such as the cut of `main.ts` into
+registries ([[tower3d-registries]]) needs a before/after it can be checked against.
 
 **How.**
 - Input is intents: a move held and a turn taken per frame (`input.ts`). Keyboard and mouse produce them, and the
@@ -33,7 +33,7 @@ needs a before/after it can be checked against.
   shown or hidden, every object where it stands), so `locate`, `teleport`, `aimAt` holds with no frame between them (guests and cats are placed by a frame's ticks, so on a stepped clock both refuse one until a step follows the latest board), `press(verb, {hold})` (refuses verbs not offered, and a held
   verb without a hold), `key`, `drive`, `step`/`play`, `advance` (a fixture's next board), `pictured` (every picture being read is painted, a later board's too), `state` (frame times, what the last frame drew, counters for boards and rebuilds) and
   `shot`. The door plays no music and never stores the walker's spot.
-- `?board=<name>` renders a fabricated board (`busy`, `empty`, `tall`, `party`, `review`, `attention`), a list of boards delivered one by one
+- `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES), a list of boards delivered one by one
   through `advance`, so what happens between boards can be recorded. Scenarios state facts; callsign,
   attention, liveness, verbs and on-duty come from the bridge's own functions, so a contract change breaks the
   build. A fixture's monitors open no streams: there is no host behind it, and replies landing between steps

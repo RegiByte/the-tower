@@ -12,8 +12,8 @@
 ---
 **Problem.** `main.ts` held about 45 module-level `let`s and did everything: three near-identical keep/make/remove
 loops for desks, walls and guests; act kinds dispatched by `if` chains in two places (offers, run); one long
-`update` doing every per-frame job inline. Roadmap phase 2 adds a drafts wall, workstations and carrying: more
-layers, more act kinds, more ticks, each landing in the same file by hand, and the door's implementation could
+`update` doing every per-frame job inline. The roadmap's next phase was to add a drafts wall, workstations and
+carrying: more layers, more act kinds, more ticks, each landing in the same file by hand, and the door's implementation could
 not leave `main.ts` without being handed a dozen closures.
 
 **Why.** "Mods emerge, then freeze": extract the patterns that already exist, build three systems on them, and only
@@ -56,4 +56,4 @@ walks out and joins the roof's guests.
   same reason: its entries call navigation and panels.
 
 **Impact.** `main.ts` keeps boot, the board, navigation, panels and input; adding a layer, an act kind or a tick
-is one entry each. Phase 2's systems are the second and third users of these shapes.
+is one entry each. The corkboard, the workstations and carrying, which came next, were built on these shapes.

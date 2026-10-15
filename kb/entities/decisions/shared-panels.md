@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Shared panels: one Changes, one Reviews, one Stats and one Policies for every renderer",
-  "summary": "The Changes, Reviews and Stats panels are pure views in one shared module (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
+  "summary": "The Changes, Reviews, Stats and Policies panels are pure views in one shared module (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
@@ -94,8 +94,8 @@ panels are the same view in both renderers. Only where they sit, their state and
   and ✕ for this viewer, a dismissed one marked), then every policy with its rule and next slot in words, where it
   stands (`standingWords` of `/policies.js`, the reason the runner acts on), its approval, live runs and last run, Run
   now and Approve. Every press is a call the board offered (`data-policy-call`); Run now drawn off says why (live full,
-  another runner's, the host down). The page opens it in the main pane per floor; Tower 3D can draw it as it draws the
-  others.
+  another runner's, the host down). The page opens it in the main pane per floor; Tower 3D doesn't draw it yet, and would
+  through the same view.
 
 **Alternatives considered.**
 - *Rewriting relative specifiers in served code* (`./x.ts` → `/x.js`), keeping one browser instance per module: a

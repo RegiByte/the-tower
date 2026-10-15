@@ -29,8 +29,8 @@ mod skills, `tower` output ("Latest prompt from …"), the review threads' opera
 descriptions. Anyone else running the tower got agents that talked about someone else.
 
 **Decision.**
-- Agent-facing text says "the user": [`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief), the `tower` and
-  `review` skills, every `tower` message, and the API's descriptions.
+- Agent-facing text says "the user": [`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief), the mod's
+  skills (`handbook`, `review`, `guide`), every `tower` message, and the API's descriptions.
 - `config.user.name` ([`UserConfig`](ref:hub/src/shared/model.ts#UserConfig)) is the one name a human-facing surface
   needs: it signs the notes renderers write for the user, `user` when unset
   ([`userName`](ref:hub/src/shared/model.ts#userName)). The board carries it as `board.user.name`, so a renderer

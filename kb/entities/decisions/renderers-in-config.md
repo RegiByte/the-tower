@@ -66,4 +66,4 @@ update of the core never touches it.
 **Impact.** A user writes a renderer anywhere, declares it, and makes it the default without touching the repo.
 Tower 3D runs at `/r/tower3d/` (its Lab at `/r/tower3d/lab.html`), and the recipes (`drive`, `tool:frames`, the
 sandbox) use that URL. Configs drop their Tower 3D shelf entries, or swap them for `{ "renderer": "tower3d" }`, which
-keeps its settings framed. API version 18; the shelf's `renderer` kind, 23.
+keeps its settings framed.

@@ -111,5 +111,4 @@ measured. So anyone it annoys, or whose machine it slows, needs a way to turn it
   a subtle effect) and point lamps over your level. All were measured and deleted.
 
 **Impact.** Tower 3D's frames on the fixture boards are the new look. `npm run tool:frames` records them with the
-lighting on, and the setting off draws byte for byte what `?proc=skyline,shell,roof` drew on the spike. Shadows
-reappearing late after a dialog closes is known and not fixed (draft `ivory-lynx`).
+lighting on, and the setting off draws byte for byte what `?proc=skyline,shell,roof` drew on the spike.

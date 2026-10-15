@@ -20,7 +20,7 @@
 ---
 **Problem.** A floor showed a desk only per worker on duty, so an empty floor was empty and a new session
 could only start from the console. Starting work had no place in the room, and carrying a draft to a desk
-(roadmap phase 2, session D) had nothing to carry it to.
+had nothing to carry it to.
 
 **Why.** The office should read as an office: desks waiting for workers. The user wanted a quick start in the
 world, with the defaults, and the new-session dialog as the optional path, reusing the dialog the console
@@ -61,6 +61,6 @@ already opens.
   whenever the last desk fills would make the building move under you. A plain count was the roadmap's
   call.
 
-**Impact.** Empty floors show their desks. Starting a session is a walk to the lit desk. Session D's
-carrying lands here: E at the open desk with a draft in hand spawns with it. The door gained `acts(kind)`
+**Impact.** Empty floors show their desks. Starting a session is a walk to the lit desk. Carrying
+lands here: H at the open desk with a draft in hand hires a worker on it ([[corkboard]]). The door gained `acts(kind)`
 to find things without knowing their ids, and the frames walk ends aiming at an open desk.

@@ -30,11 +30,11 @@
 ---
 **Problem.** A hire's brief (`tower hire`, `tower review`) and a review-note pointer (`tower send`) reach a worker
 through its composer, as the user's typing would, and Claude reports them with the composer's origin. The stats
-counted them as the user's prompts and as waits the user answered: over 2026-10-03..09, about 130 of 890 "prompts
+counted them as the user's prompts and as waits the user answered: over one week, about one in seven "prompts
 from you" were hire briefs alone, so every attention number overstated the user's share.
 
-**Why.** The tower's throughput is the user's answer rate: workers waited 54.5 hours on the user that week, against
-46 busy. Work that reduces the user's load can only be judged against a count of the user's own prompts.
+**Why.** The tower's throughput is the user's answer rate: workers waited longer on the user that week than
+they were busy. Work that reduces the user's load can only be judged against a count of the user's own prompts.
 
 **How.** `submit` and `spawn` take an optional `by`, a session id the tower knows (an unknown one is refused before
 anything happens). With it, [`actedBy`](ref:hub/src/tower/server.ts#actedBy) has the host append

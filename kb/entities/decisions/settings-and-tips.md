@@ -55,9 +55,9 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   stylesheet; `data-alerts-ask`, `data-ring-choice` and `data-sound-play` wired by each renderer. `themeSection` and
   its `data-scheme-choice`, the first Theme section, are kept `@deprecated`. It is a native `popover` (light dismiss, top layer, not a modal).
   Settings stay where they lived: the ring in `tower.store` ([[attention-list]]), notifications with the browser, and
-  the scheme with `tower.js` (since API 1.13 a field of `tower.prefs`, [[viewer-prefs]]), which gained `tower.schemeChoice()` and `tower.chooseScheme(c)`: localStorage at the
+  the scheme with `tower.js` (a field of `tower.prefs`, [[viewer-prefs]]), which gained `tower.schemeChoice()` and `tower.chooseScheme(c)`: localStorage at the
   tower's origin, and framed, a `{t: 'tower', verb: 'scheme'}` message the framing page keeps and answers with
-  `scheme` (API 1.3, [[renderer-api]]). The tower page now reads its own scheme through the same calls.
+  `scheme` ([[renderer-api]]). The tower page reads its own scheme through the same calls.
 - *The head* keeps the host lamp, the gear, `?` and `«`. The gear is `ICON.settings`, an inline SVG from
   `/icons.js` like the scheme icons, so it looks the same on every OS.
 - *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `/tips.js`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
@@ -88,8 +88,8 @@ gets them by importing and wiring ([[renderer-is-disposable]], [[shared-panels]]
   coloured quiet, working (amber: a restart some time) or broken, with its word (`host up` faint, `host outdated` and
   `host down` on their colour) and [`HOST_MEANS`](ref:hub/src/shared/cards.ts#HOST_MEANS) as its tooltip. The note line
   under the head no longer repeats it. Tower 3D's HUD keeps a bare lamp while the host is up.
-- *Tower 3D* opens the same popover from a gear in its HUD and a Settings button on the pause card, with Sound and
-  Theme: it sends no notifications (the page framing it does), so it offers no Alerts.
+- *Tower 3D* opens the same popover from a gear in its HUD and a Settings button on the pause card, with Sound, the
+  viewer's appearance (`prefSections`), Brief and Lighting: it sends no notifications (the page framing it does), so it offers no Alerts.
 
 **Alternatives considered.**
 - *A modal dialog for settings*: three small choices don't deserve taking the screen.
