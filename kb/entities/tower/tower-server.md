@@ -17,7 +17,9 @@
 }
 ---
 `tower up` starts it detached with the daemons ([[bring-up]]), `npm run tower` in the foreground, on the
-config's `port`, read when it starts ([[port-in-config]]). The board (floors of cards, rate limits, today's stats, shells) is
+config's `port`, read when it starts ([[port-in-config]]). The same process runs the probes
+([`runProbes`](ref:hub/src/probes.ts#runProbes), [[probes]]) and the policies' runner
+([`runPolicies`](ref:hub/src/policies.ts#runPolicies), [[policies]]), each on a 30 s tick. The board (floors of cards, rate limits, today's stats, shells) is
 derived by [`board`](ref:hub/src/bridge/board.ts#board) and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/server.ts#archive) ([[board-archive]]). A session screen is
 a stream ([`screenStream`](ref:hub/src/tower/server.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
@@ -29,8 +31,7 @@ monitor. It outlives its last viewer by 30 s, so a reconnect finds it built, and
 tower builds it again. A session no longer running is sent its last frame, a
 [snapshot](ref:hub/src/bridge/screen.ts#snapshot) of the log, and no mirror. A log that holds its exit never changes,
 so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tower/screens.ts#lastFrames): 500 sessions,
-least recently opened dropped, guarded by the log's size, opens in flight sharing one computation): a 20 MB log opens in
-~320 ms the first time and ~8 ms after. A session without an exit in its log (stranded by the host) is replayed on every
+least recently opened dropped, guarded by the log's size, opens in flight sharing one computation). A session without an exit in its log (stranded by the host) is replayed on every
 open. An interactive terminal opens the same stream as `terminal/<id>`
 ([`terminalStream`](ref:hub/src/tower/server.ts#terminalStream)), whose snapshot also says how many other terminals
 are open on the session, so a renderer claims the PTY size on open only as the sole one ([[tower3d-desk]]). A board
@@ -62,8 +63,8 @@ schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 [`HANDLERS`](ref:hub/src/tower/server.ts#HANDLERS), and the reply checked against the verb's reply schema. Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused`, one that doesn't answer
 `unavailable`. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
-[`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, and the error, as JSON
-Schema, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
+[`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, every read's query, and the error, as JSON
+Schema, each stream described, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
 that throws answers `config` for a [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError), else `internal`
 ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)), and goes to the log.
 
@@ -72,7 +73,7 @@ the module `/design.js` and its faces, readable from any origin, and the drafts 
 `/drafts.js` ([[corkboard]]), what renderers say about a worker, `/cards.js`
 ([`cards.ts`](ref:hub/src/shared/cards.ts)): status words, the one-line gist, times, the order and keys that move
 between workers, and the icons they draw, `/icons.js` ([`icons.ts`](ref:hub/src/shared/icons.ts)), and the review threads' format,
-`/reviews.js` ([[review-threads]]), and the Changes and Reviews panels, `/panels.js` ([[shared-panels]]). Every module
+`/reviews.js` ([[review-threads]]), and the shared panels, `/panels.js` ([[shared-panels]]). Every module
 in [`MODULES`](ref:hub/src/tower/served.ts#MODULES) is served as JavaScript, bundled with what it imports
 ([`bundled`](ref:hub/src/tower/served.ts#bundled)). What it serves for renderers to build on (`/tower.js`, `/design.css`
 and these modules) is part of the API's contract ([[renderer-api-contract]]).

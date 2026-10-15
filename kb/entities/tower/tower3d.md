@@ -7,7 +7,7 @@
   "reviewed": "2026-10-15",
   "refs": ["hub/renderers/tower3d/index.html", "hub/src/shared/cards.ts#renderersHtml", "hub/renderers/tower3d/src/outside.ts#outside", "hub/renderers/tower3d/src/outside.ts#traffic", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/layout.ts#plan", "hub/renderers/tower3d/src/layers.ts#STATIONS", "hub/renderers/tower3d/src/layers.ts#NOTES", "hub/renderers/tower3d/src/layers.ts#CABINETS", "hub/renderers/tower3d/src/arcade.ts", "hub/renderers/tower3d/src/filing.ts#buildFiling", "hub/renderers/tower3d/src/archive.ts#readFloorArchive", "hub/renderers/tower3d/src/desk.ts#dressBinder", "hub/renderers/tower3d/src/main.ts#openLogbook", "hub/renderers/tower3d/src/cork.ts", "hub/renderers/tower3d/src/gallery.ts", "hub/renderers/tower3d/src/running.ts#buildRunning", "hub/renderers/tower3d/src/layers.ts#RUNNING", "hub/renderers/tower3d/src/layers.ts#GALLERY", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/showing.ts#playFilms", "hub/renderers/tower3d/src/desk.ts#dressSide", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/renderers/tower3d/src/models.ts#instance", "hub/renderers/tower3d/src/zones.ts#furnish", "hub/renderers/tower3d/src/kit.ts#fillLayer", "hub/renderers/tower3d/src/zones.ts#cityModel", "hub/scripts/tour.ts", "hub/renderers/tower3d/src/room.ts#buildRoom", "hub/renderers/tower3d/src/party.ts#buildParty", "hub/renderers/tower3d/src/layout.ts#danceFloors", "hub/renderers/tower3d/src/party.ts#buildDanceFloors", "hub/renderers/tower3d/src/party.ts#mug", "hub/renderers/tower3d/src/avatar.ts#avatar", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/renderers/tower3d/src/palette.ts#tintOf", "hub/renderers/tower3d/src/music.ts#band", "hub/renderers/tower3d/src/tv.ts#startShare", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/world.ts#paintDirectory", "hub/renderers/tower3d/src/world.ts#paintStatsBoard", "hub/renderers/tower3d/models/kit.py", "hub/renderers/tower3d/models/catkit.py", "hub/renderers/tower3d/src/life.ts#catAt", "hub/renderers/tower3d/src/life.ts#guestAt", "hub/renderers/tower3d/src/life.ts#watcherOf", "hub/renderers/tower3d/src/life.ts#steer", "hub/renderers/tower3d/src/hands.ts#poseHands", "hub/renderers/tower3d/src/hands.ts#drawHands", "hub/renderers/tower3d/src/hands.ts#holdNote", "hub/renderers/tower3d/src/hands.ts#holdBeer", "hub/renderers/tower3d/models/hands.py", "hub/renderers/tower3d/src/pet.ts", "hub/renderers/tower3d/src/life.ts#purr", "hub/renderers/tower3d/src/compass.ts#pointers", "hub/package.json", "hub/src/shared/cards.ts#can", "hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/renderers/tower3d/src/lab.ts", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/renderers/tower3d/src/life.ts#chase", "hub/renderers/tower3d/src/outside.ts#airfield", "hub/renderers/tower3d/src/outside.ts#flight", "hub/renderers/tower3d/models/plane.py"],
   "links": [
-    { "to": "tower-server", "verb": "calls", "carries": "through /tower.js: the board, every verb (spawn, resume, keys, submit, resize, kill, reap, reap/process, open, reveal, edit, shell/*, collection/*), shelf and collection reads, remember/recall, and screen and shell streams on /mux" }
+    { "to": "tower-server", "verb": "calls", "carries": "through /tower.js: the board, the API's verbs and reads, and screen and shell streams on /mux" }
   ]
 }
 ---
@@ -126,14 +126,14 @@ back-left corner:
   screen over its sessions and conversations ([[logbook]]). The floor panel's archive lists the same read
   ([`readFloorArchive`](ref:hub/renderers/tower3d/src/archive.ts#readFloorArchive)); a first read that fails says so
   there with Read again (the shared `failedHtml`), and one failing over cards read before keeps them and toasts.
-- On a floor keeping games, the arcade: a cabinet per game along the glass front, the couch stepped back; E plays
+- On a floor keeping games, the arcade: a cabinet per game along the glass front, as many as fit, the newest by the door, the couch stepped back; E plays
   the game in a sandboxed frame on the right half of the screen, the camera facing the cabinet and the music
   stopped until it closes ([[arcade]]).
 
 **Panels and world** ([[design-system]]). The panels are the shared components of `/design.css` in the
 viewer's scheme, which reaches the frame as the renderer API's `scheme` message: the HUD, one row of loose chips at the
 bottom-left over the world, as wide as the prompt card leaves room for, the floor name the one that shrinks (the host lamp, a word beside it once the host is outdated or down, the music toggle and the settings gear, a floor sign for where you are, a waiting chip that is the
-N button, lamp counts per attention and shells, rate-limit mini meters with when each resets, a pace tick on a weekly one (how much of the week has gone, [`weekElapsed`](ref:hub/src/shared/cards.ts#weekElapsed), shared with the tower page) and the reading's age, dimmed once it is past 15 minutes, new showings (V) and stop sharing, each shown only
+N button, lamp counts per attention and shells, rate-limit mini meters with when each resets, a pace tick on a weekly one (how much of the week has gone, [`weekElapsed`](ref:hub/src/shared/cards.ts#weekElapsed), shared with the tower page) the reading's age once it is past 15 minutes (the meters then dimmed), extra usage once spent from, and each probe as a lamp a click reads now, new showings (V) and stop sharing, each shown only
 while it says something; [`hudHtml`](ref:hub/renderers/tower3d/src/ui.ts#hudHtml)), the prompt card (what you aim at and its verbs on their keys), the elevator list,
 the floor panel and directory (signs and worker cards; the left rail `#rail` stacks it from the top, above the fps readout and the HUD, so none of them needs an offset), the desk panel (status pill, an ask banner while the
 worker needs you, Terminal, Logbook, Changes and, on a floor keeping review threads, Reviews tabs ([[shared-panels]]), and a tab per showing, the logbook or showing laid over the terminal so the PTY keeps its size) and the reader. What is drawn into the scene keeps one
@@ -144,6 +144,11 @@ over every landing's doors (the lobby and the roof in the lobby's amber), on the
 lobby's directory board ([`paintDirectory`](ref:hub/renderers/tower3d/src/world.ts#paintDirectory), with who's on
 duty or a needs chip) and a row per level on the car's panel. "The Tower" is display caps on enamel plates over
 the core doors, the entrance and the roof; the big screens' placard is enamel too.
+
+**Reviews** ([[reviewer]], [[review-threads]]). A reviewer sits beside its author with a chair and a notebook whose
+lid shows its terminal, no desk of its own; notes new to a worker lie as papers on its desk, and each floor's review
+threads fill a pigeonhole on the control room's outer wall, a slot per checkout with a sheet per note
+([`buildPigeonhole`](ref:hub/renderers/tower3d/src/pigeonhole.ts#buildPigeonhole)).
 
 **Showings** ([[agent-show]]). A worker that showed something has a second monitor on its desk, turned to the
 seat, with its latest showing: markdown typeset as a page with its images, an image letterboxed on the screen,
@@ -215,9 +220,15 @@ terminal or the big screen is open, opened up on the roof. The party dances to i
   project's dance floor if it has one.
 - The sky follows the viewer's clock.
 
+**The building and its light** ([[tower3d-look]]). The building's shell, the city and the roof plant are geometry
+generated at load (`renderers/tower3d/src/exterior/`); the KayKit roof zone stands beside that plant. The lighting
+(`renderers/tower3d/src/light/`: a sun that follows the clock with its shadows, contact shadows under your level, and
+the night's bloom) is a setting in the settings popover, on by default, applied on the next load
+([`startLighting`](ref:hub/renderers/tower3d/src/light/setting.ts#startLighting)).
+
 **Outside** ([`outside`](ref:hub/renderers/tower3d/src/outside.ts#outside)): a sky, light and city of windows
 lit by the viewer's clock (each window on its own office hours, red warning lights flashing on the tallest
-towers and clouds drifting overhead: decision `tower3d-look`), and a ring road around the block, 42 to 57 m out, its asphalt and centre dashes one mesh.
+towers and clouds drifting overhead: [[tower3d-look]]), and a ring road around the block, 42 to 57 m out, its asphalt and centre dashes one mesh.
 Sixteen cars drive it on the right in two lanes ([`traffic`](ref:hub/renderers/tower3d/src/outside.ts#traffic)), three
 instanced meshes (body, cabin, lamps); each lane is a convoy at its own speed whose cars drift ahead and back, never
 into each other, so where every car is follows from the sim clock and hashed constants alone, the same on every
@@ -233,8 +244,8 @@ the clock too. The plane joins once the models load (`fly`), and never comes bet
 
 **Life:** new workers walk in from the elevator and leavers walk out, along the landing and the aisles
 between desk columns, and through the elevator's doors. A landing's doors open ahead of a leaver, close
-behind it once it stands in the car facing out, and only then is it gone ([`doorTarget`](ref:hub/renderers/tower3d/src/main.ts#doorTarget)). Three cats, Mochi (a grey tabby),
-Patches (a calico) and Domino (a tuxedo), roam the tower on a schedule hashed from the time
+behind it once it stands in the car facing out, and only then is it gone ([`doorTarget`](ref:hub/renderers/tower3d/src/main.ts#doorTarget)). Three cats, by default Mochi (a grey tabby),
+Patches (a calico) and Domino (a tuxedo), named otherwise by the renderer's `settings.cats`, roam the tower on a schedule hashed from the time
 ([`catAt`](ref:hub/renderers/tower3d/src/life.ts#catAt)): every two minutes all three take distinct levels, project floors first in
 a hashed order, the leftovers to the lobby and the roof. On each, a cat comes out of the elevator, takes a few walks
 along a grid around what a walker bumps into, each ending in a sit, a groom or a nap, then goes back in. The same wall clock
@@ -253,8 +264,9 @@ remind every 30 s, off; the gear in the HUD or on the pause card, [[settings-and
 rings nothing and leaves ringing to the page framing it ([[attention-list]]); N goes round the
 waits; the desk panel's ✕ dismisses the worker's wait, which then stops pulsing; while you walk a floor, an arrow on the
 screen's edge points to each worker on it waiting on you out of view
-([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)). A `blocked` worker turns round to you with a ?. A worker's look is its own, hashed
-from the session id by the wardrobe, `renderers/tower3d/wardrobe.json` ([`lookOf`](ref:hub/renderers/tower3d/src/wardrobe.ts#lookOf)): a KayKit adventurer dressed from
+([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)). A `blocked` worker turns round to you with a ?. A worker's look is its own, from the wardrobe,
+`renderers/tower3d/wardrobe.json` ([`lookOfWorker`](ref:hub/renderers/tower3d/src/wardrobe.ts#lookOfWorker)): the named
+outfit of its callsign's name when the wardrobe has one, else hashed from the session id: a KayKit adventurer dressed from
 hashed parts, colours and gear, or a bot, all on one skeleton and posed by KayKit's clips ([[kaykit-workers]]). Its
 status shows on the light over its head, its bubble and its pose. Above its monitor, a tag
 names it and its status, and a line over the tag says what it's up to, so the floor reads at a glance: the tool it runs or
@@ -271,6 +283,8 @@ of KayKit's Rig_Medium that clips move, the adventurers' parts and the clips (`k
 pivots named after the bones they ride, its anchors `hat` and `face` and its status light `bulb_glow_own`; `wear.glb`
 holds hats and glasses, parts of the wardrobe's `Hat` and `Face` slots hung on anchors on the head bone, and what one holds goes in its right hand slot. The cats share one body (`models/catkit.py`, skipped by the build like `kit.py`),
 each script painting its own coat, and keep their own contract: pivots `head`, `tail`, `paw_L` and `paw_R`.
+Parts for the workers' looks modelled by hand live in a Blender kit beside them, `renderers/tower3d/parts/parts.blend`,
+each joining a look's slot by its name (`npm run tower3d:parts` exports them to `parts/parts.glb`, [[kaykit-workers]]).
 
 **The door** ([[tower3d-door]]): `window.tower3d` ([`door.ts`](ref:hub/renderers/tower3d/src/door.ts)) is how an
 agent drives and sees it. Keyboard and mouse produce intents (a move held, a turn taken per frame;
@@ -297,4 +311,3 @@ board opens no streams ([`watchStream`](ref:hub/renderers/tower3d/src/fixtures.t
 with its draw calls, triangles and names, driven by `window.lab`; `dresser.html` dresses, poses and fits one worker
 and saves the wardrobe ([[character-creator]]).
 
-The look (toon shading, bean workers) started from agent-office.

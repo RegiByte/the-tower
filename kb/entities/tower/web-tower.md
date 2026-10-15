@@ -10,7 +10,7 @@
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
 drives the system through `/tower.js`; it holds no machinery. The skyline home
-(projects as buildings, sessions as lit windows) is the seed of a spatial renderer. Its buildings stand in one row
+shows projects as buildings and sessions as lit windows. Its buildings stand in one row
 and narrow to fit any number of floors, windows and signs scaled with them; a sign's name is cut to its building's
 width and whole in its tooltip, as in the sidebar. A sidebar's shelf chips and trays keep to one line, cut the same way.
 
@@ -37,20 +37,20 @@ deleted. A prompt typed into the dialog that closes without starting, or whose s
 opened on. A session the page
 starts opens once the board carries its card: the host answers before the tower has read the new log.
 
-*The clipboard in frames* (2026-10-08). A frame that runs a floor's own page is sandboxed at an opaque origin, where
+A frame that runs a floor's own page is sandboxed at an opaque origin, where
 the browser's permissions policy blocks the Clipboard API unless the frame grants it: the shelf frame of an `html` or
-`renderer` entry, an `html` item and a shown file each carry `allow="clipboard-write"` (a `url` frame already had
+`renderer` entry, an `html` item and a shown file each carry `allow="clipboard-write"` (a `url` frame has
 `clipboard-read; clipboard-write`), so a copy button inside, such as Tower 3D's on a logbook's prompts and answers,
 works framed as it does top-level. Tower 3D grants the same on its own frames of shelf pages and shown files, so the
 grant carries through when it is itself framed. Reading the clipboard stays with `url` frames.
 
-*Reflow* (2026-10-08). The page holds at 200% zoom and at the largest Text size: under 900 px the sidebar is the rail
+The page holds at 200% zoom and at the largest Text size: under 900 px the sidebar is the rail
 and the sidebar key (or ») opens it over the main pane until a worker is picked; the worker bar wraps rather than
 clipping its callsign ([[design-system]]). Under the worker bar sits one tab row ([[shared-panels]]): its panes, then its showings scrolling sideways.
 While it waits on you, a quiet "dismiss" beside its status takes that wait out of your way. The move keys (`prev-worker`, `next-worker`, `next-waiting`)
 have no chips there: the keys sheet lists them, and the sidebar shows where they land. What the worker runs now is the terminal's, and the details' `now` row.
 
-*Keyboard and screen readers* (2026-10-08). The page is the tower's accessible renderer: Tower 3D's pointer-lock walk
+The page is the tower's accessible renderer: Tower 3D's pointer-lock walk
 can't be. Every worker is a link to `#<id>`: a card's callsign, a lit or past window of the skyline, a lamp of the
 collapsed rail and a past worker's callsign in the archive. The page opens what the hash names at load and again on
 `hashchange` (a link, Back, the address bar); every view still writes its own hash in place. The selected worker's
@@ -64,10 +64,10 @@ wait that begins and isn't dismissed ([`waitsBeganLine`](ref:hub/src/shared/card
 waiting on you: done."), the worker you are watching included. Landmarks: the sidebar's `aside`, the floors' `nav`,
 `main`; floor signs and the selected callsign are level-2 headings; every dialog is named; buttons drawn as a glyph
 carry an `aria-label` and glyphs beside words are hidden from screen readers. Still mouse-only: picking lines for a
-note in Changes, a showing tab's ↗ and ×, a shell tab's ×, a file's Finder and editor buttons (spans, so they can sit
-inside a tab), live threads and shelf files in their lists, and the dock's grip (drafts and kept items are buttons).
+note in Changes, a showing tab's ↗ and ×, a shell tab's ×, and a file's Finder and editor buttons inside a tab (spans, so they can sit there). The dock's grip is a
+focusable separator that ↑ and ↓ resize.
 
-*Policies* (2026-10-13). A floor that keeps policies shows a tray of their count, what is offered and what needs you,
+A floor that keeps policies shows a tray of their count, what is offered and what needs you,
 which opens the shared policies panel in the main pane at `#policies/<floor>` ([[shared-panels]]). Its open offers that
 you heed sit above its workers, each with Accept and ✕, counted beside the waits in the tally and the tab title, and N
 goes to them after the workers waiting on you ([[attention-list]]). A worker a run started says so under its callsign,
