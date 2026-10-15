@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { MAX_BEFORE_LINES, MAX_FILE_LINES, parseDiff, withBefore } from '../src/bridge/diff.ts'
+import { beforeCount, MAX_FILE_LINES, parseDiff, withBefore } from '../src/bridge/diff.ts'
 
 const out = readFileSync(new URL('./fixtures/changes.diff', import.meta.url), 'utf8')
 const files = parseDiff(out)
@@ -55,11 +55,16 @@ test('git diff: each hunk carries the unchanged lines since the one before it, c
   const text = Array.from({ length: 20 }, (_, i) => String(i + 1)).map((l) => (l === '5' ? 'five' : l === '15' ? 'fifteen' : l)).join('\n') + '\n'
   const keep = withBefore(byPath('keep.txt'), text)
   assert.deepEqual(keep.hunks!.map((h) => h.before), [['1'], ['9', '10', '11']])
-  const [gap] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -3 +2,0 @@', '-c', ''].join('\n'))
-  assert.deepEqual(withBefore(gap, 'a\nb\nd\n').hunks![0].before, ['a', 'b'])
   assert.equal(withBefore(byPath('keep.txt'), ['header', ...text.split('\n')].join('\n')), byPath('keep.txt'))
   assert.deepEqual(withBefore(byPath('keep.txt'), text.replaceAll('\n', '\r\n')).hunks!.map((h) => h.before!.length), [1, 3])
-  const far = MAX_BEFORE_LINES + 2
-  const [deep] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', `@@ -${far} +${far} @@`, '-a', '+b', ''].join('\n'))
-  assert.equal(withBefore(deep, 'x\n'.repeat(far - 1) + 'b\n'), deep)
+  const [gap] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -3 +2,0 @@', '-c', ''].join('\n'))
+  assert.equal(withBefore(gap, 'a\nb\nd\n'), gap, 'no own line to tell the text by')
+})
+
+test('git diff: the lines before hunks are counted from their headers, before any read', () => {
+  assert.equal(beforeCount(byPath('keep.txt')), 4)
+  const [gap] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -3 +2,0 @@', '-c', ''].join('\n'))
+  assert.equal(beforeCount(gap), 2)
+  const [deep] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -5000 +5000 @@', '-a', '+b', ''].join('\n'))
+  assert.equal(beforeCount(deep), 4999)
 })

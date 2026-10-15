@@ -7,7 +7,7 @@ import { fnv1a } from '../shared/hash.ts'
 /** A file's lines past this many changed are left out: a lockfile or a build output, not something to read. */
 export const MAX_FILE_LINES = 2000
 
-/** A file's unchanged lines sent before its hunks past this many would be a large file changed near its end: its hunks go without them. */
+/** A file's unchanged lines before its hunks past this many would be a large file changed near its end: it isn't read for them (`beforeCount`). */
 export const MAX_BEFORE_LINES = 1000
 
 /**
@@ -108,26 +108,45 @@ const parseFile = (block: string[]): DiffFile => {
 /** A line as a diff and a file on disk both read it, past a carriage return git's eol conversion may strip from one. */
 const bare = (line: string) => (line.endsWith('\r') ? line.slice(0, -1) : line)
 
+/** A hunk's lines on its new side, past their marks: its context and what it adds. */
+const ownLines = (h: Hunk) => h.lines.filter((l) => l[0] === ' ' || l[0] === '+').map((l) => l.slice(1))
+
+/** Where each hunk's own lines start in the new side, counted from 0: a hunk adding nothing starts after its `new` line, not at it. */
+const startOf = (h: Hunk, own: number) => (own ? h.new - 1 : h.new)
+
+/** How many lines `withBefore` cuts before a file's hunks, told by their headers alone: what reading the file would buy. */
+export function beforeCount(file: DiffFile): number {
+  let at = 0
+  let n = 0
+  for (const h of file.hunks ?? []) {
+    const own = ownLines(h).length
+    n += startOf(h, own) - at
+    at = startOf(h, own) + own
+  }
+  return n
+}
+
 /**
  * A modified or renamed file's hunks, each with the unchanged lines before it, cut from `text`, the file as its new
- * side reads; as they were past `MAX_BEFORE_LINES` of them, or when `text` isn't what git diffed (a clean filter that
- * changes lines, an edit since the diff), told by a hunk's own lines not standing where it says in `text`. A hunk adding
- * nothing starts after its `new` line, not at it.
+ * side reads; as they were when `text` isn't what git diffed (a clean filter that changes lines, an edit since the
+ * diff), told by the hunks' own lines not standing where they say in `text`, or by hunks with no own line to tell.
  */
 export function withBefore(file: DiffFile, text: string): DiffFile {
   if (!file.hunks?.length) return file
   const lines = text.split('\n')
   let at = 0
+  let told = false
   let fits = true
   const hunks = file.hunks.map((h) => {
-    const own = h.lines.filter((l) => l[0] === ' ' || l[0] === '+').map((l) => l.slice(1))
-    const start = own.length ? h.new - 1 : h.new
+    const own = ownLines(h)
+    const start = startOf(h, own.length)
     const before = lines.slice(at, start)
+    told ||= own.length > 0
     fits &&= own.every((l, i) => bare(l) === bare(lines[start + i] ?? ''))
     at = start + own.length
     return { ...h, before }
   })
-  return !fits || hunks.reduce((n, h) => n + h.before.length, 0) > MAX_BEFORE_LINES ? file : { ...file, hunks }
+  return told && fits ? { ...file, hunks } : file
 }
 
 /** The files of a `git diff` output, in its order. */
