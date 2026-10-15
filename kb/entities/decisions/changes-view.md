@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -28,10 +28,14 @@ files you have read while the agent keeps working.
   config of the user's that changes what `git diff` prints is set back on the command line.
 - **Highlighting.** A hunk highlighted alone reads wrong when it starts inside a comment or a string. Each hunk of a
   modified or renamed file carries `before`, the unchanged lines since the hunk before it
-  ([`withBefore`](ref:hub/src/bridge/diff.ts#withBefore)), cut from the file's new side: the working tree's file, or
-  a commit's through one `git cat-file --batch`. The panel highlights each side of the file as one text with them,
-  and each hunk alone when a file has none: past a cap per file and per read, or when the text read isn't what git
-  diffed (a filter, an edit since), told by a hunk's own lines not standing where it says.
+  ([`withBefore`](ref:hub/src/bridge/diff.ts#withBefore)), cut from the file's new side: the working tree's file read
+  to its last hunk, or a commit's blobs by id through one `git cat-file --batch`. Which files are read is told by their
+  hunk headers first, under caps per file and per read on lines and characters (a minified line above a hunk is
+  megabytes); a file past them, or whose text isn't what git diffed (a filter, an edit since), goes without. The panel
+  highlights each hunk alone, and each side whole with `before`, and a hunk takes the whole's colours only where what it
+  carries in from above is a comment, or a string or fence that closes within it
+  ([`readsWhole`](ref:hub/src/shared/panels.ts#readsWhole)): highlight.js misreads some code (Markdown's stray `*`, a
+  regex in a template's `${}`) and never closes what it opened, which carried through every hunk below.
 - **When.** Only while a worker's Changes are open: on open, on a poll, and when the worker's status leaves
   `working`. Claude edits through scripts as often as through its edit tools, so no tool event is a reliable trigger.
 - **Viewed.** Each file carries a hash of its diff. A mark is `(path → hash)` per repo dir, kept with `tower.store`

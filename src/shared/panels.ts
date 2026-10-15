@@ -67,7 +67,7 @@ import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTarg
 import { heldWords, POLICIES, slotWords, standingWords } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
-import { highlightCss, highlightLines } from './highlight.ts'
+import { highlightCss, highlightLines, highlightOpen } from './highlight.ts'
 import { markdownHtml } from './markdown.ts'
 import { markRanges, wordRanges } from './words.ts'
 import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
@@ -425,10 +425,32 @@ const highlighted = new Map<string, string[]>()
 const HIGHLIGHTED_KEPT = 500
 
 /**
- * Each row's code as html with its syntax marked, aligned with `fileRows` (a hunk heading's is empty). The file is
- * highlighted as two texts, the old side and the new, each hunk after the unchanged lines before it, so a line reads in
- * the code it stood in; a file whose hunks came without them (`withBefore`), as two texts per hunk. A removed line and the added line `splitRows` sets beside it have the words they changed
- * marked over the syntax (`wordRanges`).
+ * Spans a hunk may take from the code above it: a comment, a string or a fenced block opened there. Others (Markdown's
+ * emphasis on a stray `*`) are highlight.js reading past where the language stops them, at a paragraph it doesn't see.
+ */
+const CARRIES = /^hljs-(comment|doctag|string|subst|code|quote)\b/
+/** Of those, the ones only an unmistakable mark closes (`*\/`, `-->`): highlight.js doesn't run away inside them. */
+const COMMENT = /^hljs-(comment|doctag)\b/
+
+/**
+ * Whether a hunk's lines, `from` to `to` in a side's text highlighted whole, read better than the hunk alone: the spans
+ * open as it starts are ones it may take from above (`CARRIES`), and they are a comment, or one of them closes within
+ * it. A string or a fence opened above that runs through the hunk is as likely highlight.js misreading the code (a
+ * regex in a template's `${}`) as a long one: the hunk alone is what it read before.
+ */
+function readsWhole(open: string[][], from: number, to: number): boolean {
+  const carried = open[from]
+  if (!carried.length) return true
+  if (!carried.every((c) => CARRIES.test(c))) return false
+  return carried.every((c) => COMMENT.test(c)) || open.slice(from + 1, to + 1).some((o) => o.length < carried.length)
+}
+
+/**
+ * Each row's code as html with its syntax marked, aligned with `fileRows` (a hunk heading's is empty). Each hunk is
+ * highlighted as two texts, the old side and the new, so a line reads in the code it stood in. When a file came with
+ * the lines before its hunks (`withBefore`), each side is also highlighted whole, and a hunk takes its lines from that
+ * where it `readsWhole`: a comment or a string opened above it is read as one. A removed line and the added line
+ * `splitRows` sets beside it have the words they changed marked over the syntax (`wordRanges`).
  */
 function rowCode(f: DiffFile): string[] {
   // The same diff comes with or without the lines before its hunks, as the read's budget falls: each is its own.
@@ -437,18 +459,23 @@ function rowCode(f: DiffFile): string[] {
   if (kept) return kept
   const lang = langOf(f.path)
   const hunks = f.hunks ?? []
-  // Without the lines between them, hunks joined would carry a comment left open in one into the next: each goes alone.
-  const groups = hunks[0]?.before ? [hunks] : hunks.map((h) => [h])
-  const code = groups.flatMap((group) => {
-    const side = (mark: string) => group.flatMap((h) => [...(h.before ?? []), ...h.lines.filter((l) => l[0] === ' ' || l[0] === mark).map((l) => l.slice(1))])
-    const [old, now] = [highlightLines(side('-'), lang), highlightLines(side('+'), lang)]
+  const own = (h: Hunk, mark: string) => h.lines.filter((l) => l[0] === ' ' || l[0] === mark).map((l) => l.slice(1))
+  const sides = (['-', '+'] as const).map((mark) => {
+    const alone = hunks.map((h) => highlightLines(own(h, mark), lang))
+    if (!hunks[0]?.before) return alone
+    const whole = highlightOpen(hunks.flatMap((h) => [...h.before!, ...own(h, mark)]), lang)
+    let at = 0
+    return hunks.map((h, i) => {
+      const from = at + h.before!.length
+      at = from + alone[i].length
+      return readsWhole(whole.open, from, at) ? whole.lines.slice(from, at) : alone[i]
+    })
+  })
+  const code = hunks.flatMap((h, i) => {
+    const [old, now] = [sides[0][i], sides[1][i]]
     let o = 0
     let n = 0
-    return group.flatMap((h) => {
-      o += h.before?.length ?? 0
-      n += h.before?.length ?? 0
-      return ['', ...h.lines.map((l) => (l[0] === '+' ? now[n++] : l[0] === '-' ? old[o++] : l[0] === '\\' ? esc(l.slice(1)) : (o++, now[n++])))]
-    })
+    return ['', ...h.lines.map((l) => (l[0] === '+' ? now[n++] : l[0] === '-' ? old[o++] : l[0] === '\\' ? esc(l.slice(1)) : (o++, now[n++])))]
   })
   const rows = fileRows(f)
   for (const s of splitRows(rows)) {

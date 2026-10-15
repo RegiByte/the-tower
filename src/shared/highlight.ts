@@ -48,12 +48,17 @@ const EMBEDDED: Record<string, LanguageFn> = { xml, javascript, typescript, css 
 const highlighter = hljs.newInstance()
 for (const [name, grammar] of Object.entries({ ...GRAMMARS, ...EMBEDDED })) highlighter.registerLanguage(name, grammar)
 
-const TAG = /<span class="[^"]*">|<\/span>|\n/g
+const TAG = /<span class="([^"]*)">|<\/span>|\n/g
+
+/** Highlighted lines, and the classes of the spans open at the start of each line and after the last. */
+export type Highlighted = { lines: string[]; open: string[][] }
 
 /** highlight.js html cut at its newlines, each line closing the spans still open and the next opening them again. */
-function splitLines(html: string): string[] {
+function splitLines(html: string): Highlighted {
   const lines: string[] = []
   const open: string[] = []
+  const classes: string[] = []
+  const opens: string[][] = [[]]
   let line = ''
   let at = 0
   for (const m of html.matchAll(TAG)) {
@@ -61,23 +66,29 @@ function splitLines(html: string): string[] {
     at = m.index + m[0].length
     if (m[0] === '\n') {
       lines.push(line + '</span>'.repeat(open.length))
+      opens.push([...classes])
       line = open.join('')
     } else if (m[0] === '</span>') {
       open.pop()
+      classes.pop()
       line += m[0]
     } else {
       open.push(m[0])
+      classes.push(m[1])
       line += m[0]
     }
   }
-  return [...lines, line + html.slice(at)]
+  return { lines: [...lines, line + html.slice(at)], open: [...opens, [...classes]] }
+}
+
+/** Lines of code in a fence language, as html with their syntax marked, and the spans open at each line (`Highlighted`). */
+export function highlightOpen(lines: string[], lang: string): Highlighted {
+  if (!GRAMMARS[lang]) return { lines: lines.map(esc), open: Array.from({ length: lines.length + 1 }, () => []) }
+  return splitLines(highlighter.highlight(lines.join('\n'), { language: lang, ignoreIllegals: true }).value)
 }
 
 /** Lines of code in a fence language, as html with their syntax marked: one pass over them all. Escaped text when no grammar knows the language. */
-export function highlightLines(lines: string[], lang: string): string[] {
-  if (!GRAMMARS[lang]) return lines.map(esc)
-  return splitLines(highlighter.highlight(lines.join('\n'), { language: lang, ignoreIllegals: true }).value)
-}
+export const highlightLines = (lines: string[], lang: string): string[] => highlightOpen(lines, lang).lines
 
 /** The syntax colours of highlighted code under `scope`, a selector. */
 export const highlightCss = (scope: string) => `${scope} :is(.hljs-keyword, .hljs-selector-tag, .hljs-name, .hljs-doctag) { color: var(--syn-keyword); }
