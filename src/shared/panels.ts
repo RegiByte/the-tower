@@ -427,7 +427,7 @@ const HIGHLIGHTED_KEPT = 500
 /**
  * Each row's code as html with its syntax marked, aligned with `fileRows` (a hunk heading's is empty). The file is
  * highlighted as two texts, the old side and the new, each hunk after the unchanged lines before it, so a line reads in
- * the code it stood in. A removed line and the added line `splitRows` sets beside it have the words they changed
+ * the code it stood in; a file whose hunks came without them (`withBefore`), as two texts per hunk. A removed line and the added line `splitRows` sets beside it have the words they changed
  * marked over the syntax (`wordRanges`).
  */
 function rowCode(f: DiffFile): string[] {
@@ -436,14 +436,18 @@ function rowCode(f: DiffFile): string[] {
   if (kept) return kept
   const lang = langOf(f.path)
   const hunks = f.hunks ?? []
-  const side = (mark: string) => hunks.flatMap((h) => [...(h.before ?? []), ...h.lines.filter((l) => l[0] === ' ' || l[0] === mark).map((l) => l.slice(1))])
-  const [old, now] = [highlightLines(side('-'), lang), highlightLines(side('+'), lang)]
-  let o = 0
-  let n = 0
-  const code = hunks.flatMap((h) => {
-    o += h.before?.length ?? 0
-    n += h.before?.length ?? 0
-    return ['', ...h.lines.map((l) => (l[0] === '+' ? now[n++] : l[0] === '-' ? old[o++] : l[0] === '\\' ? esc(l.slice(1)) : (o++, now[n++])))]
+  // Without the lines between them, hunks joined would carry a comment left open in one into the next: each goes alone.
+  const groups = hunks[0]?.before ? [hunks] : hunks.map((h) => [h])
+  const code = groups.flatMap((group) => {
+    const side = (mark: string) => group.flatMap((h) => [...(h.before ?? []), ...h.lines.filter((l) => l[0] === ' ' || l[0] === mark).map((l) => l.slice(1))])
+    const [old, now] = [highlightLines(side('-'), lang), highlightLines(side('+'), lang)]
+    let o = 0
+    let n = 0
+    return group.flatMap((h) => {
+      o += h.before?.length ?? 0
+      n += h.before?.length ?? 0
+      return ['', ...h.lines.map((l) => (l[0] === '+' ? now[n++] : l[0] === '-' ? old[o++] : l[0] === '\\' ? esc(l.slice(1)) : (o++, now[n++])))]
+    })
   })
   const rows = fileRows(f)
   for (const s of splitRows(rows)) {

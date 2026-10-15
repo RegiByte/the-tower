@@ -63,22 +63,34 @@ const withBeforeAll = async (files: DiffFile[], newSides: (paths: string[]) => P
   })
 }
 
-/** Files of the working tree, a symlink as none: its diff is its target's path, not the file it reads. */
+/**
+ * Files of the working tree, as none: a symlink (its diff is its target's path, not the file it reads), a submodule,
+ * and a file the worker removed since `git diff` read it.
+ */
 const treeFiles = (dir: string) => (paths: string[]) => Promise.all(paths.map(async (path) => {
   const file = join(dir, path)
-  return (await lstat(file)).isFile() ? readFile(file, 'utf8') : undefined
+  try {
+    return (await lstat(file)).isFile() ? await readFile(file, 'utf8') : undefined
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw err
+  }
 }))
 
-/** Files as `commit` holds them, through one `cat-file --batch`: each answer a header (`<oid> blob <bytes>`), its bytes and a newline. */
+/**
+ * Files as `commit` holds them, through one `cat-file --batch`: a blob answers a header (`<oid> blob <bytes>`), its
+ * bytes and a newline; a submodule (`<oid> submodule`) answers its header alone, and reads as none.
+ */
 const commitFiles = (dir: string, commit: string) => async (paths: string[]) => {
   const out = await gitBytes(dir, ['cat-file', '--batch'], paths.map((p) => `${commit}:${p}\n`).join(''))
   let at = 0
   return paths.map(() => {
     const eol = out.indexOf(10, at)
-    const size = Number(out.toString('utf8', at, eol).split(' ')[2])
-    const text = out.toString('utf8', eol + 1, eol + 1 + size)
-    at = eol + 1 + size + 1
-    return text
+    const [, type, size] = out.toString('utf8', at, eol).split(' ')
+    if (type !== 'blob') return (at = eol + 1), undefined
+    const end = eol + 1 + Number(size)
+    at = end + 1
+    return out.toString('utf8', eol + 1, end)
   })
 }
 

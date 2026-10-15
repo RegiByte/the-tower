@@ -13,7 +13,7 @@ export const MAX_BEFORE_LINES = 1000
 /**
  * One region of a file: `old` and `new` are the first line's numbers, each line keeps git's mark (` `, `+`, `-`, `\`).
  * `before`: the unchanged lines since the last hunk (or the file's start), the same on both sides, so a renderer reads
- * each hunk in the code it stands in (a comment or a string opened above it). Absent when `withBefore` didn't read them.
+ * each hunk in the code it stands in (a comment or a string opened above it). On every hunk of a file or on none: absent when `withBefore` didn't read them.
  */
 export type Hunk = { old: number; new: number; heading: string; lines: string[]; before?: string[] }
 
