@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.35.0
+
+Floors fold to one line in the tower page's sidebar. No host restart, no config change, the renderer API unchanged.
+Restart the tower (`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and reload both.
+
+- A press on a floor's sign folds it to one line: its waits on you, its offers and its workers on duty, each a lamp
+  and a number. The choice is kept per viewer. A floor nobody has chosen for is open while a worker on it needs you,
+  and folded otherwise. An open floor's sign stays at the top of the sidebar while its workers scroll under it.
+  ⌥J, N and ⌥↑/↓ open the floor of the worker they land on, and fold it again when they move on.
+- The New worker dialog lists every repo under "Main checkout": the list no longer stops at a fixed height with a
+  scroll of its own. Tower 3D's dialog gets the same.
+
 ## v1.34.0
 
 One button to end a worker, a limits chip, and red only for a worker that needs you. No host restart, no config
