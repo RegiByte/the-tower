@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.37.0
+
+The Changes view colours a hunk in the code it stands in. No host restart, no config change. The renderer API moves
+to 1.58, additions only. Restart the tower (`tower down tower && tower up tower`), rebuild Tower 3D
+(`npm run tower3d`) and reload both.
+
+- A hunk that starts inside a comment or a string is coloured as one: an apostrophe in a JSDoc block no longer opens
+  a string that runs through the code after it. Each hunk of a modified or renamed file carries the unchanged lines
+  before it (`before` on `/changes` hunks), read from the working tree or the commit, within caps on lines and bytes
+  per file and per read; a file past them is coloured hunk by hunk, as before.
+- Blank context lines keep their line numbers when `diff.suppressBlankEmpty` is set in the user's git config.
+- `/changes` answers a git failure as an error, which the panel shows with Read again, where it used to send an
+  empty body.
+
+Thanks to Carlos Bonetti.
+
 ## v1.36.2
 
 The Mac app's icon has rounded corners on macOS before 26. No host restart, no config change, the renderer API
