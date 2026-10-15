@@ -47,4 +47,4 @@ ends a worker with everyone under it ([[crews]]). The verbs that reach the user'
 only paths the system names ([[open-files]]).
 Attribution: the acts one worker takes on another are facts naming their actor: a hire (`tower.hire` in the hirer's
 log, read as the hired card's `hiredBy`, [[hiring-limits]]), a prompt (`tower.prompt`, [[worker-prompts]]), a kill and
-keys (`tower.kill`, `tower.keys` once per burst, [[worker-acts]]), each in the target's log.
+keys (`tower.kill`, `tower.keys` once per burst, [[worker-prompts]]), each in the target's log.

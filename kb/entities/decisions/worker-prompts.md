@@ -1,8 +1,8 @@
 ---
 {
   "type": "decision",
-  "name": "A prompt a worker types through the tower is the worker's, named in the log before it arrives",
-  "summary": "submit and spawn take `by`, the requesting worker's session id; the tower has the host append a tower.prompt fact to the target's log before the prompt reaches Claude, and the fold counts the next composer prompt as `peer`, answering no wait. The user's prompts are the rest.",
+  "name": "A worker's acts on another are named in the target's log before they land",
+  "summary": "submit, spawn, kill and keys take `by`, the requesting worker's session id; the tower has the host append tower.prompt, tower.kill or tower.keys to the target's log before the act, keys once per burst. The fold counts the next composer prompt after a tower.prompt as `peer`, answering no wait, and keeps killedBy and keyedBy. The user's acts pass no `by`. Attribution, not permission.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
@@ -10,53 +10,72 @@
   "refs": [
     "hub/src/cli.ts",
     "hub/src/bridge/facts.ts#PROMPTED_BY",
+    "hub/src/bridge/facts.ts#KEYED_BY",
+    "hub/src/bridge/facts.ts#KILLED_BY",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/tower/server.ts#factRefused",
     "hub/src/tower/server.ts#actedBy",
     "hub/src/tower/server.ts#namedFirst",
     "hub/src/tower/server.ts#submit",
     "hub/src/tower/server.ts#spawnedBy",
+    "hub/src/tower/server.ts#kill",
+    "hub/src/tower/server.ts#inBurst",
+    "hub/src/tower/server.ts#keyedBy",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/directory.ts",
     "hub/test/stats.test.ts"
   ],
   "links": [
     { "to": "stats", "verb": "refines", "carries": "prompts from you and waits on you count only the user's prompts" },
-    { "to": "log-reductions", "verb": "uses", "carries": "tower.prompt, then prompt.submit" },
-    { "to": "agents-have-every-capability", "verb": "follows", "carries": "a worker holds the verbs, and its acts are told apart from the user's" },
-    { "to": "worker-acts", "verb": "refines", "carries": "the prompt is one of a worker's acts named in the target's log" }
+    { "to": "log-reductions", "verb": "uses", "carries": "tower.prompt, then prompt.submit; tower.kill and tower.keys" },
+    { "to": "agents-have-every-capability", "verb": "follows", "carries": "a worker holds every verb, and what it does to another is told apart from the user's" },
+    { "to": "renderer-api-contract", "verb": "uses", "carries": "`by` on submit, spawn, kill and keys" }
   ]
 }
 ---
-**Problem.** A hire's brief (`tower hire`, `tower review`) and a review-note pointer (`tower send`) reach a worker
-through its composer, as the user's typing would, and Claude reports them with the composer's origin. The stats
-counted them as the user's prompts and as waits the user answered: over one week, about one in seven "prompts
-from you" were hire briefs alone, so every attention number overstated the user's share.
+**Problem.** Workers hold every verb. A hire's brief (`tower hire`, `tower review`) and a review-note pointer
+(`tower send`) reach a worker through its composer, as the user's typing would, and Claude reports them with the
+composer's origin, so the stats counted them as the user's prompts and as waits the user answered. A worker that
+ended another (`tower home`, `tower kill`) or typed into one (`keys`) left nothing behind: the target's log read as if
+the user had done it.
 
-**Why.** The tower's throughput is the user's answer rate: workers waited longer on the user that week than
-they were busy. Work that reduces the user's load can only be judged against a count of the user's own prompts.
+**Why.** The logs are the facts ([[logs-are-facts]]). The tower's throughput is the user's answer rate, and work that
+reduces the user's load can only be judged against a count of the user's own prompts. Who ended a worker, or typed
+into it, is the first question when one stops or acts unexpectedly, and it can only be read later if it was written
+then.
 
-**How.** `submit` and `spawn` take an optional `by`, a session id the tower knows (an unknown one is refused before
-anything happens). With it, [`actedBy`](ref:hub/src/tower/server.ts#actedBy) has the host append
-`{"hook_event_name":"tower.prompt","by":<id>}` to the target's log, through the host's `fact` request, before the
-text is typed; for a spawn, right after it starts, only when it has a prompt (Claude takes over a second to read its
-first). The host takes `fact` from protocol 2 on: while an older host runs, a `submit` or a spawn with a prompt and
-`by` refuses with `unavailable` and the restart to do, before it types or spawns anything
-([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as `let-go` refuses). [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps the mark as `promptedBy` until the next
-`prompt.submit` of a user origin, counts that prompt as `peer` and lets its wait go unanswered, and spends the mark.
-The conversation's prompt is untouched: a hired worker's card still shows its brief. The `tower` CLI passes its own
-session id on `hire`, `review` and `send`, and `tower submit`, which speaks to the host directly, appends
-`tower.prompt` itself before typing when `TOWER_SESSION_ID` is set; the user's page and the user's terminal pass none,
-so their prompts stay the user's. The Stats panel adds the user's prompts per commit landed.
+**How.**
+- `submit`, `spawn`, `kill` and `keys` take an optional `by`, a session id the tower knows (an unknown one is refused
+  before anything happens). With it, [`namedFirst`](ref:hub/src/tower/server.ts#namedFirst) has the host append
+  `{"hook_event_name": "tower.prompt" | "tower.kill" | "tower.keys", "by": <id>}` to the target's log through the
+  host's `fact` request ([`actedBy`](ref:hub/src/tower/server.ts#actedBy)) before the act. A spawn is named right
+  after it starts, only when it has a prompt ([`spawnedBy`](ref:hub/src/tower/server.ts#spawnedBy)). A kill is named
+  only while the session runs, so a refused kill names nobody. While a host older than the `fact` request runs, a
+  named act refuses with `unavailable` and the restart to do, before anything happens
+  ([`factRefused`](ref:hub/src/tower/server.ts#factRefused)).
+- [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps a `tower.prompt` as `promptedBy` until the next
+  `prompt.submit` of a user origin, counts that prompt as `peer`, lets its wait go unanswered, and spends the mark. The
+  conversation's prompt is untouched: a hired worker's card still shows its brief. It keeps `killedBy`, and `keyedBy`
+  (the latest worker that typed, with when).
+- Keys come a request per keystroke from a page, so a fact per request would outweigh the input it names. A `keys`
+  request with `by` is named unless the latest `tower.keys` names the same worker and is less than a minute old
+  ([`inBurst`](ref:hub/src/tower/server.ts#inBurst)); the tower waits for its fold of the fact before typing
+  ([`keyedBy`](ref:hub/src/tower/server.ts#keyedBy)), so the burst's next request reads it.
+- The `tower` CLI names its caller from `TOWER_SESSION_ID`: it passes it on `hire`, `review`, `send` and `home`, and
+  `tower submit` and `tower kill`, which speak to the host directly, append the fact themselves first. The user's
+  page and terminal pass none, so the user's acts stay unnamed.
 
 **Alternatives considered.**
 - *Match the fact to the prompt by a digest of its text* (as messages are matched): Claude wraps a long paste in
   `<pasted_content>` tags, so the submitted text and the prompt differ exactly when the prompt is long.
-- *Derive hires from the hirer's `tower.hire` across logs*: covers hires only, not `send`, and the per-log fold can't see
-  another log.
+- *Derive hires from the hirer's `tower.hire` across logs*: covers hires only, not `send`, and the per-log fold can't
+  see another log.
 - *A request header for the actor*: invisible in `/schema`; a body field is described with the verb.
 - *A new origin `worker`*: the Stats panel already reads `peer` as "from workers", which is what this is.
+- *Name keys only when the actor changes*: the user's keys are unnamed, so a worker's second burst after the user
+  typed would go unnamed; the minute bounds how stale the latest name can be.
 
-**Impact.** A mark whose prompt never arrives (text typed into a dialog, not submitted) makes the user's next
-composer prompt the worker's: rare, since the CLI submits only to a worker at its composer. Logs before this
-decision keep their old counts. Kills and keys are named the same way (decision `worker-acts`).
+**Impact.** A target's log says which worker prompted it, ended it or typed into it, within a minute's precision for
+keys: keys the user types inside a worker's burst read as that burst's. A prompt mark whose prompt never arrives
+(text typed into a dialog, not submitted) makes the user's next composer prompt the worker's: rare, since the CLI
+submits only to a worker at its composer.
