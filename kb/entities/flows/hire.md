@@ -4,7 +4,7 @@
   "name": "Hire",
   "summary": "A worker starts another on a prompt with tower hire: a spawn marked as its hire, which the tower weighs against the floor's hiring limits, starts, and logs as a fact in the hirer's log, one hire of a hirer at a time; the board turns the fact into the new card's hiredBy.",
   "in": "tower",
-  "reviewed": "2026-10-14",
+  "reviewed": "2026-10-15",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
   "refs": ["hub/src/directory.ts#hireArgs", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/tower/server.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/cards.ts#spawnDefaults", "hub/src/shared/cards.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
 }
