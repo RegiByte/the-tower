@@ -58,8 +58,11 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
 - **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
   than the build, writes the checkout and the config into the bundle's `Info.plist` (so the app needs no setting),
   signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, the tower page's skyline at
-  dusk, rendered into the bundle's `AppIcon.icns` with Quick Look, `sips` and `iconutil` when it changed: drawn full
-  bleed, since macOS 26 masks an app icon into its own shape and puts one that brings a shape of its own on a plate. One app per system: the default config's is `Tower.app`, another's is
+  dusk, rendered into the bundle's `AppIcon.icns` with Quick Look, `sips` and `iconutil` when it or `src/app.ts` changed:
+  drawn full bleed, since macOS 26 masks an app icon into its own shape and puts one that brings a shape of its own on
+  a plate. An earlier macOS draws an icon as it is, so there [`renderIcon`](ref:hub/src/app.ts#renderIcon) puts it on
+  Apple's grid first (the 824 square at 100..924, clipped to its continuous-corner rounded rect, over a soft shadow),
+  drawn by `sips`, which keeps the corners transparent where Quick Look fills them white. One app per system: the default config's is `Tower.app`, another's is
   named after its system root (`Tower (tower-sandbox).app`), each with a bundle id of its own. All of it under the
   git-ignored `apps/macos/out/`.
 

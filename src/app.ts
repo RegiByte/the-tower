@@ -56,11 +56,49 @@ const swiftc = async (args: string[]) => {
 /** Each size an icon set holds, by its file name. */
 const ICON_SIZES = [16, 32, 128, 256, 512].flatMap((px) => [[`icon_${px}x${px}.png`, px], [`icon_${px}x${px}@2x.png`, px * 2]] as const)
 
-/** The icon as an .icns: the SVG drawn at 1024 by Quick Look, scaled to every size of an icon set by sips. */
+/** macOS 26 (Darwin 25) masks an app icon into its own shape; an earlier one draws the icon as the file has it. */
+const masksIcons = Number(os.release().split('.')[0]) >= 25
+
+/** Apple's continuous-corner rounded rect (the squircle UIBezierPath draws) at x, y, size s and corner radius r. */
+const squircle = (x: number, y: number, s: number, r: number): string => {
+  const [a, b, c, d, e, f] = [1.52866483, 1.08849323, 0.86840689, 0.63149399, 0.37282392, 0.169059].map((k) => k * r)
+  const g = 0.074911 * r
+  const [x1, y1] = [x + s, y + s]
+  return [
+    `M${x + a},${y}H${x1 - a}C${x1 - b},${y} ${x1 - c},${y} ${x1 - d},${y + g}C${x1 - e},${y + f} ${x1 - f},${y + e} ${x1 - g},${y + d}C${x1},${y + c} ${x1},${y + b} ${x1},${y + a}`,
+    `V${y1 - a}C${x1},${y1 - b} ${x1},${y1 - c} ${x1 - g},${y1 - d}C${x1 - f},${y1 - e} ${x1 - e},${y1 - f} ${x1 - d},${y1 - g}C${x1 - c},${y1} ${x1 - b},${y1} ${x1 - a},${y1}`,
+    `H${x + a}C${x + b},${y1} ${x + c},${y1} ${x + d},${y1 - g}C${x + e},${y1 - f} ${x + f},${y1 - e} ${x + g},${y1 - d}C${x},${y1 - c} ${x},${y1 - b} ${x},${y1 - a}`,
+    `V${y + a}C${x},${y + b} ${x},${y + c} ${x + g},${y + d}C${x + f},${y + e} ${x + e},${y + f} ${x + d},${y + g}C${x + c},${y} ${x + b},${y} ${x + a},${y}Z`,
+  ].join('')
+}
+
+/** The full-bleed icon on Apple's grid for a macOS that doesn't mask it: in the 824 square at 100..924 of the 1024
+ *  canvas, clipped to its rounded rect (radius 185.4), over a soft shadow below it, stacked rects in place of a blur
+ *  filter, which sips doesn't draw. */
+const onIconGrid = (svg: string): string => {
+  const shadow = Array.from({ length: 12 }, (_, i) => {
+    const k = (i + 1) / 2
+    return `<path d="${squircle(100 - k, 104 + k, 824 + 2 * k, 185.4 + k)}" opacity=".03"/>`
+  })
+  return `<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs><clipPath id="icon-grid"><path d="${squircle(100, 100, 824, 185.4)}"/></clipPath></defs>
+  ${shadow.join('')}
+  <g clip-path="url(#icon-grid)">${svg.replace('<svg width="1024" height="1024"', '<svg x="100" y="100" width="824" height="824"')}</g>
+</svg>`
+}
+
+/** The icon as an .icns: the SVG drawn at 1024, scaled to every size of an icon set by sips. Full bleed it is drawn by
+ *  Quick Look; on Apple's grid, where macOS doesn't mask it, by sips, which keeps the corners transparent where Quick
+ *  Look fills them white. */
 const renderIcon = async (icns: string) => {
   const work = mkdtempSync(path.join(os.tmpdir(), 'tower-icon-'))
-  await run('qlmanage', ['-t', '-s', '1024', '-o', work, ICON])
   const drawn = path.join(work, `${path.basename(ICON)}.png`)
+  if (masksIcons) await run('qlmanage', ['-t', '-s', '1024', '-o', work, ICON])
+  else {
+    const source = path.join(work, path.basename(ICON))
+    writeFileSync(source, onIconGrid(readFileSync(ICON, 'utf8')))
+    await run('sips', ['-s', 'format', 'png', source, '--out', drawn])
+  }
   const set = path.join(work, 'AppIcon.iconset')
   mkdirSync(set)
   for (const [name, px] of ICON_SIZES) await run('sips', ['-z', String(px), String(px), drawn, '--out', path.join(set, name)])
@@ -79,7 +117,8 @@ export const openApp = async (paths: SystemPaths): Promise<string> => {
   const built = existsSync(binary) ? statSync(binary).mtimeMs : 0
   const stale = sources.some((f) => statSync(f).mtimeMs > built)
   const icns = path.join(app, 'Contents', 'Resources', 'AppIcon.icns')
-  const iconStale = !existsSync(icns) || statSync(ICON).mtimeMs > statSync(icns).mtimeMs
+  // How the icon is drawn lives here: a change to this file draws it again too.
+  const iconStale = !existsSync(icns) || [ICON, import.meta.filename].some((f) => statSync(f).mtimeMs > statSync(icns).mtimeMs)
   const plist = infoPlist(name, paths.config)
   const plistChanged = !existsSync(plistFile) || readFileSync(plistFile, 'utf8') !== plist
   if (stale) {
