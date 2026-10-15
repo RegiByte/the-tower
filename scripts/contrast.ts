@@ -41,8 +41,8 @@ const PAIRS: Pair[] = [
   ...on(['needsText'], [mix('needs', 11, 'panel')], 'text', 'the ask bar'),
   ...on(['added', 'removed'], ['panel', 'panel2'], 'text', '+N / −N counts'),
   ...on(['panel'], ['added', 'removed'], 'text', "a changed file's mark"),
-  ...(['needs', 'ready', 'working', 'quiet', 'broken'] as const).flatMap((a) =>
-    on([`on${a[0].toUpperCase()}${a.slice(1)}` as Token], [a], 'text', `a ${a} pill, chip or tag`),
+  ...(['needs', 'ready', 'working', 'quiet', 'broken', 'offered'] as const).flatMap((a) =>
+    on([`on${a[0].toUpperCase()}${a.slice(1)}` as Token], [a], 'text', a === 'needs' ? 'a needs pill, chip or tag, a stuck worker’s pill included' : `a ${a} pill, chip or tag`),
   ),
   ...on(['synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['panel', 'addedWash', 'removedWash'], 'text', 'code syntax'),
   ...on(['ink', 'synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['addedWord', 'removedWord'], 'text', "the words an edited line changed"),

@@ -31,6 +31,7 @@ export const palettes = {
     enamel: '#28322f',
     enamel2: '#36423e',
     needs: '#d4413b',
+    offered: '#2f647c',
     ready: '#5aa872',
     working: '#e0921a',
     quiet: '#99a197',
@@ -40,6 +41,7 @@ export const palettes = {
     workingText: '#82530a',
     brokenText: '#7a3530',
     onNeeds: '#ffffff',
+    onOffered: '#ffffff',
     onReady: '#28322f',
     onWorking: '#28322f',
     onQuiet: '#28322f',
@@ -80,6 +82,7 @@ export const palettes = {
     enamel: '#131917',
     enamel2: '#28322f',
     needs: '#ee5a5a',
+    offered: '#86b9cc',
     ready: '#6fbf8a',
     working: '#e9a13a',
     quiet: '#8e9891',
@@ -89,6 +92,7 @@ export const palettes = {
     workingText: '#e9a13a',
     brokenText: '#d48880',
     onNeeds: '#131917',
+    onOffered: '#131917',
     onReady: '#131917',
     onWorking: '#131917',
     onQuiet: '#131917',
@@ -318,7 +322,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
 
 /**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
- * `quiet`, `broken`) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
+ * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, which has no text tone) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
  * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
@@ -336,7 +340,7 @@ const COMPONENTS = `
 .eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
-.quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
+.quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .offered { --c: var(--offered); --on: var(--on-offered); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
 .lamp { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); }
 .needs .lamp, .lamp.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: .25; } }

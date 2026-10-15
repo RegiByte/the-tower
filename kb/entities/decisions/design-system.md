@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
@@ -78,7 +78,7 @@ draws with almost no advance, so the next face in the stack draws it.
   (`needsText`, `readyText`, `workingText`, `brokenText`, the fill itself where it already passes, set as `--c-text` by
   the attention classes) and a per-scheme text on it (`on*`: dark `needs` takes enamel, white measured 3.36). The fills
   moved only where text on them failed: light `needs` 4% darker, dark `broken` 4.5%. `accent`, `added` and `removed`
-  darkened in light, their uses being text. `lineStrong` edges form fields at 3:1 (`line` divides, 1.4:1). A project's
+  darkened in light, their uses being text. `offered` (a policy's slot waiting to be started) is a sixth fill with an `onOffered`, the accent's own tones, set by the `offered` class; it has no text tone. A stuck worker's pill is drawn as `needs`, since its text tone on the working fill failed. `lineStrong` edges form fields at 3:1 (`line` divides, 1.4:1). A project's
   focus ring and selected edge mix the colour with ink by the scheme's `pEdgeMix` (light 50%, dark the colour itself),
   since config colours are picked for dark. Shifts are toward black (light) or white (dark) in oklab, which keeps each
   hue. Every pair is data in [`contrast.ts`](ref:hub/scripts/contrast.ts): `npm run tool:contrast` measures them
