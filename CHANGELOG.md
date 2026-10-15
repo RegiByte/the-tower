@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.36.0
+
+Name a worker yourself when you start it. No host restart, no config change. The renderer API moves to 1.57,
+additions only. Restart the tower (`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and
+reload both; new workers pick up the handbook's new lines as they start.
+
+- The New worker dialog has a **Callsign** field, under every place a worker can start. Type `ZECA` and the worker
+  runs as `ZECA-` and the number its session gives it; type `ZECA-07` and it runs as `ZECA-07`. Left empty, it's drawn
+  as before. A name a worker on duty already holds is refused, with who holds it. The callsign is chosen once: a
+  resumed worker keeps it.
+- The dialog's old "Name" field, the new worktree's folder, now reads **Worktree name**.
+- `spawn` takes an optional `callsign`; `tower spawn --callsign <C>` and `tower hire … callsign <C>` pass it.
+
 ## v1.35.0
 
 Floors fold to one line in the tower page's sidebar. No host restart, no config change, the renderer API unchanged.
