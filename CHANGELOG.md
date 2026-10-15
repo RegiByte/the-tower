@@ -12,6 +12,27 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.33.0
+
+A calmer tower page that holds up under a lot of data: the first pass from a design audit of the page on a busy
+board. No host restart, no config change. The renderer API moves to 1.54, additions only. Restart the tower
+(`tower down tower && tower up tower`), rebuild Tower 3D (`npm run tower3d`) and reload both. Thanks to Carlos
+Bonetti for the header feedback.
+
+- The worker header is one line. The move chips and the "now" line are gone: the sidebar and the terminal already say
+  both, and the ⌥ move keys still work. The showings scroll sideways after the Terminal, Brief, Changes and Reviews
+  tabs, with a fade on an edge that hides more, and the selected one scrolls into view. Tower 3D's desk tabs scroll
+  the same way. "dismiss" sits beside the status it dismisses.
+- The sidebar has bounds: a floor's drafts and kept trays list their newest 6, then "+N more", which opens the whole
+  collection in the main pane. Shelf chips and trays keep to one line. The sidebar grows with the window, up to 28rem.
+- The skyline fits any number of floors in one row, and a floor's sign never runs past its building.
+- A card's time never gets cut off: its status word gives way first. A stranded worker reads "stranded", and its
+  carry on, resume and let go show when it's selected or hovered. A hire under its hirer drops "hired by".
+- The header counts use the cards' words, "done" and "failed".
+- A stuck worker's pill is drawn as "needs you", readable in both schemes, and "offered" has a colour of its own.
+- A subagent compacting during a manual `/compact` no longer leaves its worker reading `working`.
+- Long unbroken words wrap inside a toast.
+
 ## v1.32.5
 
 Tidy keeps a hire while the worker that hired it is on duty. No host restart, no config change, the renderer API
