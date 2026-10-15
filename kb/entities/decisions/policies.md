@@ -107,8 +107,7 @@ verb (a run could go unrecorded between the two). A new `Wait.reason` for offers
 major). Ignoring unknown header keys (fails open on the keys that restrict). A version key. cronstrue for the words
 (English that drifts from ours, and a dependency for about 60 lines).
 
-**Impact.** API 1.50 (the `held` kind of `needs`; 1.49 brought): `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>` and
-`/policies.js`. The first project streams ([[probes]]). A second collection with a meaning in the core
+**Impact.** API: `floor.policies`, `board.offers`, `card.run`, the three verbs, `GET /runs/<project>`, `/policies.js` and the `held` kind of `needs`. The first project streams ([[probes]]). A second collection with a meaning in the core
 ([[collections]]). croner joins the dependencies. A run that nobody watches ends itself with `tower home <own
 callsign>` ([[leave]]), its last answer kept for the next. Renderers draw policies with the shared policies panel
 ([[shared-panels]]) and put offers in the attention order with a sound of their own ([[attention-list]]). Open: Tidy

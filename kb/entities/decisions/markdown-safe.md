@@ -23,7 +23,7 @@
     { "to": "renderer-shared-modules", "verb": "extends", "carries": "/markdown.js" },
     { "to": "brief-turns", "verb": "uses", "carries": "markdownHtml as the tower page's said" },
     { "to": "agent-show", "verb": "uses", "carries": "documentHtml for a shown markdown file" },
-    { "to": "renderer-api-contract", "verb": "follows", "carries": "a served module added: API 1.5" }
+    { "to": "renderer-api-contract", "verb": "follows", "carries": "a served module added" }
   ]
 }
 ---
@@ -72,4 +72,4 @@ files may use it, and they stay framed without scripts.
 `<br>` included); a remote image in an answer is a link. Since [[chat-brief]], review notes and Tower 3D's logbook draw
 `markdownHtml` inline too, its fences highlighted with a copy button and its links opening a tab of their own, set by
 `markdownCss`. Prompts in the card gist and in a past conversation's line lose `**` and backticks with `plain`, as answers
-already did; a gist reduced through marked's lexer waits for the brief's chat redesign. API 1.5: `/markdown.js` is a served module under the contract ([[renderer-api-contract]]).
+already did; a gist is not reduced through marked's lexer. `/markdown.js` is a served module under the contract ([[renderer-api-contract]]).

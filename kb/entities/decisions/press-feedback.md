@@ -72,7 +72,7 @@ them, and nothing it needs lives in the tower page.
   (the id and the text the file held), and [`restore`](ref:hub/src/shared/drafts.ts#restore) puts it back through
   `collection/restore` ([`restoreItem`](ref:hub/src/collections.ts#restoreItem)): the file under its own id, so its
   tag, its place in the tray and its name on disk are what they were. The id is claimed with an exclusive create, so
-  a restore never overwrites, and an id an item holds again is `refused`. API 1.17.
+  a restore never overwrites, and an id an item holds again is `refused`.
 
 **Alternatives considered.**
 - *Undo as `collection/create` with the same text*: a new id, so a new tag and a new place in the tray; the draft
@@ -90,7 +90,7 @@ them, and nothing it needs lives in the tower page.
 - *A stack aligned on one edge, each toast its own width*: a ragged right edge, with the actions at different places.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
-**Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb (API 1.17), and
+**Impact.** `/press.js` and `/toasts.js` are new served modules, `collection/restore` a new verb, and
 `discard` in `/drafts.js` now answers what it deleted. Tower 3D draws its toasts through `/toasts.js` too, raised
 above its HUD: sending a worker home (its hold, or the desk's second press) toasts with Resume, read from the board
 or its floor's archive, and a draft deleted from its editor or thrown away from the corkboard (held X, its text read

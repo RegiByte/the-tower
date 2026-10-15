@@ -52,7 +52,7 @@ for the user.
   a set `editor` needs all three, and one missing is a `config` error naming it, so one editor never mixes with another.
   [`inEditor`](ref:hub/src/tower/server.ts#inEditor) runs it with no shell
   ([`runEditor`](ref:hub/src/machine.ts#runEditor)); a command not on the tower's PATH is a `config` error naming
-  the key, or saying the command is the default. The floor verb that offers `open` is `editor` (API version 17).
+  the key, or saying the command is the default. The floor verb that offers `open` is `editor`.
 - *Paths the system names* ([`onPath`](ref:hub/src/tower/server.ts#onPath)): the path must be absolute (`invalid`
   otherwise), is resolved (`..` can't climb out) and compared with its links followed (`/tmp` is `/private/tmp`
   on macOS; a missing path through its nearest existing folder), and must be inside a project's dirs (their worktrees are below
@@ -64,7 +64,7 @@ for the user.
 - *Buttons drawn once.* [`fileButtonsHtml`](ref:hub/src/shared/panels.ts#fileButtonsHtml) draws a quiet Finder and
   editor pair as `data-reveal` / `data-edit` (`data-line`) buttons, each named for its file ("reveal main.md in
   Finder"), in the Tab order; [`fileSpansHtml`](ref:hub/src/shared/panels.ts#fileSpansHtml) draws the same pair as
-  `role=button` spans for the one place a button may not sit, inside another button: an open showing's tab (API 1.23);
+  `role=button` spans for the one place a button may not sit, inside another button: an open showing's tab;
   [`fileCall`](ref:hub/src/shared/panels.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
   capturing click listener on the document, so a button inside a file header or an anchor never also folds the
   file or jumps to Changes. The shared panels draw them on each changed file (not a deleted one), on the thread's

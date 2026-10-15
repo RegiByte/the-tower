@@ -129,5 +129,5 @@ the user, and these are observed facts.
 
 **Impact.** A fourth directory of logs, not a fourth kind of state: config (intent), logs (facts, `sessions/` by the
 host and `streams/` by the tower), collections (files kept for later). The limits on the board stay current while no
-session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API 1.46 adds `board.probes`, `GET /probe/<name>` and
-the Tidy plan's `streams`. API 1.47: outside use as a stat, a model's own week, extra usage, `POST /probe/run`.
+session runs, at one ~1.5 s `claude` process per read and ~1.7 KB per read kept. API: `board.probes`, `GET /probe/<name>`,
+the Tidy plan's `streams`, outside use as a stat, a model's own week, extra usage and `POST /probe/run`.

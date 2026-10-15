@@ -72,13 +72,10 @@ what went wrong.
   stops at the version check on any other. A renderer kept apart from the tower pins the version it was written against
   in its script URL, `/tower.js?v=1.3`, and the script refuses to load into a tower of another major or an older
   minor; a page that names none (every renderer in the repo) moves with the tower. `tower.version` is the full version,
-  for a renderer that checks a feature. The public release starts at `1.0`; before it, one integer moved on every
-  change a renderer had to follow, up to 23 (the history of those moves is in the decisions that made them: [[blob-reads]],
-  [[agent-show]], [[tower-cuts-worktrees]], [[attention-list]], [[watching-status]], [[board-errors]], [[tidy]], [[board-archive]]).
+  for a renderer that checks a feature. The public release starts at `1.0`.
 
-- **The served modules are part of the contract** (2026-10-08). They are how the core hands its capabilities to
-  renderers: [`MODULES`](ref:hub/src/tower/served.ts#MODULES) (`/cards.js`, `/panels.js`, `/drafts.js`, `/icons.js`,
-  `/design.js`, `/reviews.js`, `/brief.js`, `/termkeys.js`, `/keymap.js`, `/settings.js`, `/tips.js`, `/markdown.js`), `/design.css` (its custom properties and classes) and
+- **The served modules are part of the contract.** They are how the core hands its capabilities to
+  renderers: every module in [`MODULES`](ref:hub/src/tower/served.ts#MODULES) (`/cards.js`, `/panels.js`, …), `/design.css` (its custom properties and classes) and
   `/tower.js` (the members of `window.tower`). A renderer copied out of the checkout imports them by URL, so they are
   versioned with the API: removing or renaming a name is a major, with a CHANGELOG line saying what to use instead;
   adding one is a minor. A name on its way out stays, marked `@deprecated` with what replaces it, until a major. Changes are announced, not frozen; the core makes a best effort to avoid majors. The
@@ -95,7 +92,7 @@ what went wrong.
 - Hand-written parsers beside the types: a second copy of every shape, which drifts.
 - Verbs as objects carrying their own request (`[{ verb, call }]`): one structure instead of two, but every `can()`,
   label table, key table and fixture changes, for no new capability.
-- A code per failure (`no_session`, `not_saved`, …): the four codes are what a renderer can act on; the message
+- A code per failure (`no_session`, `not_saved`, …): the codes are what a renderer can act on; the message
   says the rest.
 - Mapping the host's error messages to codes: the host's protocol would have to grow codes too, and a host change
   ends every running session.

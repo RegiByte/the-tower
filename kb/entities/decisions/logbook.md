@@ -84,7 +84,7 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   [`readConversations`](ref:hub/renderers/tower3d/src/fixtures.ts#readConversations)), and the walk's binder, logbook,
   replay, drawer and folder stages on every board that has them.
 
-*The reader's tabs and empty resumes* (2026-10-08). The reader stacked the screen over the brief in one grid,
+*The reader's tabs and empty resumes.* The reader stacked the screen over the brief in one grid,
 55% and the rest: a long answer shown in full squeezed the screen to a strip while the brief kept its half. It now
 shows one at a time ([`logbookTab`](ref:hub/renderers/tower3d/src/main.ts#logbookTab)), the tabs drawn as the desk
 panel's, and opens on the Logbook: what someone opening a past worker reads first is what it was asked and answered;
@@ -92,18 +92,18 @@ the screen is the evidence beside it. The Screen tab's terminal is mounted only 
 prompt of its own showed the same last screen as the session it resumed (Claude reprints the conversation on
 resume), so the two chips read as duplicates: such a session's chip says "resumed, no new turns", with why in its
 tip ([`sessionsHtml`](ref:hub/renderers/tower3d/src/ui.ts#sessionsHtml), from the shared
-[`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle), [[brief-turns]]), on the desk's Logbook tab too. The tabs
-are not on the keymap: Tower 3D's desk tabs aren't either (the keymap's `pane-*` commands are the tower page's
-alone), and the two should join it together.
+[`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle), [[brief-turns]]), on the desk's Logbook tab too. The keymap's
+`pane-terminal` and `pane-brief` switch the reader's Screen and Logbook, as `pane-*` switch the desk panel's tabs
+([`toPane`](ref:hub/renderers/tower3d/src/main.ts#toPane), [[keymap]]).
 
 **Measured** (synthetic logs of 120×40 redraws, sandbox tower, 2026-10-07): the first snapshot of `screen/<id>` takes
-about 140 ms for a 5 MB log and 0.75–0.9 s for a 50 MB one, on every open; the real logs average 3.9 MB, the largest
-53 MB. A replay of a long session waits that long until screen checkpoints (roadmap 7C) let the tower start from one.
+about 140 ms for a 5 MB log and 0.75–0.9 s for a 50 MB one, on every open: the screen keeps no checkpoint, so a
+replay of a long session waits that long.
 
 **Alternatives considered.**
 - *A separate Logbook tab beside Brief*: the same lineage brief twice.
-- *Timed playback of a session*: needs a read of the screen at a time, or every `o` event with its time; left for when
-  screen checkpoints give the core one.
+- *Timed playback of a session*: needs a read of the screen at a time, or every `o` event with its time, which the core
+  doesn't offer.
 - *The logbook in the 350 px side panel*: too narrow for a terminal; the reader holds a screen and the brief.
 - *A folder per act in the drawer*: tabs a few centimetres wide are hard to aim at; the drawer is the act and its
   folders are listed beside it.

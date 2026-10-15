@@ -14,11 +14,10 @@
 }
 ---
 **Problem.** Every start of the [[live-system]] (the tower) and every `tower ls` and `tower resume` folded every log
-ever written from byte 0. On 2026-10-07 that was 235 logs, 881 MB: the tower took 1.64 s and peaked at 430 MB,
-`tower ls` 4.3 s and 1.77 GB (it parsed every line). It grows linearly with history, yet 230 of those logs had
-exited and can never change.
+ever written from byte 0: on a system some months old, seconds and gigabytes for `tower ls` (it parsed every line).
+It grows linearly with history, yet nearly all of those logs had exited and can never change.
 
-**Why.** Roadmap decision D2 settled it: a checkpoint is a cache, never authoritative, always safe to delete, so
+**Why.** A checkpoint is a cache, never authoritative, always safe to delete, so
 it is not a fourth kind of stored state ([[logs-are-facts]]). The facts of a closed file are a pure function of
 it and of the code that folds it; keep the result under both and the next read is a lookup.
 
@@ -54,10 +53,11 @@ checkpoint to the new offset when it read anything. A checkpoint is `{fold, head
 - **Archived logs** ([[log-retention]]): a log Tidy gzipped is read as the plain log it was, offsets in plain
   bytes; its size is the gzip trailer's, so the checkpoint archiving leaves at its end holds and `readEvents`
   returns nothing without inflating it.
-- **Readers**: [`watchSystem`](ref:hub/src/system.ts#watchSystem)'s `track` (the tower's start and every new log)
-  and `tower ls`/`tower resume` ([`src/cli.ts`](ref:hub/src/cli.ts)). The archive read (`GET /archive/<project>`) reads
+- **Readers**: [`watchSystem`](ref:hub/src/system.ts#watchSystem)'s `track` (the tower's start and every new log),
+  `tower ls`/`tower resume` ([`src/cli.ts`](ref:hub/src/cli.ts)) and archiving a log
+  ([`archiveLog`](ref:hub/src/archive.ts#archiveLog), which folds it to its end first). The archive read (`GET /archive/<project>`) reads
   the live system's sessions in memory and folds nothing. Screens (`/screen`, `tower screen`, `tower attach`) replay
-  output, a separate cache (ScreenCheckpoint) left for later.
+  output and keep no checkpoint.
 
 [`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) resumes every fixture from a checkpoint at every
 event boundary and asserts the facts deep-equal the fold from the start; checkpoints of other code, past the end,
@@ -78,8 +78,6 @@ of another header or unreadable are not used; and the hash covers the fold's mod
   slot per log it is.
 - Keeping checkpoints beside the logs: `sessions/` is the facts, and the store's directory watch would wake on them.
 
-**Impact.** On a copy of the real sessions (235 logs, 881 MB): the tower's start goes from 1.64 s and 430 MB
-peak to 36 ms and 115 MB warm; cold (no cache, or after a fold code change) it is 1.78 s, the extra ~90 ms
-writing 235 checkpoints (3.2 MB) once. `tower ls` goes from 4.3 s and 1.77 GB to 0.36 s and 110 MB warm (2.1 s
-cold). Start time is now proportional to what was appended since the last read, not to history. `sessionState`
+**Impact.** A warm start reads tens of milliseconds where a cold one (no cache, or after a fold code change) reads
+seconds, and writes every checkpoint once. Start time is now proportional to what was appended since the last read, not to history. `sessionState`
 and `stateOf` went with `tower ls`'s whole-log read.

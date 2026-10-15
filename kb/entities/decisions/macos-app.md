@@ -46,8 +46,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   one), each as `<callsign> · <status>` over `<project>: <gist>`, and the waits that began and ended since the last
   board ([`transitions`](ref:hub/src/shared/cards.ts#transitions)). The native side only draws them: the count on the
   Dock badge and in the menu bar, whose menu lists each wait in the order to go to them; a notification (no sound:
-  the page rings its own) and a Dock bounce per wait that begins, unless the user is at that worker's session in the
-  window; a notification taken back when its wait ends. A click on either opens the session at `/#<id>`. Words and
+  the page rings its own) per wait that begins, unless the user is at that worker's session in the window, and one Dock
+  bounce for them while the app isn't active; a notification taken back when its wait ends. A click on either opens the session at `/#<id>`. Words and
   dismissals stay in the shared modules, so the app and every renderer agree. A web view in no window is suspended by
   WebKit, so this one runs with suspension off, and the window's page, once hidden, is throttled as a background tab
   is, not stopped. When the tower stops answering, the page starts over once it answers again, on the modules it

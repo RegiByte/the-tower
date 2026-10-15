@@ -20,16 +20,15 @@ repo needs, and what keeps the Claudes who change the code consistent.
 
 **How.**
 
-- **One command.** [`cli.ts`](ref:hub/src/cli.ts) is `tower`: the user's verbs (`up`, `down`, `spawn`, `resume`,
-  `submit`, `kill`, `live`, `ls`, `ps`, `reap`, `screen`, `attach`) read the system root; any other verb is a worker's,
+- **One command.** [`cli.ts`](ref:hub/src/cli.ts) is `tower`: the user's verbs ([[tower-cli]]) read the system root; any other verb is a worker's,
   handed to the directory ([[agent-directory]]). `mc send <id> <text>` became `tower submit`, the API's verb, because
   `tower send <CALLSIGN>` already delivers review notes. The mod's `bin/tower` runs it and `package.json` declares it
   as the package's `bin`, so `npm link` puts it on the user's PATH. `npm run tower` still starts the server.
-- **The mod** is the plugin `tower`; its skills are `tower:handbook` (the old `tower` skill) and `tower:review`.
+- **The mod** is the plugin `tower`; its skills are `tower:`-prefixed (`tower:handbook` is the old `tower` skill).
 - **Env:** `TOWER_SESSION_ID`, `TOWER_HOOKS_SOCKET` (set by the host, scrubbed from children, [[env-scrub]]),
-  `TOWER_CONFIG`, `TOWER_PORT`, `TOWER_SANDBOX`, `TOWER_FRAMES`, `TOWER_TOUR`.
-- **Log events** the tower derives are `tower.show`, `tower.keep`, `tower.hire`, `tower.tool.result` and
-  `tower.tool.abandoned`. The fold reads only these. A one-off migration rewrote the logs written before (and the
+  `TOWER_CONFIG`, `TOWER_SANDBOX`, `TOWER_FRAMES`, `TOWER_TOUR`.
+- **Log events** the tower derives are named `tower.*` (`tower.show`, `tower.hire`, `tower.prompt`, …), a namespace
+  Claude's own events don't use; no `mc.*` name is read. A one-off migration rewrote the logs written before (and the
   recorded fixtures) and deleted `cache/facts`, whose byte offsets it invalidated; it also renamed a reviewer's launch
   prompt, `/mc-sensor:review` → `/tower:review`, in the header's argv and in the prompt events that carry it: the board
   finds a reviewer from its launch (`reviewedIn`) and the hirer of a prompt by comparing it with the launch (`promptBy`).
@@ -47,6 +46,5 @@ repo needs, and what keeps the Claudes who change the code consistent.
 - *`npm run tower` as the CLI and `tower serve` for the server.* Settled by the setup work: `tower up` starts the
   server with the daemons, and `npm run tower` runs it in the foreground ([[setup]]).
 
-**Impact.** Sessions started before the change carry `MC_*` and the old mod until resumed under a host started after
-it. Processes they left running are marked with `MC_SESSION_ID`, which the leftover scan no longer reads: reap them
-before the cutover. Moving the system root and rewriting the logs is one step for the user, with every daemon stopped.
+**Impact.** One name across the repo, the command, the mod, the env, the log events and the system root. The
+rename was a one-step cutover with every daemon stopped; nothing reads the old names.

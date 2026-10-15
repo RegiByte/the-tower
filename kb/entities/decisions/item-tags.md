@@ -39,5 +39,7 @@ only in milliseconds (`185518.537Z`, `185518.740Z`), and a cork note is read fro
   wrong one.
 - *A pronounceable made-up word (`kobemi`).* Rejected by the user: letters with no picture behind them.
 
-**Impact.** One more derived field on the board and one on each collection; no stored state. Old references by id
+**Impact.** One more derived field on the board and one on each collection; no stored state. Ids made since carry a slug of
+the item's name after the moment (`20261008T130025Z-life-garden.html`), so they sort the same and read better in a
+file listing; the tag stays the short, fixed name, since a slug is cut long and follows a name, not the title. Old references by id
 still resolve with `tower read`.

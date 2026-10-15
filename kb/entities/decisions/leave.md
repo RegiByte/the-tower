@@ -56,6 +56,6 @@ answer, and a next run reading its predecessors would find no handoff note.
 - *A host change that ends a session after its next turn*: the host stays small and knows nothing of turns; the tower
   already folds them.
 
-**Impact.** Log: the `tower.leave` fact. Board: `card.leaving` (API 1.48). Tower server: a reaction to the live
+**Impact.** Log: the `tower.leave` fact. Board: `card.leaving`. Tower server: a reaction to the live
 system that sends leaving workers home. CLI: `tower home` with one's own callsign. Shared: `statusName` says
 `going home`. A worker ended this way is off duty, resumable, its last answer kept.

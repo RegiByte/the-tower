@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-29",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached"]
 }
 ---
@@ -21,9 +21,9 @@ they can be user config. It also drops a parent managed session's `TOWER_SESSION
 process carrying a session's id is that session's [[leftover]], so a terms daemon started by `tower up` from inside a
 session would make its shells (and itself) that session's to reap. `TOWER_CONFIG` stays: it chooses the system.
 The host scrubs a session's env after the config's `env` is merged in
-([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)), so a config cannot set a marker again; until 2026-10-06
-the config's `env` was applied after the scrub. The host and the terms daemon apply it to their children, and `tower up` to the daemons it starts
-([`startDetached`](ref:hub/src/machine.ts#startDetached)).
+([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)), so a config cannot set a marker again. Every child process
+the tower starts goes through it: the host's sessions, the terms daemon's shells, the daemons `tower up` starts
+([`startDetached`](ref:hub/src/machine.ts#startDetached)), git, the probes, policy checks and `tower update`'s npm.
 
 **The launching terminal (2026-10-09).** A daemon started from a terminal carries that terminal's identity
 (`TERM_PROGRAM`, `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `TMUX`, …), and programs tune themselves to it. Started from

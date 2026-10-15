@@ -48,8 +48,8 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
   by [`firstLine`](ref:hub/src/shared/log-file.ts#firstLine), shared with the bridge's reader and importing no
   bridge code). A last line a host that died left unfinished is cut back to the log's whole lines first
   ([`wholeLinesLength`](ref:hub/src/shared/log-file.ts#wholeLinesLength)): the fragment holds no fact, and the fact
-  appended after it would end it as a whole line that isn't JSON ([[broken-logs]]). It refuses a log that is archived, unknown, or still
-  flushing its exit. A stranded id never runs again (a resume is a new session), so
+  appended after it would end it as a whole line that isn't JSON ([[broken-logs]]). It refuses a session with no plain log (unknown, or
+  archived) and one still flushing its exit. A stranded id never runs again (a resume is a new session), so
   nothing else writes that file. `HOST_PROTOCOL` is 2, and `POST /let-go` refuses with `unavailable` and the
   restart to do while the running host is older ([`factRefused`](ref:hub/src/tower/server.ts#factRefused), as a
   worker's prompt does).
@@ -75,5 +75,5 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
 - Accepting posts for ended sessions on the hooks socket. That socket answers only a status code, and errors
   ("archived", "still flushing") belong in the control protocol's replies.
 
-**Impact.** Needs a host restart (the protocol moves to 2). A stranded worker can be let go from every renderer,
+**Impact.** A stranded worker can be let go from every renderer,
 the CLI and the API. The `fact` message is the general way to record a fact about a session an earlier host ran.

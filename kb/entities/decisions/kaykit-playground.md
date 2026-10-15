@@ -58,4 +58,4 @@ GPU. They can also be reviewed before the office takes them.
 
 **Impact.** Bringing props into the office is reading scene documents: Tower 3D draws flattened prefabs with the
 same catalog, norms, themes and batching ([[office-kaykit]]), and the office's zones are prefabs here
-(`scenes/prefabs/office_*.json`, `hero_*.json`, `control_*.json`, `lobby_*.json`, `roof_*.json`).
+(`scenes/prefabs/`, named by zone or piece: `office_*`, `lobby_*`, `roof_*`, `desk_*`, `planter*`, …).

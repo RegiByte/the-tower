@@ -65,5 +65,5 @@ the easy path stops them, as long as it is named for what it is.
   function is there when one wants to show it.
 
 **Impact.** Hiring is attributed and bounded in the core, for every caller that marks a spawn as a hire: API `spawn`
-field `hire`, error code `limited`. A worker that calls `spawn` without `hire` is neither logged nor limited, until
-per-session identity lands (roadmap 7). Renderers draw the lineage as crews ([[crews]]).
+field `hire`, error code `limited`. A worker that calls `spawn` without `hire` is neither logged nor limited: the
+tower checks only that a `by` names a session, not that the caller is that session. Renderers draw the lineage as crews ([[crews]]).

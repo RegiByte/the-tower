@@ -66,16 +66,16 @@
 the KayKit office around them looked, and every new motion was hand-written trigonometry.
 
 **Why.** NEMO-27's research, done before the decision, found KayKit's `Rig_Medium` the best
-fit: the office's own artist and atlas technique, a skeleton with hand slots, and 150+ CC0 clips. RegiByte chose
+fit: the office's own artist and atlas technique, a skeleton with hand slots, and 150+ CC0 clips. The user chose
 the KayKit Adventurers as the base and liked the fantasy bits showing up at random; the bot stays as a species.
 
 **How.**
 - Assets. [`tower3d-characters.ts`](ref:hub/scripts/tower3d-characters.ts) packs the packs' own files into
-  `renderers/tower3d/kaykit/Characters`: `adventurers.glb` (1.1 MB), every part the contract names from the five
-  Adventurers files on one skeleton with their four atlases and no clips; `rig_medium.glb` (0.45 MB), the contract's
-  [`CLIPS`](ref:hub/renderers/tower3d/src/contract.ts#CLIPS) on Rig_Medium's bones; `medium.glb` (2.4 MB), the
-  Skeletons' and the Series 5's Rig_Medium characters skinned to adventurers.glb's joints by name; `large.glb` (1.7 MB),
-  the Clanker on his own Rig_Large skeleton, with his family's colourways and props; `rig_large.glb` (0.45 MB), Rig_Medium's clips on it. It checks that every
+  `renderers/tower3d/kaykit/Characters`: `adventurers.glb`, every part the contract names from the five
+  Adventurers files on one skeleton with their four atlases and no clips; `rig_medium.glb`, the contract's
+  [`CLIPS`](ref:hub/renderers/tower3d/src/contract.ts#CLIPS) on Rig_Medium's bones; `medium.glb`, the
+  Skeletons' and the Series 5's Rig_Medium characters skinned to adventurers.glb's joints by name; `large.glb`,
+  the Clanker on his own Rig_Large skeleton, with his family's colourways and props; `rig_large.glb`, Rig_Medium's clips on it. It checks that every
   character of a rig is skinned to the same joints, by name, in the same bind pose before moving a part onto the rig's
   one skeleton, splits a glowing primitive off as `<part>_Glow`, and packs only the parts the contract names, never a
   whole pack, each pack's licence beside them.
@@ -98,7 +98,7 @@ the KayKit Adventurers as the base and liked the fantasy bits showing up at rand
   and `seatOf` read that skeleton's clips and seated measurement, so no caller changed. Rig units to meters by skeleton
   ([`RIG_SCALES`](ref:hub/renderers/tower3d/src/rig.ts#RIG_SCALES)): the Clanker stands a head over a worker, his
   status light and held things scaled to keep their size in meters (Rig_Large's rest stands 3.8 units, so at 0.48 m
-  a unit he is 1.8 m; at first 0.3 put him at 1.1 m, under a worker's 1.5).
+  a unit he is 1.8 m, over a worker's 1.5).
 - The Clanker's family. Eight variants another model generated from the Clanker's file (Sentinel, Tinker, Brute, Sir
   Clanksworth, Scout, Frostbyte, Sludge, King Bolt): his meshes vertex for vertex, each with a gradient atlas and an
   eye glow of its own, props on his bones, exhausts dropped, and bone rest scales for its proportions. None of it is
@@ -137,8 +137,7 @@ the KayKit Adventurers as the base and liked the fantasy bits showing up at rand
   only the workers it wins. [`lookOf`](ref:hub/renderers/tower3d/src/wardrobe.ts#lookOf) hashes a session id
   into it: a bot one time in five; else maybe an outfit, the rest from the mix. The roof's bartender and DJ are outfits
   kept out of the share, dressed by name ([`STAFF`](ref:hub/renderers/tower3d/src/wardrobe.ts#STAFF)): `problems`
-  reports either missing or in the mix, so the dresser locks them and Tower 3D's load names the fix (a dresser save
-  that deleted the bartender once left Tower 3D drawing nothing). `mix.named` gives an outfit to the workers whose
+  reports either missing or in the mix, so the dresser locks them and Tower 3D's load names the fix. `mix.named` gives an outfit to the workers whose
   callsign has a name, whatever their id rolls ([`lookOfWorker`](ref:hub/renderers/tower3d/src/wardrobe.ts#lookOfWorker)):
   every CLANKER is the Clanker. The mix's `bodies` are the characters it dresses from, each with a weight
   ([`weighted`](ref:hub/renderers/tower3d/src/hashed.ts#weighted): rendezvous scored `weight / -ln(roll)`, so a body
@@ -160,11 +159,10 @@ the KayKit Adventurers as the base and liked the fantasy bits showing up at rand
   (a head, an outfit, any part) or on a bot (`bot`). A look wears one part per slot, so at most one override per slot
   matches; they resolve by the slot of their key ([`FIT_PRECEDENCE`](ref:hub/renderers/tower3d/src/wardrobe.ts#FIT_PRECEDENCE):
   bot, Head, Outfit, Body, Helm, Hat, Face, Cape, Prop, Gear), field by field over `*`
-  ([`fitFrom`](ref:hub/renderers/tower3d/src/wardrobe.ts#fitFrom), which also says which key set each field). The
-  first pass lowers the hats onto each head's own top (each head measured in the head bone's space: the Mage's,
-  Rogue's and Barbarian's 0.11 to 0.13 rig units under the Knight's hair, the hood's 0.07), squashes the beanie and cap
-  a little on the lower heads, and moves the wear glasses and shades back from the nose to the eyes at 0.82 of their
-  size (0.74 in the hood); the bot keeps its own placement. Fits move rigid parts only; heads and outfits are skinned.
+  ([`fitFrom`](ref:hub/renderers/tower3d/src/wardrobe.ts#fitFrom), which also says which key set each field). The fits
+  lower the hats onto each head's own top (each head measured in the head bone's space), squash the beanie and cap a
+  little on the lower heads, and move the wear glasses and shades back from the nose to the eyes; the bot keeps its own
+  placement. Fits move rigid parts only; heads and outfits are skinned.
 - Draw calls. The skinned parts of one atlas merge into one mesh per worker (geometry cached per combination);
   the bot's rigid parts (`models/bot.py`, built in the rig's rest pose, a pivot per bone) are skinned to their bones
   at load, one mesh per material ([`wearModel`](ref:hub/renderers/tower3d/src/rig.ts#wearModel)). Each worker
@@ -237,7 +235,7 @@ keep theirs, whatever the order of the GLB's names. Bots wear only the hats and 
   everything worn was drawn nearly twice its size.
 - *Picking by index into the pool* (the first cut): every part added re-dressed most of a slot's wearers.
 - *Every new character at the adventurers' weight*: seven of the busy board's twelve desks turned to new characters,
-  drowning the adventurers; weights keep them a share RegiByte tunes.
+  drowning the adventurers; weights keep them a share the user tunes.
 - *Heads mixed across characters on the floor*: a skeleton's body under a human head and a knight's helmet read as a
   glitch more than a look; mixing across characters stays a choice made by hand in the dresser.
 - *The Clanker's family as nine copies of his geometry* (+13 MB): the variants share his meshes vertex for vertex;
@@ -247,16 +245,9 @@ keep theirs, whatever the order of the GLB's names. Bots wear only the hats and 
 - *Blender's export as the runtime's file*: its skin orders joints its own way; normalizing keeps one skeleton and
   lets skinned made parts merge with the pack's into one mesh.
 
-**Impact.** On `?board=busy&seed=1` (stepped, lit): draw calls 578 → 574 on a floor, 1272 → 1212 in the overview,
-468 → 466 on the roof; frame time on a floor 3.5 → 4.4 ms (medians of three, the same afternoon), of which posing
-only the levels drawn won back 0.4 ms. A reviewer sits 1.2 m beside its author and a fork's twin 1.05 m, clear of
+**Impact.** A reviewer sits 1.2 m beside its author and a fork's twin 1.05 m, clear of
 the wider bodies; seated heads top about 1.75 m, over the 1.6 m eye, so from behind a worker what lies in front of it on
-the desk is aimed past its head, not through it. Every worker looks different from before, so `tool:frames` shows every stage with a worker
-changed. `npm test` checks both GLBs hold the contract's parts, bones and clips, and that `parts.glb`'s parts are named
-after a slot, painted in an atlas and hung on the clips' bones or the pack's skin. The repo grew by 1.1 MB (1.5 MB of
-characters in, the bean and the puff out), and the kit by 1.2 MB (`parts.blend` 1 MB, `parts.glb` 0.13 MB with the
-examples).
-
-The Skeletons, Helpers, Combat Mech and Clanker (2026-10-12) grew the repo and Tower 3D's bundle by 4.4 MB of
-characters (most of it geometry: the Clanker alone is 17k triangles, three times a worker; his atlas is 0.5 MB) and
-changed no frame of the fixture boards (`tool:frames`: identical on all eight) until they join the mix.
+the desk is aimed past its head, not through it. `npm test` checks the GLBs hold the contract's parts, bones and clips,
+and that `parts.glb`'s parts are named after a slot, painted in an atlas and hung on the clips' bones or the pack's
+skin. The Skeletons, Helpers, Combat Mech and Clanker (2026-10-12) are in the mix at their weights in
+`wardrobe.json`; most of their bytes are geometry (the Clanker has about three times a worker's triangles).

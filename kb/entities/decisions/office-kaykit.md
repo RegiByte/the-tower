@@ -49,7 +49,7 @@ thing on a floor, big planes muted, colour spent on small countable things, one 
   (desk props, every model of the [`PREFABS`](ref:hub/renderers/tower3d/src/zones.ts#PREFABS) documents, the city
   model's) and flattens each prefab with the footprint a walker bumps into (models at least 0.25 m tall standing on
   the floor), all into one git-ignored file, `renderers/tower3d/out/kaykit/kit.kaykit` (catalog, prefabs, packed
-  meshes, the packs' atlases: 2.7 MB, laid out as [`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)),
+  meshes, the packs' atlases, laid out as [`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)),
   which the bundle embeds ([[bundled-renderer]]): framed in the tower the page has an opaque origin and can fetch
   nothing beside it. Atlases become images through blob URLs of the page's own. [`kit.ts`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) places scene items with the playground's
   `itemMatrix` and `nodeMatrices` and draws each layer as one BatchedMesh per pack and theme (the playground's
@@ -101,6 +101,5 @@ thing on a floor, big planes muted, colour spent on small countable things, one 
 
 **Impact.** Every level is dressed; frame draw calls stay within fifteen of before at every tour spot, about 27k
 triangles added per floor. Building Tower 3D measures its models from the subset of the bundle vendored in `renderers/tower3d/kaykit` (copied by [`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts) `vendor`, which leaves the workers' `Characters/` there alone, [[kaykit-workers]]), so a fresh clone builds it. New
-places are scene documents in `renderers/kaykit/scenes/prefabs` plus a line in `zones.ts`. The bundle grew from
-4.8 to 8.3 MB. Batches were building-wide at first, culled per instance and not occluded, so a wide view counted
-other floors' instances in its frustum; since [[tower3d-levels]] each level has its own, drawn only while it is.
+places are scene documents in `renderers/kaykit/scenes/prefabs` plus a line in `zones.ts`. The kit added a few
+MB to the bundle. Each level has batches of its own, drawn only while the level is ([[tower3d-levels]]).

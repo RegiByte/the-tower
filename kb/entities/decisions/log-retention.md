@@ -35,8 +35,7 @@
   ]
 }
 ---
-**Problem.** Nothing ever removed or shrank a session log. On 2026-10-08 the system root held 283 logs, 1.02 GB,
-from about ten days of use. [[fold-checkpoints]] keep the tower's start fast, but the disk only fills, and a new
+**Problem.** Nothing ever removed or shrank a session log: about a gigabyte from ten days of use. [[fold-checkpoints]] keep the tower's start fast, but the disk only fills, and a new
 user would run into it within a month or two.
 
 **Why.** A log is the fact ([[logs-are-facts]]): an old worker's card, brief, screen and stats are read from it, so
@@ -76,8 +75,8 @@ most of the space; moving logs to another directory gives back none.
   Streams under `streams/system/` belong to no floor, so every floor's Tidy lists them in the plan's `streams`, each
   `{file, bytes}` by its path under `streams/`, as one row ("▤ 1 closed stream month · archive · 3.7 KB"); whichever
   floor applies it archives them, and the others' plans move on. Two floors' Tidy pressed together pass the same check,
-  so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams, once written, will go to
-  its floor's Tidy alone. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
+  so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams (`streams/projects/`,
+  [[policies]]' runs and approvals) are not offered yet. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
   no fold first (streams keep no checkpoints); the live view reads a month plain while it is, else archived
   ([`StreamMonth`](ref:hub/src/bridge/retention.ts#StreamMonth) on `system.streamMonths()`), and its reads fold the same.
 
@@ -97,7 +96,7 @@ and offset, from its start and from the checkpoint it leaves, and replays its sc
 - *Statting every log on each change of the sessions directory*: the directory changes on every append. Sizes are
   read when a log is tracked, ends or is archived, which is when an eligible log's size can change.
 
-**Impact.** API v20: `TidyPlan.logs`, the `tidy` reply's `archived`. API 1.46: `TidyPlan.streams` (the `tidy`
-input's `streams` defaults to none, so a plan built before it still parses), the reply's `streams`. Config `retention.days`. No host
-change and no log format change: an archive inflates to the log byte for byte. On 2026-10-08, with
-`retention.days: 3`, about 100 logs (430 MB) would be offered, about 60 MB once archived.
+**Impact.** API: `TidyPlan.logs` and `TidyPlan.streams`, the `tidy` reply's `archived` and `streams` (the `tidy`
+input's `streams` defaults to none, so a plan built before it still parses). Config `retention.days`. No host
+change and no log format change: an archive inflates to the log byte for byte. Archived logs take
+roughly a seventh of their plain size.

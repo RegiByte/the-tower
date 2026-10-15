@@ -6,14 +6,14 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-09-30",
-  "reviewed": "2026-10-12",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#stop"]
 }
 ---
 **Context.** The renderer is where the churn is. If it held the PTYs, every renderer change would kill
 running Claude sessions.
 
-**Decision.** One host process owns every PTY master and is the single writer of the logs. Clients talk to
+**Decision.** One host process owns every PTY master and is the single writer of the session logs (the tower writes the system's other logs, `streams/`). Clients talk to
 it over `control.sock`; Claude talks to it over `hooks.sock`.
 
 **Alternatives considered.** PTYs inside the renderer (the agent-office prior art): rejected for the reason
