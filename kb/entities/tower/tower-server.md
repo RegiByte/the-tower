@@ -19,7 +19,7 @@
 `tower up` starts it detached with the daemons ([[bring-up]]), `npm run tower` in the foreground, on the
 config's `port`, read when it starts ([[port-in-config]]). The same process runs the probes
 ([`runProbes`](ref:hub/src/probes.ts#runProbes), [[probes]]) and the policies' runner
-([`runPolicies`](ref:hub/src/policies.ts#runPolicies), [[policies]]), each on a 30 s tick. The board (floors of cards, rate limits, today's stats, shells) is
+([`runPolicies`](ref:hub/src/policies.ts#runPolicies), [[policies]]), each on a tick of their own. The board (floors of cards, rate limits, today's stats, shells) is
 derived by [`board`](ref:hub/src/bridge/board.ts#board) and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/server.ts#archive) ([[board-archive]]). A session screen is
 a stream ([`screenStream`](ref:hub/src/tower/server.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
@@ -27,11 +27,9 @@ the host still runs the session, then the log's output as it is appended. A runn
 [mirror](ref:hub/src/tower/screens.ts#screenMirrors) shared by all its viewers: the first builds it, replaying the
 log once ([`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf)), it follows the log with one tail, and every later
 viewer is sent its snapshot, so a floor of monitors opening at once costs one replay per session, not one per
-monitor. It outlives its last viewer by 30 s, so a reconnect finds it built, and is kept nowhere else: a restarted
-tower builds it again. A session no longer running is sent its last frame, a
+monitor. It outlives its last viewer briefly, so a reconnect finds it built, and is kept nowhere else. A session no longer running is sent its last frame, a
 [snapshot](ref:hub/src/bridge/screen.ts#snapshot) of the log, and no mirror. A log that holds its exit never changes,
-so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tower/screens.ts#lastFrames): 500 sessions,
-least recently opened dropped, guarded by the log's size, opens in flight sharing one computation). A session without an exit in its log (stranded by the host) is replayed on every
+so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tower/screens.ts#lastFrames), bounded, guarded by the log's size). A session without an exit in its log (stranded by the host) is replayed on every
 open. An interactive terminal opens the same stream as `terminal/<id>`
 ([`terminalStream`](ref:hub/src/tower/server.ts#terminalStream)), whose snapshot also says how many other terminals
 are open on the session, so a renderer claims the PTY size on open only as the sole one ([[tower3d-desk]]). A board
@@ -42,8 +40,8 @@ any other site are refused.
 A viewer that stops reading (a suspended tab, a frozen web view) costs the tower a bounded amount: a board client
 still reading an earlier board is sent the newest once it has, the boards between skipped
 ([`sendBoard`](ref:hub/src/tower/server.ts#sendBoard)); a screen, shell or mux connection, whose bytes can't be
-skipped, is closed once what waits for it hasn't drained in 30 s, or past 64 MB ([`sse`](ref:hub/src/tower/server.ts#sse)): a burst, such as every monitor's snapshot written at once on one mux, drains well within both, and its client reconnects and
-starts again from a snapshot (`tower.js` re-watches every stream on a new mux). A stream that fails to open answers its
+skipped, is closed once what waits for it hasn't drained within a time or a size bound
+([`sse`](ref:hub/src/tower/server.ts#sse)), and its client reconnects and starts again from a snapshot (`tower.js` re-watches every stream on a new mux). A stream that fails to open answers its
 watch with the failure and leaves nothing behind on the mux.
 
 Renderers are served at [`/r/<name>/`](ref:hub/src/tower/server.ts#rendered): the entry, or any file below the
@@ -68,15 +66,10 @@ Schema, each stream described, and the `board` stream's message as the JSON Sche
 that throws answers `config` for a [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError), else `internal`
 ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)), and goes to the log.
 
-The design system ([[design-system]]) is served from [`design`](ref:hub/src/tower/server.ts#design): `/design.css`,
-the module `/design.js` and its faces, readable from any origin, and the drafts editor renderers share,
-`/drafts.js` ([[corkboard]]), what renderers say about a worker, `/cards.js`
-([`cards.ts`](ref:hub/src/shared/cards.ts)): status words, the one-line gist, times, the order and keys that move
-between workers, and the icons they draw, `/icons.js` ([`icons.ts`](ref:hub/src/shared/icons.ts)), and the review threads' format,
-`/reviews.js` ([[review-threads]]), and the shared panels, `/panels.js` ([[shared-panels]]). Every module
-in [`MODULES`](ref:hub/src/tower/served.ts#MODULES) is served as JavaScript, bundled with what it imports
-([`bundled`](ref:hub/src/tower/served.ts#bundled)). What it serves for renderers to build on (`/tower.js`, `/design.css`
-and these modules) is part of the API's contract ([[renderer-api-contract]]).
+The design system's `/design.css` and faces, `/tower.js` and the shared modules
+([[renderer-shared-modules]]) are served readable from any origin, each module bundled with what it imports
+([`bundled`](ref:hub/src/tower/served.ts#bundled)); what renderers build on is part of the API's contract
+([[renderer-api-contract]]).
 
 Shelf entries are served only when declared in the config, with a CSP `sandbox` header
 ([`sandboxed`](ref:hub/src/tower/server.ts#sandboxed)); a video (`.mp4`, `.webm`) gets `nosniff` instead: it runs no
@@ -84,12 +77,10 @@ script, and Chrome plays no video document under a sandbox. So are collection it
 (`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/server.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
-into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText); with `by`, a worker's, it first
-has the host append `tower.prompt` to the session's log ([[worker-prompts]]); `/kill` and `/keys` with `by` append
-`tower.kill` and `tower.keys`, the keys once per burst ([[worker-prompts]]). A worker that asked to go home (`card.leaving`) is sent home by the server once its turn completes, through its card's `send-home` ([[leave]]). A `/spawn` with `hire` is `by`'s hire:
-[`hired`](ref:hub/src/tower/server.ts#hired) weighs it against the floor's limits, has the host append `tower.hire` to
-the hirer's log, and takes a hirer's hires one at a time, each until the system counts it ([[hiring-limits]]). claude.ai
-artifacts refuse framing, so they go on the shelf as `link`, not `url`. An `item` entry's file is served from its
+into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText). A worker's `submit`, `spawn`,
+`kill` and `keys` (with `by`) are named in the target's log first ([[worker-prompts]]); a `/spawn` with `hire` is
+weighed against the floor's limits by [`hired`](ref:hub/src/tower/server.ts#hired) ([[hiring-limits]]); a worker that
+asked to go home is sent home once its turn completes ([[leave]]). An `item` shelf entry's file is served from its
 collection, alone ([[shelf-items]]).
 
 An open `html` entry is framed with scripts, popups and pointer lock allowed. It gets the board over
