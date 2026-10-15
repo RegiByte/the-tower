@@ -165,7 +165,6 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .offer-row .what span { color: var(--muted); }
 .offer-row .what:hover b { text-decoration: underline; }
 .sess .run { color: var(--faint); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.move.waiting:has(.lamp.offered) { border-color: var(--offered); }
 #archive-filter { flex: 1; min-width: 120px; max-width: 420px; padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 #archive-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .past { overflow: hidden; padding: var(--sp-xs) var(--sp-m); border-radius: var(--radius); font-size: var(--fs-s); color: var(--muted); cursor: pointer; }
@@ -233,11 +232,7 @@ dialog#landing { width: min(960px, 94vw); }
 #c-mode:empty, #c-mode.owner, .main.on-brief #c-mode, .main.on-shown #c-mode, .main.on-changes #c-mode, .main.on-reviews #c-mode { display: none; }
 #bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
 .dismiss { color: var(--needs-text); }
-#bar-line .moves { gap: var(--sp-s); }
-.move { flex: none; display: flex; align-items: center; gap: var(--sp-s); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
-.move .call { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
-.move small { font: var(--fs-xs) var(--mono); color: var(--faint); }
-.move.waiting { border-color: var(--c); }
+#bar-line .dismiss { margin-left: auto; }
 #bar-details, #bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
 #bar-details h3, #bar-left h3 { margin: 0 0 var(--sp-l); font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
@@ -902,7 +897,7 @@ function skylineHtml() {
     <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
 }
 
-/** The selected worker's header: who and where, a glance at its context, cost and leftovers, its views, and the workers around it. */
+/** The selected worker's header: who and where, a glance at its context, cost and leftovers, and its views. */
 function barHtml(c) {
   const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
   const orphan = c.resources.some((r) => r.orphan)
@@ -929,10 +924,7 @@ function barHtml(c) {
   $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
   $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
-  repaint($('bar-line'), [
-    paneTabsHtml(c, paneOf(c)),
-    movesHtml(c),
-  ].filter(Boolean).join(''))
+  repaint($('bar-line'), paneTabsHtml(c, paneOf(c)) + dismissHtml(c))
   renderPane(c)
 }
 
@@ -960,8 +952,6 @@ function detailsHtml(c) {
   return `<h3>${callsign(c.id)}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
 }
 
-const MOVE_TITLE = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
-
 /** The keymap's command for each move (src/shared/keymap.ts). */
 const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
@@ -971,20 +961,10 @@ const CLOSE_HOME = `<button class="icon-btn" data-act="home" aria-label="back to
 
 const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabel(board.keys, id)})` : what)
 
-/** The workers each move key goes to from `c`, named before you go, and ✕ for `c`'s own wait while you heed it. */
-function movesHtml(c) {
-  const to = neighbours(board, c.id, heed)
+/** ✕ for `c`'s own wait while you heed it. */
+function dismissHtml(c) {
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
-  const move = (m) => {
-    const card = to[m]
-    if (!card || card.id === c.id) return ''
-    return `<button class="move ${m} ${card.attention}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${callsign(card.id)}, ${statusName(card)}" data-tip="${withKeys(MOVE_TITLE[m], MOVE_COMMAND[m])}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND[m])}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ""}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${callsign(card.id)}</span></button>`
-  }
-  const next = nextAttended(attentionOrder(board, heed), heed.visited, { id: c.id }).to
-  const offer = next && isOffer(next) && `<button class="move waiting" data-move="waiting" aria-label="${MOVE_TITLE.waiting}: ${esc(next.title ?? next.tag)}, offered" data-tip="${withKeys(MOVE_TITLE.waiting, MOVE_COMMAND.waiting)}" aria-keyshortcuts="${keyshortcuts(board.keys, MOVE_COMMAND.waiting)}"><small>${board.keys[MOVE_COMMAND.waiting].length ? chordLabel(board.keys[MOVE_COMMAND.waiting][0]) : ''}</small><span class="lamp offered"></span><span class="call">${esc(next.title ?? next.tag)}</span></button>`
-  const moves = dismiss + ['prev', 'next'].map(move).join('') + (offer || move('waiting'))
-  return moves && `<span class="moves">${moves}</span>`
+  return wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
 }
 
 /** The selected session's view in the main pane, as the viewer picked it since selecting the session. */
@@ -2675,8 +2655,6 @@ document.addEventListener('click', (e) => {
   if (range) return (Object.assign(statsView, { range, stats: undefined }), tower.store.set('stats.range', range), drawSideView(), readStats())
   if (e.target.closest('[data-stats-read]')) return ((statsView.failed = undefined), drawSideView(), readStats())
   if (e.target.closest('[data-keys]')) return showKeys()
-  const move = e.target.closest('[data-move]')?.dataset.move
-  if (move) return go(move)
   const dismissed = e.target.closest('[data-dismiss]')?.dataset.dismiss
   if (dismissed) return dismissWait(dismissed)
   const offerDismissed = e.target.closest('[data-offer-dismiss]')?.dataset.offerDismiss
