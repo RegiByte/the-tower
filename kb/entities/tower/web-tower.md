@@ -10,7 +10,9 @@
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-server]] turns the
 [[live-system]] into a board and relays requests to the daemons. It holds no machinery. The skyline home
-(projects as buildings, sessions as lit windows) is the seed of a spatial renderer.
+(projects as buildings, sessions as lit windows) is the seed of a spatial renderer. Its buildings stand in one row
+and narrow to fit any number of floors, windows and signs scaled with them; a sign's name is cut to its building's
+width and whole in its tooltip, as in the sidebar.
 Spatial renderers live in `renderers/` on the same API: [[tower3d]] is the first-person one. The Week
 ([`renderers/week/`](ref:hub/renderers/week/week.js)) is a plain page over the same API: the budget week as a
 yearbook, read from the board, `/stats` and each floor's archive ([[renderers-in-config]]).

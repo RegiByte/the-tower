@@ -367,18 +367,18 @@ dialog#landing { width: min(960px, 94vw); }
 .hello .big b { color: var(--c-text); }
 .hello .sub { color: var(--muted); margin-top: var(--sp-s); }
 .hello .clock { color: var(--faint); font-size: var(--fs-s); margin-top: var(--sp-2xs); font-variant-numeric: tabular-nums; }
-.city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: 34px; padding: 0 var(--sp-2xl); flex-wrap: wrap; }
-.building { display: flex; flex-direction: column; align-items: center; }
-.building .sign { margin-bottom: var(--sp-m); padding: var(--sp-xs) var(--sp-l); gap: var(--sp-m); background: var(--enamel); border-color: var(--enamel); color: #fff;
+.city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: min(34px, 2vw); padding: 0 var(--sp-2xl); }
+.building { flex: 0 1 196px; min-width: 0; container-type: inline-size; display: flex; flex-direction: column; align-items: center; }
+.building .sign { max-width: 100%; margin-bottom: var(--sp-m); padding: var(--sp-xs) min(var(--sp-l), 5cqi); gap: min(var(--sp-m), 3cqi); background: var(--enamel); border-color: var(--enamel); color: #fff;
   box-shadow: inset 5px 0 0 var(--pp), var(--shadow); }
 .building .sign .num { min-width: 22px; min-height: 19px; font-size: var(--fs-s); }
 .building .sign .name { font-size: var(--fs-s); }
 .building .mast { width: 2px; height: 22px; background: var(--ink); position: relative; }
 .building .mast.alarm::after { content: ""; position: absolute; left: -4px; top: -8px; width: 10px; height: 10px; border-radius: 50%;
   background: var(--c); box-shadow: 0 0 14px var(--c); animation: beacon 1.6s infinite; }
-.building .body { display: flex; flex-wrap: wrap-reverse; gap: var(--sp-m); width: 196px; padding: var(--sp-xl) var(--sp-l); background: var(--enamel);
+.building .body { display: flex; flex-wrap: wrap-reverse; gap: 4.1cqi; width: 100%; padding: 8.2cqi 6.1cqi; background: var(--enamel);
   border-top: 6px solid var(--p, var(--deco)); border-radius: var(--radius-s) var(--radius-s) 0 0; }
-.w { width: 36px; height: 24px; border-radius: var(--radius-s); background: var(--enamel-2); }
+.w { width: 18.4cqi; height: 12.2cqi; border-radius: var(--radius-s); background: var(--enamel-2); }
 .w.lit { background: var(--c); cursor: pointer; }
 .w.lit.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
 .w.past { background: color-mix(in oklab, var(--c) 30%, var(--enamel-2)); cursor: pointer; }
@@ -815,9 +815,9 @@ function traysHtml(f) {
     ${drafts?.items.length && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${kept.filter((c) => unfolded.has(`kept-${c.id}:${f.id}`)).map((c) => keptHtml(f, c)).join('')}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${(threads || landed) && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
 }
 
-/** A floor's sign: its number on the project's band, its name in caps. */
+/** A floor's sign: its number on the project's band, its name in caps, cut to the sign's width and whole in the tooltip. */
 const signHtml = (n, name, extra = '') =>
-  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name" role="heading" aria-level="2">${esc(name)}</span>${extra}</div>`
+  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name" role="heading" aria-level="2" data-tip="${esc(name)}">${esc(name)}</span>${extra}</div>`
 
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
