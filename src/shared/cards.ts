@@ -69,6 +69,9 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
 export const statusName = (c: Card) =>
   c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}${c.cutOff ? ' mid-turn' : ''}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : `${c.stuck ? 'stuck' : STATUS_NAME[c.status]}${c.leaving ? ', going home' : ''}`
 
+/** A worker's status in a word or two, for a row that has no room for more: a stranded worker is `stranded`, its `statusName` on hover. */
+export const statusWord = (c: Card) => (c.stranded && !c.broken ? (c.letGoAt !== undefined ? 'let go' : 'stranded') : statusName(c))
+
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
 

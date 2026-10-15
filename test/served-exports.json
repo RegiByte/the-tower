@@ -377,6 +377,7 @@
       "statusLegendHtml",
       "statusName",
       "statusTitle",
+      "statusWord",
       "stepFrom",
       "strandedOf",
       "subagentEnd",
