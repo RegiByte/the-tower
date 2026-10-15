@@ -34,12 +34,9 @@
   ]
 }
 ---
-**Problem.** Tower 3D's outside was boxes papered with a window texture, its shell plain mullions, bands and a
-block parapet, all under one flat light that never changed through the day. Two spikes on 2026-10-10 built a
-procedural city and shell, and a light rig with contact shadows and a night bloom, all behind `?proc=` URL
-flags. The user picked a lead (`skyline,shell,roof,rig,contact,bloom`) to ship. The lighting costs GPU time: the
-night overview takes 11.9 ms against 7.8 ms without it, under the 16.6 ms of a 60 fps frame in every view
-measured. So anyone it annoys, or whose machine it slows, needs a way to turn it off.
+**Problem.** Tower 3D's outside was boxes papered with a window texture under one flat light that never changed
+through the day. A procedural city and shell, and a light rig with contact shadows and a night bloom, replace them.
+The lighting costs GPU time, so anyone it annoys, or whose machine it slows, needs a way to turn it off.
 
 **How.**
 - *The exterior is always drawn.* [`exterior/`](ref:hub/renderers/tower3d/src/exterior/geo.ts) is geometry as
@@ -50,27 +47,24 @@ measured. So anyone it annoys, or whose machine it slows, needs a way to turn it
   the glass comes to it (the walking camera's 70° on a canvas 800 px tall): fins whose sides stand less than a pixel
   proud, bands, and the thin roof plant (a tank's legs, an antenna's mast). Drawn thinner, they blink as the view
   moves; the far ring of the city keeps its windows, colours and silhouette without them.
-  West of the tower (the −x side, away from the airfield and behind the roof's big screen) the city gives way to a
-  neighbourhood ([`neighbourhood`](ref:hub/renderers/tower3d/src/exterior/neighbourhood.ts#neighbourhood)): gabled
-  houses along two curved lanes, an L-block, a stepped tower and a water tower behind them, all from constants and a
-  seed in four merged meshes, and street trees along the ring road's outer edge and in some back yards, two instanced
-  meshes. The city skips its sector ([`inNeighbourhood`](ref:hub/renderers/tower3d/src/exterior/neighbourhood.ts#inNeighbourhood)).
-  At night it stays dark and calm, a few house windows lit by the hour that lights the city's.
+  West of the tower, behind the roof's big screen, the city gives way to a neighbourhood of houses and street trees
+  ([`neighbourhood`](ref:hub/renderers/tower3d/src/exterior/neighbourhood.ts#neighbourhood)), which the city skips
+  ([`inNeighbourhood`](ref:hub/renderers/tower3d/src/exterior/neighbourhood.ts#inNeighbourhood)); at night only a
+  few of its windows light.
   The shell ([`frame`](ref:hub/renderers/tower3d/src/exterior/shell.ts#frame),
   `spandrel`, `parapet`) is capped mullions, panelled spandrels and a coping. The roof plant
   ([`roofPlant`](ref:hub/renderers/tower3d/src/exterior/roof.ts#roofPlant), placed by
-  [`plantOnRoof`](ref:hub/renderers/tower3d/src/world.ts#plantOnRoof)) is in steel and bronze. The box city and the
-  old shell are deleted, so there is one implementation of each.
+  [`plantOnRoof`](ref:hub/renderers/tower3d/src/world.ts#plantOnRoof)) is in steel and bronze.
 - *The city follows the clock*, every part a pure function of the wall clock's hour (`?at`) or sim time
   (`?stepped`), so frames repeat. Each lit window keeps office hours hashed from where it stands
   ([`keepHours`](ref:hub/renderers/tower3d/src/exterior/windows.ts#keepHours)): on around dusk, off through the
   evening, a few all night or again before dawn. The hours ride on its vertices and the window material compares
   them with the hour on the GPU ([`keepsHours`](ref:hub/renderers/tower3d/src/exterior/windows.ts#keepsHours)), as
-  far as the night has fallen: by day every lit window shows as before. Red warning lights flash on the parapet
-  corners of the six tallest towers and on the roof's mast, each structure on a hashed phase
+  far as the night has fallen: by day every lit window shows as before. Red warning lights flash on the tallest towers
+  and on the roof's mast, each structure on a hashed phase
   ([`beacons`](ref:hub/renderers/tower3d/src/exterior/beacons.ts#beacons)), tagged to glow. A few soft clouds drift
   overhead, placed on the GPU from sim time and tinted by the sky at the hour
-  ([`clouds`](ref:hub/renderers/tower3d/src/exterior/clouds.ts#clouds)). Two draw calls in all. The rig's interior
+  ([`clouds`](ref:hub/renderers/tower3d/src/exterior/clouds.ts#clouds)). The rig's interior
   light is chained after a material's own shader patch, so the windows keep their hours with the lighting on.
 - *The lighting is one setting.* [`startLighting`](ref:hub/renderers/tower3d/src/light/setting.ts#startLighting)
   reads `tower.store` under [`LIGHTING_KEY`](ref:hub/renderers/tower3d/src/light/setting.ts#LIGHTING_KEY) (on
@@ -107,8 +101,7 @@ measured. So anyone it annoys, or whose machine it slows, needs a way to turn it
   switch that works live is worse than an honest reload.
 - *The renderer's config `settings`* (as the cats' names are): no UI, so only someone who edits the config could
   turn it off. A viewer's choice about how the page draws is view state, and that goes through `tower.store`.
-- *The experiments not picked*: `look` (one fixed sun with prop shadows), screen-space AO (a lot of GPU time for
-  a subtle effect) and point lamps over your level. All were measured and deleted.
+- *Screen-space AO and point lamps over your level*: a lot of GPU time for a subtle effect.
 
-**Impact.** Tower 3D's frames on the fixture boards are the new look. `npm run tool:frames` records them with the
-lighting on, and the setting off draws byte for byte what `?proc=skyline,shell,roof` drew on the spike.
+**Impact.** Tower 3D's frames on the fixture boards are drawn with the lighting on; `npm run tool:frames` records
+them that way, and `?lighting=off` draws the exterior under the plain light.
