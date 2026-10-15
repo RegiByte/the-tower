@@ -33,7 +33,7 @@ meaning by one renderer, with no change to the core.
 
 **How.**
 - **A collection like drafts.** `games` is declared in the config's `collections`, for every project (the user's
-  answer: each floor has its own games). A worker keeps one with `tower keep games game.html` ([[agent-keep]]); the
+  answer: each floor has its own games). A worker keeps one with `tower keep games game.html` ([[workers-edit-kept-items]]); the
   board carries the items, their tags and keepers, never content. What a game is lives in Tower 3D
   ([`games.ts`](ref:hub/renderers/tower3d/src/games.ts)), named once there.
 - **One cabinet per game** ([`arcadeFor`](ref:hub/renderers/tower3d/src/layout.ts#arcadeFor)), only on a floor

@@ -54,7 +54,7 @@ primitives every renderer can reach.
   ignored, so an editor's swap files never become items.
 - [[live-system]] watches the directory and rescans it once changes settle, whoever made them: the tower, a
   session, an editor. A burst of 400 creates and deletes raised 404 watch events and costs one rescan. The board carries each floor's declared collections, each with its `dir`, and item metadata only (`id`, `tag`
-  ([[item-tags]]), `size`, `modifiedAt`), never content: the format is a view's business. An item a worker kept carries `keptBy` ([[agent-keep]]). A view fetches content
+  ([[item-tags]]), `size`, `modifiedAt`), never content: the format is a view's business. An item a worker kept carries `keptBy` ([[workers-edit-kept-items]]). A view fetches content
   (`collection/<project>/<collection>/<item>`) and fetches again when `modifiedAt` changes. Undeclared directories
   stay off the board.
 - [[renderer-api]] verbs: `collection/create` (answers `created` with the id and its version), `collection/write`

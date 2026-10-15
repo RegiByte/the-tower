@@ -25,7 +25,7 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
 - `/items.js` ([`src/shared/items.ts`](ref:hub/src/shared/items.ts)): a collection's items newest first as rows
   (`collectionTrayHtml`, each a button carrying `data-kept`), titled where their type names itself
   ([`keptTitles`](ref:hub/src/shared/items.ts#keptTitles) over `titles.ts`, else the tag), with the tag, the keeper
-  ([[agent-keep]]) and how long ago it changed. [`itemKind`](ref:hub/src/shared/items.ts#itemKind) reads an item by
+  ([[workers-edit-kept-items]]) and how long ago it changed. [`itemKind`](ref:hub/src/shared/items.ts#itemKind) reads an item by
   its extension: markdown through `markdownHtml` ([[markdown-safe]]: anything a worker kept is unvetted words), html
   framed at the opaque origin `/collection/…` serves it at, scripts on and no API relay, an image shown, text as
   written, anything else left to Finder and the editor. [`deleteAsk`](ref:hub/src/shared/items.ts#deleteAsk) is what a

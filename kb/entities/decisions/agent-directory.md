@@ -52,7 +52,7 @@ name belongs to which callsign, floor or task.
   by the same [`spawnCall`](ref:hub/src/shared/cards.ts#spawnCall) over the floor's offered calls, so it lands where
   the renderers would land it. It marks the spawn as its `hire`: the tower refuses it past the floor's `hiring` limits and logs who hired whom
   ([[hiring-limits]]).
-- The directory's reads fold no logs. `tower show` and `tower open` write only to the worker's own log ([[agent-show]]); `tower keep` adds to the floor's collections ([[agent-keep]]). A peer message is Claude Code's, visible in both sessions.
+- The directory's reads fold no logs. `tower show` and `tower open` write only to the worker's own log ([[agent-show]]); `tower keep` adds to the floor's collections ([[workers-edit-kept-items]]). A peer message is Claude Code's, visible in both sessions.
   Workers hold every verb of the renderer API ([[agents-have-every-capability]]).
 
 **Alternatives considered.**
@@ -63,7 +63,7 @@ name belongs to which callsign, floor or task.
   reader beside the renderer API.
 - *A transport of the tower's own (a mailbox in collections).* Rejected: Claude Code already delivers messages,
   and peer messages stay Claude's.
-- *Agent verbs to write collections.* Deferred at first; workers now add to them ([[agent-keep]]) and edit what they kept ([[workers-edit-kept-items]]).
+- *Agent verbs to write collections.* Deferred at first; workers now add to them and edit what they kept ([[workers-edit-kept-items]]).
 - *The skill alone.* Rejected: a skill loads when Claude judges it relevant, and Claude's own messaging tools
   match "reach out" first (observed with Haiku).
 
