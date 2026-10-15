@@ -10,11 +10,10 @@
   "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
-**Problem.** A survey of the tower's first five days found the system prompt doing more than the skill. About half
-of the worked sessions loaded `tower:handbook`, but most ran the `tower` CLI, and very few of its calls failed. The
-verbs used right without the skill were the ones the brief spelled out (`whoami`, `show`, `keep drafts`). The skill
-loaded where it mattered most: before nearly every first message to a peer. The weak spot was showing: more than half
-of the sessions with three or more turns showed nothing.
+**Problem.** A worker learns the tower from two texts: the tower brief in its system prompt, sent on every turn,
+and the `tower:handbook` skill, loaded only when a session decides to. The verbs workers use right without loading
+the skill are the ones the brief spells out, and a session that never loads the skill still has to show its work,
+keep its ideas and reach a peer correctly.
 
 **Decision.**
 - The tower brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) is a short list, most important first:
