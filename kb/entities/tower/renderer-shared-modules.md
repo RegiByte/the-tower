@@ -9,14 +9,15 @@
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js` (a policy's rule and slots in words and where it stands, [[policies]]), and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
-with esbuild on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
 
-- `cards.ts`: words about cards (a status as a word and as a bubble's glyph, `bubbleOf`), the spawn form and its request, round-robin through waits, dismissals and the
-  ring setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, and the hiring
-  limits ([[hire]]).
+- `cards.ts`: words about cards (status words and glyphs, the status counts' and the host lamp's words, what a live
+  region says as waits begin), the spawn form and its request, round-robin through waits, dismissals and the ring
+  setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
+  ([[hire]]), crews ([[crews]]) and the past by crew.
 - `panels.ts`: the Changes, Reviews, Stats and Policies panels as pure views (view model in, html out), the line-picking logic,
   one stylesheet and the data attributes each renderer wires ([[shared-panels]]), with code highlighted by
   `highlight.ts` (highlight.js, bundled).
@@ -27,7 +28,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   and what to ask before deleting one ([[collection-trays]]).
 - `reviews.ts`: the thread format, its parse and append, anchors and their state against the current diff, the
   prompts that start a reviewer and send notes ([[review-round]], [[review-threads]]).
-- `icons.ts`: the inline SVG every renderer draws for the same things, every icon a control or a row draws among them (close, info, help, the sidebar, resume, a caret, a branch, a thread, a shelf entry's kind, a gist's kind); `withIcons` draws the text marks shared words carry (`⎇`, `◇`, `▤`) as those icons ([[design-system]]).
+- `icons.ts`: the inline SVG every renderer draws for the same things, and `withIcons`, which draws the text marks
+  shared words carry as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by
   `wirePrefs`) as pure views, its stylesheet and the data attributes a renderer wires ([[viewer-prefs]]).
 - `prefs.ts`: the viewer's appearance record `tower.prefs` keeps, its defaults, and whether to move less (`reducedMotion`) ([[viewer-prefs]]).
@@ -40,23 +42,18 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
 - `toasts.ts`: a few words about what just happened, stacked at the bottom of the page, each with at most one action
   (Resume after a kill, Undo after a delete), in a polite live region ([`toaster`](ref:hub/src/shared/toasts.ts#toaster)).
-- `cards.ts` also holds what a renderer's live region says as waits begin (`waitsBeganLine`, `WAIT_SAID`), a status in a word for a row short of room (`statusWord`), and the words of the status counts, which a card says too ("done", "failed": `ATTENTION_NAME`, `ATTENTION_MEANS`, `WAITING_MEANS`,
-  `statusLegendHtml`) and of the host's state (`hostState`, `HOST_NAME`, `HOST_MEANS`).
 - `termkeys.ts`: the editing keys of a Mac text field in every browser terminal
-  ([`NATURAL_KEYS`](ref:hub/src/shared/termkeys.ts#NATURAL_KEYS)): Shift+Enter sends `\n` (a newline in Claude's
-  prompt, Enter in a shell), Ctrl+⌫ `^W`, ⌘⌫ `^U`, ⌘⌦ `^K`, ⌘← / ⌘→ `^A` / `^E`, ⌥← / ⌥→ `ESC b` / `ESC f` (xterm's `ESC [1;3D` leaks `D` in zsh), the readline keys Claude's
-  prompt and a shell both read. ⌥⌫ is xterm's own ESC DEL, already a word delete in both. Every xterm a renderer
-  mounts (the tower page's session and shells, Tower 3D's desk and kiosks) takes
-  [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) as its key handler: each natural key is a
-  command of the keymap, so the config can rebind it, and any other command a terminal reaches goes to the renderer
-  first. [`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) stays for renderers on the default keys.
+  ([`NATURAL_KEYS`](ref:hub/src/shared/termkeys.ts#NATURAL_KEYS)), the readline keys Claude's prompt and a shell both
+  read; every xterm a renderer mounts takes [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) as its
+  key handler, each natural key a command of the keymap the config can rebind
+  ([`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) stays for renderers on the default keys).
+- `policies.ts`: a policy's rule and slots in words, and where it stands ([[policies]]).
 - `keymap.ts`: every command a renderer runs from the keyboard, as data ([`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS)),
   matched against `board.keys` (the config's `keys` over the defaults), with the words for chords, the `?` sheet and
   `aria-keyshortcuts` ([[keymap]]).
 
-Some are also imported by the bridge, the server and the `tower` command. A module here holds no renderer's state: each renderer keeps its
-own and hands it in. `panels.ts` keeps only a cache of highlighted files, by their diff's hash.
+A module here holds no renderer's state: each renderer keeps its own and hands it in. `panels.ts` keeps only a cache
+of highlighted files, by their diff's hash.
 
 Their exports are part of the renderer API's contract ([[renderer-api-contract]]): a renderer kept apart from the
-checkout imports them, so removing or renaming one is an API major. `test/served-exports.json` lists every name served,
-and `test/served.test.ts` holds the modules to it: any difference fails, and `npm run served:update` rewrites the list.
+checkout imports them, so removing or renaming one is an API major, held by `test/served.test.ts`.
