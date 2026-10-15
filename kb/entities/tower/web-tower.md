@@ -43,8 +43,8 @@ grant carries through when it is itself framed. Reading the clipboard stays with
 
 *Reflow* (2026-10-08). The page holds at 200% zoom and at the largest Text size: under 900 px the sidebar is the rail
 and the sidebar key (or ») opens it over the main pane until a worker is picked; the worker bar wraps rather than
-clipping its callsign ([[design-system]]). Under the worker bar sits one tab row: its panes, a tab per showing and,
-while it waits on you, the ✕ that dismisses that wait. The move keys (`prev-worker`, `next-worker`, `next-waiting`)
+clipping its callsign ([[design-system]]). Under the worker bar sits one tab row: its panes and a tab per showing.
+While it waits on you, a quiet "dismiss" beside its status takes that wait out of your way. The move keys (`prev-worker`, `next-worker`, `next-waiting`)
 have no chips there: the keys sheet lists them, and the sidebar shows where they land. What the worker runs now is the terminal's, and the details' `now` row.
 
 *Keyboard and screen readers* (2026-10-08). The page is the tower's accessible renderer: Tower 3D's pointer-lock walk

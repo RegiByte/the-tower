@@ -231,8 +231,7 @@ dialog#landing { width: min(960px, 94vw); }
   box-shadow: var(--shadow); pointer-events: none; }
 #c-mode:empty, #c-mode.owner, .main.on-brief #c-mode, .main.on-shown #c-mode, .main.on-changes #c-mode, .main.on-reviews #c-mode { display: none; }
 #bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
-.dismiss { color: var(--needs-text); }
-#bar-line .dismiss { margin-left: auto; }
+#bar-info .dismiss { flex: none; min-height: 0; padding: 1px var(--sp-s); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
 #bar-details, #bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
 #bar-details h3, #bar-left h3 { margin: 0 0 var(--sp-l); font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
@@ -903,7 +902,7 @@ function barHtml(c) {
   const orphan = c.resources.some((r) => r.orphan)
   const ctx = c.context
   repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}
     <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, floorOf(c.project))))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
@@ -924,7 +923,7 @@ function barHtml(c) {
   $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
   $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
-  repaint($('bar-line'), paneTabsHtml(c, paneOf(c)) + dismissHtml(c))
+  repaint($('bar-line'), paneTabsHtml(c, paneOf(c)))
   renderPane(c)
 }
 
@@ -961,10 +960,10 @@ const CLOSE_HOME = `<button class="icon-btn" data-act="home" aria-label="back to
 
 const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabel(board.keys, id)})` : what)
 
-/** ✕ for `c`'s own wait while you heed it. */
+/** Dismiss, beside the status of `c` while it waits on you and you heed it. */
 function dismissHtml(c) {
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  return wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
+  return wait ? `<button class="dismiss" data-dismiss="${esc(wait.key)}" data-tip="${DISMISS_TITLE}">dismiss</button>` : ''
 }
 
 /** The selected session's view in the main pane, as the viewer picked it since selecting the session. */
