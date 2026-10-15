@@ -90,7 +90,7 @@ export const toastsCss = `
   width: max-content; max-width: 90vw; pointer-events: none; }
 .toasts .toast { display: flex; align-items: center; gap: var(--sp-l); max-width: 100%; padding: var(--sp-m) var(--sp-xl); background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-left: 4px solid var(--ink); border-radius: var(--radius); box-shadow: var(--shadow); pointer-events: auto; }
-.toasts .toast > span:first-child { flex: 1; }
+.toasts .toast > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .toasts .toast-count { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
 .toasts .toast-count:empty { display: none; }
 .toasts .toast button { flex: none; }
