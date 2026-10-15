@@ -15,7 +15,7 @@ import type { FloorWorktreeRepo, WorktreeState } from './worktrees.ts'
 /**
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
- * ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a
+ * ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a
  * stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a
  * prompt telling it so; `note` adds a note to the review thread about its work
  * (`NoteVerb`).
@@ -154,12 +154,12 @@ export const cardOffers = (
 }
 
 /**
- * `send-home` on a worker in a crew: someone reports to it or it reports to someone. `crew`: the worker and everyone
- * under it, each under its hirer or author, so the reverse ends the deepest first. Offered while any of them runs.
+ * `send-home` on every worker: `crew` is the worker and everyone under it, each under its hirer or author, so the
+ * reverse ends the deepest first. Offered while any of them runs; a worker with nobody under it ends alone.
  */
-export const sendHomeOffer = (crew: { id: string; status: Status }[], inCrew: boolean): Offers<'send-home', Pick<CardCalls, 'send-home'>> => {
+export const sendHomeOffer = (crew: { id: string; status: Status }[]): Offers<'send-home', Pick<CardCalls, 'send-home'>> => {
   const running = crew.filter((c) => isLive(c.status)).reverse()
-  return inCrew && running.length
+  return running.length
     ? { verbs: ['send-home'], calls: { 'send-home': running.map(({ id }): Call<'kill'> => ['kill', { id }]) } }
     : { verbs: [], calls: {} }
 }

@@ -772,8 +772,8 @@ const kill = (id: string, by: string | undefined) =>
 const departing = new Set<string>()
 
 /**
- * A leaving worker whose turn has completed goes home through its card's calls, each kill named as its own act: its
- * `send-home` (everyone under it, then itself) when it is in a crew, else its `kill`.
+ * A leaving worker whose turn has completed goes home through its card's `send-home`, each kill named as its own
+ * act: everyone under it that runs, then itself.
  */
 const sendLeaversHome = () => {
   const live = system.live()?.ids
@@ -783,7 +783,7 @@ const sendLeaversHome = () => {
   for (const c of cards.filter((c) => c.leaving && !departing.has(c.id) && leavesNow(system.session(c.id)!.facts))) {
     departing.add(c.id)
     void (async () => {
-      for (const [verb, body] of c.calls['send-home'] ?? [c.calls.kill!]) {
+      for (const [verb, body] of c.calls['send-home']!) {
         const answer = await HANDLERS[verb](ROUTES[verb].input.parse({ ...body, by: c.id }))
         if (answer.t === 'error') console.error(`${c.callsign} asked to go home, and killing ${body.id} failed: ${(answer as ApiError).message}`)
       }

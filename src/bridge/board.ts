@@ -132,7 +132,7 @@ export type Card = {
   waiting: boolean
   /**
    * It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the
-   * tower runs its `send-home`, or its `kill` when it is in no crew. Its outcome waits on nobody; a screen or a question
+   * tower runs its `send-home`. Its outcome waits on nobody; a screen or a question
    * still waits on the user, since the turn can't end until someone answers it.
    */
   leaving: boolean
@@ -531,8 +531,7 @@ const withCrews = (cards: Card[]): Card[] => {
     return { ...c, ...(to && { reportsTo: to.id }), ...answerWait(c, hirer) }
   })
   return reporting.map((c) => {
-    const crew = crewOf(reporting, c)
-    const { verbs, calls } = sendHomeOffer([c, ...crew], crew.length > 0 || c.reportsTo !== undefined)
+    const { verbs, calls } = sendHomeOffer([c, ...crewOf(reporting, c)])
     return verbs.length ? { ...c, verbs: [...c.verbs, ...verbs], calls: { ...c.calls, ...calls } } : c
   })
 }

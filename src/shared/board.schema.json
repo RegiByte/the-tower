@@ -513,7 +513,7 @@
         },
         "leaving": {
           "type": "boolean",
-          "description": "It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the tower runs its `send-home`, or its `kill` when it is in no crew. Its outcome waits on nobody; a screen or a question still waits on the user, since the turn can't end until someone answers it."
+          "description": "It runs and asked to go home (`tower home` with its own callsign) with no prompt since: once its turn completes, the tower runs its `send-home`. Its outcome waits on nobody; a screen or a question still waits on the user, since the turn can't end until someone answers it."
         },
         "waitsOn": {
           "type": "object",
@@ -1365,7 +1365,7 @@
         "send-home",
         "note"
       ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), offered to a worker in a crew; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
     },
     "CardCalls": {
       "type": "object",

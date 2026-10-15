@@ -291,7 +291,7 @@ export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: str
     can(c, 'let-go') && (held('let-go') ? heldButton(held('let-go')!, '', 'Let go', 'Let go') : askingButton(armed(`let-go ${c.id}`), `data-act="let-go" data-of="${esc(c.id)}"`, 'Let go', `let ${c.callsign} go: ${LET_GO_MEANS}`, letGoAsk(c))),
     can(c, 'reap') && askingButton(armed(`reap ${c.id}`), `data-act="reap" data-of="${esc(c.id)}"`, `reap ${c.resources.length}`, c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'), reapAsk(c)),
     framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
-    (can(c, 'send-home') || can(c, 'kill')) && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(floor!.cards, c))),
+    can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(floor!.cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(floor!.cards, c))),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
   return `<span class="call">${esc(c.callsign)}</span>${pill(c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floor))}</span>

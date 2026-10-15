@@ -137,7 +137,7 @@ test('waits: a screen that blocks first, then a question, then an answer, each k
     { id: '20261003-115149-aee9', key: '20261003-115149-aee9@1791028325519', reason: 'done', since: 1791028325519 },
   ])
   const blocked = cardsOf([logs[2]], hostWith(logs[2].header.id))[0]
-  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, blocked.verbs], ['blocked', 'trust', 'needs', ['drive', 'kill']])
+  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, blocked.verbs], ['blocked', 'trust', 'needs', ['drive', 'kill', 'send-home']])
 })
 
 test('attention: working at a turn, needs you on a question, ready on an answer, quiet when idle, broken once lost or failed', () => {
@@ -190,9 +190,9 @@ test('verbs: a live session is driven and killed, takes a prompt at its composer
   const log = homed(fixture('interrupts'))
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
-  assert.deepEqual(at(5, id).verbs, ['drive', 'kill'])
-  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'kill'])
-  assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill'])
+  assert.deepEqual(at(5, id).verbs, ['drive', 'kill', 'send-home'])
+  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'kill', 'send-home'])
+  assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
   assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
 })
@@ -302,7 +302,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
     { resume: ['resume', { id: log.header.id, conversation: latest }] },
   ])
   const live = cardsOf([{ ...log, events: log.events.filter((e) => e[1] !== 'x') }], hostWith(log.header.id))[0]
-  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], kill: ['kill', { id: log.header.id }] })
+  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
   assert.deepEqual(board(CONFIG, [], hostWith(), [], [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, 0).floors[0].calls, {
     spawn: ['spawn', { project: 'tower' }],
     shell: ['shell/spawn', { project: 'tower' }],
@@ -556,7 +556,7 @@ test("a Stop the fold can't follow breaks its session there: its facts stop, the
   assert.equal(statusName(running), 'broken')
   assert.match(gistLine(running), /^× log unreadable past a hook \(.+\): Cannot read properties of undefined \(reading 'some'\)$/)
   assert.deepEqual(speechOf(running), [])
-  assert.deepEqual(running.verbs, ['drive', 'submit', 'brief', 'kill'])
+  assert.deepEqual(running.verbs, ['drive', 'submit', 'brief', 'kill', 'send-home'])
 
   const [killed] = cardsOf([log])
   assert.equal(killed.status, 'lost')

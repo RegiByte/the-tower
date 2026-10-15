@@ -145,8 +145,8 @@ const threadOffer = (board: Board, c: Card): Offer[] => {
   return [{ verb: 'thread', label: c.unseen ? `read ${notes(c.unseen)} new to it` : 'review thread' }]
 }
 
-/** Those X sends home: the worker's crew that runs when it is in one (`send-home`), else the worker. */
-export const sentHome = (cards: Card[], c: Card): Card[] => (c.calls['send-home'] ?? [c.calls.kill!]).map(([, { id }]) => cards.find((h) => h.id === id)!)
+/** Those X sends home: the worker and everyone under it that runs (`send-home`). */
+export const sentHome = (cards: Card[], c: Card): Card[] => c.calls['send-home']!.map(([, { id }]) => cards.find((h) => h.id === id)!)
 
 const homeLabel = (board: Board, c: Card) => {
   const others = sentHome(floorOf(board, c.project)!.cards, c).filter((h) => h.id !== c.id)
@@ -164,7 +164,7 @@ const workerOffers = (board: Board, scene: Scene, c: Card, drive: string): Offer
     ...threadOffer(board, c),
     ...(can(c, 'review') ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
     ...(can(c, 'reap') ? [{ verb: 'reap' as const, label: `reap ${c.resources.length} leftover${c.resources.length === 1 ? '' : 's'}` }] : []),
-    ...(can(c, 'send-home') || can(c, 'kill') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
+    ...(can(c, 'send-home') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
     ...(can(c, 'let-go') ? [holding(board, scene, 'let-go', { verb: 'let-go', label: 'let go' })] : []),
   ]
   return c.live ? [look, ...goOn(board, scene, c), ...rest] : [...goOn(board, scene, c), look, ...rest]

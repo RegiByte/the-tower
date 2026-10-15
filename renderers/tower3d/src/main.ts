@@ -958,10 +958,10 @@ function goLevel(index: number) {
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, lock)
 }
 
-/** Ends a worker, with its crew that runs when it is in one, the deepest first; the toast offers its resume. */
+/** Ends a worker with everyone under it that runs, the deepest first; the toast offers its resume. */
 async function sendHome(c: Card) {
   const crew = sentHome(floorOf(c.project).cards, c)
-  for (const call of c.calls['send-home'] ?? [c.calls.kill!]) if (!(await offered(call))) return
+  for (const call of c.calls['send-home']!) if (!(await offered(call))) return
   toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, { label: 'Resume', run: () => resumeSentHome(c) })
 }
 

@@ -31,8 +31,8 @@
  *   tower send <CALLSIGN>           submit into a worker a pointer to the notes on its checkout's thread new to it
  *   tower review <CALLSIGN> [tell]  hire a reviewer of a worker's work, in a fork of its checkout (its card's `review`);
  *                                   with `tell`, the reviewer sends its notes to that worker when done
- *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed (its card's `send-home`,
- *                                   or its `kill` for a worker in no crew);
+ *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed, the deepest first (its
+ *                                   card's `send-home`);
  *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
  *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
  *   tower hire [<tag|id>] [model <m>] [effort <e>] [name <n>] [base origin/<b>]   start a worker on this floor, placed
@@ -820,11 +820,11 @@ switch (verb) {
     if (card.id === me) {
       if (!process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
       await postToHost(me, { hook_event_name: 'tower.leave' })
-      const crew = card.calls['send-home'] ? crewOf(board.floors.find((f) => f.id === card.project)!.cards, card).filter((c) => c.live) : []
+      const crew = crewOf(board.floors.find((f) => f.id === card.project)!.cards, card).filter((c) => c.live)
       console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
       break
     }
-    const calls = card.calls['send-home'] ?? (card.calls.kill && [card.calls.kill])
+    const calls = card.calls['send-home']
     if (!calls) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker whose session runs can be sent home. \`tower agents --all\` shows who is on duty.`)
     for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })
     const floor = board.floors.find((f) => f.id === card.project)!
