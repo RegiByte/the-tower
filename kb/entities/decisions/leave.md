@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-10-14",
+  "reviewed": "2026-10-15",
   "refs": [
     "hub/src/directory.ts",
     "hub/src/bridge/facts.ts#LEAVE",

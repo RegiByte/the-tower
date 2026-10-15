@@ -93,12 +93,16 @@ const statusAfter = ({ status, compaction }: SessionState, event: LogEvent, scre
   return HOOK_STATUS[hook.hook_event_name] ?? status
 }
 
-/** A compaction ends with its `SessionStart`, or, when it gives up, with the main loop's next step of the turn. */
+/**
+ * A compaction ends with its `SessionStart`, or, when it gives up, with the main loop's next step of the turn. A
+ * subagent's compaction raises the same `PreCompact` and `SessionStart` as the main loop's, with no `agent_id`: an
+ * automatic start during a manual `/compact` can only be a subagent's, and keeps the manual trigger.
+ */
 const compactionAfter = (compaction: string | undefined, event: LogEvent): string | undefined => {
   if (event[1] === 'x') return undefined
   if (event[1] !== 'h') return compaction
   const hook = event[2]
-  if (isCompactionStart(hook)) return String(hook.trigger)
+  if (isCompactionStart(hook)) return compaction === 'manual' ? compaction : String(hook.trigger)
   const turnMoves = hook.agentId === undefined && (hook.hook_event_name === 'turn.step' || hook.hook_event_name === 'turn.complete')
   return isCompactionEnd(hook) || turnMoves ? undefined : compaction
 }

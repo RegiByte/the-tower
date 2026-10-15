@@ -79,6 +79,19 @@ test('automatic compactions mid-turn, one that gives up and two that finish, kee
   ])
 })
 
+test('a subagent compacting during a manual /compact leaves the main loop idle when its own compaction ends', () => {
+  assert.deepEqual(timeline(fixture('compact-subagent')), [
+    ['idle', 0.872],
+    ['working', 0.947],
+    ['watching', 3.847],
+    ['working', 9.798],
+    ['idle', 13.912],
+    ['working', 23.089],
+    ['done', 26.26],
+    ['exited', 71.65],
+  ])
+})
+
 test("outside an organization the mod's session.compact starts a compaction too", () => {
   assert.deepEqual(timeline(fixture('compact-manual-outside-org')), [
     ['idle', 0.796],

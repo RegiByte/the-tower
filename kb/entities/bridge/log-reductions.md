@@ -4,7 +4,7 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
   "in": "bridge",
-  "reviewed": "2026-10-14",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
 }
 ---
@@ -26,7 +26,11 @@ or one event at a time as it is tailed:
   carries on (it may also give up with no `SessionStart`, ended by the turn's next step), and an idle one
   summarizes the conversation of a session that waits, which keeps waiting (its `PreCompact` says `auto`, read
   from Claude 2.1.300's code and never seen live). The state keeps the `trigger` of the compaction in
-  progress for that, and the board's card says `compacting` while one runs inside a turn or by `/compact`. A session without
+  progress for that, and the board's card says `compacting` while one runs inside a turn or by `/compact`. A
+  subagent's compaction raises the same hooks with no `agent_id` ([[claude-code]]), so the fold can't tell it apart:
+  an automatic start during a manual `/compact` keeps the manual trigger (only a subagent's can come then), while a
+  subagent's `SessionStart` can end a manual one early, and its start can show a working main loop as `compacting`
+  until the loop's next step (known gaps). A session without
   an `x` event that the host no longer runs is `lost` ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one
   place a bad event is caught: a step that throws leaves the facts as they were with `broken` (the error, the event's
