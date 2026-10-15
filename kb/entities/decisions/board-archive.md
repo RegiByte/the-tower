@@ -41,7 +41,7 @@ every card.
   [`archiveOf`](ref:hub/src/bridge/board.ts#archiveOf) over `allCards` (`Card[]`, newest first, the same card
   shape), typed in `Reads` and as `tower.archive`.
 - A past list is the board's off-duty cards with the archive read
-  ([`pastOf`](ref:hub/src/shared/cards.ts#pastOf)), listed by crew ([[archive-crews]]); its tray counts `pastCount` before the read. The tower page keeps
+  ([`pastOf`](ref:hub/src/shared/cards.ts#pastOf)), listed by crew ([[crews]]); its tray counts `pastCount` before the read. The tower page keeps
   the archives it read, its `findCard` looks there on a miss, and an id in the URL hash that the board lacks reads
   every floor's archive. Tower 3D reads every floor's archive for its filing cabinets and its archive panel ([[logbook]]; a fixture board serves its own), and
   a gallery picture is looked up in `floor.gallery`, its card optional (`archived` on hover when the board lacks it).
