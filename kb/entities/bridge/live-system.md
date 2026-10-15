@@ -19,51 +19,53 @@
   ]
 }
 ---
-`src/system.ts`, with its machine edges in `src/machine.ts` (host and terms requests, `ps`/`lsof`, git
-origins, the editor, `bringUp`). A new log file is picked up by a directory watch; an exited session stops being
-tailed, as does one let go ([[let-go]]) and one whose fold breaks on an event it can't follow ([[broken-logs]]): it costs that session's facts,
-and the tower and every other session carry on. Each log is folded from its checkpoint on ([`foldLog`](ref:hub/src/checkpoints.ts#foldLog),
-[[fold-checkpoints]]): an exited log costs a header read and a lookup, so a start once checkpointed is far cheaper than
-folding every log from its start; a running session's tail goes on from where its fold
-stopped. Logs are read and tailed through an event filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) that tells
-from a line's bytes what the fold ignores, before decoding or parsing it: output is skipped once the session has started
-(the filter folds the session's state over what it keeps, and reads output only while it is `booting` or `blocked`, the
-only time output holds a fact), and a `PostToolUse` is read for its name alone (output and tool responses are over 90% of
-a log's bytes). An event whose state the filter can't follow is kept, as is a complete line that isn't JSON, for the fold to break on, with nothing after it but the user letting the session go ([[broken-logs]]). A filter is
-made from the state a read starts at (`factEvents(state)`): the
-fold's own state at every step, so a fold resumed from a checkpoint and the tail after it skip exactly what a fold
-from the start skips. `onChange` fires only when something renderers read changed, each poll comparing its read with the last by
-content: output changes no fact but a blocking screen
-(`factsAfter` hands back the same facts for any other `o` event), and the directory watch, which fires on every append,
-signals only a newly tracked log. The collections directory is watched recursively (one FSEvents stream on macOS, no descriptor per file) and
-rescanned once changes settle for 100 ms ([`scanCollections`](ref:hub/src/collections.ts#scanCollections): every
-item with its size and mtime), so a burst of writes costs one rescan,
-signalling only when the listing differs; the store doesn't read the config, so the board picks the declared ones. The system's streams (`streams/system/`) are watched the same way: each probe's month files are folded in order
-([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts), [[probes]]) once a write settles, a file whose size is
-unchanged kept as read, signalling only when a probe's facts differ. The projects' streams (`streams/projects/`) are
-watched the same way: each project's `runs` and `approvals` months folded into its policy facts
-([`policyFacts`](ref:hub/src/bridge/policies.ts#policyFacts), [[policies]]); and each item of a `policies`
-collection is parsed and hashed when the collections settle, read again only when its `modifiedAt` moves. Leftover processes and the peer names of sessions' Claudes are re-read every 5 s, from one `ps` scan ([[agent-directory]]), run
-off the event loop. The config's directory is
-watched for the config file (an editor's save replaces it), and a change signals: the board reads the config, and a
-config fixed after it broke brings the board back ([[board-errors]]). [`readConfig`](ref:hub/src/system.ts#readConfig)
-throws a `ConfigError` naming the file for JSON that doesn't parse; the repos read then keeps its last read.
+`src/system.ts`, with its machine edges in `src/machine.ts` (host and terms requests, `ps`/`lsof`, git origins, the
+editor, `bringUp`).
 
-The machine (`running()`, `peers()` and `repos()`) is read only while someone observes it: `observe()` keeps the 5 s
-polls running until its release, and the first observer after none reads it at once and waits for the read, so
-whoever observes sees it current. Every board client of the tower observes while it holds the board, and a reap
-observes for the length of the request; with no renderer open, the tower runs no `ps`, `lsof` or git at all (a
-read runs git several times per dir, on a thread of its own so their spawns never hold the
-tower's event loop: [`readRepos`](ref:hub/src/system.ts#readRepos)). `live()` and `shells()` are `undefined` while the host or
-the terms daemon is down, which renderers show as such.
+**Logs.** A new log file is picked up by a directory watch. Each log is folded from its checkpoint on
+([`foldLog`](ref:hub/src/checkpoints.ts#foldLog), [[fold-checkpoints]]), and a running session's tail goes on from where
+its fold stopped; an exited session stops being tailed, as does one let go ([[let-go]]) and one whose fold breaks on an
+event it can't follow ([[broken-logs]]), which costs that session's facts alone. Logs are read through an event filter
+([`factEvents`](ref:hub/src/tail.ts#factEvents)) that tells from a line's bytes what the fold ignores, before decoding
+it: output once the session has started (output holds a fact only while it is `booting` or `blocked`), and a
+`PostToolUse` past its name. The filter folds the session's state over what it keeps and is made from the state a read
+starts at (`factEvents(state)`), so a fold resumed from a checkpoint skips exactly what a fold from the start skips. An
+event whose state it can't follow, or a complete line that isn't JSON, is kept for the fold to break on.
+
+**Change.** `onChange` fires only when something renderers read changed, each poll comparing its read with the last by
+content: output changes no fact but a blocking screen, and the directory watch, which fires on every append, signals
+only a newly tracked log.
+
+**Collections and streams.** The collections directory, the system's streams (`streams/system/`) and the projects'
+streams (`streams/projects/`) are each watched recursively (one FSEvents stream on macOS, no descriptor per file) and
+read again once changes settle, so a burst of writes costs one read, signalling only when the result differs:
+collections rescanned ([`scanCollections`](ref:hub/src/collections.ts#scanCollections), every item with its size and
+mtime; the store doesn't read the config, the board picks the declared ones), each probe's month files folded in order
+([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts), [[probes]]), each project's `runs` and `approvals` folded
+into its policy facts ([`policyFacts`](ref:hub/src/bridge/policies.ts#policyFacts), [[policies]]); a stream file at the
+same size is not read again. Each item of a `policies` collection is parsed and hashed when the collections settle,
+again only when its `modifiedAt` moves.
+
+**Config.** The config's directory is watched for the config file (an editor's save replaces it), and a change
+signals: the board reads the config, and a config fixed after it broke brings the board back ([[board-errors]]).
+[`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for JSON that doesn't parse; the repos read then keeps its last read.
+
+**The machine.** `live()` and `shells()` poll the host and the terms daemon every 1 s, and are `undefined` while either is
+down, which renderers show as such. `running()` (leftover processes), `peers()` (the peer names of sessions' Claudes,
+[[agent-directory]]), both from one `ps` scan run off the event loop, and `repos()` are read only while someone
+observes, every 5 s: `observe()` keeps those polls running until its release, and the first observer after none reads at once and
+waits for the read. Every board client of the tower observes while it holds the board, and a reap for the length of
+its request; with no renderer open, the tower runs no `ps`, `lsof` or git at all.
 
 `repos()` is every project dir's git, by dir, read every 5 s while observed and after a worktree verb
-([`readRepo`](ref:hub/src/worktrees.ts#readRepo)): the tower's worktrees, its kept branches and origin's branches,
+([`readRepo`](ref:hub/src/worktrees.ts#readRepo)), on a thread of its own so its spawns never hold the tower's event
+loop ([`readRepos`](ref:hub/src/system.ts#readRepos)): the tower's worktrees, its kept branches and origin's branches,
 without fetching, every command with `--no-optional-locks` so a read never takes the index lock a worker's git needs.
-One read runs at a time (a refresh asked during one runs once more after it, [`serially`](ref:hub/src/system.ts#serially), as the process scan does); a dir git fails to read keeps its last
-read and the failure is logged ([[tower-cuts-worktrees]]).
+One read runs at a time, a refresh asked during one running once more after it
+([`serially`](ref:hub/src/system.ts#serially), as the process scan does) ([[tower-cuts-worktrees]]).
 
-No poll or watch can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails (the host, the terms
-daemon, the process scan, git) keeps its last read and says why in the tower's log, and the next poll reads again; a
-watcher's callback (the sessions directory, a log's tail, the collections' rescan, the config) that throws is logged
-and runs again on the next change. A log's tail whose watcher fails says so in the log and that session's facts stop there; a failed watch of the sessions directory, the collections or the config's directory ends the tower with the reason, since every board after it would look current and be stale.
+**Failures.** No poll or watch can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails (the host,
+the terms daemon, the process scan, git) keeps its last read and says why in the tower's log, and the next
+poll reads again; a watcher's callback that throws is logged and runs again on the next change. A log's tail whose
+watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections, the
+streams or the config's directory ends the tower with the reason, since every board after it would look current and be stale.

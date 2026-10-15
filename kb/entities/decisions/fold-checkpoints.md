@@ -14,8 +14,7 @@
 }
 ---
 **Problem.** Every start of the [[live-system]] (the tower) and every `tower ls` and `tower resume` folded every log
-ever written from byte 0: on a system some months old, seconds and gigabytes for `tower ls` (it parsed every line).
-It grows linearly with history, yet nearly all of those logs had exited and can never change.
+ever written from byte 0. It grows linearly with history, yet nearly all of those logs had exited and can never change.
 
 **Why.** A checkpoint is a cache, never authoritative, always safe to delete, so
 it is not a fourth kind of stored state ([[logs-are-facts]]). The facts of a closed file are a pure function of
@@ -50,9 +49,8 @@ checkpoint to the new offset when it read anything. A checkpoint is `{fold, head
   log's end.
 - **Failures**: a write the file system refuses (`ENOSPC`, `EDQUOT`, `EACCES`, `EPERM`, `EROFS`) is said once per
   process and the fold goes on without it; any other error is thrown.
-- **Archived logs** ([[log-retention]]): a log Tidy gzipped is read as the plain log it was, offsets in plain
-  bytes; its size is the gzip trailer's, so the checkpoint archiving leaves at its end holds and `readEvents`
-  returns nothing without inflating it.
+- **Archived logs**: a log Tidy gzipped keeps the checkpoint archiving leaves at its end, which holds without
+  inflating it ([[log-retention]]).
 - **Readers**: [`watchSystem`](ref:hub/src/system.ts#watchSystem)'s `track` (the tower's start and every new log),
   `tower ls`/`tower resume` ([`src/cli.ts`](ref:hub/src/cli.ts)) and archiving a log
   ([`archiveLog`](ref:hub/src/archive.ts#archiveLog), which folds it to its end first). The archive read (`GET /archive/<project>`) reads
@@ -68,16 +66,12 @@ of another header or unreadable are not used; and the hash covers the fold's mod
   must not have.
 - Hashing only `bridge/facts.ts`, or a fixed list of files: misses a new import or a change in the filter.
 - Hashing the git commit: any commit anywhere invalidates, and a dirty working tree (every worker's) is not one.
-- JSON files: readable with `cat`, but lossy (a key holding `undefined` disappears, `NaN` becomes `null`), so
-  equality would hold only modulo JSON, and a future fact holding a `Map` would break it silently.
-- One file for all logs: a write rewrites everything, and a corrupt file loses every log's checkpoint.
-- A slot per fold hash (`facts/<fold>/<id>.v8`): two versions of the fold code reading one root (the main
-  tower, and `tower ls` from a worktree whose bridge changed) would keep their own checkpoints, where one slot per log
-  makes each throw out the other's and fold cold on every run (still correct, ~2 s). Retired hashes' directories
-  would pile up with nothing to remove them, and workers check changes on sandboxes with roots of their own. One
-  slot per log it is.
+- JSON files: lossy (a key holding `undefined` disappears, `NaN` becomes `null`), so equality would hold only
+  modulo JSON.
+- A slot per fold hash (`facts/<fold>/<id>.v8`): two versions of the fold code reading one root would each keep
+  theirs, where one slot per log makes them refold cold (still correct); but retired hashes' directories would pile
+  up with nothing to remove them, and workers check changes on sandboxes with roots of their own.
 - Keeping checkpoints beside the logs: `sessions/` is the facts, and the store's directory watch would wake on them.
 
-**Impact.** A warm start reads tens of milliseconds where a cold one (no cache, or after a fold code change) reads
-seconds, and writes every checkpoint once. Start time is now proportional to what was appended since the last read, not to history. `sessionState`
-and `stateOf` went with `tower ls`'s whole-log read.
+**Impact.** Start time is proportional to what was appended since the last read, not to history; a cold start (no
+cache, or after a fold code change) folds every log once and writes every checkpoint.

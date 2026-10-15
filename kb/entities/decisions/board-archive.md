@@ -10,24 +10,21 @@
   "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/server.ts#archive", "hub/src/shared/cards.ts#pastOf", "hub/src/shared/cards.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/bridge/seats.ts#withSeats", "hub/src/bridge/board.ts#galleryOf", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#findCard", "hub/src/directory.ts", "hub/renderers/page/index.html"]
 }
 ---
-**Problem.** The board is pushed whole, to every client, on every change, and it grew with every session ever run:
-once nearly every card on it had exited, and exited cards' conversations alone were a large share of the frame.
-The cards that change are the few on duty.
+**Problem.** The board is pushed whole, to every client, on every change. Holding every session ever run, it grows
+with history, while the cards that change are the few on duty.
 
 **Why.** Everything the bridge derives from history already runs over sessions, not over cards: threads,
 `resumes`/`resumedBy`, callsign lineage, a card's `shown` gathered across its lineage, `keptBy` and `waiting`
 ([`board`](ref:hub/src/bridge/board.ts#board), [`threads`](ref:hub/src/bridge/chains.ts#threads)). The server
-can keep full history and send less. What broke was the renderers, which derived over the cards they were sent:
-Tower 3D replayed seats over every card, the tower page's `findCard` threw on an id not on the board, Tower 3D's
-gallery took the newest showings of the cards it had, and party guests, `tower agent` and the past lists read past
-cards. So the history derivations moved into the bridge first, and only then did the board drop cards.
+can keep full history and send less, as long as nothing a renderer derives needs the cards it isn't sent: so whatever
+is derived from history (seats, the gallery, the callsigns of referenced sessions) is derived in the bridge, over
+every card.
 
 **How.**
 - History derived in the bridge, over every card: `card.seat`
   ([`withSeats`](ref:hub/src/bridge/seats.ts#withSeats): `{n}` a workstation, `{beside}` the author's id);
-  `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf)): the floor's last twelve showings, newest
-  first, each `{worker: {id, callsign}, shown}` (Tower 3D hangs as many as it has places, nine; twelve so the bridge
-  does not carry one renderer's wall); [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
+  `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf)): the floor's last showings, newest
+  first, each `{worker: {id, callsign}, shown}` ([[shared-wall]]); [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
   a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` and
   `hiredBy` carry `{session, callsign}`. [`bubbleOf`](ref:hub/src/shared/cards.ts#bubbleOf), a status's glyph, is in
   the shared cards.
@@ -52,18 +49,15 @@ cards. So the history derivations moved into the bridge first, and only then did
   archive; `tower hire` reads them for the hire depth, which walks `hiredBy` to sessions the board may leave out.
 - A past worker that can't be resumed where it ran says why in both past lists (`unresumable`, [[resume]]), in place
   of its ↻.
-- What the present doesn't show: the tower page's skyline lights the board's cards only, and a crew lists its
-  members gone home only while the board carries them.
+- A crew lists its members gone home only while the board carries them.
 
 **Alternatives considered.**
 - Clip harder (conversations' prompts and answers to a line on exited cards): halves the frame but keeps it
   linear in history, and renderers still derive over every card.
 - Diff frames (JSON patches against the last board): the work moves to every client, the board stays
   unbounded in memory and on first load, and a renderer in another language needs the patch logic.
-- Pagination of the archive by time: wanted later if the archive read itself grows; one project's history is
-  small next to the board pushed per change.
+- Pagination of the archive by time: wanted if the archive read itself grows.
 - A time-only horizon (24 h): drops stranded workers, which stay on duty for days, and leftovers.
 
-**Impact.** A breaking board change (an API major). The board shrinks to the cards of the day and those still on
-duty; past lists, lookups by id and callsign, and the hire depth read the archive. The fold and the logs are untouched;
-the archive is derived from the same sessions, so nothing is stored.
+**Impact.** The board holds the cards of the day and those still on duty; past lists, lookups by id and callsign, and
+the hire depth read the archive. The archive is derived from the same sessions, so nothing is stored.
