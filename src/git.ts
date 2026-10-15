@@ -62,7 +62,8 @@ const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.Proc
       if (code === null) return reject(new Error(`git ${args.join(' ')} in ${dir} ended on ${signal}`))
       resolve({ stdout: Buffer.concat(stdout), stderr, code })
     })
-    if (input !== undefined) child.stdin!.end(input)
+    // A git that exits before reading all of `input` breaks the pipe: its exit code and stderr say why, through `close`.
+    if (input !== undefined) child.stdin!.on('error', () => {}).end(input)
   })
 
 /** At most `n` tasks run at once; the rest start in the order they came, each as a running one settles and hands it its place. */
