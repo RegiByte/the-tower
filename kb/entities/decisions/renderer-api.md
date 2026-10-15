@@ -6,14 +6,13 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "supersedes": "shelf-page-contract",
   "reviewed": "2026-10-15",
   "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html"]
 }
 ---
-**Context.** Shelf pages could read the board but not act ([[shelf-page-contract]]), so no renderer on a
-shelf could ever do what the tower page does: by definition the tower could not be replaced from inside it.
-The tower page already drove everything through about a dozen HTTP routes and two SSE streams.
+**Context.** Shelf pages and renderers need to read the system and act on it, or no renderer could ever do what
+the tower page does: by definition the tower could not be replaced from inside it. The tower page already drove
+everything through HTTP routes and SSE streams.
 
 **Decision.** Those routes are the API: commands declared as schemas in [`src/shared/api.ts`](ref:hub/src/shared/api.ts)
 ([[renderer-api-contract]]), reads, streams and the tunnel typed in
@@ -52,35 +51,23 @@ renderer with a live screen per desk would otherwise starve. The tower page itse
 [`/run/<project>/<n>`](ref:hub/src/tower/server.ts#run) serves a shelf's `html` entry there too, so it runs on its
 own, full screen. [[tower3d]] is a full-parity renderer.
 
-`get` answers JSON as data and anything else as text, so a renderer reads a shelf's file list
-(`shelf/<project>/<n>`) and its markdown (`shelf/<project>/<n>/<file>`) through the same read, and a collection's
-item (`collection/<project>/<collection>/<item>`, listed on the board) too, and a file a worker showed
-(`shown/<id>/<path>`, on its card), and what a worker changed in its repos (`changes/<id>`, [[changes-view]]), and stats over every log
-(`stats?from&to&bucket&project`, `tower.stats(query)`: a read whose query has a schema, listed at `/schema` under
-`reads`, [[stats]]), what landing changed on a carried branch (`landing?project&branch`, `tower.landing(query)`, [[carried]]), and a project's review threads, live and landed, as history (`reviews/<project>`, [[review-threads]]). `text` reads any of them as text and `blob` as a `Blob` of its type,
-which is how a framed renderer draws an image in WebGL ([[blob-reads]]). `collection/create | write | delete`
-change items and `submit` types a prompt into a worker's composer ([[collections]]); `review/append` appends a note
-to a checkout's review thread, and `/reviews.js` serves the threads' format to renderers ([[review-threads]]); `spawn {cut}`,
-`worktree/recut | prune | remove`, `branch/delete` and `tidy` cut and tidy worktrees ([[tower-cuts-worktrees]]), and
-`worktree/discard` throws away work that never landed ([[discard]]); each verb's reply and its
-errors are in [[renderer-api-contract]].
+`get` answers JSON as data and anything else as text, `text` reads any read as text and `blob` as a `Blob` of its
+type, which is how a framed renderer draws an image in WebGL ([[blob-reads]]). The reads (a shelf's files, a
+collection's item, a file a worker showed, [[changes-view]], [[stats]], [[review-threads]] and more) are typed by
+`Reads` in `shelf-page.ts`; the verbs and the reads that take a query are listed at `/schema`, and each verb's reply
+and its errors are in [[renderer-api-contract]].
 `remember`/`recall` keep one value per page in the viewer's browser (where a walker stood): a framed page's
 own storage throws at its opaque origin, so the framing tower keeps it, per shelf entry.
 `tower.store.set`/`get` keep values under keys every page shares, the tower page included, in the same
-storage: what one renderer marks (the files viewed in a diff), another reads in the same browser.
-`tower.scheme()`/`onScheme` carry the viewer's colour scheme ([[design-system]]): `tower.js` puts the choice on
-the root's `data-scheme`, so a page linking `/design.css` follows the tower's toggle as well as the system. A
-`url` entry's frame is sent the same `scheme` message on each load and change (its only message: the choice is
-not private), so a separately served app can follow the toggle by setting its own `data-scheme`.
-The choice behind it is a field of the viewer's appearance, `tower.prefs` ([[viewer-prefs]]): at the
-tower's origin `tower.js` keeps the record in localStorage `tower.prefs`, framed it asks the framing page (`{t: 'tower',
-verb: 'prefs'}`), which keeps it and sends `prefs` back, so any renderer's settings change every page's appearance
-([[settings-and-tips]]). `tower.schemeChoice()`/`chooseScheme(c)` and the `scheme` verb stay, deprecated.
+storage: what one renderer marks (the files viewed in a diff), another reads in the same browser. The viewer's
+appearance and colour scheme, `prefs` and `scheme`, are [[viewer-prefs]].
 
 **Alternatives considered.**
 - A semantic message set per verb: a second vocabulary to keep in step with the routes, for no gain.
 - A WebSocket per client: Node has no WebSocket server built in; SSE plus POST needs no dependency.
 - A connection per stream: breaks past five or six live screens.
+- A board route a framed page fetches itself: at an opaque origin the route would need
+  `Access-Control-Allow-Origin: *`, and with no auth any site open in the browser could read every prompt.
 - Guards on which verbs a page gets: the environment is trusted (local, one operator), and a page's code
   could reach the routes anyway once it runs at the tower's origin.
 

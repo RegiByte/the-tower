@@ -47,12 +47,6 @@ rebuilt, or lost, with the next.
   ([`src/shared/icons.ts`](ref:hub/src/shared/icons.ts)), and the panels, the brief and the terminal keys are
   shared the same way ([[renderer-shared-modules]]).
 
-History: the session fold and the live store moved out of the tower into [[live-system]] and
-[[log-reductions]]; the view model moved into the bridge when shelf pages started reading it
-([[shelf-page-contract]]); once pages could act, the tower server's routes became the [[renderer-api]]. On
-2026-10-07 four meanings Tower 3D derived alone moved into the bridge and the shared cards (where a worker sits,
-a floor's last showings, the callsign of a session a card points at, the glyph over a worker), so the board could
-leave past cards out ([[board-archive]]).
 The tower *page* is one renderer; the tower *server* is the API and is not disposable.
 
 **Alternatives considered.**
