@@ -1,8 +1,8 @@
 ---
 {
   "type": "decision",
-  "name": "Crews: who reports to whom is derived, drawn as a tree, and sent home together",
-  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the author whose work it reviews, else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker.",
+  "name": "Crews: who reports to whom is derived, drawn as a tree on duty and in the archive, and sent home together",
+  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the author whose work it reviews, else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
@@ -22,7 +22,13 @@
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/acts.ts#sentHome",
-    "hub/src/shared/cards.ts#sendHomeAsk"
+    "hub/src/shared/cards.ts#sendHomeAsk",
+    "hub/src/shared/cards.ts#pastCrews",
+    "hub/src/shared/cards.ts#pastMatching",
+    "hub/src/shared/cards.ts#pastSize",
+    "hub/src/shared/cards.ts#pastOf",
+    "hub/renderers/tower3d/src/ui.ts#archiveListHtml",
+    "hub/test/past.test.ts"
   ],
   "links": [
     { "to": "hiring-limits", "verb": "uses", "carries": "card.hiredBy, the fact a hire leaves" },
@@ -32,9 +38,9 @@
 }
 ---
 **Problem.** With several workers on a floor, nothing showed which belonged together. A worker hires workers and
-reviewers, and they hire in turn, but the sidebar listed everyone flat, by start. The user once asked the wrong worker
-to clean up a worktree. And once a hire's work is done, it and whoever it hired stay on duty with nothing left to do,
-ended one by one by hand.
+reviewers, and they hire in turn, but a flat list by start scatters a coordinator among its hires and among unrelated
+workers, on duty and in the archive alike. And once a hire's work is done, it and whoever it hired stay on duty with
+nothing left to do, ended one by one by hand.
 
 **Why.** Who hired whom was already a fact ([[hiring-limits]]) and a reviewer's author is derived from its first
 prompt ([[reviewer]]). The tree is computable, so it is computed. Nothing here is a "task": a worker may be a
@@ -57,13 +63,21 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   call is its own `kill`.
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
-- *Drawn.* Tower page: each crew nests in the sidebar under a rail. Members gone home fold into one line under their
-  hirer ("12 gone home") that unfolds them, dimmed with their Resume; the unfolded hirers are kept per viewer in
-  `tower.store` (`crews.unfolded`). A member gone home with someone on duty under it stays drawn, so the tree holds.
-  The header offers Send home, and its confirm names everyone it ends, who is working and what a resume costs; sent
-  home alone, a worker's toast offers its Resume. `tower agents` lists crews
-  with `└` and whom each reports to; `tower agent` lists who is under a worker; `tower home <CALLSIGN>` runs the
-  card's call; with the caller's own callsign it logs a leave the tower acts on once the turn ends ([[leave]]). Tower 3D (kept small): X on a worker, and the desk panel's Send home, send it home with its crew, the label naming them.
+- *Drawn.* The tower page nests each crew in the sidebar under a rail; members gone home fold into one line under
+  their hirer that unfolds them, the unfolded hirers kept per viewer in `tower.store`. A member gone home with someone
+  on duty under it stays drawn, so the tree holds. Send home's confirm names everyone it ends, who is working and what
+  a resume costs (`sendHomeAsk`). `tower agents` lists crews and whom each reports to, `tower agent` who is under a
+  worker, and `tower home <CALLSIGN>` runs the card's call (the handbook says to read `tower agents` first and never
+  name a worker above you); with the caller's own callsign it logs a leave the tower
+  acts on once the turn ends ([[leave]]). Tower 3D sends a worker home with its crew and draws no crew tree on duty.
+- *The archive by crew.* [`pastCrews`](ref:hub/src/shared/cards.ts#pastCrews) groups `pastOf`'s cards (the board's
+  off-duty ones and the archive read, [[board-archive]], so a crew split between them stays whole) into the same tree:
+  archived cards carry `reportsTo` because `withCrews` runs over every card before the past ones are picked. A worker
+  heads a crew when it reports to no past worker; its hires follow in the order they were hired (a resumed hire by its
+  first life's start), each leading its own sub-crew; crews go by their latest start, the newest first. A worker's
+  earlier lives follow its latest one and its crew at the same depth. [`pastMatching`](ref:hub/src/shared/cards.ts#pastMatching)
+  filters by words: a worker that does not match leaves its place to its crew, so an indent always means "reports to
+  the worker it hangs from". Both renderers draw it; Tower 3D's filing cabinet's drawers stay by day.
 
 **Alternatives considered.**
 - *A derived `tasks` list on the board.* Rejected by the user: nothing in the hierarchy says what is a task, and a
@@ -71,18 +85,13 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Only `hiredBy` on the board, each renderer resolving resumes and reviewers itself.* The edge has two sources and a
   resume to follow: three renderers would each get it slightly wrong.
 - *Kill beside Send home.* For a lone worker or a hire with nobody under it the two did the same; for a lead, Kill
-  left hires running with nobody to report to. Settled by the user (2026-10-15).
+  left hires running with nobody to report to. When two actions have the same effect, the user sees only one.
 - *A server verb that kills a subtree.* The board already knows the crew; a list of ready kills keeps the API as it is.
-- *Asking a worker to confirm `tower home` (refuse once, then accept).* The user raised it against a worker that sends
-  its own hirers home by accident; not built until that happens. The skill says to read `tower agents` first and never
-  name a worker above you.
-- *Tower 3D seating a crew together.* Changes the seat replay; deferred.
+- *The archive's coordinator after its hires, closing its crew*: an indent reads as belonging to the row above it, so
+  every crew read upside down, the other way round from the floor on duty.
+- *Keeping a non-matching coordinator as a dimmed context row while filtering*: more rows than the words asked for.
 
-**Impact.** Board: `card.reportsTo`, card verb `send-home` with `calls['send-home']: Call<'kill'>[]`, on every worker
-(the user: when two actions have the same effect, the user sees only one; renderers draw no Kill on a worker). Shared: `hiresOf`,
-`crewOf`, `crewTree`, `workerNamed`; `dutyOrder` follows crews. Mod: `tower home`, crews in `tower agents`. Tower page:
-nested sidebar and Send home. Tower 3D: X sends a crew home. Members gone home stayed drawn, dimmed, under an on-duty
-head until it went off duty too; a coordinator that had hired and sent home sixteen workers in a day buried its live
-crew under them, so they fold into one line (2026-10-07, settled by the user). The board carries only today's past
-cards (board split), so the fold counts those; it never reads the archive. Tower 3D draws no crew tree on duty and has nothing
-to fold. Both archives list past workers by crew too ([[archive-crews]]).
+**Impact.** Board: `card.reportsTo` and the card verb `send-home`, its call a list of kills, on every worker;
+renderers draw no Kill on a worker. Shared: the crew folds and the archive's order are `/cards.js` exports every
+renderer draws from. The board carries only today's past cards, so the sidebar's fold counts those; the archive's
+tree reads the archive too.
