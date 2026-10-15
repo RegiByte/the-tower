@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-15",
   "refs": [
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
