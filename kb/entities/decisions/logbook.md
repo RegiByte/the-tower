@@ -54,7 +54,7 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   same thing; the tower page keeps "Brief"): a chip per session of the lineage, oldest first, the running one
   "● live", over the lineage brief ([`logbookHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml)). Q on a worker
   opens it too, and the tab is always there. The brief reads as the tower page's does, a chat with its markdown
-  rendered or raw ([[chat-brief]]), scrolled to its end when it opens.
+  rendered or raw ([[brief-turns]]), scrolled to its end when it opens.
 - **Replay** ([`replay`](ref:hub/renderers/tower3d/src/main.ts#replay)): a past session's chip puts that session's
   last screen in the panel's terminal area, read-only (`screen/<session>`, which the tower rebuilds from its log),
   sepia under a "REPLAY · Oct 6, 21:40" stamp with a ● live button

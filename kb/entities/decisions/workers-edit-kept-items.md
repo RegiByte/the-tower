@@ -51,7 +51,7 @@ versions of one idea with nothing saying which was current.
 - To change a kept item, a worker edits its file in place and never keeps a second copy; it never deletes one:
   throwing an item away is the user's. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
   handbook say so. The brief also says to keep off-goal ideas and later prompts with `tower keep drafts` and carry on
-  ([[brief-turns]]).
+  ([[brief-first]]).
 - Every spawn and resume passes the project's collections directory as `--add-dir`
   ([`keptArgs`](ref:hub/src/shared/launch.ts#keptArgs)), so an edit there asks no permission. The directory holds no
   `.claude/`, so [[repos-file-access-only]]'s reason for `additionalDirectories` does not apply, and the flag is the
