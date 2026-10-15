@@ -17,8 +17,8 @@ Commit messages hold the detail.
 New looks for Tower 3D's workers, made in the dresser. No host restart, no config change, the renderer API
 unchanged. Rebuild Tower 3D (`npm run tower3d`) and reload it.
 
-- Three outfits: `fixerclankr`, `mageskeleton` and `mechwizz`. Like every outfit outside the mix (`mix.outfits.share`
-  is 0), they are worn by name, or picked in the dresser.
+- Three outfits: `fixerclankr`, `mageskeleton` and `mechwizz`. No worker wears them yet: outfits join the mix only
+  when `mix.outfits.share` rises above 0.
 - Hats, glasses, the Clanker's top hat and beacon, the wand and the mug are fitted per head on the Clanker, the
   skeleton mage's skull and the Combat Mech, so they sit where they should on every worker wearing them.
 
