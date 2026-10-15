@@ -6,7 +6,6 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "supersedes": "drafts",
   "reviewed": "2026-10-15",
   "refs": [
     "hub/src/shared/model.ts#CollectionType",
@@ -24,7 +23,7 @@
   ]
 }
 ---
-**Problem.** The user keeps the next prompts for a session in their head while it works ([[drafts]]). A drafts
+**Problem.** The user keeps the next prompts for a session in their head while it works. A drafts
 feature would be one more special-purpose store, and the shelf's `md` entries are already a read-only "set of
 files a project keeps".
 
@@ -96,7 +95,9 @@ answered in its own turn; text already in the composer stayed ahead of the submi
 Meta+Enter for newlines scrambled the order.
 
 **Alternatives considered.**
-- Drafts as a feature of their own ([[drafts]]): a store for one use, beside the shelf's own set of files.
+- Drafts as a feature of their own (a markdown file per unsent prompt under `drafts/<project>/`, sent and then
+  deleted): a store for one use, beside the shelf's own set of files, and a meaning the core would hold.
+- A folder in the project's hub: versioned, but writes into repos the tower does not own.
 - Collections declaring their purpose in data a consumer acts on (`prompt: true`, or a list of supported renderers):
   data describing its consumers. The dependency points from the consumer to the data, as a KB link is stored on the entity that acts. `description` is prose for people and workers, read by nobody's code.
 - Slugs only, no moment: ids would collide and stop sorting by creation, and a renamed title would argue for
