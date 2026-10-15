@@ -99,7 +99,8 @@ entries, then `tower config check`. See [config.md](config.md).
 
 A worker that asks a question, holds a permission dialog, is stuck on a screen, or finished a turn you haven't answered
 is **waiting on you**. The tower page lists them in order, notifies you and rings (settings, the gear); `N` or ⌥J
-goes to the next one, and `?` shows every key. `tower app` puts the same tower in a Mac window of its own, with who
+goes to the next one, and `?` shows every key. In the tower page's sidebar a floor folds to one line by its sign,
+with what waits on you there; a floor with something waiting starts open. `tower app` puts the same tower in a Mac window of its own, with who
 waits on you on its Dock icon and in the menu bar.
 
 A worker left waiting a long time can have its conversation compacted while it waits: Claude Code's idle compaction

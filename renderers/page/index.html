@@ -65,6 +65,15 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .sign button + button { margin-left: var(--sp-xs); }
 .sign button.new-draft { color: var(--muted); }
 .sign button .icon { width: var(--icon-m); height: var(--icon-m); }
+.floor > .sign { position: sticky; top: calc(-1 * var(--sp-l)); z-index: 2; }
+.floors { scroll-padding-top: calc(var(--control) + 2 * var(--sp-s)); }
+.sign .fold { flex: 1; min-width: 0; display: flex; }
+.sign .fold button { flex: 1; min-width: 0; margin: 0; display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-m); padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.sign .fold .icon { width: var(--icon-s); height: var(--icon-s); margin-left: calc(var(--sp-2xs) - var(--sp-m)); color: var(--muted); }
+.floor.folded .sign .fold .icon { rotate: -90deg; }
+.sign .summary { flex: none; display: flex; gap: var(--sp-2xs); }
+.sign .summary .chip { gap: var(--sp-xs); padding: 0 var(--sp-s); font-size: var(--fs-xs); }
+.floor.folded + .floor.folded { margin-top: calc(var(--sp-s) - var(--sp-xl)); }
 .dirs { padding: var(--sp-s) 0 0; }
 .dir { display: flex; align-items: center; gap: var(--sp-xs); padding: 1px var(--sp-s); font-size: var(--fs-s); color: var(--muted); border-radius: var(--radius); }
 .dir:hover { background: var(--panel-2); }
@@ -816,17 +825,62 @@ function traysHtml(f) {
 const signHtml = (n, name, extra = '') =>
   `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name" role="heading" aria-level="2" data-tip="${esc(name)}">${esc(name)}</span>${extra}</div>`
 
+/**
+ * Whether each floor is open, as this viewer chose by its sign, kept in `tower.store` by project. A floor never chosen
+ * is open while something on it waits on you, and folded otherwise.
+ */
+const FLOORS_OPEN_KEY = 'floors.open'
+let floorsOpen = (await tower.store.get(FLOORS_OPEN_KEY)) ?? {}
+/** The selected worker whose floor its sign folded: the selected worker's floor is open whatever was chosen until then. */
+let foldedOver
+
+/** The waits and offers on a floor that this viewer heeds. */
+const floorWaits = (f) => heededWaits(board, heed).filter((w) => f.cards.some((c) => c.id === w.id))
+const floorOffers = (f) => heededOffers(board, heed).filter((o) => o.project === f.id)
+
+const holdsSelected = (f) => selected !== undefined && selected !== foldedOver && findCard(selected)?.project === f.id
+const isOpen = (f) => holdsSelected(f) || (floorsOpen[f.id] ?? floorWaits(f).length + floorOffers(f).length > 0)
+
+function toggleFloor(id) {
+  const open = !isOpen(floorOf(id))
+  if (holdsSelected(floorOf(id))) foldedOver = selected
+  floorsOpen = Object.fromEntries([...Object.entries(floorsOpen).filter(([p]) => p !== id && floorOf(p)), [id, open]])
+  tower.store.set(FLOORS_OPEN_KEY, floorsOpen)
+  render()
+}
+
+/** A folded floor's counts: its waits on you (ringed, lamp of the loudest), its offers, and its workers on duty by the loudest. */
+const floorSummaryHtml = (f) => {
+  const waits = floorWaits(f).map((w) => f.cards.find((c) => c.id === w.id))
+  const offers = floorOffers(f).length
+  const duty = f.cards.filter(onDuty)
+  const tone = loudest(duty)
+  const count = (cls, n, words) => `<span class="chip ${cls}" data-tip="${esc(words)}"><span class="lamp"></span><b>${n}</b><span class="sr-only"> ${esc(words)}</span></span>`
+  return `<span class="summary">${[
+    waits.length && count(`waits some ${loudest(waits)}`, waits.length, WAITING_NAME),
+    offers && count('offered some', offers, 'offered'),
+    duty.length && count(tone, duty.length, `${noun(duty.length, 'worker')} on duty, the loudest: ${ATTENTION_NAME[tone]}`),
+  ].filter(Boolean).join('')}</span>`
+}
+
 const floorHtml = (f, i, all) => {
   const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
-  return `<section class="floor" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    ${signHtml(all.length - i, f.name, (draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : '') + (heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''))}
+  const open = isOpen(f)
+  const n = String(all.length - i).padStart(2, '0')
+  const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
+  const draft = draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : ''
+  return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
+    <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? draft : floorSummaryHtml(f)}${spawn}</div>
+    ${open ? floorBodyHtml(f, heads) : ''}
+  </section>`
+}
+
+const floorBodyHtml = (f, heads) => `
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     ${offersHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
-    ${traysHtml(f)}
-  </section>`
-}
+    ${traysHtml(f)}`
 
 /** A meter's fill: ink, broken past `hot`. */
 const fillOf = (pct, hot) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
@@ -1794,6 +1848,7 @@ function select(id) {
   closeTerminal()
   arriving = undefined
   selected = id
+  foldedOver = undefined
   paneChoice = undefined
   dropPick()
   noteRe = undefined
@@ -2732,6 +2787,8 @@ document.addEventListener('click', (e) => {
   if (archive) return archiveOpen?.project === archive ? goHome() : openArchive(archive)
   const section = e.target.closest('[data-section]')?.dataset.section
   if (section) return toggleSection(section)
+  const floorFold = e.target.closest('[data-floor-fold]')?.dataset.floorFold
+  if (floorFold) return toggleFloor(floorFold)
   const reapOne = e.target.closest('[data-reap-process]')
   if (reapOne) return told(pressing(reapOne, () => tower.run(JSON.parse(reapOne.dataset.reapProcess))))
   const reapable = e.target.closest('[data-reap]')
