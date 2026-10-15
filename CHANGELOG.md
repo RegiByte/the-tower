@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.32.4
+
+New looks for Tower 3D's workers, made in the dresser. No host restart, no config change, the renderer API
+unchanged. Rebuild Tower 3D (`npm run tower3d`) and reload it.
+
+- Three outfits: `fixerclankr`, `mageskeleton` and `mechwizz`. Like every outfit outside the mix (`mix.outfits.share`
+  is 0), they are worn by name, or picked in the dresser.
+- Hats, glasses, the Clanker's top hat and beacon, the wand and the mug are fitted per head on the Clanker, the
+  skeleton mage's skull and the Combat Mech, so they sit where they should on every worker wearing them.
+
 ## v1.32.3
 
 Claude Code 2.1.300 is tested, and the board's "untested" notice clears. No host restart, no config change, the
