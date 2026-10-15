@@ -25,21 +25,19 @@ The host scrubs a session's env after the config's `env` is merged in
 the tower starts goes through it: the host's sessions, the terms daemon's shells, the daemons `tower up` starts
 ([`startDetached`](ref:hub/src/machine.ts#startDetached)), git, the probes, policy checks and `tower update`'s npm.
 
-**The launching terminal (2026-10-09).** A daemon started from a terminal carries that terminal's identity
-(`TERM_PROGRAM`, `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `TMUX`, …), and programs tune themselves to it. Started from
-Cursor, every Claude believed it ran in an editor's xterm.js and changed how it scrolls ([[fullscreen-tui]]): each wheel
-report moved a scroll speed's rows (about 15 a row of travel, measured) and the last 30 rows eased in after the wheel
-stopped. A PTY the tower draws is in the viewer's xterm, wherever `tower up` ran, so a session's and a shell's
-environment drop it ([`withoutTerminal`](ref:hub/src/shared/env.ts#withoutTerminal), in
-[`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv) and the terms daemon's shells). `GIT_ASKPASS` goes with
-`VSCODE_*`: VS Code and Cursor point it at a script that reaches the running editor through them, and git falls back to
-the user's credential helper. Unlike a parent session's markers, the config's `env` may set them again: it is merged
-after this scrub. Git, npm and the daemons keep the terminal: nothing they run is drawn.
+**The launching terminal.** A daemon started from a terminal carries that terminal's identity
+(`TERM_PROGRAM`, `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `TMUX`, …), and programs tune themselves to it: started from an
+editor, every Claude believed it ran in an editor's xterm.js and changed how it scrolls ([[fullscreen-tui]]). A PTY
+the tower draws is in the viewer's xterm, wherever `tower up` ran, so a session's and a shell's environment drop it
+([`withoutTerminal`](ref:hub/src/shared/env.ts#withoutTerminal), in [`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)
+and the terms daemon's shells). `GIT_ASKPASS` goes with `VSCODE_*`: VS Code and Cursor point it at a script that
+reaches the running editor through them, and git falls back to the user's credential helper. Unlike a parent
+session's markers, the config's `env` may set them again: it is merged after this scrub. Git, npm and the daemons keep
+the terminal: nothing they run is drawn.
 
 **Alternatives considered.** Starting children with an empty env: rejected, it loses the user's PATH and
 config. Telling Claude it runs in xterm.js (it reads `TERM_PROGRAM=vscode` as one): its xterm.js mode is tuned to
-editors that flood the wheel, and measured on the tower it overshoots and lags; with no terminal named, Claude scrolls a
-row per report and stops with the wheel.
+editors that flood the wheel, and on the tower it overshoots and lags.
 
 **Consequences.** A new marker in a Claude release brings the bug back; check this list when transcripts
 stop being saved.

@@ -23,18 +23,16 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   `alert`/`confirm`/`prompt` as sheets, and links that leave the tower (`_blank`, `window.open`, `tower open`, an
   origin's page) opening in the default browser, a window opened with no address and given one after (xterm's
   links) too; and pointer lock (Tower 3D's mouse-look), for the window's page and its frames
-  ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)). WebKit denies
-  pointer lock unless the UI delegate grants it through a private method, the one way an embedder can, and words
-  every denial as "Pointer lock requires the window to have focus". Frames inside the page (shelf pages at origins of
+  ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)), granted
+  through a private delegate method, the one way an embedder can. Frames inside the page (shelf pages at origins of
   their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
   answers. Until then the window says what starts it from a terminal (`tower up`, with `TOWER_CONFIG` when the config
-  isn't the default) and asks every 2 seconds; a load of the tower that fails waits the same way. macOS holds
-  whatever starts a daemon responsible for its access to protected folders (Documents, Desktop, Downloads), and every
-  Claude and shell under it, and takes an ad hoc signed build whose binary changed for a new app: daemons the app
-  started asked again in its name after each such rebuild (seen on a sandbox). Started from a terminal, they stay
-  the terminal's.
+  isn't the default) and asks again until it does; a load of the tower that fails waits the same way. The app
+  starts nothing because macOS holds whatever starts a daemon responsible for its access to protected folders, and
+  every Claude and shell under it, and takes an ad hoc signed build whose binary changed for a new app, which would
+  ask again in its name after each rebuild. Started from a terminal, they stay the terminal's.
 - **Keys** ([`TowerWebView`](ref:hub/apps/macos/Sources/App.swift#TowerWebView)): ⌘Q, ⌘W, ⌘H and ⌘M are the app's;
   every other key goes to the page first, so the keymap ([[keymap]]) works as in a tab and a key it doesn't take
   reaches the menus (⌘R reloads, ⌘0/⌘+/⌘− zoom, ⌥⌘I the Web Inspector). The View menu's Renderer lists the renderers
@@ -57,35 +55,24 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   tower and every session running, as closing a tab does.
 - **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
   than the build, writes the checkout and the config into the bundle's `Info.plist` (so the app needs no setting),
-  signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, the tower page's skyline at
-  dusk, rendered into the bundle's `AppIcon.icns` with Quick Look, `sips` and `iconutil` when it changed: drawn full
-  bleed, since macOS 26 masks an app icon into its own shape and puts one that brings a shape of its own on a plate. One app per system: the default config's is `Tower.app`, another's is
-  named after its system root (`Tower (tower-sandbox).app`), each with a bundle id of its own. All of it under the
+  signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, rendered into the bundle's
+  icon set when it changed ([`renderIcon`](ref:hub/src/app.ts#renderIcon)). One app per system: the default config's
+  is `Tower.app`, another's is named after its system root, each with a bundle id of its own. All of it under the
   git-ignored `apps/macos/out/`.
 
 **Alternatives considered.**
 
-- *Safari's Add to Dock.* Free and close: a Dock icon, a window, a badge from `navigator.setAppBadge`. Rejected as the
-  answer, not as an option: it can't keep a menu bar item.
-- *The waits read natively, from `/board` in Swift.* Rejected: the words (`statusName`, `gistLine`) and the dismissals
-  would be written twice, and drift from the tower page's.
-- *The page's own `Notification`s, granted through WebKit's private delegate.* Rejected: private API, and only the
-  page that is open would notify; the badge and the menu bar need the board apart from it anyway. Pointer lock is
-  granted through the same kind of private delegate method because it has no public one and nothing else gives it.
-- *Electron.* Rejected: about 85 MB of Chromium for a page WebKit already draws, and running the tower in its process
-  would tie the tower to a window.
-- *Tauri.* Rejected: the same WKWebView, behind Rust.
-- *Signed and notarized releases.* Deferred: the app is built where it runs, from the checkout.
-- *The app starting the system* (`tower up` in the user's login shell environment, as the app first did). Rejected:
-  the daemons, and every session under them, would ask for protected folders in the app's name, again after each
-  rebuild, and the app would control processes it is only one way to show. Kept apart, the app is one more way to
-  run the UI.
-- *Daemons that own their access to protected folders*, through the private call terminals use to disclaim
-  responsibility for their children, or a signing certificate the user keeps. Not needed while the app starts
-  nothing.
+- *Safari's Add to Dock.* A Dock icon, a window and a badge for free, but it can't keep a menu bar item.
+- *The waits read natively, from `/board` in Swift.* The words (`statusName`, `gistLine`) and the dismissals would be
+  written twice, and drift from the tower page's.
+- *The page's own `Notification`s, granted through WebKit's private delegate.* Private API, and only the open page
+  would notify; the badge and the menu bar need the board apart from it anyway.
+- *Electron or Tauri.* Chromium for a page WebKit already draws, or the same WKWebView behind Rust; and running the
+  tower in the app's process would tie the tower to a window.
+- *The app starting the system.* The daemons, and every session under them, would ask for protected folders in the
+  app's name, again after each rebuild, and the app would control processes it is only one way to show.
 
 **Impact.** Nothing changes for a user who doesn't run `tower app`: the browser stays the default, `tower doctor`
-doesn't ask for Swift, and the core gains no dependency. The API, the log and the host are untouched. In the window
+doesn't ask for Swift, and the core gains no dependency. In the window
 `Notification.permission` stays `default`, so the tower page's own notifications stay off there and the app's are the
-only ones; it asks macOS to notify on first launch. On macOS 26 a crowded menu bar can hide the item behind the
-notch. Opening the app starts nothing: with the system down, the window waits for `tower up`.
+only ones; it asks macOS to notify on first launch. Opening the app starts nothing: with the system down, the window waits for `tower up`.

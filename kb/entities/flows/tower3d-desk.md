@@ -47,9 +47,8 @@ sequenceDiagram
   ([`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf)); a desk's `use` is "sit" while its card is live
   ([[verb-prompts]]). E runs it through the act table ([`RUN`](ref:hub/renderers/tower3d/src/main.ts#RUN)):
   [`goDesk`](ref:hub/renderers/tower3d/src/main.ts#goDesk) cuts to the desk's floor if needed, and
-  [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel: a modal centred over the
-  world (`min(94vw, 1500px)` by `min(90vh, 1000px)`), its spread shadow dimming the rest. The camera stays at
-  your eyes, and while the modal is open the scene isn't drawn: the canvas keeps its last frame and updates go
+  [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel, a modal over the dimmed
+  world. The camera stays at your eyes, and while the modal is open the scene isn't drawn: the canvas keeps its last frame and updates go
   on. A video-wall tile opens the same terminal in place.
 - **The transport depends on where Tower 3D runs.** At `/r/tower3d/` `/tower.js` calls the routes and
   opens one `/mux` stream; framed from a shelf in the tower page, it posts to the page, which makes the same requests
@@ -74,15 +73,11 @@ sequenceDiagram
   [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) ([[renderer-shared-modules]]), at the chords
   `board.keys` binds; the moves and ⌥Esc, which leaves the terminal, run from inside it too ([[keymap]]). The host logs `i` before writing to the PTY
   ([`handle`](ref:hub/src/host/main.ts#handle)).
-- **The panel's tabs.** Logbook (its sessions over the lineage brief, [[logbook]]), Changes (the worker's diff:
-  [[changes-view]]), Reviews on a floor keeping threads ([[review-threads]]) and each thing the worker showed lie
-  over the terminal, which keeps its size; Q (or E on the binder by its keyboard) opens the desk on its Logbook and T
-  on its Reviews tab. A past session picked in the Logbook replaces the terminal with that session's last screen
-  (`screen/<session>`, read-only, sepia under a REPLAY stamp) until ● live or Esc mounts the terminal again
-  ([`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen)); Esc then goes back to Claude. Changes and Reviews are the shared panels ([[shared-panels]]),
-  drawn by [`drawChanges`](ref:hub/renderers/tower3d/src/main.ts#drawChanges) and
-  [`drawThread`](ref:hub/renderers/tower3d/src/main.ts#drawThread), and worked with the mouse: fold, Viewed, a click on a
-  line number picks it (⇧ extends) and opens a note box under it, an anchor scrolls Changes to its line. While a
-  text box has focus, keys type into it and never move you.
+- **The panel's tabs.** Logbook ([[logbook]]: a past session picked there replaces the terminal with its last
+  screen, [`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen), until live is chosen again),
+  Changes and Reviews (the shared panels, [[shared-panels]], drawn by
+  [`drawChanges`](ref:hub/renderers/tower3d/src/main.ts#drawChanges) and
+  [`drawThread`](ref:hub/renderers/tower3d/src/main.ts#drawThread)) and each thing the worker showed lie over the
+  terminal, which keeps its size. While a text box has focus, keys type into it and never move you.
 - **Leaving.** Esc belongs to Claude, so the panel closes with ✕ or a click on the dimmed world around it; closing unwatches the
   stream, and the session keeps running.

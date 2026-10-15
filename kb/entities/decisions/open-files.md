@@ -31,9 +31,8 @@
 }
 ---
 **Problem.** The tower names many files: what workers show, review threads, the files a note quotes and a Changes
-diff lists, kept items, the config. To grab one, the user asked a worker to open it or typed its folder by hand.
-The only way out was `open {dir}`, which opens a project directory or worktree in a new editor window and nothing
-else.
+diff lists, kept items, the config. To grab one, the user asked a worker to open it or typed its folder by hand:
+`open {dir}` opens only a project directory or worktree, in a new editor window.
 
 **Why.** The paths are already on the board or in the panels' data; what was missing was a verb and a button.
 By [[agents-have-every-capability]], what a renderer can do a worker can too: a worker can reveal a file it made
@@ -43,8 +42,7 @@ for the user.
 - *Two verbs* in [`VERBS`](ref:hub/src/shared/api.ts#VERBS): `reveal {path}` shows the path selected in a Finder
   window (`open -R`); `edit {path, line?}` opens it in the user's editor. With VS Code's `code`, or Cursor, which shares its
   flags, the editor picks the window: a file opens in the window whose folder holds it, else the last active one; a
-  folder in the window that has it open, else a new one. Checked live in Cursor: a file outside every open folder
-  opened as a tab in the one open window. `open {dir}` keeps its new window.
+  folder in the window that has it open, else a new one. `open {dir}` keeps its new window.
 - *The editor is data.* The config's `editor` holds an argv per thing the tower does: `window` (`{dir}`), `open`
   (`{path}`) and `goto` (`{path}`, `{line}`). [`editorArgv`](ref:hub/src/shared/model.ts#editorArgv) fills a
   template, each placeholder anywhere in an argument, and a placeholder the action doesn't take is a `config`
@@ -64,14 +62,12 @@ for the user.
 - *Buttons drawn once.* [`fileButtonsHtml`](ref:hub/src/shared/panels.ts#fileButtonsHtml) draws a quiet Finder and
   editor pair as `data-reveal` / `data-edit` (`data-line`) buttons, each named for its file ("reveal main.md in
   Finder"), in the Tab order; [`fileSpansHtml`](ref:hub/src/shared/panels.ts#fileSpansHtml) draws the same pair as
-  `role=button` spans for the one place a button may not sit, inside another button: an open showing's tab;
+  `role=button` spans for the one place a button may not sit, inside another button;
   [`fileCall`](ref:hub/src/shared/panels.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
   capturing click listener on the document, so a button inside a file header or an anchor never also folds the
-  file or jumps to Changes. The shared panels draw them on each changed file (not a deleted one), on the thread's
-  own file once it has notes, and on each anchor (the editor at its first line), the anchor's repo found among the
-  checkout's dirs ([`threadFiles`](ref:hub/src/shared/panels.ts#threadFiles)). The tower page adds them to the open
-  showing's tab (files only), the open draft's head and a sidebar footer naming the config; Tower 3D to the open
-  showing's tab, a gallery picture's head and the draft panel ([[shared-panels]], [[corkboard]]).
+  file or jumps to Changes. The shared panels draw them on changed files, a thread's file and each note's anchor (the
+  editor at its first line, the anchor's repo found by [`threadFiles`](ref:hub/src/shared/panels.ts#threadFiles)), and
+  each renderer wherever else it names a file: a showing, a draft, the config ([[shared-panels]], [[corkboard]]).
 - *The CLI*: `tower reveal <path>` and `tower edit <path> [line]` ([[agent-directory]]).
 
 **Alternatives considered.**
@@ -81,15 +77,9 @@ for the user.
   argv template takes any command line, `$EDITOR` in a terminal among them.
 - A default per action: a partial `editor` would run `code` for the actions it leaves out, and a missing `code`
   would be reported against a key the user never set.
-- A full argv with no default: a fresh config would show buttons that fail; `code` is the most common editor and
-  Cursor shares its flags.
-- `cursor -r` / `code -r` (force reuse): on a folder it swaps the workspace of the user's last window out from under them.
 - Any path at all: same-user processes are trusted, but a browser page reaching the tower shouldn't be able to make
   it open arbitrary files; the system's own paths cover every button.
 - A file shown also allows its folder: the folder may hold anything; the file itself is what was shown.
-- Moving the API version: the verbs and `board.config` are additions an older renderer reads past, as
-  `review/append` was added without a move ([[renderer-api-contract]]).
 
-**Impact.** Every file the tower names is one click from Finder or the user's editor, in both renderers, and the config is
-reachable from the tower page. A renderer or worker gets both with `tower.call('reveal' | 'edit', …)`. `board()`
-takes the system's paths (config and collections) in place of the collections root.
+**Impact.** Every file the tower names is one click from Finder or the user's editor, in every renderer. A renderer or
+worker gets both with `tower.call('reveal' | 'edit', …)`.

@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-15",
   "refs": [
     "hub/renderers/tower3d/dresser.html",
     "hub/renderers/tower3d/src/dresser.ts",
@@ -32,10 +32,9 @@
   ]
 }
 ---
-**Problem.** Worn pieces were misplaced (glasses far too big on some heads, the bartender's cap too large, hats
-riding high on bald heads), and every fix was brute force: change a number in code or a script, rebuild, walk to
-the desk, look. The user asked for the components to be data, "with a UI to move components around in a
-composition, swap outfit and body parts and change the scale of items".
+**Problem.** Worn pieces were misplaced on some heads, and every fix was brute force: change a number in code or a
+script, rebuild, walk to the desk, look. The user asked for a UI to move components around, swap outfit and body
+parts and change the scale of items, saved as data.
 
 **Why.** Once the wardrobe made looks, outfits and fits data ([[kaykit-workers]]), what was missing was a surface
 to edit that data by eye, and the same surface for agents, so a fit is judged from a picture rather than guessed.
@@ -46,19 +45,17 @@ to edit that data by eye, and the same surface for agents, so a fit is judged fr
   `avatar(models, look, wardrobe)`, so what it shows is what Tower 3D draws. The look on the stand is a wardrobe
   `Look`; every list (bodies, each slot's parts, palettes, outfits) is read from the catalogue and the wardrobe, so
   a part made in the Blender kit appears with no code.
-- Building a look follows the user's flow, not the document's: start from a body
+- Building a look follows the user's flow: start from a body
   ([`based`](ref:hub/renderers/tower3d/src/dresser.ts#based): any KayKit character of the contract or the bot, its own
   head and nothing else) or randomize the whole look (`lookOf` on a fresh id), then pick or roll (a die) each slot's part
   and each colour. Colours are only the swatches of the mix's palettes (`skins`, `hairs`, `wears`), the curated set
   the shared atlas is tinted with: offering a colour is adding it to a palette. Loading a worker by session id or
   callsign is an advanced field.
 - Poses ([`poseAt`](ref:hub/renderers/tower3d/src/dresser.ts#poseAt)) are the layers Tower 3D plays: standing,
-  sitting and typing in the desk's own chair model seated by `seatedAt` on
-  [`CHAIR`](ref:hub/renderers/tower3d/src/chair.ts#CHAIR) (the measurement desks use), walking, waving, cheering,
-  dancing; played or scrubbed on the page's clock.
+  sitting and typing in the desk's own chair ([`CHAIR`](ref:hub/renderers/tower3d/src/chair.ts#CHAIR)), walking and
+  the rest, played or scrubbed on the page's clock.
 - Fitting is per head, because heads differ and one `*` fit cannot suit them all. A rigid piece (clicked, or picked
-  from the list) takes three's `TransformControls` (T, R, S; Esc deselects, F frames it), number fields and a size
-  slider, and an edit writes only the field the gizmo moves into the override keyed by the head worn (`bot` on a
+  from the list) takes three's `TransformControls`, number fields and a size slider, and an edit writes only the field the gizmo moves into the override keyed by the head worn (`bot` on a
   bot). "Line up every head" ([`restage`](ref:hub/renderers/tower3d/src/dresser.ts#restage)) is the fitting surface:
   the look on every head, re-fitted live, each with a tag saying whether the piece is fitted on it, follows the
   default or is as made ([`fitState`](ref:hub/renderers/tower3d/src/dresser.ts#fitState)); a click on a worker makes
@@ -85,17 +82,16 @@ to edit that data by eye, and the same surface for agents, so a fit is judged fr
   writes another file, a copy to try saving on. Served elsewhere (the tower, a shelf frame), the page has no server
   and copies the JSON instead. The serve rebuilds on each load of the page, and Tower 3D takes the file on its next
   `npm run tower3d`.
-- Agents: `window.dresser` (`ready · look · head · wear · pose · fit · outfit · rename · unkeep · changes · wardrobe · save ·
-  select · heads · view · state · cost · where · shot`) and `npm run tool:dresser -- shot <outfit|body|id|CALLSIGN> [--wear] [--pose] [--view]
-  [--heads all]`, a PNG through the same page in headless Chrome.
+- Agents drive the same page through `window.dresser`, and `npm run tool:dresser -- shot` renders a look, a pose or
+  the line-up as a PNG through it in headless Chrome (usage in `scripts/dresser.ts`).
 
 **Alternatives considered.**
-- *A mode of the KayKit playground* (the first plan): its scenes are static models; the dresser needs the rig,
+- *A mode of the KayKit playground*: its scenes are static models; the dresser needs the rig,
   clips, tinting and dressing code, which live in Tower 3D's bundle.
 - *Fits saved by the server checking the catalogue*: the catalogue comes from parsing the GLBs with three; the page
   that already has it checks, and the server checks the schema.
-- *One fit for every head with a "save under" choice* (the first round): it showed the document's keys rather than
-  the user's task; the user could not tell what the line-up was for. Fitting on the head clicked, with its state on
+- *One fit for every head with a "save under" choice*: it showed the document's keys rather than the user's task.
+  Fitting on the head clicked, with its state on
   each head, is the task itself; `*` stays one button away.
 - *A native colour picker*: any colour breaks the curated palettes the shared atlas is tinted from.
 - *Dragging the uniform-scale handle alone*: TransformControls' centre handle jumps when grabbed near its middle,
