@@ -24,7 +24,7 @@
   sessions and [`HOST_PROTOCOL`](ref:hub/src/shared/protocol.ts#HOST_PROTOCOL), the protocol's version, bumped
   by any change to a host message: the board says `hostOutdated` while the running host speaks another or none, so a renderer can say the host predates its clients.
 - `hooks.sock`: HTTP. `POST /hooks/<session id>` appends the body as an `h` event, a `PostToolUse` without its
-  `tool_response` ([[log-diet]]); unknown or exited
+  `tool_response` ([[logs-are-facts]]); unknown or exited
   sessions get 404, and a body that isn't a JSON object gets 400 with the reason.
 
 Bad input costs a request, never the host: a control line that isn't a JSON object
