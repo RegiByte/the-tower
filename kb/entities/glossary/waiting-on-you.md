@@ -27,8 +27,8 @@ same events:
 
 - [`transitions`](ref:hub/src/shared/cards.ts#transitions)`(prev, next)`: the waits that began and ended between two
   boards, nothing on the first board a renderer sees. Notifications, rings and pulses key on it.
-- [`nextWait`](ref:hub/src/shared/cards.ts#nextWait)`(waits, visited, here)`: N and ⌥J go round the waits, each once a
-  round, skipping the worker you are at.
+- [`nextWait`](ref:hub/src/shared/cards.ts#nextWait)`(waits, visited, here)`: N and ⌥J go round the waits (and the
+  policies' offers after them, [[attention-list]]), each once a round, skipping the worker you are at.
 - Dismissing (✕) a wait takes it out of the viewer's way until the worker waits again
   ([`heededWaits`](ref:hub/src/shared/cards.ts#heededWaits)): counts, N, rings, notifications, Tower 3D's lamps and
   edge arrows. It is the viewer's, never a fact: its keys live in `tower.store` (`waits.dismissed`), shared by their

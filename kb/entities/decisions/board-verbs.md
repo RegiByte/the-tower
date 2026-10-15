@@ -19,44 +19,34 @@ several verbs each (a desk: sit, brief, resume, kill), fed by one declaration, t
 their interactions ([[verb-prompts]]).
 
 **How.** [`verbs.ts`](ref:hub/src/bridge/verbs.ts) holds the rules as pure functions, and
-[`board`](ref:hub/src/bridge/board.ts#board) puts their results on the data every renderer reads. Lists keep
-a fixed order, the first being the thing's primary verb.
-- A card is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive)) while its PTY runs. Its verbs
-  ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)): `drive` and `kill` while live; its latest
-  conversation's `resume` or `goto`; `carry-on` beside `resume` while it awaits one and the host cut it off mid-turn
-  (`card.cutOff`), its call a `resume` on the [[carry-on]] prompt; `submit` while at Claude's composer (idle, working, watching, done or failed:
-  not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout's work goes on (`card.checkoutState` live: a landed or gone checkout has nothing to review) and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone, live or not, is `card.worktree.gone`, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
-  [[leftover]]s, live or not; `send-home` on every worker while any of it runs, its call a list of kills, the
-  deepest first, a lone worker's its own kill ([[crews]]); `let-go` while it is stranded and on duty, its latest conversation not yet resumed
-  ([[let-go]]); `note` while its floor keeps review threads and the work its thread is about goes on
-  (`card.threadState` live, [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState)), its call
-  `['review/append', { project, checkout }]` ([`noteOffers`](ref:hub/src/bridge/verbs.ts#noteOffers), [[review-threads]]).
-- Each of a floor's `threads` offers `note` the same way, by its own `state`.
-- Each of a card's `resources`, a process it left running
-  ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)): `reap`, always, its call
-  `['reap/process', { id, pid }]`, which the tower refuses for a pid that isn't one of that session's leftovers.
-- Each of the board's `probes` ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)): `run` unless it is off,
-  its call `['probe/run', { name }]`, which the tower refuses while a read is in flight or within a minute of the
-  last read's start: what it holds in memory, not on the board ([[probes]]).
-- Each conversation ([`conversationVerbs`](ref:hub/src/bridge/verbs.ts#conversationVerbs)): `goto` once
-  another session resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
-  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt): its `cwd` is no longer a dir of its floor, or a
-  worktree whose folder is gone), the same for the card's own `resume` ([[resume]]).
-- Each floor ([`floorVerbs`](ref:hub/src/bridge/verbs.ts#floorVerbs)): `spawn` while the host is up (its call
-  `['spawn', { project }]`, which starts in the hub's main checkout unless a `cwd` is added), `cut` while
-  it is and every dir is a git repo with an origin (its call `['spawn', { project, cut: {} }]`), `shell` while the
-  terms daemon is up, `editor` always, `tidy` while the floor's Tidy lists anything, its call carrying the list ([[tidy]]). Spawn, shell
-  and editor apply to every dir of the floor and to its worktrees.
-- Each of a floor's `worktrees` ([`worktreeVerbs`](ref:hub/src/bridge/verbs.ts#worktreeVerbs)): `recut` and `prune`
-  when `lost`, `remove` when `removable` or `carried`, `discard` when `at-risk` on a floor keeping review threads
-  ([[discard]]), nothing when `live`. Each kept branch
-  ([`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)): `recut` always, `delete` once [[absorbed]] or [[carried]]. The states, and each
-  repo's `atRisk`, are decided in the fold ([[tower-cuts-worktrees]]).
+[`board`](ref:hub/src/bridge/board.ts#board) puts their results on the data every renderer reads. Lists keep a fixed
+order, the first being the thing's primary verb. Each verb's meaning and when it is offered are the doc comments of
+its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `BranchVerb`, `ResourceVerb`,
+`ProbeVerb`); the rules that read other decisions:
+- A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
+  while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
+  question ([[collections]]); `brief` once Claude saved a [[conversation]]; `carry-on` beside `resume` when the host
+  cut it off mid-turn ([[carry-on]]); `review` while its checkout's work goes on and it isn't a reviewer ([[reviewer]]);
+  `reap` while it has [[leftover]]s; `send-home` while any of its crew runs ([[crews]]); `let-go` while stranded on
+  duty ([[let-go]]); `note` while its floor keeps review threads and its checkout's work goes on
+  ([`noteOffers`](ref:hub/src/bridge/verbs.ts#noteOffers), [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState),
+  [[review-threads]]). A floor's `threads` offer `note` the same way.
+- A conversation ([`conversationVerbs`](ref:hub/src/bridge/verbs.ts#conversationVerbs)): `goto` once another session
+  resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
+  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt): its `cwd` is no longer a dir of its floor, or a worktree
+  whose folder is gone, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone)) ([[resume]]).
+- A floor ([`floorVerbs`](ref:hub/src/bridge/verbs.ts#floorVerbs)): `spawn` and `cut` while the host is up (`cut` while
+  every dir is a git repo with an origin), `shell` while the terms daemon is up, `editor` always, `tidy` while its Tidy
+  lists anything ([[tidy]]). Spawn, shell and editor apply to every dir of the floor and to its worktrees.
+- A floor's worktrees and kept branches ([`worktreeVerbs`](ref:hub/src/bridge/verbs.ts#worktreeVerbs),
+  [`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)) by the states the fold decides ([[tower-cuts-worktrees]],
+  [[discard]], [[absorbed]], [[carried]]); a card's leftover processes
+  ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)) `reap` always; each probe
+  ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)) `run` unless it is off ([[probes]]).
 - Each verb that is a request of the renderer API comes with its call
-  ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings): `calls.resume` is
-  `['resume', { id, conversation }]`, built from the same list, so a renderer adds only what the user supplies
-  (`tower.run(floor.calls.spawn, { cwd })`) ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within the
-  renderer and have no call.
+  ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings, [`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)),
+  built from the same list, so a renderer adds only what the user supplies (`tower.run(floor.calls.spawn, { cwd })`)
+  ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within the renderer and have no call.
 - Renderers ask whether a verb is offered (`can(thing, verb)` in both) and draw it: an absent verb is not drawn,
   except a verb whose daemon is down, drawn disabled with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence
   (below). Monitors and screens read `live`, a fact, not a verb.

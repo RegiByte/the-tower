@@ -35,12 +35,12 @@
   ]
 }
 ---
-**Problem.** Nothing ever removed or shrank a session log: about a gigabyte from ten days of use. [[fold-checkpoints]] keep the tower's start fast, but the disk only fills, and a new
-user would run into it within a month or two.
+**Problem.** Nothing ever removed or shrank a session log. [[fold-checkpoints]] keep the tower's start fast, but the
+disk only fills.
 
 **Why.** A log is the fact ([[logs-are-facts]]): an old worker's card, brief, screen and stats are read from it, so
-deleting it loses facts. Session logs are mostly terminal output and repeated JSON, which gzip shrinks about seven
-times (the test fixtures, real sessions: 1.03 MB to 0.14 MB). Compressing keeps every fact readable and gives back
+deleting it loses facts. Session logs are mostly terminal output and repeated JSON, which gzip shrinks several
+times over. Compressing keeps every fact readable and gives back
 most of the space; moving logs to another directory gives back none.
 
 **How.**
@@ -51,7 +51,7 @@ most of the space; moving logs to another directory gives back none.
   it exited or was lost. `retention.days` ([`RetentionConfig`](ref:hub/src/shared/model.ts#RetentionConfig)) is
   top level; unset, nothing is offered.
 - *Offered by Tidy* ([[tidy]]): the floor's [`TidyPlan`](ref:hub/src/bridge/board.ts#TidyPlan) gains `logs`, each
-  `{id, bytes}` (bytes on disk), drawn as one row, "▤ 12 old logs · archive · 340 MB"
+  `{id, bytes}` (bytes on disk), drawn as one row
   ([`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)), since a floor can hold hundreds. Applied whole with the rest
   of the plan, refused like the rest once a listed log no longer qualifies; the reply's `archived` names them.
   Never automatic: whoever changes the system root is the user's press.
@@ -73,7 +73,7 @@ most of the space; moving logs to another directory gives back none.
 - *Streams' months* ([[probes]]): a stream's file is its UTC month's, appended to only during that month, so a
   month that ended more than `retention.days` ago is eligible ([`oldStreams`](ref:hub/src/bridge/retention.ts#oldStreams)).
   Streams under `streams/system/` belong to no floor, so every floor's Tidy lists them in the plan's `streams`, each
-  `{file, bytes}` by its path under `streams/`, as one row ("▤ 1 closed stream month · archive · 3.7 KB"); whichever
+  `{file, bytes}` by its path under `streams/`, as one row; whichever
   floor applies it archives them, and the others' plans move on. Two floors' Tidy pressed together pass the same check,
   so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams (`streams/projects/`,
   [[policies]]' runs and approvals) are not offered yet. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
@@ -90,13 +90,9 @@ and offset, from its start and from the checkpoint it leaves, and replays its sc
 - *Archiving on a timer*: a change to the system root nobody pressed for surprises. Tidy is the one place what can go is listed and applied as shown.
 - *Eligibility per session, by its own end*: archives the earlier sessions of a chain whose current session still
   runs, and its brief would inflate them on every open.
-- *Calling the act "archive" in code beside the board's archive* (cards off the board): the plan's field is `logs`
-  and the words say "old logs", so an archived card and an archived log are not confused; the row's verb is
-  "archive".
 - *Statting every log on each change of the sessions directory*: the directory changes on every append. Sizes are
   read when a log is tracked, ends or is archived, which is when an eligible log's size can change.
 
 **Impact.** API: `TidyPlan.logs` and `TidyPlan.streams`, the `tidy` reply's `archived` and `streams` (the `tidy`
 input's `streams` defaults to none, so a plan built before it still parses). Config `retention.days`. No host
-change and no log format change: an archive inflates to the log byte for byte. Archived logs take
-roughly a seventh of their plain size.
+change and no log format change: an archive inflates to the log byte for byte.
