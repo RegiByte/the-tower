@@ -254,7 +254,9 @@ async function changes(res: http.ServerResponse, id: string, search: string | un
   const { project, cwd } = session.header
   const config = readConfig()
   if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })))
+  // Read before the status is written: a git failure then answers as an error the panel draws, not an empty 200.
+  const repos = await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(repos))
 }
 
 const DAY_MS = 86_400_000
