@@ -211,7 +211,9 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   the tower answers 403, its guard against other web pages.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
-  `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
+  `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/runs/<project>`
+  (`?policy&limit`: a policy's runs, newest first, each with its worker as it is now), `/landing?project&branch` (what
+  landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
   weekly limit as last read in the window (`weekly`), and the points of it used outside the tower in the window (`outside`: claude.ai, the desktop app, another machine, as the quota probe saw it climb while no session worked; the budget's `outside` is this week's, and what 1% buys leaves it out). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
@@ -269,7 +271,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states |
 | `/design.js` | the design module: palettes, type, the type and spacing scales (`size`, `space`), the terminal's theme, the sky by hour, a document's stylesheet |
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
-| `/panels.js` | the Changes, Reviews and Stats panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`); the Stats panel's money, hours and durations as words (`usd`, `hours`, `duration`) |
+| `/panels.js` | the Changes, Reviews, Stats and Policies panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`); the Stats panel's money, hours and durations as words (`usd`, `hours`, `duration`) |
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
 | `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`) |
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
@@ -284,6 +286,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/press.js` | a control busy while what it asks is in flight (`pressing(control, request)`: `aria-busy` on it and on every control drawn with the same identity, a second press ignored), and a control's identity in html drawn anew (`identityOf`) |
 | `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
+| `/policies.js` | what renderers say and decide about policies: a rule and its slots in words (`ruleWords`, `slotWords`), where a policy stands (`standing`, `standingWords`), and the cron checks a policy file's header gets (`cronProblem`) |
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
 `parse`: those words can carry what a web page Claude read put in them, and your renderer runs at the tower's origin,

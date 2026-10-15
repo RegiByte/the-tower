@@ -38,7 +38,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | Key | Takes | Unset |
 |---|---|---|
 | `argv` | The command every session starts with, before the arguments the tower adds: `["claude"]`. | required |
-| `env` | Variables added to every session's environment, after the parent session's are scrubbed. | none |
+| `env` | Variables added to every session's environment. They are scrubbed with the parent session's: a parent session's markers (`CLAUDECODE`, `CLAUDE_CODE_SESSION*`, `TOWER_SESSION_ID`, …) set here are dropped. | none |
 | `projects` | The floors, by id (letters, digits, `_`, `-`): see [Projects](#projects). | required |
 | `collections` | The collections every project has, by id: see [Collections](#collections). | none |
 | `user.name` | The name the user's review notes are signed with: text with no `·`, no line break and no space at either end. | `user` |

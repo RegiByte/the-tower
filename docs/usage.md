@@ -90,9 +90,24 @@ and its reviewers discuss the work before it lands.
 
 **Collections** are folders of files a floor keeps: `drafts` (prompts waiting for a session), `reviews` (the
 threads above), and any you declare, each with a description of what it's for. Workers add with `tower keep`;
-every item gets a two-word tag to refer to it by (`ivory-otter`). A draft starts a worker from the tower page, or
-`tower hire <tag>`. Declare your own collections in the config (notes, reports, templates…): the tower keeps the
+every item gets a two-word tag to refer to it by (`ivory-otter`). `tower kept` lists what a floor keeps, and
+`tower read <tag>` reads one item in full. A draft starts a worker from the tower page, or `tower hire <tag>`. Declare your own collections in the config (notes, reports, templates…): the tower keeps the
 files, and you and your workers decide what they mean.
+
+## Standing work: policies
+
+> "Every weekday at 9, have a worker check the dependency updates and open a PR."
+> "Run the nightly cleanup now." · "Which policies does this floor have, and when did they last run?"
+
+A **policy** is work a floor does on a schedule: one markdown file in its `policies` collection, a title, a short
+json header (when it runs, as crons; an optional `check` that says whether there is work; `ask` or `auto`), and the
+prompt each run's worker starts on. A worker writes one with `tower keep policies`. At each slot the tower starts a
+worker on it, or, for an `ask` policy, offers the slot to you: offers come after the waits when you go to the next one
+(`N`). An `auto` policy runs on its own only while you have approved its words; any edit asks for a new approval.
+
+Each floor's policies are in its sidebar tray, which opens the Policies panel: each rule in words, where it stands,
+its runs, and Run now, Approve and Accept. Workers read the same with `tower policies` (`approve` and `run` act on
+one) and `tower runs` (a policy's latest runs, and what each left for the next).
 
 ## The shelf
 
@@ -125,7 +140,8 @@ held (after each `/clear`, and across resumes), without scrolling its terminal. 
 Every session's log is kept, so a worker that ended (killed, sent home, its terminal closed) can be **resumed**: a
 new session continuing the same Claude conversation. A floor's past workers are in its archive, by crew, each
 resumable. When the host stops while workers are mid-turn (a restart, a crash), they show as stranded (stopped mid-turn, on
-hover) and offer **carry on**: a resume with a prompt to pick up where they were.
+hover) and offer **carry on**: a resume with a prompt to pick up where they were, or **let go**: off duty without
+resuming, still resumable from the archive (`tower let-go <CALLSIGN>`).
 
 > "Resume ODIN-07 and ask it to finish the migration."
 
@@ -154,7 +170,9 @@ many ran at once, the weekly budget's pace, and what landed on each project's de
 
 > "How much did this floor spend this week, and on what?"
 
-Workers read the same numbers from the API (`GET /stats`).
+Workers read the same numbers from the API (`GET /stats`). The rate limits in the sidebar's chip come from
+Claude's turns and from the tower's own **probes**: the quota probe reads your account's usage while no worker's turn
+reports it. `tower probes` says how each probe stands and when it reads next; `tower probes run quota` reads now.
 
 ## Tower 3D
 

@@ -45,7 +45,7 @@ tower doctor                         # check what the tower needs, with a fix fo
 tower config check                   # check the config as the tower reads it, each problem at its key
 tower update                         # move to the newest release, restart the tower, say if the host needs a restart
 tower init [hub] [repos...]          # write a first config, never over one
-tower spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt>]
+tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt>]
 tower ls | live | ps | reap [id] | resume <id> | submit <id> <text> | kill <id|CALLSIGN> | screen <id> [t] | attach <id>
 tower app                            # open the tower as a Mac app (built on first use; needs xcode-select --install)
 ```
