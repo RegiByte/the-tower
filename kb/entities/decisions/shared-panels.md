@@ -25,7 +25,6 @@
     "hub/src/shared/panels.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
     "hub/src/shared/words.ts#markRanges",
-    "hub/src/tower/server.ts#design",
     "hub/renderers/page/index.html",
     "hub/renderers/tower3d/src/main.ts#drawChanges",
     "hub/renderers/tower3d/src/main.ts#drawThread"
@@ -38,152 +37,69 @@
   ]
 }
 ---
-**Problem.** The tower page (plain JS) and Tower 3D each drew their own Changes and Reviews. Tower 3D's Reviews
-was a near line-for-line port of the page's, its CSS lived twice, and its Changes was a file list with no hunks,
-folds, viewed toggle or line picking. Every feature was ported by hand and drifted.
+**Problem.** The tower page and Tower 3D each drew their own Changes and Reviews: Tower 3D's Reviews was a near
+line-for-line port of the page's, its CSS lived twice, and its Changes lacked hunks, folds, Viewed and line picking.
+Every feature was ported by hand and drifted.
 
-**Why.** A capability a next renderer would need belongs in shared code ([[renderer-is-disposable]]). The two
-panels are the same view in both renderers. Only where they sit, their state and a few gestures differ.
+**Why.** A capability a next renderer would need belongs in shared code ([[renderer-is-disposable]]). The panels
+are the same view in every renderer; only where they sit, their state and a few gestures differ.
 
 **How.**
-- *One module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`):
-  [`changesHtml`](ref:hub/src/shared/panels.ts#changesHtml) (head, repos, files, folds, hunks, picked rows, the note
-  box under them, noted line marks) and [`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml) (head, Send,
-  notes, anchors with their state, composer) take a view model and read nothing global. The logic only the page had
-  lives beside them as pure functions: `fileRows`, `picked` (the pick after a click), `spanned` (the pick of a drag),
-  `pickAnchor`, `notedLines`,
-  `anchorSpot` (where an anchor's line is), `marksToggled` (a repo's viewed marks after a toggle).
-- *A protocol of data attributes*, listed once in the module's header: `data-fold`, `data-viewed`, `data-pick`,
-  `data-pick-text`, `data-anchor`, `data-reply`, `data-note-text`, `data-send`, `data-copy`, `data-since`, …
-  Each renderer wires them to its own state. `data-reveal` and `data-edit` (a file's Finder and editor buttons,
-  [`fileButtonsHtml`](ref:hub/src/shared/panels.ts#fileButtonsHtml)) are calls already: `fileCall` gives the request,
-  and a renderer wires it once for the whole page ([[open-files]]). Text boxes are named by attribute, not id, so one panel can be drawn
-  in two places.
+- *One module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds four panels:
+  Changes ([`changesHtml`](ref:hub/src/shared/panels.ts#changesHtml), [[changes-view]]), Reviews
+  ([`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml), [[review-threads]], whose view model
+  [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf) builds), Stats
+  ([`statsHtml`](ref:hub/src/shared/panels.ts#statsHtml) over a `/stats` read, ranges asked by
+  [`statsQuery`](ref:hub/src/shared/panels.ts#statsQuery), [[stats]]) and Policies
+  ([`policiesHtml`](ref:hub/src/shared/panels.ts#policiesHtml) over `floor.policies` and `board.offers`,
+  [[policies]]). Each takes a view model and reads nothing global. The logic only the page once had lives beside
+  them as pure functions: `fileRows`, `picked`, `spanned`, `pickAnchor`, `notedLines`, `anchorSpot`, `marksToggled`.
+  The tower page draws all four; Tower 3D draws Changes, Reviews and Stats (its desk panel and roof), and would
+  draw Policies through the same view.
+- *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
+  File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]); a
+  policy's presses are calls the board offered (`data-policy-call`). Text boxes are named by attribute, not id, so
+  one panel can be drawn in two places.
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panels.ts#drawPanel) replaces the element's
-  html only when it changed (or something else wrote the element), sets each text box from the renderer's text,
-  and gives focus and caret back to the box that had them, and focus to a control that had it
-  ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus): the one element of the same tag and the same attributes
-  naming what it does, none when two match, which a renderer also wraps around its own redraws). A time is an empty `data-since` span that each
-  renderer fills on its own clock, so the clock never forces a redraw that would drop a text selection in the diff.
-- *A fold keeps the reader's place.* Marking a file viewed, or folding it by its caret, while the reader is inside its
-  diff (its header stuck under the panel's head) would leave them as far past the next file as the fold took away;
-  both renderers redraw through [`keepingFileTop`](ref:hub/src/shared/panels.ts#keepingFileTop), which scrolls the file
-  back to its header, so the next file follows it. A file whose header was not stuck does not move.
-- *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels.ts#panelsCss)), scoped under the views' own roots
-  (`.changes-panel`, `.reviews-panel`). Each renderer adds it as a `<style>`, as `documentCss` is used, and sizes
-  the element the panel is drawn in.
-- *Served modules are bundled.* The tower serves every shared module bundled with what it imports at runtime
-  (esbuild, [`design`](ref:hub/src/tower/server.ts#design)), the same way Tower 3D's bundle does. `./x.ts` imports
-  then work in served modules with no rewriting.
-- *A read that failed says so.* Each view takes `failed`, why its last read failed, drawn while nothing is read in
-  place of "reading…": [`failedHtml`](ref:hub/src/shared/panels.ts#failedHtml) names what couldn't be read and why,
-  with Read again (`data-changes-read`, `data-thread-read`, `data-stats-read`). A failure over a read already held
-  leaves it drawn and toasts. The tower page draws its archive and shelf reads with the same `failedHtml`.
-- *One view model of a thread.* Both renderers build the Reviews panel's view with
-  [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf), from the place it is opened (`cardThread`, a worker's
-  view, read as that worker; `floorThread`, read as the worker on duty in the checkout) and what the viewer holds: the
-  thread as read, the reader's Changes, its Send pick and the note it answers ([[review-threads]]).
-- *What stays per renderer is wiring, not html.* Copying a tag, scrolling to `re n…` and toasts are each
-  renderer's handlers on the same attributes. The page re-reads Changes while its pane is open and when a turn
-  ends; Tower 3D every 30 s while either tab is open. A note picked in Tower 3D goes to the thread its Reviews tab
-  shows (the author's, for a reviewer); the page writes on the selected worker's own checkout.
-
-- *Policies* (2026-10-13). [`policiesHtml`](ref:hub/src/shared/panels.ts#policiesHtml) draws a floor's
-  `floor.policies` and its open `board.offers` ([[policies]]): a "Needs you" section (an auto policy edited since
-  its approval, with Approve; one approved once and invalid now, with its problems at their paths), the offers (Accept,
-  and ✕ for this viewer, a dismissed one marked), then every policy with its rule and next slot in words, where it
-  stands (`standingWords` of `/policies.js`, the reason the runner acts on), its approval, live runs and last run, Run
-  now and Approve. Every press is a call the board offered (`data-policy-call`); Run now drawn off says why (live full,
-  another runner's, the host down). The page opens it in the main pane per floor; Tower 3D doesn't draw it yet, and would
-  through the same view.
+  html only when it changed, sets each text box from the renderer's text, and gives focus and caret back
+  ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus), which a renderer also wraps around its own redraws).
+  A time is an empty `data-since` span each renderer fills on its own clock, so the clock never forces a redraw that
+  would drop a text selection.
+- *A fold keeps the reader's place.* Folding or marking viewed a file the reader is inside redraws through
+  [`keepingFileTop`](ref:hub/src/shared/panels.ts#keepingFileTop), which scrolls the file back to its header so the
+  next file follows it.
+- *Line picks* stop at the edge of the first line's hunk (`picked`, `spanned`): an anchor is a span of the file's
+  lines, and a range over a gap would claim lines its quote doesn't hold. The drag is DOM wiring, shared as
+  [`watchPickDrag`](ref:hub/src/shared/panels.ts#watchPickDrag); the renderer keeps the pick and a `picking` flag,
+  and the note box waits for the drop.
+- *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels.ts#panelsCss)), scoped under the views' own roots. Each
+  renderer adds it as a `<style>` and sizes the element the panel is drawn in. It also lays out a worker's tab row:
+  the panes' tabs pinned, then the showings in one sideways-scrolling strip, kept in place across redraws by
+  [`keepShownTabs`](ref:hub/src/shared/panels.ts#keepShownTabs).
+- *A read that failed says so.* Each view takes `failed`, drawn while nothing is read:
+  [`failedHtml`](ref:hub/src/shared/panels.ts#failedHtml) names what couldn't be read and why, with Read again. A
+  failure over a read already held leaves it drawn and toasts.
+- *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
+  Reviews are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (the tower is
+  local-first and a framed page fetches nothing beside it). [`rowCode`](ref:hub/src/shared/panels.ts#rowCode)
+  highlights each hunk as two texts, its old side and its new, so a removed line reads in the code it was removed
+  from, and keeps the result by file and diff hash so redraws never highlight again. A hunk carries no state from the
+  lines before it, so one starting inside a block comment or string is highlighted as code. The changed words of an
+  edited line ([[changes-view]]) are laid over the highlighted html by
+  [`markRanges`](ref:hub/src/shared/words.ts#markRanges), inside the syntax spans, from a tokenizer of code over
+  jsdiff's `diffArrays`. The colours are the design's tokens ([[design-system]]).
+- *What stays per renderer is wiring, not html.* Copying, scrolling to a note, toasts and when to re-read are each
+  renderer's handlers on the same attributes. A Stats bar's readout (`data-tip`) shows through the renderer's one
+  tooltip ([[viewer-prefs]]). Picking lines for a note stays a pointer gesture; a file's fold and Viewed are
+  real buttons.
 
 **Alternatives considered.**
-- *Rewriting relative specifiers in served code* (`./x.ts` → `/x.js`), keeping one browser instance per module: a
-  regex over generated code, and it fails on `../`. Bundling duplicates a few pure functions per module, which
-  costs nothing.
-- *Optional flags on the views* (copyable tag or not, a hint line per renderer): one view doing two things.
-  Both renderers now wire every attribute.
-- *A DOM morph (idiomorph or morphdom) or a framework* for redraws: `drawPanel` covers today's needs, so the
-  morph is the next step only if hand-patching grows.
+- *Optional flags on the views* (copyable tag or not, a hint line per renderer): one view doing two things; every
+  renderer wires every attribute instead.
+- *A DOM morph (idiomorph or morphdom) or a framework* for redraws: `drawPanel` covers today's needs; a morph is the
+  next step only if hand-patching grows.
 - *Panel CSS inside `/design.css`*: every shelf page would load it, and the design module would import the panels.
-
-*Syntax* (2026-10-07). Code in Changes and quotes in Reviews are highlighted with highlight.js, an npm dependency
-bundled into `/panels.js` and into Tower 3D's bundle like everything else the panels import
-([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): core plus the grammars of the fence
-languages `langOf` names, picked by extension, plain escaped text for any other. Those embedded in another (`xml`
-for JSX in a `.tsx` and for markup in markdown, `javascript` and `css` inside html) are registered under highlight.js's
-own names too, which is how a grammar asks for another: unregistered, an embedded block reads as plain text. JSX's
-`{…}` stays plain, and a `>` inside one ends its tag, as far as the `xml` grammar goes. It highlights a run of lines in
-one pass and cuts the html at its newlines, closing and reopening the spans a line break falls inside.
-[`rowCode`](ref:hub/src/shared/panels.ts#rowCode) highlights each hunk as two texts, its old side and its new, so
-a removed line reads in the code it was removed from, and keeps the result by file and diff hash (the last 500), so
-redraws (a pick, a keystroke in the note box, a re-read that changed nothing) never highlight again. A `diff` quote
-is highlighted in its file's language, each line on its mark's wash. The colours are the design's `syn*` tokens
-([[design-system]]), so both schemes and both renderers read them from `/design.css`, set under a scope by
-[`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss), which rendered markdown's fences share. A note's body is
-markdown drawn through `markdownHtml` ([[chat-brief]]). About 25 µs a line: a
-2000-line file, the most a diff shows, highlights in some 40 ms, once per version. A hunk that starts inside a
-block comment or a template string is highlighted as code, since a hunk carries no state from the lines before it.
-- *A CDN* (the user's first idea): the tower is local-first and Tower 3D's framed page fetches nothing beside it,
-  so the library would be missing offline and in Tower 3D. Bundled, it adds some 85 kB to Tower 3D's minified bundle and 180 kB to `/panels.js`, served unminified.
-- *Shiki or Prism*: Shiki's TextMate grammars need a WASM regex engine and load asynchronously, too heavy for a
-  pure, synchronous view; Prism highlights through globals and is between majors. highlight.js is synchronous,
-  dependency-free and returns html the views already speak.
-- *Highlighting each line alone*: a line out of its file loses multi-line strings and comments, and costs a call
-  per line.
-
-*Words* (2026-10-09). The words an edited line changed ([[changes-view]]) are laid over its highlighted html by
-[`markRanges`](ref:hub/src/shared/words.ts#markRanges): it counts the text's characters (an entity is one), and wraps
-each range in a `<mark class="word">` that closes before any tag and opens again after it, so a mark lives inside the
-syntax spans and the colours and the shade both show. `rowCode` does it as it highlights, so it is kept with the
-highlight by file and diff hash. The shade is `--added-word` or `--removed-word` by the row's side ([[design-system]]).
-jsdiff (npm `diff`, BSD-3, synchronous, ESM with its types) is bundled like highlight.js: some 9 kB to `/panels.js`,
-unminified, and 4.5 kB to Tower 3D's minified bundle. `wordRanges` and `markRanges` are served from `/panels.js`.
-- *diff-match-patch or fast-diff*: both diff characters, which marks fragments of words; diff-match-patch is
-  unmaintained and ships no ESM or types.
-- *jsdiff's `diffWordsWithSpace`*: its words are prose's, so `$el` splits after its `$`; a tokenizer of our own over
-  `diffArrays` reads code.
-
-*Stats* ([`statsHtml`](ref:hub/src/shared/panels.ts#statsHtml), [[stats]]) came later on the same terms. The view
-model is the last `/stats` read over a range (`today` by hour, `week` or `month` by day, as
-[`statsQuery`](ref:hub/src/shared/panels.ts#statsQuery) asks for it), every project as a series with its config colour (a project in the read that the config no longer lists stacks in a
-neutral colour under its id, so the bars add up to the tiles),
-and the scope tabs the renderer offers (`STATS_ALL` is every project's). It draws tiles (spent, agent-hours, waiting
-on you, sessions, prompts, asks, commits landed, lines changed, and "left this week" on the All tab), bar charts of
-spend, agent-hours and commits per bucket, lines added above an axis and removed below it, and spend by hour of day, stacked by project on the All tab with a legend, and the spreads of waits, turns and active
-time, tokens by model and lines by file kind. Bars are html, so a column's readout (`data-tip`) shows on hover and focus through the renderer's one tooltip
-([[settings-and-tips]]), with nothing to wire; text stays in ink (lines added and removed wear the diff's colours, as in Changes), and a bar wears its project's colour mixed a quarter toward ink. `data-stats-scope`,
-`data-stats-range` and `data-stats-read` are the attributes a renderer wires. The tower page puts it on the sidebar
-(the floor in view and All floors), Tower 3D on the roof (every project and the overview).
-
-*Keyboard* (2026-10-08). A file's fold is a real button, the header's caret (`data-fold` on it too, with
-`aria-expanded` and the file's path as its name), so a keyboard folds a file the way a click on its header does;
-Viewed was already a button. Picking lines for a note stays a pointer gesture (the user saw no need for keys). The file's Finder and editor buttons are spans with a name, out of the Tab order, since they also sit inside a
-showing's tab. The Stats scopes and ranges say which is on with `aria-pressed`.
-
-**Impact.** The tower page and Tower 3D draw Changes, Reviews and Stats through one module. Tower 3D's desk has the full
-Changes: hunks, folds, Viewed (written to `tower.store`), mouse line picking (drag or ⇧-click for a range), the note box,
-noted-line marks, and anchors that scroll to their line. A third renderer gets both panels by importing
-`/panels.js` and wiring the attributes.
-
-*Range picks* (2026-10-08, API 1.15). A note took one line or a ⇧-click range; a drag across line numbers now picks a
-range too. The gesture is DOM wiring, so it is shared as
-[`watchPickDrag`](ref:hub/src/shared/panels.ts#watchPickDrag): it calls the renderer's `drag(from, to)` for each
-line of the pressed file the pointer moves onto and `drop()` on release, and leaves a press that reaches no other
-line to the click. The renderer keeps the pick and a `picking` flag in its view model: while picking, the rows draw
-picked and the note box waits for the drop (a box under the last row would move the rows under the pointer). Both
-`picked` and `spanned` stop a range at the edge of its first line's hunk: an anchor is a span of the file's lines,
-and a range over a gap would claim lines its quote doesn't hold. A range of removed lines alone still anchors by
-their old numbers with a `diff` quote ([[review-threads]]).
-
-*Tab row* (2026-10-15). `panelsCss` also lays out a worker's tab row, the same in both renderers, on one line: the
-panes' tabs pinned at the left, then the showings in a `.shown-tabs` strip that scrolls sideways, its scrollbar hidden
-and a fade on each edge past which more showings hide. A showing's title ends in an ellipsis (its full target in the
-tab's tip), never under 6em on the selected one beside its controls, and a showing is never wider than the strip.
-[`keepShownTabs`](ref:hub/src/shared/panels.ts#keepShownTabs), which a renderer calls after each draw of the row
-with the worker it draws, keeps the strip where the viewer left it through redraws, scrolls a showing newly selected
-(clicked, shown anew, reached by a key) into view clear of the fade, sets the fades and turns a mouse wheel sideways;
-a selected showing as wide as the strip fills it unfaded. The row wrapped before: with twenty showings it took four
-or five lines of the header and the terminal shrank by as much. A `+N` menu for the showings that don't fit was
-built and dropped for the scroll: the user wanted the showings in one row to move along. API 1.53 (`keepShownTabs` on
-`/panels.js`).
+- *Shiki or Prism*: Shiki's TextMate grammars need a WASM regex engine and load asynchronously, too heavy for a pure,
+  synchronous view; Prism highlights through globals. Highlighting each line alone loses multi-line strings and
+  comments.
+- *Character diffs (diff-match-patch, fast-diff) or jsdiff's prose words*: they mark fragments of code tokens.
