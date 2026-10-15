@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.34.0
+
+One button to end a worker, a limits chip, and red only for a worker that needs you. No host restart, no config
+change. The renderer API moves to 1.56, additions only. Restart the tower (`tower down tower && tower up tower`),
+rebuild Tower 3D (`npm run tower3d`) and reload both.
+
+- **Send home** is the one way to end a worker in the tower page and Tower 3D: it ends the worker with every hire
+  under it, the deepest first, and a worker with nobody under it ends alone. The board offers `send-home` on every
+  worker now (a lone worker's is its own `kill`); `kill` stays on the API and `tower kill`. Its confirmation says what
+  resuming later costs, and sending one worker home offers Resume in its toast.
+- A stranded worker offers **resume** and **let go**; "resume all" still carries on the workers the host cut off
+  mid-turn, and resumes the rest as they were. A selected stranded worker's actions show once, in the header.
+- The sidebar's rate limits fold into one chip naming the tightest limit and its share; a click opens the full meters,
+  "as of", extra usage and the probes.
+- **Red means a worker needs you**: a question, a permission, a screen. A finished answer still waits on you and
+  still counts, drawn calm; the count of waits is ringed, and "needs you" has its own count. New marks are drawn in
+  the accent; problems (at risk, invalid, extra spent) in the broken tone; meters stay ink until a limit runs hot.
+  Tower 3D's HUD, signs and directory follow the same rule.
+
 ## v1.33.0
 
 A calmer tower page that holds up under a lot of data: the first pass from a design audit of the page on a busy
