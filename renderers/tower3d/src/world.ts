@@ -466,12 +466,13 @@ export function paintDirectory(dir: World['directory'], p: Plan) {
     g.textAlign = 'center'
     const cx = W - 28 - h * 0.2 - asideW / 2
     if (waiting) {
-      g.fillStyle = WORLD.needs
+      g.strokeStyle = WORLD.ink
+      g.lineWidth = h * 0.06
       g.beginPath()
-      g.roundRect(cx - asideW / 2, y + h * 0.2, asideW, h * 0.6, h * 0.3)
-      g.fill()
+      g.roundRect(cx - asideW / 2, y + h * 0.23, asideW, h * 0.54, h * 0.27)
+      g.stroke()
     }
-    g.fillStyle = waiting ? '#fff' : WORLD.muted
+    g.fillStyle = waiting ? WORLD.ink : WORLD.muted
     g.fillText(aside, cx, y + h / 2 + h * 0.03)
   })
   dir.texture.needsUpdate = true

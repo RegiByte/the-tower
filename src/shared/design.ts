@@ -324,6 +324,8 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
  * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, which has no text tone) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
+ * Only `needs` fills or washes in red: a count of waits (`.chip.waits`) is ringed in ink, its lamp in the loudest wait's
+ * attention.
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
  * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
  * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
@@ -355,6 +357,8 @@ const COMPONENTS = `
 .chip.some { background: var(--c); color: var(--on); }
 .chip.some .lamp { background: var(--on); }
 .chip:not(.some) .lamp { animation: none; }
+.chip.waits.some { background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.chip.waits.some .lamp { background: var(--c); }
 button:active:not(:disabled, [aria-disabled='true'], [aria-busy='true']) { translate: 0 1px; }
 button:is(:disabled, [aria-disabled='true']) { opacity: .45; cursor: not-allowed; }
 button[aria-busy='true'] { position: relative; cursor: progress; }

@@ -37,7 +37,8 @@ const PAIRS: Pair[] = [
   ...on(['muted'], ['addedWash', 'removedWash'], 'text', "a diff line's +/- sign"),
   ...on(['muted'], ['addedGutter', 'removedGutter', mix('accent', 10, 'panel')], 'text', 'diff line numbers, hunk headers'),
   ...on(['accent'], ['panel', 'panel2'], 'text', 'links, a note’s re'),
-  ...ATTENTION.flatMap((a) => on([`${a}Text`], ['panel', 'panel2', mix(a, 8, 'panel')], 'text', `${a} as text: a status, a waiting row`)),
+  ...ATTENTION.flatMap((a) => on([`${a}Text`], ['panel', 'panel2'], 'text', `${a} as text: a status`)),
+  ...on(['needsText'], [mix('needs', 8, 'panel')], 'text', 'a card that needs you'),
   ...on(['needsText'], [mix('needs', 11, 'panel')], 'text', 'the ask bar'),
   ...on(['added', 'removed'], ['panel', 'panel2'], 'text', '+N / −N counts'),
   ...on(['panel'], ['added', 'removed'], 'text', "a changed file's mark"),
@@ -48,6 +49,7 @@ const PAIRS: Pair[] = [
   ...on(['ink', 'synKeyword', 'synString', 'synNumber', 'synComment', 'synTitle', 'synType', 'synAttr', 'synRegexp'], ['addedWord', 'removedWord'], 'text', "the words an edited line changed"),
   ...on(['lineStrong'], ['panel', 'panel2'], 'ui', "a form field's edge"),
   ...on(['accent'], ['panel', 'panel2'], 'ui', 'the focus ring'),
+  ...on(['ink'], ['panel2'], 'ui', 'the ring of a count of waits'),
   ...on(['brokenText'], ['panel2'], 'ui', 'an invalid field'),
   ...on(PROJECT_SAMPLES.map((p) => mix(p as Colour, 'pEdgeMix', 'ink')), ['panel2'], 'ui', 'a project’s focus ring and selected edge'),
 ]

@@ -14,7 +14,12 @@ export { tagOf } from './tags.ts'
  * way. The tower serves this module as `/cards.js`; nothing in the core imports it.
  */
 
-/** The fact a status word states; its colour is the card's attention. */
+/**
+ * The status vocabulary every renderer draws a worker's state from: the word (`statusName`, `statusWord` short), and
+ * the colour, its attention's palette token (`palettes[scheme][attention]`, the attention's class in design.ts). Red,
+ * `needs`, is only a worker that needs you: a screen, a question or a permission. An unread answer is `ready`, a wait
+ * drawn calm: loud only in the count of waits and the keys that walk them.
+ */
 export const STATUS_NAME: Record<Status, string> = {
   booting: 'booting', blocked: 'blocked', idle: 'idle', working: 'working', needs_input: 'needs you', watching: 'watching', done: 'done', failed: 'failed', exited: 'exited', lost: 'lost',
 }

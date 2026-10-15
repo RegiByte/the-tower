@@ -56,7 +56,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   const host = `<span class="hud-host ${HOST_ATTENTION[state]}" data-tip="${esc(HOST_MEANS[state])}"><span class="lamp"></span>${state === 'up' ? '' : HOST_NAME[state]}</span>`
   const tune = `<button class="icon-btn hud-music${music ? ' on' : ''}" data-music aria-label="music" aria-pressed="${music}" data-tip="music ${music ? 'on' : 'off'} (B)">${music ? ICON.music : ICON.silent}</button>`
   const gear = `<button class="icon-btn" popovertarget="settings" aria-label="settings" data-tip="settings: sound, theme and lighting">${ICON.settings}</button>`
-  const tally = (['ready', 'working', 'quiet', 'broken'] as const).filter((a) => count(a))
+  const tally = (['needs', 'ready', 'working', 'quiet', 'broken'] as const).filter((a) => count(a))
     .map((a) => `<span class="${a}" data-tip="${esc(`${count(a)} ${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b></span>`)
   const shells = board.shells.length ? [`<span data-tip="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
   const crew = [...tally, ...shells]
@@ -85,7 +85,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
       : `<span class="hud-probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}">${inner}</span>`
   })
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
-    ${waits.length ? `<button class="chip ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
+    ${waits.length ? `<button class="chip waits ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
     ${limits.length || probes.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf, ...extra, ...probes].join('')}</span>` : ''}
     ${fresh ? `<button class="chip hud-shown" data-shown data-tip="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
@@ -648,7 +648,7 @@ export function directoryHtml(p: Plan, held: HeldWhy) {
         <span class="st">${esc(k.shell.activity)}</span></div></div>`).join('')}</div>
       ${spawnButton(l.floor, held)}`
   }).join('')
-  const legend = (['needs', 'ready', 'working', 'quiet', 'broken'] as const).map((a) => `<span class="chip ${a}"><span class="lamp"></span>${a === 'needs' ? 'needs you' : a}</span>`).join('')
+  const legend = (['needs', 'ready', 'working', 'quiet', 'broken'] as const).map((a) => `<span class="chip ${a}"><span class="lamp"></span>${ATTENTION_NAME[a]}</span>`).join('')
   const roof = p.levels.at(-1)!
   return `<div class="side-title"><h2>Directory</h2>${closeButton}</div>
     <div class="tally">${legend}</div>${body}

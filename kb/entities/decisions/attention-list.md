@@ -79,8 +79,9 @@ wait alike, so "done, your turn" read as alarm.
   turn ends; a screen or a question still waits on the user ([[leave]]).
 - Attention splits: `needs` is a screen or a question (red, blinks), `ready` an unread answer (a calm green, still),
   `broken` a failure, read or not. `ready` holds whomever the answer waits on: the colour says what the worker holds,
-  `waiting` whether it's yours. A count of waits is coloured by its loudest card
-  ([`loudest`](ref:hub/src/shared/cards.ts#loudest): needs, broken, ready, the rank waits are gone to in).
+  `waiting` whether it's yours. A count of waits is drawn in ink, its lamp and a waiting light coloured by its loudest
+  card ([`loudest`](ref:hub/src/shared/cards.ts#loudest): needs, broken, ready, the rank waits are gone to in), so red
+  marks only what needs you; a card is washed only when it needs you ([[design-system]]).
 - Alternatives: keeping a hire's done-wait in the list ranked last, silent or ringing: still the user's list filled with
   answers that aren't theirs. Its hirer's state ignored: a hirer gone home reads nothing, so the answer comes back to
   you. Keying on `card.reportsTo`: an untold reviewer reports to its author yet its notes are for the user; `hiredBy`

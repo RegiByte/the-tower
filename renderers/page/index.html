@@ -110,7 +110,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess { position: relative; padding: var(--sp-m) var(--sp-l); border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line);
   border-left: 4px solid var(--c); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
 .sess:hover { box-shadow: var(--shadow); }
-.sess.waits { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
+.sess.waits.needs { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
 :is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button.on) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
@@ -208,7 +208,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
   .side { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
   .side :is(.floors, .stats-side) { flex: none; overflow: visible; }
 }
-.rail .count { display: grid; place-items: center; min-width: 20px; min-height: 20px; border-radius: var(--radius-pill); background: var(--c); color: var(--on); font-weight: 700; font-size: var(--fs-xs); }
+.rail .count { display: grid; place-items: center; min-width: 20px; min-height: 20px; border-radius: var(--radius-pill); background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; font-size: var(--fs-xs); }
 .rail .lamp { width: 11px; height: 11px; cursor: pointer; }
 .rail .lamp.sel { outline: 2px solid var(--ink); outline-offset: 3px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-m) var(--sp-xl); align-items: baseline; color: var(--muted); font-size: var(--fs-m); }
@@ -362,7 +362,6 @@ dialog#landing { width: min(960px, 94vw); }
 .hello { position: relative; align-self: flex-start; margin: var(--sp-3xl) 0 0 var(--sp-3xl); padding: var(--sp-xl) var(--sp-2xl); background: var(--panel); border-radius: var(--radius);
   box-shadow: var(--shadow); }
 .hello .big { font: 900 var(--fs-3xl)/1.1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
-.hello .big b { color: var(--c-text); }
 .hello .sub { color: var(--muted); margin-top: var(--sp-s); }
 .hello .clock { color: var(--faint); font-size: var(--fs-s); margin-top: var(--sp-2xs); font-variant-numeric: tabular-nums; }
 .city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: min(34px, 2vw); padding: 0 var(--sp-2xl); }
@@ -374,6 +373,7 @@ dialog#landing { width: min(960px, 94vw); }
 .building .mast { width: 2px; height: 22px; background: var(--ink); position: relative; }
 .building .mast.alarm::after { content: ""; position: absolute; left: -4px; top: -8px; width: 10px; height: 10px; border-radius: 50%;
   background: var(--c); box-shadow: 0 0 14px var(--c); animation: beacon 1.6s infinite; }
+.building .mast.alarm:not(.needs)::after { animation: none; }
 .building .body { display: flex; flex-wrap: wrap-reverse; gap: 4.1cqi; width: 100%; padding: 8.2cqi 6.1cqi; background: var(--enamel);
   border-top: 6px solid var(--p, var(--deco)); border-radius: var(--radius-s) var(--radius-s) 0 0; }
 .w { width: 18.4cqi; height: 12.2cqi; border-radius: var(--radius-s); background: var(--enamel-2); }
@@ -921,7 +921,7 @@ function skylineHtml() {
   const working = cards().filter((c) => c.status === 'working').length
   const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
   return `<div class="stars"></div><div class="orb" id="orb"></div>
-    <div class="hello ${loudest(waitsOnYou()) ?? ''}"><div class="big">${big}</div><div class="sub">${waiting && board.keys['next-waiting'].length ? `press ${board.keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
+    <div class="hello"><div class="big">${big}</div><div class="sub">${waiting && board.keys['next-waiting'].length ? `press ${board.keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
       <div class="clock" id="clock"></div></div>
     <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
 }
@@ -1453,9 +1453,9 @@ function render() {
   const waiting = heededWaits(board, heed).length
   const offered = heededOffers(board, heed).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
-  paintOnce($('tally'), `<span class="chip ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
+  paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
     (offered ? `<span class="chip offered some" tabindex="0" data-tip="policies' slots offered and not yet started, that you haven't dismissed: N goes to them after the workers waiting on you"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
-    ['ready', 'working', 'quiet', 'broken']
+    ['needs', 'ready', 'working', 'quiet', 'broken']
       .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = lostAt ? 'unknown' : hostState(board)
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
@@ -1485,7 +1485,7 @@ function render() {
 /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
 const railHtml = (waiting) =>
   `<button class="icon-btn" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board.keys, 'sidebar')}">${ICON.sidebar}</button>
-  ${waiting ? `<span class="count ${loudest(waitsOnYou())}" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
+  ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrder(board).map((c) => {
     const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
     return `<a class="lamp ${lampOf(c)} ${c.id === selected ? 'sel' : ''}" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`

@@ -26,7 +26,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 .hidden { display: none !important; }
 .sign button { margin-left: auto; min-width: 26px; min-height: 24px; padding: 0; display: grid; place-items: center; }
 .sign small { margin-left: auto; color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; }
-.sign small .waits { color: var(--on-needs); background: var(--needs); border-radius: var(--radius-pill); padding: 1px var(--sp-m); }
+.sign small .waits { color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); border-radius: var(--radius-pill); padding: 1px var(--sp-m); }
 .tally { display: flex; flex-wrap: wrap; gap: var(--sp-xs); }
 
 #rail { position: fixed; top: 14px; bottom: 14px; left: 14px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: var(--sp-m); pointer-events: none; }
@@ -40,7 +40,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 #hud .sign .name { font-size: var(--fs-xs); min-width: 0; }
 #hud .chip { padding: 0 var(--sp-m); font-size: var(--fs-xs); gap: var(--sp-xs); line-height: 1; }
 #hud .lamp { width: 7px; height: 7px; }
-#hud button.chip.needs { background: var(--needs); color: var(--on-needs); }
+#hud .chip.waits { box-shadow: inset 0 0 0 2px var(--ink), 0 1px 3px #0005; }
 #hud kbd { min-width: 1.5em; padding: var(--sp-2xs) var(--sp-xs); font-size: var(--fs-xs); background: #fff3; color: inherit; }
 .hud-group { gap: var(--sp-m) !important; color: var(--muted); }
 .hud-group > span { display: inline-flex; align-items: center; gap: var(--sp-xs); white-space: nowrap; }
@@ -202,7 +202,7 @@ button.wide { width: 100%; }
 .move { display: flex; align-items: center; gap: var(--sp-s); padding: 1px var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
 .move .call { font-size: var(--fs-xs); color: var(--ink); }
 .move small { font: var(--fs-xs) var(--mono); color: var(--faint); }
-.move.waiting { border-color: var(--needs); }
+.move.waiting { border-color: var(--ink); }
 .dismiss { color: var(--needs-text); }
 .desk-tabs .shown-tab { gap: var(--sp-s); }
 .shown-tab .fresh { display: inline-block; margin-right: var(--sp-s); vertical-align: middle; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }

@@ -156,6 +156,7 @@
       ".st",
       ".summary",
       ".task",
+      ".waits",
       ".watching",
       ".where",
       ".wide",
