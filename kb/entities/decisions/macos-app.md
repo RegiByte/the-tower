@@ -56,7 +56,9 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
 - **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
   than the build, writes the checkout and the config into the bundle's `Info.plist` (so the app needs no setting),
   signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, rendered into the bundle's
-  icon set when it changed ([`renderIcon`](ref:hub/src/app.ts#renderIcon)). One app per system: the default config's
+  icon set when it or `src/app.ts` changed ([`renderIcon`](ref:hub/src/app.ts#renderIcon)): full bleed for macOS 26,
+  which masks an app icon into its own shape, and put on Apple's rounded grid first for an earlier macOS, which draws
+  an icon as it is. One app per system: the default config's
   is `Tower.app`, another's is named after its system root, each with a bundle id of its own. All of it under the
   git-ignored `apps/macos/out/`.
 
