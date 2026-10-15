@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { MAX_FILE_LINES, parseDiff } from '../src/bridge/diff.ts'
+import { MAX_BEFORE_LINES, MAX_FILE_LINES, parseDiff, withBefore } from '../src/bridge/diff.ts'
 
 const out = readFileSync(new URL('./fixtures/changes.diff', import.meta.url), 'utf8')
 const files = parseDiff(out)
@@ -49,4 +49,15 @@ test('git diff: a file hashes the same until its diff changes', () => {
   const edited = parseDiff(out.replace('+fifteen', '+FIFTEEN'))
   assert.notEqual(edited.find((f) => f.path === 'keep.txt')!.hash, byPath('keep.txt').hash)
   assert.equal(edited.find((f) => f.path === 'tail.txt')!.hash, byPath('tail.txt').hash)
+})
+
+test('git diff: each hunk carries the unchanged lines since the one before it', () => {
+  const text = Array.from({ length: 20 }, (_, i) => String(i + 1)).map((l) => (l === '5' ? 'five' : l === '15' ? 'fifteen' : l)).join('\n') + '\n'
+  const keep = withBefore(byPath('keep.txt'), text)
+  assert.deepEqual(keep.hunks!.map((h) => h.before), [['1'], ['9', '10', '11']])
+  const [gap] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', '@@ -3 +2,0 @@', '-c', ''].join('\n'))
+  assert.deepEqual(withBefore(gap, 'a\nb\nd\n').hunks![0].before, ['a', 'b'])
+  const far = MAX_BEFORE_LINES + 2
+  const [deep] = parseDiff(['diff --git a/x b/x', '--- a/x', '+++ b/x', `@@ -${far} +${far} @@`, '-a', '+b', ''].join('\n'))
+  assert.equal(withBefore(deep, 'x\n'.repeat(far - 1) + 'b\n'), deep)
 })

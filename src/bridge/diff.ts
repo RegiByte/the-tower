@@ -7,8 +7,15 @@ import { fnv1a } from '../shared/hash.ts'
 /** A file's lines past this many changed are left out: a lockfile or a build output, not something to read. */
 export const MAX_FILE_LINES = 2000
 
-/** One region of a file: `old` and `new` are the first line's numbers, each line keeps git's mark (` `, `+`, `-`, `\`). */
-export type Hunk = { old: number; new: number; heading: string; lines: string[] }
+/** A file's unchanged lines sent before its hunks past this many would be a large file changed near its end: its hunks go without them. */
+export const MAX_BEFORE_LINES = 5000
+
+/**
+ * One region of a file: `old` and `new` are the first line's numbers, each line keeps git's mark (` `, `+`, `-`, `\`).
+ * `before`: the unchanged lines since the last hunk (or the file's start), the same on both sides, so a renderer reads
+ * each hunk in the code it stands in (a comment or a string opened above it). Absent when `withBefore` didn't read them.
+ */
+export type Hunk = { old: number; new: number; heading: string; lines: string[]; before?: string[] }
 
 export type DiffFile = {
   path: string
@@ -96,6 +103,24 @@ const parseFile = (block: string[]): DiffFile => {
     hash: fnv1a(block.join('\n')).toString(16),
     ...(!binary && plus + minus <= MAX_FILE_LINES && { hunks }),
   }
+}
+
+/**
+ * A modified or renamed file's hunks, each with the unchanged lines before it, cut from `text`, the file as its new
+ * side reads; as they were past `MAX_BEFORE_LINES` of them. A hunk adding nothing starts after its `new` line, not at it.
+ */
+export function withBefore(file: DiffFile, text: string): DiffFile {
+  if (!file.hunks?.length) return file
+  const lines = text.split('\n')
+  let at = 0
+  const hunks = file.hunks.map((h) => {
+    const adds = h.lines.filter((l) => l[0] === ' ' || l[0] === '+').length
+    const start = adds ? h.new - 1 : h.new
+    const before = lines.slice(at, start)
+    at = start + adds
+    return { ...h, before }
+  })
+  return hunks.reduce((n, h) => n + h.before.length, 0) > MAX_BEFORE_LINES ? file : { ...file, hunks }
 }
 
 /** The files of a `git diff` output, in its order. */

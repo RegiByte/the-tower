@@ -4,7 +4,9 @@
  * anywhere else, everything since `HEAD`. A scope narrows it to what isn't committed yet, or to one of the commits
  * since the base. Files outside the repos aren't seen. Git is read on every request, never kept.
  */
-import { parseDiff, type DiffFile } from './bridge/diff.ts'
+import { lstat, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { parseDiff, withBefore, type DiffFile } from './bridge/diff.ts'
 import { git, run } from './git.ts'
 import { againstFor, isRepo } from './worktrees.ts'
 
@@ -47,12 +49,29 @@ const commitsSince = async (dir: string, since: string): Promise<Commit[]> =>
 /** Files in the order of the paths their headers show, untracked ones among the rest; as git sorts its own, for ASCII paths. */
 const byPath = (files: DiffFile[]): DiffFile[] => files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
 
+/**
+ * Each changed file's hunks with the lines before them (`withBefore`), read by `newSide` from the file as it now reads.
+ * A file added or deleted is one hunk from its first line; a symlink's diff is its target's path, not the file it reads.
+ */
+const withBeforeAll = (files: DiffFile[], newSide: (path: string) => Promise<string | undefined>): Promise<DiffFile[]> =>
+  Promise.all(files.map(async (f) => {
+    if (!f.hunks?.length || (f.change !== 'modified' && f.change !== 'renamed')) return f
+    const text = await newSide(f.path)
+    return text === undefined ? f : withBefore(f, text)
+  }))
+
+/** A file of the working tree, unless it is a symlink. */
+const treeFile = (dir: string) => async (path: string) => {
+  const file = join(dir, path)
+  return (await lstat(file)).isFile() ? readFile(file, 'utf8') : undefined
+}
+
 /** The working tree's diff from `from`, untracked files with it. */
 const treeDiff = async (dir: string, from: string) => {
   const untracked = (await git(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
   const shown = untracked.slice(0, MAX_UNTRACKED)
   const outs = await Promise.all([git(dir, [...DIFF, from]), ...shown.map((file) => untrackedDiff(dir, file))])
-  return { files: byPath(outs.flatMap(parseDiff)), more: untracked.length - shown.length }
+  return { files: byPath(await withBeforeAll(outs.flatMap(parseDiff), treeFile(dir))), more: untracked.length - shown.length }
 }
 
 const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChanges> => {
@@ -64,7 +83,8 @@ const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChange
   if (scope === 'uncommitted') return { ...base, shows: 'uncommitted', ...(await treeDiff(dir, 'HEAD')) }
   const commit = commits.find((c) => c.sha.startsWith(scope.commit))
   if (!commit) return { ...base, shows: scope.commit, files: [], more: 0 }
-  return { ...base, shows: commit.sha, files: byPath(parseDiff(await git(dir, [...DIFF, `${commit.sha}^`, commit.sha]))), more: 0 }
+  const files = parseDiff(await git(dir, [...DIFF, `${commit.sha}^`, commit.sha]))
+  return { ...base, shows: commit.sha, files: byPath(await withBeforeAll(files, (path) => git(dir, ['show', `${commit.sha}:${path}`]))), more: 0 }
 }
 
 /** The changes in each of a session's dirs that is a repo, in its order, as `scope` shows them. */

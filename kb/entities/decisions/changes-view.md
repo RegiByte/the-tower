@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -26,6 +26,12 @@ files you have read while the agent keeps working.
 - **As data.** [`parseDiff`](ref:hub/src/bridge/diff.ts#parseDiff) turns git's output into files with their
   hunks, lines kept with git's marks. Binary files and very long diffs keep their counts and drop their hunks. Every
   config of the user's that changes what `git diff` prints is set back on the command line.
+- **Highlighting.** A hunk highlighted alone reads wrong when it starts inside a comment or a string. Each hunk of a
+  modified or renamed file carries `before`, the unchanged lines since the hunk before it
+  ([`withBefore`](ref:hub/src/bridge/diff.ts#withBefore)), cut from the file's new side: the working tree's file, or
+  a commit's through one `git cat-file --batch`. The panel highlights each side of the file as one text with them,
+  and each hunk alone when a file has none: past a cap per file and per read, or when the text read isn't what git
+  diffed (a filter, an edit since), told by a hunk's own lines not standing where it says.
 - **When.** Only while a worker's Changes are open: on open, on a poll, and when the worker's status leaves
   `working`. Claude edits through scripts as often as through its edit tools, so no tool event is a reliable trigger.
 - **Viewed.** Each file carries a hash of its diff. A mark is `(path → hash)` per repo dir, kept with `tower.store`
