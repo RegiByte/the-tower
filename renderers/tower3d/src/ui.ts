@@ -42,8 +42,8 @@ const toolHtml = (tool: string) => {
   const [name, ...target] = tool.split(' ')
   return `<b>${esc(name)}</b> ${esc(target.join(' '))}`
 }
-/** A meter's fill: ink, then working past 60%, needs past 85%. */
-const fillOf = (pct: number) => (pct > 85 ? 'var(--needs)' : pct > 60 ? 'var(--working)' : 'var(--ink)')
+/** A meter's fill: ink, broken past `hot`. */
+const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
 
 /** A rate limit's window, short: `five_hour` reads 5h, `seven_day_opus` 7d opus. */
 const limitName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', '7d').replaceAll('_', ' ')
@@ -70,7 +70,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
     const pace = elapsed === undefined ? '' : `<s style="left:${elapsed}%"></s>`
     const reset = r.resetsAt ? `<small>${resetWhen(r.resetsAt, now) ?? 'reset'}</small>` : ''
     return `<span data-tip="${esc(title)}">${esc(limitName(r.kind))}
-      <span class="meter" style="--fill:${fillOf(r.percentUsed)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
+      <span class="meter" style="--fill:${fillOf(r.percentUsed, 85)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
   })
   const asOf = stale ? [`<small data-tip="${esc(limitsFromTitle(board))}">as of ${span(age)} ago</small>`] : []
   /** Extra usage only once it is spent from: the HUD stays short while the plan's limits hold. */
@@ -280,7 +280,7 @@ const closeButton = `<button class="icon-btn x" data-act="close" aria-label="clo
 export function deskHeadHtml(c: Card, floor: Floor | undefined, armed: (key: string) => boolean, held: HeldWhy, framed: boolean) {
   const ctx = c.context
   const stats = [
-    ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
+    ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
     c.costUsd != null && `<b>$${c.costUsd.toFixed(2)}</b>`,
     claudeFlagHtml(c),
   ].filter(Boolean).join('')

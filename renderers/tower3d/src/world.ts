@@ -333,7 +333,7 @@ function limitColumns(p: Plan, limits: RateLimit[], today: Today) {
     const b = boxes[i]
     const x = (b.minX + b.maxX) / 2
     const z = (b.minZ + b.maxZ) / 2
-    const color = r.percentUsed > 85 ? WORLD.needs : r.percentUsed > 60 ? WORLD.working : WORLD.quiet
+    const color = r.percentUsed > 85 ? WORLD.broken : WORLD.quiet
     g.add(block(1.6, 0.2, 1.6, toon('#20242e'), x, 0, z))
     g.add(mesh(new THREE.BoxGeometry(1.4, 3.8, 1.4), glass, x, 0.2 + 1.9, z))
     g.add(block(1.2, 0.15 + height(r.percentUsed), 1.2, glowing(color), x, 0.2, z))

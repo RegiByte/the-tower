@@ -440,7 +440,7 @@ export function dressPapers(desk: Desk, count: number) {
     sheet.rotation.y = Math.sin(i * 1.3) * 0.12
     desk.papers.add(sheet)
   }
-  const flag = sprite(`${count} NEW`, 0.09, { color: '#fff', bg: WORLD.needs, px: 44 })
+  const flag = sprite(`${count} NEW`, 0.09, { color: '#fff', bg: WORLD.accent, px: 44 })
   flag.position.set(0, Math.min(count, PAPERS.most) * thick + PAPERS.flag, 0)
   desk.papers.add(flag)
   const reach = PAPERS.flag + PAPERS.above

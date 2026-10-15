@@ -40,6 +40,8 @@ const PAIRS: Pair[] = [
   ...ATTENTION.flatMap((a) => on([`${a}Text`], ['panel', 'panel2'], 'text', `${a} as text: a status`)),
   ...on(['needsText'], [mix('needs', 8, 'panel')], 'text', 'a card that needs you'),
   ...on(['needsText'], [mix('needs', 11, 'panel')], 'text', 'the ask bar'),
+  ...on(['ink'], [mix('broken', 11, 'panel')], 'text', "a draft's conflict note"),
+  ...on(['panel'], ['accent'], 'text', 'a new or changed mark: unseen notes, a moved anchor'),
   ...on(['added', 'removed'], ['panel', 'panel2'], 'text', '+N / −N counts'),
   ...on(['panel'], ['added', 'removed'], 'text', "a changed file's mark"),
   ...(['needs', 'ready', 'working', 'quiet', 'broken', 'offered'] as const).flatMap((a) =>
@@ -50,6 +52,7 @@ const PAIRS: Pair[] = [
   ...on(['lineStrong'], ['panel', 'panel2'], 'ui', "a form field's edge"),
   ...on(['accent'], ['panel', 'panel2'], 'ui', 'the focus ring'),
   ...on(['ink'], ['panel2'], 'ui', 'the ring of a count of waits'),
+  ...on(['broken'], ['sunk'], 'ui', 'a meter past hot'),
   ...on(['brokenText'], ['panel2'], 'ui', 'an invalid field'),
   ...on(PROJECT_SAMPLES.map((p) => mix(p as Colour, 'pEdgeMix', 'ink')), ['panel2'], 'ui', 'a project’s focus ring and selected edge'),
 ]

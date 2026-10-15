@@ -239,5 +239,5 @@ export const settingsCss = `
 .settings .pref input[data-pref=display] { font-family: var(--display); } .settings .pref input[data-pref=mono] { font-family: var(--mono); }
 .settings .pref .size { display: flex; align-items: center; gap: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
 .settings .pref .size input { width: 4rem; font-variant-numeric: tabular-nums; }
-.settings .missing { margin: calc(-1 * var(--sp-xs)) 0 0 calc(4.75rem + var(--sp-m)); color: var(--needs-text); font-size: var(--fs-xs); }
+.settings .missing { margin: calc(-1 * var(--sp-xs)) 0 0 calc(4.75rem + var(--sp-m)); color: var(--broken-text); font-size: var(--fs-xs); }
 `

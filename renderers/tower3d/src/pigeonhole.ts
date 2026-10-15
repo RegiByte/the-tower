@@ -81,7 +81,7 @@ export function buildPigeonhole(level: FloorLevel, slot: PigeonholeSlot): Pigeon
     }
     const lipY = HEADER + (row + 1) * height - LIP
     const fresh = t.unseen > 0
-    g.fillStyle = fresh ? WORLD.needs : t.landed ? WORLD.panel2 : WORLD.panel
+    g.fillStyle = fresh ? WORLD.accent : t.landed ? WORLD.panel2 : WORLD.panel
     g.fillRect(m(col * cell + 0.03), m(lipY), m(cell - 0.06), m(LIP - 0.012))
     g.fillStyle = fresh ? '#fff' : t.landed ? WORLD.faint : WORLD.ink
     g.font = `800 ${m(0.04)}px ${type.display}`

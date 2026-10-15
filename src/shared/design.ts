@@ -325,7 +325,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, which has no text tone) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
  * Only `needs` fills or washes in red: a count of waits (`.chip.waits`) is ringed in ink, its lamp in the loudest wait's
- * attention.
+ * attention; something new is drawn in `--accent`, a problem that waits on no one in `--broken-text`.
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
  * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
  * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
@@ -417,7 +417,7 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
 .spawn-form .pick:has(:checked) { background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); }
 .spawn-form .pick span { color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .pick .st { margin-left: auto; }
-.spawn-form .pick .st.at-risk { color: var(--needs-text); }
+.spawn-form .pick .st.at-risk { color: var(--broken-text); }
 .spawn-form .pick .st.live { color: var(--working-text); }
 .spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: calc(-1 * var(--sp-s)); padding-left: var(--sp-xl); border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
 .spawn-form:has([name=where][value=new]:checked) .if-new, .spawn-form:has([name=where][value=worktree]:checked) .if-worktree,

@@ -34,7 +34,12 @@ draws with almost no advance, so the next face in the stack draws it.
   derived in the bridge from status and whether it holds something unread ([`board`](ref:hub/src/bridge/board.ts)):
   needs is a screen or a question, ready an answer nobody has read yet (whoever it waits on, [[waiting-on-you]]),
   working is booting or at work, broken is failed or lost. Red is kept for what needs a hand; an answer ready is a
-  calm green (`ready`, enamel text on it), and a failure keeps its own colour (2026-10-07, [[attention-list]]). Renderers
+  calm green (`ready`, enamel text on it), and a failure keeps its own colour (2026-10-07, [[attention-list]]). Red
+  means only that (2026-10-15): a card washes only when it needs you, a count of waits (`.chip.waits`) is ringed in
+  ink with its lamp in the loudest wait's colour, something new (unseen notes, a moved anchor, a NEW flag) is
+  `accent`, a problem that waits on no one (at risk, invalid, a draft's conflict, a missing face, extra usage spent)
+  `brokenText`, and a meter is ink until hot, then `broken`. The words and the table they come from are
+  [`STATUS_NAME`](ref:hub/src/shared/cards.ts#STATUS_NAME) and `ATTENTION_NAME` in `/cards.js`. Renderers
   colour by it and never derive it; the status word keeps the exact state. Only needs blinks; a `watching` lamp breathes ([[watching-status]]); and with reduced motion (the viewer's `data-motion`, or the system's setting: `reduced`) every animation in
   `design.css` runs once. More contrast (the viewer's `data-contrast`, or the system's) moves muted and faint text
   toward ink and draws lines as strong as a field's edge ([[viewer-prefs]]).

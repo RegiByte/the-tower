@@ -52,7 +52,7 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .probe-run { margin-left: auto; padding: 0 var(--sp-xs); border: 0; background: none; color: var(--muted); font-size: inherit; text-decoration: underline dotted; cursor: pointer; }
 .limits .probe-run:hover { color: var(--ink); }
 .limits .extra { margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
-.limits .extra.spent { color: var(--needs-text); }
+.limits .extra.spent { color: var(--broken-text); }
 .limits .probe:is(.working, .broken) { color: var(--muted); }
 .side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
@@ -102,7 +102,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .wt .who { font-weight: 700; color: var(--ink); text-decoration: none; }
 .wt .who:hover { text-decoration: underline; }
 .wt .st { flex: none; font-size: var(--fs-xs); letter-spacing: .04em; color: var(--faint); }
-.wt.at-risk .st, .wt.lost .st { color: var(--needs-text); }
+.wt.at-risk .st, .wt.lost .st { color: var(--broken-text); }
 .wt button { flex: none; min-height: var(--control); }
 .wt button:not(.icon-btn) { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
 .sess .branch { color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -151,7 +151,8 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .trays { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-m) 0 0; }
 .tray { max-width: 100%; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tray b { color: var(--ink); font-variant-numeric: tabular-nums; }
-.tray i { font-style: normal; font-weight: 700; color: var(--needs-text); }
+.tray i { font-style: normal; font-weight: 700; color: var(--broken-text); }
+.tray i.needs { color: var(--needs-text); }
 .tray:hover { color: var(--ink); }
 .archive { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; gap: var(--sp-2xs); }
 .archive-view, .collection-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-m); }
@@ -272,7 +273,7 @@ dialog#landing { width: min(960px, 94vw); }
 .pane-tab .icon-btn .icon, .tab .icon-btn .icon { width: var(--icon-s); height: var(--icon-s); }
 .pane-tab:has(> .icon-btn:last-child), .tab { padding-right: 0; }
 .pane-tab small { margin-left: var(--sp-xs); color: var(--faint); font-variant-numeric: tabular-nums; }
-.pane-tab small.unseen { color: var(--needs-text); font-weight: 700; }
+.pane-tab small.unseen { color: var(--accent); font-weight: 700; }
 .changes { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); }
 .main.on-changes .changes { display: block; }
 .reviews { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); }
@@ -311,8 +312,8 @@ dialog#landing { width: min(960px, 94vw); }
 .item-image { flex: 1; min-width: 0; display: grid; place-items: center; overflow: auto; padding: var(--sp-xl); }
 .item-image img { max-width: 100%; max-height: 100%; }
 .main:not(.drafting) .draft-view, .main.drafting .bar, .main.drafting .screen { display: none; }
-.draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius); background: color-mix(in oklab, var(--needs) 11%, var(--panel));
-  border: 1px solid var(--needs); }
+.draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius); background: color-mix(in oklab, var(--broken) 11%, var(--panel));
+  border: 1px solid var(--broken); }
 .draft-note:empty { display: none; }
 #draft-head a { color: inherit; }
 .draft-note span { margin-right: auto; }
@@ -769,7 +770,7 @@ function policiesTrayHtml(f) {
   const needs = f.policies.filter((p) => p.needs).length
   const invalid = f.policies.filter((p) => p.problems && !p.needs).length
   const on = policiesOpen?.project === f.id
-  return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${f.policies.length}</b> ${f.policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i>${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
+  return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${f.policies.length}</b> ${f.policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
 }
 
 /** The floor's offers this viewer heeds, in the attention order: Accept starts the run, ✕ dismisses it for this viewer. */
@@ -827,8 +828,8 @@ const floorHtml = (f, i, all) => {
   </section>`
 }
 
-/** A meter's fill: ink, the working colour past `warm`, needs past `hot`. */
-const fillOf = (pct, warm, hot) => (pct > hot ? 'var(--needs)' : pct > warm ? 'var(--working)' : 'var(--ink)')
+/** A meter's fill: ink, broken past `hot`. */
+const fillOf = (pct, hot) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
 
 /** A limit's meter, with a tick where an even pace through the week would be. */
 const limitHtml = (r, now) => {
@@ -837,7 +838,7 @@ const limitHtml = (r, now) => {
   const pace = elapsed === undefined ? '' : `<s style="left:${elapsed}%"></s>`
   return `<div${elapsed === undefined ? '' : ` data-tip="${paceLine(pct, elapsed)}"`}><div class="row">${esc(r.kind.replaceAll('_', ' '))} <b>${pct}%</b>
     <small>${r.resetsAt ? resetLine(r.resetsAt, now) : ''}</small></div>
-    <div class="meter" style="--fill:${fillOf(pct, 60, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
+    <div class="meter" style="--fill:${fillOf(pct, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
 }
 
 /** Each probe under the limits: its line, its state's colour on the lamp, and in full on hover. */
@@ -863,7 +864,7 @@ const limitsHtml = (now) => {
 const tightestLimit = (limits) => limits.reduce((a, r) => (r.percentUsed > a.percentUsed ? r : a))
 
 /** A meter's tone as an attention class, by the thresholds `fillOf` colours it with. */
-const limitTone = (pct) => (pct > 85 ? 'needs' : pct > 60 ? 'working' : 'quiet')
+const limitTone = (pct) => (pct > 85 ? 'broken' : 'quiet')
 
 /** The limits folded into one chip: the tightest limit's name and percentage, loud once it is hot. */
 const limitsPill = (now) => {
@@ -872,7 +873,7 @@ const limitsPill = (now) => {
   const tone = limitTone(r.percentUsed)
   const name = r.kind.replace('five_hour', '5h').replace('seven_day', 'week').replaceAll('_', ' ')
   const stale = now - board.rateLimitsAt > LIMITS_STALE_MS
-  return { cls: `chip ${tone}${tone === 'needs' ? ' some' : ''}${stale ? ' stale' : ''}`, html: `<span class="lamp"></span>${esc(name)} <b>${r.percentUsed}%</b>`,
+  return { cls: `chip ${tone}${tone === 'broken' ? ' some' : ''}${stale ? ' stale' : ''}`, html: `<span class="lamp"></span>${esc(name)} <b>${r.percentUsed}%</b>`,
     tip: `${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used, the tightest of ${plural(board.rateLimits.length, 'limit')}, as of ${span(now - board.rateLimitsAt)} ago: click for all of them` }
 }
 
@@ -935,7 +936,7 @@ function barHtml(c) {
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}
     <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, floorOf(c.project))))}</span>
     <span class="stats">
-      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${ctx > 80 ? 'var(--needs)' : 'var(--working)'}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
+      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
       ${claudeFlagHtml(c) ?? ''}
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
