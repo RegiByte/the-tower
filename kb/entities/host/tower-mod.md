@@ -34,7 +34,7 @@ Classic hooks (curl), declared in the same `hooks/hooks.json`, still deliver the
 (`SessionStart`, `Stop`, `PreCompact`, ...) because the mods API's `classic.*` events never fire: two transports into one
 socket. A classic hook also reaches the log when Claude's built-in `sec-default` mod keeps a mod event from user
 mods, as it keeps `session.compact` inside an organization ([[claude-code]]). Each Claude reads that list from the plugin as it starts, so changing it needs no host restart
-([[host-knows-no-flags]]).
+([[host-owns-ptys]]).
 
 The plugin's `bin/tower` is on the Bash tool's PATH in every session. The brief in the system prompt gives the
 everyday recipes, and the `tower:handbook` skill is the handbook beside it ([[brief-first]]): it tells Claude what the tower is, how to find itself and other workers, and how to reach one with `SendMessage` ([[agent-directory]]); how

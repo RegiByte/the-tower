@@ -11,4 +11,4 @@ The [[host-daemon]] starts sessions, relays keystrokes and resizes, and appends 
 to its log. The [[tower-mod|tower mod]] runs inside each session and reports what Claude does.
 
 Changing the host means restarting it, which ends every running session (each can be resumed). So it stays
-small and its log format stable: anything that can live in a client does ([[host-knows-no-flags]]).
+small and its log format stable: anything that can live in a client does ([[host-owns-ptys]]).

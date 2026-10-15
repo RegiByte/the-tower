@@ -15,7 +15,7 @@ skills, commands and agents, so a session in a three-repo project listed a skill
 
 **Decision.** [`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs) passes the dirs as
 `permissions.additionalDirectories` in the session's `--settings`, composed by clients since 2026-10-08
-([[host-knows-no-flags]]): the same file access, none of the config loading.
+([[host-owns-ptys]]): the same file access, none of the config loading.
 The directory a session starts in (the [[hub]] or the repo chosen at spawn) is the only one that configures it.
 Checked on Claude Code 2.1.289: with `--add-dir` a repo's skill is listed; with `additionalDirectories` it is not,
 and the repo's files read without a prompt either way.
@@ -31,7 +31,7 @@ puts the fix on every repo instead of the tower.
 **Consequences.** A repo's own skills are reachable only from a session started in it. A repo's CLAUDE.md was never
 loaded (that takes `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1`), and still is not. Clients still pass
 `--add-dir` for directories outside the project's repos: the floor's collections directory, and in a [[worktree]] the
-directory sources of its links ([[tower-cuts-worktrees]]); a `.claude/` in one of those would load. The settings are the clients' ([[host-knows-no-flags]]).
+directory sources of its links ([[tower-cuts-worktrees]]); a `.claude/` in one of those would load. The settings are the clients' ([[host-owns-ptys]]).
 
 The user-facing docs say it as well: [[docs-config]] (`repos`), [[readme]], [[docs-usage]] and `AGENTS.md`'s Data section; each refs
 [`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs), so a change in how repos are granted re-checks them.

@@ -21,7 +21,7 @@ name belongs to which callsign, floor or task.
   session's `TOWER_SESSION_ID` belongs to that session's own Claude ([`peers`](ref:hub/src/bridge/resources.ts#peers)).
   The live system reads it with the leftovers every 5 s, from the same `ps` scan.
 - Every spawn and resume passes the worker's [[callsign]] as Claude's `--name` (composed in `launch.ts`, see
-  [[host-knows-no-flags]]), so a worker's peer name is its callsign, across resumes too: a resume that carries a
+  [[host-owns-ptys]]), so a worker's peer name is its callsign, across resumes too: a resume that carries a
   worker on runs under its callsign ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), a fork under its
   own. The join still names sessions started before a host ran this. `cardNamed` finds a callsign on several cards
   (a worker on duty wins over past ones), reading the floors' archives when no worker on duty has it ([[board-archive]]).
