@@ -24,6 +24,8 @@ const TREE_TIMEOUT_MS = 10 * 60_000
 const GIT_CONCURRENCY = 8
 
 export type Run = { stdout: string; stderr: string; code: number }
+/** A run's output as git wrote it, bytes undecoded. */
+type RawRun = { stdout: Buffer; stderr: string; code: number }
 
 /** A git call stopped after its timeout. */
 export class GitTimeout extends Error {}
@@ -32,17 +34,17 @@ export class GitTimeout extends Error {}
  * Git in a process group of its own, so a timeout stops the hooks and the fsmonitor it started with it: SIGTERM, which
  * git answers by removing its lock files.
  */
-const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.ProcessEnv): Promise<Run> =>
+const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.ProcessEnv, input?: string): Promise<RawRun> =>
   new Promise((resolve, reject) => {
     const child = spawn('git', ['-C', dir, '--no-optional-locks', ...PINNED, ...args], {
       detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
       env: { ...withoutParentSession(process.env), GIT_TERMINAL_PROMPT: '0', ...env },
     })
-    let stdout = ''
+    const stdout: Buffer[] = []
     let stderr = ''
-    child.stdout.setEncoding('utf8').on('data', (d: string) => (stdout += d))
-    child.stderr.setEncoding('utf8').on('data', (d: string) => (stderr += d))
+    child.stdout!.on('data', (d: Buffer) => stdout.push(d))
+    child.stderr!.setEncoding('utf8').on('data', (d: string) => (stderr += d))
     let timedOut = false
     const timer = setTimeout(() => {
       timedOut = true
@@ -58,8 +60,9 @@ const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.Proc
       if (timedOut)
         return reject(new GitTimeout(`git ${args.slice(0, 2).join(' ')} in ${dir} took over ${timeout / 1000}s and was stopped: a hook or an fsmonitor of the repo may hang, or its disk is slow; run it there by hand to see`))
       if (code === null) return reject(new Error(`git ${args.join(' ')} in ${dir} ended on ${signal}`))
-      resolve({ stdout, stderr, code })
+      resolve({ stdout: Buffer.concat(stdout), stderr, code })
     })
+    if (input !== undefined) child.stdin!.end(input)
   })
 
 /** At most `n` tasks run at once; the rest start in the order they came, each as a running one settles and hands it its place. */
@@ -82,15 +85,22 @@ const limited = (n: number) => {
 const inTurn = limited(GIT_CONCURRENCY)
 
 /** A call's timeout counts from its start, not from when it was queued. */
-const exec = (dir: string, args: string[], timeout: number, env: NodeJS.ProcessEnv): Promise<Run> => inTurn(() => spawnGit(dir, args, timeout, env))
+const exec = async (dir: string, args: string[], timeout: number, env: NodeJS.ProcessEnv): Promise<Run> => {
+  const r = await inTurn(() => spawnGit(dir, args, timeout, env))
+  return { ...r, stdout: r.stdout.toString('utf8') }
+}
 
 /** Git, its exit code returned for the caller to read; a timeout throws `GitTimeout`. */
 export const run = (dir: string, args: string[], timeout = GIT_TIMEOUT_MS): Promise<Run> => exec(dir, args, timeout, {})
 
-const succeeded = (dir: string, args: string[], r: Run) => {
+const succeeded = <T>(dir: string, args: string[], r: { stdout: T; stderr: string; code: number }): T => {
   if (r.code !== 0) throw new Error(`git ${args.join(' ')} in ${dir}: ${r.stderr.trim()}`)
   return r.stdout
 }
+
+/** Git that must succeed, fed `input` on its stdin, its output as bytes: for output that counts its own lengths in bytes (`cat-file --batch`). */
+export const gitBytes = async (dir: string, args: string[], input: string): Promise<Buffer> =>
+  succeeded(dir, args, await inTurn(() => spawnGit(dir, args, GIT_TIMEOUT_MS, {}, input)))
 
 /** Git that must succeed, with `env` added to its environment: a failure throws with its stderr. */
 export const gitWith = (env: NodeJS.ProcessEnv) => async (dir: string, args: string[]): Promise<string> => succeeded(dir, args, await exec(dir, args, GIT_TIMEOUT_MS, env))

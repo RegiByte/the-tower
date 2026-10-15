@@ -8,7 +8,7 @@ import { fnv1a } from '../shared/hash.ts'
 export const MAX_FILE_LINES = 2000
 
 /** A file's unchanged lines sent before its hunks past this many would be a large file changed near its end: its hunks go without them. */
-export const MAX_BEFORE_LINES = 5000
+export const MAX_BEFORE_LINES = 1000
 
 /**
  * One region of a file: `old` and `new` are the first line's numbers, each line keeps git's mark (` `, `+`, `-`, `\`).
