@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.37.1
+
+Fixes to the Changes view's hunk colouring, found testing v1.37.0 end to end. No host restart, no config change, the
+renderer API unchanged. Restart the tower (`tower down tower && tower up tower`), rebuild Tower 3D
+(`npm run tower3d`) and reload both.
+
+- A hunk takes the colours of the code above it only where highlight.js reads that code right: a comment, or a string
+  or fence that closes within the hunk. A stray `*` in Markdown no longer turns every hunk below it italic, nor does a
+  regex in a template literal's `${}` turn the rest of a file into a string.
+- The lines before hunks are capped by size: a minified line above a hunk no longer sends megabytes per poll and holds
+  the page. A working tree's file is read only through its last hunk, never through a symlink or a fifo, and a file
+  that fails to read goes without its lines instead of failing the read. A commit's files are read by blob id, fast on
+  wide commits of deep paths.
+- With `diff.submodule=log` in the user's git config, a moved submodule keeps its row and no longer breaks the file
+  before it. A hub in a subdirectory of its repo gets the lines before its hunks, and a root commit since the base
+  reads as added files where it failed the read.
+
+Thanks to Carlos Bonetti.
+
 ## v1.37.0
 
 The Changes view colours a hunk in the code it stands in. No host restart, no config change. The renderer API moves
