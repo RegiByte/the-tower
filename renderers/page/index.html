@@ -112,7 +112,8 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .call { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; white-space: nowrap; }
 .sess .st { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sess:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
-.sess .st.stuck, .pill.stuck { color: var(--needs-text); }
+.sess .st.stuck { color: var(--needs-text); }
+.pill.stuck { --c: var(--needs); --on: var(--on-needs); }
 .sess .line { margin-top: var(--sp-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
 .subs { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
@@ -161,8 +162,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .offer-row .what span { color: var(--muted); }
 .offer-row .what:hover b { text-decoration: underline; }
 .sess .run { color: var(--faint); font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chip.offered .lamp, .move .lamp.offered { background: var(--accent); }
-.move.waiting:has(.lamp.offered) { border-color: var(--accent); }
+.move.waiting:has(.lamp.offered) { border-color: var(--offered); }
 #archive-filter { flex: 1; min-width: 120px; max-width: 420px; padding: var(--sp-xs) var(--sp-l); font: var(--fs-m) var(--ui); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 #archive-filter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .past { overflow: hidden; padding: var(--sp-xs) var(--sp-m); border-radius: var(--radius); font-size: var(--fs-s); color: var(--muted); cursor: pointer; }
