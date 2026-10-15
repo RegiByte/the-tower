@@ -827,7 +827,7 @@ const signHtml = (n, name, extra = '') =>
 
 /**
  * Whether each floor is open, as this viewer chose by its sign, kept in `tower.store` by project. A floor never chosen
- * is open while something on it waits on you, and folded otherwise.
+ * is open while a worker on it needs you (a question, a permission or a screen), and folded otherwise.
  */
 const FLOORS_OPEN_KEY = 'floors.open'
 let floorsOpen = (await tower.store.get(FLOORS_OPEN_KEY)) ?? {}
@@ -839,7 +839,8 @@ const floorWaits = (f) => heededWaits(board, heed).filter((w) => f.cards.some((c
 const floorOffers = (f) => heededOffers(board, heed).filter((o) => o.project === f.id)
 
 const holdsSelected = (f) => selected !== undefined && selected !== foldedOver && findCard(selected)?.project === f.id
-const isOpen = (f) => holdsSelected(f) || (floorsOpen[f.id] ?? floorWaits(f).length + floorOffers(f).length > 0)
+const needsYou = (f) => floorWaits(f).some((w) => findCard(w.id).attention === 'needs')
+const isOpen = (f) => holdsSelected(f) || (floorsOpen[f.id] ?? needsYou(f))
 
 function toggleFloor(id) {
   const open = !isOpen(floorOf(id))
