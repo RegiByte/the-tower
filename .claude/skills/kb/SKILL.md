@@ -26,7 +26,8 @@ If the schema cannot express something, stop and tell the human; propose a custo
   gap with a plausible guess. If you do not know, ask, or leave it out and list it as an open question.
 - When the owner's account and the code disagree, do not pick one silently. List the contradiction.
 - Existing docs and notes are leads, not truth. Old docs are where rot lives: confirm them against code.
-- Present tense, current truth. History exists only as decisions.
+- Present tense, current truth. History lives in git: a decision holds the reasoning that stands today,
+  never a log of how it got there.
 - Code in the other repos is read at `origin/<branch>` (the branch the KB describes), never the
   working tree: those checkouts may be on feature branches. Use `git -C <checkout> show origin/<branch>:<path>`
   and `git -C <checkout> grep -n <pattern> origin/<branch> -- <dir>`. They sit next to the main checkout

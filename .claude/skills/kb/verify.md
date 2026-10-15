@@ -20,17 +20,19 @@ date on an unread change is worse than a stale entity, because it hides the stal
    `git -C <checkout> show <hash> -- <path>`. Then re-read the entity, summary included, and decide:
    - claims still true: set `reviewed` to today, change nothing else
    - claims changed: fix prose, links and refs, then set `reviewed` to today
+   - a decision's premise changed: draft the decision that now stands and ask the human before writing it
 
    Verify lists first the suspects whose commits changed what the entity reads (an anchored symbol's lines, or a
    file read whole), then those whose file changed only elsewhere. Read both: a change outside the anchors is often a
    helper the anchored code calls or a new function beside it. When one makes a claim false, fix the claim and add a
    ref to that code, so the next change to it lands in the first list.
-   - a decision's premise changed: draft a new decision with `supersedes` and ask the human before writing it
 4. **Targeted updates.** When the human reports a change, find the affected entities even if they are
    not suspect (`grep -rli <term> kb/entities`), and update them the same way.
 5. **Unanchored warnings.** Try to find the code that backs the entity. If you cannot, leave it and list it.
-6. **Removals.** Delete an entity only when its subject no longer exists. Decisions are never deleted:
-   they are rejected or superseded. Fix the wiki links and link targets that the deletion breaks.
+6. **Removals.** Delete an entity when its subject no longer exists. A decision holds current reasoning and git
+   holds its history: one absorbed by another, superseded or rejected is merged into the decision that stands
+   (rewritten as today's reasoning) or deleted. Fix every `[[link]]`, link target and `supersedes` the merge or
+   deletion breaks.
 7. **Render** with `node <skill-dir>/tool/kb.mjs render` until there are no errors.
 8. **Report** briefly: the number confirmed unchanged, what was updated (one line each on what
    changed), what needs the human, and the path to the HTML file.

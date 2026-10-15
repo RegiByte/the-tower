@@ -116,8 +116,13 @@ Unknown fields are errors.
   `involves` names every part it passes through (containers, stores, tables, externals, actors, or
   another system); never a project, flow, runbook, decision or term. Flows are the unit of the map.
 - **runbook**: a failure mode or operation: what it looks like, where to look first, what fixes it.
-- **decision**: why something is the way it is. Decisions are never deleted. To reverse one,
-  write a new decision with `supersedes`; the old one then shows as superseded automatically.
+- **decision**: why something is the way it is, as current reasoning: the problem, why, how, and the
+  alternatives that still bear on today's code. Git holds its history: dated follow-ups, the
+  measurements of the day and the reasoning of a reversed choice live in `git log`, not in the body.
+  A decision absorbed by another, superseded or rejected is merged into the one that stands
+  (rewritten as current reasoning, a rejected option kept as one of its alternatives when it still
+  bears on the code) or deleted, and every `[[link]]` and `supersedes` that pointed at it is fixed.
+  `supersedes` marks a reversal while both decisions are still worth reading.
 - **term**: a glossary entry. The summary is the definition.
 
 "evidence: yes" means the entity is expected to have refs; verify warns when it has none.
