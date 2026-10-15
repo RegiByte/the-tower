@@ -56,7 +56,8 @@ worker, and a kept draft can start one too.
 
 A worker's callsign is drawn at random unless you type one as it starts: the New worker dialog's Callsign,
 `tower hire … callsign ZECA` or `tower spawn <project> --callsign ZECA`. A name typed without a number gets one
-(`ZECA-63`), and a name a worker on duty already has is refused. The callsign is kept for good, across resumes.
+(`ZECA-63`) and is refused while a worker on duty has that name; a name typed with its number is refused only when
+that exact callsign is on duty. The callsign is kept for good, across resumes.
 
 ## Checking on a worker
 

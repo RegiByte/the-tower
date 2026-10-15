@@ -49,15 +49,17 @@ export const CALLSIGN_NAME = /^[A-Z][A-Z0-9]*$/
 const TYPED = /^[A-Z][A-Z0-9]*(-[0-9]+)?$/
 
 /**
- * Why `typed` can't be a new worker's callsign: it isn't `NAME` or `NAME-NN`, or its name is held by one of `held`
- * (the callsigns of the workers on duty), the rule a drawn callsign follows (`freshId`); `undefined` when it can.
+ * Why `typed` can't be a new worker's callsign: it isn't `NAME` or `NAME-NN`, or it is held by one of `held` (the
+ * callsigns of the workers on duty); `undefined` when it can. A typed `NAME-NN` is held only by that exact callsign. A
+ * bare `NAME` takes its number at spawn, so it is held by any worker of that name, the rule a drawn callsign follows
+ * (`freshId`).
  */
 export const callsignRefused = (typed: string, held: Iterable<string>): string | undefined => {
   const given = typed.trim().toUpperCase()
   if (!TYPED.test(given)) return `"${typed.trim()}" is not a callsign: a name of letters and digits starting with a letter, and a number after a dash if you like (HOLMES, HOLMES-42)`
-  const name = given.includes("-") ? nameIn(given) : given
-  const holder = [...held].find((h) => nameIn(h) === name)
-  return holder && `${holder} is on duty${holder === given ? "" : `, under the name ${name}`}: pick another name`
+  const numbered = given.includes("-")
+  const holder = [...held].find((h) => (numbered ? h === given : nameIn(h) === given))
+  return holder && (numbered ? `${holder} is on duty: pick another number or name` : `${holder} is on duty under the name ${given}: add a number (${given}-NN) or pick another name`)
 }
 
 /** The callsign typed for session `id`'s worker, upper-cased: as typed with its number, else given the id's (`numberOf`). */

@@ -31,8 +31,10 @@ a host restart both count; the CLI, which reads no board, passes the host's live
 its name ([[callsign-from-log]]).
 
 A callsign typed as a worker starts (the spawn verb's `callsign`, the New worker dialog, `tower spawn --callsign`,
-`tower hire … callsign`) is held to the same rule: [`callsignRefused`](ref:hub/src/shared/callsign.ts#callsignRefused)
-refuses it, naming the holder, when a worker on duty has its name, whatever the number
+`tower hire … callsign`) is checked by [`callsignRefused`](ref:hub/src/shared/callsign.ts#callsignRefused), which
+refuses it, naming the holder. A typed `NAME-NN` is the user's exact choice: refused only when a worker on duty has
+that very callsign, so `PEDRINHO-12` starts beside `PEDRINHO-33`. A bare `NAME` takes its id's number at the spawn, so
+it follows the drawn rule: refused when a worker on duty has that name, whatever the number
 ([`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns), the tower's in
 [`newWorker`](ref:hub/src/tower/server.ts#newWorker)). The dialog checks it against the board's cards on duty as it is
 typed, the tower again at the spawn.
