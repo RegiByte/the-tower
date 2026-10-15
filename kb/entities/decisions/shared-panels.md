@@ -175,3 +175,8 @@ picked and the note box waits for the drop (a box under the last row would move 
 `picked` and `spanned` stop a range at the edge of its first line's hunk: an anchor is a span of the file's lines,
 and a range over a gap would claim lines its quote doesn't hold. A range of removed lines alone still anchors by
 their old numbers with a `diff` quote ([[review-threads]]).
+
+*Tab row* (2026-10-15). `panelsCss` also lays out a worker's tab row, the same in both renderers: its tabs wrap onto
+lines and a showing's title shrinks to an ellipsis, its full target in the tab's tip. The selected showing keeps 6em of
+its title beside its controls, so selecting one can move a break; at the 9em every other showing counts as, its
+controls alone took the room and the title was gone.

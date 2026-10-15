@@ -1013,21 +1013,22 @@ export function keepingFocus(el: HTMLElement, write: () => void) {
  * they're painted in.
  *
  * Also a worker's `.tab-row`: its tabs (any of them in a `.tab-set`, which lays out as if absent), an `.activity` line
- * and its `.moves`, on lines that wrap. Where the row breaks into lines, a shown tab counts as a 9em stub (room for the
- * selected one's controls, so selecting a tab with a longer title moves no break); on its line it grows toward its full
- * width, the selected one five times faster, and the activity line takes what is left. A short row first narrows the
- * shown tabs' titles, then moves the moves to a line of their own, then the shown tabs that don't fit: nothing passes
- * the row's edge. A `.shown-tab`'s first child is its `.shown-name`, capped at 16em and the only part of it that shrinks.
+ * and its `.moves`, on lines that wrap. Where the row breaks into lines, a shown tab counts as a 9em stub, the selected
+ * one as its controls beside 6em of its title; on its line it grows toward its full width, the selected one five times
+ * faster, and the activity line takes what is left. A short row first narrows the shown tabs' titles, then moves the
+ * moves to a line of their own, then the shown tabs that don't fit: nothing passes the row's edge. A `.shown-tab`'s
+ * first child is its `.shown-name`, capped at 16em and the only part of it that shrinks.
  */
 export const panelsCss = `
 .tab-row { display: flex; flex-wrap: wrap; align-items: center; }
 .tab-row > *, .tab-row > .tab-set > * { flex: none; }
 .tab-row > .tab-set { display: contents; }
 .tab-row .shown-tab { flex: 1000 1 9em; min-width: 0; max-width: max-content; }
-.tab-row .shown-tab.on { flex-grow: 5000; }
+.tab-row .shown-tab.on { flex-grow: 5000; min-width: min-content; }
 .tab-row > .activity { flex: 1 1 0; min-width: 0; }
 .tab-row > .moves { display: flex; margin-left: auto; }
 .shown-tab { display: inline-grid; grid-auto-flow: column; grid-template-columns: minmax(0, max-content); align-items: center; overflow: hidden; white-space: nowrap; }
+.shown-tab.on { grid-template-columns: minmax(6em, max-content); }
 .shown-tab > .shown-name { min-width: 0; max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
 .file-acts { display: inline-flex; gap: var(--sp-2xs); flex: none; }
 .file-act { min-width: var(--control); min-height: var(--control); display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); padding: 0; background: none; color: var(--muted); cursor: pointer; }
