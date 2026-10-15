@@ -2,10 +2,10 @@
 {
   "type": "library",
   "name": "Log reductions",
-  "summary": "Pure functions over session logs: status, facts, screens, conversations, resume chains, leftovers and peer names.",
+  "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, policies and probes, stats, and the board that gathers them.",
   "in": "bridge",
   "reviewed": "2026-10-15",
-  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts"]
+  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/board.ts#waitingOrder", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -25,7 +25,7 @@ or one event at a time as it is tailed:
   between the two, then `idle`. Any other leaves the status as it was: an automatic one runs inside a turn that
   carries on (it may also give up with no `SessionStart`, ended by the turn's next step), and an idle one
   summarizes the conversation of a session that waits, which keeps waiting (its `PreCompact` says `auto`, read
-  from Claude 2.1.300's code and never seen live). The state keeps the `trigger` of the compaction in
+  from Claude's code and never seen live). The state keeps the `trigger` of the compaction in
   progress for that, and the board's card says `compacting` while one runs inside a turn or by `/compact`. A
   subagent's compaction raises the same hooks with no `agent_id` ([[claude-code]]), so the fold can't tell it apart:
   an automatic start during a manual `/compact` keeps the manual trigger (only a subagent's can come then), while a

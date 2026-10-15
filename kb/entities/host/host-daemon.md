@@ -4,7 +4,7 @@
   "name": "Host daemon",
   "summary": "The detached Node process that spawns Claude sessions in PTYs, relays control requests, and appends output, input, hooks and exits to each session's log.",
   "in": "host",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/session.ts#sessionArgv", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize"],
   "links": [
     { "to": "claude-code", "verb": "triggers", "carries": "a PTY running config argv + --plugin-dir (the tower mod, which declares the hooks) + client args (its --settings among them), with the cwd checked by sessionDirs, with TOWER_SESSION_ID and TOWER_HOOKS_SOCKET in a scrubbed env" },
@@ -20,10 +20,9 @@
   refuses an id it runs or holds a log for. `fact {id, fact}` appends a `tower.*` event as an `h` event at the
   host's time: a running session's like a hook, any other's to its plain log once closed, which is how a fact
   reaches a session an earlier host ran ([[let-go]]); an archived or unknown log is refused.
-  A `spawn` is refused unless `cwd` is one of the project's dirs. The `live` reply carries the ids of the running
+  A `spawn` is refused unless `sessionDirs` accepts its `cwd`: one of the project's dirs or a worktree of one ([[tower-cuts-worktrees]]). The `live` reply carries the ids of the running
   sessions and [`HOST_PROTOCOL`](ref:hub/src/shared/protocol.ts#HOST_PROTOCOL), the protocol's version, bumped
-  by any change to a host message: the board says `hostOutdated` while the running host speaks another (one
-  started before 2026-10-06 sends none), so a renderer can say the host predates its clients.
+  by any change to a host message: the board says `hostOutdated` while the running host speaks another or none, so a renderer can say the host predates its clients.
 - `hooks.sock`: HTTP. `POST /hooks/<session id>` appends the body as an `h` event, a `PostToolUse` without its
   `tool_response` ([[log-diet]]); unknown or exited
   sessions get 404, and a body that isn't a JSON object gets 400 with the reason.

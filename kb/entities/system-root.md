@@ -25,11 +25,11 @@
   store's staging files and are never items. The `reviews` collection's threads are written only by the
   tower's `review/append` ([[review-threads]]).
 - `control.sock`, `hooks.sock` ([[host-daemon]]) and `terms.sock` ([[terms-daemon]]).
-- `host.log`, `terms.log`: what the daemons print when `tower up` starts them.
+- `host.log`, `terms.log`, `tower.log`: what the daemons print when `tower up` starts them.
 - `cache/`: what is computed from the stored state and kept to skip computing it again, never authoritative and
   safe to delete at any time: `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]). Not a
   fourth kind of stored state: deleting it changes nothing but speed.
-- `host.pid`, `terms.pid`: the pids `tower up` started, so `tower down` can stop them; gone once stopped. A fact
+- `host.pid`, `terms.pid`, `tower.pid`: the pids `tower up` started, so `tower down` can stop them; gone once stopped. A fact
   about running processes, not about sessions.
 
 The config is read fresh on every spawn and every tower request, so edits apply without restarts.

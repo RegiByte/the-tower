@@ -9,7 +9,7 @@
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock; from the tower command, tower.show and tower.keep" },
     { "to": "tower-server", "verb": "reads", "carries": "from the tower command: GET /board, the first event; /conversations/<id> (agent); /archive/<project> for a callsign no worker on duty has, and for the hire depth; collection items and review threads (kept, read, hire, thread)" },
-    { "to": "tower-server", "verb": "calls", "carries": "from the tower command: collection/create (keep), review/append (note), spawn (hire, review), submit (send), kill (home), reveal and edit; `tower home` with the caller's own callsign posts `tower.leave` to the hooks socket instead ([[leave]])" }
+    { "to": "tower-server", "verb": "calls", "carries": "from the tower command: collection/create (keep), review/append (note), spawn (hire, review), submit (send), the card's send-home calls (home), let-go, policy/run and policy/approve (policies), probe/run (probes), reveal and edit; `tower home` with the caller's own callsign posts `tower.leave` to the hooks socket instead ([[leave]])" }
   ]
 }
 ---
@@ -33,8 +33,8 @@ event: the abandoned call is remembered and posted at the loop's `turn.complete`
 Classic hooks (curl), declared in the same `hooks/hooks.json`, still deliver the classic events
 (`SessionStart`, `Stop`, `PreCompact`, ...) because the mods API's `classic.*` events never fire: two transports into one
 socket. A classic hook also reaches the log when Claude's built-in `sec-default` mod keeps a mod event from user
-mods, as it keeps `session.compact` inside an organization ([[claude-code]]). Until 2026-10-06 the host passed that list as settings hooks, so changing it meant a host restart; in
-the plugin, each Claude reads it as it starts ([[host-knows-no-flags]]).
+mods, as it keeps `session.compact` inside an organization ([[claude-code]]). Each Claude reads that list from the plugin as it starts, so changing it needs no host restart
+([[host-knows-no-flags]]).
 
 The plugin's `bin/tower` is on the Bash tool's PATH in every session. The brief in the system prompt gives the
 everyday recipes, and the `tower:handbook` skill is the handbook beside it ([[brief-first]]): it tells Claude what the tower is, how to find itself and other workers, and how to reach one with `SendMessage` ([[agent-directory]]); how

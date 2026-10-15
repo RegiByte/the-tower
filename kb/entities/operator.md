@@ -1,12 +1,12 @@
 ---
 {
   "type": "actor",
-  "name": "Operator",
+  "name": "User",
   "summary": "The one human running sessions, shells and projects from a renderer.",
   "in": "tower",
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-15",
   "links": [
-    { "to": "tower-server", "verb": "uses", "carries": "clicks, keystrokes and spawn requests from the browser page on 127.0.0.1:4317" },
+    { "to": "tower-server", "verb": "uses", "carries": "clicks, keystrokes and spawn requests from a renderer in the browser, at the config's port" },
     { "to": "tower-cli", "verb": "uses", "carries": "tower commands in a terminal" }
   ]
 }

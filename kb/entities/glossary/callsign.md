@@ -30,15 +30,16 @@ list, so a change renames those: adding a name to n renames about 1 in n+1 of th
 written: a reviewer's first prompt (`/tower:review HOLMES-42`, read back by `reviewedIn`) and review note headings;
 since a worker's callsign no longer moves, they keep pointing at it. A new worker's session id is drawn until its
 callsign's name is one no worker on duty holds ([`freshId`](ref:hub/src/shared/callsign.ts#freshId),
-[[callsign-free-name]]), so workers on duty together have different names while the list has a free one; past that,
-the number tells them apart, and two live workers sharing a whole callsign would share a peer name too. A worktree cut
+[[callsign-free-name]]), so drawn workers on duty together have different names while the list has a free one; past that,
+and for a typed `NAME-NN`, the number tells them apart, and two live workers sharing a whole callsign would share a peer name too. A worktree cut
 also draws until the lowercased callsign is a free worktree name.
 
-A callsign can instead be chosen as a worker starts, once, and never changed after: typed `NAME-NN`, or `NAME`, given
+A callsign can instead be chosen as a worker starts, once, and never changed after: typed `NAME-NN` (any number of digits), or `NAME`, given
 the number its new session id hashes to ([`typedCallsign`](ref:hub/src/shared/callsign.ts#typedCallsign),
 [`numberOf`](ref:hub/src/shared/callsign.ts#numberOf), the same number a drawn one takes), so every callsign is
-`NAME-NN`. The name needn't be in the list, only of the list's shape, and is refused while a worker on duty has it
-([[callsign-free-name]]). It is passed as `--name` like a drawn one, so resumes keep it, and a cut's worktree is named
+`NAME-NN`. The name needn't be in the list, only of the list's shape. A typed `NAME-NN` is refused only while that
+exact callsign is on duty; a bare `NAME` while any worker on duty has that name
+([`callsignRefused`](ref:hub/src/shared/callsign.ts#callsignRefused), [[callsign-free-name]]). It is passed as `--name` like a drawn one, so resumes keep it, and a cut's worktree is named
 for it, lowercased, unless named apart; a worktree of that name already there refuses the cut. Forking resumes,
 reviewers and policy runs always draw. The default list gives about 15,500. [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes
 the naming function for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge,

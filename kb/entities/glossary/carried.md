@@ -8,9 +8,8 @@
   "refs": ["hub/src/bridge/worktrees.ts#copiesOf", "hub/src/bridge/worktrees.ts#carriedOf", "hub/src/bridge/worktrees.ts#isCarried", "hub/src/worktrees.ts#landing", "hub/src/worktrees.ts#marksOf", "hub/src/worktrees.ts#landingOf", "hub/src/shared/cards.ts#editedRows", "hub/src/shared/cards.ts#landingHtml", "hub/test/absorbed.test.ts"]
 }
 ---
-Measured on 2026-10-08: of 17 commits landed that night, author email and date matched their copy on main 17/17,
-subject 17/17, `git patch-id` only 7/17, so every one of 10 worktrees read at risk under [[absorbed]] alone and was
-removed by hand. [`landing`](ref:hub/src/worktrees.ts#landing) runs after the exact checks fail:
+Landed copies often differ from their branch's patch, so a branch checked under [[absorbed]] alone reads at risk.
+[`landing`](ref:hub/src/worktrees.ts#landing) runs after the exact checks fail:
 `git log --left-right --cherry-mark <base>...<branch>` marks each side's commits ([`marksOf`](ref:hub/src/worktrees.ts#marksOf)),
 and [`copiesOf`](ref:hub/src/bridge/worktrees.ts#copiesOf) pairs each branch commit that has no equal patch with one
 base commit, one copy per commit.
@@ -25,4 +24,4 @@ base commit, one copy per commit.
   commit, its copy and `git range-diff`, drawn by [`landingHtml`](ref:hub/src/shared/cards.ts#landingHtml).
 - A card's `checkoutState` counts a carried checkout as landed (`edited`, `branch`), so it offers no note or
   review; Tidy files its thread only once the worktree is gone. A finished hire whose worktree is carried is killed by
-  Tidy (it resumes), and its worktree then waits for its own press.
+  Tidy once its hirer is off duty (it resumes), and its worktree then waits for its own press.

@@ -7,7 +7,7 @@
   "reviewed": "2026-10-15",
   "refs": ["hub/src/cli.ts", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
-    { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill, live over control.sock" },
+    { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
     { "to": "terms-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower up: starts it detached, unless this system's tower already listens on its port" },
