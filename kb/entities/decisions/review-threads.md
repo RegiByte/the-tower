@@ -51,153 +51,83 @@ with no way back to the author. Copying findings into a terminal by hand is fric
 resumes and a reviewer have no shared place to talk about the same lines. `SendMessage` reaches a peer, but
 nobody sees it on the board. GitHub threads exist only once a PR is open, and many changes never get one.
 
-**Why.** Three uses share one shape: a person reviewing the Changes pane, a reviewer worker (draft
-`wavy-lantern`) and the author answering. Two more have the same shape: an author walking through its own
-diff, and a handoff to whoever works in the checkout next. Every one of them is a message about a checkout's
-unlanded work, sometimes pointing at code. Building that primitive covers all of them with no new code per use
+**Why.** A person reviewing the Changes pane, a [[reviewer]] worker, the author answering, an author walking
+through its own diff and a handoff to whoever works in the checkout next share one shape: a message about a
+checkout's unlanded work, sometimes pointing at code. One primitive covers all of them with no new code per use
 ([[agents-have-every-capability]]: what the user can write, a worker can write).
 
 **How.**
 - *Subject: a checkout, across every repo of its project.* A tower cut makes one worktree name in every
-  project dir, and a session there works in all of them, so one thread covers a ticket that touches five
+  project dir, and a session there works in all of them, so one thread covers a ticket that touches several
   repos. The main checkouts are the checkout named `main`, as `git worktree list` shows it; `cut` refuses the
   name `main` so the two can't collide.
 - *Storage: `collections/<project>/reviews/<checkout>.md`*, one plain markdown file per thread, readable with
-  `cat` by a person or an agent. Each message is a heading `## <author> · <time> · n<k>[ · re n<j>]`, then
-  optional anchors as `` `repo:path:lines` `` each followed by the quoted lines as they were, then the body.
-  The quote keeps a note readable once the code moves on; a renderer looks for those lines in the current
-  diff to say whether they changed.
-- *Writing: append only, through the tower.* One append verb serializes the page, `tower note` and every
-  worker. Authorship is declared in the heading: same-user processes are trusted. This narrows
+  `cat`. Each message is a heading `## <author> · <time> · n<k>[ · re n<j>]`, then optional anchors as
+  `` `repo:path:lines` `` each followed by the quoted lines as they were, then the body. The quote keeps a note
+  readable once the code moves on; [`anchorState`](ref:hub/src/shared/reviews.ts#anchorState) looks for those
+  lines in the reader's current Changes to say whether they changed or left the diff. The format is a pure parser
+  and printer ([`reviews.ts`](ref:hub/src/shared/reviews.ts), served as `/reviews.js`), total over hand edits.
+- *Writing: append only, through one verb.* [`review/append`](ref:hub/src/tower/server.ts#appendReview) numbers the
+  note from the thread and writes it in one synchronous step, so appends from the page, `tower note` and every
+  worker never interleave; a generic append would leave numbering to clients racing each other. It refuses an
+  unknown `re`, a note with neither body nor anchor, and a body that would break the parse (a heading outside a
+  fence, a fence left open). Authorship is declared in the heading: same-user processes are trusted. This narrows
   [[workers-edit-kept-items]] for this collection: anyone appends, nobody rewrites.
 - *No states.* No resolve, status or kinds: "fixed in 3f2a" is a reply, and a reviewer's finding is a note.
-  What a worker hasn't seen is every message after its own last one, so read state is worked out, not stored.
-- *Delivery: `submit` into a worker the user picks* (default: the one most recently active in the checkout),
-  pointing at the thread (`tower thread`). Sending a few notes and "go read the new ones" are the same call.
-- *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once every
-  branch of that name is absorbed (a recut branch keeps its name, so the thread survives a recut; a [[carried]] one
-  once its worktree is removed by its own press; a discarded one at once, after the note naming its tips, [[discard]]), and `main`'s
-  once its diff is empty: it takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId) gives
-  it (`odin-42@2026-10-07-1530.md`), is no floor's thread from then on, and the checkout's name is free for a
-  thread about new work (`main`'s and a reused worktree name's would otherwise carry old notes, counted unseen by
-  the next worker). Filed threads are the review history: [`reviewHistory`](ref:hub/src/bridge/reviews.ts#reviewHistory),
-  served at `GET /reviews/<project>`, gives every thread, live and landed, each message with its verdict
-  ([`verdictOf`](ref:hub/src/shared/reviews.ts#verdictOf): a reviewer's anchorless closing note, `**ship**`,
-  `**fix first**` or `**rethink**`, or `**Verdict: …**`), and each author's notes, replies, verdicts and checkouts.
-- *Changes on main count from the upstream* (unpushed commits and the working tree), and from `HEAD` only
-  without one. Counting from `HEAD` would turn every note outdated at the first commit. This changes
-  [[changes-view]] when built.
-- *Renderers:* a Reviews tab beside Changes renders the thread with its quoted code and a tally of what the
-  chosen worker hasn't seen; selecting lines in Changes starts a note. An item is shown by its checkout name
-  as well as its tag ([[item-tags]]).
+  What a worker hasn't seen is every message after its own last one (`unseenBy`), worked out, not stored.
+- *Delivery: `submit` into a worker the user picks* (by default the one most recently active in the checkout).
+  [`sendText`](ref:hub/src/shared/reviews.ts#sendText) never carries notes inline: one line naming the sender, the
+  notes new to the target and the checkout, and how to read and answer them. Sending a few notes and "go read the
+  new ones" are the same call.
+- *Where the work stands.* [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState) folds each checkout to
+  `live`, `landed` or `gone`: `main` is always live; a worktree is landed by the rule Tidy files on (absorbed or
+  [[carried]] everywhere), with `empty` when every branch cut under it gained no commits of its own
+  ([`ownCommits`](ref:hub/src/worktrees.ts#ownCommits)), and gone once its folder is missing with nothing saying its
+  work landed. A worktree Tidy removed is landed through the thread it filed after the card started
+  ([`filedThreadOf`](ref:hub/src/bridge/reviews.ts#filedThreadOf)). Each card carries `checkoutState` and
+  `threadState` (they differ only for a reviewer, whose thread is its author's,
+  [`threadCheckoutOf`](ref:hub/src/shared/cards.ts#threadCheckoutOf)); `note` and `review` are offered
+  ([[board-verbs]]), and `card.unseen` counted, only while the work is live. `review/append` still takes any checkout.
+- *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once its work
+  has landed and `main`'s once every main checkout is level with its upstream and no worker runs there
+  ([`tidyProject`](ref:hub/src/tower/server.ts#tidyProject), [[tidy]]; a [[discard]]ed worktree's at once, after
+  the note naming its tips). A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
+  gives it (`<checkout>@<time>.md`) and frees the checkout's name, so a reused name never inherits old notes.
+  Filed threads are the review history: [`reviewHistory`](ref:hub/src/bridge/reviews.ts#reviewHistory), at
+  `GET /reviews/<project>`, gives every thread, each message with its verdict
+  ([`verdictOf`](ref:hub/src/shared/reviews.ts#verdictOf): `**ship**`, `**fix first**` or `**rethink**` in a note without anchors),
+  and each author's tally.
+- *Changes on main count from the upstream* (unpushed commits and the working tree), from `HEAD` only without one,
+  so a commit doesn't turn every note outdated ([[changes-view]]).
+- *On the board:* [`threadsIn`](ref:hub/src/system.ts#threadsIn) parses each thread when the collections settle;
+  [`floorThreads`](ref:hub/src/bridge/reviews.ts#floorThreads) gives each floor its `threads` (checkout, item, count,
+  last message, `landed`, `state`).
+- *Workers:* `tower thread [checkout]` prints the thread, the notes new to the caller and the repos an anchor can
+  name; `tower note [on <checkout>] [re n<k>] [repo:path:lines …]` appends under the caller's callsign, quoting each
+  anchor from the checkout's copy (or the caller's own when it works in a fork of it, the version a reviewer read);
+  `tower send <CALLSIGN>` is Send for workers.
+
+**The thread view model** (this is its one home). Every renderer draws a thread through the shared Reviews panel
+([[shared-panels]]), and what it shows is built in shared code. New is relative to whose view is open: author and
+reviewer iterate on one thread, so in the reviewer's view the author's notes since the reviewer's last are new,
+and the reverse. [`cardThread`](ref:hub/src/shared/panels.ts#cardThread) gives a card's thread with that worker as
+its reader; [`floorThread`](ref:hub/src/shared/panels.ts#floorThread) a thread opened where no worker's view is (a
+floor's list of threads), read as the worker on duty in its checkout, else nobody.
+[`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf) builds the panel's view from that place, the board and
+what the viewer holds (the thread as read, the reader's Changes, its Send pick, the note it answers): anchors are
+looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref:hub/src/shared/cards.ts#sendTargets)
+(the workers at their composer in the checkout, most recently active first, then the floor's others) and
+[`sendTarget`](ref:hub/src/shared/cards.ts#sendTarget), and a settled thread draws read only, under a line saying it
+landed or was removed. Renderers sign the user's notes with `board.user.name` ([[the-user]]); bodies are drawn
+through `markdownHtml`, raw HTML escaped ([[markdown-safe]]). The tower page draws it as a Reviews tab beside
+Changes, where picking lines starts a note; Tower 3D as papers on a worker's desk, a pigeonhole per floor and the
+desk panel's Reviews tab ([[tower3d]]).
 
 **Alternatives considered.**
-- *One file per note, threads worked out from replies naming their parent:* each note's author comes from the
-  log (`tower.keep`), but nobody can read the thread as one file.
+- *One file per note, threads worked out from replies naming their parent:* nobody can read the thread as one file.
 - *A thread per branch or per repo:* one ticket spanning repos would split into several threads.
-- *Findings as JSON with triage states (draft `sleepy-cedar`, first version):* not readable as a conversation;
-  keep, drop and addressed are better said as replies. "Addressed" can't be worked out from the diff, since a
-  changed line isn't a fix.
+- *Findings as JSON with triage states:* not readable as a conversation; keep, drop and addressed are better said
+  as replies, and "addressed" can't be worked out from the diff, since a changed line isn't a fix.
 - *The reviewer `SendMessage`s the author:* invisible on the board, and it lands outside the composer.
 - *Only worktrees, no `main`:* many users never cut worktrees, and git already treats main as one.
-
-**Built (2026-10-06, DANIEL-73).**
-- *Format* ([`reviews.ts`](ref:hub/src/shared/reviews.ts)): a pure parser and printer, total over hand edits, imported
-  by the core and served to renderers as `/reviews.js`. A quote is fenced longer than any backtick run it holds; a
-  quote of picked diff rows holding a removal is a `diff` block keeping git's marks, its lines numbered on the new
-  side (the old side when only removals are picked). The parser ignores a heading-shaped line inside a code fence, and
-  the verb refuses a body with one outside a fence, and a body that leaves a fence open (it would hide every later heading from the parser, so `unseenBy`, `send` and `nextNumber` would miss them). Pinned by a thread recorded through the verb
-  (`test/fixtures/review-thread.md`): printing what was parsed gives the file back.
-- *Verb: `review/append`*, not a generic `collection/append`. The note's number and the file's name come from the
-  thread, so they must be worked out inside the one serialization point; a generic append would leave numbering to
-  clients racing each other. [`appendReview`](ref:hub/src/tower/server.ts#appendReview) reads, numbers and writes in
-  one synchronous step, so appends never interleave; the file arrives by rename (`putItem`). It refuses an unknown
-  `re`, an empty note and an author a heading can't carry. The collection must be declared (`reviews`, every project
-  in the real config), like any other.
-- *On the board*: [`threadsIn`](ref:hub/src/system.ts#threadsIn) parses each thread when the collections settle (a file
-  at the same version isn't read again); [`floorThreads`](ref:hub/src/bridge/reviews.ts#floorThreads) gives each floor
-  `threads` (checkout, item id, tag, count, last message, `landed`), and each card its `checkout` and `unseen`,
-  counted on the thread about its work ([`threadCheckoutOf`](ref:hub/src/shared/cards.ts#threadCheckoutOf): a
-  reviewer's is its author's, which every renderer opens for it too).
-- *Landed*: a worktree's thread once no worktree of the name is in use or holds work and every repo's branch under
-  the name is absorbed; `main`'s once every main checkout is clean and level with its upstream (git read every 5 s,
-  `RepoRead.main`) **and no worker runs there**, the same rule a worktree in use follows. Tidy files the threads its
-  list named, those the board called landed at the press, after git's part
-  ([`tidyProject`](ref:hub/src/tower/server.ts#tidyProject), [[tidy]]); `tidied` names them, and `tidy` is offered
-  while any thread has landed.
-- *Notes are offered only while the work goes on* (2026-10-08, BIT-80, API 1.20). A stopped worker whose work landed still
-  drew a note form, and its notes reached nobody. Each card says where its checkout's work stands, and where the work
-  its thread is about stands (`checkoutState`, `threadState`; they differ only for a reviewer), and each floor thread
-  its `state`, all by one fold, [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState): `main` is always
-  `live`; a worktree is `landed` by the same rule Tidy files on (its `on` the base, while git still holds the
-  worktree or a branch cut under its name), `gone` once its folder is missing or it is removed with nothing saying its
-  work landed, else `live`. A worktree removed by Tidy is `landed` through the thread it filed: the first filed after
-  the card started ([`filedThreadOf`](ref:hub/src/bridge/reviews.ts#filedThreadOf), since the name may be cut again),
-  carried as `filed` so renderers read that file. The card and the floor thread offer `note` ([[board-verbs]]) only
-  while `live`; `review/append` still takes any checkout (`main`'s thread and odd cases need it), so only the offer
-  goes. Rejected: a per-floor map of every checkout's state (one entry per archived worker on every board push), and
-  deciding in the panels (each renderer would hold the rule).
-- *Nothing to land, review and unseen follow the state* (2026-10-08, SIGURD-96). A worktree cut and stopped with no
-  commits is trivially absorbed, so it read "Landed". Git now reads, per branch the tower cut, the commits it gained
-  since its reflog's creation entry (`own`, [`ownCommits`](ref:hub/src/worktrees.ts#ownCommits); none once the reflog
-  no longer holds the creation), and a landed state whose every branch says 0 carries `empty`: both panels say
-  "Nothing to land". A worktree already removed says nothing, so it stays plainly landed. Tidy is unchanged. `review` is
-  offered only while the card's own checkout is live ([[reviewer]]), and `card.unseen` is left out once its thread's
-  checkout isn't, and the shared Reviews panel marks nothing new on a settled thread, so no renderer tallies notes new to
-  a worker on landed work. Rejected: an ahead count against the
-  base (0 for landed work and for none alike), and a recorded cut commit (absent on every branch cut before it).
-- *Workers*: `tower thread [checkout]` prints the file, the notes new to you and the repos an anchor on that checkout
-  can name; `tower note [on <checkout>] [re n<k>]
-  [repo:path:lines …]` appends under your callsign with the body on stdin, quoting each anchor from the checkout's
-  copy of the repo as it is now, or from your own when your worktree is a fork of that checkout: the version a
-  [[reviewer]] read. `on` lets a reviewer working elsewhere write on another checkout; `tower send <CALLSIGN>` is Send
-  for workers.
-- *Send points at the thread*, never carries notes inline: [`sendText`](ref:hub/src/shared/reviews.ts#sendText) names
-  the sender and the notes new to the target (`n3, n4`), and how to read and answer them, with the checkout spelled
-  out so a worker in another checkout reads the right thread. One line, so it lands as typed. Picking notes to send
-  is the same call: what is new to the target is worked out.
-- *Tower page*: Reviews tab beside Changes (`N new` for the selected worker, else the count), quotes marked
-  `changed since` or `no longer in the diff` by [`anchorState`](ref:hub/src/shared/reviews.ts#anchorState) over the
-  worker's Changes read, a click on an anchor opens its lines in Changes; line numbers in Changes pick lines (a drag
-  or ⇧-click picks a range, within one hunk)
-  and open a note box under them, and noted lines carry a mark; a composer with `reply` for notes on the whole work;
-  Send to the worker most recently active in the checkout, or one picked; a sidebar tray of threads by checkout
-  beside their tags, with Tidy. Bodies are drawn through `markdownHtml`, raw HTML escaped, so nothing a worker wrote
-  runs in the page ([[chat-brief]]).
-- *Shared by both renderers* ([`cards.ts`](ref:hub/src/shared/cards.ts#sendTargets)): who Send may reach (`sendTargets`: the
-  workers at their composer in the checkout, the most recently active first, then the floor's others) and reaches
-  ([`sendTarget`](ref:hub/src/shared/cards.ts#sendTarget): the viewer's pick, else the first in the checkout), the worker a
-  thread opens on (`workerIn`), the thread a worker's work belongs to (`threadCheckoutOf`: its author's for a
-  reviewer). Renderers sign the user's notes with `board.user.name` and Send names the sender `THE_USER` ([[the-user]]).
-- *Tower 3D (2026-10-06, SADDIE-61)*: notes new to a worker lie as a stack of papers in front of its mouse with a
-  "N NEW" flag ([`dressPapers`](ref:hub/renderers/tower3d/src/desk.ts#dressPapers)); aimed at, T reads them and H sends
-  them (the same `sendText` submit). Each floor keeping threads has a pigeonhole on the control room's outer wall past
-  its door ([`pigeonhole.ts`](ref:hub/renderers/tower3d/src/pigeonhole.ts)): a slot per checkout, a sheet per note,
-  its label orange while the worker on duty there has notes it hasn't seen; T opens the thread at that worker's desk,
-  or in a reader when nobody works there now, and H sends. The desk panel gains a Reviews tab
-  ([`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml)): the thread as the tower page draws it, quotes
-  marked `changed since` against the Changes of the desk's worker, Send with its picker, and a composer
-  with reply. Once the work no longer goes on, both renderers draw the thread read only (no composer, reply or Send,
-  no line picking in Changes) under a line saying it landed, and when its thread was filed, or that its worktree was
-  removed; a gone checkout with no thread says it has none. An anchor opens the desk's Changes tab scrolled to its line ([[changes-view]]), and lines picked there
-  start a note on the thread the Reviews tab shows (the author's, at a reviewer's desk).
-- *One view in both renderers* ([[shared-panels]]): the tower page and Tower 3D draw Changes and Reviews through the
-  same module and wire the same data attributes. The thread is read once per version of its file ([`reviews.ts`](ref:hub/renderers/tower3d/src/reviews.ts)),
-  and Send waits for it, so the pointer names the notes.
-- *New is relative to whose view is open* (2026-10-09, BIT-58, API 1.39). A thread belongs to its author's checkout, but
-  author and reviewer iterate on it: in the reviewer's view the author's notes since the reviewer's last one are new, and
-  in the author's view the reviewer's. The reader is the worker whose view it is: a card's tab in the tower page, a desk
-  panel in Tower 3D (the author's desk, or its reviewer's notebook beside it); a thread opened where no worker's view is
-  (the pigeonhole) reads as the worker on duty in its checkout, else nobody. Tower 3D read every thread as the worker in
-  its checkout, so a reviewer's desk marked what was new to its author. The rule is in shared code:
-  [`cardThread`](ref:hub/src/shared/panels.ts#cardThread) and [`floorThread`](ref:hub/src/shared/panels.ts#floorThread)
-  give the place a thread is opened from with its reader, and [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf)
-  builds the Reviews panel's view from it, the board and what the viewer holds (the thread as read, the reader's
-  Changes, its Send pick, the note it answers). Anchors are looked for in the reader's Changes.
-
-**Impact.** A `reviews` collection, the `review/append` verb, `tower thread` / `tower note` in the mod with a
-Reviews section in the tower skill, board fields `floor.threads`, `card.checkout`, `card.unseen`, a Reviews tab and
-line selection in the tower page, `cut` refusing `main`, Changes counting from the upstream on a branch that has one
-([[changes-view]]), and Tidy filing landed threads as the review history. Deleting them (as first built) left no
-record of past reviews, and a reused checkout name would have inherited an old thread. Built from draft `sleepy-cedar` (the thread); draft
-`wavy-lantern` (the reviewer) writes into it.
+- *Deciding note offers in the panels:* each renderer would hold the rule; the board carries the state instead.

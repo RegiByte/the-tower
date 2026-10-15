@@ -35,8 +35,8 @@
 }
 ---
 **Problem.** Reviewing a worker's work meant the user reading the Changes pane alone, or prompting a second
-worker by hand, with no shared context and nowhere for the findings to go. A Conductor user's demo (2026-10-05)
-showed the flow people expect: a worker writes, and a second one reviews it before anyone merges.
+worker by hand, with no shared context and nowhere for the findings to go. The flow people expect: a worker
+writes, and a second one reviews it before anyone merges.
 
 **Why.** The pieces existed: worktrees cut by the tower, the Changes read, `tower agent` for the author's goal,
 review threads for findings ([[review-threads]]), and every verb in every worker's hands
@@ -60,8 +60,7 @@ and how its findings reach the author.
   conversation, when every dir of its floor is a git repo and its checkout's work goes on (`card.checkoutState` live: a fork needs the
   checkout, and work that landed has nothing left to review), unless it is itself a reviewer; `tower review` refuses
   another with the card's reason. Its call is
-  `['spawn', {project, cut: {from: checkout}, prompt: '/tower:review <CALLSIGN>'}]`. The tower page shows a
-  Review button in the worker's header; Tower 3D binds it to Y on a worker. Workers run it as
+  `['spawn', {project, cut: {from: checkout}, prompt: '/tower:review <CALLSIGN>'}]`. Workers run it as
   `tower review <CALLSIGN> [tell]`.
 - *The skill* (`src/mod/skills/review/SKILL.md`): read the goal (`tower agent`), the thread so far, and the diff
   (`git diff <towerBase>...HEAD` in the fork, the same change the author's Changes pane shows); run the project's
@@ -85,16 +84,9 @@ and how its findings reach the author.
   ([`launchPrompt`](ref:hub/src/shared/launch.ts#launchPrompt)) gives `card.reviews`, and the fork's git record gives
   `card.worktree.from`. Both renderers draw [`pairLine`](ref:hub/src/shared/cards.ts#pairLine) ("reviews MARCO-87")
   beside the branch, Tower 3D on the desk's name tag. Nothing is stored.
-- *In Tower 3D the reviewer sits beside its author.* The seat replay ([`seats`](ref:hub/src/bridge/seats.ts#seats), on the board as `card.seat`)
-  gives a reviewer whose author is at a desk when it comes on duty no workstation of its own: it walks from the
-  elevator to the free left end of the author's desk and works there on a notebook
-  ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)) whose lid shows its live terminal, its tag hung
-  under the author's. One reviewer sits beside an author; a second takes a free desk, and a reviewer whose author
-  leaves first takes the lowest free desk then. Aimed at, the reviewer is a worker like any other (E sits at its
-  terminal), and T opens the author's thread, the one it writes on. Derived from `card.reviews` and the floor's
-  comings and goings alone, like every seat.
-- *Sandboxes per worker.* `npm run sandbox -- up` refuses a port another tower holds and warns when its root was
-  already up, naming `TOWER_SANDBOX` and `--port` to run one's own.
+- *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
+  terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)); the seat is derived like every seat
+  ([[workstations]]).
 
 **Alternatives considered.**
 - *The reviewer works in the author's worktree.* Sees exactly the author's files, but its tests and builds write
@@ -108,16 +100,9 @@ and how its findings reach the author.
 - *Claude's `/code-review` alone.* No goal, nothing kept. The skill may use it for the bug hunt.
 - *Agents iterate until the reviewer approves.* Cost and drift are unbounded with nobody watching; rounds stay one
   request each.
-- *Read-only by `--permission-mode plan`.* Unneeded once the reviewer has its own fork, and it would stop the
-  failing test that proves a finding.
-- *The pair as stored state.* The first prompt and the fork's git record already say it.
-- *Tower 3D: the reviewer at its own desk, with a clipboard naming the author, or a ribbon between the two desks.*
-  Reads as two workers who happen to share a word. *The reviewer's figure walking over while its desk stays its own:*
-  leaves a live monitor with nobody at it. The user's call: the reviewer sits beside the author on a notebook, its
-  terminal with it.
+- *Tower 3D: the reviewer at its own desk, with a clipboard or a ribbon naming the author.* Reads as two workers
+  who happen to share a word.
 
-**Impact.** API: `spawn.cut.from` (additive). Git: branch records `towerFork` and `towerFrom`; a fork's exposure
-counts only commits beyond its snapshot. Board: `card.reviews`, `card.worktree.from`, card verb `review` with its
-call. Mod: the `review` skill, and `tower review` / `tower send`. Tower page: Review button and pair line. Tower 3D:
-Y on a worker, the pair on the desk tag, the reviewer at its author's desk with a notebook. Sandbox: refuses a foreign tower on its port. Built from draft
-`wavy-lantern`.
+**Impact.** API: `spawn.cut.from`. Git: branch records `towerFork` and `towerFrom`; a fork's exposure counts only
+commits beyond its snapshot. Board: `card.reviews`, `card.worktree.from`, the card verb `review`. Mod: the `review`
+skill, `tower review` and `tower send`.
