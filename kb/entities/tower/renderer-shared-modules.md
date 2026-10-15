@@ -29,12 +29,12 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   prompts that start a reviewer and send notes ([[review-round]], [[review-threads]]).
 - `icons.ts`: the inline SVG every renderer draws for the same things, every icon a control or a row draws among them (close, info, help, the sidebar, resume, a caret, a branch, a thread, a shelf entry's kind, a gist's kind); `withIcons` draws the text marks shared words carry (`⎇`, `◇`, `▤`) as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by
-  `wirePrefs`) as pure views, its stylesheet and the data attributes a renderer wires ([[settings-and-tips]], [[viewer-prefs]]).
+  `wirePrefs`) as pure views, its stylesheet and the data attributes a renderer wires ([[viewer-prefs]]).
 - `prefs.ts`: the viewer's appearance record `tower.prefs` keeps, its defaults, and whether to move less (`reducedMotion`) ([[viewer-prefs]]).
 - `terminal.ts`: a browser terminal's face and size from the record, and the size a watched one fits at, from cells
   measured in its face ([[viewer-prefs]]).
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
-  ([[settings-and-tips]]).
+  ([[viewer-prefs]]).
 - `markdown.ts`: markdown as html, the only way a renderer draws it ([[markdown-safe]]).
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
