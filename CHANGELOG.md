@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.36.2
+
+The Mac app's icon has rounded corners on macOS before 26. No host restart, no config change, the renderer API
+unchanged. Run `tower app` again to redraw the icon.
+
+- Before macOS 26, `tower app` puts the icon on Apple's icon grid: the rounded square with a soft shadow, its corners
+  transparent. Earlier versions showed a hard-edged square there. macOS 26 masks the icon itself and draws it as
+  before. Thanks to Yuri Galindo.
+
 ## v1.36.1
 
 A callsign typed with its number starts beside a worker of the same name. No host restart, no config change, the
