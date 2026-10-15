@@ -28,28 +28,19 @@ sequenceDiagram
   T->>T: the hirer's turn ends once the system counts the hire
 ```
 
-- **Limits live in the tower.** A `spawn` with `hire` and `by` is `by`'s hire, whoever sends it.
-  [`hired`](ref:hub/src/tower/server.ts#hired) weighs it with [`hireRefusal`](ref:hub/src/shared/cards.ts#hireRefusal)
-  over every card, the ones the board leaves out included ([[board-archive]]): how many hires deep the hirer stands
-  ([`hireDepth`](ref:hub/src/shared/cards.ts#hireDepth)) and how many of its hires still run
-  ([`liveHires`](ref:hub/src/shared/cards.ts#liveHires), reviewers aside), against the spawn's floor's `hiring`
-  ([`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig): the project's own, else the top level's, else
-  defaults). Past them it answers `limited` (409), and the command tells the worker to ask the user. A spawn without
-  `hire` is not limited, by design ([[hiring-limits]]).
-- **One at a time.** Claude runs Bash calls in parallel, so a worker's hires can arrive together. A hirer's hires
-  queue by its callsign ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), and each holds the turn until the system
-  counts it ([`counted`](ref:hub/src/tower/server.ts#counted): its log tracked, the hirer's log naming it, the host
-  running it; `until` on [`watchSystem`](ref:hub/src/system.ts#watchSystem), at most 5 s), so the next is weighed
-  against it.
+- **Limits and order live in the tower** ([[hiring-limits]]). A `spawn` with `hire` and `by` is `by`'s hire, whoever
+  sends it: [`hired`](ref:hub/src/tower/server.ts#hired) weighs it with
+  [`hireRefusal`](ref:hub/src/shared/cards.ts#hireRefusal) against the floor's `hiring`, and past it answers `limited`
+  (409), the command telling the worker to ask the user. A hirer's hires queue by its callsign
+  ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), each holding the turn until the system
+  [`counted`](ref:hub/src/tower/server.ts#counted) it, so the next is weighed against it.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default
   ([`spawnDefaults`](ref:hub/src/shared/cards.ts#spawnDefaults), [`spawnCall`](ref:hub/src/shared/cards.ts#spawnCall)):
   a new worktree when the floor cuts by default, else the hub. The prompt is stdin or a kept item's text; an empty
   one is refused.
-- **The fact.** The tower has the host append `tower.hire` to the hirer's own log through the host's `fact`, right
-  after the spawn, as it appends `tower.prompt` ([[worker-prompts]]); a hire that can't be logged is killed (it can be
-  resumed), so every hire that runs is counted. The fold appends the id to `facts.hired`; the board inverts it across resumes
-  ([`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf)), so the hired card's `hiredBy` names the worker (the
-  callsign of the hirer's whole chain), not one session. A worker started any other way has none.
+- **The fact.** Right after the spawn the host appends `tower.hire` to the hirer's own log through its `fact`; a hire
+  that can't be logged is killed (it can be resumed), so every hire that runs is counted. The board inverts it across
+  resumes ([`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf)): the hired card's `hiredBy` names the hirer's callsign.
 - **Its answer is the hirer's.** While the hirer runs, a hire's answer to the hirer's prompt waits on the hirer, not
   on the user: off the attention list, its status word "waiting on <HIRER>" ([[waiting-on-you]]).
 - **Going home.** The hire reports to its hirer ([[crews]]): `tower home` ends the hirer's crew, deepest first. A

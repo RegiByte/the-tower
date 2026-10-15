@@ -33,10 +33,9 @@
 }
 ---
 **Problem.** The tower showed what each worker is doing now and nothing about the past: what a day cost, how much
-work the floor did, how long workers wait on the user, how far the weekly limit's pace will carry. A spike over the
-logs showed all of it is in events the live fold already reads, and that the
-obvious sum is wrong: each card's `costUsd` is Claude's running total for the conversation, carried into a resume,
-so summing cards overstated the spend by about a third.
+work the floor did, how long workers wait on the user, how far the weekly limit's pace will carry. All of it is in
+events the live fold already reads, and the obvious sum is wrong: each card's `costUsd` is Claude's running total for
+the conversation, carried into a resume, so summing cards overstates the spend.
 
 **Why.** Stats are a capability: every renderer and every worker should reach them ([[renderer-is-disposable]]),
 and they are computable from the logs, so they are computed ([[logs-are-facts]]).
@@ -72,9 +71,7 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   [`outsideUse`](ref:hub/src/bridge/stats.ts#outsideUse) sums the climbs between two probe answers in a row
   (`ProbeFacts.rises`) while no session used the API (no model step, no spend, no main-loop turn over the span, a turn
   still running included). Only the probe's answers are compared with each other: a session's reading and the probe's
-  can differ by a point for the same use (observed: the probe's answer a point above a session's reading minutes
-  apart, nothing spent between, as if one rounds up and the other down), so a session's reading then a probe's could
-  look like a climb. Use outside
+  can differ by a point for the same use, so a session's reading then a probe's could look like a climb. Use outside
   the tower while the tower works counts as the tower's: the estimate errs low. The budget's `outside` is this
   week's; it leaves the climb that makes the rate. `/stats`'s `outside` ([`outsideIn`](ref:hub/src/bridge/stats.ts#outsideIn))
   sums the climbs that ended in the window, of any week, which The Week shows beside a week's quota. Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
@@ -95,39 +92,34 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   signs commits by their own convention. A team repo's numbers count teammates' landings too.
 - *A read, not the board.* `GET /stats?from&to&bucket&project` ([`statsRead`](ref:hub/src/tower/server.ts#statsRead)),
   its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES) served at `/schema` under `reads`, defaults the
-  last seven local days by day, and refuses windows over 2400 buckets. `tower.stats(query)` reads it.
+  last seven local days by day, and refuses windows of too many buckets. `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
   waits answered (count and p50), the day's start and the weekly budget with its pace. The roof draws them live beside the rate
   limits. They move only with readings, turns and prompts, which already change the board, so they add no pushes; a
   day that turns while nothing happens shows yesterday's until the next event, which `today.since` tells.
 
-Git is read on demand, on each `/stats`: one `git log` per repo over a bounded window (about 0.45 s for this repo's
-busiest week), the panels read every minute at most, and history on a branch never changes, so nothing would be
-gained by holding it between reads. A cache keyed on each repo's origin/HEAD commit is the next step if a repo
-grows slow; the 5 s board poll of `repos` is the wrong cadence for it (it runs whenever anyone watches the board).
+Git is read on demand, on each `/stats`: one `git log` per repo over a bounded window, the panels read every minute
+at most, and history on a branch never changes, so nothing is held between reads. A cache keyed on each repo's
+origin/HEAD commit is the next step if a repo grows slow; the board's poll of `repos` is the wrong cadence for it.
 
 **Alternatives considered.**
-- *Sum each card's `costUsd`.* Wrong by 30% (resumes carry it).
-- *Only deltas between readings, a drop counted in full* (the spike's rule). A `/clear` with no reading between
-  its two conversations shows no drop, and the new conversation's cost was lost (the `clear` fixture); keying the
-  baseline on the conversation counts it.
-- *Waits from a `Stop` to the next turn* (the spike's). A turn a task's notification, a schedule or a peer starts is
-  not the user answering; nearly one wait in five was one of those.
-- *Asks from `tool.check` with decision `ask`.* About seventy for every dialog the user saw, nearly all settled by
-  auto mode; `PermissionRequest` is what the user saw.
-- *Lines from the log's Edit/Write hooks* (the spike's first look): they miss every edit made through Bash and
-  would need `PostToolUse` bodies the live fold skips. Git saw half again as many lines added as the hooks did, and
-  several times as many removed.
-- *Commits by committer time* (`git log --numstat` without `--first-parent`, phase 2's first cut): in a repo that
-  lands through merges, a branch's commits counted on the days they were written and dropped when that fell before
-  the window; on repos landing through merges it read a half to a third of the commits that reached main in two days.
-- *Attributing commits to workers* by matching `git commit` commands or commit messages (79% in the spike): a policy
-  about who made what, which the tower doesn't declare.
-- *Concurrency counting every `turn.complete`* (the survey's `extract.py`): subagents' turns counted as workers,
-  which nearly tripled the peak of workers at once against the main loops alone.
-- *History on the board.* It is pushed on every change to every renderer; a week of series doesn't belong there.
-- *Prompt texts or per-turn records in facts.* Only times and numbers are folded: the brief reads texts from the logs
-  when asked ([[brief-turns]]).
+- *Sum each card's `costUsd`.* Resumes carry it, so it overstates.
+- *Only deltas between readings, a drop counted in full.* A `/clear` with no reading between its two conversations
+  shows no drop, and the new conversation's cost is lost (the `clear` fixture); keying the baseline on the
+  conversation counts it.
+- *Waits from a `Stop` to the next turn.* A turn a task's notification, a schedule or a peer starts is not the user
+  answering.
+- *Asks from `tool.check` with decision `ask`.* Nearly all are settled by auto mode; `PermissionRequest` is what the
+  user saw.
+- *Lines from the log's Edit/Write hooks*: they miss every edit made through Bash and would need `PostToolUse` bodies
+  the live fold skips.
+- *Commits by committer time* (without `--first-parent`): in a repo that lands through merges, a branch's commits
+  count on the days they were written and drop out when that falls before the window.
+- *Attributing commits to workers* by matching `git commit` commands or commit messages: a policy about who made
+  what, which the tower doesn't declare.
+- *Concurrency counting every `turn.complete`*: subagents' turns would count as workers.
+- *History on the board, or prompt texts in facts.* The board is pushed on every change to every renderer; only
+  times and numbers are folded, and the brief reads texts from the logs when asked ([[brief-turns]]).
 
 **Impact.** Each session's facts hold a few hundred small entries more. The tower page's sidebar (the floor in view
 and All floors) and Tower 3D's roof (a stats board beside the rate-limit columns, the overview and every floor as tabs)
