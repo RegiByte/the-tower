@@ -20,12 +20,12 @@ export const STATUS_NAME: Record<Status, string> = {
 }
 
 /** A worker's attention in a word, as a count of workers or a legend names it. */
-export const ATTENTION_NAME: Record<Attention, string> = { needs: 'needs you', ready: 'ready', working: 'working', quiet: 'quiet', broken: 'broken' }
+export const ATTENTION_NAME: Record<Attention, string> = { needs: 'needs you', ready: 'done', working: 'working', quiet: 'quiet', broken: 'failed' }
 
 /** What puts a worker in each attention (`attentionOf`, src/bridge/board.ts), for a count's tooltip and a legend. */
 export const ATTENTION_MEANS: Record<Attention, string> = {
   needs: "held by one of Claude's screens (workspace trust, sign-in) or asking permission for a tool: it goes on only once you answer",
-  ready: 'its turn ended with an answer nobody has read: nothing it started can wake it, and nobody has typed to it since. Typing to it reads it. An answer for the worker that hired it reads ready too, and waits on that worker',
+  ready: 'its turn ended with an answer nobody has read: nothing it started can wake it, and nobody has typed to it since. Typing to it reads it. An answer for the worker that hired it reads done too, and waits on that worker',
   working: 'booting, or in a turn: thinking, running tools or compacting',
   quiet: 'nothing for you: at its prompt, its answer read, watching (a background task or a /loop it started will wake it, and its lamp breathes), exited, or stopped with the host and resumable',
   broken: "its last turn failed (an API error or a refusal), it was lost: the host no longer runs it and it never logged an exit, or its log holds an event the tower can't read, and its facts stop there",
