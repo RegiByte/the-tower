@@ -15,7 +15,7 @@ hub, so the page lived either in the user's main checkout (an untracked file the
 entry broke when the worktree was tidied). A page also kept in a collection, such as a game in `games`, was a second
 copy of the one on the shelf.
 
-**Why.** Collections are where workers already put what they make for the user ([[collections]], [[agent-keep]]):
+**Why.** Collections are where workers already put what they make for the user ([[collections]], [[workers-edit-kept-items]]):
 the system root, owned by the tower, outliving every worktree, written with `tower keep` and edited in place. The
 shelf only needs to point at one.
 
