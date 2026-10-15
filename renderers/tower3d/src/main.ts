@@ -958,11 +958,11 @@ function goLevel(index: number) {
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, lock)
 }
 
-/** Ends a worker with everyone under it that runs, the deepest first; the toast offers its resume. */
+/** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
 async function sendHome(c: Card) {
   const crew = sentHome(floorOf(c.project).cards, c)
   for (const call of c.calls['send-home']!) if (!(await offered(call))) return
-  toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, { label: 'Resume', run: () => resumeSentHome(c) })
+  toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, crew.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
 }
 
 /** A stranded worker off duty, its conversation left in the floor's archive to resume. */

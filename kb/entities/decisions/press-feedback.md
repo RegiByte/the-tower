@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Every press is answered: busy controls, toasts with an action, undo by putting back",
-  "summary": "A control that asks the tower something is aria-busy until the reply (pressing in /press.js), found again by its identity through redraws; every button's pressed, held and busy states are drawn by design.css; toasts stack, time out, pause under the pointer or focus and may carry one action (/toasts.js); Kill offers Resume, and deleting a draft is done at once with an Undo that puts its file back under its id (collection/restore).",
+  "summary": "A control that asks the tower something is aria-busy until the reply (pressing in /press.js), found again by its identity through redraws; every button's pressed, held and busy states are drawn by design.css; toasts stack, time out, pause under the pointer or focus and may carry one action (/toasts.js); sending one worker home offers Resume, and deleting a draft is done at once with an Undo that puts its file back under its id (collection/restore).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -65,8 +65,8 @@ them, and nothing it needs lives in the tower page.
   that finds nothing leaves one toast. The stack is one column as wide as its widest toast, so edges, counts and
   actions line up in place of each toast centring on its own. An action is one button (`{ label, run }`) that closes
   its toast and runs.
-- Kill still asks, with what killing costs (`KILL_COST`): it ends a turn in flight, which no resume brings back. Once
-  killed, its toast offers Resume, the dead card's own `calls.resume`, read when pressed from the board or, once the
+- Send home still asks, with what ending a worker costs (`KILL_COST`, in `sendHomeAsk`): it ends a turn in flight,
+  which no resume brings back. Once a worker is sent home alone, its toast offers Resume, the dead card's own `calls.resume`, read when pressed from the board or, once the
   board has left it out, from its floor's archive ([[board-archive]]): no renderer builds a call.
 - Deleting a draft is done at once, with no question, and its toast offers Undo. `discard` answers what it deleted
   (the id and the text the file held), and [`restore`](ref:hub/src/shared/drafts.ts#restore) puts it back through

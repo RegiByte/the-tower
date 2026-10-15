@@ -57,7 +57,7 @@ link is `aria-current`. Its pane tabs are an ARIA tablist (←, →, Home and En
 the terminal is `inert` while another pane lies over it, so Tab never falls into it unseen. Redraws give focus back to
 the control that had it ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus)), so a board arriving every few
 seconds doesn't throw a keyboard back to the page's start. Every press that asks the tower something stays busy
-until the reply, and toasts stack, some with an action: Resume after Kill, Undo after deleting a draft
+until the reply, and toasts stack, some with an action: Resume after sending one worker home, Undo after deleting a draft
 ([[press-feedback]]). The toast stack is a polite live region that says every toast, and another says a line for each
 wait that begins and isn't dismissed ([`waitsBeganLine`](ref:hub/src/shared/cards.ts#waitsBeganLine): "ENKI-26 is
 waiting on you: done."), the worker you are watching included. Landmarks: the sidebar's `aside`, the floors' `nav`,

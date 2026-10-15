@@ -468,7 +468,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
 <script src="/addon-fit.js"></script>
 <script type="module">
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, KILL_COST, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, crewOf, crewFold, crewTree, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, STUCK_TITLE, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, can, current, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, CARRY_ON_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
@@ -920,7 +920,6 @@ function barHtml(c) {
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
-    ${can(c, 'kill') ? `<button class="danger" data-act="kill" data-of="${c.id}">Kill</button>` : ''}
     <button class="icon-btn" data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">${ICON.close}</button>`)
   $('bar-details').innerHTML = detailsHtml(c)
   $('bar-left').innerHTML = leftHtml(c)
@@ -1661,13 +1660,17 @@ function go(move) {
 /** Those `send-home` ends: the worker and everyone under it that runs, each a card. */
 const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => c.calls['send-home'].some(([, { id }]) => id === h.id))
 
-const sendHomeTitle = (c) => `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
+const sendHomeTitle = (c) => sentHome(c).length === 1 ? `end ${callsign(c.id)}; it can be resumed` : `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
 
+/** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
 async function sendHome(button, c) {
-  if (!confirm(sendHomeAsk(c, sentHome(c)))) return
-  await pressing(button, async () => {
-    for (const call of c.calls['send-home']) await tower.run(call).catch((err) => toast(err.message))
+  const sent = sentHome(c)
+  if (!confirm(sendHomeAsk(c, sent))) return
+  const ended = await pressing(button, async () => {
+    for (const call of c.calls['send-home']) if (!(await told(tower.run(call)))) return false
+    return true
   })
+  if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
 }
 
 /** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. */
@@ -2541,13 +2544,7 @@ async function letGo(button, c) {
 }
 
 /** Killing asks first; once killed, the toast offers the worker's resume, read from the board or its floor's archive. */
-async function kill(button, c) {
-  if (!confirm(`Kill ${callsign(c.id)}?\n\nIt stays ${KILL_COST}.`)) return
-  if (!(await told(pressing(button, () => tower.run(c.calls.kill))))) return
-  toast(`Killed ${callsign(c.id)}`, { label: 'Resume', run: () => resumeKilled(c) })
-}
-
-async function resumeKilled(c) {
+async function resumeSentHome(c) {
   const dead = cards().find((d) => d.id === c.id) ?? (await told(tower.archive(c.project)))?.find((d) => d.id === c.id)
   if (!dead?.calls.resume) return toast(`${callsign(c.id)} can't be resumed now`)
   const reply = await told(tower.run(dead.calls.resume))
@@ -2720,7 +2717,6 @@ document.addEventListener('click', (e) => {
   const actor = e.target.closest('[data-act]')
   const act = actor?.dataset.act
   if (act === 'send-home') return sendHome(actor, findCard(selected))
-  if (act === 'kill') return kill(actor, findCard(selected))
   if (act === 'review') {
     const author = findCard(selected)
     return told(pressing(actor, () => tower.run(author.calls.review))).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${r.cut.name}, a fork of ${author.checkout}`))

@@ -260,8 +260,8 @@ export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) 
 /** What a renderer asks before sending `c` home with `sent`, those its `send-home` calls end, naming who is mid-turn. */
 export const sendHomeAsk = (c: Card, sent: Card[]) => {
   const busy = sent.filter((h) => h.status === 'working')
-  return `Send ${c.callsign} home with everyone under it that runs?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${
-    busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\nEach can be resumed.`
+  return `Send ${c.callsign} home${sent.length > 1 ? ' with everyone under it that runs' : ''}?\n\n${sent.map((h) => `${h.callsign} · ${statusName(h)}`).join('\n')}${
+    busy.length ? `\n\n${busy.map((h) => h.callsign).join(', ')} ${busy.length === 1 ? 'is' : 'are'} working right now.` : ''}\n\n${sent.length > 1 ? 'Each stays' : 'It stays'} ${KILL_COST}.`
 }
 
 /** What a renderer asks before ending everything a worker left running. */
