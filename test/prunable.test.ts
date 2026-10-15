@@ -116,13 +116,27 @@ test("a finished hire whose work has landed is offered with its answer unread on
   assert.deepEqual(towerAt(hired(log, 'worktree'), at(log, 0) + DAY, repos(false, 0)).tidy.prune, [])
 })
 
-test('a hire whose hirer is on duty is never offered, a resumed one included; it is offered once the hirer is gone', () => {
+test('a hire whose hirer is on duty is never offered; it is offered once the hirer is gone', () => {
   const log = until(fixture('tool-turn'), 5)
   const later = at(log, 0) + DAY
   const offered = (floor: ReturnType<typeof towerAt>) => floor.tidy.prune.some((p) => p.t === 'kill' && p.id === log.header.id)
   const [hirer, hire] = hired(log, 'worktree', 10)
   assert.equal(offered(towerAt([hirer, hire], later, repos(true, 0), true)), false)
   assert.equal(offered(towerAt([hirer, hire], later, repos(true, 0))), true)
+})
+
+test("a hire whose hirer was resumed stays unoffered while the hirer's successor is on duty", () => {
+  const log = until(fixture('tool-turn'), 5)
+  const later = at(log, 0) + DAY
+  const [source, resumed] = [fixture('resume-source'), until(fixture('resumed'), 10)].map((l) => ({ ...l, header: { ...l.header, project: 'tower', cwd: HUB } }))
+  const hirer = { ...source, events: [...source.events, [1, 'h', { hook_event_name: 'tower.hire', id: log.header.id }] as SessionLog['events'][number]] }
+  const hire = hired(log, 'worktree')[1]
+  const logs = [hirer, resumed, hire]
+  const offered = (floor: ReturnType<typeof towerAt>) => floor.tidy.prune.some((p) => p.t === 'kill' && p.id === log.header.id)
+  const floor = towerAt(logs, later, repos(true, 0), true)
+  assert.equal(floor.cards.find((c) => c.id === log.header.id)!.reportsTo, resumed.header.id)
+  assert.equal(offered(floor), false)
+  assert.equal(offered(towerAt(logs, later, repos(true, 0))), true)
 })
 
 test('a hire asking a question is never offered, its work landed or not', () => {
