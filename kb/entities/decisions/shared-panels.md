@@ -176,7 +176,14 @@ picked and the note box waits for the drop (a box under the last row would move 
 and a range over a gap would claim lines its quote doesn't hold. A range of removed lines alone still anchors by
 their old numbers with a `diff` quote ([[review-threads]]).
 
-*Tab row* (2026-10-15). `panelsCss` also lays out a worker's tab row, the same in both renderers: its tabs wrap onto
-lines and a showing's title shrinks to an ellipsis, its full target in the tab's tip. The selected showing keeps 6em of
-its title beside its controls, so selecting one can move a break; at the 9em every other showing counts as, its
-controls alone took the room and the title was gone.
+*Tab row* (2026-10-15). `panelsCss` also lays out a worker's tab row, the same in both renderers, on one line: the
+panes' tabs pinned at the left, then the showings in a `.shown-tabs` strip that scrolls sideways, its scrollbar hidden
+and a fade on each edge past which more showings hide. A showing's title ends in an ellipsis (its full target in the
+tab's tip), never under 6em on the selected one beside its controls, and a showing is never wider than the strip.
+[`keepShownTabs`](ref:hub/src/shared/panels.ts#keepShownTabs), which a renderer calls after each draw of the row
+with the worker it draws, keeps the strip where the viewer left it through redraws, scrolls a showing newly selected
+(clicked, shown anew, reached by a key) into view clear of the fade, sets the fades and turns a mouse wheel sideways;
+a selected showing as wide as the strip fills it unfaded. The row wrapped before: with twenty showings it took four
+or five lines of the header and the terminal shrank by as much. A `+N` menu for the showings that don't fit was
+built and dropped for the scroll: the user wanted the showings in one row to move along. API 1.53 (`keepShownTabs` on
+`/panels.js`).

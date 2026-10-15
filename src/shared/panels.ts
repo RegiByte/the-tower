@@ -1008,24 +1008,67 @@ export function keepingFocus(el: HTMLElement, write: () => void) {
   if (again.length === 1) again[0].focus({ preventScroll: true })
 }
 
+/** Each tab row's worker, place along its showings and showing selected when it was last drawn. */
+const shownStrips = new WeakMap<HTMLElement, { of: string; left: number; on?: string }>()
+
+/**
+ * Keeps a `.tab-row`'s `.shown-tabs` where the viewer left it through a redraw, scrolls a showing newly selected into
+ * view, marks the edges past which more showings hide (`more-before`, `more-after`) and turns a mouse wheel over it
+ * sideways. A selected showing as wide as the strip fills it unfaded, its controls in full. Call it after each draw of the row, with the id of the worker it is drawn for: another starts at its first.
+ */
+export function keepShownTabs(row: HTMLElement, of: string) {
+  const strip = row.querySelector<HTMLElement>('.shown-tabs')
+  if (!strip) return
+  const was = shownStrips.get(row)
+  const kept = was?.of === of ? was : { of, left: 0 }
+  shownStrips.set(row, kept)
+  const tabs = [...strip.children]
+  const on = tabs.find((t) => t.classList.contains('on'))
+  const onKey = on && `${tabs.indexOf(on)}:${on.querySelector('.shown-name')?.textContent}`
+  const fills = on instanceof HTMLElement && on.offsetWidth > strip.clientWidth - 2 * parseFloat(getComputedStyle(strip).scrollPaddingLeft)
+  const inView = () => Math.abs(on!.getBoundingClientRect().left - strip.getBoundingClientRect().left) < 1
+  strip.scrollLeft = kept.left
+  if (on && onKey !== kept.on) {
+    if (fills) strip.scrollLeft += on.getBoundingClientRect().left - strip.getBoundingClientRect().left
+    else on.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }
+  kept.on = onKey
+  const mark = () => {
+    kept.left = strip.scrollLeft
+    const faded = !(fills && inView())
+    strip.classList.toggle('more-before', faded && strip.scrollLeft > 0)
+    strip.classList.toggle('more-after', faded && strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1)
+  }
+  mark()
+  strip.addEventListener('scroll', mark)
+  strip.addEventListener('wheel', (e) => {
+    if (strip.scrollWidth <= strip.clientWidth || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
+    e.preventDefault()
+    strip.scrollLeft += e.deltaY
+  }, { passive: false })
+}
+
 /**
  * The panels' look, under `.changes-panel`, `.reviews-panel` and `.stats-panel`: the renderer places and sizes the element
  * they're painted in.
  *
- * Also a worker's `.tab-row`: its tabs (any of them in a `.tab-set`, which lays out as if absent), an `.activity` line
- * and its `.moves`, on lines that wrap. Where the row breaks into lines, a shown tab counts as a 9em stub, the selected
- * one as its controls beside 6em of its title; on its line it grows toward its full width, the selected one five times
- * faster, and the activity line takes what is left. A short row first narrows the shown tabs' titles, then moves the
- * moves to a line of their own, then the shown tabs that don't fit: nothing passes the row's edge. A `.shown-tab`'s
- * first child is its `.shown-name`, capped at 16em and the only part of it that shrinks.
+ * Also a worker's `.tab-row`, on one line: its tabs (any of them in a `.tab-set`, which lays out as if absent), its
+ * showings' tabs in a `.shown-tabs` strip that scrolls sideways, faded at an edge past which more hide, an `.activity`
+ * line down to 8em and its `.moves`. A `.shown-tab` is never wider than the strip; its first child is its `.shown-name`,
+ * capped at 16em, the selected one's never under 6em beside its controls.
  */
 export const panelsCss = `
-.tab-row { display: flex; flex-wrap: wrap; align-items: center; }
-.tab-row > *, .tab-row > .tab-set > * { flex: none; }
+.tab-row { display: flex; align-items: center; }
+.tab-row > *, .tab-row > .tab-set > *, .shown-tabs > * { flex: none; }
 .tab-row > .tab-set { display: contents; }
-.tab-row .shown-tab { flex: 1000 1 9em; min-width: 0; max-width: max-content; }
-.tab-row .shown-tab.on { flex-grow: 5000; min-width: min-content; }
-.tab-row > .activity { flex: 1 1 0; min-width: 0; }
+.tab-row .shown-tabs { flex: 0 1 auto; min-width: 0; display: flex; gap: var(--sp-s); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  padding-block: 2px; margin-block: -2px; --fade: 2.5em; scroll-padding-inline: var(--fade); }
+.shown-tabs::-webkit-scrollbar { display: none; }
+.shown-tabs > .shown-tab { max-width: 100%; }
+.shown-tabs.more-after { mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent); }
+.shown-tabs.more-before { mask-image: linear-gradient(to left, #000 calc(100% - var(--fade)), transparent); }
+.shown-tabs.more-before.more-after { mask-image: linear-gradient(to right, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent); }
+.tab-row > .activity { flex: 1 1 0; min-width: 8em; }
 .tab-row > .moves { display: flex; margin-left: auto; }
 .shown-tab { display: inline-grid; grid-auto-flow: column; grid-template-columns: minmax(0, max-content); align-items: center; overflow: hidden; white-space: nowrap; }
 .shown-tab.on { grid-template-columns: minmax(6em, max-content); }

@@ -464,6 +464,7 @@
       "isCommitScope",
       "isFolded",
       "isViewed",
+      "keepShownTabs",
       "keepingFileTop",
       "keepingFocus",
       "livePick",

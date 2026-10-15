@@ -10,7 +10,7 @@ import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
@@ -402,6 +402,7 @@ function renderPanel() {
     if (!c) return unfocus()
     $('desk-head').innerHTML = deskHeadHtml(c, board.floors.find((f) => f.id === c.project), isArmed, held, tower.framed)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
+    keepShownTabs($('desk-tabs').parentElement!, c.id)
     if (s.deskTab === 'reviews') drawThread($('desk-reviews'), cardThread(c))
     if (s.deskTab === 'changes') drawChanges(c)
     $('desk-activity').innerHTML = activityHtml(c)

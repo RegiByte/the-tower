@@ -366,7 +366,7 @@ const reviewsTally = (c: Card, f: Floor) => {
 export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean) {
   const own = (['screen', 'brief', 'changes', ...(keepsReviews(f) ? ['reviews'] as const : [])] as const)
     .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${t === 'reviews' ? reviewsTally(c, f) : ''}</button>`).join('')
-  return own + c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')
+  return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')}</span>` : '')
 }
 
 const keepsReviews = (f: Floor) => f.collections.some((col) => col.id === REVIEWS)

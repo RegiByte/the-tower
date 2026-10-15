@@ -468,7 +468,7 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, newestFirst, readsText } from '/items.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
+import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
@@ -924,6 +924,7 @@ function barHtml(c) {
   $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
   repaint($('bar-line'), paneTabsHtml(c, paneOf(c)))
+  keepShownTabs($('bar-line'), c.id)
   renderPane(c)
 }
 
@@ -993,7 +994,7 @@ const paneTabsHtml = (c, pane) => {
     (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief')} data-tip="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
     `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes')} data-tip="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
     (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews')} data-tip="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
-    shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('') + '</span>'
+    (shown.length ? `<span class="shown-tabs">${shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('')}</span>` : '') + '</span>'
 }
 
 /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. */
