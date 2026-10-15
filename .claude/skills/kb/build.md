@@ -76,7 +76,8 @@ Document piece by piece: one scope per session, done well, beats breadth.
   from it, and the flow appears on each involved entity's page. Every container belongs to at least
   one flow; when writing a system, plan its flows before its containers.
 - **decision**: body sections **Context**, **Decision**, **Alternatives considered**, **Consequences**.
-  Never delete one. To reverse it, write a new decision with `supersedes`.
+  Write today's reasoning, not its history (git holds that). To reverse one, rewrite it, or merge it
+  into the decision that replaces it, and fix the links (`SCHEMA.md`, decision).
 - **runbook**: body sections **Symptom**, **Where to look first**, **Likely causes**, **Fix**.
 - **term**: the summary is the definition. A body only if the term needs an example.
 - **views**: prose plus `kb-list` tables, for pages that cut across the tree (a data dictionary,
