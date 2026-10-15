@@ -22,11 +22,10 @@
   ]
 }
 ---
-**Problem.** Every level was drawn on every frame, and only frustum culling trimmed it. Standing on floor 1 and
-looking down the desks drew floors 2 and 3 and the roof too, behind slabs you cannot see through: 912 draw calls and
-497k triangles on the busy board, against 409 and 230k for what is actually visible. The [[office-kaykit]] batches
-were building-wide, so splitting them per level would only pay once levels you are not on were hidden. That needed
-a rule for the whole building.
+**Problem.** Every level was drawn on every frame, and only frustum culling trimmed it: standing on a floor and
+looking down the desks drew the floors above and the roof too, behind slabs you cannot see through, at about twice
+the draw calls of what is visible. Per-level KayKit batches ([[office-kaykit]]) pay only once levels you are not on
+are hidden, which needs a rule for the whole building.
 
 **Why it can be exact.** The building is a box whose slabs close off each level, and a ray that leaves a box never
 comes back in. From inside a level, glass shows only the outside, so no other level's interior can be seen. The
@@ -59,26 +58,13 @@ landing doors of every level it passes go by.
 **Alternatives considered.**
 - *Building-wide batches with per-instance visibility* (`setVisibleAt` per level on every level change): one draw
   call per pack in the overview. Rejected because it hides only the KayKit, and the building, desks and people
-  were most of the cost (the kit was under 30 of the 912 calls).
+  were most of the cost.
 - *Your level plus the ones above and below*, for sightlines: no sightline crosses a slab, so it would double the
   cost for nothing.
 - *Hiding by height* (a root's y names its level): ambiguous at y = 0, where the building-wide groups stand.
-- *Hiding the facade's bands with their level*: the frames walk caught the gap. The lobby's window top lost floor
-  1's lilac strip, and the floors lost the next spandrel's edge.
+- *Hiding the facade's bands with their level*: a window's top and bottom then show a gap where the next
+  level's band stood.
 
-**Impact.** Busy board, 15:00, 1920×1080, M1 Max (headless Chrome on Metal), draw calls / triangles / ms per frame
-including the GPU (a run of `step(1)` closed by a readback), before → after:
-
-| spot | before | after |
-|---|---|---|
-| f1-desks | 912 / 497k / 3.4 | 409 / 230k / 1.7 |
-| f1-door | 321 / 198k / 2.0 | 199 / 126k / 1.2 |
-| lobby | 470 / 183k / 2.1 | 102 / 12k / 0.86 |
-| roof | 865 / 434k / 3.0 | 163 / 85k / 0.94 |
-| overview | 1068 / 618k / 3.2 | 1082 / 618k / 3.5 |
-
-The overview costs 14 more calls, the price of per-level batches. Frames on all four fixture boards: state
-identical. Pictures match but for one pixel by 3/255 and the tall overview's glass order (max 8/255). Window views
-up and down, the roof's edge and a whole ride from the lobby to the roof are identical byte for byte. Anything new
-that stands on a level hangs on its level root (`hangOn`). Anything that stands outside the glass goes in a level's
-`foot`.
+**Impact.** Away from the overview, a frame draws only what can be seen; the overview costs a few more calls, the
+price of per-level batches. Anything new that stands on a level hangs on its level root (`hangOn`); anything that
+stands outside the glass goes in a level's `foot`.
