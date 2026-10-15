@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Blob reads: real images through the renderer API",
   "summary": "Any read of the renderer API can be taken as a Blob of its type (tower.blob, API v5), so a framed renderer draws real images in WebGL; a shown or shelved markdown page also serves the images beside it.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

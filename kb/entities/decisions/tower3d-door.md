@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D has a door for agents",
   "summary": "Tower 3D exposes a typed window.tower3d surface (state, teleport, aimAt, press, key, drive, step, shot) over an intent-driven input layer and a steppable, seeded clock, and renders fabricated boards in place of the live one, so agents test it deterministically.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

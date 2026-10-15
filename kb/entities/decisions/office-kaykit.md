@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The office dressed with the KayKit: zones as scene documents on the playground's path",
   "summary": "Tower 3D places every KayKit model through the playground's own measuring, norms, scene documents, themes and per-pack batches: desk dressing per board, and per level zones (lounge, coffee point, meeting table, planters, rugs, a hero, the control room's couch, the lobby, the roof) composed as checkable prefabs and placed from the plan.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-11",

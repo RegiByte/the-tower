@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D lists an object's verbs, each on its own key",
   "summary": "What you aim at in Tower 3D lists its verbs in the corner, each bound to one key that means the same on every object; verbs that end something run on a hold. No menu opens, so you never stop walking.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

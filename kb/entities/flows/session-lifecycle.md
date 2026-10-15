@@ -5,20 +5,22 @@
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
   "reviewed": "2026-10-15",
-  "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
+  "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/server.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/server.ts#spawnCut"]
 }
 ---
 ```mermaid
 sequenceDiagram
   participant O as [[operator]]
+  participant P as [[web-tower]]
   participant T as [[tower-server]]
   participant H as [[host-daemon]]
   participant C as [[claude-code]]
   participant R as [[system-root]]
   participant L as [[live-system]]
   participant F as [[log-reductions]]
-  O->>T: spawn (project, dir or cut, model, effort, first prompt)
+  O->>P: a new worker
+  P->>T: spawn (project, dir or cut, model, effort, first prompt)
   opt cut: a new worktree
     T->>T: git fetch, worktree add in every repo (src/worktrees.ts)
   end
@@ -32,7 +34,8 @@ sequenceDiagram
     H->>R: o event
     C->>H: hooks and mod events (see hook-events)
     H->>R: h event
-    O->>T: keys, resize
+    O->>P: keys, resize
+    P->>T: keys, resize
     T->>H: write, resize
     H->>R: i / r event, then to the PTY
     R-->>L: appended lines (tail)

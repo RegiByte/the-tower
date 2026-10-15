@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Changes: a worker's diff read from git, and viewed marks per file version",
   "summary": "The tower reads what a worker changed in its repos from git on request (since its branch's base in a worktree, since its upstream on a branch that has one, since HEAD elsewhere), the page re-reads it every 30 s while the view is open and when a turn ends, and a file marked viewed stays viewed only until its diff changes; the marks live in the viewer's browser, shared by every renderer through tower.store.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",

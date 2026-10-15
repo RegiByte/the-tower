@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D starts under a loading screen, its shaders compiled before the first draw",
   "summary": "index.html draws the elevator's panel before the bundle runs, a button per stage of the start (settings, models and the kit, the board, building the floors, lighting the scene) lit as the page reaches it. A live page draws nothing until its first board is built and every program its first frame uses is compiled off the main thread (renderer.compileAsync); that frame is drawn under the screen, which then fades. A fixture page drops the screen as it boots and draws as before.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
   "reviewed": "2026-10-15",

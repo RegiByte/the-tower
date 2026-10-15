@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D's shell is a state record, keyed layers, act tables and ticks",
   "summary": "Tower 3D's mutable state lives in one record (state.ts); desks, walls and guests are keyed layers reconciled against the plan; what each act kind offers and does are tables keyed by kind; a frame is an ordered list of ticks; the door drives a typed Engine.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

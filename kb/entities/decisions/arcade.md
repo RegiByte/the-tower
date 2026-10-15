@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The arcade: a floor's games as cabinets in its control room",
   "summary": "Workers make mini-games, each one self-contained html file, and keep them in the floor's games collection; Tower 3D draws each as an arcade cabinet along the control room's glass front, and E plays it in a sandboxed frame on the right half of the screen while the camera faces the cabinet and the music stops. The core learns nothing about games.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Shared panels: one Changes, one Reviews, one Stats and one Policies for every renderer",
   "summary": "The Changes, Reviews and Stats panels are pure views in one shared module (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",

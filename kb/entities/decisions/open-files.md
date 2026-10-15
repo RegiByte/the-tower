@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Open any file the tower names: Finder and the user's editor",
   "summary": "Two generic verbs, `reveal` (Finder) and `edit` (the user's editor, at a line), take any path the system names: inside a project's dirs or the system root, or a file a worker showed. Quiet Finder and editor buttons sit wherever a renderer names a file, drawn once in the shared panels. The editor is the config's `editor`: argv templates, VS Code's `code` unless set.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-07",
   "reviewed": "2026-10-15",

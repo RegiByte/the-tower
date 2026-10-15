@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The dresser: workers dressed, posed and fitted by hand, saved to the wardrobe",
   "summary": "A Tower 3D page beside the lab (dresser.html) puts one worker on a stand, dressed by the wardrobe through the same avatar path as Tower 3D, to start from a body or a random look, change or roll its parts and its colours (the wardrobe's palettes), pose it as Tower 3D does (the office chair included) and fit its rigid pieces head by head: in the line-up a click makes a head the one fitted and an edit saves as that head's override. Looks are kept as outfits. It edits a copy of the wardrobe; tool:dresser serve shows what saving changes in the file and writes it, and tool:dresser shot renders a look headless through the same page for agents.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
   "reviewed": "2026-10-13",

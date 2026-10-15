@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The brief reads as a chat, drawn inline by every renderer",
   "summary": "A worker's brief is drawn top to bottom in time, the latest exchange at the bottom: the user's prompts as bubbles on one side, Claude's answers on the other, each with its time and how long Claude took (answeredAt, derived from the log). Words are markdown through markdownHtml, inline in both renderers with no frame, fences highlighted and copyable; long words fold with a CSS-only show all; each viewer picks rendered or raw in tower.store, offered in the brief and in the settings popover. Review notes render through markdownHtml too.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The shared wall: drafts in, showings out, on one wall per floor",
   "summary": "Every floor in Tower 3D has a freestanding wall before the back glass: the corkboard (drafts, what goes in) on its left when the floor keeps drafts, and a gallery of the floor's last nine showings (what came out) on its right, any worker's, on duty or not.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

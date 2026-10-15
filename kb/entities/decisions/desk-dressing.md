@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Desk dressing: a workstation's KayKit props derived from its worker's card",
   "summary": "Every workstation in Tower 3D is an L (the Blender desk plus a KayKit cabinet return), and what stands on it is a pure function of the worker's card: status props on the desk, a mess growing with context on the return, a pizza box per finished turn on the floor, frames for what it showed, candy in October. Drawn on the office's KayKit path, one batch per pack and theme.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",

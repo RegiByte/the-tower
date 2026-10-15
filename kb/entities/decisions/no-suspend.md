@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Ctrl+Z never reaches a session",
   "summary": "Keys bound for a session drop Ctrl+Z, because a session's Claude can be suspended but never continued.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-15",

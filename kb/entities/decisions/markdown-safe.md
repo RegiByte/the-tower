@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Markdown is drawn through one shared module, safe by construction for unvetted words",
   "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown or shelved file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML, and the tower page opens a shelf link only when safeHref allows it.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-15",

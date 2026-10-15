@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Corkboard and carrying: drafts as notes in Tower 3D",
   "summary": "A floor keeping drafts shows them as notes on a corkboard; E takes one into your hand, H hands it to a worker (submit) or to the open desk (a hire on it), and the draft is deleted only once its words reach a session. Drafts are edited in a panel beside the world, by the same editor module the tower page uses.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Workstations: fixed desks, and the open one is derived",
   "summary": "Every floor in Tower 3D has the same set of workstations whether anyone sits at them or not; the open one, where the floor's next worker sits by the seat replay, is lit and offers a hire with the defaults, in its own worktree unless the floor says otherwise (E), or the new-worker form (G). Which desk is open is computed, never stored.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-15",

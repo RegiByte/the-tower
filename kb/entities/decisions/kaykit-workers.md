@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Workers as KayKit characters on KayKit's rigs, posed by clips on the sim clock",
   "summary": "Tower 3D's workers are KayKit characters (CC0): the Adventurers, the Skeletons, the Series 5's Helpers, Combat Mech and Clanker, dressed from hashed parts, heads, helms, capes, gear, atlases and skin and hair colours, or the bot, whose rigid parts are skinned to Rig_Medium's bones. Rig_Medium's characters mix parts; the Clanker stands on Rig_Large, whose clips the packer retargets from Rig_Medium's. One set of KayKit clips per skeleton (plus a typing clip derived at load) poses every worker through a mixer of its own, set from sim time each frame, so stepped frames repeat. The bean and the puff retired. New parts are modelled by hand in a Blender kit (parts/parts.blend) and join a look's slots by their names, with no code.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "A renderer that outgrows a file is bundled",
   "summary": "A shelf renderer too big for one html file is TypeScript modules bundled by esbuild into one classic script beside its page, with Three.js and xterm inside.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-13",

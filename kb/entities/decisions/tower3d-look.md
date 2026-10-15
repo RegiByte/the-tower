@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D's look: a procedural city and shell, and lighting as a setting",
   "summary": "The city, the building's shell and its roof plant are geometry generated in TypeScript at load (exterior/), always drawn. The lighting (a sun that follows the clock and casts shadows with the interior's own ceiling light, contact shadows under your level, and the night's bloom on what is tagged to glow) is one setting in Tower 3D's settings popover, on by default, kept in tower.store and read before the page loads, so a change applies on reload. Off, the building and city are lit by the outside's hemisphere, sun and ambient alone.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-10",
   "reviewed": "2026-10-15",

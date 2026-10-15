@@ -1,21 +1,18 @@
 ---
 {
-  "type": "system",
-  "name": "Web tower",
-  "summary": "The disposable web renderer: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf, on 127.0.0.1:4317.",
-  "in": "tower",
+  "type": "container",
+  "name": "Tower page",
+  "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
+  "in": "tower-core",
   "reviewed": "2026-10-15",
   "refs": ["hub/renderers/page/index.html", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
-Built to learn from and throw away ([[renderer-is-disposable]]): the [[tower-server]] turns the
-[[live-system]] into a board and relays requests to the daemons. It holds no machinery. The skyline home
+Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
+drives the system through `/tower.js`; it holds no machinery. The skyline home
 (projects as buildings, sessions as lit windows) is the seed of a spatial renderer. Its buildings stand in one row
 and narrow to fit any number of floors, windows and signs scaled with them; a sign's name is cut to its building's
 width and whole in its tooltip, as in the sidebar. A sidebar's shelf chips and trays keep to one line, cut the same way.
-Spatial renderers live in `renderers/` on the same API: [[tower3d]] is the first-person one. The Week
-([`renderers/week/`](ref:hub/renderers/week/week.js)) is a plain page over the same API: the budget week as a
-yearbook, read from the board, `/stats` and each floor's archive ([[renderers-in-config]]).
 
 The sidebar's rate limits fold into one chip naming the tightest limit and its percentage, toned as its meter is (quiet, filled broken past 85%), whose popover holds the meters, "as of", extra usage and the probes.
 

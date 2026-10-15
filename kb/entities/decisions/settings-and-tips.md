@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "One settings popover and one tooltip for every renderer",
   "summary": "Alerts, sound and theme sit in a small settings popover drawn from shared pure views; any element with data-tip shows its text in one shared tooltip, on keyboard focus at once and on hover once the pointer rests, fading in and out, inside the viewport, and every renderer and shared view explains through it, title kept only where no tip can show; the status counts and the host lamp say what they mean in shared words.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-15",

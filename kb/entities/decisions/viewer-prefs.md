@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "A viewer's appearance is one record, kept per browser",
   "summary": "Scheme, the text, heading and code faces (any installed face, by name), the terminal's size, motion, contrast and text size are one record, tower.prefs, that tower.js keeps in the viewer's browser, puts on every page's root before it paints, syncs across tabs and relays to framed pages; the settings popover draws it from data, and terminals draw in its face and size, measured in place.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D's logbook: a binder on every desk, a replay on its monitor, and the floor's filing cabinet",
   "summary": "Every desk has a binder as thick as its worker's lineage; it opens the desk panel's Logbook tab (the lineage brief under a chip per session), where a past session's last screen replays, sepia and stamped, in the panel and on the desk's monitor. Each floor's filing cabinet, beside its Running board, files the floor's archive read in drawers by day, a folder per worker whose logbook opens in the reader. A renderer change only: the board, the archive read and the screen stream already carry it.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
   "reviewed": "2026-10-15",

@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "The KayKit playground: scenes as data over a measured catalog",
   "summary": "A sibling renderer of Tower 3D draws any scene document (the whole KayKit collection by default) through one path, and a CLI drives that page headless so agents find, check and render what humans fly through.",
-  "in": "web-tower",
+  "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-10",

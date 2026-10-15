@@ -3,7 +3,7 @@
   "type": "decision",
   "name": "Tower 3D draws only the levels you can see",
   "summary": "Everything that stands on a level hangs under that level's group, its KayKit in batches of its own, and a pure rule says which levels are drawn: yours while you walk, sit or pet a cat; every level the car passes while you ride; all of them over the city and during camera flights. What stands outside the glass (each level's spandrel, the roof's slab, the ground) is the building's outside, drawn from every level.",
-  "in": "web-tower",
+  "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-15",
