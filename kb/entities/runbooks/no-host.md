@@ -14,8 +14,8 @@
 - Sessions that never logged an exit read `lost` ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)):
   their PTYs died with the host. Each stays resumable.
 - Keys, resize, kill and spawn fail with `unavailable` (502) from the tower
-  ([`daemon`](ref:hub/src/tower/server.ts#daemon)); `tower` commands fail with "No host on …/control.sock (…).
-  Start it with: npm run host" ([`connectHost`](ref:hub/src/shared/client.ts#connectHost)). A request the daemon leaves
+  ([`daemon`](ref:hub/src/tower/server.ts#daemon)); `tower` commands fail with "No host answers at …/control.sock"
+  and the fix `tower up` ([`fromHost`](ref:hub/src/cli.ts#fromHost)). A request the daemon leaves
   unanswered for 30 s fails naming it ("may be wedged") and closes the connection, so a hung host reads as an error, not a wait.
 
 **Host outdated.** A host that answers with another protocol than its clients (`board.hostOutdated`) is up and

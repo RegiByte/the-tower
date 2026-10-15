@@ -4,7 +4,7 @@
   "name": "Transcripts not saved",
   "summary": "A Claude started with a parent Claude session's variables believes it is a child session and saves no transcript, so its conversations cannot be resumed; the scrub in env.ts is what prevents it.",
   "in": "host",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-15",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
 }
 ---
@@ -23,14 +23,13 @@ its transcript. The session may also reach the parent session's messaging socket
 **Likely causes.**
 - A Claude Code release added a marker the scrub does not drop
   ([`withoutParentSession`](ref:hub/src/shared/env.ts#withoutParentSession), [[env-scrub]]).
-- The config's `env` sets one: [`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv) applies it after the
-  scrub.
 - A child started by a path that skips the scrub. The host's sessions, the terms daemon's shells
   ([`spawnShell`](ref:hub/src/terms/main.ts#spawnShell)) and the daemons `tower up` starts
   ([`startDetached`](ref:hub/src/machine.ts#startDetached)) all go through it; anything new that starts a child
   must too.
 
 **Fix.** Add the variable or prefix to the lists in `src/shared/env.ts` (leave other `CLAUDE_CODE_*` alone:
-they can be user config), or drop it from the config's `env`. The scrub runs in the host, so the fix takes effect
+they can be user config). The config's `env` is scrubbed with the parent's
+([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)), so it cannot set a marker again. The scrub runs in the host, so the fix takes effect
 on a host restart, which ends every session ([[no-host]]); sessions spawned after it save their transcripts.
 Conversations that were never written cannot be recovered.

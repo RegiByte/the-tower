@@ -20,7 +20,7 @@ sequenceDiagram
   C->>M: mod event (turn.start, tool.call, turn.step, session.measure, ...)
   M->>H: POST /hooks/<id> {...payload, hook_event_name}
   M->>H: tower.tool.result / tower.tool.abandoned / tower.claude (derived)
-  C->>H: tower.show / tower.keep from the tower command in Bash (tower show / open / keep)
+  C->>H: tower.show / tower.keep / tower.leave from the tower command in Bash (tower show / open / keep / home on itself)
   H->>R: h event
   R-->>F: folded: status, facts, conversations
 ```

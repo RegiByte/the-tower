@@ -55,6 +55,3 @@ cc-plugin-sec-default`. Then read the same moment from a classic hook, which sti
    terminal scrolls the transcript, the quota probe's `get_usage` answer: record it again into
    `test/fixtures/probe-usage.out` with the request in [[probes]] and diff it), and update the list if the tower now
    reads something new.
-
-The draft tagged `lanky-delta` (Haiku scenario runs recorded as fixtures, with a drift table) is this
-runbook as an unattended night shift: once it lands, its recordings are the step-2 set.

@@ -63,7 +63,7 @@ sequenceDiagram
   `terminal/<id>` stream, the screen stream as an interactive terminal opens it, whose snapshot says how many other
   terminals are open on the session ([`terminalStream`](ref:hub/src/tower/server.ts#terminalStream); a monitor's
   `screen/<id>` stream is not one). With none,
-  [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal at a 14px font and sends
+  [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal at the viewer's terminal size (`tower.prefs`) and sends
   `resize` as soon as the snapshot arrives, so typing works at once; beside another (the tower page on the same
   session, another window) it reads "watching" at a font that fits, so opening never reflows the session under
   whoever is working. Typing always claims; focusing does not. A resize from another viewer hands the size back the
