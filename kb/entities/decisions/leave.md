@@ -19,7 +19,7 @@
   ],
   "links": [
     { "to": "crews", "verb": "uses", "carries": "the card's send-home, a kill per running worker under it, then its own" },
-    { "to": "worker-acts", "verb": "uses", "carries": "each kill named by the leaving worker's id (tower.kill)" },
+    { "to": "worker-prompts", "verb": "uses", "carries": "each kill named by the leaving worker's id (tower.kill)" },
     { "to": "agent-show", "verb": "extends", "carries": "a fact the worker logs in its own log through the hooks socket" }
   ]
 }
@@ -43,7 +43,7 @@ answer, and a next run reading its predecessors would find no handoff note.
   live system the tower server ([`sendLeaversHome`](ref:hub/src/tower/server.ts#sendLeaversHome)) takes each leaving
   card that `leavesNow` (computing the cards only when a live session does, or a departure is in flight) and runs its `send-home` through the public `kill` handler, each body parsed by the verb's schema as
   a `POST` would be: everyone under it that runs, deepest first, then itself.
-  Each kill is `by` the leaving worker ([[worker-acts]]). A worker is sent once while it is leaving. The leave lives in
+  Each kill is `by` the leaving worker ([[worker-prompts]]). A worker is sent once while it is leaving. The leave lives in
   the log, so a turn that completed while the tower was down is acted on when it starts.
 - *Drawn as a word.* `statusName` adds `going home` (`working, going home`), which every renderer and `tower agents`
   read. The `tower:handbook` skill says to end oneself with one's own callsign, after this turn.
