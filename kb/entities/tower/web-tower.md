@@ -19,7 +19,7 @@ yearbook, read from the board, `/stats` and each floor's archive ([[renderers-in
 
 A worker's subagents hang under its sidebar line as satellites ([`satellitesOf`](ref:hub/src/shared/cards.ts#satellitesOf): those running, and those that ended a turn under 8 s ago, fading out; a fork marked with the branch glyph, a stopped one struck through), and its details list every run with its tokens and how it ended. A board push redraws the floors holding the selected row while any of it is in sight, so a move key's target stays in view.
 
-A sidebar card's top row is its lamp, callsign, status word and time in state: the word ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord), `statusTitle` on hover) gives way to an ellipsis and the time never does; an offer row's title gives way and its slot never does. A stranded card shows carry on, resume and let go only while it is selected, or over its last line while hovered or focused.
+A sidebar card's top row is its lamp, callsign, status word and time in state: the word ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord), `statusTitle` on hover) gives way to an ellipsis and the time never does; an offer row's title gives way and its slot never does. A stranded card shows carry on, resume and let go only while it is selected, or over its last line while hovered or focused. A hire nested under its hirer leaves out "hired by", and each crew below the first is indented only a little.
 
 Every collection a floor declares has a tray under its workers ([[collection-trays]]): rows by title, tag, keeper and
 age from `/items.js`, an item opened in the main pane read as its type, with its tag, Finder and editor buttons, a new

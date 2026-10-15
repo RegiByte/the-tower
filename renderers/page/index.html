@@ -136,6 +136,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess:not(.sel) .act.resumes { display: none; }
 .sess:not(.sel):is(:hover, :focus-within) .act.resumes { display: flex; position: absolute; inset: auto var(--sp-l) var(--sp-m); margin: 0; background: inherit; }
 .crew { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); margin-left: var(--sp-l); padding-left: var(--sp-m); border-left: 2px solid var(--line); }
+.crew .crew { margin-left: 0; padding-left: var(--sp-s); }
 .sess.gone { opacity: .55; }
 .gone-home { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
 .gone-home:hover { color: var(--ink); }
@@ -563,10 +564,10 @@ const waitsOnYou = () => heededWaits(board, heed).map((w) => findCard(w.id))
 const floorsTopDown = () => [...board.floors].reverse()
 const byStart = (a, b) => a.startedAt - b.startedAt
 
-const sessionHtml = (c) => {
+const sessionHtml = (c, over) => {
   return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" data-since="${c.enteredAt}"></span></div>
-    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c)].filter(Boolean).join(' · ')))}</div>` : ''}
+    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c)].filter(Boolean).join(' · ')))}</div>` : ''}
     ${c.run ? `<div class="run" data-tip="${esc(runTitle(c))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${satellitesHtml(c)}
@@ -596,20 +597,20 @@ const letGoHtml = (c, label) => !can(c, 'let-go') ? '' : heldWhy('let-go') ? hel
 const carryOnHtml = (c, label, cls = '') => !can(c, 'carry-on') ? '' : heldWhy('carry-on') ? heldHtml('carry-on', label, `${ICON.resume} ${label}`, cls) : `<button class="${cls}" data-resume="${esc(JSON.stringify(c.calls['carry-on']))}" data-tip="${esc(`${callsign(c.id)} was cut off mid-turn: ${CARRY_ON_MEANS}`)}">${ICON.resume} ${label}</button>`
 
 /** A worker and everyone under it. */
-const wholeCrewHtml = (cards, c) => {
+const wholeCrewHtml = (cards, c, over) => {
   const hires = hiresOf(cards, c)
-  return sessionHtml(c) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(cards, h)).join('')}</div>` : '')
+  return sessionHtml(c, over) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(cards, h, c)).join('')}</div>` : '')
 }
 
 /** A worker, the crew under it not gone home, and those gone home on one line that unfolds them (`crewFold`). */
-const crewHtml = (cards, c) => {
+const crewHtml = (cards, c, over) => {
   const { drawn, home, folded } = crewFold(cards, c)
   const open = crewsUnfolded.has(c.id)
   const fold = home.length
-    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h)).join('') : ''}`
+    ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h, c)).join('') : ''}`
     : ''
-  const under = drawn.map((h) => crewHtml(cards, h)).join('') + fold
-  return sessionHtml(c) + (under ? `<div class="crew">${under}</div>` : '')
+  const under = drawn.map((h) => crewHtml(cards, h, c)).join('') + fold
+  return sessionHtml(c, over) + (under ? `<div class="crew">${under}</div>` : '')
 }
 
 /** The hirers whose gone-home crew this viewer unfolded, by card id, as `tower.store` keeps them. */

@@ -45,7 +45,7 @@ the easy path stops them, as long as it is named for what it is.
   weighed, and still logs `tower.hire`, so the pair is attributed.
 - *Drawn.* `tower whoami` tells a hired worker who hired it; `tower agent`, the tower page (sidebar and worker header)
   and Tower 3D (desk tag and aim card) say "hired by X" through [`pairLine`](ref:hub/src/shared/cards.ts#pairLine),
-  left out when the hirer is the author a reviewer reviews.
+  left out when the hirer is the author a reviewer reviews, and on the tower page's sidebar when the card sits under its hirer's.
 - *Whose prompt.* A conversation's `promptBy` is the hirer while its latest prompt is still the one the worker was
   hired on (the first session's launch prompt, as `card.reviews` reads it); `tower agent` and both renderers' Brief
   name it in place of the user. A prompt typed later is the user's again.
