@@ -37,7 +37,7 @@ moving.
     they are new to (`send`, on the papers and a pigeonhole slot)
 
   Verbs sharing a key are never offered together. Keys are bound to verbs, never to objects.
-- [`HELD`](ref:hub/renderers/tower3d/src/acts.ts#HELD) verbs (kill, let go, stop, reap) run only after 1.2 s held (700 ms proved too quick to trust with sending a worker home).
+- [`HELD`](ref:hub/renderers/tower3d/src/acts.ts#HELD) verbs (kill, let go, stop, reap) run only after a held key ([`HOLD_MS`](ref:hub/renderers/tower3d/src/acts.ts#HOLD_MS)), long enough to trust with sending a worker home.
   A ring fills on the key cap, and releasing early cancels. The hold is the confirmation.
 - The mouse path: the wheel marks a verb, a click runs it, and a held click runs a held verb. In the overview
   the list follows the cursor and the keys work on what's under it.
@@ -56,10 +56,8 @@ moving.
   snapshot `exited` whenever the host no longer runs the session), then its brief.
 
 **Alternatives considered.**
-- A radial menu on hold-E or right-click (the spec's first plan, after the Sims and GTA's weapon wheel). It
-  opens a mode, freezes the camera, and needs direction maths, which only pays off for six to eight
-  choices. Objects here offer one to four verbs. It is parked for things the player carries, if that ever
-  comes.
+- A radial menu on hold-E or right-click. It opens a mode, freezes the camera, and needs direction maths, which only
+  pays off for six to eight choices; objects here offer one to four verbs.
 - E for the primary verb and a menu for the rest. The keys for everything else would be invisible, and a
   stopped desk's primary changes, so E would mean different things on the same object.
 - The two-click "sure?" for destructive verbs. It stays in the desk panel's buttons, but in the world a hold

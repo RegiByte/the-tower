@@ -18,10 +18,8 @@ base commit, one copy per commit.
   committer date is later than the copy's, so it stays at risk. So does a branch rebased again after it landed.
 - *The subject.* Every worker commits as the user, often within the same second, so author and date alone matched
   unrelated commits in testing; the subject makes a match by coincidence need all three.
-- *Never in bulk.* A carried copy may hold less than the branch did (the lander dropped a hunk): the state is its own
-  (`carried`, [[tidy]]), Tidy all leaves it out, and the row, the worktree tray and the card's Changes panel offer
-  `tower.landing` (`GET /landing?project&branch`, [`landingOf`](ref:hub/src/worktrees.ts#landingOf)): each edited
+- *Its own state.* A carried copy may hold less than the branch did, so it is never removed in bulk ([[tidy]]); the
+  row, the worktree tray and the card's Changes panel offer `tower.landing` (`GET /landing?project&branch`, [`landingOf`](ref:hub/src/worktrees.ts#landingOf)): each edited
   commit, its copy and `git range-diff`, drawn by [`landingHtml`](ref:hub/src/shared/cards.ts#landingHtml).
 - A card's `checkoutState` counts a carried checkout as landed (`edited`, `branch`), so it offers no note or
-  review; Tidy files its thread only once the worktree is gone. A finished hire whose worktree is carried is killed by
-  Tidy once its hirer is off duty (it resumes), and its worktree then waits for its own press.
+  review; Tidy files its thread only once the worktree is gone.
