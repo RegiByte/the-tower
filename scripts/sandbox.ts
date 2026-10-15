@@ -49,6 +49,8 @@ import { SANDBOX_CONFIG as CONFIG, SANDBOX_ROOT as ROOT, sandboxUrl } from './sa
 const REPO = path.join(import.meta.dirname, '..')
 
 process.env.TOWER_CONFIG = CONFIG
+/** Claude appends the mod's bin to PATH, behind any global `tower`: a sandbox's sessions run this checkout's first. */
+process.env.PATH = `${path.join(REPO, 'src', 'mod', 'bin')}${path.delimiter}${process.env.PATH}`
 
 /**
  * A session that prints a line, reports the newest tested Claude release and one saved conversation with a prompt and an answer as Claude's hooks and mod
