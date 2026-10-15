@@ -69,7 +69,7 @@ hooks socket appends only for sessions the host runs, and a stranded session is 
 
 **Alternatives considered.**
 - The tower appends to the stranded log itself. It needs no host restart and has no race, but it makes a second
-  writer of logs, and [[log-diet]]'s rule lives at the one writer.
+  writer of logs, and [[logs-are-facts]]' trim of tool output lives at the one writer.
 - A new event code, or a second `x`. A code changes the log's type for one fact. `x` means the process exited,
   and the process is long gone.
 - Accepting posts for ended sessions on the hooks socket. That socket answers only a status code, and errors
