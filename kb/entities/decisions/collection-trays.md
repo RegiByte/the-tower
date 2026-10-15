@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-15",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/ui.ts#shellPickHtml"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/ui.ts#shellPickHtml"]
 }
 ---
 **Problem.** The tower page drew trays only for `drafts` and the review threads. Any other collection a floor
@@ -33,6 +33,10 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
 - What opening a row means stays the renderer's. The tower page opens a drafts row in its editor, any other row in an
   item view in the main pane (`#kept/<project>/<collection>/<id>`), which follows the board: a changed item is read
   again, a deleted one closes.
+- A tray in the sidebar lists the newest [`TRAY_ROWS`](ref:hub/src/shared/items.ts#collectionPeekHtml) items (6),
+  then "+N more", which lists the whole collection in the main pane (`#kept/<project>/<collection>`): a floor
+  keeping dozens of drafts doesn't push its workers out of sight (API 1.52: `collectionPeekHtml` and `TRAY_ROWS` in
+  `/items.js`).
 - Drafts keep their own tray, on the shared rows, with `+`; review threads keep theirs, and below the live ones a
   fold lists the threads Tidy filed ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the
   board's `reviews` items, no read needed), each opened in the item view. A live thread no worker has been in opens

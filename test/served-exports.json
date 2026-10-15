@@ -205,6 +205,8 @@
       "titleOf"
     ],
     "/items.js": [
+      "TRAY_ROWS",
+      "collectionPeekHtml",
       "collectionTrayHtml",
       "deleteAsk",
       "itemFile",

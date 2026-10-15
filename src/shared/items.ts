@@ -79,6 +79,15 @@ export const itemRowHtml = (project: string, collection: string, item: FloorItem
   `<button class="kept-row ${open ? 'sel' : ''}" data-kept="${esc(keptKey(project, collection, item.id))}"${open ? ' aria-current="true"' : ''} data-tip="${esc(`${title}\n${item.id}`)}">` +
   `<span class="t">${esc(title)}</span><span class="meta">${esc(itemMeta(item, title, now))}</span></button>`
 
+const trayHtml = (c: FloorCollection, actions: string, rows: string) =>
+  `<div class="kept-tray"><div class="kept-head eyebrow">${esc(c.label)}${actions}</div>` +
+  (c.description ? `<div class="kept-about">${esc(c.description)}</div>` : '') +
+  (rows || '<div class="kept-empty">none kept</div>') +
+  '</div>'
+
+const rowsHtml = (project: string, c: FloorCollection, items: FloorItem[], title: (item: FloorItem) => string, open: string | undefined, now: number) =>
+  items.map((item) => itemRowHtml(project, c.id, item, title(item), item.id === open, now)).join('')
+
 /**
  * A collection unfolded: its label with `actions` (a renderer's own buttons, such as a new draft), what it is for, and
  * a row per item, newest first. `open`: the id of the item shown, if it is in this collection.
@@ -90,11 +99,28 @@ export const collectionTrayHtml = (
   open: string | undefined,
   now: number,
   actions = '',
-) =>
-  `<div class="kept-tray"><div class="kept-head eyebrow">${esc(c.label)}${actions}</div>` +
-  (c.description ? `<div class="kept-about">${esc(c.description)}</div>` : '') +
-  (newestFirst(c.items).map((item) => itemRowHtml(project, c.id, item, title(item), item.id === open, now)).join('') || '<div class="kept-empty">none kept</div>') +
-  '</div>'
+) => trayHtml(c, actions, rowsHtml(project, c, newestFirst(c.items), title, open, now))
+
+/** How many of a collection's newest items a tray beside other things lists before it leads to the whole collection. */
+export const TRAY_ROWS = 6
+
+/**
+ * A collection unfolded as `collectionTrayHtml` does, bounded to its `TRAY_ROWS` newest items, then `more`: what the
+ * renderer draws to lead to the rest, given how many there are.
+ */
+export const collectionPeekHtml = (
+  project: string,
+  c: FloorCollection,
+  title: (item: FloorItem) => string,
+  open: string | undefined,
+  now: number,
+  more: (rest: number) => string,
+  actions = '',
+) => {
+  const items = newestFirst(c.items)
+  const rest = items.length - TRAY_ROWS
+  return trayHtml(c, actions, rowsHtml(project, c, items.slice(0, TRAY_ROWS), title, open, now) + (rest > 0 ? more(rest) : ''))
+}
 
 /** What a renderer asks before deleting an item: deleting is the user's, and a deleted item is gone for good. */
 export const deleteAsk = (c: Pick<FloorCollection, 'label'>, item: FloorItem, title: string) =>
