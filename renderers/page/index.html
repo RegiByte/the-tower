@@ -234,10 +234,6 @@ dialog#landing { width: min(960px, 94vw); }
 #bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
 .dismiss { color: var(--needs-text); }
 #bar-line .moves { gap: var(--sp-s); }
-#bar-line .activity { overflow: hidden; text-overflow: ellipsis; text-align: left; min-height: var(--control); padding: 0 var(--sp-m); margin-left: var(--sp-s); background: none; border-color: transparent;
-  color: var(--muted); font: var(--fs-s)/1.6 var(--mono); }
-#bar-line .activity:hover { border-color: var(--line); }
-#bar-line .activity .tool b { font-family: var(--ui); }
 .move { flex: none; display: flex; align-items: center; gap: var(--sp-s); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
 .move .call { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
 .move small { font: var(--fs-xs) var(--mono); color: var(--faint); }
@@ -906,7 +902,7 @@ function skylineHtml() {
     <div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`
 }
 
-/** The selected worker's header: who and where, a glance at its context, cost and leftovers, its views, what it does now, and the workers around it. */
+/** The selected worker's header: who and where, a glance at its context, cost and leftovers, its views, and the workers around it. */
 function barHtml(c) {
   const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
   const orphan = c.resources.some((r) => r.orphan)
@@ -935,7 +931,6 @@ function barHtml(c) {
     ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
   repaint($('bar-line'), [
     paneTabsHtml(c, paneOf(c)),
-    `<button class="activity" popovertarget="bar-details" data-tip="${esc(gistLine(c))}">${lineOf(c)}</button>`,
     movesHtml(c),
   ].filter(Boolean).join(''))
   renderPane(c)
