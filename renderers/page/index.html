@@ -36,7 +36,11 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .side-notes:empty { display: none; }
 .side-notes .untested { white-space: normal; }
 .tally { display: flex; gap: var(--sp-s); flex-wrap: wrap; padding: 0 var(--sp-xl) var(--sp-l); }
-.limits { display: grid; gap: var(--sp-m); padding: var(--sp-2xs) var(--sp-xl) var(--sp-xl); border-bottom: 1px solid var(--line); font-size: var(--fs-s); color: var(--muted); }
+.limits-bar { padding: 0 var(--sp-xl) var(--sp-l); border-bottom: 1px solid var(--line); }
+.limits-bar .chip { border: 0; color: var(--ink); cursor: pointer; }
+.limits-bar .chip.some { color: var(--on); }
+.limits-bar .chip.stale:not(.some) { color: var(--muted); }
+.limits:popover-open { display: grid; } .settings-pop.limits { gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl) var(--sp-xl); font-size: var(--fs-s); color: var(--muted); }
 .limits .row { display: flex; gap: var(--sp-s); align-items: baseline; margin-bottom: var(--sp-xs); }
 .limits .row b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .limits .row small { margin-left: auto; color: var(--faint); font-size: var(--fs-s); }
@@ -391,7 +395,7 @@ dialog .actions small { margin-right: auto; }
 .board-error b { display: block; margin-bottom: var(--sp-2xs); }
 .board-error:empty { display: none; }
 .board-error small { display: block; margin-top: var(--sp-xs); color: var(--muted); }
-body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
+body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { filter: grayscale(1); opacity: .55; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
 </head>
@@ -402,7 +406,7 @@ body.lost :is(#host, #tally, #limits, #floors, #rail, #main, #sky, #tabs) { filt
     <button class="icon-btn" id="keys-open" data-keys aria-label="shortcuts"></button><button class="icon-btn side-toggle" id="side-hide" data-side aria-label="hide the sidebar"></button></div>
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
-  <div class="limits" id="limits"></div>
+  <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
   <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>
@@ -855,11 +859,35 @@ const limitsHtml = (now) => {
     <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(board))}">as of ${span(age)} ago</small>${extraHtml(now)}${probesHtml(now)}`
 }
 
+/** The limit closest to running out: the one with the most used. */
+const tightestLimit = (limits) => limits.reduce((a, r) => (r.percentUsed > a.percentUsed ? r : a))
+
+/** A meter's tone as an attention class, by the thresholds `fillOf` colours it with. */
+const limitTone = (pct) => (pct > 85 ? 'needs' : pct > 60 ? 'working' : 'quiet')
+
+/** The limits folded into one chip: the tightest limit's name and percentage, loud once it is hot. */
+const limitsPill = (now) => {
+  if (!board.rateLimits.length) return { cls: 'chip quiet', html: '<span class="lamp"></span>no limits read', tip: 'no rate-limit reading yet: click for the probes' }
+  const r = tightestLimit(board.rateLimits)
+  const tone = limitTone(r.percentUsed)
+  const name = r.kind.replace('five_hour', '5h').replace('seven_day', 'week').replaceAll('_', ' ')
+  const stale = now - board.rateLimitsAt > LIMITS_STALE_MS
+  return { cls: `chip ${tone}${tone === 'needs' ? ' some' : ''}${stale ? ' stale' : ''}`, html: `<span class="lamp"></span>${esc(name)} <b>${r.percentUsed}%</b>`,
+    tip: `${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used, the tightest of ${plural(board.rateLimits.length, 'limit')}, as of ${span(now - board.rateLimitsAt)} ago: click for all of them` }
+}
+
 let limitsPainted = ''
 function paintLimits() {
-  const html = limitsHtml(Date.now())
+  const now = Date.now()
+  const pill = limitsPill(now)
+  const open = $('limits-open')
+  open.className = pill.cls
+  open.dataset.tip = pill.tip
+  if (open.innerHTML !== pill.html) open.innerHTML = pill.html
+  const html = limitsHtml(now)
   if (html !== limitsPainted) $('limits').innerHTML = limitsPainted = html
 }
+placeOnOpen($('limits'), () => $('limits-open'))
 
 const windowHtml = (c) => {
   const title = `${callsign(c.id)} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`

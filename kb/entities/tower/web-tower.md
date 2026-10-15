@@ -17,6 +17,8 @@ Spatial renderers live in `renderers/` on the same API: [[tower3d]] is the first
 ([`renderers/week/`](ref:hub/renderers/week/week.js)) is a plain page over the same API: the budget week as a
 yearbook, read from the board, `/stats` and each floor's archive ([[renderers-in-config]]).
 
+The sidebar's rate limits fold into one chip naming the tightest limit and its percentage, toned as its meter is (amber past 60%, filled red past 85%), whose popover holds the meters, "as of", extra usage and the probes.
+
 A worker's subagents hang under its sidebar line as satellites ([`satellitesOf`](ref:hub/src/shared/cards.ts#satellitesOf): those running, and those that ended a turn under 8 s ago, fading out; a fork marked with the branch glyph, a stopped one struck through), and its details list every run with its tokens and how it ended. A board push redraws the floors holding the selected row while any of it is in sight, so a move key's target stays in view.
 
 A sidebar card's top row is its lamp, callsign, status word and time in state: the word ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord), `statusTitle` on hover) gives way to an ellipsis and the time never does; an offer row's title gives way and its slot never does. A stranded card shows resume and let go over its last line while hovered or focused and not selected; selected, they are in the header alone. A hire nested under its hirer leaves out "hired by", and each crew below the first is indented only a little.
