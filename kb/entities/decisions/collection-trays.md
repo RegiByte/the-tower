@@ -35,7 +35,7 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
   again, a deleted one closes.
 - A tray in the sidebar lists the newest [`TRAY_ROWS`](ref:hub/src/shared/items.ts#collectionPeekHtml) items (6),
   then "+N more", which lists the whole collection in the main pane (`#kept/<project>/<collection>`): a floor
-  keeping dozens of drafts doesn't push its workers out of sight (API 1.52: `collectionPeekHtml` and `TRAY_ROWS` in
+  keeping dozens of drafts doesn't push its workers out of sight (`collectionPeekHtml` and `TRAY_ROWS` in
   `/items.js`).
 - Drafts keep their own tray, on the shared rows, with `+`; review threads keep theirs, and below the live ones a
   fold lists the threads Tidy filed ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the
@@ -63,7 +63,7 @@ says how to draw it. That part belongs in shared code so Tower 3D or any other r
 - One tray for every collection, drafts and threads included, with no special rows: drafts need `+` and the editor,
   threads the worker's Reviews pane; the shared rows serve both, their actions stay the renderer's.
 
-**Impact.** API 1.10: `/items.js` is served; `keepUnsent` in `/drafts.js`, `shellPlaces` in `/cards.js` and
+**Impact.** An API minor: `/items.js` is served; `keepUnsent` in `/drafts.js`, `shellPlaces` in `/cards.js` and
 `landedThreads` in `/reviews.js` are new exports. Nothing in the core changed: the board, verbs and reads are as they
 were. Tower 3D lists every collection that holds items as a tray in its floor panel (`collectionTrayHtml`, titled by
 `keptTitles` through [`keptText`](ref:hub/renderers/tower3d/src/kept.ts#keptText), a fixture board's own drafts and

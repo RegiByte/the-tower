@@ -39,7 +39,7 @@ every renderer draws the same one ([[renderer-is-disposable]]).
   the worker it reports to.
 
 **Alternatives considered.**
-- The coordinator after its hires, closing its crew (v1.4.0): an indent reads as belonging to the row above it, so
+- The coordinator after its hires, closing its crew: an indent reads as belonging to the row above it, so
   every crew read upside down, a reviewer seeming to belong to the worker before its author, and the archive drew
   crews the other way round from the floor on duty.
 - Keep a non-matching coordinator as a dimmed context row while filtering: more rows than the words asked for, and a
@@ -47,5 +47,4 @@ every renderer draws the same one ([[renderer-is-disposable]]).
 - Change `pastOf` to return the tree: `/cards.js` exports are API contract, so it stays as it was and the order is
   three new exports (an API minor).
 
-**Impact.** API 1.27 (additions); the order turned head first in v1.4.1, with no API change. Tower 3D's archive list no longer overflows its panel: its grid tracks are
-`minmax(0, 1fr)` like the page's. The filing cabinet's drawers stay by day.
+**Impact.** Three additions to `/cards.js`, an API minor. The filing cabinet's drawers in Tower 3D stay by day.

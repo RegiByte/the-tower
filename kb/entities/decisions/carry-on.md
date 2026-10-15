@@ -73,4 +73,4 @@ storing, and the capability belongs in the core, where every renderer and worker
 - Storing that a session was cut off. It is computed from the log.
 
 **Impact.** A board field (`cutOff`), a card verb (`carry-on`) and `resume`'s `prompt`: API minor. No host change, no
-config change. The sandbox's sessions now submit the prompt a resume passes.
+config change. The sandbox's sessions submit the prompt a resume passes.

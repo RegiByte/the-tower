@@ -59,7 +59,7 @@ side, the world still in view), without leaving for the tower page.
   after the editor's last save, then submitted or spawned as `Launch.prompt`. Only a success deletes the draft
   and empties your hand. A failure keeps the note in hand.
 - **The panel** ([`openDraftPanel`](ref:hub/renderers/tower3d/src/main.ts#openDraftPanel)) lies on the right
-  like the reader: Carry, Start session (the dialog, prefilled), Delete (asks twice), ✕ or Esc; its head also
+  like the reader: Carry, Start session (the dialog, prefilled), Delete (at once, the toast offering Undo), ✕ or Esc; its head also
   reveals the draft's file in Finder or opens it in the user's editor ([[open-files]]). It saves as you
   type, on leaving, and before a carry or a send.
 
@@ -74,7 +74,6 @@ side, the world still in view), without leaving for the tower page.
 - *Notes for every collection.* Only drafts have verbs (spawn, submit); the board is generic over the
   collection's items, the verbs bound to drafts.
 
-**Impact.** Phase 2 of the roadmap is done: drafts live in both renderers on one editor. `src/shared` now holds a
-renderer-side module besides the design. Fixture boards carry drafts with their texts, and the frames walk ends
+**Impact.** Drafts live in both renderers on one editor, a renderer-side module in `src/shared`. Fixture boards carry drafts with their texts, and the frames walk ends
 by taking a note to the open desk and putting it back. H joins the verb keys ([[verb-prompts]]); it later also
 hands a worker the review notes new to it ([[review-threads]]).

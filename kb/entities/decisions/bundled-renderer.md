@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-15",
   "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts"]
 }
 ---
@@ -28,9 +28,10 @@ them. Staying in one file: this was rejected for size, even with no build step.
 **Consequences.** The renderer has a build step, and its output is git-ignored. Models and other
 assets go inside the bundle or come from a CORS-enabled CDN, never from fetching shelf files. Tower 3D's
 models are Blender scripts (`renderers/tower3d/models/*.py`, `npm run tower3d:models`) exported to
-`.glb` files that are committed and embedded with esbuild's `binary` loader (the fixture boards' test video, a `.webm`, the same way); the bundle grew to about
-2.7 MB. The KayKit models the office uses are measured at build time into one file embedded the same way
-(`out/kaykit/kit.kaykit`, [[office-kaykit]]): the bundle is about 8.9 MB. The build copies the pages (`index.html`,
-`lab.html`) into `out/` beside the bundles with esbuild's `copy` loader, so `out/` is the built renderer the tower
+`.glb` files that are committed and embedded with esbuild's `binary` loader (the fixture boards' test video, a `.webm`, the same way).
+The KayKit models the office uses are measured at build time into one file embedded the same way
+(`out/kaykit/kit.kaykit`, [[office-kaykit]]), so the bundle runs to megabytes. The build bundles three entries
+(`src/boot.ts` as `tower3d.js`, the lab and the dresser) and copies their pages (`index.html`, `lab.html`,
+`dresser.html`) into `out/` beside the bundles with esbuild's `copy` loader, so `out/` is the built renderer the tower
 serves at `/r/tower3d/` and exists only once built ([[renderers-in-config]]). A next
 renderer that grows past a file follows the same pattern.

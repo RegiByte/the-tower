@@ -79,8 +79,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Tower 3D seating a crew together.* Changes the seat replay; deferred.
 
 **Impact.** Board: `card.reportsTo`, card verb `send-home` with `calls['send-home']: Call<'kill'>[]`, on every worker
-since API 1.55 (2026-10-15, the user: when two actions have the same effect, the user sees only one; Kill left the
-renderers). Shared: `hiresOf`,
+(the user: when two actions have the same effect, the user sees only one; renderers draw no Kill on a worker). Shared: `hiresOf`,
 `crewOf`, `crewTree`, `workerNamed`; `dutyOrder` follows crews. Mod: `tower home`, crews in `tower agents`. Tower page:
 nested sidebar and Send home. Tower 3D: X sends a crew home. Members gone home stayed drawn, dimmed, under an on-duty
 head until it went off duty too; a coordinator that had hired and sent home sixteen workers in a day buried its live

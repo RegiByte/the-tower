@@ -10,11 +10,11 @@
   "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
-**Problem.** The survey of the tower's first five days found the
-system prompt doing more than the skill. 54% of worked sessions loaded `tower:handbook`, but 84% ran the `tower`
-CLI, and 9 of 821 calls failed. The verbs used right without the skill were the ones the brief spelled out
-(`whoami`, `show`, `keep drafts`). The skill loaded where it mattered most: before 16 of 19 first messages to a
-peer. The weak spot was showing: 39 of 69 sessions with 3+ turns showed nothing.
+**Problem.** A survey of the tower's first five days found the system prompt doing more than the skill. About half
+of the worked sessions loaded `tower:handbook`, but most ran the `tower` CLI, and very few of its calls failed. The
+verbs used right without the skill were the ones the brief spelled out (`whoami`, `show`, `keep drafts`). The skill
+loaded where it mattered most: before nearly every first message to a peer. The weak spot was showing: more than half
+of the sessions with three or more turns showed nothing.
 
 **Decision.**
 - The tower brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) is a short list, most important first:
@@ -23,11 +23,11 @@ peer. The weak spot was showing: 39 of 69 sessions with 3+ turns showed nothing.
   change; off-goal ideas and later prompts go to `tower keep drafts`, edited in place afterwards. A last line names
   what the skill holds and keeps the worktree rule.
 - The skill (`SKILL.md`) is the handbook: the CLI in full, reaching out step by step, reviews, hiring and crews,
-  showing and keeping in detail, worktree rules, the API. It no longer repeats the brief's prose (11 KB to 7.7 KB).
-  Its description still triggers on callsigns, workers and reaching another session, and now on reviews, hiring,
-  crews and kept items too.
-- Since 2026-10-08 the skill also has a section on the floor's shelf and the config, and the brief's last line
-  names both: a worker cold to the tower read the user's "shelf" as a collection, since neither text said the word.
+  showing and keeping in detail, policies, the floor's shelf and the config, worktree rules, the API. It doesn't
+  repeat the brief's prose. Its description triggers on callsigns, workers and reaching another session, and on
+  reviews, hiring, crews, kept items, policies, the shelf and the config.
+- The brief's last line names the shelf and the config: a worker cold to the tower read the user's "shelf" as a
+  collection, since neither text said the word.
 
 **Alternatives considered.**
 - *Keep "load the skill first" in the brief.* It was written for Haiku, which read "reach out to Q-61" as a job for
@@ -36,6 +36,5 @@ peer. The weak spot was showing: 39 of 69 sessions with 3+ turns showed nothing.
 - *The whole skill in the system prompt.* It is sent on every turn of every session, and most turns need none of
   reviews, hiring or the API.
 
-**Impact.** The brief grows from about 1.1k to 1.5k characters. Only sessions started after the change get it.
-Measured with the survey's `extract.py` and `compare.py` (`notes.md` beside them): the share of worked sessions
-running `whoami` (62% before) and the CLI (84%), and of 3+ turn sessions showing something (43%).
+**Impact.** The brief is a little longer, and sent on every turn. A session gets the brief it was started or
+resumed with.

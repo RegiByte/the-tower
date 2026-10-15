@@ -14,9 +14,9 @@
 the set of running statuses was copied into `board.ts`, the tower page (`LIVE`, `canResume`) and Tower 3D
 (`RUNNING`, `canResume`), untested, and every new renderer would copy it again.
 
-**Why.** [[renderer-is-disposable]]: a rule a next renderer needs belongs in the bridge. Tower 3D is moving to
-objects that offer several verbs each (a desk: sit, brief, resume, kill), fed by one declaration, the way the
-Sims' objects advertise their interactions.
+**Why.** [[renderer-is-disposable]]: a rule a next renderer needs belongs in the bridge. Tower 3D's objects offer
+several verbs each (a desk: sit, brief, resume, kill), fed by one declaration, the way the Sims' objects advertise
+their interactions ([[verb-prompts]]).
 
 **How.** [`verbs.ts`](ref:hub/src/bridge/verbs.ts) holds the rules as pure functions, and
 [`board`](ref:hub/src/bridge/board.ts#board) puts their results on the data every renderer reads. Lists keep
@@ -24,7 +24,7 @@ a fixed order, the first being the thing's primary verb.
 - A card is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive)) while its PTY runs. Its verbs
   ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)): `drive` and `kill` while live; its latest
   conversation's `resume` or `goto`; `carry-on` beside `resume` while it awaits one and the host cut it off mid-turn
-  (`card.cutOff`), its call a `resume` on the [[carry-on]] prompt; `submit` while at Claude's composer (idle, working, done or failed:
+  (`card.cutOff`), its call a `resume` on the [[carry-on]] prompt; `submit` while at Claude's composer (idle, working, watching, done or failed:
   not booting or blocked, which may be a startup screen, nor needing input on a question) ([[collections]]); `brief` once Claude saved a [[conversation]]; `review` alongside it while every dir of its floor is a git repo, its checkout's work goes on (`card.checkoutState` live: a landed or gone checkout has nothing to review) and it isn't a reviewer itself (its call a fork of its checkout, [[reviewer]]; a worktree whose folder is gone, live or not, is `card.worktree.gone`, read by [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone), the same reading that makes a card `unresumable` as `'gone'`); `reap` while it has
   [[leftover]]s, live or not; `send-home` on every worker while any of it runs, its call a list of kills, the
   deepest first, a lone worker's its own kill ([[crews]]); `let-go` while it is stranded and on duty, its latest conversation not yet resumed
@@ -57,8 +57,9 @@ a fixed order, the first being the thing's primary verb.
   `['resume', { id, conversation }]`, built from the same list, so a renderer adds only what the user supplies
   (`tower.run(floor.calls.spawn, { cwd })`) ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within the
   renderer and have no call.
-- Renderers ask only whether a verb is offered (`can(thing, verb)` in both) and draw it: an absent verb is
-  not drawn at all, never drawn disabled. Monitors and screens read `live`, a fact, not a verb.
+- Renderers ask whether a verb is offered (`can(thing, verb)` in both) and draw it: an absent verb is not drawn,
+  except a verb whose daemon is down, drawn disabled with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence
+  (below). Monitors and screens read `live`, a fact, not a verb.
 - [Board tests](ref:hub/test/board.test.ts) pin the rules over the recorded fixtures.
 - An offer is advice, not a permission. The server refuses only what the facts rule out: a conversation Claude
   hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/server.ts#resume)); a pid that
@@ -74,11 +75,12 @@ a fixed order, the first being the thing's primary verb.
 - Screens reading `drive`: it would tie a picture to a menu; `live` says what they need.
 - The server refusing every call the board doesn't offer: it would turn the bridge's advice into policy,
   an opinion on what a user or worker may do, where the facts don't forbid it.
-- Drawing unavailable verbs disabled: buttons that fail, or explain themselves, add noise; the host lamp and
-  the status word already say why something is missing.
+- Drawing every unavailable verb disabled: buttons that fail, or explain themselves, add noise; the status word
+  already says why most are missing. A daemon down is the exception: there the verb is drawn disabled with its
+  reason.
 
-**Impact.** Two visible changes: the brief is offered only once a conversation is saved, and spawn and shell
-buttons leave the board while their daemon is down. The tower page draws them inert, with
-[`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence as their tip, and resume and review alike while the host is
-down (the board still offers those): a control never vanishes without saying why. A new verb is one rule here plus one presentation entry per
+**Impact.** The brief is offered only once a conversation is saved, and spawn and shell leave the board while their
+daemon is down. Renderers draw a verb that needs a daemon that is down (spawn, cut, resume, carry on, review, let go,
+shell) disabled, with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence as its tip: a control never vanishes
+without saying why. A new verb is one rule here plus one presentation entry per
 renderer; Tower 3D's prompts ([[verb-prompts]]) build on these lists.

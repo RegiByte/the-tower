@@ -96,7 +96,7 @@ draws with almost no advance, so the next face in the stack draws it.
     is a step; the root's font size is the browser's times the viewer's Text size (`--scale`, [[viewer-prefs]]), so
     both reach every panel. Terminals keep their own size (the Terminal pref) and Tower 3D's canvas its own, as art.
     Sizes moved to the nearest step: 10 px text (kbd, a draft's meta, a move's chord, a worktree's state) is 11, the
-    floor; the brand and the bar's callsign 20 (were 19 and 18); glyph buttons 16 (were 15).
+    floor; the brand and the bar's callsign 20; glyph buttons 16.
   - *A spacing scale in px* ([`space`](ref:hub/src/shared/design.ts#space), `--sp-2xs` to `--sp-3xl`: 2, 4, 6, 8,
     12, 16, 24, 32): text grows with the viewer's size, the space around it stays. Each padding, margin and gap went
     to its nearest step, a tie to the multiple of 4 and else up (10 is 12, 14 is 16), so the page is a little airier.
@@ -130,10 +130,10 @@ draws with almost no advance, so the next face in the stack draws it.
   - *One selected look* for cards and tabs (`--selected`): an ink border with a 1 px ink ring inside it, so a
     selected card keeps its attention edge and gains no frame outside it. Rows in a list keep their own idiom (a
     wash with the project's edge), and segmented choices theirs (an ink fill).
-  - New served names, an addition (API 1.22): `controls` and `iconSize` in `/design.js`, `GIST_ICON` and `withIcons`
+  - New served names, an addition (an API minor): `controls` and `iconSize` in `/design.js`, `GIST_ICON` and `withIcons`
     in `/icons.js`, new keys of `ICON`, and `.icon`, `.icon-btn`, `--control`, `--selected` and `--icon-*` in
-    `/design.css`. `SHELF_ICON`'s values are SVG now, where they were one character.
-  - *Tower 3D follows* (API 1.25): its HUD, panel heads, floor panel, archive and logbook draw the same icons
+    `/design.css`. `SHELF_ICON`'s values are SVG.
+  - *Tower 3D follows*: its HUD, panel heads, floor panel, archive and logbook draw the same icons
     ([`ui.ts`](ref:hub/renderers/tower3d/src/ui.ts)), every close one `.icon-btn` with `ICON.close`; `ICON` adds
     `back`, `music` and `silent` for its archive's way back and the music toggle. What it paints into textures
     (monitors, signs, pictures) keeps its own text.

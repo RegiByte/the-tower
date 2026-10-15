@@ -69,7 +69,7 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
   ([`Turn`](ref:hub/src/bridge/turns.ts#Turn)), read from the log like the rest of it. Prompts from peers (a hired
   worker's later instructions by `SendMessage`) were deferred here, since they change what a turn is; they came on
   2026-10-09 (below).
-- *Workers' messages* (2026-10-09, API 1.21). A turn another worker opened (`turn.from`, [[brief-turns]]) is a third
+- *Workers' messages* (2026-10-09). A turn another worker opened (`turn.from`, [[brief-turns]]) is a third
   kind of bubble, `.bubble.peer`: on the prompt side, headed by the sender's callsign and when Claude took it
   ("BEOWULF-38 · 21:24"), in a neutral tint with a dashed edge, so it reads apart from the user's accent prompts and
   Claude's answers in both schemes (its words measured by `npm run tool:contrast`). Copy and fold as any prompt. The
@@ -94,7 +94,7 @@ best as one. Once [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml) 
 - *Folds as config (`brief.fold`).* Nobody asked for it; a constant until someone does.
 - *Conversations latest first, turns oldest first.* Scrolling to the end would land in the oldest conversation.
 
-**Impact.** API 1.12: `briefHtml` takes optional `expanded`, `markdown` and `working` (an older call draws rendered
+**Impact.** An API minor: `briefHtml` takes optional `expanded`, `markdown` and `working` (an older call draws rendered
 with nothing expanded and nothing at work), `/brief.js`, `/markdown.js` and `/settings.js` gain exports, a turn gains `answeredAt`. A renderer that
 draws `markdownHtml` or the Reviews panel adds `markdownCss` beside `panelsCss` and wires `data-copy-code`. Contrast:
 a prompt bubble's words and inline code are measured by `npm run tool:contrast`; links and "show all" in a prompt

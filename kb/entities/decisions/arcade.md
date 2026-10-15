@@ -62,8 +62,8 @@ meaning by one renderer, with no change to the core.
   (403) and it has no storage. High scores are kept in memory (the user's answer).
 - **Workers are told how** ([`SKILL.md`](ref:hub/src/mod/skills/handbook/SKILL.md)): one html file, inline CSS and JS,
   no network, a `<title>`, no storage, alert or forms, keyboard and mouse, any frame size; preview with
-  `tower show`, keep with `tower keep games`. The tower brief is unchanged.
-- **Checked by frames**: `busy`'s alpha keeps three games (titled and keeper, titled, untitled without keeper,
+  `tower show`, keep with `tower keep games`. The tower brief says nothing of games.
+- **Checked by frames**: `busy`'s alpha keeps three games (two titled, each with a keeper, and one untitled without one,
   [`FIXTURE_GAMES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURE_GAMES)); the walk aims at a cabinet, plays
   it and closes it.
 
@@ -75,7 +75,7 @@ meaning by one renderer, with no change to the core.
 - *Saving high scores.* Would need a writer the sandbox can't reach; in memory is enough for now.
 - *Cabinets elsewhere in the room.* The side walls hold the shell bench and the shelf, the back wall the video wall;
   the glass front is the one stretch that grows with nothing else.
-- *A game room per floor.* A follow-up: a room of its own with cabinets (dummies and a plate saying how to make a
+- *A game room per floor.* Not built: a room of its own with cabinets (dummies and a plate saying how to make a
   game when there are none). `arcadeFor` takes a stretch of wall; a game room would give it another one.
 
 **Impact.** Tower 3D gains an act kind, a layer, a panel and a camera framing; the couch moves while a floor has

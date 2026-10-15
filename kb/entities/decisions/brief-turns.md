@@ -38,7 +38,7 @@ renderer draws them oldest first, the latest at the bottom (the tower page and T
   ([[board-archive]]).
 - *Cut by characters or time.* Rejected: a turn is the unit the user reads; a count is predictable.
 
-*The worker's lineage* (2026-10-07, API version 16). A brief held only the session's own conversations: one an
+*The worker's lineage* (2026-10-07). A brief held only the session's own conversations: one an
 earlier session of the worker held and nobody continued (session 1 worked on A, `/clear`ed to B; session 2 resumed
 B) was lost from view, and nothing said which session a conversation or a showing came from.
 [`briefOf`](ref:hub/src/bridge/turns.ts#briefOf) now walks the worker's
@@ -61,13 +61,13 @@ one the next resumed), so a session's place, "session 2 of 3", is counted from t
 - *Showings say their session.* `card.lineage` ([`LineageSession`](ref:hub/src/bridge/board.ts#LineageSession), oldest
   first) lists the sessions a worker ran as; [`shownFrom`](ref:hub/src/shared/brief.ts#shownFrom) marks a showing's tab
   `s1` with the full label in its title, while the worker has run as more than one.
-- *A resume that added nothing says so* (2026-10-08, API 1.19). A session resumed and never given a prompt holds
+- *A resume that added nothing says so* (2026-10-08). A session resumed and never given a prompt holds
   only the turns it resumed, and its last screen reprints them, so it reads as a copy of the session before.
   [`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle) tells it from the brief alone: a session after the first
   whose turns all began before it did (a session's own turns are its latest, so the brief's last turns show them).
   `briefHtml` marks its label "resumed, no new turns" (`RESUMED_IDLE`, with why in a tip), and Tower 3D's session
   chips say the same ([[logbook]]).
-- *Workers' messages are turns* (2026-10-09, API 1.21). A hired worker's later instructions, and every report a
+- *Workers' messages are turns* (2026-10-09). A hired worker's later instructions, and every report a
   coordinator receives, arrive by Claude's `SendMessage` and were invisible in the brief. A turn also opens on a
   `prompt.submit` of peer origin whose text is a delivery from another Claude session
   ([`delivered`](ref:hub/src/bridge/messages.ts#delivered): `<cross-session-message from-name="…">`, unwrapped to the
@@ -89,5 +89,5 @@ one the next resumed), so a session's place, "session 2 of 3", is counted from t
 
 **Consequences.** Opening a brief reads one log per session in the worker's lineage and in each conversation's chain, as `/screen` already does.
 `prompt` and `answer` stay as the latest of the whole conversation, which the board and cards use. The reply of
-`conversations/<id>` gained `turns` without a version bump: readers that ignore it are unchanged. The lineage moved the
-API to version 16: an older renderer would draw earlier sessions' conversations as the current one's.
+`conversations/<id>` carries `turns`, which readers that ignore it read past. The lineage was an API major: an older
+renderer would draw earlier sessions' conversations as the current one's.

@@ -62,5 +62,6 @@ loudest thing on the floor.
   pictures.
 - *Pizza boxes by context.* The stand-in until the board carried `turns`.
 
-**Impact.** The first KayKit models in the office, and placement as data beside `layout.ts`. The papers block is
-gone. Building Tower 3D needs the KayKit bundle on disk. The office has one KayKit path, shared with the zones.
+**Impact.** The first KayKit models in the office, and placement as data beside `layout.ts`. The models the office
+uses are vendored in `renderers/tower3d/kaykit/`, so building Tower 3D needs no bundle on disk. The office has one
+KayKit path, shared with the zones.

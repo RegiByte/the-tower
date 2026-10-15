@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A worker adds to its floor's collections, and who kept an item is a fact in its log",
-  "summary": "tower keep adds a file to one of the floor's collections through the renderer API and logs tower.keep in the worker's own log; the board joins those facts onto items as keptBy, so every renderer says which worker kept an item and from which conversation. Workers only add; what is kept is the user's.",
+  "summary": "tower keep adds a file to one of the floor's collections through the renderer API and logs tower.keep in the worker's own log; the board joins those facts onto items as keptBy, so every renderer says which worker kept an item and from which conversation. Workers add and edit items in place; deleting one is the user's.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
@@ -21,7 +21,7 @@ where, what was already there, or that the place existed; and an item said nothi
   keep` alone lists the floor's collections with what each is for),
   `tower kept [collection]` (alone, each collection's item count and its latest five by edit time, so a floor with many
   items costs a few lines; with a collection, every item: title, age, size and who kept it; tag and file since [[item-tags]]) and
-  `tower read <id>`.
+  `tower read <tag|id>`.
 - `keep` creates the item with the renderer API's `collection/create` ([[collections]]), then posts
   `{hook_event_name: 'tower.keep', project, collection, id}` to the host's hooks socket, as `tower.show` goes
   ([[agent-show]]). No host change.
@@ -30,8 +30,9 @@ where, what was already there, or that the place existed; and an item said nothi
   conversation?}`. An item made any other way (the tower, an editor, a shell) has none: its maker is unknown.
 - Titles are derived where they are shown: a markdown or text item's first line, an html item's `<title>`. Nothing
   about an item is stored beside it.
-- Workers only add (reversed for edits by [[workers-edit-kept-items]]). The skill says never to edit or delete items, its own included: a kept item is the user's to
-  edit, send or throw away. A worker's shell can still reach the files: the command is the agreed way, not a lock.
+- Workers add, and edit an item in place when it goes stale or the user adjusts it ([[workers-edit-kept-items]]); the
+  handbook says never to delete one: throwing an item away is the user's. Spawns grant the collections directory with
+  `--add-dir`, so a worker's tools reach the files.
 - The tower brief says to keep off-goal ideas and later prompts with `tower keep drafts` and carry on ([[brief-first]]), and to make
   pages as local html files shown with `tower show`, publishing a claude.ai artifact only when asked (a link is all
   the tower can do with one).

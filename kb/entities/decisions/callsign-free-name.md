@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A new worker takes a name no worker on duty holds",
-  "summary": "Every spawn that starts a new worker (a spawn, a worktree cut, a forking resume, the tower's and the CLI's) draws session ids until the id's callsign has a name no worker on duty holds; the callsign stays a function of the id. A callsign typed at spawn follows the same rule: refused when its name is held.",
+  "summary": "Every spawn that starts a new worker (a spawn, a worktree cut, a forking resume, the tower's and the CLI's) draws session ids until the id's callsign has a name no worker on duty holds; the callsign stays a function of the id. A bare name typed at spawn follows the same rule, refused when a worker on duty holds it; a typed NAME-NN is refused only while that exact callsign is on duty.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-10",

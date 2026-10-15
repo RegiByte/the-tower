@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Blob reads: real images through the renderer API",
-  "summary": "Any read of the renderer API can be taken as a Blob of its type (tower.blob, API v5), so a framed renderer draws real images in WebGL; a shown or shelved markdown page also serves the images beside it.",
+  "summary": "Any read of the renderer API can be taken as a Blob of its type (tower.blob), so a framed renderer draws real images in WebGL; a shown or shelved markdown page also serves the images beside it.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-04",
@@ -37,7 +37,7 @@ what.
   one new tunnel message, `{t: 'blob', id, path}` ([`FromPage`](ref:hub/src/shared/shelf-page.ts#FromPage)),
   which the tower page answers with a one-line relay. A `Blob` is structured-cloneable: it crosses `postMessage`
   with its MIME type. The server already served images with their types; who may read what is unchanged.
-  [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION) moved to 5: a v5 page asking a v4 tower would wait
+  It moved [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION): a page asking a tower without it would wait
   forever for an answer.
 - **Markdown pulls in its images.** [`shownServes`](ref:hub/src/shelf.ts#shownServes) lets a shown `.md` serve
   the images (png, jpg, gif, webp, svg) beside or below it, and [`shelfServes`](ref:hub/src/shelf.ts#shelfServes)
@@ -66,7 +66,6 @@ what.
   DOM undrawn, so images still need blob reads; and its API is still being renamed. A later spike.
 
 **Impact.** One read mode on the renderer API for every renderer and shelf page. Tower 3D's wall and monitors
-carry the real screenshots and plots workers show, and markdown reports show their figures everywhere. The
-tower needs a restart (`tower up`) for the new `tower.js`, the relay and the version; the host and the board are
-unchanged. HTML pages and PDFs stay posters. Videos (`.mp4`, `.webm`) came later the same way: read as a blob,
+carry the real screenshots and plots workers show, and markdown reports show their figures everywhere. The host
+and the board are unchanged. HTML pages and PDFs stay posters. Videos (`.mp4`, `.webm`) came later the same way: read as a blob,
 played on a blob URL, their frames painted into the world ([[agent-show]]).

@@ -57,6 +57,6 @@ thread ([[review-threads]]).
   the verb refuses there.
 - *A force flag on `worktree/remove`*: one verb would mean two things; discard has its own guard and its own record.
 
-**Impact.** API 1.26: verb `worktree/discard {project, name, author, held}` replying `{tips, thread}`;
+**Impact.** An API minor: verb `worktree/discard {project, name, author, held}` replying `{tips, thread}`;
 `WorktreeVerb` gains `discard`, `WorktreeCalls.discard`. Removal can now lose work, by this verb alone. Tower 3D
 draws it too (2026-10-09), asked on a second press with `discardAsk` and signed with the user's name. No host change.

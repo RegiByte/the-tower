@@ -41,10 +41,9 @@ worker (decisions [[renderer-is-disposable]], [[agents-have-every-capability]]).
   session is `booting` or `blocked`; a match makes it `blocked` with the screen's kind until a status hook or its exit.
   Attention `needs`; it waits on you; the card carries `blocked`. Recorded fixtures: `trust-dialog` (answered, then
   `SessionStart`) and `login-screen` (a fresh `CLAUDE_CONFIG_DIR`, exited on the login screen).
-- The live fold skips output before parsing it: [`factEvents`](ref:hub/src/tail.ts#factEvents) became a filter per log
+- The live fold skips output before parsing it: [`factEvents`](ref:hub/src/tail.ts#factEvents) is a filter per log
   that folds the session's state over what it keeps and keeps output only while the state reads it, so the filter and
-  the fold agree by construction (`test/tail.test.ts` checks every fixture). Startup fold over 188 real logs: ~1.16 s
-  before and after.
+  the fold agree by construction (`test/tail.test.ts` checks every fixture).
 - `board.waiting` is `Wait[]`: `key` (`id@since`) names one wait; reasons ranked blocked, asks, failed, done, then the
   longest wait ([`waitingOrder`](ref:hub/src/bridge/board.ts#waitingOrder)).
 - In `/cards.js`: [`transitions`](ref:hub/src/shared/cards.ts#transitions) (silent on the first board),
@@ -57,7 +56,7 @@ worker (decisions [[renderer-is-disposable]], [[agents-have-every-capability]]).
 - One ringer per viewer: a framed renderer rings nothing and leaves it to the page framing it (Tower 3D checks
   `tower.framed`), which sees the same transitions; Tower 3D run on its own rings itself.
 - Tower 3D adds edge arrows toward waiting workers out of view on your floor
-  ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)); the page drops its 12 s hint.
+  ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
 
 **Alternatives considered.**
 - Screen regexes over the rendered screen (agent-office): needs a terminal per booting session in the bridge; matching
@@ -105,6 +104,5 @@ before any worker exists, so it can't be a `Wait`: every renderer looks a wait's
 - Alternatives: a `Wait.reason` of `offer` (a wait with no card breaks every renderer, an API major); offers merged
   with waits by `since` (an offer opened an hour ago would jump a blocked screen).
 
-**Impact.** A breaking board change (`waiting` from ids to waits; `neighbours` takes the viewer's `Heed`): both
-renderers moved in the same change. `Status` gains `blocked`, live and not at its composer (no `submit`). Seats and
-other renderer logic (`card.seat`, `bubbleOf`) stay for the roadmap's "logic out of renderers" item.
+**Impact.** A breaking board change (`waiting` from ids to waits; `neighbours` takes the viewer's `Heed`). `Status`
+gains `blocked`, live and not at its composer (no `submit`).

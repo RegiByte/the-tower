@@ -38,10 +38,11 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   ([`BoardMsg`](ref:hub/src/shared/shelf-page.ts#BoardMsg)) on the same stream, deduplicated like boards. The tunnel's
   `board` message carries it the same way, with `error` in place of `board`.
 - **Two codes.** [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError) marks what the user must fix in the config:
-  JSON that doesn't parse ([`readConfig`](ref:hub/src/system.ts#readConfig) names the file) and a `user.name` no note
-  can carry. It answers `config`; anything else answers `internal` and goes to the log with its stack
+  JSON that doesn't parse ([`readConfig`](ref:hub/src/system.ts#readConfig) names the file), and a key the tower
+  reads with a value it can't use (a `user.name` no note can carry, an `editor` template, `keys`, `callsigns`,
+  `port`, a renderer, a collection that clashes). It answers `config`; anything else answers `internal` and goes to the log with its stack
   ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)). The same mapping answers any request whose handler throws, which
-  used to end with an empty 500: a spawn refused for `user.name` now says so.
+  would otherwise end with an empty 500.
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. The tower page and Tower 3D show it in a
   banner over the last board they drew, gone with the next board (Tower 3D, before its first board, on its loading
@@ -53,11 +54,11 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   stream. The board through `subscribe` clears it, as for the tower's own errors, and the tower page relays it to a
   framed page. Renderers head it with [`boardErrorTitle`](ref:hub/src/shared/cards.ts#boardErrorTitle); the tower
   page also dims the board and its counts, reads the host as `unknown` (`HostState`), and stops its `data-since`
-  times at the moment it was lost. API 1.9.
+  times at the moment it was lost.
 - **Recovery without a reload.** [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches the config's directory
   for the config file (editors replace it on save, which a watch on the file itself would lose), so a fix publishes
   the board at once. A config the tower can't read keeps the repos' last git read.
-- `API_VERSION` moves to 12: a v11 page would hand `undefined` to its subscribers; it now stops at the version check.
+- An API major: an older page would hand `undefined` to its subscribers; it stops at the version check.
 
 **Alternatives considered.**
 - *An SSE `event: error`.* `EventSource` raises its own `error` on every dropped connection, on the same listener: a
@@ -65,8 +66,10 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
 - *A fallback board (empty floors, `error` field).* A board that looks real while saying nothing; renderers would draw
   an empty tower.
 - *Validating the whole config with a schema.* Would turn unknown or missing project fields into `config` errors with
-  good messages; larger than this change. Today such a config fails where it is first read, as `internal` with
-  JavaScript's message (`Cannot read properties of undefined`), shown the same way.
+  good messages; larger than this change. Such a config fails where it is first read, as `internal` with
+  JavaScript's message, shown the same way. `tower config check` and `tower doctor` read a config as the tower
+  does and name each problem at its key path ([`configProblems`](ref:hub/src/config-check.ts#configProblems)),
+  outside the board.
 - *Retrying on a timer.* The config watch is the event the board waits for; nothing else can fix it.
 
 **Impact.** A broken config is told on every renderer and by every verb that reads it, and the tower survives

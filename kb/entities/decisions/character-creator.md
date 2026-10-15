@@ -34,7 +34,7 @@
 ---
 **Problem.** Worn pieces were misplaced (glasses far too big on some heads, the bartender's cap too large, hats
 riding high on bald heads), and every fix was brute force: change a number in code or a script, rebuild, walk to
-the desk, look. RegiByte asked for the components to be data, "with a UI to move components around in a
+the desk, look. The user asked for the components to be data, "with a UI to move components around in a
 composition, swap outfit and body parts and change the scale of items".
 
 **Why.** Once the wardrobe made looks, outfits and fits data ([[kaykit-workers]]), what was missing was a surface
@@ -85,8 +85,8 @@ to edit that data by eye, and the same surface for agents, so a fit is judged fr
   writes another file, a copy to try saving on. Served elsewhere (the tower, a shelf frame), the page has no server
   and copies the JSON instead. The serve rebuilds on each load of the page, and Tower 3D takes the file on its next
   `npm run tower3d`.
-- Agents: `window.dresser` (`ready · look · head · wear · pose · fit · outfit · rename · unkeep · changes · save ·
-  heads · view · state · cost · where · shot`) and `npm run tool:dresser -- shot <outfit|body|id|CALLSIGN> [--wear] [--pose] [--view]
+- Agents: `window.dresser` (`ready · look · head · wear · pose · fit · outfit · rename · unkeep · changes · wardrobe · save ·
+  select · heads · view · state · cost · where · shot`) and `npm run tool:dresser -- shot <outfit|body|id|CALLSIGN> [--wear] [--pose] [--view]
   [--heads all]`, a PNG through the same page in headless Chrome.
 
 **Alternatives considered.**
@@ -95,7 +95,7 @@ to edit that data by eye, and the same surface for agents, so a fit is judged fr
 - *Fits saved by the server checking the catalogue*: the catalogue comes from parsing the GLBs with three; the page
   that already has it checks, and the server checks the schema.
 - *One fit for every head with a "save under" choice* (the first round): it showed the document's keys rather than
-  the user's task; RegiByte could not tell what the line-up was for. Fitting on the head clicked, with its state on
+  the user's task; the user could not tell what the line-up was for. Fitting on the head clicked, with its state on
   each head, is the task itself; `*` stays one button away.
 - *A native colour picker*: any colour breaks the curated palettes the shared atlas is tinted from.
 - *Dragging the uniform-scale handle alone*: TransformControls' centre handle jumps when grabbed near its middle,
@@ -103,4 +103,4 @@ to edit that data by eye, and the same surface for agents, so a fit is judged fr
 
 **Impact.** Fits, outfits and the mix are adjusted by eye and saved as a reviewed diff of `wardrobe.json`; agents
 check a fit from a picture. Tower 3D modules that read `window.tower` at import (`api.ts`'s reads, `fixtures.ts`'s
-streams and blobs) now read it when called, so a Tower 3D page loads where no tower serves it.
+streams and blobs) read it when called, so a Tower 3D page loads where no tower serves it.

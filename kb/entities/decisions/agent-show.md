@@ -55,8 +55,9 @@ worker that made it.
   stopped predecessor (ORION-59 resumed as ODIN-75, 2026-10-05).
 - *Snapshot the file's content when shown.* Rejected: logs stay small, and a worker updates a file and shows it
   again.
-- *A tower verb that opens things on the user's machine.* Not needed while the UI and the host share a machine:
-  the worker can run `open` itself.
+- *A tower verb that opens things on the user's machine, for showing.* Not needed: showing puts the page beside the
+  worker. Opening a file in the user's Finder or editor has its own verbs, `tower reveal` and `tower edit`
+  ([[open-files]]).
 
 **Consequences.** Showing an html file exposes its directory and below to the tower's loopback port, as an html
 shelf entry does. A file deleted after it was shown answers `not_found`. Closing a showing is per browser

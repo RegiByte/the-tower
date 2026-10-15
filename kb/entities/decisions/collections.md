@@ -63,7 +63,7 @@ primitives every renderer can reach.
   file that moved on since is `refused`, and an item that no longer exists is `not_found`, never recreated),
   `collection/delete`, `collection/restore` (an undo of a delete: the file put back under its own id, claimed as a
   create claims one, so it never overwrites; `refused` while an item holds the id, [[press-feedback]]), and `submit`. A view reads an item as text with `tower.text`, whatever its type.
-- `submit` is a card verb ([[board-verbs]]) on a worker at its composer: idle, working, done or failed. A booting
+- `submit` is a card verb ([[board-verbs]]) on a worker at its composer: idle, working, watching, done or failed. A booting
   worker may be on a startup dialog, and one needing input on a question, so keys there would answer them.
   [`submitText`](ref:hub/src/machine.ts#submitText) types the text as the user would, over one host connection:
   bracketed pastes from [`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes), then Enter as its own write
@@ -76,7 +76,7 @@ primitives every renderer can reach.
   `src/shared/reviews.ts`. Its items are named by checkout (`<checkout>.md`), parsed onto the board as
   `floor.threads`, and written only by appending, through `review/append` (`putItem` makes or replaces an item under a
   name of the caller's, by rename). Undeclared, it is not on the board and the verb refuses.
-- A second has meaning in the core since: `policies`, standing work the tower starts at its slots ([[policies]]).
+- A second has meaning in the core: `policies`, standing work the tower starts at its slots ([[policies]]).
   Each item is parsed and hashed onto the board as `floor.policies`; the files are written and edited like any
   item, and the facts about them (runs, passes, approvals) live in the project's streams, never beside the file.
 - A drafts feature is a fold in a renderer: send is read, then `spawn` with the text as `Launch.prompt`, then
@@ -111,7 +111,7 @@ Meta+Enter for newlines scrambled the order.
 - One paste plus Enter in one write (the old `promptInput`): fine under 800 characters and 3 lines, wrapped as
   pasted content above.
 
-**Impact.** The stored state is now three kinds: the config (intent), the logs (facts) and the collections (files
+**Impact.** The stored state is three kinds: the config (intent), the logs (facts) and the collections (files
 kept for later, such as unsent words). This amends [[logs-are-facts]]. Board floors carry `collections`, cards may
 offer `submit`, and `tower submit` submits through the same `submitText`. The tower page's drafts and Tower 3D's
 corkboard ([[corkboard]]) are each a renderer's own feature over one shared editor.

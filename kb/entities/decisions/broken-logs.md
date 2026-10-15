@@ -56,7 +56,7 @@ the session's start) and its code. A broken session's facts fold nothing more.
   runs it). Its facts say nothing reliable after the break, so it waits on no one and is never stuck. The shared
   words ([`statusName`](ref:hub/src/shared/cards.ts#statusName), [`gistOf`](ref:hub/src/shared/cards.ts#gistOf),
   [`statusTitle`](ref:hub/src/shared/cards.ts#statusTitle)) say `broken`, the reason as its gist (`× log unreadable
-  past a hook (time): <error>`) and what to do on hover, so both renderers draw it alike. API 1.14.
+  past a hook (time): <error>`) and what to do on hover, so both renderers draw it alike.
 
 **What the user does** (runbook [[broken-log]]): the verbs stand as the facts allow. While the host runs it, drive
 it or kill it; once it no longer runs, resume its conversation, which starts a new log and a healthy session under the
