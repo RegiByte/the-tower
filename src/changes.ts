@@ -30,7 +30,7 @@ export type Commit = { sha: string; subject: string; at: string }
 export type RepoChanges = { dir: string; against: string; since: string; commits: Commit[]; shows: 'all' | 'uncommitted' | string; files: DiffFile[]; more: number }
 
 /** Every config of the user's that changes what `git diff` prints, set back to what the parser reads. */
-const DIFF = ['-c', 'core.quotepath=false', 'diff', '-M', '--no-color', '--no-ext-diff', '--no-textconv', '--src-prefix=a/', '--dst-prefix=b/']
+const DIFF = ['-c', 'core.quotepath=false', '-c', 'diff.suppressBlankEmpty=false', 'diff', '-M', '--no-color', '--no-ext-diff', '--no-textconv', '--src-prefix=a/', '--dst-prefix=b/']
 
 /** An untracked file as a diff against nothing: `--no-index` exits 1 when there is a difference, which there always is. */
 const untrackedDiff = async (dir: string, file: string): Promise<string> => {
@@ -54,6 +54,8 @@ const byPath = (files: DiffFile[]): DiffFile[] => files.sort((a, b) => (a.path <
  * and seconds of highlighting as the pane opens. The files past it go without them.
  */
 const MAX_READ_BEFORE_LINES = 4000
+/** A file past this many bytes isn't read for the lines before its hunks: a log or a data dump, read whole on every poll for a few lines. */
+const MAX_BEFORE_FILE_BYTES = 2 * 1024 * 1024
 
 /**
  * Each changed file's hunks with the lines before them (`withBefore`), read by `newSides` from the files as they now
@@ -78,12 +80,13 @@ const withBeforeAll = async (files: DiffFile[], newSides: (paths: string[]) => P
 
 /**
  * Files of the working tree, as none: a symlink (its diff is its target's path, not the file it reads), a submodule,
- * and a file the worker removed since `git diff` read it.
+ * a file past `MAX_BEFORE_FILE_BYTES`, and a file the worker removed since `git diff` read it.
  */
 const treeFiles = (dir: string) => (paths: string[]) => Promise.all(paths.map(async (path) => {
   const file = join(dir, path)
   try {
-    return (await lstat(file)).isFile() ? await readFile(file, 'utf8') : undefined
+    const stat = await lstat(file)
+    return stat.isFile() && stat.size <= MAX_BEFORE_FILE_BYTES ? await readFile(file, 'utf8') : undefined
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined
     throw err
@@ -92,11 +95,18 @@ const treeFiles = (dir: string) => (paths: string[]) => Promise.all(paths.map(as
 
 /**
  * Files as `commit` holds them, through one `cat-file --batch`: a blob answers a header (`<oid> blob <bytes>`), its
- * bytes and a newline; a submodule (`<oid> submodule`) answers its header alone, and reads as none. The batch asks one
- * name per line, so a path holding a newline isn't asked, and reads as none.
+ * bytes and a newline; a submodule (`<oid> submodule`) answers its header alone, and reads as none. A `--batch-check`
+ * first answers the headers alone, so a blob past `MAX_BEFORE_FILE_BYTES` isn't asked, and reads as none. The batch
+ * asks one name per line, so a path holding a newline isn't asked either.
  */
 const commitFiles = (dir: string, commit: string) => async (paths: string[]) => {
-  const asked = paths.filter((p) => !p.includes('\n'))
+  const named = paths.filter((p) => !p.includes('\n'))
+  const heads = (await gitBytes(dir, ['cat-file', '--batch-check'], named.map((p) => `${commit}:${p}\n`).join(''))).toString('utf8').split('\n')
+  const asked = named.filter((_, i) => {
+    const [, type, size] = heads[i].split(' ')
+    return type === 'blob' && Number(size) <= MAX_BEFORE_FILE_BYTES
+  })
+  if (!asked.length) return paths.map(() => undefined)
   const out = await gitBytes(dir, ['cat-file', '--batch'], asked.map((p) => `${commit}:${p}\n`).join(''))
   let at = 0
   const texts = new Map(asked.map((p) => {
