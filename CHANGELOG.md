@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.38.0
+
+A tool that checks a new Claude Code release against the tower. No host restart, no config change, the renderer API
+unchanged. Nothing to restart: the tool runs from a checkout.
+
+- `npm run tool:claude-check -- run` records, on the installed Claude, a scenario for every fixture of real Claude's
+  in a throwaway system of its own (about 30 Haiku sessions, ~6 minutes), and reports what reads differently from the
+  tested releases: the events and payload keys Claude posts against `test/claude-shapes.json`, each recording's
+  statuses against its fixture's, the surfaces no fixture covers, what Claude's `sec-default` held back, and the
+  release's changelog entries about those surfaces. It exits 0 when the release reads clean, and then raising the
+  tested range is mechanical; `report` prints the last run again and `accept` takes its shapes as the baseline. The
+  runbook `new-claude-release` says what stays human.
+
 ## v1.37.2
 
 The tower is tested on Claude Code up to 2.1.301. No host restart, no config change, the renderer API unchanged.
