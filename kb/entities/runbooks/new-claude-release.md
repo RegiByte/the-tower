@@ -4,7 +4,7 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after the fixture set is recorded again on it and replays clean.",
   "in": "tower",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
 }
 ---
@@ -44,6 +44,9 @@ cc-plugin-sec-default`. Then read the same moment from a classic hook, which sti
 2. Record again, on the new release, each scenario the fixture set covers (one short Haiku session each:
    `tower spawn <project> --model haiku -- "<prompt>"`, keys through `POST /keys`, `tower kill`, then copy
    `sessions/<id>.jsonl`). A fresh directory raises the trust screen first: down, then enter, as two writes.
+   Claude keeps trust per git repo root, so a scenario that needs the screen runs in its own repo. Send each
+   key when the session's log shows the event it waits on (`turn.start`, `PermissionRequest`, `turn.complete`),
+   and run about five sessions at once: with twenty, keys landed up to a minute late, after the turn they meant.
 3. Diff event names and payload keys against the fixtures, and replace each fixture whose events changed
    under a name the tests already use. `npm test` replays them against the expectations written by hand.
 4. Replays pass and nothing the bridge reads drifted: raise `CLAUDE_TESTED.highest` to the release. Something
