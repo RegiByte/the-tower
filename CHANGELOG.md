@@ -12,6 +12,14 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.37.2
+
+The tower is tested on Claude Code up to 2.1.301. No host restart, no config change, the renderer API unchanged.
+Restart the tower (`tower down tower && tower up tower`) and a worker on 2.1.301 is no longer flagged untested.
+
+- Claude Code 2.1.301 passed the runbook `new-claude-release`: nothing the tower reads changed. Inside a Team or
+  Enterprise organization a compaction still starts from the classic `PreCompact`.
+
 ## v1.37.1
 
 Fixes to the Changes view's hunk colouring, found testing v1.37.0 end to end. No host restart, no config change, the
