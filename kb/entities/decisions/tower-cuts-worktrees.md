@@ -6,12 +6,12 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
-**Problem.** Every worker on a floor ran in the same checkout: workers interleaved edits, tested each other's
-half-done changes and moved each other's HEAD. A warning to each worker was the only guard, and it failed silently.
+**Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
+other's HEAD. A warning to each worker is no guard: it fails silently.
 
 **Why.** Parallel workers per floor are the norm. A worktree that is the session's `cwd` from birth keeps everything
 keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the same dir.
@@ -37,15 +37,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   ([`exec`](ref:hub/src/git.ts#exec)) with its process group, hooks and fsmonitor included, and fails naming the
   command, so a hung hook can't hold the config writers' chain; a few run at once, the rest queued, so a board read
   never stalls the keystrokes the tower relays. Answers about commits are kept by what they were asked about.
-- **Absorbed** is content, not ancestry: `git merge-tree --write-tree <base> <br>` equals the base's tree. It is
-  true after a merge, rebase or squash, with no GitHub. The base is the one recorded at the cut, or origin's
-  default once origin deleted it ([`againstOf`](ref:hub/src/worktrees.ts#againstOf)): an integration branch's work
-  has usually landed there by then. A branch landed as a rebased or cherry-picked copy is absorbed too, whenever
-  merging it would still change the base: every commit `git rev-list --cherry-mark --right-only <base>...<br>` lists
-  is marked `=`, an equal `git patch-id` in the base. A merge commit has no patch-id and keeps the branch at risk, and
-  so does a copy landed with conflicts resolved: it is [[carried]] when every such commit has a copy made alike, else
-  removed by hand or discarded ([[discard]]). No fuzzy matching (similar subjects, most hunks): a wrong absorbed
-  deletes work.
+- **Absorbed** is content, not ancestry, and exact ([[absorbed]], [`absorbed`](ref:hub/src/worktrees.ts#absorbed)):
+  true after a merge, rebase, squash or cherry-pick, with no GitHub. A copy landed edited is [[carried]]. No fuzzy
+  matching (similar subjects, most hunks): a wrong absorbed deletes work.
 - **The cut** ([`cut`](ref:hub/src/worktrees.ts#cut), offered through `spawn {cut}`,
   [`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)): preflight every repo (a repo with an origin, a valid and free
   branch, a free path, each `worktrees.links` key ignored and untracked), fetch (else `offline`; verbs at once share
@@ -99,8 +93,6 @@ would be derived from hooks everywhere, for Claude only. Spawn carrying `dirs` s
 `git branch -d` as the merged test: misses squash merges and deletes pushed-but-unmerged branches. Asking GitHub: a
 prescriptive integration. Copying shared folders: they diverge.
 
-**Impact.** The API has `spawn.cut`, verbs `worktree/recut | prune | remove | discard`, `branch/recut`,
-`branch/delete`, `tidy`, errors `exists`, `would_lose`, `lost`, `offline`, `worktree_failed`, and `kept` on the
-replies that delete branches. The board has `floor.worktrees`, `floor.branches`, `floor.bases`, `floor.branchPrefix`,
-`floor.cutByDefault` and `card.worktree` ([[board-verbs]]). Config: `worktrees: { branchPrefix, links, cutByDefault }`,
-top level and per project. No new stored state.
+**Impact.** The API's `spawn.cut`, the `worktree/*`, `branch/*` and `tidy` verbs and the board's `floor.worktrees`,
+`floor.branches` and `card.worktree` ([[board-verbs]]); the config's `worktrees` ([[docs-config]]). No new stored
+state.
