@@ -99,7 +99,7 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
     `${run.scenarios.length} scenarios, ${Object.keys(recordings).length} sessions, ${run.minutes} minutes, from ${new Date(run.startedAt).toISOString().slice(0, 16)}Z. Tested range ${range.lowest} to ${range.highest}: this release reads \`${range.reads}\`. Baseline taken on ${baseline.claude || 'no release yet'}.`,
     '',
     clean
-      ? `**Clean.** No shape changed, every recording replays as its fixture, and every surface check holds: raise \`CLAUDE_TESTED.highest\` to ${run.claude}, and \`accept\` to move the baseline.`
+      ? `**Clean.** No shape changed, every recording replays as its fixture, and every surface check holds: ${range.reads === 'above' ? `raise \`CLAUDE_TESTED.highest\` to ${run.claude}, and \`accept\` to move the baseline` : 'nothing to move'}.`
       : '**Needs reading.** Each difference is named below.',
     '',
     '## Scenarios',
