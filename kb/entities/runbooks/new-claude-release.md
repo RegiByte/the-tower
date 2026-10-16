@@ -2,10 +2,10 @@
 {
   "type": "runbook",
   "name": "New Claude release",
-  "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after the fixture set is recorded again on it and replays clean.",
+  "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
   "reviewed": "2026-10-16",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/sandbox.ts"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
@@ -28,33 +28,53 @@ What says a release is new to the tower:
 - A session started before the mod reported versions has no `claude`, and is never flagged. So is a session whose
   Claude has no `$.session.version`: its start hook fails after the start ran, and no version is posted.
 
-**Where to look first.** Compare what the new release posts with what the fixtures hold: every
-`hook_event_name` and its top-level keys, in a fresh recording and in `test/fixtures/*.jsonl`. Then compare
-the screens a fresh directory raises with [`blocked.ts`](ref:hub/src/bridge/blocked.ts).
-A mod event missing from the recording may be missing only for some accounts: inside a Team or Enterprise
-organization, Claude's built-in `sec-default` mod can keep an event from user mods, as it keeps `session.compact`
-since 2.1.299 ([[claude-code]]). Run Claude with `--debug-file`: it logs `<mod>: <event> bypassed by
-cc-plugin-sec-default`. Then read the same moment from a classic hook, which still fires.
+**Where to look first.** `npm run tool:claude-check -- run`
+([`claude-check.ts`](ref:hub/scripts/claude-check.ts#run)) records on the installed release every scenario in
+[`SCENARIOS`](ref:hub/scripts/claude-check.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
+with none, and reports, by scenario and event, everything that reads differently from the release the baseline was
+taken on. It exits 0 when nothing does, 1 when there is something to read. About 30 Haiku sessions and half an hour.
+- **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
+  out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
+  the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary
+  ([`shapeChanges`](ref:hub/scripts/claude-check.read.ts#shapeChanges)), since which scenario raises an event
+  shifts with timing and the model's choices; a scenario that stops raising one shows in its replay.
+- **Status replays.** Each recording through `timeline` (`test/replay.ts`) against its fixture's, the scenario
+  driven as the fixture was. What a fixture can't share with a fresh run is left out by the scenario's data, not by
+  the code ([`comparedForm`](ref:hub/scripts/claude-check.read.ts#comparedForm)): the trust screen of a fixture
+  recorded in a trusted directory, and how many turns subagents that race the main loop report in.
+- **Surfaces no fixture covers** ([`renderReport`](ref:hub/scripts/claude-check.report.ts#renderReport)): the
+  quota probe's `get_usage` answer against `test/fixtures/probe-usage.out` (what the fold reads), a submit longer
+  than a paste chunk landing whole, each session's peer registration with `pid` and `name`, `tower.claude` posting
+  the installed release, `?1049h` and `?1006h` in every session's output, and the resume chain.
+- **Held back.** The compaction scenarios run with `--debug-file`, whose `<mod>: <event> bypassed by
+  cc-plugin-sec-default` lines say what Claude's built-in `sec-default` mod kept from the tower's inside a Team or
+  Enterprise organization, as it keeps `session.compact` since 2.1.299 ([[claude-code]]): such an event is read
+  from a classic hook, which still fires.
+- **Changelog.** The release's section of `~/.claude/cache/changelog.md`, each entry naming a surface the tower
+  reads (hooks, mods, compaction, trust, permissions, peers, usage) marked.
+
+What a throwaway recording of real Claude needs, all in the tool: a short root of its own (`--root`, deleted and
+made again by each run) and port; a git repo per scenario directory, named for the run, since Claude keeps folder
+trust per repo root and remembers a trusted path; the trust screen answered once its output goes quiet (down, then
+enter, as two writes); one writer of the config (two raced and dropped a `repos` entry), which `spawn` needs to list
+each directory; scenarios with the same Claude flags and environment run together, five at a time (at 21, `POST
+/keys` landed up to a minute late); and every step waiting on an event read from the session's log, never on a
+sleep or the board. Compaction takes `autoCompactEnabled` in the directory's `.claude/settings.local.json`,
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW=100k` and `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=54`; the sign-in screen takes
+`CLAUDE_CONFIG_DIR` at an empty directory.
 
 **Fix: move the range.**
-1. A throwaway system with a short root (`/tmp/tower-<callsign>`): a git repo for the hub, a config whose
-   `argv` is `["claude", "--permission-mode", "default"]` (plain `claude` inherits the user's mode, and
-   permission prompts never appear), `tower up` with `TOWER_CONFIG` set to it, and a tower on a free
-   `port` in that config. Never the real system.
-2. Record again, on the new release, each scenario the fixture set covers (one short Haiku session each:
-   `tower spawn <project> --model haiku -- "<prompt>"`, keys through `POST /keys`, `tower kill`, then copy
-   `sessions/<id>.jsonl`). A fresh directory raises the trust screen first: down, then enter, as two writes.
-   Claude keeps trust per git repo root, so a scenario that needs the screen runs in its own repo. Send each
-   key when the session's log shows the event it waits on (`turn.start`, `PermissionRequest`, `turn.complete`),
-   and run about five sessions at once: with twenty, keys landed up to a minute late, after the turn they meant.
-3. Diff event names and payload keys against the fixtures, and replace each fixture whose events changed
-   under a name the tests already use. `npm test` replays them against the expectations written by hand.
-4. Replays pass and nothing the bridge reads drifted: raise `CLAUDE_TESTED.highest` to the release. Something
-   drifted: fix the fold (`src/bridge/facts.ts`, `status.ts`, `conversation.ts`, `blocked.ts`) against the new
-   fixture, write its expectation by hand from what was observed, then raise the range. A release that drops
-   what an older one had raises `lowest` too.
-5. Re-check each surface in `CLAUDE_SURFACES` that a fixture doesn't exercise (the paste limit, the peer
-   registry, the fullscreen TUI: a session's log enables `?1049h` and `?1006h`, and the wheel over the tower page's
-   terminal scrolls the transcript, the quota probe's `get_usage` answer: record it again into
-   `test/fixtures/probe-usage.out` with the request in [[probes]] and diff it), and update the list if the tower now
-   reads something new.
+1. Exit 0: raise `CLAUDE_TESTED.highest` to the release, and `npm run tool:claude-check -- accept` to take the
+   baseline on it, both in one commit. A release that drops what an older one had raises `lowest` too.
+2. Exit 1: read each difference in `<root>/report.md`. A scenario that stopped short is run again with `--only`.
+   A replay that differs because of how it was driven is fixed in the scenario. A key or event gone, or a replay
+   that differs, is drift: fix the fold (`src/bridge/facts.ts`, `status.ts`, `conversation.ts`, `blocked.ts`)
+   against the recording in `<root>/recordings/`, replace the fixture with it under the name the tests already
+   use (its home path and host replaced, as every fixture's are), write its expectation by hand from what was
+   observed, `npm test`, then raise the range. A new key or event is read for whether the bridge should use it,
+   then accepted.
+3. What stays human: reading the changelog entries the report marks, and provoking a change one names that no
+   scenario covers (a targeted scenario, kept with the run's notes); replacing a fixture; the wheel over the tower
+   page's terminal scrolling Claude's transcript, which needs a browser; the `*-outside-org` fixtures, which need
+   an account outside an organization; and updating [`CLAUDE_SURFACES`](ref:hub/src/shared/claude.ts#CLAUDE_SURFACES)
+   and the scenarios when the tower reads something new.
