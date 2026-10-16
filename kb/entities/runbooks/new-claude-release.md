@@ -32,7 +32,7 @@ What says a release is new to the tower:
 ([`claude-check.ts`](ref:hub/scripts/claude-check.ts#run)) records on the installed release every scenario in
 [`SCENARIOS`](ref:hub/scripts/claude-check.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
 with none, and reports, by scenario and event, everything that reads differently from the release the baseline was
-taken on. It exits 0 when nothing does, 1 when there is something to read. About 30 Haiku sessions and half an hour.
+taken on. It exits 0 when nothing does, 1 when there is something to read. About 30 Haiku sessions and six minutes.
 - **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
   out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
   the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary

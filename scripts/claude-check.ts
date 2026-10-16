@@ -6,7 +6,7 @@
  * those surfaces marked.
  *
  *   npm run tool:claude-check -- run [--only <scenario,...>]   start a throwaway system, record, stop it, report;
- *                                                              about 30 Haiku sessions, 5 at a time, half an hour
+ *                                                              about 30 Haiku sessions, 5 at a time, ~6 minutes
  *   npm run tool:claude-check -- report                        the report of the last run again
  *   npm run tool:claude-check -- accept                        the last run's shapes become the baseline: on the
  *                                                              baseline's release they are merged with its own (a key
