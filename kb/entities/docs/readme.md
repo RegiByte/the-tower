@@ -4,7 +4,7 @@
   "name": "README",
   "summary": "The repository's front page: what the tower is, the renderers that ship, requirements, setup, the user's tower verbs, a config example and where the rest is documented; it restates the code below, so a change there re-checks it.",
   "in": "tower",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/renderers.ts#BUILT_INS", "hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/doctor.ts#readiness", "hub/scripts/setup.ts", "hub/src/cli.ts#main", "hub/src/app.ts#openApp", "hub/src/init.ts#initialConfig", "hub/src/shared/model.ts#PROJECT_KEYS", "hub/src/shared/launch.ts#settingsArgs"]
 }
 ---

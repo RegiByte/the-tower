@@ -4,7 +4,7 @@
   "name": "Terms daemon",
   "summary": "The detached Node process that owns login shells started in project directories and streams their screens to viewers.",
   "in": "terms",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/terms.ts#ShellStream", "hub/src/shared/terms.ts#SHELL_SCROLLBACK", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "config.json on every spawn: the project's dirs" }
@@ -17,7 +17,7 @@
 handling throws is answered `error` with the reason, and every shell keeps running. A read error on a shell's PTY master ends that shell as an exit, never the daemon ([`endOnReadError`](ref:hub/src/shared/pty.ts#endOnReadError)). A `spawn` or `resize` to a size
 that isn't whole cols and rows from 1 to 1000 is refused before the PTY sees it
 ([`checkSize`](ref:hub/src/shared/protocol.ts#checkSize)): the shell's screen would throw on it later, outside any reply. Each shell is `$SHELL -l` with the parent session and the launching terminal
-scrubbed ([[env-scrub]]), mirrored into a headless xterm with `SHELL_SCROLLBACK` (2000) lines of scrollback, sent with every snapshot.
+scrubbed ([[env-scrub]]), mirrored into a headless xterm with `SHELL_SCROLLBACK` lines of scrollback, sent with every snapshot.
 
 `attach` turns the connection into the shell's stream: a snapshot of the screen, then `o`, `r` and `x` as
 they happen. Output that arrives while the snapshot is taken is held and sent after it, so nothing is lost

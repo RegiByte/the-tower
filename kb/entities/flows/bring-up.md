@@ -4,7 +4,7 @@
   "name": "Bring-up",
   "summary": "tower up starts the host, the terms daemon and the tower detached, each only if this system's own does not already answer where it serves, and records their pids; tower down stops what it started. Either takes daemons by name.",
   "in": "tower",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-16",
   "involves": ["operator", "tower-cli", "host-daemon", "terms-daemon", "tower-server"],
   "refs": ["hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#bringDown", "hub/src/machine.ts#bringAllDown", "hub/src/machine.ts#daemons", "hub/src/machine.ts#daemonsNamed", "hub/src/machine.ts#startedPid", "hub/src/shared/socket.ts#claimSocket", "hub/src/shared/model.ts#towerPort"]
 }
@@ -49,9 +49,8 @@ sequenceDiagram
   && tower up tower` restarts the tower alone: a new server, the host and every session untouched.
 - `tower down` signals only the pid in this system's pid file, and only while that process still runs the daemon's
   script with this system's config in its environment, since pids are reused and every system runs the same scripts
-  ([`bringDown`](ref:hub/src/machine.ts#bringDown)): it never reaches another system root's daemons. It goes on past
-  a daemon it refuses ([`bringAllDown`](ref:hub/src/machine.ts#bringAllDown)). A daemon answering without a pid file was started by
-  hand (`npm run host`, `npm run tower`): `tower down` refuses it, says to stop it where it runs, stops the others and
-  exits 1. Stopping the
-  host ends every session (`hostStopped`, resumable); stopping terms ends every shell.
+  ([`bringDown`](ref:hub/src/machine.ts#bringDown)). A daemon answering without a pid file was started by hand
+  (`npm run host`, `npm run tower`): `tower down` refuses it and stops the others
+  ([`bringAllDown`](ref:hub/src/machine.ts#bringAllDown)). Stopping the host ends every session (`hostStopped`,
+  resumable); stopping terms ends every shell.
 - `npm run setup` ends with the same bring-up ([[setup]]); the sandbox brings its own system up and down through it.

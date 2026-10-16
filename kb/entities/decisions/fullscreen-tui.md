@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/renderers/tower3d/src/term.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
@@ -23,9 +23,8 @@ outrank the user's own, so it holds whatever `~/.claude/settings.json` says. It 
 release that renames the setting or its value drops sessions back to arrow keys.
 
 A session's terminal sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), every
-renderer): one SGR report per row of travel at the terminal's own row height, the remainder carried, undamped, since
-xterm left alone sends one report per wheel event however far it went and damps a trackpad's small deltas, so a flick
-reached Claude as a fraction of its travel. With no terminal named in its env ([[env-scrub]]), Claude moves a row per
+renderer): one SGR report per row of travel, the remainder carried, since xterm left alone sends one report per wheel event
+however far it went, so a flick would reach Claude as a fraction of its travel. With no terminal named in its env ([[env-scrub]]), Claude moves a row per
 report and stops with the wheel, so the transcript follows the finger. A shell's terminal keeps xterm's wheel: xterm
 does not say which mouse encoding a shell's program asked for.
 

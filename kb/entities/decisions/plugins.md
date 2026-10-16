@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-11",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/shared/model.ts#projectPlugins", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/host/session.ts#sessionArgv"]
 }
 ---
@@ -26,7 +26,7 @@ touching any repo.
 - *The flags.* [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest) and
   [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest) take the list and pass each directory as
   `--plugin-dir` ([`pluginArgs`](ref:hub/src/shared/launch.ts#pluginArgs)), so spawn, resume, a cut, a fork, `tower
-  hire` and `tower review` all load them. The host is unchanged ([[host-owns-ptys]]): it adds the mod's
+  hire` and `tower review` all load them. The host composes none of it ([[host-owns-ptys]]): it adds the mod's
   `--plugin-dir` before the client's args, and Claude takes the flag repeated. Each Claude reads its plugins as it
   starts: a changed plugin reaches the next session started, a changed list the next spawn or resume.
 - *What goes in a plugin.* Commands and skills that describe a workflow only. What a project adds (its knowledge base,
@@ -35,7 +35,7 @@ touching any repo.
   namespaced: `/<plugin>:<command>`.
 
 **Alternatives considered.**
-- *A marketplace on disk, installed the ordinary way.* Rejected for now: it reaches sessions the tower doesn't start,
+- *A marketplace on disk, installed the ordinary way.* Rejected: it reaches sessions the tower doesn't start,
   which nobody asked for, and is state outside the config.
 - *The host reads the list from the config.* Rejected: a host change kills running sessions, and the host composes
   no Claude flags but its own wiring.
@@ -43,5 +43,5 @@ touching any repo.
   its own plugin.
 
 **Impact.** A user's workflow lives in one plugin outside the repos, loaded into every tower session as
-`/<plugin>:<command>`; the repos' copies can go. Sessions started outside the
+`/<plugin>:<command>`, with no copy in any repo. Sessions started outside the
 tower (a plain `claude`) don't load configured plugins.

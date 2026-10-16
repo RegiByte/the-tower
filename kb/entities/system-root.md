@@ -4,7 +4,7 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-13",
+  "reviewed": "2026-10-16",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts"]
 }
 ---
@@ -27,9 +27,8 @@
 - `control.sock`, `hooks.sock` ([[host-daemon]]) and `terms.sock` ([[terms-daemon]]).
 - `host.log`, `terms.log`, `tower.log`: what the daemons print when `tower up` starts them.
 - `cache/`: what is computed from the stored state and kept to skip computing it again, never authoritative and
-  safe to delete at any time: `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]). Not a
-  fourth kind of stored state: deleting it changes nothing but speed.
-- `host.pid`, `terms.pid`, `tower.pid`: the pids `tower up` started, so `tower down` can stop them; gone once stopped. A fact
-  about running processes, not about sessions.
+  safe to delete at any time: `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]). Deleting it
+  changes nothing but speed.
+- `host.pid`, `terms.pid`, `tower.pid`: the pids `tower up` started, so `tower down` can stop them; gone once stopped.
 
 The config is read fresh on every spawn and every tower request, so edits apply without restarts.
