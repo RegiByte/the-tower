@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/src/bridge/probes.ts#due",
     "hub/src/bridge/probes.ts#waitOf",
