@@ -30,7 +30,7 @@ const USAGE_ARGS = [
  * sessions' `argv` (the same Claude, through any wrapper), from the temp dir, with the config's `env` and the parent
  * session scrubbed, and killed if it has not exited within the timeout.
  */
-const readUsage = (config: Config): Promise<{ answer: unknown } | { error: string }> =>
+export const readUsage = (config: Config): Promise<{ answer: unknown } | { error: string }> =>
   new Promise((resolve) => {
     const [command, ...args] = config.argv
     const child = spawn(command, [...args, ...USAGE_ARGS], { cwd: os.tmpdir(), env: withoutParentSession({ ...process.env, ...config.env }), stdio: ['pipe', 'pipe', 'pipe'] })
