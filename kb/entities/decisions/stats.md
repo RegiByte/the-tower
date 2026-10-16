@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
@@ -32,96 +32,61 @@
   ]
 }
 ---
-**Problem.** The tower showed what each worker is doing now and nothing about the past: what a day cost, how much
-work the floor did, how long workers wait on the user, how far the weekly limit's pace will carry. All of it is in
-events the live fold already reads, and the obvious sum is wrong: each card's `costUsd` is Claude's running total for
-the conversation, carried into a resume, so summing cards overstates the spend.
+**Problem.** The past is in events the live fold already reads: what a day cost, how much work the floor did, how
+long workers wait on the user, how far the weekly limit's pace will carry. The obvious sum is wrong: each card's
+`costUsd` is Claude's running total for the conversation, carried into a resume, so summing cards overstates the spend.
 
 **Why.** Stats are a capability: every renderer and every worker should reach them ([[renderer-is-disposable]]),
 and they are computable from the logs, so they are computed ([[logs-are-facts]]).
 
 **How.**
-- *Timed facts.* [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) folds small arrays, each entry with its epoch
-  ms: `spend` (what each `session.measure` reading added to its [[conversation]]'s total: a conversation new to the
-  session starts from zero, a resumed one from its first reading, a reading before Claude names the first
-  conversation is where its total starts, a lower total started again), `tokens` per model step (main loop and
-  subagents), `turnSpans` (main-loop `turn.start` to `turn.complete`), `waits` (a `Stop` to the user's next prompt,
-  `composer` or `bridge`), `prompts` by origin, `asks` (`PermissionRequest`: a dialog the user saw), `failures`
-  (`PostToolUseFailure`), `subagentRuns` (each started at its `agent.spawn`), and each rate limit's readings where they moved (`limitReadings`). None reads a
-  `PostToolUse` body.
-- *A pure reduction.* [`stats`](ref:hub/src/bridge/stats.ts#stats)`(sessions, {from, to, bucket})` gives per
-  project and for all: summaries (sessions started, sessions that ran a turn, resumes, spend, tokens by model,
-  agent-hours, turns, prompts by origin (`peer` a message from another Claude session or a prompt a worker typed
-  through the tower ([[worker-prompts]]), a subagent's hand-back `hand-back`), subagents, asks, failures, and the spread (min, p50, avg, p90, max) of waits,
-  turn durations and active minutes per session), each session's share of the window by its id (`sessions`: its
-  turns, agent-hours and spend, counted as the summary counts them, and its longest turn and longest wait on the user,
-  each with when it began), series per local hour or day, spend and turns by hour of day, and
-  concurrency: [`overlap`](ref:hub/src/bridge/stats.ts#overlap) sweeps every main-loop turn span cut to the window (and
-  to each bucket) for the wall time anyone worked (`busyHours`), the workers working at once on average over it
-  (`atOnce`: turn time over busy time) and the most at once (`peak`, per bucket in `series.peak`). Subagents' turns
-  are not workers and are not counted. [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
-  every session's readings and every probe's reads ([[probes]]: the quota is read while no session's turn reads it)
-  (it is the account's, so `/stats?project=` filters the stats and never the budget), and
-  [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) the latest of those readings taken in the window (`weekly`:
-  the percent used then and the reset it counts to), so a past week shows how far its quota went: over the window it is in, the spend from its first reading to the
-  latest where it moved, divided by the percent it climbed for the tower, is what 1% buys; the percent left times that
-  is "$ left this week".
-- *Use from outside the tower.* The weekly limit is the account's: claude.ai, the desktop app or another machine
-  move it too, and counting that against the tower's spend made 1% look cheaper than it is.
-  [`outsideUse`](ref:hub/src/bridge/stats.ts#outsideUse) sums the climbs between two probe answers in a row
-  (`ProbeFacts.rises`) while no session used the API (no model step, no spend, no main-loop turn over the span, a turn
-  still running included). Only the probe's answers are compared with each other: a session's reading and the probe's
-  can differ by a point for the same use, so a session's reading then a probe's could look like a climb. Use outside
-  the tower while the tower works counts as the tower's: the estimate errs low. The budget's `outside` is this
-  week's; it leaves the climb that makes the rate. `/stats`'s `outside` ([`outsideIn`](ref:hub/src/bridge/stats.ts#outsideIn))
-  sums the climbs that ended in the window, of any week, which The Week shows beside a week's quota. Its `pace` ([`pace`](ref:hub/src/bridge/stats.ts#pace)) says whether the day's spending lasts: `perDay`, the
-  even daily spend that spends what is left at the reset, and `runsOutAt`, when what is left runs out at today's rate
-  (today's spend over the hours since the day began, at least one), only when that is before the reset. Both are
-  absent while what is left is unknown.
-- *What landed, from git's own records.* Per project only: for each of a project's dirs (its hub and `repos`),
-  [`readLanded`](ref:hub/src/landed.ts#readLanded) walks the first parents of `origin/HEAD` over the window (as of the
-  last fetch) with `--diff-merges=first-parent --numstat` (and `core.quotepath=false`, so a path reads as it is whatever the user's git config says), and [`parseLog`](ref:hub/src/bridge/landed.ts#parseLog)
-  reads each landing: the time it reached the branch (its committer time) and the lines it changed against the
-  branch before it. A merge is one landing that counts the commits it brought, itself included (`rev-list --count
-  M^1..M`), its lines those of all of them; a commit made straight on the branch, or a squash, is one. Repos are keyed
-  by their top level, so two dirs in one repo read it once. `stats()` takes the read as data (`landed`, by project)
-  and adds to every scope the commits, the merges among the landings, lines added and removed, lines by file
-  extension and each repo's branch, and series of commits and lines by landing time; the All scope counts a repo two
-  projects share once, and the panel draws the All tab's commits and lines from it, naming each project's share in the
-  readout. Nobody is credited: the tower parses neither commands nor commit messages, and a user who wants attribution
-  signs commits by their own convention. A team repo's numbers count teammates' landings too.
+- *Timed facts.* [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) folds small arrays of epoch-ms entries:
+  `spend` (what each `session.measure` reading added to its [[conversation]]'s total, the baseline keyed on the
+  conversation, so a `/clear` or a resume counts from the right start), `tokens` per model step, `turnSpans`
+  (main-loop `turn.start` to `turn.complete`), `waits` (a `Stop` to the user's next prompt), `prompts` by origin,
+  `asks` (`PermissionRequest`: a dialog the user saw), `failures` (`PostToolUseFailure`), `subagentRuns` and
+  `limitReadings`. None reads a `PostToolUse` body.
+- *A pure reduction.* [`stats`](ref:hub/src/bridge/stats.ts#stats)`(sessions, landed, {from, to, bucket})` gives
+  summaries, per-session shares, series per bucket and hour-of-day, per project and for all. Concurrency comes from
+  [`overlap`](ref:hub/src/bridge/stats.ts#overlap) over main-loop turn spans only: subagents are not workers.
+- *The weekly budget.* [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
+  every session's readings and every probe's reads ([[probes]]); it is the account's, so `/stats?project=` filters the
+  stats and never the budget. The spend from the week's first reading to its latest, over the percent it climbed, is
+  what 1% buys; [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) gives a past window's last reading, and
+  [`pace`](ref:hub/src/bridge/stats.ts#pace) whether today's rate lasts to the reset.
+- *Use from outside the tower.* claude.ai, the desktop app or another machine move the same limit, which would make
+  1% look cheaper than it is. [`outsideUse`](ref:hub/src/bridge/stats.ts#outsideUse) sums climbs between two
+  consecutive probe answers while no session used the API; only probe answers are compared with each other, since a
+  session's reading and the probe's can differ by a point for the same use. Use outside while the tower works counts
+  as the tower's, so the estimate errs low. [`outsideIn`](ref:hub/src/bridge/stats.ts#outsideIn) gives a window's.
+- *What landed, from git's own records.* Per project: [`readLanded`](ref:hub/src/landed.ts#readLanded) walks the
+  first parents of each repo's `origin/HEAD` over the window (as of the last fetch) with `--numstat`, and
+  [`parseLog`](ref:hub/src/bridge/landed.ts#parseLog) reads each landing at its committer time: a merge is one
+  landing counting the commits it brought, a commit made on the branch or a squash is one. A repo two projects share
+  counts once in All. Nobody is credited: the tower parses neither commands nor commit messages, and a team repo's
+  numbers count teammates' landings too. Git is read on each `/stats`, over a bounded window, and history on a branch
+  never changes, so nothing is held between reads.
 - *A read, not the board.* `GET /stats?from&to&bucket&project` ([`statsRead`](ref:hub/src/tower/server.ts#statsRead)),
-  its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES) served at `/schema` under `reads`, defaults the
-  last seven local days by day, and refuses windows of too many buckets. `tower.stats(query)` reads it.
+  its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES); `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
-  waits answered (count and p50), the day's start and the weekly budget with its pace. The roof draws them live beside the rate
-  limits. They move only with readings, turns and prompts, which already change the board, so they add no pushes; a
-  day that turns while nothing happens shows yesterday's until the next event, which `today.since` tells.
-
-Git is read on demand, on each `/stats`: one `git log` per repo over a bounded window, the panels read every minute
-at most, and history on a branch never changes, so nothing is held between reads. A cache keyed on each repo's
-origin/HEAD commit is the next step if a repo grows slow; the board's poll of `repos` is the wrong cadence for it.
+  waits answered and the weekly budget with its pace. They move only with readings, turns and prompts, which already
+  change the board, so they add no pushes; a day that turns while nothing happens shows yesterday's until the next
+  event, which `today.since` tells.
 
 **Alternatives considered.**
 - *Sum each card's `costUsd`.* Resumes carry it, so it overstates.
 - *Only deltas between readings, a drop counted in full.* A `/clear` with no reading between its two conversations
-  shows no drop, and the new conversation's cost is lost (the `clear` fixture); keying the baseline on the
-  conversation counts it.
+  shows no drop, and the new conversation's cost is lost (the `clear` fixture).
 - *Waits from a `Stop` to the next turn.* A turn a task's notification, a schedule or a peer starts is not the user
   answering.
 - *Asks from `tool.check` with decision `ask`.* Nearly all are settled by auto mode; `PermissionRequest` is what the
   user saw.
 - *Lines from the log's Edit/Write hooks*: they miss every edit made through Bash and would need `PostToolUse` bodies
   the live fold skips.
-- *Commits by committer time* (without `--first-parent`): in a repo that lands through merges, a branch's commits
-  count on the days they were written and drop out when that falls before the window.
-- *Attributing commits to workers* by matching `git commit` commands or commit messages: a policy about who made
-  what, which the tower doesn't declare.
-- *Concurrency counting every `turn.complete`*: subagents' turns would count as workers.
+- *Commits by committer time without first parents*: in a repo that lands through merges, a branch's commits count
+  on the days they were written and drop out when that falls before the window.
+- *Attributing commits to workers*: a policy about who made what, which the tower doesn't declare.
 - *History on the board, or prompt texts in facts.* The board is pushed on every change to every renderer; only
   times and numbers are folded, and the brief reads texts from the logs when asked ([[brief-turns]]).
 
-**Impact.** Each session's facts hold a few hundred small entries more. The tower page's sidebar (the floor in view
-and All floors) and Tower 3D's roof (a stats board beside the rate-limit columns, the overview and every floor as tabs)
-draw the shared Stats panel ([[shared-panels]]); any page or worker reads `/stats`. The panels show commits landed and
-lines changed per bucket beside the log stats, per project and on the All tab.
+**Impact.** Every renderer draws the shared Stats panel ([[shared-panels]]); any page or worker reads `/stats`.
