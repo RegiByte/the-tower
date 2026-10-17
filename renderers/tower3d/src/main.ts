@@ -24,7 +24,7 @@ import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from '.
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
-import { CABINET, DESK, EYE, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
+import { CABINET, DESK, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
 import { loadModels } from './models.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
@@ -63,7 +63,7 @@ import { itemKind, itemPath, itemsCss, keptOf, readsText } from '../../../src/sh
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } from './stage.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
-import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
+import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
 
@@ -544,7 +544,7 @@ const lookQuaternion = (from: THREE.Vector3, at: THREE.Vector3) => new THREE.Qua
 function flyTo(to: THREE.Vector3, toQ: THREE.Quaternion, ms = 700, done?: () => void) {
   s.flight = { from: camera.position.clone(), to, fromQ: camera.quaternion.clone(), toQ, start: s.simNow, ms: reducedMotion() ? 0 : ms, done }
 }
-const flyHome = (done?: () => void) => flyTo(new THREE.Vector3(s.me.x, floorY() + EYE, s.me.z), eyeQuaternion(s.me), 600, done)
+const flyHome = (done?: () => void) => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600, done)
 
 /** Frames a face `size` wide in the middle of the view, straight out from it: the camera stays in front, never in a wall. */
 function frameOn(point: THREE.Vector3, normal: THREE.Vector3, size: number) {

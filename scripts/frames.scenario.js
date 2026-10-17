@@ -239,5 +239,11 @@
     tryDo('use-tile-outside', () => t.press('use')); t.step(60); snap('tile-outside-open')
     t.key('Escape'); t.step(60)
   }
+  if (waiter) {
+    t.capture()
+    tryDo('aim-tile-again', () => toward({ kind: 'tile', id: waiter }, -4, DECK)); t.step(1)
+    tryDo('use-tile-again', () => t.press('use')); t.step(60)
+    t.key('Escape'); t.step(18); snap('tile-closing')
+  }
   return out
 })()

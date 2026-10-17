@@ -51,8 +51,11 @@ export function facing(from: THREE.Vector3, at: THREE.Vector3) {
   return { yaw: Math.atan2(d.x, d.z), pitch: THREE.MathUtils.clamp(Math.atan2(d.y, Math.hypot(d.x, d.z)), -PITCH, PITCH) }
 }
 
-/** Puts the camera at the walker's eyes, `floor` being the height of the level under its feet. */
+/** Sets `target` to where the walker's eyes are, `floor` being the height of the level under its feet. */
+export const eyes = (w: Walker, floor: number, target: THREE.Vector3) => target.set(w.x, floor + w.y + EYE, w.z)
+
+/** Puts the camera at the walker's eyes. */
 export function aim(camera: THREE.Camera, w: Walker, floor: number) {
-  camera.position.set(w.x, floor + w.y + EYE, w.z)
+  eyes(w, floor, camera.position)
   camera.rotation.set(w.pitch, w.yaw + Math.PI, 0, 'YXZ')
 }

@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
-import { EYE } from './layout.ts'
 import { levelsShown, showLevels } from './levels.ts'
 import { drive, type Move } from './input.ts'
 import { SEED } from './random.ts'
@@ -9,7 +8,7 @@ import { pictured } from './showing.ts'
 import { camera, canvas, scene } from './stage.ts'
 import { s, type Standing, type View } from './state.ts'
 import type { CatName } from './life.ts'
-import { aim, facing, type Walker } from './walker.ts'
+import { aim, eyes, facing, type Walker } from './walker.ts'
 
 /**
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
@@ -213,7 +212,7 @@ export function installDoor(e: Engine) {
     aimAt(target) {
       if (s.view !== 'walk') throw new Error(`aimAt works while walking; the view is ${s.view}`)
       const at = centerOf(target)
-      s.me = { ...s.me, ...facing(new THREE.Vector3(s.me.x, e.floorY() + s.me.y + EYE, s.me.z), at) }
+      s.me = { ...s.me, ...facing(eyes(s.me, e.floorY(), new THREE.Vector3()), at) }
       aim(camera, s.me, e.floorY())
       camera.updateMatrixWorld()
       s.aimed = e.pick(0, 0)
