@@ -8,11 +8,12 @@ import { find } from '../../kaykit/src/find.ts'
 import { formatScene } from '../../kaykit/src/format.ts'
 import type { DocEntry } from '../../kaykit/src/listing.ts'
 import { loadMeshes } from '../../kaykit/src/meshes.ts'
-import { flatten, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
+import { flatten, isModelGuide, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelGuide, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
 import { avatar, seatedAt } from './avatar.ts'
 import { CHAIR } from './chair.ts'
+import { MODEL_NAMES, type ModelName } from './contract.ts'
 import { WARDROBE } from './closet.ts'
-import { loadModels, type Models } from './models.ts'
+import { instance, loadModels, type Models } from './models.ts'
 import { pose } from './rig.ts'
 import { dispose, sprite } from './toon.ts'
 import { lookOf, type Look } from './wardrobe.ts'
@@ -23,7 +24,8 @@ import { lookOf, type Look } from './wardrobe.ts'
  * the gizmo, G to snap (5 cm, 15°), F to drop onto what is below, Delete to remove, ⌘Z to undo. The states picker
  * draws the document in one state; while a state is shown, edits of what the document shares go to that state
  * (`set`, `remove`) or to every state, as the scope says, and what is added goes to it. A slot for a person is drawn as
- * a Tower 3D worker at its size in its pose, translucent; a slot for a thing as a tile; guides as ghosts. Saving shows
+ * a Tower 3D worker at its size in its pose, translucent; a slot for a thing as a tile; a guide naming one of Tower 3D's
+ * models as that model, where Tower 3D draws it, and any other guide as a ghost. Saving shows
  * what changed against the files on disk, line by line, and writes them through `tool:editor serve`. Open lists every
  * scene the serve reaches (its states and slots, who places it, whether Tower 3D reads it) and opens one at `?scene=`,
  * once unsaved changes are given up.
@@ -311,15 +313,29 @@ async function redraw() {
     g.userData.src = (s.via[0] ?? s.from).split('#')[1]
     return g
   })
-  built.scene.add(...ghosts, proxy, gizmo.getHelper())
+  built.scene.add(...(flat.guides ?? []).filter(isModelGuide).map(hostModel), ...ghosts, proxy, gizmo.getHelper())
   await dressProxy()
   render()
 }
 
 function disposeBuilt(b: Built) {
   b.scene.traverse((o) => {
-    if (o instanceof THREE.Mesh || o instanceof THREE.BatchedMesh) o.geometry.dispose()
+    if ((o instanceof THREE.Mesh || o instanceof THREE.BatchedMesh) && !o.geometry.userData.shared) o.geometry.dispose()
   })
+}
+
+/** A guide naming one of Tower 3D's own models, drawn as Tower 3D draws it: a surface to snap and drop onto, never selected. */
+function hostModel(g: ModelGuide) {
+  if (!(MODEL_NAMES as readonly string[]).includes(g.model)) throw new Error(`guide "${g.name}": Tower 3D has no model "${g.model}" (its models: ${MODEL_NAMES.join(', ')})`)
+  const { root } = instance(models[g.model as ModelName])
+  root.position.set(...g.at)
+  root.rotation.y = (g.turn ?? 0) * DEG
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true
+  })
+  root.userData.guide = g.name
+  root.userData.host = g.model
+  return root
 }
 
 /** A slot's `with` models in world meters, placed in its frame. */
@@ -410,13 +426,15 @@ async function select(src: Ref | undefined) {
   return info()
 }
 
-/** A click: the slot's ghost or the model nearest along the ray, as what the edited document writes. */
+/** A click: the slot's ghost or the model nearest along the ray, as what the edited document writes; nothing behind the host's own models. */
 function pick(x: number, y: number): Ref | undefined {
   if (!built) return
   const ray = new THREE.Raycaster()
   ray.setFromCamera(new THREE.Vector2((x / canvas.clientWidth) * 2 - 1, -(y / canvas.clientHeight) * 2 + 1), camera)
+  const host = ray.intersectObjects(built.scene.children.filter((o) => o.userData.host), true)[0]?.distance ?? Infinity
   const g = ray.intersectObjects(ghosts, true)[0]
   const m = ray.intersectObjects(built.scene.children.filter((o) => o instanceof THREE.BatchedMesh), false)[0]
+  if (Math.min(g?.distance ?? Infinity, m?.distance ?? Infinity) > host) return
   if (g && (!m || g.distance < m.distance)) {
     let o: THREE.Object3D | null = g.object
     while (o && o.userData.src === undefined) o = o.parent

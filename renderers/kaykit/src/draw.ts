@@ -3,7 +3,7 @@ import { fit, type Catalog, type Model, type Pack } from './catalog.ts'
 import { atlasTexture, glowTexture, type Atlases } from './atlas.ts'
 import { drawLabels } from './labels.ts'
 import type { ModelMesh } from './meshes.ts'
-import type { Camera, Flat, ModelItem } from './scene.ts'
+import { isBoxGuide, type Camera, type Flat, type ModelItem } from './scene.ts'
 
 /**
  * A flat scene made into a three.js scene. Every model is one mesh (or a few named parts) sampling its pack's atlas,
@@ -120,9 +120,9 @@ function boxes(flat: Flat) {
 const GHOST = '#3d8fd6'
 const ghost = (opacity: number) => new THREE.MeshBasicMaterial({ color: GHOST, transparent: true, opacity, depthWrite: false })
 
-/** Guides as ghosts: what the host draws itself, to place against. */
+/** Box guides as ghosts: what the host draws itself, to place against. */
 function guides(flat: Flat) {
-  return (flat.guides ?? []).map((g) => {
+  return (flat.guides ?? []).filter(isBoxGuide).map((g) => {
     const geometry = new THREE.BoxGeometry(...g.size)
     const m = new THREE.Mesh(geometry, ghost(0.1))
     m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: GHOST, transparent: true, opacity: 0.45 })))

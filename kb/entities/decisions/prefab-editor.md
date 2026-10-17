@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The prefab editor: scenes placed by hand, with states and slots, saved as their documents",
-  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose and its guides as ghosts, and lets a person select a model, a placed prefab or a slot, move, turn and scale it with a gizmo (snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the state drawn, edits of shared things going to that state or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
+  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose, a guide naming one of Tower 3D's own models as that model (the workstation's desk.glb, where Tower 3D draws it) and any other guide as a ghost, and lets a person select a model, a placed prefab or a slot, move, turn and scale it with a gizmo (snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the state drawn, edits of shared things going to that state or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-16",
@@ -13,6 +13,9 @@
     "hub/renderers/tower3d/src/editor.ts#place",
     "hub/renderers/tower3d/src/editor.ts#ghost",
     "hub/renderers/tower3d/src/editor.ts#redraw",
+    "hub/renderers/tower3d/src/editor.ts#hostModel",
+    "hub/renderers/tower3d/src/editor.ts#pick",
+    "hub/renderers/kaykit/src/scene.ts#Guide",
     "hub/renderers/tower3d/src/editor.ts#changes",
     "hub/renderers/kaykit/src/format.ts#formatScene",
     "hub/renderers/kaykit/src/listing.ts#listing",
@@ -40,7 +43,15 @@ code fills from the board.
   [`editor.html`](ref:hub/renderers/tower3d/editor.html). It draws with the playground's `build` over its full catalog
   (served from `renderers/kaykit/out`), so any of the 628 models can be added, and draws person slots with Tower 3D's
   own `avatar` posed sitting or standing ([`ghost`](ref:hub/renderers/tower3d/src/editor.ts#ghost)), so a person is
-  placed, not a point. Guides stand for what the host draws itself (the Tower desk).
+  placed, not a point. Guides stand for what the host draws itself
+  ([`Guide`](ref:hub/renderers/kaykit/src/scene.ts#Guide)): one naming a Tower 3D model (`"model": "desk"`) is drawn
+  as that model at its place ([`hostModel`](ref:hub/renderers/tower3d/src/editor.ts#hostModel)), exactly as the office
+  draws the workstation, its own pot, cactus and mug included; it is a surface to drop and add onto, never selected or
+  saved, and a click on it selects nothing behind it ([`pick`](ref:hub/renderers/tower3d/src/editor.ts#pick)). Any
+  other guide is a box drawn as a ghost; drops land on faces, never on a box's edge lines.
+- A prop lands where Tower 3D draws it because both draw a scene item through the playground's `itemMatrix` (its
+  place, then the catalog's norms) over the same measured catalog, in the same frame: the desk's group in Tower 3D,
+  whose origin is desk.glb's, the world in the editor. Desk space faces +z, so +x is on a seated worker's left.
 - The selection is drawn alone under the gizmo and left out of the drawing; on release its place is written to the
   document ([`place`](ref:hub/renderers/tower3d/src/editor.ts#place)), which is redrawn
   ([`redraw`](ref:hub/renderers/tower3d/src/editor.ts#redraw)). The documents are kept raw as their files hold them
@@ -58,6 +69,8 @@ code fills from the board.
   an Euler's y alone folds a turn past 90° back. A drag ends with its button, also when the browser loses the pointer.
 
 **Alternatives considered.**
+- *Boxes for the desk's parts* (the first guides): they left out what desk.glb itself holds, so the editor showed a
+  cleaner desk than the office; desk.glb's own cactus, inside its monitor, was taken for the dressing's.
 - *A mode of the playground.* The ghost workers need Tower 3D's characters and rig; the playground stays a gallery and
   a viewer without a write path.
 - *Prefab overrides on the placing item* (as Unity does): a second, quieter mechanism beside states. Editing inside a

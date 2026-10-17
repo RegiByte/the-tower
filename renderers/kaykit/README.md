@@ -30,7 +30,7 @@ catalog, its norms, themes and per-pack batches (decision `office-kaykit`).
   "lamps":  [{ "at": [x, y, z], "color": "#…", "intensity": 5, "distance": 10 }],
   "cameras": { "name": { "pos": [x, y, z], "look": [x, y, z], "fov": 50 } | { "view": "iso", "frame": { "min": […], "max": […] } } },
   "slots":  [{ "name": "seat_1", "at": [x, y, z], "turn": 180, "pose": "sit" | "stand", "size": 1, "with": [{ "model": "…", "at": [0, 0, 0] }] }],
-  "guides": [{ "name": "desk top", "size": [w, h, d], "at": [x, y, z], "turn": 0 }],
+  "guides": [{ "name": "desk", "model": "desk", "at": [x, y, z], "turn": 0 }, { "name": "desk top", "size": [w, h, d], "at": [x, y, z], "turn": 0 }],
   "states": { "working": { "remove": ["id", "slot"], "set": { "screen": { "color": "#e89a1a" } }, "add": { "items": […], "boxes": […], "lamps": […], "slots": […] } } }
 }
 ```
@@ -56,8 +56,10 @@ How it differs from the `Placement` and `Theme` sketched in the exploration's fi
   slots are its capacity, filled from `_1` in order, and nobody is drawn past the last. `with` holds models drawn
   only while the slot is filled. A prefab's slots come out of `flatten` in world meters under the placing item's
   `id` (`pod/twin`). The playground draws them as ghosts: a pawn for a person, a tile for a thing.
-- **Guides** stand for what the host draws itself (the Tower desk, its monitor), so props are placed against them:
-  ghosts in the playground and the editor, drawn by no renderer, never placed into a parent.
+- **Guides** stand for what the host draws itself (the Tower desk, its monitor), so props are placed against them,
+  never placed into a parent. A guide naming one of the host's own models (`"model": "desk"`, Tower 3D's) is that
+  model, its origin at `at`: the editor draws it whole, as Tower 3D draws it, and the playground, which has only the
+  KayKit models, leaves it out. A guide with a `size` is a box, drawn as a ghost by both.
 - `id` names an item, box, label or lamp for states; ids and slot names are unique within a document.
 - Night is `light: "night"`. What glows at night is a fact about the art (`GLOW` in `src/catalog.ts`: the City
   windows, the Halloween lantern glass), so scenes don't repeat it.

@@ -70,9 +70,15 @@ export const Slot = z
   })
   .describe('a named place, set by hand, that code fills from the board')
 
-export const Guide = z
+export const BoxGuide = z
   .object({ name: z.string(), size: vec3, at: vec3.describe('the centre of its base'), turn })
-  .describe('a box standing for what the host draws itself, to place against: drawn as a ghost by the playground and the editor, by no renderer, never placed into a parent')
+  .describe('a box standing for what the host draws itself, to place against: drawn as a ghost by the playground and the editor')
+
+export const ModelGuide = z
+  .object({ name: z.string(), model: z.string().describe('the host\'s own model by its name there: desk, one of Tower 3D\'s'), at: vec3.describe('where its origin goes'), turn })
+  .describe('the model the host draws itself, drawn whole by a renderer that has it (the editor), by no other')
+
+export const Guide = z.union([BoxGuide, ModelGuide]).describe('what the host draws itself, to place against: never placed into a parent')
 
 const Additions = z.object({ items: z.array(Item).optional(), boxes: z.array(Box).optional(), labels: z.array(Label).optional(), lamps: z.array(Lamp).optional(), slots: z.array(Slot).optional() })
 
@@ -127,6 +133,8 @@ export type Theme = z.infer<typeof Theme>
 export type Camera = z.infer<typeof Camera>
 export type Slot = z.infer<typeof Slot>
 export type Guide = z.infer<typeof Guide>
+export type BoxGuide = z.infer<typeof BoxGuide>
+export type ModelGuide = z.infer<typeof ModelGuide>
 export type State = z.infer<typeof State>
 export type Scene = z.infer<typeof Scene>
 
@@ -201,6 +209,8 @@ export type FlatSlot = Slot & { from: string; via: string[]; turn: number; size:
 export type Flat = Omit<Scene, 'items' | 'slots' | 'states'> & { items: (ModelItem & { from: string; via: string[]; frame: Frame })[]; slots: FlatSlot[] }
 
 export const isModel = (it: Item): it is ModelItem => 'model' in it
+export const isBoxGuide = (g: Guide): g is BoxGuide => 'size' in g
+export const isModelGuide = (g: Guide): g is ModelGuide => 'model' in g
 
 const place = (f: Frame, p: Vec3): Vec3 => {
   const [x, z] = turnXZ(p[0] * f.scale, p[2] * f.scale, f.turn)

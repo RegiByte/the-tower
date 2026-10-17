@@ -12,7 +12,8 @@
  *                                                      parseScene, as formatScene lays it out)
  *   npm run tool:editor -- shot <scene.json> [--states a,b] [--select src] [--camera view|json] [--size 1600x1000] [--out file.png]
  *                                                      a PNG of the scene in its states as the editor draws it: slots
- *                                                      as ghost workers, guides, and the selection (items/0) under
+ *                                                      as ghost workers, guides (Tower 3D's own models where they
+ *                                                      name one), and the selection (items/0) under
  *                                                      its gizmo; seen from where a worker sits unless --camera
  *
  * Shots land in --out, else in $TMPDIR/editor. Paths are printed, one per line.

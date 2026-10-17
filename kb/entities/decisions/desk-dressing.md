@@ -38,8 +38,8 @@ loudest thing on the floor.
   its running fork in a second chair at its right (`twin`), in the worker's own look, its twin (a reviewer beside its
   author seats none); its running subagents standing along the near edge, one per `subagent_<n>` slot and no more
   (`card.subagentRuns`); its logbook right of the keyboard, drawn in code as thick as its lineage ([[logbook]]);
-  the papers new to it; and the notebook of a reviewer beside it. The guides stand for `desk.glb`, which Tower 3D
-  draws itself.
+  the papers new to it; and the notebook of a reviewer beside it. `desk.glb`, which Tower 3D draws itself, is the
+  document's guide by name (`"model": "desk"`), so the prefab editor draws it ([[prefab-editor]]).
 - [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month, desk, models)` answers the models in desk
   space: the state's from the kit, then the pile. The return holds what the session piled up, each item from a
   context share (2% to 33%, so a typical session is already messy). The floor past the desk's back edge holds a

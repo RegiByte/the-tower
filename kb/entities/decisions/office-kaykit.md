@@ -60,7 +60,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   [`fit`](ref:hub/renderers/kaykit/src/catalog.ts#fit) derives the placed bounds, so a norm changes in one place.
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
   another scene: prefabs are the hierarchy), boxes, labels, lamps, cameras, a theme (alt atlas and hue swaps per
-  pack) and a light; slots (named places code fills from the board), guides (ghosts of what the host draws itself)
+  pack) and a light; slots (named places code fills from the board), guides (what the host draws itself: a ghost box, or one of the host's own models by name, which the editor draws)
   and named states. A prefab is a pure function of the states its placement asks for:
   [`resolve`](ref:hub/renderers/kaykit/src/scene.ts#resolve) applies each state's removals, changes and additions
   in the document's order, and [`flatten`](ref:hub/renderers/kaykit/src/scene.ts#flatten) places prefabs in their
