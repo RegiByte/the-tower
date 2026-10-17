@@ -166,6 +166,7 @@ async function edit(change: (scene: Scene) => void) {
   history = [...history.slice(0, at + 1), docs]
   at = history.length - 1
   await redraw()
+  renderPanel()
 }
 
 const stateOwn = (src: Ref) => shown !== undefined && src.startsWith(`states/${shown}/add/`)
@@ -350,7 +351,7 @@ function ghost(slot: Pick<Slot, 'name' | 'pose' | 'size'>) {
     tile.position.y = 0.01
     g.add(tile)
   }
-  const tag = sprite(slot.name, slot.pose ? 0.07 : 0.05, { color: '#fff', bg: GHOST, px: 40 })
+  const tag = sprite(slot.name, slot.pose && size > 0.5 ? 0.07 : 0.035, { color: '#fff', bg: GHOST, px: 40 })
   tag.position.y = top + 0.06
   g.add(tag)
   return g
@@ -543,8 +544,8 @@ function lineDiff(before: string, after: string) {
   let i = 0, j = 0
   while (i < a.length || j < b.length) {
     if (i < a.length && j < b.length && a[i] === b[j]) (i++, j++)
-    else if (j < b.length && (i >= a.length || lcs[i][j + 1] >= lcs[i + 1][j])) out.push(`+ ${b[j++]}`)
-    else out.push(`- ${a[i++]}`)
+    else if (i < a.length && (j >= b.length || lcs[i + 1][j] >= lcs[i][j + 1])) out.push(`- ${a[i++]}`)
+    else out.push(`+ ${b[j++]}`)
   }
   return out
 }
