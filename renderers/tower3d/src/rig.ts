@@ -267,8 +267,27 @@ export function wearSkinned(cast: Cast, rig: Rig, names: string[], material: THR
   return skin(rig, cast.merged.get(key)!, material)
 }
 
+/** How far a skinned mesh reaches past its bones: the flesh and clothes round a joint, meters. */
+const FLESH = 0.12
+const bones = new THREE.Box3()
+const joint = new THREE.Vector3()
+const entry = new THREE.Vector3()
+
+/**
+ * A ray against a skinned mesh, tested triangle by triangle only when it enters the box round its bones, posed as last
+ * drawn and padded by `FLESH`. three.js poses every vertex on the CPU for that test, which costs a frame milliseconds
+ * per worker whose bounding sphere, wide enough for any pose, the crosshair's ray crosses.
+ */
+function raycastBones(this: THREE.SkinnedMesh, raycaster: THREE.Raycaster, hits: THREE.Intersection[]) {
+  bones.makeEmpty()
+  for (const bone of this.skeleton.bones) bones.expandByPoint(joint.setFromMatrixPosition(bone.matrixWorld))
+  if (!raycaster.ray.intersectBox(bones.expandByScalar(FLESH), entry) || raycaster.ray.origin.distanceTo(entry) > raycaster.far) return
+  THREE.SkinnedMesh.prototype.raycast.call(this, raycaster, hits)
+}
+
 function skin(rig: Rig, geometry: THREE.BufferGeometry, material: THREE.Material) {
   const mesh = new THREE.SkinnedMesh(geometry, material)
+  mesh.raycast = raycastBones
   mesh.boundingSphere = geometry.boundingSphere!.clone()
   rig.root.add(mesh)
   mesh.bind(rig.skeleton, new THREE.Matrix4())
