@@ -31,7 +31,7 @@ loudest thing on the floor.
 
 **How.**
 - The workstation's dressing is a scene document, [`desk_dress.json`](ref:hub/renderers/kaykit/scenes/prefabs/desk_dress.json),
-  placed by hand: shared, the return; a state per status, what it puts on the desk's right end
+  placed by hand: shared, the return and the desk's own cactus and mug (once modelled into `desk.glb`); a state per status, what it puts on the desk's right end
   (cactus idle; lamp and pencils working; lamp and a mug watching, [[watching-status]]; headphones lamp asking; a
   plated pizza done), picked by [`statusState`](ref:hub/renderers/tower3d/src/dress.ts#statusState); and its slots,
   the places of what is drawn around the worker, read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots):

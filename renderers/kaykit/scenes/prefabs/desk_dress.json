@@ -1,12 +1,14 @@
 {
  "title": "Tower desk dressing",
- "note": "What a Tower 3D workstation holds, in desk space: the desk (desk.glb, drawn by Tower 3D: the editor draws it, the playground leaves it out) centred on the origin, its monitor at the far edge (+z), the worker's chair at z -1; the second monitor Tower 3D shows beside it once its worker has shown something, as a guide. The worker sits facing +z, so +x is on its left. Shared: the L's return, a filing cabinet off the desk's right end. Each state is a worker's status: idle, working (and booting), watching, needs (asking, or held by Claude's trust or sign-in screen), done. Slots are the places of what Tower 3D draws around the worker: its fork in a second chair, its subagents standing on the desk, its logbook, the papers new to it, and the notebook of a reviewer sitting at the desk's left end.",
+ "note": "What a Tower 3D workstation holds, in desk space: the desk (desk.glb, drawn by Tower 3D: the editor draws it, the playground leaves it out) centred on the origin, its monitor at the far edge (+z), the worker's chair at z -1; the second monitor Tower 3D shows beside it once its worker has shown something, as a guide. The worker sits facing +z, so +x is on its left. Shared: the L's return, a filing cabinet off the desk's right end, and a cactus and a mug toward its other end (-x). Each state is a worker's status: idle, working (and booting), watching, needs (asking, or held by Claude's trust or sign-in screen), done. Slots are the places of what Tower 3D draws around the worker: its fork in a second chair, its subagents standing on the desk, its logbook, the papers new to it, and the notebook of a reviewer sitting at the desk's left end.",
  "guides": [
   { "name": "desk", "model": "desk", "at": [0, 0, 0] },
   { "name": "second monitor", "size": [0.71, 0.46, 0.04], "at": [-0.98, 0.84, 0.06], "turn": -31.5 }
  ],
  "items": [
-  { "id": "return", "model": "furniture/cabinet_medium", "at": [1.575, 0, -0.2], "turn": 90 }
+  { "id": "return", "model": "furniture/cabinet_medium", "at": [1.575, 0, -0.2], "turn": 90 },
+  { "id": "desk_cactus", "model": "furniture/cactus_small_A", "at": [-0.55, 0.75, 0.38], "turn": 0, "scale": 0.5 },
+  { "id": "desk_mug", "model": "furniture/mug_A", "at": [-0.95, 0.75, 0.25], "turn": 180, "scale": 0.45 }
  ],
  "slots": [
   { "name": "twin", "pose": "sit", "size": 0.85, "at": [1.05, 0, -1.3], "turn": -22.91831180523293 },
