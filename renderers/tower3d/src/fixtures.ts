@@ -67,6 +67,8 @@ type Facts = {
   landed?: boolean
   /** How many sessions it ran as, this one the last: each earlier one started a day before the next. */
   sessions?: number
+  /** Minutes since it went off duty, a minute after it started unless given. */
+  left?: number
   /** Why it can't be resumed where it ran. */
   unresumable?: Card['unresumable']
 }
@@ -116,7 +118,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     status: f.status, blocked: f.blocked, live, waiting, leaving: false,
     ...(f.waitsOn !== undefined && { reportsTo: idOf(project, f.waitsOn), waitsOn: { id: idOf(project, f.waitsOn), callsign: callsign(idOf(project, f.waitsOn)) } }),
     ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)) } }),
-    attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: startedAt + MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
+    attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: f.left === undefined ? startedAt + MIN : now - f.left * MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, cutOff, unresumable: f.unresumable, conversations,
     onDuty: live || awaitsResume,
@@ -591,6 +593,21 @@ const crews = (now: number) => boardOf([
   },
 ], now)
 
+/**
+ * One crew's table changing state as it grows and shrinks, a board each: a lead and three hires at `seats_4`, a fourth
+ * hire bringing `seats_6`, two more `seats_8`; then the second hire goes home, its seat left empty and the table kept,
+ * and last that hire falls off the board, as at the day's turn, and the table is drawn for the six on duty.
+ */
+function growing(now: number): Board[] {
+  const lead: Facts = { status: 'working', prompt: 'Coordinate the parser rewrite', tool: 'Bash', ago: 60 }
+  const hires = [50, 45, 40, 5, 4, 3].map((ago, n) => hire(0, ago, `Rewrite parser stage ${n + 1}`))
+  const home: Facts = { ...hires[1], status: 'exited', answer: 'Rewritten.', left: 1 }
+  const yesterday: Facts = { ...home, ago: 3000, left: 2990 }
+  const floor = (workers: Facts[]) => boardOf([{ id: 'grow', name: 'grow', color: '#c3e88d', workers }], now)
+  const secondAs = (second: Facts) => [lead, hires[0], second, ...hires.slice(2)]
+  return [floor([lead, ...hires.slice(0, 3)]), floor([lead, ...hires.slice(0, 4)]), floor([lead, ...hires]), floor(secondAs(home)), floor(secondAs(yesterday))]
+}
+
 /** Each fixture's boards, in the order the door's `advance` delivers them. */
 export const FIXTURES: Record<string, (now: number) => Board[]> = {
   busy: (now) => [busyBoard(busyFloors(now), now), busyBoard(busyFloors(now, true), now), busyBoard(answered(busyFloors(now, true)), now)],
@@ -602,6 +619,7 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
   tidy: (now) => [tidyFloor(now)],
   logbook: (now) => [logbook(now)],
   crews: (now) => [crews(now)],
+  growing,
 }
 
 /** The fixture named by `?board=`, if the page was opened with one. */

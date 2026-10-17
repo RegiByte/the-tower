@@ -34,7 +34,8 @@
     "hub/renderers/kaykit/scenes/prefabs/meeting_long.json",
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_8.json",
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_4.json",
-    "hub/renderers/tower3d/src/fixtures.ts#crews"
+    "hub/renderers/tower3d/src/fixtures.ts#crews",
+    "hub/renderers/tower3d/src/fixtures.ts#growing"
   ],
   "links": [
     { "to": "crews", "verb": "uses", "carries": "card.reportsTo, card.onDuty and today's sent-home cards: who a crew is and when each of it came and went" },
@@ -78,6 +79,12 @@ board field was added.
   ([`room_meeting_8.json`](ref:hub/renderers/kaykit/scenes/prefabs/room_meeting_8.json)); all of it is moved in the
   [[prefab-editor]], and [`meetingKit`](ref:hub/renderers/tower3d/src/meetings.ts#meetingKit) reads it into places on
   the level. A table is drawn with the workstations' dressing on every board, so a state change rebuilds nothing.
+  A member keeps its place's name as the table grows (`seat_3` stays `seat_3`), so when the state changes every seated
+  member stands up and walks inside the room to that seat in the new state, and nobody swaps sides. The table keeps its
+  largest state while the crew stays, so a member going home moves nobody. At the day's turn a member sent home
+  yesterday drops off the board and the replay no longer knows it: the table can shrink a state, and the members who
+  came after it renumber. That is accepted: the replay is pure over one board, and a once-a-day shuffle isn't worth
+  stored state.
 - *Drawn as a desk at a place.* [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan) gives a member a `DeskSlot` at its
   place, with `meeting` and its own workstation's `n`; the desk layer
   ([`DESKS`](ref:hub/renderers/tower3d/src/layers.ts#DESKS)) draws it as a seat
@@ -123,5 +130,7 @@ board field was added.
 
 **Impact.** Tower 3D only; no board or API change. The tidy fixture's crew of three now gathers; a `crews` fixture
 board covers a gathered crew, an overflow onto the counter and a standing member, two crews in two rooms, and a
-third crew waiting at its desks. Off-duty members staying around as roamers while their lead works is a later idea
+third crew waiting at its desks. A `growing` fixture has one crew over five boards (`seats_4`, `seats_6`, `seats_8`, a member
+sent home, then that member dropped at the day's turn), and a frames stage shoots its room as the table grows, mid-walk
+and settled. Off-duty members staying around as roamers while their lead works is a later idea
 (draft `wintry-pebble`).

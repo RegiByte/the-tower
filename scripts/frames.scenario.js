@@ -259,5 +259,12 @@
     t.key('Escape'); t.step(10); t.capture()
     tryDo('meeting-room', () => t.teleport({ level: front.l.level, x: front.l.x - 1.5, z: front.l.z - 3.6, y: 2.9, yaw: 0, pitch: -0.9 })); t.step(1); snap('meeting-room')
   }
+  if (new URLSearchParams(location.search).get('board') === 'growing') {
+    /** Inside Meeting · 8 by its door, looking along the long table. */
+    const room = () => (t.teleport({ level: 1, x: -7.4, z: 13.3, yaw: Math.PI / 2, pitch: -0.35 }), t.step(1))
+    tryDo('table-grows', () => t.advance())
+    t.step(60); room(); snap('reseating')
+    t.step(900); room(); snap('reseated')
+  }
   return out
 })()
