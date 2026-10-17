@@ -330,8 +330,11 @@ export function wearRigid(cast: Cast, rig: Rig, name: string, material: THREE.Ma
 /** Whether a part of the pack is skinned to the bones, else hung on one. */
 export const skinned = (cast: Cast, name: string) => cast.parts.get(name)!.bone === undefined
 
-/** A clip playing at `at` seconds (looped), at `weight`. */
-export type Layer = { clip: ClipKey; at: number; weight?: number }
+/** How long a clip of a rig lasts, seconds. */
+export const clipLength = (cast: Cast, rig: Rig, clip: ClipKey) => cast.skeletons[rig.kind].clips.get(clip)!.duration
+
+/** A clip playing at `at` seconds, looped, or played `once` and held on its last frame, at `weight`. */
+export type Layer = { clip: ClipKey; at: number; weight?: number; once?: true }
 /** A pose: its layers, and how far the chest leans forward over them (radians; back when negative). */
 export type Pose = { layers: Layer[]; lean?: number }
 
@@ -340,6 +343,8 @@ const X = new THREE.Vector3(1, 0, 0)
 
 /** How long a new pose takes to fade in over the last one, seconds. */
 const FADE = 0.3
+/** How far before its end a clip played once is held: a looping action set to its duration wraps to its first frame. */
+const ONCE_END = 1e-3
 
 const clipsOf = (p: Pose) => p.layers.map((l) => l.clip).join('|')
 
@@ -352,22 +357,23 @@ export function pose(cast: Cast, rig: Rig, next: Pose, t: number) {
   if (rig.last && clipsOf(rig.last) !== clipsOf(next)) rig.fade = { from: rig.fade && t - rig.fade.at < FADE ? rig.fade.from : rig.last, at: t }
   rig.last = next
   const k = rig.fade ? Math.min(1, (t - rig.fade.at) / FADE) : 1
-  const layers = new Map<ClipKey, { at: number; weight: number }>()
-  for (const { clip, at, weight = 1 } of next.layers) layers.set(clip, { at, weight: weight * k })
-  for (const { clip, at, weight = 1 } of k < 1 ? rig.fade!.from.layers : []) {
+  const layers = new Map<ClipKey, { at: number; weight: number; once?: true }>()
+  for (const { clip, at, weight = 1, once } of next.layers) layers.set(clip, { at, weight: weight * k, once })
+  for (const { clip, at, weight = 1, once } of k < 1 ? rig.fade!.from.layers : []) {
     const held = layers.get(clip)
     if (held) held.weight += weight * (1 - k)
-    else layers.set(clip, { at, weight: weight * (1 - k) })
+    else layers.set(clip, { at, weight: weight * (1 - k), once })
   }
   if (k === 1) rig.fade = undefined
   for (const [clip, action] of rig.playing) if (!layers.has(clip)) (action.stop(), rig.playing.delete(clip))
-  for (const [clip, { at, weight }] of layers) {
+  for (const [clip, { at, weight, once }] of layers) {
     let action = rig.playing.get(clip)
     if (!action) {
       action = rig.mixer.clipAction(cast.skeletons[rig.kind].clips.get(clip)!).play()
       rig.playing.set(clip, action)
     }
-    action.time = ((at % action.getClip().duration) + action.getClip().duration) % action.getClip().duration
+    const { duration } = action.getClip()
+    action.time = once ? Math.min(Math.max(at, 0), duration - ONCE_END) : ((at % duration) + duration) % duration
     action.weight = weight
   }
   for (const { bone, rest } of rig.shaped) bone.scale.copy(rest)

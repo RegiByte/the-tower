@@ -19,7 +19,7 @@ import { drawCompass, pointers } from './compass.ts'
 import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
 import { launch, tickFireworks } from './fireworks.ts'
 import { beatAt, duck, pause, play, playing, setRoom } from './music.ts'
-import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, makeCat, nearDoors, purr, ring, roam, standPose, steer, tada, tagAlong, walkIn, walkOut, walkPose, watcherOf, type Cat, type CatName } from './life.ts'
+import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, makeCat, nearDoors, purr, ring, roam, steer, tada, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat, type CatName } from './life.ts'
 import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from './hands.ts'
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
@@ -1586,12 +1586,12 @@ function tickPeople({ dt, t }: Frame) {
   for (const desk of s.desks.values()) {
     if (!shown(levelOf(desk.group))) continue
     const arriving = s.arrivals.get(desk.card.id)
-    if (arriving) walkPose(s.models!, arriving.desk.avatar, t)
-    else poseRigs(desk, t)
+    if (arriving) arrivalPose(s.models!, arriving, t)
+    else poseRigs(desk, t, opened + t)
   }
   for (const l of s.leavers) {
     const inside = walkOut(l, dt)
-    if (shown(l.level)) (inside ? standPose : walkPose)(l.models, l.avatar, t)
+    if (shown(l.level)) leaverPose(l, inside, t)
     if (inside && s.doorOpen.get(l.level) === 0) (s.leavers.delete(l), discard(l.group))
   }
   tickCats(dt, t)

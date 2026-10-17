@@ -11,7 +11,7 @@ import { WARDROBE } from './closet.ts'
 import { CHAIR } from './chair.ts'
 import { instance, type Models } from './models.ts'
 import { lookOf, lookOfWorker } from './wardrobe.ts'
-import { pose, type Pose } from './rig.ts'
+import { clipLength, pose, type Pose } from './rig.ts'
 import { posterOf, shownKey, type Shown } from './showing.ts'
 import { block, dispose, glowing, glows, mesh, sprite, toon } from './toon.ts'
 
@@ -123,6 +123,8 @@ export type Desk = {
   /** Its logbook beside the keyboard, as thick as the sessions it ran as; a reviewer beside its author has none. */
   binder?: THREE.Group
   binderSessions: number
+  /** How many subagents stood at the desk when last posed, and since when (sim seconds) the worker summoned the newest. */
+  summoned: { count: number; at?: number }
   turn: number
   phase: number
 }
@@ -263,9 +265,10 @@ function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 
   furniture.group.add(papers)
   const desk: Desk = {
     ...furniture, marks, card, models, look, avatar: w, minis, speech, papers, papersCount: 0, binderSessions: 0,
-    tagText: '', gistText: '', bubbleText: '', speechText: '', sideText: '', turn: 0, phase: random() * 10,
+    tagText: '', gistText: '', bubbleText: '', speechText: '', sideText: '', summoned: { count: 0 }, turn: 0, phase: random() * 10,
   }
   syncDesk(desk, card)
+  desk.summoned.count = desk.minis.avatars.length
   return desk
 }
 
@@ -512,18 +515,40 @@ function poseRaised(desk: Desk, t: number, seat: THREE.Vector3) {
   return k < RAISE.hold
 }
 
-/** The worker in its chair: typing while it works, waving you over while it asks, a showing held up over its head, else sitting back. */
-function seatedPose(card: Card, p: number, holding: boolean): Pose {
+/** How long after the user last typed to a resting worker it still talks back, seconds. */
+const TALKING = 6
+
+/**
+ * What the worker in its chair is doing at `wall` (epoch seconds), `summoning` seconds after it summoned its newest
+ * subagent: a showing held up over its head; talking back while you type to it; waving you over while it asks;
+ * summoning; working (casting while it compacts, picking at a turn that seems stuck, else typing); flinching over the
+ * `flinch` seconds after it fails, then slumped; else sitting back.
+ */
+function seatedPose(card: Card, p: number, wall: number, holding: boolean, summoning: number | undefined, flinch: number): Pose {
   const sit = { clip: 'Sit_Chair_Idle:rest', at: p } as const
+  const working = card.status === 'working' || card.status === 'booting'
   if (holding) return { layers: [sit, { clip: 'Cheering:arms', at: p * 0.5 }] }
-  if (card.status === 'working' || card.status === 'booting') return { layers: [sit, { clip: 'Type', at: p }] }
+  if (!working && card.typedAt !== undefined && wall - card.typedAt / 1000 < TALKING) return { layers: [{ clip: 'UAL_Sitting_Talking_Loop', at: p }] }
   if (card.status === 'needs_input' || card.status === 'blocked') return { layers: [sit, { clip: 'Waving:arms', at: p }] }
+  if (summoning !== undefined) return { layers: [sit, { clip: 'Ranged_Magic_Summon:arms', at: summoning, once: true }] }
+  if (working && card.compacting) return { layers: [sit, { clip: 'Ranged_Magic_Spellcasting_Long:arms', at: p }] }
+  if (working && card.stuck) return { layers: [sit, { clip: 'Lockpicking:arms', at: p }] }
+  if (working) return { layers: [sit, { clip: 'Type', at: p }] }
+  const failedFor = wall - card.enteredAt / 1000
+  if (card.status === 'failed' && failedFor < flinch) return { layers: [sit, { clip: 'Hit_B:arms', at: failedFor, once: true }], lean: 0.45 }
   const lean = card.status === 'failed' ? 0.45 : card.status === 'idle' ? 0.22 + Math.sin(p * 0.9) * 0.04 : card.status === 'watching' ? -0.15 : 0
   return { layers: [{ clip: 'Sit_Chair_Idle', at: p }], lean }
 }
 
 /** Whether the worker holds a showing up over its head at `t`. */
 const holdingUp = (desk: Desk, t: number) => desk.raised !== undefined && t - desk.raised.start < RAISE.hold
+
+/** How long ago (sim seconds) the worker summoned its newest subagent, while it still summons. */
+function summoning(desk: Desk, t: number) {
+  const { at } = desk.summoned
+  if (at === undefined || t - at >= clipLength(desk.models.cast, desk.avatar.rig, 'Ranged_Magic_Summon')) return undefined
+  return t - at
+}
 
 /**
  * Moves the worker for its status: turned round to you while it asks or holds something up, hopping while it asks;
@@ -538,6 +563,8 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   desk.turn = ease(desk.turn, turnTo, dt * 5)
   desk.swivel.rotation.y = desk.turn
   a.body.rotation.y = desk.turn
+  if (desk.minis.avatars.length > desk.summoned.count) desk.summoned.at = t
+  desk.summoned.count = desk.minis.avatars.length
   const hop = asks ? Math.max(0, Math.sin(p * 5)) * 0.08 : 0
   a.body.position.copy(seatedAt(desk.models.cast, a, CHAIR).applyAxisAngle(Y, desk.turn)).add(new THREE.Vector3(0, hop, 0))
   if (desk.twin) desk.twin.avatar.body.position.copy(seatedAt(desk.models.cast, desk.twin.avatar, { y: CHAIR.y / desk.marks.twin!.size, back: CHAIR.back / desk.marks.twin!.size }))
@@ -546,11 +573,14 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   a.bulb.color.set(statusColor(card)).multiplyScalar(card.waiting ? 0.6 + Math.abs(Math.sin(p * 4)) * 0.6 : 1)
 }
 
-/** Poses the bones at a desk: the worker for its status (typing, waving you over, slumped, dozing), its twin typing, its subagents cheering. */
-export function poseRigs(desk: Desk, t: number) {
+/**
+ * Poses the bones at a desk at sim time `t`, `wall` on the wall clock (epoch seconds): the worker for what it does
+ * (`seatedPose`), its twin typing, its subagents cheering.
+ */
+export function poseRigs(desk: Desk, t: number, wall: number) {
   const { cast } = desk.models
   const p = t + desk.phase
-  pose(cast, desk.avatar.rig, seatedPose(desk.card, p, holdingUp(desk, t)), t)
+  pose(cast, desk.avatar.rig, seatedPose(desk.card, p, wall, holdingUp(desk, t), summoning(desk, t), clipLength(cast, desk.avatar.rig, 'Hit_B')), t)
   if (desk.twin) pose(cast, desk.twin.avatar.rig, { layers: [{ clip: 'Sit_Chair_Idle:rest', at: p + 1.3 }, { clip: 'Type', at: p + 1.3 }] }, t)
   desk.minis.avatars.forEach((m, i) => pose(cast, m.rig, { layers: [{ clip: 'Cheering', at: p + i * 0.4 }] }, t))
 }

@@ -187,22 +187,23 @@ export function placeGuest(g: Guest, at: GuestPlace, y: number) {
 export function poseGuest(g: Guest, at: GuestPlace, beat: number, t: number) {
   g.mug.visible = at.pose === 'drink'
   if (g.avatar.gear) g.avatar.gear.visible = at.pose !== 'drink'
-  if (at.pose === 'walk') walkPose(g.models, g.avatar, t)
+  if (at.pose === 'walk') walkPose(g.models, g.avatar, at.walked, t)
   else if (at.pose === 'dance') dance(g, beat, t)
   else if (at.pose === 'drink') drink(g, at.since, t)
   else mingle(g, at.since, t)
 }
 
-/** The moves a guest dances, a few bars of each, in its own order. */
-const MOVES: ClipKey[] = ['Cheering', 'Jump_Idle', 'Waving', 'Cheering:arms']
+/** The moves a guest dances, a few bars of each, in its own order: the dance itself most of the time. */
+const MOVES: ClipKey[] = ['UAL_Dance_Loop', 'Cheering', 'UAL_Dance_Loop', 'Jump_Idle', 'UAL_Dance_Loop', 'Waving', 'Cheering:arms']
 
-/** Bounces on the beat and sways, changing moves every two bars. */
+/** Dances, changing moves every two bars; between dances, bounces on the beat and sways. */
 function dance(g: Guest, at: number, t: number) {
   const beat = at + g.phase
   const { body, rig } = g.avatar
-  body.position.set(0, Math.abs(Math.sin(beat * Math.PI)) * 0.06, 0)
-  body.rotation.set(0, Math.sin(beat * Math.PI * 0.25) * 0.5, 0)
   const move = MOVES[(Math.floor(beat / 8) + Math.floor(g.phase * MOVES.length)) % MOVES.length]
+  const bounce = move === 'UAL_Dance_Loop' ? 0 : 1
+  body.position.set(0, Math.abs(Math.sin(beat * Math.PI)) * 0.06 * bounce, 0)
+  body.rotation.set(0, Math.sin(beat * Math.PI * 0.25) * 0.5 * bounce, 0)
   const layers = move.endsWith(':arms') ? [{ clip: 'Jump_Idle:rest', at: beat } as const, onBeat(g.models.cast, rig, move, beat)] : [onBeat(g.models.cast, rig, move, beat)]
   pose(g.models.cast, rig, { layers }, t)
 }
@@ -220,12 +221,12 @@ function drink(g: Guest, since: number, t: number) {
   pose(g.models.cast, rig, { layers: [{ clip: 'Sit_Chair_Idle:rest', at: since + g.phase * 3 }, { clip: 'Holding_A:arms', at: since, weight: 1 - lift }, { clip: 'Use_Item:arms', at: 0.6, weight: lift }] }, t)
 }
 
-/** Chats: turns a little to the others and talks with its hands now and then. */
+/** Chats: turns a little to the others and now and then talks, hands and all. */
 function mingle(g: Guest, since: number, t: number) {
   const talk = Math.max(0, Math.sin(since * 0.9 + g.phase * 7))
   const { body, rig } = g.avatar
   body.position.set(0, 0, 0)
   body.rotation.set(0, Math.sin(since * 0.4 + g.phase * 5) * 0.25, 0)
   const at = since + g.phase * 4
-  pose(g.models.cast, rig, { layers: [{ clip: 'Idle_B:rest', at }, { clip: 'Idle_B:arms', at, weight: 1 - talk }, { clip: 'Interact:arms', at: since, weight: talk }] }, t)
+  pose(g.models.cast, rig, { layers: [{ clip: 'Idle_B', at, weight: 1 - talk }, { clip: 'UAL_Idle_Talking_Loop', at: since, weight: talk }] }, t)
 }

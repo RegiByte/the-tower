@@ -88,7 +88,8 @@ export const DESKS: Layer<DeskAt, Desk> = {
   leave(desk, id) {
     if (desk.avatar.root.visible) {
       const level = s.plan.levels.find((l) => l.y === desk.group.position.y)!.index
-      const l = leaver(s.plan, id, desk.card.callsign, level, desk.group.position, desk.group.localToWorld(desk.avatar.root.position.clone()), s.models!)
+      const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
+      const l = leaver(s.plan, id, desk.card.callsign, level, desk.group.position, desk.group.localToWorld(desk.avatar.root.position.clone()), heading, s.models!)
       s.leavers.add(l)
       hangOn(level, l.group)
     }
