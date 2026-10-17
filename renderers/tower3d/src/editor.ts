@@ -680,21 +680,25 @@ function describe(e: Item | Slot) {
 
 function renderPicker(docs: DocEntry[]) {
   const words = filter.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const shownDocs = docs.filter((d) => words.every((w) => `${d.path} ${d.title ?? ''}`.toLowerCase().includes(w)))
+  const shownDocs = docs.filter((d) => words.every((w) => `${d.path} ${'title' in d ? d.title ?? '' : ''}`.toLowerCase().includes(w)))
   const badges = (d: DocEntry) =>
-    [d.states && `${d.states} state${d.states > 1 ? 's' : ''}`, d.slots && `${d.slots} slot${d.slots > 1 ? 's' : ''}`, d.usedBy.length && `used by ${d.usedBy.length}`, d.tower3d && 'Tower 3D']
-      .filter(Boolean)
-      .join(' · ')
+    'error' in d
+      ? `can't be read: ${d.error}`
+      : [d.states && `${d.states} state${d.states > 1 ? 's' : ''}`, d.slots && `${d.slots} slot${d.slots > 1 ? 's' : ''}`, d.usedBy.length && `used by ${d.usedBy.length}`, d.tower3d && 'Tower 3D']
+          .filter(Boolean)
+          .join(' · ')
+  const name = (d: DocEntry) => ('title' in d && d.title) || d.path.split('/').at(-1)!
   panel.innerHTML = `
     <div class="row"><h1>Open a scene</h1>${trail.length ? '<button data-act="close-docs">back</button>' : ''}</div>
     <input type="text" id="filter" placeholder="filter: desk, meeting, roof" value="${esc(filter)}">
-    <div class="docs">${shownDocs.map((d) => `<button data-open="${esc(d.path)}" title="${esc(d.note ?? '')}${d.usedBy.length ? `\nused by ${esc(d.usedBy.join(', '))}` : ''}" class="${trail[0]?.path === d.path ? 'on' : ''}"><b>${esc(d.title ?? d.path.split('/').at(-1)!)}</b><small>${esc(d.path.replace(/^renderers\/kaykit\/scenes\//, ''))}</small>${badges(d) ? `<em>${badges(d)}</em>` : ''}</button>`).join('')}</div>
+    <div class="docs">${shownDocs.map((d) => `<button data-open="${esc(d.path)}" ${'error' in d ? 'disabled' : ''} title="${esc('note' in d ? d.note ?? '' : '')}${d.usedBy.length ? `\nused by ${esc(d.usedBy.join(', '))}` : ''}" class="${trail[0]?.path === d.path ? 'on' : ''}"><b>${esc(name(d))}</b><small>${esc(d.path.replace(/^renderers\/kaykit\/scenes\//, ''))}</small>${badges(d) ? `<em>${badges(d)}</em>` : ''}</button>`).join('')}</div>
     ${message ? `<div class="muted">${esc(message)}</div>` : ''}
   `
 }
 
 function renderPanel() {
-  if (picking || !trail.length) return picking ? renderPicker(picking) : void showDocs().catch(fail)
+  if (picking) return renderPicker(picking)
+  if (!trail.length) return void (panel.innerHTML = `<h1>Open a scene</h1><div class="muted">${message ? esc(message) : 'reading the scenes…'}</div>`)
   const e = selected ? elementShown(selected) : undefined
   const hits = query.trim() ? find(assets.catalog, { text: query }).slice(0, 14) : []
   const pending = changes()

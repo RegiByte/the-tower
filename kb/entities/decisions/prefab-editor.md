@@ -53,7 +53,7 @@ code fills from the board.
   move diffs as one line. `window.editor` and `tool:editor shot` give agents the same page.
 - Open lists every scene the serve reaches ([`listing`](ref:hub/renderers/kaykit/src/listing.ts#listing), `GET /docs`):
   its title, states, slots, the documents placing it and whether Tower 3D reads it (the zones' `PREFABS` and
-  `DESK_DRESS`). A scene opens at `?scene=`, so a reload opens it again; leaving unsaved changes asks first.
+  `DESK_DRESS`); a file that does not read as a scene is listed with its error, greyed. A scene opens at `?scene=`, so a reload opens it again; leaving unsaved changes asks first.
 - A turn written from the gizmo is the yaw the proxy faces, as the element's own turn plus the shortest way round:
   an Euler's y alone folds a turn past 90° back. A drag ends with its button, also when the browser loses the pointer.
 

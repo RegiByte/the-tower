@@ -25,7 +25,7 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { formatScene } from '../renderers/kaykit/src/format.ts'
 import { readScene } from '../renderers/kaykit/src/files.ts'
-import { listing } from '../renderers/kaykit/src/listing.ts'
+import { listing, type Read } from '../renderers/kaykit/src/listing.ts'
 import { parseScene, VIEWS, type Camera, type Scene } from '../renderers/kaykit/src/scene.ts'
 import { DESK_DRESS } from '../renderers/tower3d/src/dress.ts'
 import { PREFABS } from '../renderers/tower3d/src/zones.ts'
@@ -54,10 +54,20 @@ function docPath(root: string, name: string | null) {
 }
 
 
-/** Every scene JSON under `root`, repo-relative, listed with who places it and whether Tower 3D reads it. */
+/**
+ * Every scene JSON under `root`, repo-relative, listed with who places it and whether Tower 3D reads it: one that does
+ * not read as a scene (half saved, not a scene at all) is listed with its error, so the rest stay openable.
+ */
 function docsUnder(root: string) {
   const files = fs.readdirSync(root, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.json')).sort()
-  const docs = files.map((f) => ({ path: path.relative(REPO, path.join(root, f)), scene: readScene(path.join(root, f)) }))
+  const docs = files.map((f): Read => {
+    const at = path.relative(REPO, path.join(root, f))
+    try {
+      return { path: at, scene: readScene(path.join(root, f)) }
+    } catch (e) {
+      return { path: at, error: (e as Error).message }
+    }
+  })
   const tower3d = new Set([...PREFABS, DESK_DRESS].map((p) => path.relative(REPO, path.join(SCENES, p))))
   return listing(docs, tower3d, (ref, from) => path.relative(REPO, path.resolve(REPO, path.dirname(from), ref)))
 }
