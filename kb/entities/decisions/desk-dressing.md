@@ -10,7 +10,6 @@
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#PROPS",
-    "hub/renderers/tower3d/src/dress.ts#THEMES",
     "hub/renderers/tower3d/src/dress.ts#statusState",
     "hub/renderers/tower3d/src/desk.ts#deskSlots",
     "hub/renderers/kaykit/scenes/prefabs/desk_dress.json",
@@ -54,7 +53,8 @@ loudest thing on the floor.
   [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms (room packs ×0.75,
   Restaurant and Halloween food and kitchenware ×0.4 more). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
   refills one layer for every workstation on each board: a BatchedMesh per pack and theme, 4 draw calls for the
-  building. The return is drawn in the Furniture pack's grey alt_C ([`THEMES`](ref:hub/renderers/tower3d/src/dress.ts#THEMES)).
+  building. The return is drawn in the Furniture pack's grey alt_C, the theme its item in `desk_dress.json` carries, so the
+  prefab editor paints it as the office does.
 - `npm run tower3d` first measures the models it uses, vendored from the KayKit bundle in `renderers/tower3d/kaykit/`,
   into one git-ignored file the renderer's bundle embeds ([`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts)).
   The first version fetched glTFs from beside the page, which drew nothing framed in the tower (an opaque origin).

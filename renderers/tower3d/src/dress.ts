@@ -1,6 +1,5 @@
 import { fnv1a, mix } from '../../../src/shared/hash.ts'
 import { fit, type Model } from '../../kaykit/src/catalog.ts'
-import type { Theme } from '../../kaykit/src/scene.ts'
 import type { Card } from './api.ts'
 import { DESK, RETURN } from './layout.ts'
 import type { Prefab, PrefabItem } from './zones.ts'
@@ -37,9 +36,6 @@ export const PROPS = {
 } as const
 
 export type Prop = keyof typeof PROPS
-
-/** Models drawn in a theme of their pack (an alternate atlas, same UV layout): the return as a grey filing cabinet. */
-export const THEMES: Partial<Record<Prop, Theme>> = { 'furniture/cabinet_medium': { atlas: { furniture: 'alt_C' } } }
 
 /** `at` is (x, z) in desk space; `y` the height of its base, the desk top when absent; `turn` degrees about +Y. */
 export type Placement = { model: Prop; at: [x: number, z: number]; turn: number; y?: number }

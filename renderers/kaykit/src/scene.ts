@@ -14,6 +14,13 @@ const turn = z.number().optional()
 /** A name a state removes or changes it by, unique in its document among ids and slot names. */
 const id = z.string().optional().describe('a name states remove or change it by, unique in its document')
 
+const Swap = z.object({ from: color, to: color, tol: z.number().optional().describe('hue tolerance, degrees (14)') })
+
+export const Theme = z.object({
+  atlas: z.partialRecord(z.enum(PACKS), z.string()).optional().describe('per pack: base, alt_A, alt_B, alt_C or alt (catalog packs[].atlases)'),
+  swaps: z.partialRecord(z.enum(PACKS), z.array(Swap)).optional().describe('per pack: atlas hues near `from` take the hue of `to`, keeping their own shading'),
+})
+
 export const ModelItem = z.object({
   id,
   model: z.string().describe('catalog id, e.g. furniture/desk'),
@@ -21,6 +28,7 @@ export const ModelItem = z.object({
   turn,
   scale: z.union([z.number(), vec3]).optional().describe('on top of the catalog norms: 1 is Tower scale'),
   parts: z.record(z.string(), vec3).optional().describe('named parts posed by Euler angles in degrees, about their own pivot'),
+  theme: Theme.optional().describe('laid over the theme the model is drawn in, for this model alone: a filing cabinet in grey'),
 })
 
 export const SceneItem = z.object({
@@ -89,13 +97,6 @@ export const State = z
     add: Additions.optional().describe('what this state draws besides'),
   })
   .describe('what a state changes of the shared scene: removed first, then set, then added')
-
-const Swap = z.object({ from: color, to: color, tol: z.number().optional().describe('hue tolerance, degrees (14)') })
-
-export const Theme = z.object({
-  atlas: z.partialRecord(z.enum(PACKS), z.string()).optional().describe('per pack: base, alt_A, alt_B, alt_C or alt (catalog packs[].atlases)'),
-  swaps: z.partialRecord(z.enum(PACKS), z.array(Swap)).optional().describe('per pack: atlas hues near `from` take the hue of `to`, keeping their own shading'),
-})
 
 export const VIEWS = ['front', 'high', 'back', 'left', 'right', 'iso', 'top'] as const
 
@@ -209,6 +210,12 @@ export type FlatSlot = Slot & { from: string; via: string[]; turn: number; size:
 export type Flat = Omit<Scene, 'items' | 'slots' | 'states'> & { items: (ModelItem & { from: string; via: string[]; frame: Frame })[]; slots: FlatSlot[] }
 
 export const isModel = (it: Item): it is ModelItem => 'model' in it
+
+/** A theme laid over another: per pack, the atlas and the swaps `over` names win. */
+export const layTheme = (under: Theme | undefined, over: Theme | undefined): Theme => ({
+  atlas: { ...under?.atlas, ...over?.atlas },
+  swaps: { ...under?.swaps, ...over?.swaps },
+})
 export const isBoxGuide = (g: Guide): g is BoxGuide => 'size' in g
 export const isModelGuide = (g: Guide): g is ModelGuide => 'model' in g
 

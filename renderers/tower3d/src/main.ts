@@ -33,7 +33,7 @@ import { rigFrame } from './light/rig.ts'
 import { chooseLighting, LIT, lightingSection } from './light/setting.ts'
 import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
-import { DESK_DRESS, THEMES, dress } from './dress.ts'
+import { DESK_DRESS, dress } from './dress.ts'
 import { cityModel, furnish, type PrefabItem } from './zones.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
@@ -267,7 +267,7 @@ const LOBBY = new THREE.Matrix4()
 /** A workstation's models in its desk's frame. */
 function inDesk(desk: THREE.Object3D, items: PrefabItem[]): Placed[] {
   desk.updateMatrix()
-  return items.map((item) => ({ item, frame: desk.matrix, theme: THEMES[item.model as keyof typeof THEMES] }))
+  return items.map((item) => ({ item, frame: desk.matrix, theme: item.theme }))
 }
 
 /** Every level's workstations in their KayKit models, and the city model in the lobby. */

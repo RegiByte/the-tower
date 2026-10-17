@@ -6,7 +6,7 @@ import { build, cameraFor, type Assets, type Built } from './draw.ts'
 import { find } from './find.ts'
 import { gallery, PACK_COLORS } from './gallery.ts'
 import { loadMeshes } from './meshes.ts'
-import { flatten, parseScene, type Camera, type Flat, type Scene, type Theme } from './scene.ts'
+import { flatten, layTheme, parseScene, type Camera, type Flat, type Scene, type Theme } from './scene.ts'
 
 /**
  * The KayKit playground: any scene drawn and flown through, the whole collection (the gallery) by default. A human
@@ -80,10 +80,7 @@ const readRelative = async (ref: string, from: string) => {
 const effective = (): Scene => ({
   ...doc.scene,
   light: override.light ?? doc.scene.light,
-  theme: {
-    atlas: { ...doc.scene.theme?.atlas, ...override.theme.atlas },
-    swaps: { ...doc.scene.theme?.swaps, ...override.theme.swaps },
-  },
+  theme: layTheme(doc.scene.theme, override.theme),
 })
 
 /** Each draw is numbered: one that a later draw overtook while it fetched its prefabs is dropped. */

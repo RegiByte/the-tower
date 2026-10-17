@@ -47,7 +47,7 @@ const SPACE_ACCENT = '#e97d19'
 
 
 /** A model of a flattened prefab, in the prefab's own frame. */
-export type PrefabItem = { model: string; at: Vec3; turn: number; scale: number | Vec3; parts?: Record<string, Vec3> }
+export type PrefabItem = { model: string; at: Vec3; turn: number; scale: number | Vec3; parts?: Record<string, Vec3>; theme?: Theme }
 /**
  * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models, the floor they take that a walker bumps into, its
  * slots, and the models it draws in each of its states alone (shared ones included).

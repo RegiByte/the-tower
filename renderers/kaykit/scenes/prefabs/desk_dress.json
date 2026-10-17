@@ -6,7 +6,7 @@
   { "name": "second monitor", "size": [0.71, 0.46, 0.04], "at": [-0.98, 0.84, 0.06], "turn": -31.5 }
  ],
  "items": [
-  { "id": "return", "model": "furniture/cabinet_medium", "at": [1.575, 0, -0.2], "turn": 90 },
+  { "id": "return", "model": "furniture/cabinet_medium", "at": [1.575, 0, -0.2], "turn": 90, "theme": { "atlas": { "furniture": "alt_C" } } },
   { "id": "desk_cactus", "model": "furniture/cactus_small_A", "at": [-0.55, 0.75, 0.38], "turn": 0, "scale": 0.5 },
   { "id": "desk_mug", "model": "furniture/mug_A", "at": [-0.95, 0.75, 0.25], "turn": 180, "scale": 0.45 }
  ],

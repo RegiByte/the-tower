@@ -22,7 +22,7 @@ catalog, its norms, themes and per-pack batches (decision `office-kaykit`).
   "light": "day" | "night", "sky": "#rrggbb", "ground": "grid" | "plain",
   "theme": { "atlas": { "furniture": "alt_C" }, "swaps": { "restaurant": [{ "from": "#1f9e7a", "to": "#2b6f87", "tol": 18 }] } },
   "items": [
-    { "id": "desk", "model": "furniture/desk", "at": [x, y, z], "turn": 90, "scale": 1, "parts": { "fridge_A_door_top": [0, -100, 0] } },
+    { "id": "desk", "model": "furniture/desk", "at": [x, y, z], "turn": 90, "scale": 1, "parts": { "fridge_A_door_top": [0, -100, 0] }, "theme": { "atlas": { "furniture": "alt_C" } } },
     { "id": "pod", "scene": "prefabs/desk.json", "states": ["working"], "at": [x, y, z], "turn": 180, "scale": 1 }
   ],
   "boxes":  [{ "size": [w, h, d], "at": [x, y, z], "color": "#…", "glow": true, "opacity": 0.3 }],
@@ -43,6 +43,8 @@ How it differs from the `Placement` and `Theme` sketched in the exploration's fi
 - `turn` is any angle, not a quarter turn: clutter is rarely on the grid (mugs, chairs round a table).
 - `scale` is on top of the norms, so `1` is always Tower scale; diorama pieces take theirs here.
 - `parts` poses by Euler angles, not one angle: oven doors hinge on X, fridge doors on Y.
+- A model's `theme` is laid over the scene's for that model alone (per pack, its atlas and swaps win): a grey
+  filing cabinet in a wooden office.
 - An item can place another **scene**. A scene is a prefab: the desk dressings are a workstation plus props, a
   floor places them. Paths are relative to the file that names them. That is the whole hierarchy mechanism.
 - `boxes`, `labels`, `lamps` and `cameras` live beside the items, because a floor needs its shell, signs and

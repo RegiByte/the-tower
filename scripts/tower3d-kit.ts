@@ -41,7 +41,7 @@ async function modelsOf(name: string, states: string[]) {
   const flat = await flatFile(path.join(SCENES, name), states)
   const extras = (['boxes', 'labels', 'lamps'] as const).filter((k) => flat[k]?.length)
   if (extras.length) throw new Error(`${name}${states.length ? ` in ${states.join(', ')}` : ''}: the office draws a prefab's models only, and it has ${extras.join(', ')}`)
-  return { flat, items: flat.items.map(({ model, at, turn, scale, parts }): PrefabItem => ({ model, at, turn: turn ?? 0, scale: scale ?? 1, parts })) }
+  return { flat, items: flat.items.map(({ model, at, turn, scale, parts, theme }): PrefabItem => ({ model, at, turn: turn ?? 0, scale: scale ?? 1, parts, theme })) }
 }
 
 /** Every prefab the office places, flattened shared and in each of its states alone, with its slots. */

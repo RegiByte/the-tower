@@ -9,6 +9,7 @@
   "reviewed": "2026-10-17",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
+    "hub/renderers/kaykit/src/scene.ts#layTheme",
     "hub/renderers/tower3d/src/kitfile.ts#KitFile",
     "hub/renderers/kaykit/src/meshes.ts#meshesFrom",
     "hub/renderers/kaykit/src/measure.ts#measureKit",
@@ -60,7 +61,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   [`fit`](ref:hub/renderers/kaykit/src/catalog.ts#fit) derives the placed bounds, so a norm changes in one place.
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
   another scene: prefabs are the hierarchy), boxes, labels, lamps, cameras, a theme (alt atlas and hue swaps per
-  pack) and a light; slots (named places code fills from the board), guides (what the host draws itself: a ghost box, or one of the host's own models by name, which the editor draws)
+  pack, and a model item's own laid over it by [`layTheme`](ref:hub/renderers/kaykit/src/scene.ts#layTheme)) and a light; slots (named places code fills from the board), guides (what the host draws itself: a ghost box, or one of the host's own models by name, which the editor draws)
   and named states. A prefab is a pure function of the states its placement asks for:
   [`resolve`](ref:hub/renderers/kaykit/src/scene.ts#resolve) applies each state's removals, changes and additions
   in the document's order, and [`flatten`](ref:hub/renderers/kaykit/src/scene.ts#flatten) places prefabs in their
@@ -68,7 +69,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   under its placing item's id. Scenes live in `renderers/kaykit/scenes/`, versioned with the code; the
   gallery is a scene derived from the catalog.
 - One drawing ([`build`](ref:hub/renderers/kaykit/src/draw.ts#build)): each pack's models in one `BatchedMesh`
-  with one toon material over the pack's atlas; a theme is a texture per pack.
+  per theme they are drawn in, with one toon material over the pack's atlas; a theme is a texture per pack.
   [`scripts/kaykit.ts`](ref:hub/scripts/kaykit.ts) (`npm run tool:kaykit`) finds and checks in Node and renders by
   driving the page's `window.kaykit` in headless Chrome, so headless and interactive share every line of drawing.
 - The office on that path. [`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts) runs before the bundle: it measures

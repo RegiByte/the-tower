@@ -3,7 +3,7 @@ import { fit, type Catalog, type Model, type Pack } from './catalog.ts'
 import { atlasTexture, glowTexture, type Atlases } from './atlas.ts'
 import { drawLabels } from './labels.ts'
 import type { ModelMesh } from './meshes.ts'
-import { isBoxGuide, type Camera, type Flat, type ModelItem } from './scene.ts'
+import { isBoxGuide, layTheme, type Camera, type Flat, type ModelItem, type Theme } from './scene.ts'
 
 /**
  * A flat scene made into a three.js scene. Every model is one mesh (or a few named parts) sampling its pack's atlas,
@@ -32,8 +32,8 @@ const UP = new THREE.Vector3(0, 1, 0)
 const SKY = { day: '#d8d2c4', night: '#121828' }
 const DEG = Math.PI / 180
 
-function material(pack: Pack, flat: Flat, assets: Assets) {
-  const m = new THREE.MeshToonMaterial({ map: atlasTexture(assets.atlases, pack, flat.theme), gradientMap: RAMP })
+function material(pack: Pack, theme: Theme, flat: Flat, assets: Assets) {
+  const m = new THREE.MeshToonMaterial({ map: atlasTexture(assets.atlases, pack, theme), gradientMap: RAMP })
   const glow = flat.light === 'night' ? glowTexture(pack, assets.atlases.get(`${pack}/base`)!) : null
   if (glow) Object.assign(m, { emissiveMap: glow, emissive: new THREE.Color('#ffffff'), emissiveIntensity: 1.4 })
   return m
@@ -64,16 +64,20 @@ export function itemMatrix(item: ModelItem, model: Model) {
 
 function batches(flat: Flat, assets: Assets, scene: THREE.Scene) {
   type Job = { item: number; geometry: THREE.BufferGeometry; matrix: THREE.Matrix4 }
-  const jobs = new Map<Pack | 'glass', Job[]>()
+  const jobs = new Map<string, Job[]>()
+  const looks = new Map<string, { pack: Pack; theme: Theme }>()
   flat.items.forEach((item, i) => {
     const model = assets.byId.get(item.model)
     if (!model) throw new Error(`${item.from}: no model "${item.model}"`)
     const mesh = assets.meshes.get(item.model)!
     for (const part of Object.keys(item.parts ?? {})) if (!mesh.nodes.some((n) => n.name === part)) throw new Error(`${item.from}: ${item.model} has no part "${part}"`)
     const base = itemMatrix(item, model)
+    const theme = layTheme(flat.theme, item.theme)
+    const look = JSON.stringify([model.pack, theme.atlas?.[model.pack] ?? 'base', theme.swaps?.[model.pack] ?? []])
+    looks.set(look, { pack: model.pack, theme })
     nodeMatrices(mesh, item.parts).forEach((m, k) => {
       for (const prim of mesh.nodes[k].prims) {
-        const key = prim.glass ? 'glass' : model.pack
+        const key = prim.glass ? 'glass' : look
         if (!jobs.has(key)) jobs.set(key, [])
         jobs.get(key)!.push({ item: i, geometry: prim.geometry, matrix: base.clone().multiply(m) })
       }
@@ -85,7 +89,7 @@ function batches(flat: Flat, assets: Assets, scene: THREE.Scene) {
     const unique = [...new Set(list.map((j) => j.geometry))]
     const verts = unique.reduce((n, g) => n + g.attributes.position.count, 0)
     const indices = unique.reduce((n, g) => n + g.index!.count, 0)
-    const batch = new THREE.BatchedMesh(list.length, verts, indices, key === 'glass' ? GLASS : material(key, flat, assets))
+    const batch = new THREE.BatchedMesh(list.length, verts, indices, key === 'glass' ? GLASS : material(looks.get(key)!.pack, looks.get(key)!.theme, flat, assets))
     const ids = new Map(unique.map((g) => [g, batch.addGeometry(g)]))
     const owner: number[] = []
     for (const j of list) {
