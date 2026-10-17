@@ -71,6 +71,10 @@ code fills from the board.
   then writes through [`tool:editor serve`](ref:hub/scripts/editor.ts), which checks each document and writes it as
   [`formatScene`](ref:hub/renderers/kaykit/src/format.ts#formatScene) lays it out: a placed thing per line, so a
   move diffs as one line. `window.editor` and `tool:editor shot` give agents the same page.
+- The serve rebuilds Tower 3D on each load of the page; a build that fails (a model the editor's full catalog offers
+  that Tower 3D's vendored kit lacks) leaves the last build in `out/`, which keeps serving with the build's own error
+  drawn over it, naming the model and the `vendor` command. The serve vendors nothing itself: the full bundle's path
+  is not kept, and vendoring rewrites the committed `renderers/tower3d/kaykit`.
 - Open lists every scene the serve reaches ([`listing`](ref:hub/renderers/kaykit/src/listing.ts#listing), `GET /docs`):
   its title, states, slots, the documents placing it and whether Tower 3D reads it (the zones' `PREFABS` and
   `DESK_DRESS`); a file that does not read as a scene is listed with its error, greyed. A scene opens at `?scene=`, so a reload opens it again; leaving unsaved changes asks first.

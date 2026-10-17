@@ -5,7 +5,9 @@
  *
  *   npm run tool:editor -- serve [scene.json] [--port 4397]
  *                                                      the editor at http://127.0.0.1:<port>/editor.html, rebuilt on
- *                                                      every load, opening the scene, else its list of scenes; it
+ *                                                      every load (a build that fails, such as a model Tower 3D's
+ *                                                      kit lacks, is drawn over the last build, which keeps serving),
+ *                                                      opening the scene, else its list of scenes; it
  *                                                      lists (GET /docs), reads and writes any scene document under
  *                                                      the scene's folder of scenes, renderers/kaykit/scenes without
  *                                                      one (GET and PUT /doc?path=, each written checked by
@@ -42,6 +44,21 @@ const SCENES = path.join(REPO, 'renderers/kaykit/scenes')
 const TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.map': 'application/json', '.png': 'image/png', '.bin': 'application/octet-stream', '.woff2': 'font/woff2' }
 
 const build = () => execFileSync('npm', ['run', '-s', 'tower3d'], { cwd: REPO, stdio: 'pipe' })
+
+/** Why building Tower 3D failed, as the build said it, or nothing when it built: a failed build leaves the last one in out/. */
+function buildFailure() {
+  try {
+    build()
+  } catch (e) {
+    return (e as { stderr: Buffer }).stderr.toString().trim()
+  }
+}
+
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** The built editor page with `failure` drawn over it. */
+const withFailure = (html: string, failure: string) => html.replace('<body>', `<body>
+<pre id="build-failed" style="position: fixed; top: 12px; left: 344px; right: 12px; z-index: 1; margin: 0; padding: 8px 12px; white-space: pre-wrap; font: 11px/1.4 var(--mono); color: var(--ink); background: var(--panel); border: 2px solid var(--broken); border-radius: var(--radius); box-shadow: var(--shadow);">Tower 3D did not build: this is its last build, and the saved scenes are not in it yet.\n\n${escapeHtml(failure)}</pre>`)
 
 /** The folder of scenes a served scene may reach: the playground's, or the scene's own folder when it lives elsewhere. */
 const rootOf = (file: string) => (file.startsWith(`${SCENES}${path.sep}`) ? SCENES : path.dirname(file))
@@ -107,7 +124,15 @@ async function serve(port: number, rebuild: boolean, start: string | undefined) 
     if (pathname === '/design.css') return res.writeHead(200, { 'content-type': 'text/css' }).end(designCss())
     const face = fonts.find((f) => pathname === `/fonts/${f.file}`)
     if (face) return res.writeHead(200, { 'content-type': 'font/woff2' }).end(fs.readFileSync(fontFile(face)))
-    if (pathname === '/editor.html' && rebuild) build()
+    if (pathname === '/editor.html' && rebuild) {
+      const failure = buildFailure()
+      if (failure) {
+        console.error(failure)
+        const page = path.join(OUT, 'editor.html')
+        if (!fs.existsSync(page)) return res.writeHead(500, { 'content-type': 'text/plain' }).end(failure)
+        return res.writeHead(200, { 'content-type': 'text/html', 'cache-control': 'no-store' }).end(withFailure(fs.readFileSync(page, 'utf8'), failure))
+      }
+    }
     const [base, rel] = pathname.startsWith('/kaykit/') ? [KAYKIT, pathname.slice('/kaykit'.length)] : [OUT, pathname]
     const file = path.join(base, rel)
     if (!file.startsWith(base) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return res.writeHead(404).end()
@@ -158,7 +183,6 @@ async function main() {
   const file = positionals[0] && path.resolve(positionals[0])
   if (file) readScene(file)
   if (command === 'serve') {
-    build()
     const { url } = await serve(Number(values.port ?? 4397), true, file)
     return console.log(`${url}\n${file ? `editing ${path.relative(REPO, file)}` : `the scenes under ${path.relative(REPO, SCENES)}`}`)
   }
