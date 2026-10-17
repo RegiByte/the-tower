@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.45.0
+
+Tower 3D gets a break room, and reviewers carry their chairs. No host restart, no config change, the renderer API
+unchanged. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- A hire whose answer has waited on its hirer for two minutes takes a break in its floor's game room: it plays at a
+  free cabinet, else stands among the onlookers, and walks back to its desk or meeting seat when prompted. Its desk
+  reads AWAY, and a meeting holds its seat as an empty chair, so the table shows who is working and the game room who
+  waits on the coordinator. Leads and reviewers stay put. The game room's standing places are slots, placed by hand.
+- A reviewer rolls its chair in beside its author and out ahead of it into the elevator, sits turned as the desk
+  dressing's reviewer slot is, and walks its author's aisle however that slot is turned.
+- The prefab editor survives a model the vendored kit lacks: the build names the model, the prefab placing it and the
+  `vendor` command, the editor draws the error over the last build and stays up, and a bad scene path answers 404.
+
 ## v1.44.0
 
 A review loop closes at whoever hired the author, and Tower 3D's meeting rooms are lighter and solid. No host restart,
