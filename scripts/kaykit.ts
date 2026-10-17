@@ -10,13 +10,16 @@
  *                                                     catalog ids with their size, bounds and parts in Tower meters;
  *                                                     `*` leaves an axis of --min/--max open
  *   npm run tool:kaykit -- check <scene.json>         unknown ids and parts, sunk or crowded models, bare wall
- *                                                     corners, props at room scale; exits 1 on an error
+ *                                                     corners, props at room scale, in the shared scene and in each
+ *                                                     of its states; ids, slot names and what states name; exits 1
+ *                                                     on an error
  *   npm run tool:kaykit -- shot <id> [--view iso|front|back|left|right|top] [--camera <json>] [--ref person,desk]
  *                                    [--parts <json>] [--theme <json>] [--night] [--size 1200x900] [--out file.png]
  *                                                     one model on a 1 m grid, beside a 1.75 m person or a desk
- *   npm run tool:kaykit -- render <scene.json|gallery> [--camera <name|view|json>]… [--theme <json>] [--night]
- *                                    [--size 1600x1000] [--out dir]
- *                                                     a PNG per camera: those given, else every camera the scene names;
+ *   npm run tool:kaykit -- render <scene.json|gallery> [--states a,b] [--camera <name|view|json>]… [--theme <json>]
+ *                                    [--night] [--size 1600x1000] [--out dir]
+ *                                                     a PNG per camera, of the scene in --states (its shared scene
+ *                                                     without): the cameras given, else every camera the scene names;
  *                                                     --theme and --night lay over the scene's own, as the page's panel does
  *   npm run tool:kaykit -- serve [--port 4398]         the page at http://127.0.0.1:<port>/ for a human, rebuilt on
  *                                                     every load; ?scene=scenes/<file>.json opens a scene
@@ -32,7 +35,7 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { z } from 'zod'
 import { fit, type Catalog, type Mount, type Pack, type Vec3 } from '../renderers/kaykit/src/catalog.ts'
-import { check } from '../renderers/kaykit/src/check.ts'
+import { checkFile } from '../renderers/kaykit/src/check-file.ts'
 import { find, type Query } from '../renderers/kaykit/src/find.ts'
 import { build } from '../renderers/kaykit/src/measure.ts'
 import type { Category } from '../renderers/kaykit/src/rules.ts'
@@ -163,7 +166,7 @@ async function main() {
     options: {
       source: { type: 'string' }, pack: { type: 'string' }, category: { type: 'string' }, mount: { type: 'string' }, parts: { type: 'string' },
       min: { type: 'string' }, max: { type: 'string' }, json: { type: 'boolean' }, view: { type: 'string' }, camera: { type: 'string', multiple: true },
-      ref: { type: 'string' }, theme: { type: 'string' }, night: { type: 'boolean' }, size: { type: 'string' }, out: { type: 'string' }, port: { type: 'string' },
+      ref: { type: 'string' }, states: { type: 'string' }, theme: { type: 'string' }, night: { type: 'boolean' }, size: { type: 'string' }, out: { type: 'string' }, port: { type: 'string' },
     },
   })
   if (command === 'build') {
@@ -193,7 +196,7 @@ async function main() {
   }
   if (command === 'check') {
     const file = positionals[0] ?? fail('usage: check <scene.json>')
-    const issues = check(await flatFile(file), catalog())
+    const issues = await checkFile(file, catalog())
     for (const i of issues) console.log(`${i.level === 'error' ? 'ERROR' : 'warn '} ${i.at}: ${i.message}`)
     console.error(issues.length ? `${issues.length} issue${issues.length > 1 ? 's' : ''}` : 'no issues')
     if (issues.some((i) => i.level === 'error')) process.exitCode = 1
@@ -204,17 +207,19 @@ async function main() {
     const camera = values.camera?.[0] ? cameraArg(values.camera[0]) : { view: (values.view ?? 'iso') as (typeof VIEWS)[number] }
     const scene = inspect(id, { refs: list(values.ref) ?? [], parts: json(values.parts, 'parts'), theme: json(values.theme, 'theme'), night: !!values.night, view: cameraName(camera) })
     const file = values.out ? path.resolve(values.out) : path.join(outDir(undefined), `${slug(id)}-${cameraName(camera)}.png`)
-    const flat = await flatten(scene, id, () => fail('a shot places no prefabs'))
+    const flat = await flatten(scene, id, () => fail('a shot places no prefabs'), [])
     return shoot(flat, {}, () => [{ camera, file }], size(values.size ?? '1200x900'))
   }
   if (command === 'render') {
     const target = positionals[0] ?? fail('usage: render <scene.json|gallery>')
     const base = target === 'gallery' ? 'gallery' : path.basename(target, '.json')
-    const scene = target === 'gallery' ? 'gallery' : await flatFile(target)
+    const states = list(values.states) ?? []
+    const scene = target === 'gallery' ? 'gallery' : await flatFile(target, states)
     const dress = { theme: json<Theme>(values.theme, 'theme'), light: values.night ? ('night' as const) : undefined }
     const asked = (values.camera ?? []).map(cameraArg)
     const dir = outDir(values.out)
-    return shoot(scene, dress, (named) => (asked.length ? asked : named.length ? named : [{ view: 'iso' as const }]).map((c) => ({ camera: c, file: path.join(dir, `${slug(base)}-${slug(cameraName(c))}.png`) })), size(values.size ?? '1600x1000'))
+    const tag = states.length ? `-${states.join('+')}` : ''
+    return shoot(scene, dress, (named) => (asked.length ? asked : named.length ? named : [{ view: 'iso' as const }]).map((c) => ({ camera: c, file: path.join(dir, `${slug(base + tag)}-${slug(cameraName(c))}.png`) })), size(values.size ?? '1600x1000'))
   }
   if (command === 'serve') {
     await bundle()

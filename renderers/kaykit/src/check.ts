@@ -1,6 +1,6 @@
 import { fit, round, worldBox, turnXZ, type Catalog, type Model, type Vec3 } from './catalog.ts'
 import type { Category } from './rules.ts'
-import { local, type Flat } from './scene.ts'
+import { KINDS, local, type Flat, type Scene } from './scene.ts'
 
 /**
  * The mistakes a scene can make with this collection, found from data alone: unknown ids and parts, models sunk
@@ -102,4 +102,32 @@ export function check(flat: Flat, catalog: Catalog): Issue[] {
     placed.push({ item, from: item.from, model, turn: item.turn ?? 0, ...worldBox(f.min, f.max, item.at, item.turn ?? 0, scaleOf(item.scale)) })
   }
   return [...issues, ...placed.flatMap(sunk), ...placed.flatMap(oversized), ...corners(placed), ...crowded(placed)]
+}
+
+const SERIES = /^(.*)_(\d+)$/
+
+/**
+ * A document's own mistakes, before anything is placed: two things under one id or slot name (in the shared scene, or
+ * a state adding a name its shared scene keeps), and a numbered series of slots with a gap.
+ */
+export function checkDocument(scene: Scene, name: string): Issue[] {
+  const issues: Issue[] = []
+  const keysIn = (lists: Partial<Record<(typeof KINDS)[number], { id?: string; name?: string }[]>>, prefix: string) =>
+    KINDS.flatMap((k) => (lists[k] ?? []).map((e, i) => ({ key: k === 'slots' ? e.name : e.id, at: `${name}#${prefix}${k}/${i}` }))).filter((e) => e.key !== undefined)
+  const shared = keysIn(scene, '')
+  const twice = (list: { key: string | undefined; at: string }[]) => list.filter((e, i) => list.findIndex((o) => o.key === e.key) !== i)
+  for (const e of twice(shared)) issues.push({ level: 'error', at: e.at, message: `"${e.key}" names two things in this document` })
+  for (const [state, s] of Object.entries(scene.states ?? {})) {
+    const kept = shared.filter((e) => !s.remove?.includes(e.key!))
+    const added = keysIn(s.add ?? {}, `states/${state}/add/`)
+    for (const e of twice([...kept, ...added]).filter((e) => added.includes(e))) issues.push({ level: 'error', at: e.at, message: `"${e.key}" names two things in state ${state}` })
+  }
+  const slots = [...(scene.slots ?? []), ...Object.values(scene.states ?? {}).flatMap((s) => s.add?.slots ?? [])]
+  const series = Map.groupBy(slots.flatMap((s) => (SERIES.test(s.name) ? [SERIES.exec(s.name)!] : [])), (m) => m[1])
+  for (const [base, ms] of series) {
+    const ns = [...new Set(ms.map((m) => Number(m[2])))].sort((a, b) => a - b)
+    const gap = ns.findIndex((n, i) => n !== i + 1)
+    if (gap >= 0) issues.push({ level: 'warn', at: `${name}#slots`, message: `the ${base} series skips ${base}_${gap + 1}: code fills a series from _1 in order` })
+  }
+  return issues
 }

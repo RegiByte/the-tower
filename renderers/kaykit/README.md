@@ -22,13 +22,16 @@ catalog, its norms, themes and per-pack batches (decision `office-kaykit`).
   "light": "day" | "night", "sky": "#rrggbb", "ground": "grid" | "plain",
   "theme": { "atlas": { "furniture": "alt_C" }, "swaps": { "restaurant": [{ "from": "#1f9e7a", "to": "#2b6f87", "tol": 18 }] } },
   "items": [
-    { "model": "furniture/desk", "at": [x, y, z], "turn": 90, "scale": 1, "parts": { "fridge_A_door_top": [0, -100, 0] } },
-    { "scene": "prefabs/workstation.json", "at": [x, y, z], "turn": 180, "scale": 1 }
+    { "id": "desk", "model": "furniture/desk", "at": [x, y, z], "turn": 90, "scale": 1, "parts": { "fridge_A_door_top": [0, -100, 0] } },
+    { "id": "pod", "scene": "prefabs/desk.json", "states": ["working"], "at": [x, y, z], "turn": 180, "scale": 1 }
   ],
   "boxes":  [{ "size": [w, h, d], "at": [x, y, z], "color": "#…", "glow": true, "opacity": 0.3 }],
   "labels": [{ "text": "line\nline", "at": [x, y, z], "height": 0.12, "tilt": 30 }],
   "lamps":  [{ "at": [x, y, z], "color": "#…", "intensity": 5, "distance": 10 }],
-  "cameras": { "name": { "pos": [x, y, z], "look": [x, y, z], "fov": 50 } | { "view": "iso", "frame": { "min": […], "max": […] } } }
+  "cameras": { "name": { "pos": [x, y, z], "look": [x, y, z], "fov": 50 } | { "view": "iso", "frame": { "min": […], "max": […] } } },
+  "slots":  [{ "name": "seat_1", "at": [x, y, z], "turn": 180, "pose": "sit" | "stand", "size": 1, "with": [{ "model": "…", "at": [0, 0, 0] }] }],
+  "guides": [{ "name": "desk top", "size": [w, h, d], "at": [x, y, z], "turn": 0 }],
+  "states": { "working": { "remove": ["id", "slot"], "set": { "screen": { "color": "#e89a1a" } }, "add": { "items": […], "boxes": […], "lamps": […], "slots": […] } } }
 }
 ```
 
@@ -44,6 +47,18 @@ How it differs from the `Placement` and `Theme` sketched in the exploration's fi
   floor places them. Paths are relative to the file that names them. That is the whole hierarchy mechanism.
 - `boxes`, `labels`, `lamps` and `cameras` live beside the items, because a floor needs its shell, signs and
   viewpoints. They are what the procedural Tower would keep drawing.
+- **States** are named changes over the shared scene: each removes things by id (or slot name), sets fields on
+  them, then adds its own, in that order. A prefab is a pure function of the states its placement asks for
+  (`resolve(scene, states)` in `src/scene.ts`), applied in the document's own order, so the board picks a list
+  (`["idle", "october"]`) and the document decides what wins. States, not a state machine: no transitions.
+- **Slots** are named places, set by hand, that code fills from the board: a person's (`pose` sit or stand, at
+  `size`) or a thing's the renderer draws itself (no `pose`). A trailing `_<n>` numbers a series (`seat_1…`): the
+  slots are its capacity, filled from `_1` in order, and nobody is drawn past the last. `with` holds models drawn
+  only while the slot is filled. A prefab's slots come out of `flatten` in world meters under the placing item's
+  `id` (`pod/twin`). The playground draws them as ghosts: a pawn for a person, a tile for a thing.
+- **Guides** stand for what the host draws itself (the Tower desk, its monitor), so props are placed against them:
+  ghosts in the playground and the editor, drawn by no renderer, never placed into a parent.
+- `id` names an item, box, label or lamp for states; ids and slot names are unique within a document.
 - Night is `light: "night"`. What glows at night is a fact about the art (`GLOW` in `src/catalog.ts`: the City
   windows, the Halloween lantern glass), so scenes don't repeat it.
 
@@ -90,8 +105,8 @@ Every command is `npm run tool:kaykit -- <command>`. The script's header lists t
 | Find | `find [words…] [--pack] [--category] [--mount] [--parts] [--min w,h,d] [--max w,h,d] [--json]` | ids with size and bounds as placed, mount, parts, colours |
 | Inspect | `shot <id> [--view iso\|front\|high\|back\|left\|right\|top] [--camera json] [--ref person,desk] [--parts json] [--theme json] [--night] [--size WxH]` | a PNG of one model on a 1 m grid |
 | Compose | write a scene JSON (items, prefabs, theme) | the document is the composition |
-| Check | `check <scene.json>` | unknown ids and parts, models sunk below the floor, two models in one spot, wall corners with no pillar, props at room scale; exits 1 on an error |
-| Render | `render <scene.json\|gallery> [--camera name\|view\|json]… [--theme json] [--night] [--size WxH] [--out dir]` | a PNG per camera |
+| Check | `check <scene.json>` | unknown ids and parts, models sunk below the floor, two models in one spot, wall corners with no pillar, props at room scale, in the shared scene and each state; ids and slot names named twice, states naming nothing, series with gaps; exits 1 on an error |
+| Render | `render <scene.json\|gallery> [--states a,b] [--camera name\|view\|json]… [--theme json] [--night] [--size WxH] [--out dir]` | a PNG per camera, in the states given |
 | Look | `serve`, then open `?scene=<path>` | the same scene, live |
 
 Rendering drives the page itself in headless Chrome through `window.kaykit` (`show`, `dress`, `look`, `shot`,
@@ -136,7 +151,8 @@ $ npm run tool:kaykit -- render coffee_break.json
 
 ## Scenes here
 
-- `desk_states.json`: the desk dressed by state (idle, working, needs, done), four prefabs over one workstation.
+- `desk_states.json`: the desk dressed by state (idle, working, needs, done): `prefabs/desk.json` placed in each
+  of its states, over one workstation.
 - `floor_overview.json`: a 30 × 21 m floor with the core, eight dressed desks, a meeting room, kitchen, lounge,
   collections wall and lockers, themed to the project colour. Every zone is a prefab.
 - `lobby_city_model.json`: a building per project on a table, height from live workers.

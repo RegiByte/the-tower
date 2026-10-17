@@ -14,8 +14,8 @@ import { flatten, parseScene, type Camera, type Flat, type Scene, type Theme } f
  * calls in headless Chrome. Both see the same drawing.
  *
  *   await kaykit.ready()                         the catalog, meshes and atlases are loaded
- *   await kaykit.show(scene, name?)              draw a scene document (its prefabs fetched relative to `name`),
- *                                                or 'gallery'; answers state()
+ *   await kaykit.show(scene, name?, states?)     draw a scene document (its prefabs fetched relative to `name`) in
+ *                                                its `states`, or 'gallery'; answers state()
  *   await kaykit.dress({ theme?, light? })       lay a theme and light over the scene's own, as the panel does
  *   kaykit.look(camera)                          move the view: { pos, look, fov? }, { view: 'iso' | … }, or a camera
  *                                                the scene names
@@ -31,7 +31,7 @@ declare global {
   interface Window {
     kaykit: {
       ready(): Promise<void>
-      show(scene: Scene | 'gallery', name?: string): Promise<State>
+      show(scene: Scene | 'gallery', name?: string, states?: string[]): Promise<State>
       dress(over: { theme?: Theme; light?: 'day' | 'night' }): Promise<State>
       look(camera: Camera | string): void
       shot(opts?: { camera?: Camera | string; w?: number; h?: number }): string
@@ -57,7 +57,7 @@ controls.maxPolarAngle = Math.PI / 2 - 0.02
 
 let assets: Assets
 /** What is drawn: the document as given, the theme and light the panel laid over it, and the scene built from both. */
-let doc: { scene: Scene; name: string } = { scene: {}, name: 'gallery' }
+let doc: { scene: Scene; name: string; states: string[] } = { scene: {}, name: 'gallery', states: [] }
 let override: { theme: Theme; light?: 'day' | 'night' } = { theme: {} }
 let flat: Flat
 let built: Built
@@ -91,7 +91,7 @@ let draws = 0
 
 async function redraw() {
   const mine = ++draws
-  const drawn = await flatten(effective(), doc.name, readRelative)
+  const drawn = await flatten(effective(), doc.name, readRelative, doc.states)
   if (mine !== draws) return false
   flat = drawn
   const next = build(flat, assets)
@@ -122,9 +122,9 @@ function look(c: Camera | string) {
   controls.update()
 }
 
-async function show(scene: Scene | 'gallery', name = 'gallery') {
+async function show(scene: Scene | 'gallery', name = 'gallery', states: string[] = []) {
   await ready
-  doc = scene === 'gallery' ? { scene: gallery(assets.catalog), name } : { scene: parseScene(scene, name), name }
+  doc = scene === 'gallery' ? { scene: gallery(assets.catalog), name, states } : { scene: parseScene(scene, name), name, states }
   override = { theme: {} }
   if (await redraw()) look(flat.cameras?.overview ?? Object.values(flat.cameras ?? {})[0] ?? { view: 'iso' })
   return state()
@@ -170,7 +170,7 @@ async function dress(over: { theme?: Theme; light?: 'day' | 'night' }) {
 /** Set once the door is asked to show something: the page's own first scene then stays away. */
 let driven = false
 
-window.kaykit = { ready: () => ready, show: (scene, name) => ((driven = true), show(scene, name)), dress, look, shot, state }
+window.kaykit = { ready: () => ready, show: (scene, name, states) => ((driven = true), show(scene, name, states)), dress, look, shot, state }
 
 function resize() {
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false)

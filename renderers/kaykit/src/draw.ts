@@ -117,6 +117,48 @@ function boxes(flat: Flat) {
   })
 }
 
+const GHOST = '#3d8fd6'
+const ghost = (opacity: number) => new THREE.MeshBasicMaterial({ color: GHOST, transparent: true, opacity, depthWrite: false })
+
+/** Guides as ghosts: what the host draws itself, to place against. */
+function guides(flat: Flat) {
+  return (flat.guides ?? []).map((g) => {
+    const geometry = new THREE.BoxGeometry(...g.size)
+    const m = new THREE.Mesh(geometry, ghost(0.18))
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: GHOST, transparent: true, opacity: 0.6 })))
+    m.position.set(g.at[0], g.at[1] + g.size[1] / 2, g.at[2])
+    m.rotation.y = (g.turn ?? 0) * DEG
+    return m
+  })
+}
+
+/** A person's height standing and sitting (a chair's base to the top of the head), meters, at size 1. */
+export const FIGURE = { stand: 1.75, sit: 1.3, across: 0.45 }
+
+/**
+ * Slots as markers: a pawn as tall as a person in its pose for a person's place, a flat tile for a thing's, each with
+ * a tick toward where it faces and its name above.
+ */
+function slots(flat: Flat) {
+  const group = new THREE.Group()
+  for (const slot of flat.slots) {
+    const g = new THREE.Group()
+    const h = slot.pose ? FIGURE[slot.pose] * slot.size : 0.02
+    const r = (slot.pose ? FIGURE.across / 2 : 0.1) * slot.size
+    const body = slot.pose ? new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(h - 2 * r, 0.01), 4, 12), ghost(0.35)) : new THREE.Mesh(new THREE.BoxGeometry(r * 2, h, r * 2), ghost(0.5))
+    body.position.y = h / 2
+    const tick = new THREE.Mesh(new THREE.ConeGeometry(r * 0.5, r, 12), ghost(0.8))
+    tick.rotation.x = Math.PI / 2
+    tick.position.set(0, slot.pose ? h * 0.75 : h, r * 1.2)
+    g.add(body, tick)
+    g.position.set(...slot.at)
+    g.rotation.y = slot.turn * DEG
+    group.add(g)
+  }
+  group.add(drawLabels(flat.slots.map((s) => ({ text: s.name, at: [s.at[0], s.at[1] + (s.pose ? FIGURE[s.pose] * s.size : 0.05) + 0.05, s.at[2]], turn: s.turn, height: 0.07, color: '#ffffff', bg: GHOST }))))
+  return group
+}
+
 function ground(kind: Flat['ground'], bounds: THREE.Box3) {
   const g = new THREE.Group()
   if (!kind) return g
@@ -169,7 +211,7 @@ export function build(flat: Flat, assets: Assets): Built {
   const { owners, triangles } = batches(flat, assets, scene)
   for (const b of boxes(flat)) scene.add(b)
   const labels = drawLabels(flat.labels ?? [])
-  scene.add(labels)
+  scene.add(labels, ...guides(flat), slots(flat))
   const bounds = new THREE.Box3().setFromObject(scene)
   if (bounds.isEmpty()) bounds.set(new THREE.Vector3(-1, 0, -1), new THREE.Vector3(1, 1, 1))
   scene.add(ground(flat.ground, bounds), ...lights(flat, bounds))

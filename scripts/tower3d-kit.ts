@@ -36,7 +36,7 @@ const LOW = 0.25
 const RAISED = 0.1
 
 const flats = await Promise.all(PREFABS.map(async (name) => {
-  const flat = await flatFile(path.join(SCENES, name))
+  const flat = await flatFile(path.join(SCENES, name), [])
   const extras = (['boxes', 'labels', 'lamps'] as const).filter((k) => flat[k]?.length)
   if (extras.length) throw new Error(`${name}: the office draws a prefab's models only, and it has ${extras.join(', ')}`)
   return [name, flat.items.map(({ model, at, turn, scale, parts }): PrefabItem => ({ model, at, turn: turn ?? 0, scale: scale ?? 1, parts }))] as const

@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/tower3d/src/kitfile.ts#KitFile",
@@ -33,6 +33,7 @@
     "hub/renderers/kaykit/src/catalog.ts#fit",
     "hub/renderers/kaykit/src/scene.ts#Scene",
     "hub/renderers/kaykit/src/scene.ts#flatten",
+    "hub/renderers/kaykit/src/scene.ts#resolve",
     "hub/renderers/kaykit/src/draw.ts#build",
     "hub/renderers/kaykit/src/gallery.ts#gallery",
     "hub/renderers/kaykit/src/check.ts#check",
@@ -59,8 +60,12 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   [`fit`](ref:hub/renderers/kaykit/src/catalog.ts#fit) derives the placed bounds, so a norm changes in one place.
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
   another scene: prefabs are the hierarchy), boxes, labels, lamps, cameras, a theme (alt atlas and hue swaps per
-  pack) and a light. [`flatten`](ref:hub/renderers/kaykit/src/scene.ts#flatten) places prefabs, keeping each
-  item's origin and frame for messages. Scenes live in `renderers/kaykit/scenes/`, versioned with the code; the
+  pack) and a light; slots (named places code fills from the board), guides (ghosts of what the host draws itself)
+  and named states. A prefab is a pure function of the states its placement asks for:
+  [`resolve`](ref:hub/renderers/kaykit/src/scene.ts#resolve) applies each state's removals, changes and additions
+  in the document's order, and [`flatten`](ref:hub/renderers/kaykit/src/scene.ts#flatten) places prefabs in their
+  states, keeping each item's origin, the placements it came through and its frame, and each slot in world meters
+  under its placing item's id. Scenes live in `renderers/kaykit/scenes/`, versioned with the code; the
   gallery is a scene derived from the catalog.
 - One drawing ([`build`](ref:hub/renderers/kaykit/src/draw.ts#build)): each pack's models in one `BatchedMesh`
   with one toon material over the pack's atlas; a theme is a texture per pack.
