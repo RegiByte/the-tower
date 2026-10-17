@@ -58,6 +58,32 @@ function along(path: THREE.Vector3[], d: number) {
   }
 }
 
+/** How far back and ahead along its way a walker looks to face it, meters: it turns a corner over twice this. */
+const TURNING = 0.4
+
+/**
+ * Which way a walker `d` along a path faces: the mean of where its way heads over `TURNING` behind and ahead (facing
+ * `from` before its start and `to` past its end), so it turns corners over a stretch of its way and never snaps,
+ * turning from `from` as it sets off and to `to` as it arrives. A function of the distance walked alone.
+ */
+export function headingAt(path: THREE.Vector3[], d: number, from: number, to: number) {
+  const total = lengthOf(path)
+  const [a, b] = [d - TURNING, d + TURNING]
+  let x = 0
+  let z = 0
+  const add = (h: number, w: number) => w > 0 && ((x += Math.sin(h) * w), (z += Math.cos(h) * w))
+  add(from, Math.min(b, 0) - a)
+  add(to, b - Math.max(a, total))
+  let s = 0
+  for (let i = 1; i < path.length; i++) {
+    const leg = path[i - 1].distanceTo(path[i])
+    add(headingOf(path[i - 1], path[i]), Math.min(b, s + leg) - Math.max(a, s))
+    s += leg
+  }
+  const ahead = turned(from, Math.atan2(x, z), d / TURNING)
+  return turned(ahead, to, Math.max(0, (d - total + TURNING) / TURNING))
+}
+
 /** The walkway to a desk at `desk` (world space), at its level's height. */
 const pathTo = (p: Plan, desk: THREE.Vector3) => walkway(p, desk.x, desk.z).map(({ x, z }) => new THREE.Vector3(x, desk.y, z))
 
@@ -66,8 +92,10 @@ const pathTo = (p: Plan, desk: THREE.Vector3) => walkway(p, desk.x, desk.z).map(
  * worker standing where KayKit's sit clips start, a seat's depth in front of where they end.
  */
 const PULL = 0.4
-/** How long a worker takes to turn to its desk as it starts to sit down, or from it as it stands up, seconds. */
-const TURN = 0.3
+/** How fast a worker turns on the spot, on average (radians a second), and the least time a turn takes, seconds. */
+const TURN = { rate: 3, least: 0.3 }
+/** How far into turning from `from` to `to` a worker is `t` seconds in, 0 to 1: a wider turn takes longer. */
+const turning = (from: number, to: number, t: number) => t / Math.max(TURN.least, Math.abs(Math.atan2(Math.sin(to - from), Math.cos(to - from))) / TURN.rate)
 
 /** Where a worker stands before it sits down at the chair `seat`, and after it stands up: the seated body's place, at floor height. */
 function standingAt(models: Models, a: Avatar, seat: THREE.Vector3) {
@@ -76,11 +104,25 @@ function standingAt(models: Models, a: Avatar, seat: THREE.Vector3) {
 }
 
 /**
- * The way from the walkway behind a desk to where its worker stands to sit (desk space): along the row to the side it
- * comes from, up between its chair, pulled back, and its desk, and across to its place.
+ * The way from the walkway behind a desk (`behind`, its z) to where its worker stands to sit (desk space): to the side
+ * it comes from, up between its chair, pulled back, and its desk, and across to its place.
  */
-function upToChair(behind: THREE.Vector3, place: THREE.Vector3, side: number) {
-  return [behind, new THREE.Vector3(side, behind.y, behind.z), new THREE.Vector3(side, place.y, place.z), place]
+function upToChair(behind: number, place: THREE.Vector3, side: number) {
+  return [new THREE.Vector3(side, place.y, behind), new THREE.Vector3(side, place.y, place.z), place]
+}
+
+/** How far off its chair, along the desk, a worker walks up to it. */
+const APPROACH = 0.85
+
+/**
+ * The side (desk space x) a worker comes to its chair from and leaves it by: that of `toward` (desk space), the way it
+ * comes from or goes to, unless someone sits beside: a reviewer at its author's left comes and goes by its own left,
+ * and its author by its right.
+ */
+function sideOf(p: Plan, desk: Desk, toward: THREE.Vector3) {
+  if (desk.side === undefined) return -APPROACH
+  if (p.levels.some((l) => l.kind === 'floor' && l.desks.some((d) => d.beside === desk.card.id))) return APPROACH
+  return toward.x < 0 ? -APPROACH : APPROACH
 }
 
 /** A chair `k` of the way into its worker sitting down: pulled back until the hips come down onto it. */
@@ -94,8 +136,9 @@ export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: numbe
 
 export function arrival(p: Plan, desk: Desk): Arrival {
   const way = pathTo(p, desk.group.position).map((v) => v.sub(desk.group.position))
-  const path = [...way.slice(0, -2), ...upToChair(way.at(-2)!, standingAt(desk.models, desk.avatar, SEAT), desk.marks.approach)]
-  return { desk, path, t: 0, sat: 0, heading: 0 }
+  const behind = way.at(-2)!
+  const path = [...way.slice(0, -2), ...upToChair(behind.z, standingAt(desk.models, desk.avatar, SEAT), sideOf(p, desk, way.at(-3) ?? behind))]
+  return { desk, path, t: 0, sat: 0, heading: headingOf(path[0], path[1]) }
 }
 
 const smooth = (k: number) => k * k * (3 - 2 * k)
@@ -108,7 +151,7 @@ export function walkIn(a: Arrival, dt: number) {
   if (!step) {
     a.sat += dt
     w.root.position.copy(SEAT)
-    w.root.rotation.y = turned(a.heading, 0, a.sat / TURN)
+    w.root.rotation.y = turned(a.heading, 0, turning(a.heading, 0, a.sat))
     if (w.gear) w.gear.visible = false
     const sat = a.sat >= clipLength(a.desk.models.cast, w.rig, 'Sit_Chair_Down')
     if (sat) pullChair(chair, SEAT, 1)
@@ -116,7 +159,7 @@ export function walkIn(a: Arrival, dt: number) {
   }
   a.t += dt * WALK_SPEED
   w.root.position.copy(step.at)
-  w.root.rotation.y = a.heading = step.heading
+  w.root.rotation.y = a.heading = headingAt(a.path, a.t, headingOf(a.path[0], a.path[1]), 0)
   pullChair(chair, SEAT, 0)
   return false
 }
@@ -140,31 +183,34 @@ function sitPose(models: Models, a: Avatar, clip: 'Sit_Chair_Down' | 'Sit_Chair_
 
 /**
  * A worker gone off duty: standing up `rose` seconds from the chair at `seat` (world space), turning to its desk from
- * `heading`, then walking `t` meters into the elevator on its level before it leaves the building. `chair` is the
- * workstation's chair it rose from, once its workstation stands there.
+ * `heading`, then walking `t` meters into the elevator on its level, setting off facing `facing` and stepping in
+ * facing `arriving`, then turning to its doors, before it leaves the building. `chair` is the workstation's chair it rose from, once its workstation stands there.
  */
 export type Leaver = {
-  group: THREE.Group; models: Models; avatar: Avatar; level: number; desk: THREE.Vector3; seat: THREE.Vector3; path: THREE.Vector3[]; heading: number; rose: number; t: number
+  group: THREE.Group; models: Models; avatar: Avatar; level: number; desk: THREE.Vector3; seat: THREE.Vector3; path: THREE.Vector3[]; heading: number; facing: number; arriving: number; rose: number; t: number
   chair?: { chair: THREE.Object3D; seat: THREE.Vector3 }
 }
 
 /**
- * A leaver from the desk at `desk` on `level`, its root at `from` facing `heading` (world space), `seated` of the way
- * onto its chair (`seatedness`: 0 when it went before it reached it, and only walks out), leaving by the side
- * `approach` (desk space).
+ * A leaver from `desk`, a desk on `level` going, its worker `seated` of the way onto its chair (`seatedness`: 0 when
+ * it went before it reached it, and only walks out). It leaves its chair by the side toward the elevator.
  */
-export function leaver(p: Plan, id: string, callsign: string, level: number, desk: THREE.Vector3, from: THREE.Vector3, heading: number, seated: number, approach: number, models: Models): Leaver {
-  const w = avatar(models, lookOfWorker(id, callsign, WARDROBE, models.catalogue), WARDROBE)
+export function leaver(p: Plan, desk: Desk, level: number, seated: number, models: Models): Leaver {
+  const w = avatar(models, lookOfWorker(desk.card.id, desk.card.callsign, WARDROBE, models.catalogue), WARDROBE)
   w.bulb.color.set('#3a4458')
   const group = new THREE.Group()
   group.add(w.root)
-  const out = pathTo(p, desk).slice(0, -1).reverse()
+  const at = desk.group.position.clone()
+  const from = desk.group.localToWorld(desk.avatar.root.position.clone())
+  const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
+  const out = pathTo(p, at).slice(0, -1).reverse()
   const car = out.at(-1)!.clone().setZ(coreFront(p) - 1.2)
-  const back = seated > 0 ? upToChair(out[0].clone().sub(desk), standingAt(models, w, from.clone().sub(desk)), approach).reverse().slice(0, -1).map((v) => v.add(desk)) : [from]
+  const side = sideOf(p, desk, (out[1] ?? out[0]).clone().sub(at))
+  const back = seated > 0 ? [...upToChair(out[0].z - at.z, standingAt(models, w, from.clone().sub(at)), side).reverse().map((v) => v.add(at)), ...out.slice(1)] : [from, ...out]
   w.root.position.copy(from)
   w.root.rotation.y = heading
   const rose = clipLength(models.cast, w.rig, 'Sit_Chair_StandUp') * (1 - seated)
-  return { group, models, avatar: w, level, desk: desk.clone(), seat: from, path: [...back, ...out, car], heading, rose, t: 0 }
+  return { group, models, avatar: w, level, desk: at, seat: from, path: [...back, car], heading, facing: seated > 0 ? 0 : heading, arriving: headingOf(out.at(-1)!, car), rose, t: 0 }
 }
 
 const standing = (l: Leaver) => l.rose < clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')
@@ -184,19 +230,21 @@ export function walkOut(l: Leaver, dt: number) {
   if (standing(l)) {
     l.rose += dt
     w.position.copy(l.seat)
-    w.rotation.y = turned(l.heading, 0, l.rose / TURN)
+    w.rotation.y = turned(l.heading, 0, turning(l.heading, 0, l.rose))
     return false
   }
   l.t += dt * WALK_SPEED
   if (l.chair) pullChair(l.chair.chair, l.chair.seat, smooth(Math.min(1, Math.max(0, (l.t - TUCK.after) / TUCK.over))))
   const step = along(l.path, l.t)
   if (!step) {
+    const total = lengthOf(l.path)
+    const boarding = headingAt(l.path, total, l.facing, l.arriving)
     w.position.copy(l.path.at(-1)!)
-    w.rotation.y -= w.rotation.y * Math.min(1, dt * 6)
+    w.rotation.y = turned(boarding, 0, turning(boarding, 0, (l.t - total) / WALK_SPEED))
     return true
   }
   w.position.copy(step.at)
-  w.rotation.y = step.heading
+  w.rotation.y = headingAt(l.path, l.t, l.facing, l.arriving)
   return false
 }
 
@@ -531,7 +579,8 @@ export function guestAt(card: Card, t: number, p: Plan): GuestPlace {
   const step = along(way, (t - start) * speed)
   if (step) {
     const off = partyOn(p, n - 1).spots.get(card.id)!.pose === 'drink' ? barSeat * Math.max(0, 1 - (t - start) / HOP) : 0
-    return { x: step.at.x, y: off, z: step.at.z, heading: step.heading, pose: 'walk', since: t - start, walked: (t - start) * speed }
+    const walked = (t - start) * speed
+    return { x: step.at.x, y: off, z: step.at.z, heading: headingAt(way, walked, partyOn(p, n - 1).spots.get(card.id)!.heading, to.heading), pose: 'walk', since: t - start, walked }
   }
   const since = t - start - lengthOf(way) / speed
   return { ...to, y: to.pose === 'drink' ? barSeat * Math.min(1, since / HOP) : 0, since, walked: 0 }

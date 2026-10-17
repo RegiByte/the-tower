@@ -63,8 +63,6 @@ type Marks = {
   twin?: { at: THREE.Vector3; turn: number; size: number }
   /** Where the papers new to the worker are stacked. */
   papers: THREE.Vector3
-  /** The side (x, desk space) a worker comes to its chair from and leaves it by, clear of whoever sits beside it. */
-  approach: number
 }
 
 /**
@@ -204,14 +202,12 @@ export function syncStation(station: Station, open: boolean) {
 }
 
 const LABELS_Z = SCREEN.z + 0.05
-/** How far off its chair, along the desk, a worker walks up: its own desk's right, a reviewer's left, away from its author. */
-const APPROACH = 0.85
 const SIDE_CENTER = new THREE.Vector3(SIDE.x, SIDE.y, SIDE.z - 0.03)
 const ownMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
   speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
   twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
-  papers: vector(slots.papers.at), approach: APPROACH,
+  papers: vector(slots.papers.at),
 })
 /**
  * A worker's logbook right of its keyboard, clear of the cat's perch and its subagents: a thin notebook on a first
@@ -322,7 +318,7 @@ const notebookAt = (slots: DeskSlots) => vector(slots.notebook.at).sub(new THREE
 const VISIT_MINIS = Array.from({ length: 4 }, (_, i) => new THREE.Vector3(-0.42 - i * 0.17, 0, -SEAT_OFFSET))
 const visitMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at), approach: -APPROACH,
+  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at),
 })
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
