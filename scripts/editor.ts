@@ -3,12 +3,13 @@
  * slots by hand and save it, and shoot a document headless through the same page, so an agent checks a placement from
  * a picture. The page draws over the KayKit playground's full catalog (`npm run tool:kaykit -- build` first).
  *
- *   npm run tool:editor -- serve <scene.json> [--port 4397]
+ *   npm run tool:editor -- serve [scene.json] [--port 4397]
  *                                                      the editor at http://127.0.0.1:<port>/editor.html, rebuilt on
- *                                                      every load, opening the scene; it reads and writes any scene
- *                                                      document under the scene's folder of scenes (GET and PUT
- *                                                      /doc?path=, each written checked by parseScene, as
- *                                                      formatScene lays it out)
+ *                                                      every load, opening the scene, else its list of scenes; it
+ *                                                      lists (GET /docs), reads and writes any scene document under
+ *                                                      the scene's folder of scenes, renderers/kaykit/scenes without
+ *                                                      one (GET and PUT /doc?path=, each written checked by
+ *                                                      parseScene, as formatScene lays it out)
  *   npm run tool:editor -- shot <scene.json> [--states a,b] [--select src] [--camera view|json] [--size 1600x1000] [--out file.png]
  *                                                      a PNG of the scene in its states as the editor draws it: slots
  *                                                      as ghost workers, guides, and the selection (items/0) under
@@ -23,7 +24,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { formatScene } from '../renderers/kaykit/src/format.ts'
+import { readScene } from '../renderers/kaykit/src/files.ts'
+import { listing } from '../renderers/kaykit/src/listing.ts'
 import { parseScene, VIEWS, type Camera, type Scene } from '../renderers/kaykit/src/scene.ts'
+import { DESK_DRESS } from '../renderers/tower3d/src/dress.ts'
+import { PREFABS } from '../renderers/tower3d/src/zones.ts'
 import { designCss, fonts } from '../src/shared/design.ts'
 import { fontFile } from '../src/packages.ts'
 import { withPage } from './drive.ts'
@@ -48,6 +53,15 @@ function docPath(root: string, name: string | null) {
   return file
 }
 
+
+/** Every scene JSON under `root`, repo-relative, listed with who places it and whether Tower 3D reads it. */
+function docsUnder(root: string) {
+  const files = fs.readdirSync(root, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.json')).sort()
+  const docs = files.map((f) => ({ path: path.relative(REPO, path.join(root, f)), scene: readScene(path.join(root, f)) }))
+  const tower3d = new Set([...PREFABS, DESK_DRESS].map((p) => path.relative(REPO, path.join(SCENES, p))))
+  return listing(docs, tower3d, (ref, from) => path.relative(REPO, path.resolve(REPO, path.dirname(from), ref)))
+}
+
 function writeDoc(file: string, req: http.IncomingMessage, res: http.ServerResponse) {
   let body = ''
   req.setEncoding('utf8')
@@ -66,13 +80,14 @@ function writeDoc(file: string, req: http.IncomingMessage, res: http.ServerRespo
 }
 
 /** The built Tower 3D pages, the playground's catalog under /kaykit/, and the scenes under `root`, on a loopback port. */
-async function serve(port: number, rebuild: boolean, start: string) {
-  const root = rootOf(start)
+async function serve(port: number, rebuild: boolean, start: string | undefined) {
+  const root = start ? rootOf(start) : SCENES
   const server = http.createServer((req, res) => {
     const url = new URL(req.url!, 'http://x')
     const pathname = decodeURIComponent(url.pathname)
     try {
-      if (pathname === '/start') return res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }).end(path.relative(REPO, start))
+      if (pathname === '/start') return res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }).end(start ? path.relative(REPO, start) : '')
+      if (pathname === '/docs') return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(docsUnder(root)))
       if (pathname === '/doc' && req.method === 'GET') return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(fs.readFileSync(docPath(root, url.searchParams.get('path'))))
       if (pathname === '/doc' && req.method === 'PUT') return writeDoc(docPath(root, url.searchParams.get('path')), req, res)
     } catch (e) {
@@ -129,14 +144,14 @@ async function main() {
     options: { port: { type: 'string' }, states: { type: 'string' }, select: { type: 'string' }, camera: { type: 'string' }, size: { type: 'string' }, out: { type: 'string' } },
   })
   if (!fs.existsSync(path.join(KAYKIT, 'catalog.json'))) throw new Error('no renderers/kaykit/out/catalog.json: run `npm run tool:kaykit -- build --source <bundle>` first')
-  const file = path.resolve(positionals[0] ?? fail('usage: serve | shot <scene.json> (see scripts/editor.ts)'))
-  parseScene(JSON.parse(fs.readFileSync(file, 'utf8')), file)
+  const file = positionals[0] && path.resolve(positionals[0])
+  if (file) readScene(file)
   if (command === 'serve') {
     build()
     const { url } = await serve(Number(values.port ?? 4397), true, file)
-    return console.log(`${url}\nediting ${path.relative(REPO, file)}`)
+    return console.log(`${url}\n${file ? `editing ${path.relative(REPO, file)}` : `the scenes under ${path.relative(REPO, SCENES)}`}`)
   }
-  if (command === 'shot') return shot(file, values)
+  if (command === 'shot') return shot(file || fail('usage: shot <scene.json> (see scripts/editor.ts)'), values)
   fail('usage: npm run tool:editor -- serve | shot <scene.json> (see scripts/editor.ts)')
 }
 

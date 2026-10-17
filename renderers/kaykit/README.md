@@ -97,7 +97,7 @@ JSON. Click a model for its facts, palette, where it was placed, and a copyable 
 frames a model on load.
 
 To place things by hand, open a scene in the prefab editor, a Tower 3D page over this catalog: `npm run tool:editor
--- serve <scene.json>` (`scripts/editor.ts`). Click a model, a placed prefab or a slot; T/R/S move, turn or scale it,
+-- serve [scene.json]` (`scripts/editor.ts`); without a file it opens on the list of scenes, and Open… switches. Click a model, a placed prefab or a slot; T/R/S move, turn or scale it,
 G snaps, F drops it onto what is below, Enter goes inside a prefab; pick a state to edit; Save shows each file's
 changed lines before writing. Slots for people are drawn as Tower 3D workers in their pose, guides as ghosts.
 

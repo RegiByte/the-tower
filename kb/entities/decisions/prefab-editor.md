@@ -15,6 +15,7 @@
     "hub/renderers/tower3d/src/editor.ts#redraw",
     "hub/renderers/tower3d/src/editor.ts#changes",
     "hub/renderers/kaykit/src/format.ts#formatScene",
+    "hub/renderers/kaykit/src/listing.ts#listing",
     "hub/renderers/kaykit/src/scene.ts#resolve",
     "hub/scripts/editor.ts",
     "hub/package.json"
@@ -50,6 +51,11 @@ code fills from the board.
   then writes through [`tool:editor serve`](ref:hub/scripts/editor.ts), which checks each document and writes it as
   [`formatScene`](ref:hub/renderers/kaykit/src/format.ts#formatScene) lays it out: a placed thing per line, so a
   move diffs as one line. `window.editor` and `tool:editor shot` give agents the same page.
+- Open lists every scene the serve reaches ([`listing`](ref:hub/renderers/kaykit/src/listing.ts#listing), `GET /docs`):
+  its title, states, slots, the documents placing it and whether Tower 3D reads it (the zones' `PREFABS` and
+  `DESK_DRESS`). A scene opens at `?scene=`, so a reload opens it again; leaving unsaved changes asks first.
+- A turn written from the gizmo is the yaw the proxy faces, as the element's own turn plus the shortest way round:
+  an Euler's y alone folds a turn past 90° back. A drag ends with its button, also when the browser loses the pointer.
 
 **Alternatives considered.**
 - *A mode of the playground.* The ghost workers need Tower 3D's characters and rig; the playground stays a gallery and

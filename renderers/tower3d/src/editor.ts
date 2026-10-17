@@ -6,6 +6,7 @@ import { fit, type Catalog, type Vec3 } from '../../kaykit/src/catalog.ts'
 import { build, cameraFor, type Assets, type Built } from '../../kaykit/src/draw.ts'
 import { find } from '../../kaykit/src/find.ts'
 import { formatScene } from '../../kaykit/src/format.ts'
+import type { DocEntry } from '../../kaykit/src/listing.ts'
 import { loadMeshes } from '../../kaykit/src/meshes.ts'
 import { flatten, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
 import { avatar, seatedAt } from './avatar.ts'
@@ -23,10 +24,14 @@ import { lookOf, type Look } from './wardrobe.ts'
  * draws the document in one state; while a state is shown, edits of what the document shares go to that state
  * (`set`, `remove`) or to every state, as the scope says, and what is added goes to it. A slot for a person is drawn as
  * a Tower 3D worker at its size in its pose, translucent; a slot for a thing as a tile; guides as ghosts. Saving shows
- * what changed against the files on disk, line by line, and writes them through `tool:editor serve`.
+ * what changed against the files on disk, line by line, and writes them through `tool:editor serve`. Open lists every
+ * scene the serve reaches (its states and slots, who places it, whether Tower 3D reads it) and opens one at `?scene=`,
+ * once unsaved changes are given up.
  *
  *   await editor.ready()                        the catalog, the models and the document are loaded
- *   await editor.open(path, states?)            open a scene file (repo-relative), in a state
+ *   await editor.open(path, states?)            open a scene file (repo-relative), in a state: the page's ?scene= and
+ *                                               ?states= say the same, so a reload opens it again
+ *   await editor.docs()                         every scene the serve reaches, as the Open list shows them
  *   editor.info()                               the document, its states, the state shown, the selection and the scope
  *   await editor.state(name | undefined)        show a state, or the shared scene
  *   editor.scope('shared' | 'state')            where edits of shared things go while a state is shown
@@ -51,6 +56,7 @@ declare global {
     editor: {
       ready(): Promise<void>
       open(path: string, states?: string[]): Promise<Info>
+      docs(): Promise<DocEntry[]>
       info(): Info
       state(name: string | undefined): Promise<Info>
       scope(to: 'shared' | 'state'): Info
@@ -109,6 +115,9 @@ let snapping = false
 let query = ''
 let confirming: { path: string; lines: string[] }[] | undefined
 let message = ''
+/** The scenes listed while one is being picked to open, and the words narrowing them. */
+let picking: DocEntry[] | undefined
+let filter = ''
 
 /** What is drawn now: the document flattened, the drawing of all but the selection, the selection under the gizmo. */
 let flat: Flat
@@ -519,10 +528,26 @@ async function open(path: string, states: string[] = []) {
   trail = [{ path, states }]
   shown = states[0]
   selected = undefined
+  picking = undefined
+  window.history.replaceState(null, '', `?scene=${encodeURIComponent(path)}${states.length ? `&states=${states.map(encodeURIComponent).join(',')}` : ''}`)
   await redraw()
   frame()
   renderPanel()
   return info()
+}
+
+const docsListed = async () => (await fetch('docs', { cache: 'no-store' })).json() as Promise<DocEntry[]>
+
+async function showDocs() {
+  picking = await docsListed()
+  renderPanel()
+}
+
+/** Opens a scene from the list, once unsaved changes to the one open are given up. */
+function openPicked(path: string) {
+  const unsaved = trail.length ? changes() : []
+  if (unsaved.length && !confirm(`Discard the unsaved changes to ${unsaved.map((c) => c.path).join(', ')}?`)) return
+  run(open(path))
 }
 
 async function showState(name: string | undefined) {
@@ -579,6 +604,7 @@ async function save() {
 }
 
 function info(): Info {
+  if (!trail.length) return { path: '', trail: [], states: [], scope: scopeTo, dirty: [] }
   return {
     path: current().path,
     trail: trail.map((t) => t.path),
@@ -652,12 +678,28 @@ function describe(e: Item | Slot) {
   return `prefab <b>${esc(e.scene)}</b>${e.states?.length ? ` in ${esc(e.states.join(', '))}` : ''}${e.id ? ` · ${esc(e.id)}` : ''}`
 }
 
+function renderPicker(docs: DocEntry[]) {
+  const words = filter.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const shownDocs = docs.filter((d) => words.every((w) => `${d.path} ${d.title ?? ''}`.toLowerCase().includes(w)))
+  const badges = (d: DocEntry) =>
+    [d.states && `${d.states} state${d.states > 1 ? 's' : ''}`, d.slots && `${d.slots} slot${d.slots > 1 ? 's' : ''}`, d.usedBy.length && `used by ${d.usedBy.length}`, d.tower3d && 'Tower 3D']
+      .filter(Boolean)
+      .join(' · ')
+  panel.innerHTML = `
+    <div class="row"><h1>Open a scene</h1>${trail.length ? '<button data-act="close-docs">back</button>' : ''}</div>
+    <input type="text" id="filter" placeholder="filter: desk, meeting, roof" value="${esc(filter)}">
+    <div class="docs">${shownDocs.map((d) => `<button data-open="${esc(d.path)}" title="${esc(d.note ?? '')}${d.usedBy.length ? `\nused by ${esc(d.usedBy.join(', '))}` : ''}" class="${trail[0]?.path === d.path ? 'on' : ''}"><b>${esc(d.title ?? d.path.split('/').at(-1)!)}</b><small>${esc(d.path.replace(/^renderers\/kaykit\/scenes\//, ''))}</small>${badges(d) ? `<em>${badges(d)}</em>` : ''}</button>`).join('')}</div>
+    ${message ? `<div class="muted">${esc(message)}</div>` : ''}
+  `
+}
+
 function renderPanel() {
+  if (picking || !trail.length) return picking ? renderPicker(picking) : void showDocs().catch(fail)
   const e = selected ? elementShown(selected) : undefined
   const hits = query.trim() ? find(assets.catalog, { text: query }).slice(0, 14) : []
   const pending = changes()
   panel.innerHTML = `
-    <h1>Prefab editor</h1>
+    <div class="row"><h1>Prefab editor</h1><button data-act="docs">open…</button></div>
     <div class="crumbs">${trail.map((t, i) => `<span>${i ? '› ' : ''}${esc(t.path.split('/').at(-1)!)}</span>`).join(' ')}${trail.length > 1 ? ' <button data-act="up">up</button>' : ''}</div>
     <div class="muted">${esc(doc().title ?? '')}</div>
     <h3>State</h3>
@@ -712,6 +754,9 @@ panel.addEventListener('click', (ev) => {
   const t = (ev.target as HTMLElement).closest('button')
   if (!t) return
   const d = t.dataset
+  if (d.open) return openPicked(d.open)
+  if (d.act === 'docs') return run(showDocs())
+  if (d.act === 'close-docs') return ((picking = undefined), renderPanel())
   if (d.state !== undefined) return run(showState(d.state || undefined))
   if (d.add) return run(add(d.add))
   if (d.act === 'up') return run(up())
@@ -751,12 +796,13 @@ panel.addEventListener('change', (ev) => {
 
 panel.addEventListener('input', (ev) => {
   const t = ev.target as HTMLInputElement
-  if (t.id !== 'find') return
-  query = t.value
+  if (t.id !== 'find' && t.id !== 'filter') return
+  if (t.id === 'find') query = t.value
+  else filter = t.value
   renderPanel()
-  const box = document.getElementById('find') as HTMLInputElement
+  const box = document.getElementById(t.id) as HTMLInputElement
   box.focus()
-  box.setSelectionRange(query.length, query.length)
+  box.setSelectionRange(t.value.length, t.value.length)
 })
 
 bar.addEventListener('click', (ev) => {
@@ -807,13 +853,19 @@ const ready = (async () => {
   resize()
   const q = new URLSearchParams(location.search)
   const start: string = q.get('scene') ?? (await (await fetch('start')).text())
-  await open(start, q.get('states')?.split(',').filter(Boolean) ?? [])
+  if (start) await open(start, q.get('states')?.split(',').filter(Boolean) ?? [])
+  else await showDocs()
 })()
+
+addEventListener('beforeunload', (e) => {
+  if (trail.length && changes().length) e.preventDefault()
+})
 ready.catch(fail)
 
 window.editor = {
   ready: () => ready,
   open,
+  docs: docsListed,
   info,
   state: showState,
   scope: (to) => ((scopeTo = to), renderPanel(), info()),
