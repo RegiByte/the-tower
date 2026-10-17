@@ -36,6 +36,7 @@
     "hub/src/shared/cards.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
+    "hub/renderers/tower3d/src/layout.ts#pigeonholeFor",
     "hub/renderers/tower3d/src/desk.ts#dressPapers",
     "hub/src/shared/panels.ts#reviewsHtml",
     "hub/test/reviews.test.ts"
@@ -120,8 +121,9 @@ looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref
 [`sendTarget`](ref:hub/src/shared/cards.ts#sendTarget), and a settled thread draws read only, under a line saying it
 landed or was removed. Renderers sign the user's notes with `board.user.name` ([[the-user]]); bodies are drawn
 through `markdownHtml`, raw HTML escaped ([[markdown-safe]]). The tower page draws it as a Reviews tab beside
-Changes, where picking lines starts a note; Tower 3D as papers on a worker's desk, a pigeonhole per floor and the
-desk panel's Reviews tab ([[tower3d]]).
+Changes, where picking lines starts a note; Tower 3D as papers on a worker's desk, a pigeonhole per floor (beside the nook under the loft's
+deck, on the game room's outer wall, [`pigeonholeFor`](ref:hub/renderers/tower3d/src/layout.ts#pigeonholeFor)) and
+the desk panel's Reviews tab ([[tower3d]]).
 
 **Alternatives considered.**
 - *One file per note, threads worked out from replies naming their parent:* nobody can read the thread as one file.

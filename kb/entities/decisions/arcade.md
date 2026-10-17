@@ -1,8 +1,8 @@
 ---
 {
   "type": "decision",
-  "name": "The arcade: a floor's games as cabinets in its control room",
-  "summary": "Workers make mini-games, each one self-contained html file, and keep them in the floor's games collection; Tower 3D draws each as an arcade cabinet along the control room's glass front, and E plays it in a sandboxed frame on the right half of the screen while the camera faces the cabinet and the music stops. The core learns nothing about games.",
+  "name": "The arcade: a floor's games as cabinets in its game room",
+  "summary": "Workers make mini-games, each one self-contained html file, and keep them in the floor's games collection; Tower 3D draws each as an arcade cabinet in the floor's game room, along its front wall, and E plays it in a sandboxed frame on the right half of the screen while the camera faces the cabinet and the music stops. The core learns nothing about games.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
@@ -37,11 +37,10 @@ meaning by one renderer, with no change to the core.
   board carries the items, their tags and keepers, never content. What a game is lives in Tower 3D
   ([`games.ts`](ref:hub/renderers/tower3d/src/games.ts)), named once there.
 - **One cabinet per game** ([`arcadeFor`](ref:hub/renderers/tower3d/src/layout.ts#arcadeFor)), only on a floor
-  that declares `games`: along the control room's glass front, facing into the room, the newest (latest id, as
-  created items are named) by the door, as many as fit (six on a 9 m room), each with a collider. While a floor
-  has cabinets, the watch couch ([[office-kaykit]],
-  [`controlZones`](ref:hub/renderers/tower3d/src/zones.ts#controlZones)) steps 1.6 m back from the glass; the
-  world rebuilds when that changes.
+  that declares `games`: in the game room under the loft's deck ([[floor-plan]]), along its front wall toward the
+  lounge, facing into the room, the newest (latest id, as created items are named) nearest the door, as many as fit
+  (six on its 9 m wall), each with a collider. Moved there from the control room's glass front when the control
+  room went up onto the deck.
 - **The cabinet** ([`arcade.ts`](ref:hub/renderers/tower3d/src/arcade.ts)): blocks in the floor's colour, a marquee
   (the room's `picture`) with the game's title and its keeper, an attract screen with the tag. The title is the
   html's `<title>`, else the tag, read once per `modifiedAt` through
@@ -75,8 +74,9 @@ meaning by one renderer, with no change to the core.
 - *Saving high scores.* Would need a writer the sandbox can't reach; in memory is enough for now.
 - *Cabinets elsewhere in the room.* The side walls hold the shell bench and the shelf, the back wall the video wall;
   the glass front is the one stretch that grows with nothing else.
-- *A game room per floor.* Not built: a room of its own with cabinets (dummies and a plate saying how to make a
-  game when there are none). `arcadeFor` takes a stretch of wall; a game room would give it another one.
+- *Cabinets along the game room's left glass or its glazed side.* The front wall is solid and faces the door, so
+  every cabinet is seen on the way in; the glass stays clear toward the desks. Dummies and a plate saying how to
+  make a game when there are none are still not built.
 
 **Impact.** Tower 3D gains an act kind, a layer, a panel and a camera framing; the couch moves while a floor has
 games. No API, board or host change. Every floor shows its arcade once the user declares `games` in the config.

@@ -61,7 +61,8 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   alternate screen ([[fullscreen-tui]]), the last screen is its final frame before it left to exit
   ([`lastFrame`](ref:hub/src/bridge/screen.ts#lastFrame)).
 - **The filing cabinet** ([`buildFiling`](ref:hub/renderers/tower3d/src/filing.ts#buildFiling)) stands on every floor
-  by the Running board ([`filingSpot`](ref:hub/renderers/tower3d/src/layout.ts#filingSpot)). Every floor's archive is
+  by the Running board, in the nook under the loft's deck against the archive's outer wall
+  ([`filingSpot`](ref:hub/renderers/tower3d/src/layout.ts#filingSpot), [[floor-plan]]). Every floor's archive is
   read when its `archiveKey` moves ([`readArchives`](ref:hub/renderers/tower3d/src/archive.ts#readArchives); the
   archive panel lists the same read) and filed by [`drawersOf`](ref:hub/renderers/tower3d/src/archive.ts#drawersOf):
   a worker is its latest session nobody continued, filed by the day it started, the latest day in the top drawer, the

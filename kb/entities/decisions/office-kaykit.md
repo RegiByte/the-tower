@@ -21,6 +21,9 @@
     "hub/renderers/tower3d/src/zones.ts#PREFABS",
     "hub/renderers/tower3d/src/zones.ts#furnish",
     "hub/renderers/tower3d/src/zones.ts#PrefabBox",
+    "hub/renderers/tower3d/src/floorplan.ts#anchorsOf",
+    "hub/renderers/tower3d/src/floorplan.ts#roomsOf",
+    "hub/renderers/kaykit/scenes/prefabs/room_game.json",
     "hub/renderers/tower3d/src/layout.ts#solids",
     "hub/renderers/tower3d/src/zones.ts#floorZones",
     "hub/renderers/tower3d/src/zones.ts#controlZones",
@@ -87,7 +90,12 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   [[kaykit-workers]]), so a fresh clone builds it.
 - Two layers per level ([[tower3d-levels]]): the desks' props and the lobby's city model are refilled on every
   board; the zones on every rebuild of the building (its structure key, which also holds the month).
-- Zones from the plan. [`furnish`](ref:hub/renderers/tower3d/src/zones.ts#furnish) adds each level's zones
+- Zones from the plan. A floor's are placed from its named anchors
+  ([`anchorsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#anchorsOf): the elevator's doors, the desks' first and
+  last rows, the glass, the rooms' doors, the stair, the deck's rail, the lounge, the hero), so a deeper plate moves
+  each with what it is anchored to: each room's prefab stands at its door, turned to face out of it
+  ([`roomsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#roomsOf)), and furniture that would stand inside a room is
+  left out. [`furnish`](ref:hub/renderers/tower3d/src/zones.ts#furnish) adds each level's zones
   ([`floorZones`](ref:hub/renderers/tower3d/src/zones.ts#floorZones),
   [`controlZones`](ref:hub/renderers/tower3d/src/zones.ts#controlZones),
   [`lobbyZones`](ref:hub/renderers/tower3d/src/zones.ts#lobbyZones),

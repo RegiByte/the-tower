@@ -2,7 +2,7 @@ import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
-import { ARCADE_DEPTH, CORE, COLUMN_SPACING, DESK, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, coreFront, partySpots, receptionBox, roomBox, runningSpot, type Box, type Level, type Plan } from './layout.ts'
+import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, coreFront, partySpots, inside, receptionBox, roomBox, runningSpot, type Box, type Level, type Plan } from './layout.ts'
 
 /**
  * The office's places beyond the desks, composed from the KayKit playground's scene documents
@@ -31,8 +31,10 @@ export const PREFABS = [
   'prefabs/roof_helipad.json',
   'prefabs/roof_lantern.json',
   'prefabs/roof_pumpkins.json',
-  'prefabs/office_meeting.json',
-  'prefabs/meeting_rug.json',
+  'prefabs/room_archive.json',
+  'prefabs/room_game.json',
+  'prefabs/room_meeting_8.json',
+  'prefabs/room_meeting_4.json',
   'prefabs/lobby_runner.json',
   'prefabs/running_bench.json',
 ]
@@ -123,9 +125,6 @@ const floorTheme = (tint: string): Theme => ({
 })
 /** The desks' rugs: the pastel lilac taken down to a taupe a step lighter than the carpet (the floor's light lifts it). */
 const RUG: Theme = { atlas: { furniture: 'alt_B' }, swaps: { furniture: [{ from: '#cdbeeb', to: '#5e574e', tol: 50 }] } }
-/** How far a planter stands off the glass, and the lounge's depth from its rug's centre to the couch's back. */
-const OFF_GLASS = 0.7
-const LOUNGE = { back: 1.8, front: 1.7, half: 2.4 }
 /** Planters framing the elevator's doors on every floor, this far either side of their middle against the core. */
 const BESIDE_DOORS = 3.3
 /** How far before the Running board its couch stands, facing it. */
@@ -141,41 +140,32 @@ const troughs = (from: number, to: number) => {
 }
 
 /**
- * A floor's zones, from where its workstations stand: a rug under each, a lounge facing the front glass in the corner
- * left of the desks and in front of the control room, clear of the loft's stair, a round table to meet at in the front strip past the last aisle,
- * a coffee point along the right glass beside the landing, the floor's hero at the end of the aisle you look down from
- * the elevator, planters at the front glass where the other aisles end, low planters along the side glass, planters
- * framing the elevator's doors, and a couch facing the Running board. `tint` is the project's colour as `#rrggbb`.
+ * A floor's zones, placed from its anchors (src/floorplan.ts): each room's prefab at its door, the floor's hero between
+ * the meeting rooms, a rug under each workstation, the lounge in the wing from the deck's front to the front glass, a
+ * coffee point along the right glass beside the landing, low planters along the side glass, planters framing the
+ * elevator's doors, and a couch facing the Running board. What would stand inside a room is left out. `tint` is the
+ * project's colour as `#rrggbb`.
  */
 function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: string): Zone[] {
+  const a = p.anchors
   const stations = [...level.desks.filter((d) => !d.beside), ...level.free]
-  const xs = stations.map((s) => s.x)
-  const lastRow = Math.max(...stations.map((s) => s.z))
-  const front = p.depth / 2 - WALL
-  const right = p.width / 2 - WALL
-  const room = roomBox(p)
-  const strip = { from: lastRow + DESK.depth / 2 + 0.7, to: front }
-  const loungeZ = Math.max(strip.from, room.maxZ + WALL + 0.6) + LOUNGE.back
-  const loungeX = (room.minX + p.loft.stair.box.minX) / 2
-  const aisles = [...new Set(xs)].sort((a, b) => a - b).slice(1).map((x) => x - COLUMN_SPACING / 2)
-  const view = aisles.reduce((a, b) => (Math.abs(b) < Math.abs(a) ? b : a))
+  const front = a['glass.front'].z - WALL
+  const right = a['glass.right'].x - WALL
+  const left = a['glass.left'].x + WALL
   const own = floorTheme(tint)
   const running = runningSpot(p)
-  const meeting = { x: (aisles.at(-1)! + right) / 2, z: (strip.from + front) / 2 }
-  const hero: Zone = { prefab: HEROES[(level.index - 1) % HEROES.length], x: view, z: (strip.from + front) / 2, turn: 180, theme: lit(tint) }
-  return [
-    hero,
+  const rooms: Zone[] = p.rooms.map((r) => ({ prefab: r.prefab, x: r.door.x, z: r.door.z, turn: r.door.turn }))
+  const furniture: Zone[] = [
+    { prefab: HEROES[(level.index - 1) % HEROES.length], x: a.hero.x, z: a.hero.z, turn: 180, theme: lit(tint) },
     ...stations.map((s) => ({ prefab: 'prefabs/desk_rug.json', x: s.x + RETURN.width / 2, z: s.z - SEAT_OFFSET / 2 + 0.05, turn: 0, theme: RUG })),
-    ...(loungeZ + LOUNGE.front <= front ? [{ prefab: 'prefabs/office_lounge.json', x: loungeX, z: loungeZ, turn: 0, theme: own }] : []),
-    { prefab: 'prefabs/meeting_rug.json', ...meeting, turn: 0, theme: RUG },
-    { prefab: 'prefabs/office_meeting.json', ...meeting, turn: 0, theme: own },
-    { prefab: 'prefabs/office_coffee.json', x: right, z: coreFront(p) + 0.6, turn: 270, theme: own },
-    ...aisles.filter((x) => x !== view).map((x) => ({ prefab: 'prefabs/planter.json', x, z: front - OFF_GLASS, turn: 0, theme: own })),
-    ...troughs(coreFront(p) + 0.6 + COFFEE.length + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: right - 0.45, z, turn: 90, theme: own })),
-    ...troughs(room.maxZ + WALL + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: -right + 0.45, z, turn: 90, theme: own })),
-    ...[-1, 1].map((side) => ({ prefab: 'prefabs/planter.json', x: side * BESIDE_DOORS, z: coreFront(p) + 0.32, turn: 0, theme: own })),
+    { prefab: 'prefabs/office_lounge.json', x: a.lounge.x, z: a.lounge.z, turn: 0, theme: own },
+    { prefab: 'prefabs/office_coffee.json', x: right, z: a['elevator.doors'].z + 0.6, turn: 270, theme: own },
+    ...troughs(a['elevator.doors'].z + 0.6 + COFFEE.length + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: right - 0.45, z, turn: 90, theme: own })),
+    ...troughs(a['deck.rail'].z + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: left + 0.45, z, turn: 90, theme: own })),
+    ...[-1, 1].map((side) => ({ prefab: 'prefabs/planter.json', x: side * BESIDE_DOORS, z: a['elevator.doors'].z + 0.32, turn: 0, theme: own })),
     { prefab: 'prefabs/running_bench.json', x: running.x + RUNNING_VIEW, z: running.z, turn: 270, theme: own },
   ]
+  return [...rooms, ...furniture.filter((z) => !p.rooms.some((r) => inside(r.box, z.x, z.z)))]
 }
 
 /** The dark lockers that stand in for server racks: the Prototype pack's dark grey atlas. */
@@ -183,20 +173,18 @@ const RACKS: Theme = { atlas: { prototype: 'alt_C' } }
 
 /**
  * A control room's furnishings on the deck, kept off the video wall so every tile stays readable: a couch facing the wall from the
- * front glass (stepped back into the room while an arcade stands at the glass), and in the front corners, where the
- * shell bench and the shelf leave room, two racks by the facade and a planter by the shelf.
+ * front glass, and in the front corners two racks by the facade where the shell bench leaves room, and a planter by the inner wall.
  */
 function controlZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: string): Zone[] {
   const room = roomBox(p)
   const front = room.maxZ - 0.1
   const benchEnds = Math.max(room.minZ, ...level.kiosks.map((k) => k.z + KIOSK_DEPTH / 2))
-  const shelfEnds = Math.max(room.minZ, ...level.shelf.map((s) => s.z + s.width / 2))
   const racks = [front - 0.9, front - 1.7].filter((z) => z - 0.5 > benchEnds)
   const y = DECK.top
   return [
-    { prefab: 'prefabs/control_watch.json', x: (room.minX + room.maxX) / 2, z: level.arcade?.cabinets.length ? front - ARCADE_DEPTH : front, y, turn: 0, theme: floorTheme(tint) },
+    { prefab: 'prefabs/control_watch.json', x: (room.minX + room.maxX) / 2, z: front, y, turn: 0, theme: floorTheme(tint) },
     ...racks.map((z) => ({ prefab: 'prefabs/control_rack.json', x: room.minX + 0.5, z, y, turn: 90, theme: RACKS })),
-    ...(front - 1.5 > shelfEnds ? [{ prefab: 'prefabs/planter.json', x: room.maxX - WALL - 0.6, z: front - 0.7, y, turn: 0, theme: floorTheme(tint) }] : []),
+    { prefab: 'prefabs/planter.json', x: room.maxX - WALL - 0.6, z: front - 0.7, y, turn: 0, theme: floorTheme(tint) },
   ]
 }
 

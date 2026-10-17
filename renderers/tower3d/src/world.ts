@@ -15,7 +15,7 @@ import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SHAFT_HEAD, SLAB, STOREY, WALL, bigScre
 import { instance, type Models } from './models.ts'
 import { buildParty, type Party } from './party.ts'
 import { floorPalette, tintOf } from './palette.ts'
-import { buildRoom, shellTag, shellTitle, type Bookcase } from './room.ts'
+import { buildRoom, buildShelf, shellTag, shellTitle, type Bookcase } from './room.ts'
 import { buildLoft } from './loft.ts'
 import type { PrefabBox } from './zones.ts'
 import { block, dispose, glowing, glows, mesh, plate, sprite, toon, toonPainted } from './toon.ts'
@@ -201,6 +201,19 @@ function buildShapes(shapes: PrefabBox[]) {
   return g
 }
 
+/** Each room's name over its door, outside, in the floor's colour. */
+function roomSigns(p: Plan, tint: string) {
+  const g = new THREE.Group()
+  for (const r of p.rooms) {
+    const sign = plate(r.label.toUpperCase(), 0.22, { color: tint, px: 64 })
+    const t = (r.door.turn * Math.PI) / 180
+    sign.position.set(r.door.x + Math.sin(t) * 0.03, Math.min(r.height, 2.95) - 0.3, r.door.z + Math.cos(t) * 0.03)
+    sign.rotation.y = t
+    g.add(sign)
+  }
+  return g
+}
+
 /** The landing in front of the elevator: a rug in the floor's color with its number painted on, garage-style. */
 /** The floor's number on a rug before the elevator, ending short of the first row's desk rugs (2.33 m out from the core). */
 function landingRug(p: Plan, number: string, tint: string, color: string) {
@@ -228,7 +241,7 @@ function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: M
   const outside = signPlate(signOf(level, tint), 1)
   outside.position.set(-p.width / 2 + 2 + outside.geometry.parameters.width / 2, STOREY / 2, p.depth / 2 + 0.2)
   g.add(outside)
-  g.add(buildRoom(p, level, colors, models, pickables, bookcases))
+  g.add(buildRoom(p, level, colors, models, pickables), buildShelf(level, models, pickables, bookcases), roomSigns(p, tint))
   g.add(buildLoft(p.loft, colors, tint))
   g.add(buildWall(level.wall, colors.facing, tint))
   if (level.cork) g.add(buildCork(level.cork, level.floor.id, draftsOf(level.floor)!.label, tint, pickables))

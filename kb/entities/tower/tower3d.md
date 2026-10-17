@@ -73,10 +73,11 @@ out of view ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
 
 **The control room** ([`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)), in each floor's back-left
 corner on the loft's deck, entered from the terrace before it: a video wall with a live tile per worker on duty; the console, which opens the floor panel (dirs, new
-shell, archive, spawn, and a tray per collection, [[collection-trays]]); the floor's shells on a bench; the shelf,
-a bookcase, TV or poster per entry ([[shelf-items]]); and on a floor keeping games, the arcade ([[arcade]]). Under
-the deck, in the nook against the archive's outer wall, stand the filing cabinet, the floor's archive by day ([[logbook]],
-[`readFloorArchive`](ref:hub/renderers/tower3d/src/archive.ts#readFloorArchive)), the Running board, and a pigeonhole
+shell, archive, spawn, and a tray per collection, [[collection-trays]]); the floor's shells on a bench. Under the deck, the archive holds the shelf, a bookcase,
+TV or poster per entry ([[shelf-items]]), and the game room, on a floor keeping games, the arcade ([[arcade]]); along
+the front glass stand two meeting rooms with the hero between them ([[floor-plan]]). In the nook against the
+archive's outer wall stand the filing cabinet, the floor's archive by day ([[logbook]],
+[`readFloorArchive`](ref:hub/renderers/tower3d/src/archive.ts#readFloorArchive)), the Running board, and beside it a pigeonhole
 holding the floor's review threads ([`buildPigeonhole`](ref:hub/renderers/tower3d/src/pigeonhole.ts#buildPigeonhole),
 [[review-threads]]). A [[reviewer]] sits beside its author with a notebook, and notes new to a worker lie on its
 desk.

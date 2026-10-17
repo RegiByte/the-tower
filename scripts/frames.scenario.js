@@ -8,6 +8,8 @@
  */
 (async () => {
   const t = window.tower3d
+  /** The loft's deck over a floor (src/floorplan.ts DECK.top), where the control room's video wall and console stand. */
+  const DECK = 3.3
   await t.ready()
   t.capture()
   const out = []
@@ -25,12 +27,12 @@
       out.push({ name: `${name}:error`, error: e.message })
     }
   }
-  /** Stand `d` m from the target on the side facing where the walker stands now, then aim at it. */
-  const near = (target, d) => {
+  /** Stand `d` m from the target on the side facing where the walker stands now, `y` over its floor, then aim at it. */
+  const near = (target, d, y = 0) => {
     const l = t.locate(target)
     const w = t.state().walker
     const len = Math.hypot(w.x - l.x, w.z - l.z) || 1
-    t.teleport({ level: l.level, x: l.x + ((w.x - l.x) / len) * d, z: l.z + ((w.z - l.z) / len) * d })
+    t.teleport({ level: l.level, x: l.x + ((w.x - l.x) / len) * d, z: l.z + ((w.z - l.z) / len) * d, y })
     t.step(1)
     return t.aimAt(target)
   }
@@ -47,7 +49,7 @@
   t.key('Escape'); t.step(60); snap('back')
   t.capture()
   if (waiter) {
-    tryDo('aim-tile', () => near({ kind: 'tile', id: waiter }, 3)); t.step(1); snap('aimed-tile')
+    tryDo('aim-tile', () => near({ kind: 'tile', id: waiter }, 3, DECK)); t.step(1); snap('aimed-tile')
     tryDo('use-tile', () => t.press('use')); t.step(60); snap('tile-open')
     t.key('Escape'); t.step(60); t.capture(); snap('tile-closed')
     tryDo('aim-desk', () => {
@@ -116,7 +118,7 @@
     t.capture()
     tryDo('aim-leftover', () => near(leftover, 3)); t.step(1); snap('aimed-leftover')
     const desk = t.acts('floor').find((a) => t.locate(a).level === t.locate(leftover).level)
-    tryDo('open-floor-panel', () => (near(desk, 2), t.press('use'))); t.step(5); snap('floor-panel')
+    tryDo('open-floor-panel', () => (near(desk, 2, DECK), t.press('use'))); t.step(5); snap('floor-panel')
   }
   const video = t.acts('picture').find((a) => /\.(mp4|webm)$/.test(a.target))
   if (video) {

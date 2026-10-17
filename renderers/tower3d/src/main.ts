@@ -684,7 +684,7 @@ function openGame(project: string, id: string) {
 /** The camera on the game's cabinet, where the arcade stands it now: a game kept since moves every cabinet along. */
 function frameCabinet(panel: GamePanel, { cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
   panel.x = cabinet.x
-  const front = new THREE.Vector3(cabinet.x, level.y + cabinet.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
+  const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
   frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
 }
 

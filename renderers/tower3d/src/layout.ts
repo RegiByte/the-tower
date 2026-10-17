@@ -2,7 +2,7 @@ import { draftsOf } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
-import { ARCHIVE, DECK, loftOf, loftWalls, type Layer, type Loft } from './floorplan.ts'
+import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room } from './floorplan.ts'
 import { gamesOf } from './games.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
@@ -20,8 +20,9 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  *
  * Each floor's back-left corner is a loft (src/floorplan.ts): a deck over the wing, reached by a stair along its edge.
  * The control room stands on the deck's back, entered from the terrace before it: a video wall of the floor's workers
- * on its back wall, the floor's shells on a bench along the facade, the shelf along its inner wall, and the console
- * in the middle. A floor keeping games has an arcade along the room's glass front, a cabinet per game.
+ * on its back wall, the floor's shells on a bench along the facade, and the console in the middle. Under the deck,
+ * the archive holds the shelf along its walls, and a floor keeping games has an arcade in the game room before it, a
+ * cabinet per game. Meeting rooms take the strip along the front glass (src/floorplan.ts's rooms and anchors).
  *
  * Right of the core, a partition stands free before the back glass: the floor's shared wall. A floor keeping drafts
  * has its corkboard on the wall's left, a note pinned on it per draft (what goes in); every floor hangs its gallery
@@ -46,6 +47,8 @@ const COLUMNS = 4
 export const COLUMN_SPACING = 5.8
 const ROW_SPACING = 4.8
 const MIN_ROWS = 2
+/** The rows of desks the plate is sized for, whatever the board draws: a floor keeps its shape until a fourth is needed. */
+const PLATE_ROWS = 3
 /** Clear floor between the elevator doors and the first row of desks. */
 const LANDING = 4.2
 const SIDE_MARGIN = 4
@@ -64,9 +67,11 @@ export const ROOM_HEIGHT = STOREY - SLAB - DECK.top
 export const VIDEO_WALL = { width: 8, bottom: 0.95, top: 2.7, gap: 0.12 }
 const SHELF_WIDTH: Record<'md' | 'html' | 'url' | 'link', number> = { md: 1.5, html: 1.5, url: 1.5, link: 1 }
 const SHELF_GAP = 0.3
-/** Where the shelf and the shell bench start, from the room's back wall. */
-const SHELF_FROM = 2.2
+/** Where the shell bench starts, from the room's back wall. */
 const KIOSK_FROM = 2.4
+/** How far a shelf piece stands off its wall, to its centre, and keeps clear of a corner. */
+const SHELF_OFF = 0.22
+const SHELF_CORNER = 0.5
 /** The shared wall: its gap from the core, how far it stands off the back glass, how tall and thick it is. */
 const PARTITION = { fromCore: 0.9, fromBack: 1.6, height: 3.2, thick: 0.2, margin: 0.5 }
 /** The corkboard: its size, how far its base is off the floor, and the band its sign takes. */
@@ -90,10 +95,10 @@ const HANG = [
 const GALLERY = { width: 8.1, gap: 0.9 }
 /** An arcade cabinet's footprint and height, and the gap between two. */
 export const CABINET = { width: 0.8, depth: 0.72, height: 2.05, gap: 0.3 }
-/** The stretch of the control room's glass front the arcade stands along: in from the facade past the racks, and from the inner wall past the planter. */
+/** The stretch of the game room's front wall the arcade stands along: in from the facade, and from its glass side. */
 const ARCADE = { fromFacade: 1.3, fromInner: 1.4 }
-/** How far the control room's watch couch steps back from the glass while an arcade stands there. */
-export const ARCADE_DEPTH = 1.6
+/** A room's walls' thickness, inside its box (its prefab's). */
+const ROOM_WALL = 0.15
 /** A picture's aspect: a poster's (src/showing.ts). */
 export const PICTURE_ASPECT = 1.6
 
@@ -108,8 +113,8 @@ export type DeskSlot = StationSlot & { card: Card; beside?: string }
 export type KioskSlot = { shell: Shell; x: number; z: number }
 /** A worker's screen on the video wall: its center on the wall (facing +z) and its size. */
 export type TileSlot = { card: Card; x: number; y: number; w: number; h: number }
-/** A shelf entry on the room's inner wall (facing -x), centered at z, `width` along it. */
-export type ShelfSlot = { entry: ShelfEntry; n: number; kind: keyof typeof SHELF_WIDTH; z: number; width: number }
+/** A shelf entry against one of the archive's walls: its centre on the floor, `width` along the wall, facing `turn` degrees about +y (0 facing +z). */
+export type ShelfSlot = { entry: ShelfEntry; n: number; kind: keyof typeof SHELF_WIDTH; x: number; z: number; turn: number; width: number }
 /** A draft's note on the corkboard: its center on the board's face, in level space. */
 export type NoteSlot = { id: string; tag: string; modifiedAt: number; x: number; y: number }
 /** A floor's corkboard on its shared wall, facing +z: its center, the drafts it holds, and the notes it has room for. */
@@ -129,8 +134,8 @@ export type WallSlot = { minX: number; maxX: number; z: number; face: number; he
  */
 export type PigeonholeSlot = { x: number; z: number; threads: Floor['threads']; more: number }
 
-/** A game's cabinet at the control room's glass front, facing into the room (-z): its center on the surface it stands on `y` over the level's floor, and who kept it. */
-export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; y: number; z: number }
+/** A game's cabinet against the game room's front wall, facing into the room (-z): its center on the floor, and who kept it. */
+export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; z: number }
 /** A floor's arcade, when it keeps games: its cabinets, the newest by the door, as many as fit; `count` is all its games. */
 export type ArcadeSlot = { count: number; cabinets: CabinetSlot[] }
 
@@ -147,6 +152,9 @@ export type Plan = {
   levels: Level[]
   /** Every floor's loft, the same on each. */
   loft: Loft
+  /** Every floor's rooms on the ground and its named points, the same on each (src/floorplan.ts). */
+  rooms: Room[]
+  anchors: Anchors
 }
 
 /** A worker off duty since today began, at the roof's party, with the project it worked for. Where it is changes with time (src/life.ts#guestAt). */
@@ -187,17 +195,37 @@ function tiles(cards: Card[]): Omit<TileSlot, 'card'>[] {
   })
 }
 
-/** The shelf's entries in a row along the room's inner wall from `from` to `to`, as many as fit; z from the room's back. */
-function shelfSlots(entries: ShelfEntry[], from: number, to: number): ShelfSlot[] {
-  let z = from
+/** A stretch of wall a shelf runs along: where it starts, which way it runs, how long it is, and the way its pieces face. */
+type ShelfRun = { x: number; z: number; dx: number; dz: number; length: number; turn: number }
+
+/**
+ * The runs of the archive's walls the shelf takes in turn: the back glass from the left, the left glass toward the
+ * front, then the wall it shares with the game room back toward the door, each piece standing off its wall.
+ */
+function shelfRuns(a: Box): ShelfRun[] {
+  const w = ROOM_WALL + SHELF_OFF
+  const c = SHELF_CORNER + SHELF_OFF
+  return [
+    { x: a.minX + c + SHELF_OFF, z: a.minZ + w, dx: 1, dz: 0, length: a.maxX - a.minX - 2 * c - SHELF_OFF, turn: 0 },
+    { x: a.minX + w, z: a.minZ + c + SHELF_OFF + 0.6, dx: 0, dz: 1, length: a.maxZ - a.minZ - 2 * c - 0.6, turn: 90 },
+    { x: a.minX + c + SHELF_OFF + 0.6, z: a.maxZ - w, dx: 1, dz: 0, length: a.maxX - a.minX - 2 * c - SHELF_OFF - 2.2, turn: 180 },
+  ]
+}
+
+/** The shelf's entries along the archive's runs in turn, each piece where it fits, as many as fit. */
+function shelfSlots(entries: ShelfEntry[], runs: ShelfRun[]): ShelfSlot[] {
+  let run = 0
+  let along = 0
   return entries.flatMap((entry, n) => {
     const own = shelfKind(entry)
     const kind: ShelfSlot['kind'] = own === 'renderer' ? 'html' : own
     const width = SHELF_WIDTH[kind]
-    if (z + width > to) return []
-    const slot = { entry, n, kind, z: z + width / 2, width }
-    z += width + SHELF_GAP
-    return [slot]
+    while (run < runs.length && along + width > runs[run].length) (run += 1, (along = 0))
+    if (run === runs.length) return []
+    const r = runs[run]
+    const mid = along + width / 2
+    along += width + SHELF_GAP
+    return [{ entry, n, kind, x: r.x + r.dx * mid, z: r.z + r.dz * mid, turn: r.turn, width }]
   })
 }
 
@@ -364,23 +392,23 @@ function corkFor(floor: Floor, depth: number): CorkSlot | undefined {
 }
 
 /**
- * A floor's arcade, when it keeps games: a cabinet per game along the control room's glass front, the newest (the
- * latest id, as created items are named) nearest the door, as many as fit.
+ * A floor's arcade, when it keeps games: a cabinet per game along the game room's front wall, facing into the room, the
+ * newest (the latest id, as created items are named) nearest the door, as many as fit.
  */
-function arcadeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth'>): ArcadeSlot | undefined {
+function arcadeFor(floor: Floor, rooms: Room[]): ArcadeSlot | undefined {
   const games = gamesOf(floor)
   if (!games) return undefined
-  const r = roomBox(p)
+  const r = roomOf(rooms, 'game').box
   const from = r.minX + ARCADE.fromFacade
   const to = r.maxX - ARCADE.fromInner
   const pitch = CABINET.width + CABINET.gap
   const fit = Math.floor((to - from + CABINET.gap) / pitch)
   const items = games.items.toSorted((a, b) => b.id.localeCompare(a.id)).slice(0, fit)
   const right = (from + to) / 2 + ((fit - 1) / 2) * pitch
-  const z = r.maxZ - WALL - 0.05 - CABINET.depth / 2
+  const z = r.maxZ - ROOM_WALL - 0.05 - CABINET.depth / 2
   return {
     count: games.items.length,
-    cabinets: items.map((item, i) => ({ id: item.id, tag: item.tag, modifiedAt: item.modifiedAt, keptBy: item.keptBy?.callsign, x: right - i * pitch, y: DECK.top, z })),
+    cabinets: items.map((item, i) => ({ id: item.id, tag: item.tag, modifiedAt: item.modifiedAt, keptBy: item.keptBy?.callsign, x: right - i * pitch, z })),
   }
 }
 
@@ -389,13 +417,13 @@ export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth
 
 const lastAt = (t: Floor['threads'][number]) => t.last?.at ?? ''
 
-/** A floor's pigeonhole in the nook, on the archive's outer wall past the Running board. */
-function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth'>): PigeonholeSlot | undefined {
+/** A floor's pigeonhole beside the nook, on the game room's outer wall between its back and its door. */
+function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined {
   if (!floor.collections.some((c) => c.id === REVIEWS)) return undefined
-  const wall = nookWall(p)
+  const game = roomOf(rooms, 'game')
   const fit = PIGEONHOLE.columns * PIGEONHOLE.rows
   const threads = floor.threads.toSorted((a, b) => lastAt(b).localeCompare(lastAt(a)) || a.checkout.localeCompare(b.checkout))
-  return { x: wall.x + PIGEONHOLE.depth / 2, z: wall.back + NOOK.pigeonhole, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
+  return { x: game.box.maxX + PIGEONHOLE.depth / 2, z: (game.box.minZ + game.door.z - ROOM_DOOR / 2) / 2, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
 }
 
 /**
@@ -405,17 +433,20 @@ function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth'>): Pigeonho
 export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
-  const shelves = board.floors.map((f) => shelfSlots(f.shelf ?? [], SHELF_FROM, ROOM.depth - WALL - SHELF_GAP))
   const kiosksFit = Math.floor((ROOM.depth - WALL - SHELF_GAP - KIOSK_FROM - KIOSK_DEPTH) / KIOSK_SPACING) + 1
   const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id).slice(0, kiosksFit))
-  const depth = CORE.depth + LANDING + rows * ROW_SPACING + BACK_MARGIN
+  const depth = CORE.depth + LANDING + Math.max(rows, PLATE_ROWS) * ROW_SPACING + BACK_MARGIN + STRIP.depth + STRIP.aisle
+  const rooms = roomsOf({ width, depth })
+  const runs = shelfRuns(roomOf(rooms, 'archive').box)
   const loft = loftOf({ width, depth }, WALL)
   const coreFront = -depth / 2 + CORE.depth
   const room = roomBox({ width, depth })
+  const firstRow = coreFront + LANDING
+  const anchors = anchorsOf({ width, depth }, loft, rooms, coreFront, { x: ROOM.width / 2, first: firstRow, last: firstRow + (rows - 1) * ROW_SPACING }, { x: (roomDoor({ width, depth }).minX + roomDoor({ width, depth }).maxX) / 2, z: room.maxZ })
   const stationAt = (n: number): StationSlot => ({
     n,
     x: ROOM.width / 2 + (n % COLUMNS - (COLUMNS - 1) / 2) * COLUMN_SPACING,
-    z: coreFront + LANDING + Math.floor(n / COLUMNS) * ROW_SPACING,
+    z: firstRow + Math.floor(n / COLUMNS) * ROW_SPACING,
   })
   const kioskAt = (shell: Shell, i: number): KioskSlot => ({ shell, x: room.minX + 0.6, z: room.minZ + KIOSK_FROM + i * KIOSK_SPACING })
   const floors = board.floors.map((floor, i): Level => {
@@ -440,11 +471,11 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       free: Array.from({ length: rows * COLUMNS }, (_, n) => n).filter((n) => !taken.has(n)).map(stationAt),
       kiosks: shells[i].map(kioskAt),
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, x: center + t.x, card: desks[i].card })),
-      shelf: shelves[i].map((slot) => ({ ...slot, z: room.minZ + slot.z })),
+      shelf: shelfSlots(floor.shelf ?? [], runs),
       wall: wallFor(floor, depth),
       cork: corkFor(floor, depth),
-      pigeonhole: pigeonholeFor(floor, { width, depth }),
-      arcade: arcadeFor(floor, { width, depth }),
+      pigeonhole: pigeonholeFor(floor, rooms),
+      arcade: arcadeFor(floor, rooms),
     }
   })
   const roof = board.floors.length + 1
@@ -454,6 +485,8 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     width,
     depth,
     loft,
+    rooms,
+    anchors,
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
       ...floors,
@@ -489,11 +522,11 @@ export const consoleSpot = (p: Plan) => {
 }
 
 /**
- * The nook under the deck beside the archive: the archive's outer wall facing +x, with the filing cabinet, the Running
- * board and the pigeonhole along it from the back glass (their centres, from the back), and the Running board's width.
+ * The nook under the deck beside the archive: the archive's outer wall facing +x, with the filing cabinet and the
+ * Running board along it from the back glass to the archive's door (their centres, from the back), and the board's width.
  */
-const NOOK = { filing: 0.6, running: 2.05, width: 2.1, pigeonhole: 3.95 }
-const nookWall = (p: Pick<Plan, 'width' | 'depth'>) => ({ x: -p.width / 2 + ARCHIVE.width + WALL / 2, back: -p.depth / 2 })
+const NOOK = { filing: 0.55, running: 2.05, width: 2.2 }
+const nookWall = (p: Pick<Plan, 'rooms'>) => ({ x: roomOf(p.rooms, 'archive').box.maxX, back: roomOf(p.rooms, 'archive').box.minZ })
 
 /** The floor's "Running" board in the nook, facing +x: its face, its center along the wall and its width. */
 export const runningSpot = (p: Plan) => {
@@ -513,8 +546,6 @@ export const filingSpot = (p: Plan) => {
 /** The video wall's face: tiles sit on it, facing +z. */
 export const videoWallZ = (p: Plan) => roomBox(p).minZ + WALL + 0.08
 
-/** The shelf's face on the room's inner wall, facing -x. */
-export const shelfX = (p: Plan) => roomBox(p).maxX - WALL
 
 /**
  * The way from just outside the elevator's doors to the seat at a desk centered at (x, z): across the landing, down
@@ -626,10 +657,11 @@ function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[]
     ...level.zones.filter((z) => z.y === DECK.top).flatMap((z) => z.boxes),
     box(consoleSpot(p).x, consoleSpot(p).z + 0.25, 2.6, 2.2),
     ...level.kiosks.map((k) => box(k.x, k.z, 0.8, KIOSK_DEPTH)),
-    ...level.shelf.map((s) => box(shelfX(p) - 0.25, s.z, 0.5, s.width)),
-    ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),
   ]
 }
+
+/** The floor a shelf piece takes: `width` along its wall, half a metre out from it. */
+const shelfFloor = (s: ShelfSlot) => (s.turn % 180 === 0 ? box(s.x, s.z, s.width, 0.5) : box(s.x, s.z, 0.5, s.width))
 
 /** What a walker on a level's floor bumps into: its walls and the furniture. */
 export function colliders(p: Plan, level: Level): Box[] {
@@ -651,6 +683,8 @@ export function colliders(p: Plan, level: Level): Box[] {
     box(filingSpot(p).x, filingSpot(p).z, FILING.depth + 0.1, FILING.width + 0.1),
     ...[...level.desks.filter((d) => !d.beside), ...level.free].map((s) => box(s.x + RETURN.width / 2, s.z - 0.35, DESK.width + RETURN.width + 0.1, DESK.depth + 0.6 + SEAT_OFFSET)),
     ...(level.pigeonhole ? [box(level.pigeonhole.x, level.pigeonhole.z, PIGEONHOLE.depth + 0.1, PIGEONHOLE.columns * PIGEONHOLE.cell + 0.2)] : []),
+    ...level.shelf.map(shelfFloor),
+    ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),
   ]
 }
 

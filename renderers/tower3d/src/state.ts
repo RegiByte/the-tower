@@ -25,7 +25,7 @@ import type { LinePick, StatsRange } from '../../../src/shared/panels.ts'
 import type { Anchor } from '../../../src/shared/reviews.ts'
 import type { DeskTab, LogbookTab } from './ui.ts'
 import { STATS_ALL } from '../../../src/shared/panels.ts'
-import { loftOf } from './floorplan.ts'
+import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
 import { LIT } from './light/setting.ts'
 import type { Walker } from './walker.ts'
 import type { World } from './world.ts'
@@ -224,7 +224,10 @@ export type State = {
   replay: { id: string; session: string } | undefined
 }
 
-const NO_PLAN: Plan = { width: 0, depth: 0, levels: [], loft: loftOf({ width: 0, depth: 0 }, 0) }
+const NO_PLATE = { width: 0, depth: 0 }
+const NO_LOFT = loftOf(NO_PLATE, 0)
+const NO_ROOMS = roomsOf(NO_PLATE)
+const NO_PLAN: Plan = { ...NO_PLATE, levels: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }) }
 
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,

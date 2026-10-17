@@ -5,15 +5,16 @@ import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from '
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
 import { DECK } from './floorplan.ts'
-import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, shelfX, videoWallZ } from './layout.ts'
+import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallZ } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf, type FloorPalette } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
 import { block, glowing, glows, mesh, plate, sprite, toon } from './toon.ts'
 
 /**
- * A floor's control room on the loft's deck, in level space (src/layout.ts places it): the walls, the console, the
- * shell bench and the shelf are built with the building; the video wall and the books change on their own.
+ * A floor's control room on the loft's deck, in level space (src/layout.ts places it): the walls, the console and the
+ * shell bench are built with the building; the video wall changes on its own. The shelf stands in the archive under
+ * the deck, its books filled once the shelf's files are read.
  */
 
 type FloorLevel = Extract<Level, { kind: 'floor' }>
@@ -84,7 +85,6 @@ function shelfPiece(slot: ShelfSlot, project: string, tint: string, models: Mode
   const label = plate(entry.label, 0.2, { color: tint, bg: WORLD.enamel, px: 48 })
   label.position.set(0, slot.kind === 'link' ? 2.35 : 2.3, 0.1)
   g.add(label)
-  g.position.z = slot.z
   return act(g, { kind: 'shelf', project, n }, pickables)
 }
 
@@ -106,7 +106,7 @@ function kiosk(shell: Shell, tint: string, models: Models, pickables: THREE.Obje
   return act(g, { kind: 'shell', id: shell.id }, pickables)
 }
 
-export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[]) {
+export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, models: Models, pickables: THREE.Object3D[]) {
   const g = new THREE.Group()
   const tint = tintOf(level.floor)
   const r = roomBox(p)
@@ -154,13 +154,20 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
     g.add(piece)
   }
 
+  g.position.y = DECK.top
+  return g
+}
+
+/** A floor's shelf in the archive: a bookcase, TV or poster per entry, each where its slot stands against a wall. */
+export function buildShelf(level: FloorLevel, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[]) {
+  const g = new THREE.Group()
+  const tint = tintOf(level.floor)
   for (const slot of level.shelf) {
     const piece = shelfPiece(slot, level.floor.id, tint, models, pickables, bookcases)
-    piece.position.x = shelfX(p) - 0.22
-    piece.rotation.y = -Math.PI / 2
+    piece.position.set(slot.x, 0, slot.z)
+    piece.rotation.y = (slot.turn * Math.PI) / 180
     g.add(piece)
   }
-  g.position.y = DECK.top
   return g
 }
 

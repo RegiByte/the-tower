@@ -23,7 +23,11 @@
     "hub/renderers/tower3d/src/layout.ts#collidersOn",
     "hub/renderers/tower3d/src/layout.ts#solids",
     "hub/renderers/tower3d/src/walker.ts#fallTo",
-    "hub/renderers/tower3d/src/main.ts#stepWalker"
+    "hub/renderers/tower3d/src/main.ts#stepWalker",
+    "hub/renderers/tower3d/src/layout.ts#plan",
+    "hub/renderers/tower3d/src/floorplan.ts#roomsOf",
+    "hub/renderers/tower3d/src/floorplan.ts#anchorsOf",
+    "hub/renderers/tower3d/src/room.ts#buildShelf"
   ]
 }
 ---
@@ -78,22 +82,45 @@ shoulders.
   ([`roomBox`](ref:hub/renderers/tower3d/src/layout.ts#roomBox), [`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)):
   9 × 9 m from the back-left corner, 3.0 m clear to the ceiling
   ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall on the back wall, the shells'
-  bench along the facade, the shelf along its solid inner wall (which closes the deck's edge behind the landing, so no
-  rail stands there) and the console in the middle, entered through a door in its glass front onto the terrace, the
-  rest of the deck. Its depth is fixed: a bench holds as many shells as fit (four) and the inner wall as many shelf
-  entries as fit. Its walls, console, bench, shelf and furniture are the deck layer's colliders
-  ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing on the deck carries its `y`.
+  bench along the facade, a solid inner wall (which closes the deck's edge behind the landing, so no rail stands
+  there) and the console in the middle, entered through a door in its glass front onto the terrace, the rest of the
+  deck. Its depth is fixed: the bench holds as many shells as fit (four). Its walls, console, bench and furniture
+  are the deck layer's colliders ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing
+  on the deck carries its `y`.
+- *The plate is sized for three rows* (`PLATE_ROWS` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)):
+  core 4 + landing 4.2 + rows × 4.8 + back margin 2.4 + the meeting strip 6.4 and its aisle 1.6, at least three rows'
+  worth: 33.0 m, 37.8 at four. The board still draws the rows it needs (two at least); the third's floor stands empty
+  before the strip. The roof's dance floors grow with it.
+- *Rooms are prefabs placed from anchors* ([`roomsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#roomsOf),
+  [`anchorsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#anchorsOf)). Each room's shell (walls, glass, door
+  frame) is a scene document of boxes, `renderers/kaykit/scenes/prefabs/room_*.json`, with its origin at its door
+  and +z out of it, placed at its `<room>.door` anchor ([[office-kaykit]], reshaped in the [[prefab-editor]]). The
+  code keeps each room's box for what it places inside (the shelf, the arcade); a room reshaped in the editor moves
+  its walls, not what stands in it. Anchors: `elevator.doors`, `desks.first-row`, `desks.last-row`, `glass.front`,
+  `glass.left`, `glass.right`, `control.door`, `stair.foot`, `stair.top`, `deck.rail`, `archive.door`, `game.door`,
+  `meeting-8.door`, `meeting-4.door`, `lounge`, `hero`. The wing's rooms and the loft are anchored to the back; the
+  meeting strip, the hero and the lounge's front to the front glass; the desk rows and the lounge stretch between.
+  - *Under the deck* (2.95 m high): the archive, 6.5 × 5 in the back corner, holding the shelf along its back glass,
+    its left glass and the wall it shares with the game room
+    ([`buildShelf`](ref:hub/renderers/tower3d/src/room.ts#buildShelf)), as many entries as fit; its outer wall is
+    solid, its door at that wall's front end, and in the nook beside it stand the filing cabinet and the Running
+    board ([[logbook]]). The game room, 9 × 9 before it, glazed toward the desks, the arcade along its front wall
+    ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).
+  - *The lounge* is open, the wing from the deck's front to the front glass.
+  - *Along the front glass*, Meeting · 8 (9.2 × 6.4) and Meeting · 4 (6.4 × 6.4): 3.2 m walls, open above, glazed
+    and doored toward the desks, empty until their long tables come; the hero stands between them. The round
+    meeting table and its rug are gone.
+  - Each room's name hangs over its door, in the floor's colour.
 
-**Still to build**, each its own change: the rooms as prefabs placed from named anchors (`elevator.doors`,
-`desks.first-row`, `glass.front`, `stair.foot`, `stair.top`, `deck.rail`, the rooms' doors, `lounge`, `hero`; the
-meeting strip, the hero and the lounge's front anchored to the front glass, the loft and its rooms to the back,
-the desk rows and the lounge stretching between), with the plate sized for at least three rows; the glazed control
-room on the deck with its two-sided video wall; turned desks with turn-aware walks; and the meeting rooms' long
-tables with a seat per crew member.
+**Still to build**, each its own change: the control room glazed toward the desks with its two-sided video wall,
+the console facing +x and its door's place on the terrace; turned desks with turn-aware walks; and the meeting
+rooms' long tables with a seat per crew member.
 
 **Alternatives considered.** The four other plans, above. A mezzanine as a level of its own would break the rule
 that a level is a box closed by slabs, and with it the levels drawn. Picking the layer from position alone (inside the deck's box) cannot tell standing on the deck from
 standing under it.
 
-**Impact.** Every Tower 3D frame changed with the taller storey. A walker's `y` is now its height over the floor on
+**Impact.** Every Tower 3D frame changed with the taller storey, and again with the deeper plate and its rooms.
+The archive's door sits at its outer wall's front end, not the wall's middle as first drawn, so the nook's boards
+have the rest of that wall, and the pigeonhole moved onto the game room's outer wall beside it. A walker's `y` is now its height over the floor on
 a stair or the deck as well as mid-jump, kept with your spot and taken by the door's `teleport`.

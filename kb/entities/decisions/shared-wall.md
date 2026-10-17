@@ -33,7 +33,8 @@ it goes home.
 **How.**
 - **One wall per floor** ([`wallFor`](ref:hub/renderers/tower3d/src/layout.ts#wallFor)): a freestanding partition
   1.6 m before the back glass, right of the elevator core, facing the desks, with its own collider. It stands on
-  every floor. The corkboard hangs on its left only when the floor declares `drafts`; a floor without leaves that
+  every floor, 3.2 m tall: with the loft over the left wing ([[floor-plan]]) nothing stands over it, so it keeps
+  its height. The corkboard hangs on its left only when the floor declares `drafts`; a floor without leaves that
   stretch bare, and the gallery keeps its half.
 - **The gallery**: the floor's last nine showings, from every card on the floor, on duty or not, newest first:
   the bridge gathers the floor's last twelve as `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf),
