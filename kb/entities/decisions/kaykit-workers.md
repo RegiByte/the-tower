@@ -6,9 +6,14 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-16",
+  "reviewed": "2026-10-17",
   "refs": [
     "hub/scripts/tower3d-characters.ts",
+    "hub/scripts/ual.ts#retargetUal",
+    "hub/renderers/tower3d/src/contract.ts#UAL_CLIPS",
+    "hub/renderers/tower3d/src/desk.ts#seatedPose",
+    "hub/renderers/tower3d/src/life.ts#arrivalPose",
+    "hub/renderers/tower3d/src/life.ts#leaverPose",
     "hub/renderers/tower3d/kaykit/Characters/README.md",
     "hub/renderers/tower3d/src/rig.ts#loadCast",
     "hub/renderers/tower3d/src/rig.ts#pose",
@@ -83,7 +88,12 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   [`bodyOf`](ref:hub/renderers/tower3d/src/contract.ts#bodyOf)) on each rig's one skeleton, the contract's
   [`CLIPS`](ref:hub/renderers/tower3d/src/contract.ts#CLIPS) per rig, each pack's licence beside them. It checks that
   every character of a rig is skinned to the same joints in the same bind pose before moving a part onto it, and
-  never packs a whole pack.
+  never packs a whole pack. Clips of Quaternius's Universal Animation Library (CC0,
+  [`UAL_CLIPS`](ref:hub/renderers/tower3d/src/contract.ts#UAL_CLIPS)) are baked onto Rig_Medium as `UAL_<name>` by
+  [`retargetUal`](ref:hub/scripts/ual.ts#retargetUal): each limb aimed along UAL's bind pose, then every frame a bone
+  takes its UAL bone's world rotation away from that bind, the hips moved by UAL's pelvis scaled by the hips'
+  heights; its sitting clips are moved onto KayKit's seated hips. Packed before the large rig's retarget, the Clanker
+  gets them too.
 - Two skeletons. Most characters are on Rig_Medium, and its parts mix on any Rig_Medium body. The Clanker is on
   Rig_Large, whose own clips hold none of the office poses, so the packer retargets Rig_Medium's onto it once. A rig
   carries its kind; `pose`, `seatedAt` and `seatOf` read that skeleton's clips and measurements, and
@@ -100,7 +110,14 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   on the levels drawn ([[tower3d-levels]]). [`poseDesk`](ref:hub/renderers/tower3d/src/desk.ts#poseDesk),
   [`walkPose`](ref:hub/renderers/tower3d/src/life.ts#walkPose) and
   [`poseGuest`](ref:hub/renderers/tower3d/src/party.ts#poseGuest) pick the layers for the desk, walking and the
-  roof.
+  roof. At the desk the card picks them ([`seatedPose`](ref:hub/renderers/tower3d/src/desk.ts#seatedPose)): typing,
+  casting while it compacts, picking at a turn that seems stuck, waving while it asks, talking back while the user
+  types to it. A layer played `once` holds its last frame: a flinch plays from the card's `enteredAt` on the wall clock
+  the sim clock is read against, and a summon from the sim moment the desk sees a new subagent, so frames stay a
+  function of the clock and the board. Arriving and leaving, the worker sits down and stands up
+  ([`arrivalPose`](ref:hub/renderers/tower3d/src/life.ts#arrivalPose),
+  [`leaverPose`](ref:hub/renderers/tower3d/src/life.ts#leaverPose)), its body lifted onto the seat over the clip. A
+  walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed.
 - Looks are data: `renderers/tower3d/wardrobe.json`, checked by a zod schema
   ([`Wardrobe`](ref:hub/renderers/tower3d/src/wardrobe.ts#Wardrobe)) as the bundle loads it
   ([`WARDROBE`](ref:hub/renderers/tower3d/src/closet.ts#WARDROBE)), over a catalogue of parts derived from the files
@@ -140,6 +157,9 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
 - *Other character kits* (Kenney's, Quaternius'): a rig with no elbows or knees, or another skeleton and look beside
   KayKit's office.
 - *Retargeting at load*: the packer does it once, and the runtime keeps one path, a skeleton and its clips.
+- *Quaternius's bodies beside its clips*: about 7½ heads tall against KayKit's 2½, anatomy in the geometry, no
+  clothes in the free set, and three times a worker's triangles; its clips retarget onto Rig_Medium and are taken
+  alone.
 - *Picking by index* (into a pool, a palette, a list of bodies): every addition re-dressed most workers; rendezvous
   moves only the share it wins. A `none` candidate in the rendezvous would shrink the bare share with each part
   added; a roll of its own keeps both stable.
