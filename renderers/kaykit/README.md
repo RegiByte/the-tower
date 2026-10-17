@@ -169,7 +169,7 @@ $ npm run tool:kaykit -- render coffee_break.json
 - `floor_overview.json`: a 30 × 21 m floor with the core, eight dressed desks, a meeting room, kitchen, lounge,
   collections wall and lockers, themed to the project colour. Every zone is a prefab.
 - `lobby_city_model.json`: a building per project on a table, height from live workers.
-- `prefabs/office_*`, `hero_*`, `control_*`, `lobby_*`, `roof_*`, `planter*`, `desk_rug`, `meeting_rug`,
+- `prefabs/office_*`, `hero_*`, `control_*`, `lobby_*`, `roof_*`, `planter*`, `desk_rug`,
   `city_table`, `running_bench`, `reception_top`: the office's zones. Tower 3D places them from its plan; check and
   render them here like any scene.
 
