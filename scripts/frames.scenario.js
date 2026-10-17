@@ -266,5 +266,15 @@
     t.step(60); room(); snap('reseating')
     t.step(900); room(); snap('reseated')
   }
+  if (new URLSearchParams(location.search).get('board') === 'review') {
+    t.key('Escape'); t.step(10); t.capture()
+    const watch = (frames, spot) => (t.step(frames), t.teleport({ level: 1, ...spot }), t.step(1))
+    const aisle = { x: -1.5, z: -5, y: 3.3, yaw: -2.35, pitch: -0.55 }
+    tryDo('reviewer-home', () => t.advance()); watch(60, aisle); snap('reviewer-rising')
+    watch(200, aisle); snap('reviewer-down-the-aisle')
+    const doors = { x: -0.5, z: -7.5, y: 2.6, yaw: Math.PI - 0.15, pitch: -0.35 }
+    watch(380, doors); snap('reviewer-on-the-landing')
+    watch(150, doors); snap('reviewer-boarding')
+  }
   return out
 })()

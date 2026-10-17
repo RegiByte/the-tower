@@ -471,13 +471,13 @@ export const FIXTURE_CHANGES: Record<string, RepoChanges[]> = { [idOf('lab', 0)]
 
 /**
  * The review flow: an author at work with a reviewer beside it and notes it hasn't read, an author that answered its
- * notes, a worker in the main checkout, and a thread whose worker went home.
+ * notes, a worker in the main checkout, and a thread whose worker went home. On the next board the reviewer goes home.
  */
-const review = (now: number) => boardOf([{
+const review = (now: number, reviewed = false) => boardOf([{
   id: 'lab', name: 'lab', color: '#5fb3b3', repos: ['/work/lab-api'], threads: reviewThreads(),
   workers: [
     { status: 'working', prompt: 'Add a retry budget to the scheduler', tool: 'Edit', worktree: REVIEWED.author, context: 38, turns: 7, ago: 40 },
-    { status: 'working', prompt: reviewPrompt(who('lab', 0), false), tool: 'Bash', worktree: 'retry-budget-review', reviews: 0, subagents: 1, ago: 12 },
+    { status: reviewed ? 'exited' : 'working', prompt: reviewPrompt(who('lab', 0), false), tool: 'Bash', worktree: 'retry-budget-review', reviews: 0, subagents: 1, ago: 12 },
     { status: 'done', waiting: true, prompt: 'Document the port', answer: 'Added the port to the README.', worktree: REVIEWED.answered, turns: 3, ago: 30 },
     { status: 'idle', prompt: 'Look around', answer: 'Looked.', ago: 8 },
     { status: 'exited', prompt: 'Drop the old flags', answer: 'Dropped three.', worktree: REVIEWED.gone, ago: 180 },
@@ -615,7 +615,7 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
   empty: (now) => [empty(now)],
   tall: (now) => [tall(now)],
   party: (now) => [party(now)],
-  review: (now) => [review(now)],
+  review: (now) => [review(now), review(now, true)],
   attention: (now) => [attention(now)],
   tidy: (now) => [tidyFloor(now)],
   logbook: (now) => [logbook(now)],

@@ -91,8 +91,8 @@ and how its findings reach the author.
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
   place them ([[desk-dressing]]): its chair at `reviewer`, its notebook at `reviewer_notebook`, its subagents standing
   on the floor at `visitor_<n>`; which desk it sits at is derived like every seat ([[workstations]]). Going home, it
-  stands up from that chair and takes it along, pushed in behind it
-  ([`carryChair`](ref:hub/renderers/tower3d/src/life.ts#carryChair)).
+  stands up from that chair and takes it along, rolled ahead of it the whole way into the elevator, where it stands
+  deeper in the car than the reviewer ([`carryChair`](ref:hub/renderers/tower3d/src/life.ts#carryChair)).
 
 **Alternatives considered.**
 - *The reviewer works in the author's worktree.* Sees exactly the author's files, but its tests and builds write

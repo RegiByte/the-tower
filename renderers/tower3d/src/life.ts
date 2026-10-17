@@ -274,11 +274,13 @@ function sitPose(models: Models, a: Avatar, clip: 'Sit_Chair_Down' | 'Sit_Chair_
 /**
  * A worker gone off duty: standing up `rose` seconds from the chair at `seat` (world space), turning from `heading` to
  * its desk, which faces `turn`, then walking `t` meters into the elevator on its level, setting off facing `facing` and stepping in
- * facing `arriving`, then turning to its doors, before it leaves the building. `chair` is the workstation's chair it rose from, once its workstation stands there.
+ * facing `arriving`, then turning to its doors, before it leaves the building. `chair` is the workstation's chair it rose from, once its workstation stands there;
+ * `carried`, the chair a reviewer takes along, rolled ahead of it along `way`.
  */
 export type Leaver = {
   group: THREE.Group; models: Models; avatar: Avatar; level: number; desk: THREE.Vector3; turn: number; seat: THREE.Vector3; path: THREE.Vector3[]; heading: number; facing: number; arriving: number; rose: number; t: number
   chair?: { chair: THREE.Object3D; seat: THREE.Vector3 }
+  carried?: { chair: THREE.Object3D; seat: THREE.Vector3; way: THREE.Vector3[] }
 }
 
 /**
@@ -304,11 +306,30 @@ export function leaver(p: Plan, desk: Desk, level: number, seated: number, model
   return { group, models, avatar: w, level, desk: desk.group.position.clone(), turn, seat: from, path: [...back, car], heading, facing: seated > 0 ? turn : heading, arriving: headingOf(back.at(-1)!, car), rose, t: 0 }
 }
 
-/** A reviewer leaving the chair beside its author takes it along, pushed in behind it as it goes: no workstation stands where it sat. */
+/**
+ * A reviewer leaving the chair beside its author takes it along, rolled ahead of it into the elevator, where it stands
+ * deeper in the car than the reviewer: no workstation stands where it sat.
+ */
 export function carryChair(l: Leaver, desk: Desk) {
   const seat = l.group.worldToLocal(desk.group.localToWorld(SEAT.clone()))
   l.group.attach(desk.chair)
-  l.chair = { chair: desk.chair, seat }
+  const [last, car] = l.path.slice(-2)
+  const deeper = car.clone().addScaledVector(car.clone().sub(last).normalize(), CARRY.ahead)
+  l.carried = { chair: desk.chair, seat, way: [...l.path, deeper] }
+}
+
+/** How far ahead of its walker a carried chair rolls, pushed by its back, and how far the walker goes to bring it from its seat to there, meters. */
+const CARRY = { ahead: 0.7, take: 0.9 }
+
+/**
+ * A carried chair `k` of the way from standing pulled back from `seat`, its desk facing `turn` (0), to rolling ahead
+ * of its walker `d` along `way`, facing the way it goes (1).
+ */
+function rollChair(chair: THREE.Object3D, seat: THREE.Vector3, turn: number, way: THREE.Vector3[], d: number, k: number) {
+  const ahead = along(way, Math.min(d + CARRY.ahead, lengthOf(way)))!
+  const pulled = seat.clone().addScaledVector(BACK.clone().applyAxisAngle(Y, turn), PULL)
+  chair.position.copy(pulled).lerp(ahead.at, smooth(k))
+  chair.rotation.y = turned(turn, ahead.heading, k)
 }
 
 const standing = (l: Leaver) => l.rose < clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')
@@ -333,6 +354,7 @@ export function walkOut(l: Leaver, dt: number) {
   }
   l.t += dt * WALK_SPEED
   if (l.chair) pullChair(l.chair.chair, l.chair.seat, smooth(Math.min(1, Math.max(0, (l.t - TUCK.after) / TUCK.over))))
+  if (l.carried) rollChair(l.carried.chair, l.carried.seat, l.turn, l.carried.way, l.t, Math.min(1, l.t / CARRY.take))
   const step = along(l.path, l.t)
   if (!step) {
     const total = lengthOf(l.path)
@@ -350,7 +372,8 @@ export function walkOut(l: Leaver, dt: number) {
 export function leaverPose(l: Leaver, inside: boolean, t: number) {
   if (standing(l)) {
     const k = sitPose(l.models, l.avatar, 'Sit_Chair_StandUp', l.rose, t)
-    if (l.chair) pullChair(l.chair.chair, l.chair.seat, k)
+    const chair = l.chair ?? l.carried
+    if (chair) pullChair(chair.chair, chair.seat, k)
     return
   }
   if (inside) return standPose(l.models, l.avatar, t)
