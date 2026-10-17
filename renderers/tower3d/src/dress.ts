@@ -8,32 +8,26 @@ import type { Prefab, PrefabItem } from './zones.ts'
 /**
  * A workstation's KayKit Bits models (CC0, vendored in `renderers/tower3d/kaykit`) as data, in desk space.
  * Every workstation is an L: the desk, and a cabinet as its return off the right end (+x), reaching back past the
- * seat. A worker's things spread over both: what it is doing now on the desk's right end (the second monitor stands
- * on the left, the logbook lies right of the keyboard, the cat perches at x 0.45, the subagents line up along the near
- * edge past the logbook), and what its session has
- * piled up on the return, growing with its context: mugs, a plate, a bowl, books, snacks; and a pizza box on the
+ * seat. A worker's things spread over both: what it is doing now on the desk's right end, placed by hand as the states of
+ * `DESK_DRESS` (the second monitor stands on the left, the cat perches at x 0.45, the logbook and the subagents stand in
+ * its slots), and what its session has piled up on the return, growing with its context: mugs, a plate, a bowl, books, snacks; and a pizza box on the
  * floor for every turn it finished. In October it hoards candy.
  */
 
 /**
- * Every model a workstation may hold, by catalog id, with its scale on top of the catalog's norms (`NORMS` in
+ * Every model a workstation's pile may hold (its status props are desk_dress.json's), by catalog id, with its scale on top of the catalog's norms (`NORMS` in
  * renderers/kaykit/src/catalog.ts): KayKit's tabletop props are two to three times real size at room scale, beside
  * the desk's own real-size keyboard and mug.
  */
 export const PROPS = {
   'furniture/cabinet_medium': 1,
-  'furniture/cactus_small_A': 0.7,
-  'furniture/lamp_desk': 0.55,
-  'furniture/lamp_desk_headphones': 0.55,
   'furniture/mug_A': 0.45,
   'furniture/mug_B': 0.45,
   'furniture/cup': 0.45,
-  'furniture/cup_pencils': 0.5,
   'furniture/book_set': 0.55,
   'furniture/pictureframe_standing_A': 0.5,
   'restaurant/plate_dirty': 0.875,
   'restaurant/food_pizza_pepperoni_slice': 0.75,
-  'restaurant/food_pizza_cheese_plated': 0.5,
   'restaurant/bowl_dirty': 0.75,
   'restaurant/jar_A_small': 1,
   'restaurant/pizzabox_closed': 0.7,
@@ -121,9 +115,9 @@ const CANDY: Placement[] = [
   { model: 'halloween/candycorn', at: [1.3, 0.05], turn: 70 },
 ]
 
-/** The same desk keeps the same mess: each model nudged and turned a little by the worker's id. */
-const jitter = (id: string, from: number) => (it: PrefabItem, i: number): PrefabItem => {
-  const h = mix(fnv1a(`${id}:${from + i}`))
+/** The same desk keeps the same mess: each model of its pile nudged and turned a little by the worker's id. */
+const jitter = (id: string) => (it: PrefabItem, i: number): PrefabItem => {
+  const h = mix(fnv1a(`${id}:${i}`))
   const nudge = (bits: number) => (((h >>> bits) & 0xff) / 255 - 0.5) * 0.06
   return { ...it, at: [it.at[0] + nudge(0), it.at[1], it.at[2] + nudge(8)], turn: it.turn + (((h >>> 16) & 0xff) / 255 - 0.5) * 30 }
 }
@@ -136,15 +130,9 @@ const pile = (card: Card, month: number): Placement[] => [
   ...(month === OCTOBER ? CANDY : []),
 ]
 
-/** A worker's workstation in desk space: the dressing's models in its status's state, and its pile. */
+/** A worker's workstation in desk space: the dressing's models in its status's state, as placed by hand, and its pile. */
 export function dress(card: Card, month: number, desk: Prefab, models: Map<string, Model>): PrefabItem[] {
-  const status = desk.states[statusState(card)]
-  const shared = desk.items.length
-  return [
-    ...status.slice(0, shared),
-    ...status.slice(shared).map(jitter(card.id, shared)),
-    ...pile(card, month).map((p) => itemOf(p, models.get(p.model)!)).map(jitter(card.id, status.length)),
-  ]
+  return [...desk.states[statusState(card)], ...pile(card, month).map((p) => itemOf(p, models.get(p.model)!)).map(jitter(card.id))]
 }
 
 /** A placement as the playground places a model in the desk's frame: its base resting at its height. */
