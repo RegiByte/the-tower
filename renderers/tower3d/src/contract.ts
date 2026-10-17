@@ -153,7 +153,10 @@ export const PACK_SLOTS = Object.fromEntries(SLOTS.map((s) => [s, [...(ADVENTURE
 export const ATLASES = ADVENTURERS.map((a) => `${a.toLowerCase()}_texture`)
 
 /** KayKit's own clips on `Rig_Medium` (Character Animations 1.1) that poses play. */
-export const CLIPS = ['Idle_A', 'Idle_B', 'Walking_A', 'Sit_Chair_Idle', 'Cheering', 'Waving', 'Jump_Idle', 'Interact', 'Use_Item', 'Working_A', 'Holding_A'] as const
+export const CLIPS = [
+  'Idle_A', 'Idle_B', 'Walking_A', 'Sit_Chair_Idle', 'Cheering', 'Waving', 'Jump_Idle', 'Interact', 'Use_Item', 'Working_A', 'Holding_A',
+  'Sit_Chair_Down', 'Sit_Chair_StandUp', 'Ranged_Magic_Summon', 'Ranged_Magic_Spellcasting_Long', 'Hit_B', 'Lockpicking', 'Throw', 'Lie_Idle',
+] as const
 export type ClipName = (typeof CLIPS)[number]
 
 /**
