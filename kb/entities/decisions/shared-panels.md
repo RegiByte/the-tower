@@ -81,7 +81,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   failure over a read already held leaves it drawn and toasts.
 - *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
   Reviews are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (the tower is
-  local-first and a framed page fetches nothing beside it). [`rowCode`](ref:hub/src/shared/panels.ts#rowCode)
+  local-first: nothing comes from a CDN). [`rowCode`](ref:hub/src/shared/panels.ts#rowCode)
   highlights each hunk as two texts, its old side and its new, so a removed line reads in the code it was removed
   from, and keeps the result by file and diff hash so redraws never highlight again. A hunk carries no state from the
   lines before it, so one starting inside a block comment or string is highlighted as code. The changed words of an

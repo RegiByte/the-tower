@@ -11,6 +11,7 @@
     "hub/renderers/tower3d/index.html",
     "hub/renderers/tower3d/src/loading.ts",
     "hub/renderers/tower3d/src/boot.ts",
+    "hub/renderers/tower3d/src/files.ts#prefetch",
     "hub/renderers/tower3d/src/main.ts#onLiveBoard",
     "hub/renderers/tower3d/src/main.ts#startOn",
     "hub/renderers/tower3d/src/main.ts#frameScene"
@@ -28,6 +29,10 @@ program cache warm, ~1.7 s cold.
   blocks, and stops for reduced motion. [`loading.ts`](ref:hub/renderers/tower3d/src/loading.ts) lights a stage,
   says why a start failed (a `start:` error, a board error) and leaves; [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts)
   drops it on a fixture page.
+- *The files arrive while the settings are read.* [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts) starts
+  fetching every model and the kit ([`prefetch`](ref:hub/renderers/tower3d/src/files.ts#prefetch)) before it reads
+  the lighting setting; the models stage parses what has arrived ([[bundled-renderer]]). Every floor needs all of
+  them, so none waits for a later stage.
 - *The first board is a sequence.* [`onLiveBoard`](ref:hub/renderers/tower3d/src/main.ts#onLiveBoard) hands it to
   [`startOn`](ref:hub/renderers/tower3d/src/main.ts#startOn): a paint, `onBoard`, a paint, the scene set as a frame
   sets it ([`frameScene`](ref:hub/renderers/tower3d/src/main.ts#frameScene): the rig's lights and shadows are part
@@ -39,8 +44,8 @@ program cache warm, ~1.7 s cold.
 - *Drawing the city while waiting*: it is the half-loaded look, and its own first draw compiles 12 programs on the
   main thread.
 - *Yielding between levels while building*: no less work, and the screen already shows "building the floors".
-- *Fetching the kit and models as files to cut the bundle's decode*: a framed page fetches nothing beside its
-  bundle ([[bundled-renderer]]).
+- *The floors in view first, the rest of the models after*: every floor draws desks, workers and the kit, so
+  holding some back is the half-loaded look again.
 
 **Impact.** Warm, headless (Apple M1 Max, sandbox board, 6 runs each, lighting on and off alike): the first draw
 blocks ~65 ms instead of ~145, the city's ~75 ms draw before the board is gone, and the first full frame lands

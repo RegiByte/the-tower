@@ -98,7 +98,7 @@ A project's shelf is a list of pages the user reads beside the floor's sessions,
 
 | Key | Shows | Example |
 |---|---|---|
-| `html` | A page the project builds, a path relative to the hub. Its files beside or below it are served with it; nothing above it is. | `"shelf/radar/index.html"` |
+| `html` | A page the project builds, a path relative to the hub. Its files beside or below it are served with it; nothing above it is. Framed, it loads them as scripts, stylesheets and images, but can't `fetch` them or import them as modules: a page that does is a `renderer`. | `"shelf/radar/index.html"` |
 | `md` | A set of markdown files, a glob relative to the hub, in name order (`"order": "desc"` reverses it). Images beside them are served. | `"notes/*.md"` |
 | `url` | A web page framed in place, such as a local server's UI. | `"http://127.0.0.1:5173"` |
 | `link` | A page opened in a new tab, for pages that refuse to be framed. | `"https://claude.ai/artifact/…"` |

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/renderers/week/week.js", "hub/src/shared/cards.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
 }
 ---
@@ -56,7 +56,8 @@ update of the core never touches it.
 - *Tower 3D's root at its source directory, available when its bundle exists*: a second file per renderer to test. Copying the pages into `out/` makes the root the built output, one rule for every
   renderer.
 - *A renderer's other pages on a shelf (`{ renderer, entry }`).* Not built: a second page is a renderer of its own,
-  declared with its `entry` (Tower 3D's Lab: `root` its `out/`, `entry` `lab.html`), or stays an `html` entry.
+  declared with its `entry` (Tower 3D's Lab: `root` its `out/`, `entry` `lab.html`). An `html` entry can't be one
+  that fetches its files, as Lab fetches its models ([[bundled-renderer]]).
 
 **Impact.** A user writes a renderer anywhere, declares it, and makes it the default without touching the repo.
 Tower 3D runs at `/r/tower3d/` (its Lab at `/r/tower3d/lab.html`), the URL the recipes (`drive`, `tool:frames`,

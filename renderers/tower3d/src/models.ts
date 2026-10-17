@@ -1,33 +1,18 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import barGlb from '../assets/bar.glb'
-import bookcaseGlb from '../assets/bookcase.glb'
-import botGlb from '../assets/bot.glb'
-import calicoGlb from '../assets/calico.glb'
-import consoleGlb from '../assets/console.glb'
-import couchGlb from '../assets/couch.glb'
-import deskGlb from '../assets/desk.glb'
-import djGlb from '../assets/dj.glb'
-import handsGlb from '../assets/hands.glb'
-import kioskGlb from '../assets/kiosk.glb'
-import planeGlb from '../assets/plane.glb'
-import tabbyGlb from '../assets/tabby.glb'
-import tvGlb from '../assets/tv.glb'
-import tuxedoGlb from '../assets/tuxedo.glb'
-import wearGlb from '../assets/wear.glb'
 import type { ModelName } from './contract.ts'
 import type { Catalogue } from './wardrobe.ts'
 import { catalogueOf } from './catalogue.ts'
+import { bytesOf, CAST_FILES, MODEL_FILES } from './files.ts'
 import { loadCast, type Cast } from './rig.ts'
 import { glowing, toon } from './toon.ts'
 
 /**
- * The Blender models (models/*.py), bundled as bytes and parsed once. A model speaks to the renderer through names:
+ * The Blender models (models/*.py), fetched as files and parsed once. A model speaks to the renderer through names:
  * a pivot's name for a part it moves, a material's name for how it's drawn: `glow` unlit, `own` a copy per instance
  * (for what's recolored), anything else toon-shaded in its color, shared with everything of that color.
  */
 
-const BYTES: Record<ModelName, Uint8Array> = { bar: barGlb, bookcase: bookcaseGlb, bot: botGlb, calico: calicoGlb, console: consoleGlb, couch: couchGlb, desk: deskGlb, dj: djGlb, hands: handsGlb, kiosk: kioskGlb, plane: planeGlb, tabby: tabbyGlb, tv: tvGlb, tuxedo: tuxedoGlb, wear: wearGlb }
 /** The Blender models by name, the cast workers are made of, and the catalogue of what they wear. */
 export type Models = Record<ModelName, THREE.Group> & { cast: Cast; catalogue: Catalogue }
 
@@ -43,8 +28,8 @@ function drawn(source: THREE.MeshStandardMaterial) {
   return m
 }
 
-async function parse(bytes: Uint8Array) {
-  const gltf = await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, '')
+async function parse(bytes: ArrayBuffer) {
+  const gltf = await new GLTFLoader().parseAsync(bytes, '')
   gltf.scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return
     o.geometry.userData.shared = true
@@ -53,8 +38,13 @@ async function parse(bytes: Uint8Array) {
   return gltf.scene
 }
 
+/**
+ * Every file arrives before any is parsed, so the models parse in the same order on every load: materials are made as
+ * they parse, and that order breaks ties in the draw order.
+ */
 export async function loadModels(): Promise<Models> {
-  const [entries, cast] = await Promise.all([Promise.all(Object.entries(BYTES).map(async ([name, bytes]) => [name, await parse(bytes)] as const)), loadCast()])
+  await Promise.all([...Object.values(MODEL_FILES), ...Object.values(CAST_FILES)].map(bytesOf))
+  const [entries, cast] = await Promise.all([Promise.all(Object.entries(MODEL_FILES).map(async ([name, url]) => [name, await parse(await bytesOf(url))] as const)), loadCast()])
   const models = Object.fromEntries(entries) as Record<ModelName, THREE.Group>
   return { ...models, cast, catalogue: catalogueOf(cast, models.bot) }
 }

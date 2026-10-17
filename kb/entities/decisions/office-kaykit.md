@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-16",
+  "reviewed": "2026-10-17",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/tower3d/src/kitfile.ts#KitFile",
@@ -76,8 +76,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   props, the [`PREFABS`](ref:hub/renderers/tower3d/src/zones.ts#PREFABS) documents, the city model's), flattens
   each prefab with [`flatFile`](ref:hub/renderers/kaykit/src/files.ts#flatFile) and the footprint a walker bumps
   into (models at least 0.25 m tall standing on the floor), and writes one git-ignored file,
-  `out/kaykit/kit.kaykit` ([`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)), which the bundle embeds
-  ([[bundled-renderer]]): framed in the tower the page has an opaque origin and can fetch nothing beside it.
+  `out/kaykit/kit.kaykit` ([`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)), which the build copies into
+  `out/assets/` and the page fetches as it starts ([[bundled-renderer]]).
   [`kit.ts`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) places scene items with the playground's matrices and
   draws each layer as one BatchedMesh per pack and theme. It measures from the subset of the bundle vendored in
   `renderers/tower3d/kaykit` (`tower3d-kit.ts vendor`, which leaves the workers' `Characters/` alone,

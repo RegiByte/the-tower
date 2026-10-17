@@ -13,7 +13,7 @@ import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
 import { GAMES } from './games.ts'
-import FILM from '../assets/fixture.webm'
+import { bytesOf, FILM_FILE } from './files.ts'
 import { wallNow } from './clock.ts'
 
 /**
@@ -571,9 +571,12 @@ export const FIXTURE_GAMES: Record<string, string> =
 /** A fixture board has no host behind it: its streams are never opened, so monitors stay blank and desks stay open. */
 export const watchStream: typeof tower.watch = FIXTURE === undefined ? (...a) => tower.watch(...a) : () => () => {}
 
+/** The test pattern, fetched as the fixture page boots so it is at hand before any frame shows it. */
+const film = FIXTURE === undefined ? undefined : bytesOf(FILM_FILE).then((bytes) => new Blob([bytes], { type: 'video/webm' }))
+
 /** A fixture board's files are read from no host: every video it shows is the same test pattern, every image the same plot. */
 export const readBlob: typeof tower.blob =
-  FIXTURE === undefined ? (path) => tower.blob(path) : (path) => (path.endsWith('.webm') ? Promise.resolve(new Blob([FILM], { type: 'video/webm' })) : fixturePlot())
+  FIXTURE === undefined ? (path) => tower.blob(path) : (path) => (path.endsWith('.webm') ? film! : fixturePlot())
 
 /** A floor's archive (`GET /archive/<project>`), read beside `board`: a fixture board's own on a fixture. */
 export const readArchive = (board: Board, project: string): Promise<Card[]> =>

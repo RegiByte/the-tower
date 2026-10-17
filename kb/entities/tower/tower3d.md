@@ -130,7 +130,7 @@ on the desk of the first worker waiting on you ([`watcherOf`](ref:hub/renderers/
 and E pets one ([`pet.ts`](ref:hub/renderers/tower3d/src/pet.ts)).
 
 **Models** are Blender scripts in `renderers/tower3d/models/` (`npm run tower3d:models`), exported to committed
-`.glb` files and embedded in the bundle ([[bundled-renderer]]). The renderer reads a model only by names
+`.glb` files, built beside the pages and fetched as they start ([[bundled-renderer]]). The renderer reads a model only by names
 ([`instance`](ref:hub/renderers/tower3d/src/models.ts#instance)): pivots for parts it moves, and materials, where
 `glow` is unlit, `own` is copied per instance to be recoloured, and anything else is toon-shaded. Live surfaces
 (screens, books, tiles) stay in code. The names it reads are data in

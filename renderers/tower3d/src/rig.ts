@@ -2,12 +2,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
-import adventurersGlb from '../kaykit/Characters/adventurers.glb'
-import largeGlb from '../kaykit/Characters/large.glb'
-import mediumGlb from '../kaykit/Characters/medium.glb'
-import largeClipsGlb from '../kaykit/Characters/rig_large.glb'
-import clipsGlb from '../kaykit/Characters/rig_medium.glb'
-import partsGlb from '../parts/parts.glb'
+import { bytesOf, CAST_FILES } from './files.ts'
 import { ATLAS_NAMES, CLIPS, RIGS, glowOf, textureOf, type Atlas, type Bone, type ClipName, type RigKind } from './contract.ts'
 
 /**
@@ -58,8 +53,7 @@ export type Cast = {
   glows: Map<Atlas, THREE.Color>
 }
 
-const parse = (bytes: Uint8Array) =>
-  new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, '')
+const parse = async (url: string) => new GLTFLoader().parseAsync(await bytesOf(url), '')
 
 const ARM_BONES = new Set(['upperarml', 'lowerarml', 'wristl', 'handl', 'handslotl', 'upperarmr', 'lowerarmr', 'wristr', 'handr', 'handslotr'])
 const boneOf = (track: THREE.KeyframeTrack) => track.name.slice(0, track.name.lastIndexOf('.'))
@@ -142,7 +136,9 @@ function skeletonOf(bones: THREE.Object3D, skin: THREE.Skeleton, animations: THR
 }
 
 export async function loadCast(): Promise<Cast> {
-  const [adventurers, made, medium, large, mediumClips, largeClips] = await Promise.all([adventurersGlb, partsGlb, mediumGlb, largeGlb, clipsGlb, largeClipsGlb].map(parse))
+  const [adventurers, made, medium, large, mediumClips, largeClips] = await Promise.all(
+    [CAST_FILES.adventurers, CAST_FILES.parts, CAST_FILES.medium, CAST_FILES.large, CAST_FILES.mediumClips, CAST_FILES.largeClips].map(parse),
+  )
   const parts: Cast['parts'] = new Map()
   const atlases: Cast['atlases'] = new Map()
   const glows: Cast['glows'] = new Map()

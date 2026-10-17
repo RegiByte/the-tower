@@ -165,7 +165,8 @@ a bundler, another language) while still importing the served modules where they
 Tower 3D is built from the checkout's sources: they import the core's TypeScript by relative path, and its build
 runs the checkout's scripts. Copy it as a clone of the tower at the release you start from, kept apart from the
 checkout that runs your tower: change `renderers/tower3d/` there in commits of your own, `npm ci`, `npm run tower3d`,
-and declare `<the clone>/renderers/tower3d/out` as your renderer's root. Taking an update is checking out the new
+and declare `<the clone>/renderers/tower3d/out` as your renderer's root: it holds the pages, their bundles and the
+models they fetch (`out/assets/`). Taking an update is checking out the new
 tag and putting your commits on it.
 
 ## Shelf pages
@@ -182,7 +183,11 @@ the board and drive the API:
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
 `tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. An `html` or
-`item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin. The viewer's appearance follows the framing page: `tower.prefs.get()` and
+`item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin.
+Framed, a `renderer` still reads every file below its root: the tower serves them with CORS, so it may `fetch` them
+and import them as modules at its opaque origin. An `html` page framed reads the files beside it only as classic
+scripts, stylesheets and images: shelf files are served without CORS, which would let any site read them, so a
+`fetch` or a module import of them fails. A page that loads its own data or models is a `renderer`. The viewer's appearance follows the framing page: `tower.prefs.get()` and
 `tower.prefs.on` read it, and `tower.prefs.set(patch)` asks the framing page to change it, for every page of the
 viewer's. A `url` entry's frame gets the colour scheme alone, as `{t: 'scheme', scheme}`.
 

@@ -5,14 +5,14 @@ import { itemMatrix, nodeMatrices } from '../../kaykit/src/draw.ts'
 import { meshesFrom, type ModelMesh } from '../../kaykit/src/meshes.ts'
 import type { ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { glows, toonMapped, toonOwn } from './toon.ts'
-import packed from '../out/kaykit/kit.kaykit'
+import { bytesOf, KIT_FILE } from './files.ts'
 import { kitLayout, type KitFile } from './kitfile.ts'
 import type { Level } from './layout.ts'
 import type { Prefabs } from './zones.ts'
 
 /**
  * The KayKit models the office draws, on the playground's path: measured and packed by the playground's own build
- * (`scripts/tower3d-kit.ts` into `out/kaykit/kit.kaykit`, embedded in the bundle), placed as the playground's scene items (`at`, `turn`, `scale` on top
+ * (`scripts/tower3d-kit.ts` into `out/kaykit/kit.kaykit`, fetched as a file), placed as the playground's scene items (`at`, `turn`, `scale` on top
  * of the catalog's norms) and drawn as the playground draws them: every model of a pack in one BatchedMesh, toon-shaded
  * over the pack's atlas as a theme paints it (an alternate atlas, hue swaps), so a layer costs a draw call per pack and
  * theme however many models and placements it holds.
@@ -28,8 +28,9 @@ async function atlasOf(png: Uint8Array<ArrayBuffer>) {
   return img
 }
 
-/** The kit embedded in the bundle: its catalog, meshes, atlases and prefabs. */
+/** The kit's file: its catalog, meshes, atlases and prefabs. */
 export async function loadKit(): Promise<Kit> {
+  const packed = new Uint8Array(await bytesOf(KIT_FILE))
   const length = new DataView(packed.buffer, packed.byteOffset).getUint32(0, true)
   const header = JSON.parse(new TextDecoder().decode(packed.subarray(4, 4 + length))) as KitFile
   const at = kitLayout(length, header)

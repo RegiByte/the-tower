@@ -1,13 +1,13 @@
-/** Binary assets, bundled as bytes by esbuild's `binary` loader. */
+/** Binary assets, built beside the pages by esbuild's `file` loader: each import is the file's URL, relative to the page. */
 declare module '*.glb' {
-  const bytes: Uint8Array
-  export default bytes
+  const url: string
+  export default url
 }
 declare module '*.webm' {
-  const bytes: Uint8Array<ArrayBuffer>
-  export default bytes
+  const url: string
+  export default url
 }
 declare module '*.kaykit' {
-  const bytes: Uint8Array<ArrayBuffer>
-  export default bytes
+  const url: string
+  export default url
 }
