@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -85,7 +85,8 @@ and how its findings reach the author.
   `card.worktree.from`. Both renderers draw [`pairLine`](ref:hub/src/shared/cards.ts#pairLine) ("reviews MARCO-87")
   beside the branch, Tower 3D on the desk's name tag. Nothing is stored.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
-  terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)); the seat is derived like every seat
+  terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor), the notebook where the desk dressing's
+  `reviewer_notebook` slot stands it, [[desk-dressing]]); the seat is derived like every seat
   ([[workstations]]).
 
 **Alternatives considered.**

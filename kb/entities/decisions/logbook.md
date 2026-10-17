@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/renderers/tower3d/src/desk.ts#dressBinder",
     "hub/renderers/tower3d/src/desk.ts#monitorOf",
@@ -44,8 +44,8 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
 
 **How.**
 - **The binder** ([`dressBinder`](ref:hub/renderers/tower3d/src/desk.ts#dressBinder)) on every worker's desk (a
-  reviewer beside its author has none) grows with the worker's lineage, a tab per session. Its act opens the desk
-  panel's Logbook tab where you stand.
+  reviewer beside its author has none) grows with the worker's lineage, a tab per session, where the desk dressing's
+  `logbook` slot stands it ([[desk-dressing]]). Its act opens the desk panel's Logbook tab where you stand.
 - **The Logbook tab** is the desk panel's brief tab (the tower page keeps "Brief"): a chip per session of the lineage,
   oldest first, the running one live, over the lineage brief ([`logbookHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml)),
   which reads as the tower page's does ([[brief-turns]]). A resume given no prompt of its own shows the same last

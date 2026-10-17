@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/scripts/tower3d-characters.ts",
     "hub/renderers/tower3d/kaykit/Characters/README.md",
