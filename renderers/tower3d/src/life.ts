@@ -165,9 +165,9 @@ const pullChair = (chair: THREE.Object3D, seat: THREE.Vector3, k: number) =>
  * A worker on its way to its chair: its desk's worker, walked in desk space `t` meters, then `sat` seconds into sitting
  * down (standing, it only turns to face its desk), turning from `heading`, the way it walked in. Coming from another
  * chair on its level (`rise`), it first stands up from it, `at` seconds into the clip, its body at `seat` turning to
- * `turn` (desk space). It sets off facing `facing`.
+ * `turn` (desk space). It sets off facing `facing`. A reviewer coming to sit beside its author brings its chair (`carried`).
  */
-export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number; facing: number; rise?: { seat: THREE.Vector3; turn: number; at: number } }
+export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number; facing: number; rise?: { seat: THREE.Vector3; turn: number; at: number }; carried?: true }
 
 /** A new worker walking in from the elevator. */
 export function arrival(p: Plan, desk: Desk): Arrival {
@@ -211,6 +211,17 @@ export function moveTo(p: Plan, desk: Desk, from: Origin): Arrival {
 const smooth = (k: number) => k * k * (3 - 2 * k)
 const turned = (from: number, to: number, k: number) => from + (Math.atan2(Math.sin(to - from), Math.cos(to - from))) * smooth(Math.min(1, k))
 
+/** A reviewer coming to sit beside its author rolls its chair in ahead of it, and sets it down pulled back from its seat as it gets there. */
+export function carryIn(a: Arrival) {
+  a.carried = true
+}
+
+/** An arriving worker's chair as it walks `d` along its way: pulled back from its seat, or rolled in ahead of it. */
+function chairOnWay(a: Arrival, d: number) {
+  if (!a.carried) return pullChair(a.desk.chair, SEAT, 0)
+  rollChair(a.desk.chair, SEAT, 0, a.path, d, Math.min(1, (lengthOf(a.path) - d) / CARRY.take))
+}
+
 const rising = (a: Arrival) => a.rise !== undefined && a.rise.at < clipLength(a.desk.models.cast, a.desk.avatar.rig, 'Sit_Chair_StandUp')
 
 /**
@@ -223,7 +234,7 @@ export function walkIn(a: Arrival, dt: number) {
     a.rise.at += dt
     w.root.position.copy(a.rise.seat)
     w.root.rotation.y = a.rise.turn
-    pullChair(chair, SEAT, 0)
+    chairOnWay(a, 0)
     return false
   }
   const step = along(a.path, a.t + dt * WALK_SPEED)
@@ -234,6 +245,7 @@ export function walkIn(a: Arrival, dt: number) {
     return turning(a.heading, 0, a.sat) >= 1
   }
   if (!step) {
+    if (a.sat === 0) chairOnWay(a, lengthOf(a.path))
     a.sat += dt
     w.root.position.copy(SEAT)
     w.root.rotation.y = turned(a.heading, 0, turning(a.heading, 0, a.sat))
@@ -245,7 +257,7 @@ export function walkIn(a: Arrival, dt: number) {
   a.t += dt * WALK_SPEED
   w.root.position.copy(step.at)
   w.root.rotation.y = a.heading = headingAt(a.path, a.t, a.facing, 0)
-  pullChair(chair, SEAT, 0)
+  chairOnWay(a, a.t)
   return false
 }
 

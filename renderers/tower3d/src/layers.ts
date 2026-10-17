@@ -7,7 +7,7 @@ import { DESK_DRESS, pickOf } from './dress.ts'
 import { deskSlots, heldUpAt, makeDesk, makeSeat, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type AwaySlot, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
-import { arrival, carryChair, leaver, moveTo, originOf } from './life.ts'
+import { arrival, carryChair, carryIn, leaver, moveTo, originOf } from './life.ts'
 import { seatedness } from './rig.ts'
 import { noteTitle } from './notes.ts'
 import { tintOf } from './palette.ts'
@@ -101,8 +101,9 @@ export const DESKS: Layer<DeskAt, Desk> = {
     desk.group.rotation.y = slot.turn * DEG
     const from = s.moves.get(slot.card.id)
     s.moves.delete(slot.card.id)
-    if (from) s.arrivals.set(slot.card.id, moveTo(s.plan, desk, from))
-    else if (!s.first) s.arrivals.set(slot.card.id, arrival(s.plan, desk))
+    const coming = from ? moveTo(s.plan, desk, from) : s.first ? undefined : arrival(s.plan, desk)
+    if (coming && kindOfDesk(desk) === 'beside') carryIn(coming)
+    if (coming) s.arrivals.set(slot.card.id, coming)
     return desk
   },
   keep(desk, { slot, y, author }) {
