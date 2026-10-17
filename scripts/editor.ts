@@ -115,8 +115,14 @@ async function serve(port: number, rebuild: boolean, start: string | undefined) 
     const pathname = decodeURIComponent(url.pathname)
     try {
       if (pathname === '/start') return res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }).end(start ? path.relative(REPO, start) : '')
-      if (pathname === '/docs') return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(docsUnder(root)))
-      if (pathname === '/doc' && req.method === 'GET') return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(fs.readFileSync(docPath(root, url.searchParams.get('path'))))
+      if (pathname === '/docs') {
+        const body = JSON.stringify(docsUnder(root))
+        return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(body)
+      }
+      if (pathname === '/doc' && req.method === 'GET') {
+        const body = fs.readFileSync(docPath(root, url.searchParams.get('path')))
+        return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(body)
+      }
       if (pathname === '/doc' && req.method === 'PUT') return writeDoc(docPath(root, url.searchParams.get('path')), req, res)
     } catch (e) {
       return res.writeHead(404, { 'content-type': 'text/plain' }).end((e as Error).message)
