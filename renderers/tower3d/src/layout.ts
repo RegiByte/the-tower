@@ -712,11 +712,17 @@ function shellWalls(p: Plan): Box[] {
 /** Every workstation standing on a floor: its workers' own, the free ones, and those of workers in a meeting. */
 export const workstations = (level: Extract<Level, { kind: 'floor' }>): StationSlot[] => [...level.desks.filter((d) => !d.beside && !d.meeting), ...level.free, ...level.away]
 
-/** The chairs at meeting places nobody takes: the seats round each room's table in its state, and at its counter. */
+/** Every chair in a floor's meeting rooms, taken or not: at each seat round its room's table in its state, and at its counter. */
+const meetingChairs = (level: Extract<Level, { kind: 'floor' }>) => level.tables.flatMap((t) => t.places.filter((pl) => !pl.stand).map((place) => ({ room: t.room, place })))
+
+/** The chairs at meeting places nobody takes. */
 export function emptyChairs(level: Extract<Level, { kind: 'floor' }>): Place[] {
   const taken = new Set(level.desks.flatMap((d) => (d.meeting ? [`${d.meeting.room}/${d.meeting.place}`] : [])))
-  return level.tables.flatMap((t) => t.places.filter((pl) => !pl.stand && !taken.has(`${t.room}/${pl.name}`)))
+  return meetingChairs(level).filter((c) => !taken.has(`${c.room}/${c.place.name}`)).map((c) => c.place)
 }
+
+/** A chair's floor in its own frame (models/desk.py): its casters round it, its back rest behind. */
+const CHAIR_FLOOR = box(0, -0.04, 0.75, 0.83)
 
 const sharedWall = (level: Extract<Level, { kind: 'floor' }>): Box => ({ minX: level.wall.minX, maxX: level.wall.maxX, minZ: level.wall.z - PARTITION.thick / 2, maxZ: level.wall.face + 0.1 })
 
@@ -757,8 +763,17 @@ function shapeSolid(b: PrefabBox): Solid {
   return { minX: b.at[0] - hx, maxX: b.at[0] + hx, minZ: b.at[2] - hz, maxZ: b.at[2] + hz, bottom: b.at[1], top: b.at[1] + b.size[1] }
 }
 
-/** What a walker on a layer of a level bumps into. */
-export const collidersOn = (p: Plan, level: Level, layer: Layer) => (layer === 'deck' && level.kind === 'floor' ? deckColliders(p, level) : colliders(p, level))
+/** What you bump into on a layer of a level. */
+export function collidersOn(p: Plan, level: Level, layer: Layer): Box[] {
+  if (level.kind !== 'floor') return colliders(p, level)
+  return layer === 'deck' ? deckColliders(p, level) : [...colliders(p, level), ...chairColliders(level)]
+}
+
+/**
+ * The meeting rooms' chairs, taken or empty, as you bump into them. A worker pulls its chair out to sit, and the rows
+ * back to back at a table and its counter leave no way between them, so the grid workers and cats walk leaves them out.
+ */
+const chairColliders = (level: Extract<Level, { kind: 'floor' }>) => meetingChairs(level).map((c) => turned(CHAIR_FLOOR, c.place))
 
 /** What a walker on a floor's deck bumps into: the shell, the deck's rails, and the control room's walls and furniture. */
 function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[] {

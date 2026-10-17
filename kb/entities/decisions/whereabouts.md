@@ -23,6 +23,8 @@
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/layout.ts#emptyChairs",
     "hub/renderers/tower3d/src/chairs.ts#placeChairs",
+    "hub/renderers/tower3d/src/layout.ts#colliders",
+    "hub/renderers/tower3d/src/layout.ts#collidersOn",
     "hub/renderers/tower3d/src/desk.ts#makeSeat",
     "hub/renderers/tower3d/src/desk.ts#syncStation",
     "hub/renderers/tower3d/src/screens.ts#awayScreen",
@@ -86,6 +88,11 @@ board field was added.
   drawn with every other on its level as one instanced mesh per material of the desk model's chair
   ([`placeChairs`](ref:hub/renderers/tower3d/src/chairs.ts#placeChairs)): they come and go as seats are taken, so
   a board moves instances, and a level's chairs cost a draw call per material in each pass.
+- *Walked round.* The long table's footprint in its state is among the floor's
+  [`colliders`](ref:hub/renderers/tower3d/src/layout.ts#colliders), which everyone walks round. Every chair at a
+  sitting place, taken or empty, stops you alone ([`collidersOn`](ref:hub/renderers/tower3d/src/layout.ts#collidersOn)):
+  a worker pulls its chair out to sit, and the far side's chairs and the counter's stand back to back with no way
+  between them, so the grid workers and cats walk leaves the chairs out.
 - *Its desk stays* ([`AwaySlot`](ref:hub/renderers/tower3d/src/layout.ts#AwaySlot)): the workstation is drawn with its
   worker's dressing, its monitor reads AWAY with the room ([`awayScreen`](ref:hub/renderers/tower3d/src/screens.ts#awayScreen))
   and its sign "<CALLSIGN> · in Meeting · 8" ([`syncStation`](ref:hub/renderers/tower3d/src/desk.ts#syncStation)); E
