@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.43.0
+
+Tower 3D's desks turn, and crews meet. No host restart, no config change, the renderer API unchanged. A checkout that
+serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- Desks face +x, away from the control room, so from its console you read screens over the workers' shoulders.
+  Workers walk the aisles between the columns to and from their chairs, sit, stand and pull the chair out along the
+  desk's turn; reviewers, rugs and colliders follow it.
+- A crew of three or more on duty, lead included, gathers in a meeting room and walks back to its desks when its lead
+  goes home. The first crew takes Meeting · 8, the next Meeting · 4. The lead sits at the head of a long table that
+  grows with the crew, members past its seats sit at the room's counter, then stand. A member sent home leaves the room,
+  and a resumed worker comes back as a new arrival.
+- Each seat in a meeting has a laptop showing its worker's live terminal, and sitting there drives the worker.
+- A desk whose worker is in a meeting reads AWAY and says where it went; E there takes you to it.
+
 ## v1.42.0
 
 Tower 3D's floor gets a plan: a loft over the control room, and rooms placed from anchors. No host restart, no config
