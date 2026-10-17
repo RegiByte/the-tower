@@ -189,7 +189,7 @@ function idFor(scene: Scene, element: Item) {
 const round = (v: number, d: number) => Number(v.toFixed(d)) + 0
 const tidy = (to: Place): Place => ({
   ...(to.at && { at: to.at.map((v) => round(v, 3)) as Vec3 }),
-  ...(to.turn !== undefined && { turn: round(((to.turn % 360) + 540) % 360 - 180, 1) }),
+  ...(to.turn !== undefined && { turn: round(to.turn, 1) }),
   ...(to.scale !== undefined && { scale: Array.isArray(to.scale) ? (to.scale.map((v) => round(v, 3)) as Vec3) : round(to.scale, 3) }),
 })
 
@@ -360,8 +360,7 @@ function ghost(slot: Pick<Slot, 'name' | 'pose' | 'size'>) {
 /** The selection, drawn alone under the gizmo at its place: a model, a placed prefab, or a slot's ghost. */
 async function dressProxy() {
   for (const c of [...proxy.children]) (proxy.remove(c), dispose(c))
-  gizmo.detach()
-  if (!selected) return
+  if (!selected) return void gizmo.detach()
   const { element } = located(doc(), selected)
   const shownEl = elementShown(selected) ?? element
   const at = shownEl.at
@@ -378,7 +377,7 @@ async function dressProxy() {
     const one: Item = { ...shownEl, at: [0, 0, 0], turn: 0, scale: 1 }
     proxy.add(...soloOf(await flatten({ items: [one] }, current().path, read, 'scene' in shownEl ? shownEl.states ?? [] : [])))
   }
-  gizmo.attach(proxy)
+  if (gizmo.object !== proxy) gizmo.attach(proxy)
 }
 
 /** A selection's element as the state shown draws it: a shared thing with the state's `set` laid over it. */
@@ -416,12 +415,26 @@ function pick(x: number, y: number): Ref | undefined {
   return (drawn[i].via[0] ?? drawn[i].from).split('#')[1]
 }
 
-/** The proxy's place as the gizmo left it, in the edited document's frame. */
+/**
+ * The proxy's place as the gizmo left it, in the edited document's frame. Its turn is the yaw it faces (an Euler's y
+ * alone reads a turn past 90° folded back), written as the element's own turn plus the shortest way round to it.
+ */
 function proxyPlace(): Place {
   const s = proxy.scale
   const element = elementShown(selected!)
   const scale = 'name' in element ? undefined : s.x === s.y && s.y === s.z ? s.x : ([s.x, s.y, s.z] as Vec3)
-  return { at: [proxy.position.x, proxy.position.y, proxy.position.z], turn: proxy.rotation.y / DEG, ...(scale !== undefined && { scale }) }
+  const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(proxy.quaternion)
+  const was = element.turn ?? 0
+  const by = (((Math.atan2(facing.x, facing.z) / DEG - was) % 360) + 540) % 360 - 180
+  return { at: [proxy.position.x, proxy.position.y, proxy.position.z], turn: was + by, ...(scale !== undefined && { scale }) }
+}
+
+/**
+ * Ends a gizmo drag the browser did not end with a pointer up on the canvas (a lost pointer capture, a cancelled
+ * pointer, a release outside the window): a drag never outlives the button that started it.
+ */
+function endDrag() {
+  if (gizmo.dragging) gizmo.pointerUp(null)
 }
 
 let scaleFrom = new THREE.Vector3()
@@ -755,8 +768,12 @@ bar.addEventListener('click', (ev) => {
   if (t.dataset.act === 'redo') return run(travel(1))
 })
 
+/** Where the button went down, unless the gizmo took the press: a press of the gizmo's never re-picks on release. */
 let down: { x: number; y: number } | undefined
-canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }))
+canvas.addEventListener('pointerdown', (e) => (down = gizmo.dragging ? undefined : { x: e.clientX, y: e.clientY }))
+canvas.addEventListener('pointermove', (e) => e.buttons === 0 && endDrag())
+canvas.addEventListener('lostpointercapture', endDrag)
+canvas.addEventListener('pointercancel', endDrag)
 canvas.addEventListener('pointerup', (e) => {
   if (!down || gizmo.dragging || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return
   const r = canvas.getBoundingClientRect()
