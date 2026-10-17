@@ -20,6 +20,8 @@
     "hub/renderers/tower3d/src/kit.ts#glowKit",
     "hub/renderers/tower3d/src/zones.ts#PREFABS",
     "hub/renderers/tower3d/src/zones.ts#furnish",
+    "hub/renderers/tower3d/src/zones.ts#PrefabBox",
+    "hub/renderers/tower3d/src/layout.ts#solids",
     "hub/renderers/tower3d/src/zones.ts#floorZones",
     "hub/renderers/tower3d/src/zones.ts#controlZones",
     "hub/renderers/tower3d/src/zones.ts#lobbyZones",
@@ -94,7 +96,12 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   around them. A floor's furniture is themed in pastels with the project's colour swapped in quietly; its hero goes
   in turn up the building. The lobby's [`cityModel`](ref:hub/renderers/tower3d/src/zones.ts#cityModel) stands a
   building per project, taller with its workers on duty. Lantern glass and City windows glow by the hour
-  ([`glowKit`](ref:hub/renderers/tower3d/src/kit.ts#glowKit)). A new place is a scene document in
+  ([`glowKit`](ref:hub/renderers/tower3d/src/kit.ts#glowKit)). A prefab may hold boxes besides models: a room's
+  walls, glass (a box with an `opacity`) and trim, sized in metres along their own axes. The kit carries them
+  ([`PrefabBox`](ref:hub/renderers/tower3d/src/zones.ts#PrefabBox)), [`furnish`](ref:hub/renderers/tower3d/src/zones.ts#furnish)
+  places them on the level as the zone's `shapes`, the building draws them one mesh per look, and a box standing on
+  the floor counts in the footprint (walls and glass are walked round, a door's gap walked through); an opaque one at
+  least eye high stops sight ([`solids`](ref:hub/renderers/tower3d/src/layout.ts#solids)). A new place is a scene document in
   `renderers/kaykit/scenes/prefabs` plus a line in `zones.ts`.
 - Judged by pictures: [`tool:tour`](ref:hub/scripts/tour.ts) shoots fixed spots on the busy fixture by day and
   night.

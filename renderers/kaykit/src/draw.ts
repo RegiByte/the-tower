@@ -106,8 +106,9 @@ function batches(flat: Flat, assets: Assets, scene: THREE.Scene) {
   return { owners, triangles }
 }
 
+/** The scene's boxes, each mesh knowing its box's index in `flat.boxes` (`userData.box`). */
 function boxes(flat: Flat) {
-  return (flat.boxes ?? []).map((b) => {
+  return flat.boxes.map((b, i) => {
     const mat = b.glow
       ? new THREE.MeshBasicMaterial({ color: b.color, toneMapped: false })
       : new THREE.MeshToonMaterial({ color: b.color, gradientMap: RAMP })
@@ -117,6 +118,7 @@ function boxes(flat: Flat) {
     m.rotation.y = (b.turn ?? 0) * DEG
     m.castShadow = b.opacity === undefined && !b.glow
     m.receiveShadow = true
+    m.userData.box = i
     return m
   })
 }

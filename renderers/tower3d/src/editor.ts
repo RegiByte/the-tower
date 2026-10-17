@@ -8,7 +8,7 @@ import { find } from '../../kaykit/src/find.ts'
 import { formatScene } from '../../kaykit/src/format.ts'
 import type { DocEntry } from '../../kaykit/src/listing.ts'
 import { loadMeshes } from '../../kaykit/src/meshes.ts'
-import { flatten, groupsOf, isModelGuide, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelGuide, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
+import { flatten, groupsOf, isModelGuide, parseScene, POSES, type Box, type Camera, type Flat, type FlatSlot, type Item, type ModelGuide, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
 import { avatar, seatedAt } from './avatar.ts'
 import { CHAIR } from './chair.ts'
 import { MODEL_NAMES, type ModelName } from './contract.ts'
@@ -21,7 +21,7 @@ import { lookOf, type Look } from './wardrobe.ts'
 /**
  * The prefab editor (editor.html): a scene document drawn as the KayKit playground draws it, its models, prefabs and
  * slots placed by hand. Click to select (a prefab as a whole; Enter goes inside it), T/R/S to move, turn or scale with
- * the gizmo, G to snap (5 cm, 15°), F to drop onto what is below, Delete to remove, ⌘Z to undo. The states picker
+ * the gizmo (a box resized along each axis on its own), G to snap (5 cm, 15°), F to drop onto what is below, Delete to remove, ⌘Z to undo. The states picker
  * draws the document in a state of each of its groups (`groupsOf`: one at a time in a document without groups); the
  * state picked last is the one edited: while it is shown, edits of what the document shares go to it (`set`, `remove`)
  * or to every state, as the scope says, and what is added goes to it. A slot for a person is drawn as a Tower 3D worker
@@ -40,9 +40,9 @@ import { lookOf, type Look } from './wardrobe.ts'
  *   await editor.state(name | undefined)        show a state in place of its group's, and edit it; or the shared scene
  *   await editor.unstate(group)                 show none of a group's states
  *   editor.scope('shared' | 'state')            where edits of shared things go while a state is shown
- *   await editor.select(src | undefined)        select by where the document writes it: items/3, slots/0,
+ *   await editor.select(src | undefined)        select by where the document writes it: items/3, slots/0, boxes/2,
  *                                               states/idle/add/items/0
- *   await editor.place(src, { at?, turn?, scale? })
+ *   await editor.place(src, { at?, turn?, scale?, size? })   size: a box's
  *   await editor.add(model, at?) · editor.addSlot(name, pose?, at?) · editor.remove(src)
  *   await editor.enter(src) · editor.up()       edit inside a placed prefab; back to the scene placing it
  *   await editor.undo() · editor.redo()
@@ -53,7 +53,10 @@ import { lookOf, type Look } from './wardrobe.ts'
  */
 
 type Ref = string
-type Place = { at?: Vec3; turn?: number; scale?: number | Vec3 }
+type Place = { at?: Vec3; turn?: number; scale?: number | Vec3; size?: Vec3 }
+/** What a document places: a model or a prefab, a slot, or a box. */
+type Element = Item | Slot | Box
+const isBox = (e: Element): e is Box => 'size' in e && 'color' in e
 type Info = {
   path: string; trail: string[]; states: string[]; groups: Record<string, string[]>; shown: string[]; edited?: string; scope: 'shared' | 'state'; selected?: Ref; element?: unknown
   dirty: string[]
@@ -135,8 +138,9 @@ let flat: Flat
 let built: Built | undefined
 const proxy = new THREE.Group()
 let ghosts: THREE.Group[] = []
-/** The models drawn, in the drawing's order: what a pick's index names. */
+/** The models and boxes drawn, in the drawing's order: what a pick's index names. */
 let drawn: Flat['items'] = []
+let drawnBoxes: Flat['boxes'] = []
 let drawing = 0
 
 const current = () => trail.at(-1)!
@@ -177,7 +181,7 @@ function located(scene: Scene, src: Ref) {
   let list: unknown = scene
   for (const p of parts) list = (list as Record<string, unknown>)?.[p]
   if (!Array.isArray(list) || !(index in list)) throw new Error(`${current().path} has nothing at ${src}`)
-  return { list: list as unknown[], index, element: list[index] as Item | Slot }
+  return { list: list as unknown[], index, element: list[index] as Element }
 }
 
 /** An edit: a copy of the edited document changed by `change`, kept for undo. */
@@ -196,12 +200,12 @@ const stateOwn = (src: Ref) => shown.some((n) => src.startsWith(`states/${n}/add
 /** Where an edit of a shared thing goes while a state is edited: into that state, else into what every state shares. */
 const intoState = (src: Ref) => edited !== undefined && scopeTo === 'state' && !stateOwn(src) && !src.startsWith('states/')
 
-const nameOf = (e: Item | Slot) => ('name' in e ? e.name : e.id)
+const nameOf = (e: Element) => ('name' in e ? e.name : e.id)
 
 /** A shared thing's id, given one from its model or scene if it has none, unique in the document. */
-function idFor(scene: Scene, element: Item) {
+function idFor(scene: Scene, element: Item | Box) {
   if (element.id) return element.id
-  const base = ('model' in element ? element.model : element.scene).split('/').at(-1)!.replace(/\.json$/, '')
+  const base = isBox(element) ? 'box' : ('model' in element ? element.model : element.scene).split('/').at(-1)!.replace(/\.json$/, '')
   const taken = new Set(JSON.stringify(scene).match(/"(id|name)":"[^"]*"/g)?.map((m) => m.split(':')[1].slice(1, -1)))
   let n = 1
   while (taken.has(n === 1 ? base : `${base}_${n}`)) n++
@@ -214,6 +218,7 @@ const tidy = (to: Place): Place => ({
   ...(to.at && { at: to.at.map((v) => round(v, 3)) as Vec3 }),
   ...(to.turn !== undefined && { turn: round(to.turn, 1) }),
   ...(to.scale !== undefined && { scale: Array.isArray(to.scale) ? (to.scale.map((v) => round(v, 3)) as Vec3) : round(to.scale, 3) }),
+  ...(to.size && { size: to.size.map((v) => round(v, 3)) as Vec3 }),
 })
 
 async function place(src: Ref, to: Place) {
@@ -313,8 +318,9 @@ async function redraw() {
   const hidden = selected && key(selected)
   const withModels = flat.slots.flatMap((s) => withOf(s).map((it) => ({ ...it, from: s.from, via: s.via, frame: { at: s.at, turn: s.turn, scale: 1 } })))
   drawn = [...flat.items, ...withModels].filter((it) => (it.via[0] ?? it.from) !== hidden)
+  drawnBoxes = flat.boxes.filter((b) => (b.via[0] ?? b.from) !== hidden)
   const was = built
-  built = build({ ...flat, items: drawn }, assets)
+  built = build({ ...flat, items: drawn, boxes: drawnBoxes }, assets)
   built.scene.getObjectByName('slots')?.removeFromParent()
   if (was) disposeBuilt(was)
   for (const g of ghosts) dispose(g)
@@ -416,10 +422,11 @@ async function dressProxy() {
   const at = shownEl.at
   proxy.position.set(...at)
   proxy.rotation.set(0, (shownEl.turn ?? 0) * DEG, 0)
-  const s = 'name' in shownEl ? 1 : shownEl.scale ?? 1
+  const s = 'name' in shownEl || isBox(shownEl) ? 1 : shownEl.scale ?? 1
   if (Array.isArray(s)) proxy.scale.set(...s)
   else proxy.scale.setScalar(s)
-  if ('name' in shownEl) {
+  if (isBox(shownEl)) proxy.add(...build({ items: [], boxes: [{ ...shownEl, at: [0, 0, 0], turn: 0, from: '', via: [] }], slots: [] }, assets).scene.children.filter((o) => o.userData.box !== undefined))
+  else if ('name' in shownEl) {
     const g = ghost(shownEl)
     proxy.add(g)
     if (shownEl.with?.length) proxy.add(...soloOf(await flatten({ items: shownEl.with }, current().path, read, [])))
@@ -435,7 +442,7 @@ function elementShown(src: Ref) {
   const { element } = located(doc(), src)
   const name = nameOf(element)
   if (name === undefined) return element
-  return shown.reduce((e, n) => ({ ...e, ...doc().states?.[n]?.set?.[name] }), element) as Item | Slot
+  return shown.reduce((e, n) => ({ ...e, ...doc().states?.[n]?.set?.[name] }), element) as Element
 }
 
 const soloOf = (f: Flat) => build(f, assets).scene.children.filter((o) => o instanceof THREE.BatchedMesh)
@@ -448,7 +455,7 @@ async function select(src: Ref | undefined) {
   return info()
 }
 
-/** A click: the slot's ghost or the model nearest along the ray, as what the edited document writes; nothing behind the host's own models. */
+/** A click: the slot's ghost, the model or the box nearest along the ray, as what the edited document writes; nothing behind the host's own models. */
 function pick(x: number, y: number): Ref | undefined {
   if (!built) return
   const ray = new THREE.Raycaster()
@@ -456,7 +463,12 @@ function pick(x: number, y: number): Ref | undefined {
   const host = ray.intersectObjects(built.scene.children.filter((o) => o.userData.host), true)[0]?.distance ?? Infinity
   const g = ray.intersectObjects(ghosts, true)[0]
   const m = ray.intersectObjects(built.scene.children.filter((o) => o instanceof THREE.BatchedMesh), false)[0]
-  if (Math.min(g?.distance ?? Infinity, m?.distance ?? Infinity) > host) return
+  const b = ray.intersectObjects(built.scene.children.filter((o) => o.userData.box !== undefined), false)[0]
+  if (Math.min(g?.distance ?? Infinity, m?.distance ?? Infinity, b?.distance ?? Infinity) > host) return
+  if (b && b.distance < Math.min(g?.distance ?? Infinity, m?.distance ?? Infinity)) {
+    const box = drawnBoxes[b.object.userData.box as number]
+    return (box.via[0] ?? box.from).split('#')[1]
+  }
   if (g && (!m || g.distance < m.distance)) {
     let o: THREE.Object3D | null = g.object
     while (o && o.userData.src === undefined) o = o.parent
@@ -474,11 +486,16 @@ function pick(x: number, y: number): Ref | undefined {
 function proxyPlace(): Place {
   const s = proxy.scale
   const element = elementShown(selected!)
-  const scale = 'name' in element ? undefined : s.x === s.y && s.y === s.z ? s.x : ([s.x, s.y, s.z] as Vec3)
+  const scale = 'name' in element || isBox(element) ? undefined : s.x === s.y && s.y === s.z ? s.x : ([s.x, s.y, s.z] as Vec3)
   const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(proxy.quaternion)
   const was = element.turn ?? 0
   const by = (((Math.atan2(facing.x, facing.z) / DEG - was) % 360) + 540) % 360 - 180
-  return { at: [proxy.position.x, proxy.position.y, proxy.position.z], turn: was + by, ...(scale !== undefined && { scale }) }
+  return {
+    at: [proxy.position.x, proxy.position.y, proxy.position.z],
+    turn: was + by,
+    ...(scale !== undefined && { scale }),
+    ...(isBox(element) && { size: [element.size[0] * s.x, element.size[1] * s.y, element.size[2] * s.z] as Vec3 }),
+  }
 }
 
 /**
@@ -492,7 +509,7 @@ function endDrag() {
 let scaleFrom = new THREE.Vector3()
 gizmo.addEventListener('mouseDown', () => scaleFrom.copy(proxy.scale))
 gizmo.addEventListener('objectChange', () => {
-  if (gizmo.mode !== 'scale') return
+  if (gizmo.mode !== 'scale' || (selected && isBox(elementShown(selected)))) return
   const d = proxy.scale.clone().divide(scaleFrom)
   const k = [d.x, d.y, d.z].reduce((a, b) => (Math.abs(b - 1) > Math.abs(a - 1) ? b : a))
   proxy.scale.copy(scaleFrom).multiplyScalar(k)
@@ -740,7 +757,8 @@ function render() {
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 const num = (v: number) => String(round(v, 3))
 
-function describe(e: Item | Slot) {
+function describe(e: Element) {
+  if (isBox(e)) return `box <b>${e.size.map(num).join(' × ')}</b>${e.opacity !== undefined ? ' · glass' : ''}${e.id ? ` · ${esc(e.id)}` : ''}`
   if ('name' in e) return `${e.pose ? `${e.pose}ting person` : 'thing'} · slot <b>${esc(e.name)}</b>`
   if ('model' in e) return `<b>${esc(e.model)}</b>${e.id ? ` · ${esc(e.id)}` : ''}`
   return `prefab <b>${esc(e.scene)}</b>${e.states?.length ? ` in ${esc(e.states.join(', '))}` : ''}${e.id ? ` · ${esc(e.id)}` : ''}`
@@ -793,10 +811,11 @@ function renderPanel() {
       <div>${describe(e)}</div>
       <div class="from">${esc(selected)}</div>
       <div class="axes"><b>at</b>${e.at.map((v, i) => `<input type="number" step="0.01" data-at="${i}" value="${num(v)}">`).join('')}</div>
-      <div class="axes"><b>turn</b><input type="number" step="1" id="turn" value="${num(e.turn ?? 0)}">${'name' in e ? '' : `<b>scale</b><input type="number" step="0.05" id="scale" value="${Array.isArray(e.scale) ? '' : num(e.scale ?? 1)}" ${Array.isArray(e.scale) ? 'disabled' : ''}>`}</div>
+      <div class="axes"><b>turn</b><input type="number" step="1" id="turn" value="${num(e.turn ?? 0)}">${'name' in e || isBox(e) ? '' : `<b>scale</b><input type="number" step="0.05" id="scale" value="${Array.isArray(e.scale) ? '' : num(e.scale ?? 1)}" ${Array.isArray(e.scale) ? 'disabled' : ''}>`}</div>
+      ${isBox(e) ? `<div class="axes"><b>size</b>${e.size.map((v, i) => `<input type="number" step="0.05" data-size="${i}" value="${num(v)}">`).join('')}</div>` : ''}
       ${'name' in e ? `<label class="row"><span>pose</span><select id="pose"><option value="">thing</option>${POSES.map((p) => `<option ${e.pose === p ? 'selected' : ''}>${p}</option>`).join('')}</select><span>size</span><input type="number" step="0.05" id="size" value="${num(e.size ?? 1)}"></label>` : ''}
       <div class="row">${'scene' in e ? '<button data-act="enter">edit inside ↵</button>' : ''}<button data-act="drop">drop F</button><button data-act="delete">delete ⌫</button><button data-act="none">deselect</button></div>
-    ` : '<div class="muted">click a model, a prefab or a slot</div>'}
+    ` : '<div class="muted">click a model, a prefab, a box or a slot</div>'}
     <h3>Add</h3>
     <input type="text" id="find" placeholder="search the catalog: mug, lamp, cactus" value="${esc(query)}">
     <div class="hits">${hits.map((h) => `<button data-add="${esc(h.id)}">${esc(h.id)} <small>${h.size.map((v) => v.toFixed(2)).join('×')}</small></button>`).join('')}</div>
@@ -864,6 +883,7 @@ panel.addEventListener('change', (ev) => {
   if (t.dataset.at !== undefined) return run(place(selected, { at: e.at.map((v, i) => (i === Number(t.dataset.at) ? Number(t.value) : v)) as Vec3 }))
   if (t.id === 'turn') return run(place(selected, { turn: Number(t.value) }))
   if (t.id === 'scale') return run(place(selected, { scale: Number(t.value) }))
+  if (t.dataset.size !== undefined && isBox(e)) return run(place(selected, { size: e.size.map((v, i) => (i === Number(t.dataset.size) ? Number(t.value) : v)) as Vec3 }))
   if (t.id === 'pose' || t.id === 'size') {
     const src = selected
     const value = t.id === 'size' ? Number(t.value) : t.value || undefined

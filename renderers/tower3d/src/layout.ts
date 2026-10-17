@@ -4,7 +4,7 @@ import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
 import { DECK, loftOf, loftWalls, type Layer, type Loft } from './floorplan.ts'
 import { gamesOf } from './games.ts'
-import type { ZoneSlot } from './zones.ts'
+import type { PrefabBox, ZoneSlot } from './zones.ts'
 
 type RateLimit = Board['rateLimits'][number]
 type ShelfEntry = NonNullable<Floor['shelf']>[number]
@@ -624,7 +624,15 @@ export function solids(p: Plan, level: Level): Solid[] {
     slab(p.loft.deck),
     slab(p.loft.landing),
     ...[roomPastDeck(p)].filter((b) => b !== undefined).map((b) => ({ ...b, bottom: ROOM_HEIGHT, top: ROOM_HEIGHT + SLAB })),
+    ...level.zones.flatMap((z) => z.shapes).filter((b) => b.opacity === undefined && b.size[1] >= EYE).map(shapeSolid),
   ]
+}
+
+/** A prefab's box on a level as sight meets it: the box round its turned footprint, as high as it stands. */
+function shapeSolid(b: PrefabBox): Solid {
+  const t = (b.turn * Math.PI) / 180
+  const [hx, hz] = [Math.abs(Math.cos(t)) * b.size[0] / 2 + Math.abs(Math.sin(t)) * b.size[2] / 2, Math.abs(Math.sin(t)) * b.size[0] / 2 + Math.abs(Math.cos(t)) * b.size[2] / 2]
+  return { minX: b.at[0] - hx, maxX: b.at[0] + hx, minZ: b.at[2] - hz, maxZ: b.at[2] + hz, bottom: b.at[1], top: b.at[1] + b.size[1] }
 }
 
 /** What a walker on a layer of a level bumps into. */

@@ -17,6 +17,7 @@ import { buildParty, type Party } from './party.ts'
 import { floorPalette, tintOf } from './palette.ts'
 import { buildRoom, shellTag, shellTitle, type Bookcase } from './room.ts'
 import { buildLoft } from './loft.ts'
+import type { PrefabBox } from './zones.ts'
 import { block, dispose, glowing, glows, mesh, plate, sprite, toon, toonPainted } from './toon.ts'
 import { FINISHES, roofPlant, type Finish } from './exterior/roof.ts'
 import { mastLight } from './exterior/beacons.ts'
@@ -174,6 +175,30 @@ function ceilingLights(p: Plan, h: number, color: THREE.ColorRepresentation) {
     }
   }
   return new THREE.Mesh(mergeGeometries(panels), glowing(color))
+}
+
+/**
+ * A level's prefab boxes (a room's walls, glass and trim), one mesh per look: toon, glowing, or see-through glass,
+ * which casts no shadow and writes no depth.
+ */
+function buildShapes(shapes: PrefabBox[]) {
+  const g = new THREE.Group()
+  const looks = Map.groupBy(shapes, (b) => JSON.stringify([b.color, b.glow ?? false, b.opacity ?? 1]))
+  for (const [, list] of looks) {
+    const { color, glow, opacity } = list[0]
+    const parts = list.map((b) => {
+      const box = new THREE.BoxGeometry(...b.size)
+      box.translate(0, b.size[1] / 2, 0)
+      box.rotateY((b.turn * Math.PI) / 180)
+      box.translate(...b.at)
+      return box
+    })
+    const material = glow ? glowing(color) : opacity === undefined ? toon(color) : new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity, roughness: 0.05, depthWrite: false, side: THREE.DoubleSide })
+    const m = new THREE.Mesh(mergeGeometries(parts), material)
+    m.castShadow = m.receiveShadow = opacity === undefined
+    g.add(m)
+  }
+  return g
 }
 
 /** The landing in front of the elevator: a rug in the floor's color with its number painted on, garage-style. */
@@ -531,6 +556,8 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
     sign.position.set(0, DOOR_HEIGHT + 0.6, coreFront(p) + WALL + 0.02)
     g.add(front, sign)
     doors.set(level.index, d)
+    const shapes = level.zones.flatMap((z) => z.shapes)
+    if (shapes.length) g.add(buildShapes(shapes))
     levels.push(g)
     group.add(g, foot(p, level))
   }

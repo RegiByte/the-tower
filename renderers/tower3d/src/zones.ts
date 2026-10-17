@@ -48,23 +48,26 @@ const SPACE_ACCENT = '#e97d19'
 
 /** A model of a flattened prefab, in the prefab's own frame. */
 export type PrefabItem = { model: string; at: Vec3; turn: number; scale: number | Vec3; parts?: Record<string, Vec3>; theme?: Theme }
+/** A box of a flattened prefab, in the prefab's own frame: `at` the centre of its base, `size` along its own axes. */
+export type PrefabBox = { size: Vec3; at: Vec3; turn: number; color: string; glow?: boolean; opacity?: number }
 /**
- * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models, the floor they take that a walker bumps into, its
- * slots, its states by the group each excludes the others of (`groupsOf`), and its models and slots in every list of
- * states it can be drawn in, by `stateKey` (shared ones included).
+ * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models and boxes, the floor they take that a walker bumps
+ * into, its slots, its states by the group each excludes the others of (`groupsOf`), and its models, boxes and slots in
+ * every list of states it can be drawn in, by `stateKey` (shared ones included).
  */
-export type Prefab = { items: PrefabItem[]; footprint: Box[]; slots: FlatSlot[]; groups: Record<string, string[]>; states: Record<string, PrefabPick> }
-/** A prefab in a list of its states: its models and its slots. */
-export type PrefabPick = { items: PrefabItem[]; slots: FlatSlot[] }
+export type Prefab = { items: PrefabItem[]; boxes: PrefabBox[]; footprint: Box[]; slots: FlatSlot[]; groups: Record<string, string[]>; states: Record<string, PrefabPick> }
+/** A prefab in a list of its states: its models, boxes and slots. */
+export type PrefabPick = { items: PrefabItem[]; boxes: PrefabBox[]; slots: FlatSlot[] }
 /** What a prefab's models in a list of its states are kept under: the names in any order. */
 export const stateKey = (names: string[]) => names.toSorted().join('+')
 export type Prefabs = Record<string, Prefab>
 
 /**
  * A prefab on a level: where its origin stands, its turn in degrees about +Y, how far it is stretched along its own x
- * (a table made to fit), and the theme its packs draw in.
+ * (a table made to fit), the theme its packs draw in, the floor it takes, and its boxes in level space (a room's walls
+ * and glass).
  */
-export type ZoneSlot = { prefab: string; x: number; z: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[] }
+export type ZoneSlot = { prefab: string; x: number; z: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[]; shapes: PrefabBox[] }
 
 /** A footprint in a prefab's frame, in level space once the prefab stands at (x, z), stretched, turned by `turn`. */
 const turnBox = (b: Box, x: number, z: number, turn: number, stretch = 1): Box => {
@@ -80,8 +83,15 @@ const prefabOf = (prefabs: Prefabs, name: string) => {
   return found
 }
 
-/** Where each prefab stands on a level, before its footprint is known. */
-type Zone = Omit<ZoneSlot, 'boxes'>
+/** Where each prefab stands on a level, before its footprint and boxes are known. */
+type Zone = Omit<ZoneSlot, 'boxes' | 'shapes'>
+
+/** A prefab's box in level space once the prefab stands at (x, z), stretched along its own x, turned by `turn`. */
+const shapeAt = (b: PrefabBox, z: Zone): PrefabBox => {
+  const stretch = z.stretch ?? 1
+  const [dx, dz] = turnXZ(b.at[0] * stretch, b.at[2], z.turn)
+  return { ...b, at: [z.x + dx, b.at[1], z.z + dz], turn: z.turn + b.turn, size: [b.size[0] * stretch, b.size[1], b.size[2]] }
+}
 
 /**
  * The office floor's furnishings: the pastel furniture atlas, the restaurant's orange calmed to a warm grey, the City
@@ -300,7 +310,10 @@ export function furnish(p: Plan, prefabs: Prefabs, tints: Record<string, string>
     ...p,
     levels: p.levels.map((level) => ({
       ...level,
-      zones: zonesOf(p, level, tints, month).map((z) => ({ ...z, boxes: prefabOf(prefabs, z.prefab).footprint.map((b) => turnBox(b, z.x, z.z, z.turn, z.stretch)) })),
+      zones: zonesOf(p, level, tints, month).map((z) => {
+        const prefab = prefabOf(prefabs, z.prefab)
+        return { ...z, boxes: prefab.footprint.map((b) => turnBox(b, z.x, z.z, z.turn, z.stretch)), shapes: prefab.boxes.map((b) => shapeAt(b, z)) }
+      }),
     })),
   }
 }

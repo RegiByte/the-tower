@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The prefab editor: scenes placed by hand, with states and slots, saved as their documents",
-  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose, a guide naming one of Tower 3D's own models as that model (the workstation's desk.glb, where Tower 3D draws it) and any other guide as a ghost, and lets a person select a model, a placed prefab or a slot, move, turn and scale it with a gizmo (snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the states drawn, one of each of the document's groups, edits of shared things going to the state picked last or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
+  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose, a guide naming one of Tower 3D's own models as that model (the workstation's desk.glb, where Tower 3D draws it) and any other guide as a ghost, and lets a person select a model, a placed prefab, a box or a slot, move, turn and scale it with a gizmo (a box resized along each axis on its own; snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the states drawn, one of each of the document's groups, edits of shared things going to the state picked last or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-16",
@@ -53,6 +53,8 @@ code fills from the board.
 - A prop lands where Tower 3D draws it because both draw a scene item through the playground's `itemMatrix` (its
   place, then the catalog's norms) over the same measured catalog, in the same frame: the desk's group in Tower 3D,
   whose origin is desk.glb's, the world in the editor. Desk space faces +z, so +x is on a seated worker's left.
+- A box (a room's wall or pane of glass) is selected like a model and resized along each of its axes on its own,
+  the gizmo's scale written to its `size`; the panel takes its size by the numbers too.
 - The selection is drawn alone under the gizmo and left out of the drawing; on release its place is written to the
   document ([`place`](ref:hub/renderers/tower3d/src/editor.ts#place)), which is redrawn
   ([`redraw`](ref:hub/renderers/tower3d/src/editor.ts#redraw)). The documents are kept raw as their files hold them
