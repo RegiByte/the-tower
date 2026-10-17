@@ -42,14 +42,19 @@ const box = (minX: number, maxX: number, minZ: number, maxZ: number): Box => ({ 
 const railX = (x: number, z0: number, z1: number) => box(x - RAIL, x + RAIL, z0, z1)
 const railZ = (z: number, x0: number, x1: number) => box(x0, x1, z - RAIL, z + RAIL)
 
-/** The loft on a plate `width` by `depth`, its back-left corner the plate's; `wall` is the shell's thickness. */
+/**
+ * The loft on a plate `width` by `depth`, its back-left corner the plate's. `wall` is the shell's thickness and how far
+ * the control room's side wall, standing on the wing's edge, reaches out of it: the stair runs along that wall's outer
+ * face, and the landing reaches over the wall to the deck.
+ */
 export function loftOf(p: { width: number; depth: number }, wall: number): Loft {
   const left = -p.width / 2
   const back = -p.depth / 2
   const edge = left + WING.width
   const front = back + WING.deck
-  const landing = box(edge, edge + STAIR.width, back + WING.landing.from, back + WING.landing.to)
-  const stair = { box: box(edge, edge + STAIR.width, landing.maxZ, landing.maxZ + STAIR.run) }
+  const side = edge + wall
+  const landing = box(edge, side + STAIR.width, back + WING.landing.from, back + WING.landing.to)
+  const stair = { box: box(side, side + STAIR.width, landing.maxZ, landing.maxZ + STAIR.run) }
   return {
     deck: box(left, edge, back, front),
     landing,

@@ -54,8 +54,9 @@ shoulders.
   lobby keeps 5.5, the shaft's head over the roof 4.2. The car rides at a speed, so a floor takes longer.
 - *The loft is data over the plate* ([`loftOf`](ref:hub/renderers/tower3d/src/floorplan.ts#loftOf)), anchored to the
   back wall, so a deeper plate leaves it where it is: the deck over the wing (x from the left glass to 9 m in, z from
-  the back to 14 m out), the landing beside it (back + 9.2 to 10.8), the stair down from the landing to its foot at
-  back + 16.2 (1.6 wide, 18 risers of 183 mm on 300 mm treads), glass rails along every open edge and the stair's
+  the back to 14 m out), the landing beside it (back + 9.2 to 10.8, reaching over the control room's side wall), the
+  stair down from the landing to its foot at back + 16.2 (1.6 wide, 18 risers of 183 mm on 300 mm treads, along that
+  wall's outer face), glass rails along every open edge and the stair's
   open sides, and one post under the deck's free corner. [`buildLoft`](ref:hub/renderers/tower3d/src/loft.ts#buildLoft)
   draws it on each floor. The deck stays inside its level, so the rule that a level is a box closed by its slabs holds
   ([[tower3d-levels]]).
