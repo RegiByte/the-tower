@@ -110,23 +110,31 @@ export type Engine = {
 
 const STEP = 1 / 60
 
+/** Whether `a` holds `o` somewhere below it. */
+const isAncestor = (a: THREE.Object3D, o: THREE.Object3D): boolean => !!o.parent && (o.parent === a || isAncestor(a, o.parent))
+
 /** An act's identity, whatever order its fields were written in. */
 const actKey = (a: Act) => JSON.stringify(Object.entries(a).sort(([x], [y]) => x.localeCompare(y)))
 
 export function installDoor(e: Engine) {
   /**
    * The outermost object standing for `target`, among everything pickable that is drawn on its level (a desk's second
-   * monitor is hidden until its worker shows something); a level you are not on still counts.
+   * monitor is hidden until its worker shows something); a level you are not on still counts. A thing drawn twice
+   * (a tile on each face of a video wall) answers with the copy facing the camera, the nearest of those.
    */
   function objectOf(target: Act) {
     const key = actKey(target)
-    let found: THREE.Object3D | undefined
+    const found: THREE.Object3D[] = []
     for (const root of e.pickables()) {
       root.traverseVisible((o) => {
-        if (!found && o.userData.act && actKey(o.userData.act) === key) found = o
+        if (o.userData.act && actKey(o.userData.act) === key && !found.some((f) => isAncestor(f, o))) found.push(o)
       })
-      if (found) return found
+      if (found.length) break
     }
+    const at = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3())
+    const turnedAway = (o: THREE.Object3D) => camera.position.clone().sub(at(o)).dot(o.getWorldDirection(new THREE.Vector3())) < 0
+    const rank = (o: THREE.Object3D) => (turnedAway(o) ? 1e6 : 0) + at(o).distanceTo(camera.position)
+    return found.reduce<THREE.Object3D | undefined>((a, o) => (!a || rank(o) < rank(a) ? o : a), undefined)
   }
 
   function everyAct(kind: Act['kind'] | undefined) {
