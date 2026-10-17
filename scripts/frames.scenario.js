@@ -61,7 +61,7 @@
     t.key('Escape'); t.step(60); t.capture(); snap('tile-closed')
     tryDo('aim-desk', () => {
       const l = t.locate({ kind: 'desk', id: waiter })
-      t.teleport({ level: l.level, x: l.x, z: l.z + 1.5 })
+      t.teleport({ level: l.level, x: l.x + 1.5, z: l.z })
       t.step(1)
       t.aimAt({ kind: 'desk', id: waiter })
     }); t.step(1); snap('aimed-desk')
@@ -78,7 +78,7 @@
   if (open) {
     tryDo('aim-station', () => {
       const l = t.locate(open)
-      t.teleport({ level: l.level, x: l.x, z: l.z - 3.5, yaw: 0 })
+      t.teleport({ level: l.level, x: l.x - 3.5, z: l.z, yaw: Math.PI / 2 })
       t.step(1)
       t.aimAt(open)
     }); t.step(1); snap('aimed-station')
@@ -98,7 +98,16 @@
       tryDo('aim-note', () => t.aimAt(note)); t.step(1); snap('aimed-note')
       tryDo('take-note', () => t.press('use')); t.step(40); snap('carrying')
       const desk = t.acts('station').find((a) => a.open && a.project === cork.project)
-      if (desk) (tryDo('aim-open-desk', () => facing(desk, -3.5, 0)), t.step(40), snap('open-desk-carrying'))
+      if (desk) {
+        tryDo('aim-open-desk', () => {
+          const l = t.locate(desk)
+          t.teleport({ level: l.level, x: l.x - 3.5, z: l.z, yaw: Math.PI / 2 })
+          t.step(1)
+          t.aimAt(desk)
+        })
+        t.step(40)
+        snap('open-desk-carrying')
+      }
       tryDo('put-back', () => (facing(cork, 3.2, Math.PI), t.press('use'))); t.step(150); snap('put-back')
     }
   }
@@ -149,11 +158,11 @@
     t.key('Escape'); t.step(10); t.capture()
     tryDo('see-pair', () => {
       const l = t.locate({ kind: 'desk', id: papers.id })
-      t.teleport({ level: l.level, x: l.x - 0.4, z: l.z - 3.4, yaw: 0, pitch: -0.18 })
+      t.teleport({ level: l.level, x: l.x - 3.4, z: l.z + 0.4, yaw: Math.PI / 2, pitch: -0.18 })
     }); t.step(2); snap('pair')
     tryDo('aim-papers', () => {
       const l = t.locate(papers)
-      t.teleport({ level: l.level, x: l.x + 0.5, z: l.z - 1.6, yaw: -0.3, pitch: -0.6 })
+      t.teleport({ level: l.level, x: l.x - 1.6, z: l.z - 0.5, yaw: Math.PI / 2 - 0.3, pitch: -0.6 })
       t.step(1)
       t.aimAt(papers)
     }); t.step(1); snap('aimed-papers')
@@ -172,7 +181,7 @@
     const desk = { kind: 'desk', id: papers.id }
     tryDo('author-changes', () => {
       const l = t.locate(desk)
-      t.teleport({ level: l.level, x: l.x, z: l.z + 1.5 })
+      t.teleport({ level: l.level, x: l.x + 1.5, z: l.z })
       t.step(1)
       t.aimAt(desk)
       t.press('use')
@@ -204,7 +213,7 @@
     t.key('Escape'); t.step(10); t.capture()
     tryDo('aim-binder', () => {
       const l = t.locate(binder)
-      t.teleport({ level: l.level, x: l.x, z: l.z - 1.1, yaw: 0, pitch: -0.6 })
+      t.teleport({ level: l.level, x: l.x - 1.1, z: l.z, yaw: Math.PI / 2, pitch: -0.6 })
       t.step(1)
       t.aimAt(binder)
     }); t.step(1); snap('aimed-binder')
