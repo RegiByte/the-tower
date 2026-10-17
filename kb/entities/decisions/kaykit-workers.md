@@ -60,7 +60,8 @@
     "hub/renderers/tower3d/src/contract.ts#CLANKER_FAMILY",
     "hub/renderers/tower3d/src/contract.ts#CLANKER_PROPS",
     "hub/renderers/tower3d/src/rig.ts#shapeRig",
-    "hub/renderers/tower3d/kaykit/Characters/clanker-family.json"
+    "hub/renderers/tower3d/kaykit/Characters/clanker-family.json",
+    "hub/renderers/tower3d/src/layout.ts#walkway"
   ],
   "links": [
     {
@@ -121,9 +122,13 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   [`leaverPose`](ref:hub/renderers/tower3d/src/life.ts#leaverPose)). KayKit's sit clips carry the body straight back
   onto a seat behind it, so the worker walks up from the side its way comes from (a reviewer by its own left, away
   from its author, and its author by its right) to where it stands in front of its chair, turns to the desk and sits
-  back; its chair, pulled back until then, comes in under it and the body is lifted onto the seat as
+  back; its chair, pulled back (the way its back faces) until then, comes in under it and the body is lifted onto the seat as
   far as the clip's hips have travelled ([`seatedness`](ref:hub/renderers/tower3d/src/rig.ts#seatedness)), and the
-  reverse as it goes, the chair tucked back in once it steps away. A
+  reverse as it goes, the chair tucked back in once it steps away. The way is laid on the level
+  ([`walkway`](ref:hub/renderers/tower3d/src/layout.ts#walkway): across the landing, down the aisle behind the desk's
+  column, behind the chair) and taken into the desk's own space, where the side, the approach and the sitting are
+  worked out with the worker facing +z; so a turned desk ([[workstations]]) changes nothing in how a worker sits, and
+  standing up it turns to face its desk's way before it walks off. A
   walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed, and a walker faces
   the mean of its way around it ([`headingAt`](ref:hub/renderers/tower3d/src/life.ts#headingAt)), so it turns corners
   over a stretch of its way, as a function of the distance walked.

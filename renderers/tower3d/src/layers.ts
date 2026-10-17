@@ -59,6 +59,8 @@ export function reconcile<S, T>(layer: Layer<S, T>, items: Map<string, T>, p: Pl
   }
 }
 
+const DEG = Math.PI / 180
+
 type FloorLevel = Extract<Level, { kind: 'floor' }>
 const floors = (p: Plan) => p.levels.filter((l): l is FloorLevel => l.kind === 'floor')
 
@@ -83,6 +85,7 @@ export const DESKS: Layer<DeskAt, Desk> = {
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
+    desk.group.rotation.y = slot.turn * DEG
     if (!s.first) s.arrivals.set(slot.card.id, arrival(s.plan, desk))
     return desk
   },
@@ -92,6 +95,7 @@ export const DESKS: Layer<DeskAt, Desk> = {
     situate(desk, slotsAt(author))
     syncDesk(desk, slot.card)
     desk.group.position.set(slot.x, y, slot.z)
+    desk.group.rotation.y = slot.turn * DEG
     return true
   },
   root: (desk) => desk.group,
@@ -128,6 +132,7 @@ export const STATIONS: Layer<StationAt, Station> = {
     syncStation(station, lit)
     act(station.group, { kind: 'station', project, n: slot.n, open }, [])
     station.group.position.set(slot.x, y, slot.z)
+    station.group.rotation.y = slot.turn * DEG
     return true
   },
   root: (station) => station.group,

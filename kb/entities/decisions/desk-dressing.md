@@ -65,6 +65,9 @@ loudest thing on the floor.
   no two stacks are clones; and up to one standing frame per `trophy_<n>` slot, facing the aisle, for what the worker
   showed. Nothing placed by hand is nudged (the user, 2026-10-17): variety will come as several layouts picked by the
   id.
+- The slots and the props are in desk space, and the desk's group carries its turn ([[workstations]]), so a turned
+  desk turns its dressing with it; the rug under it is placed through the same turn. `desk_dress.json` knows nothing of
+  the turn.
 - Every workstation is an L: a `cabinet_medium` return off the desk's right end
   ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in the Furniture pack's alt_C atlas (grey,
   beside `desk.glb`'s black legs); free stations draw it bare. The collider is widened to match.

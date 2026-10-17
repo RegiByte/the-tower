@@ -2,7 +2,7 @@ import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
-import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, type Box, type Level, type Plan } from './layout.ts'
+import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, type Box, type Level, type Plan } from './layout.ts'
 
 /**
  * The office's places beyond the desks, composed from the KayKit playground's scene documents
@@ -157,7 +157,7 @@ function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: str
   const rooms: Zone[] = p.rooms.map((r) => ({ prefab: r.prefab, x: r.door.x, z: r.door.z, turn: r.door.turn }))
   const furniture: Zone[] = [
     { prefab: HEROES[(level.index - 1) % HEROES.length], x: a.hero.x, z: a.hero.z, turn: 180, theme: lit(tint) },
-    ...stations.map((s) => ({ prefab: 'prefabs/desk_rug.json', x: s.x + RETURN.width / 2, z: s.z - SEAT_OFFSET / 2 + 0.05, turn: 0, theme: RUG })),
+    ...stations.map((s) => ({ prefab: 'prefabs/desk_rug.json', ...fromDesk(s, RETURN.width / 2, -SEAT_OFFSET / 2 + 0.05), turn: s.turn, theme: RUG })),
     { prefab: 'prefabs/office_lounge.json', x: a.lounge.x, z: a.lounge.z, turn: 0, theme: own },
     { prefab: 'prefabs/office_coffee.json', x: right, z: a['elevator.doors'].z + 0.6, turn: 270, theme: own },
     ...troughs(a['elevator.doors'].z + 0.6 + COFFEE.length + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: right - 0.45, z, turn: 90, theme: own })),

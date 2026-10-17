@@ -14,7 +14,11 @@
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/desk.ts#makeStation",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
-    "hub/renderers/tower3d/src/main.ts#hire"
+    "hub/renderers/tower3d/src/main.ts#hire",
+    "hub/renderers/tower3d/src/layout.ts#DESK_TURN",
+    "hub/renderers/tower3d/src/layout.ts#fromDesk",
+    "hub/renderers/tower3d/src/layout.ts#turned",
+    "hub/renderers/tower3d/src/layout.ts#deskSpot"
   ]
 }
 ---
@@ -36,6 +40,13 @@ already opens.
   one reviewer per author, and one whose author leaves first takes the lowest free desk then. So the open desk, where the next worker sits, is the lowest free one
   ([`openStation`](ref:hub/renderers/tower3d/src/layout.ts#openStation)). Only it offers a hire, and only
   while its floor offers `spawn`.
+- A workstation carries its `turn` (degrees about +y, 0 facing +z): every one faces +x
+  ([`DESK_TURN`](ref:hub/renderers/tower3d/src/layout.ts#DESK_TURN), [[floor-plan]]). What is placed about a desk is
+  given in its desk space (its worker facing +z) and put on the level through that turn
+  ([`fromDesk`](ref:hub/renderers/tower3d/src/layout.ts#fromDesk)): a reviewer's place beside its author, its rug,
+  where you stand behind its worker when you go to its desk ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)),
+  and its collider, the box round its turned footprint ([`turned`](ref:hub/renderers/tower3d/src/layout.ts#turned)).
+  The scene turns the desk's and the station's groups, so everything on them follows.
 - The open desk's monitor reads OPEN with its keys, its strip glows in the accent, and an OPEN DESK sign
   floats where a worker's tag would be. The other free desks are dark.
 - E hires with the new-worker form's defaults ([`spawnDefaults`](ref:hub/src/shared/cards.ts#spawnDefaults)):

@@ -3,6 +3,7 @@ import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
 import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room } from './floorplan.ts'
+import { turnXZ } from '../../kaykit/src/catalog.ts'
 import { gamesOf } from './games.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
@@ -14,9 +15,10 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  * stands. The scene, the walking and the panels all read positions from here.
  *
  * Every level shares one plate, centered on the origin, with the elevator core against the back wall (-z) and its
- * doors facing +z. A worker sits on the core's side of its desk, facing its monitor (+z), so walking out of the
- * elevator you look over the workers' shoulders at their screens. Every floor has the same workstations, a row of
- * them added to the building only when some floor has no free one left for its workers.
+ * doors facing +z. Every workstation is turned to face +x, away from the wing: a worker sits on the wing's side of its
+ * desk, facing its monitor, so from the control room you read the screens over the workers' shoulders. Workers walk to
+ * their desks along aisles running from the landing between the columns. Every floor has the same workstations, a row
+ * of them added to the building only when some floor has no free one left for its workers.
  *
  * Each floor's back-left corner is a loft (src/floorplan.ts): a deck over the wing, reached by a stair along its edge.
  * The control room stands on the deck's back, entered from the terrace before it and glazed toward the desks: a video
@@ -43,8 +45,14 @@ export const DOOR_WIDTH = 2
 export const DESK = { width: 2.4, depth: 1.1, height: 0.75 }
 /** The L's return off a desk's right end (+x), flush with its back edge and as high: `width` along x, `depth` along z. */
 export const RETURN = { width: 0.75, depth: 1.5 }
-/** From a desk's center to its worker's seat, toward the core. */
+/** From a desk's center to its worker's seat, behind the desk (desk space -z). */
 export const SEAT_OFFSET = 1.0
+/** Which way every workstation faces, degrees about +y from +z: +x, its back to the control room. */
+export const DESK_TURN = 90
+/** Behind a worker's seat (desk space), where its way to the desk comes in. */
+const BEHIND_SEAT = 0.9
+/** How far out of the elevator's doors a worker's way runs across the landing, clear of the planters beside them. */
+const ACROSS_LANDING = 1.4
 
 const COLUMNS = 4
 export const COLUMN_SPACING = 5.8
@@ -110,11 +118,14 @@ const ROOM_WALL = 0.15
 /** A picture's aspect: a poster's (src/showing.ts). */
 export const PICTURE_ASPECT = 1.6
 
-/** A workstation on a floor, numbered from the landing, left to right then row by row. */
-export type StationSlot = { n: number; x: number; z: number }
+/**
+ * A workstation on a floor, numbered from the landing, left to right then row by row: its desk's centre, and its turn
+ * (degrees about +y; 0 faces +z). Desk space is the desk's own frame before that turn: its worker faces +z.
+ */
+export type StationSlot = { n: number; x: number; z: number; turn: number }
 /**
  * A workstation with its worker. A reviewer whose author is at a desk sits beside it, at the free end of the author's
- * desk (`beside`, the author's id): `n` is the author's workstation, `x` and `z` the reviewer's own place there.
+ * desk (`beside`, the author's id): `n` and `turn` are the author's workstation's, `x` and `z` the reviewer's own place there.
  */
 export type DeskSlot = StationSlot & { card: Card; beside?: string }
 
@@ -486,6 +497,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     n,
     x: ROOM.width / 2 + (n % COLUMNS - (COLUMNS - 1) / 2) * COLUMN_SPACING,
     z: firstRow + Math.floor(n / COLUMNS) * ROW_SPACING,
+    turn: DESK_TURN,
   })
   const bench: Run = { x: room.minX + 0.6, z: room.minZ + KIOSK_FROM - KIOSK_DEPTH / 2, dx: 0, dz: 1, length: ROOM.depth - WALL - (KIOSK_FROM - KIOSK_DEPTH / 2), turn: 90 }
   const kiosksOf = (list: Shell[]): KioskSlot[] => {
@@ -499,7 +511,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       if ('n' in seat) return { card, ...stationAt(seat.n) }
       const at = own(seat.beside)
       const by = beside(floor.cards.find((c) => c.id === seat.beside)!)
-      return { card, ...at, x: at.x + by.x, z: at.z + by.z, beside: seat.beside }
+      return { card, ...at, ...fromDesk(at, by.x, by.z), beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
     return {
@@ -602,21 +614,33 @@ export const videoWallBand = (p: Pick<Plan, 'width' | 'depth'>): Solid => {
 }
 
 
+/** A point in a workstation's desk space (`dx` along its desk, `dz` toward its monitor), on the level. */
+export function fromDesk(s: Pick<StationSlot, 'x' | 'z' | 'turn'>, dx: number, dz: number) {
+  const [x, z] = turnXZ(dx, dz, s.turn)
+  return { x: s.x + x, z: s.z + z }
+}
+
+/** A footprint given in a workstation's desk space, as the box round it on the level. */
+export function turned(local: Box, s: Pick<StationSlot, 'x' | 'z' | 'turn'>): Box {
+  const corners = [[local.minX, local.minZ], [local.minX, local.maxZ], [local.maxX, local.minZ], [local.maxX, local.maxZ]].map(([x, z]) => fromDesk(s, x, z))
+  const xs = corners.map((c) => c.x)
+  const zs = corners.map((c) => c.z)
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) }
+}
+
 /**
- * The way from just outside the elevator's doors to the seat at a desk centered at (x, z): across the landing, down
- * the aisle on the desk's left past the rows in front, then behind the chair and into it.
+ * The way from just outside the elevator's doors to the seat at the workstation `s` (a reviewer's place beside its
+ * author's counts as one): across the landing to the aisle along the backs of the desk's column, down it to the desk's
+ * row, then behind the chair and into it.
  */
-export function walkway(p: Plan, x: number, z: number) {
+export function walkway(p: Plan, s: Pick<StationSlot, 'x' | 'z' | 'turn'>) {
   const front = coreFront(p)
-  const behind = z - SEAT_OFFSET - 0.9
-  const firstRow = front + LANDING - SEAT_OFFSET - 0.9
-  const aisle = x - COLUMN_SPACING / 2
-  const down = behind > firstRow ? [{ x: aisle, z: firstRow }, { x: aisle, z: behind }] : []
-  return [{ x: 0, z: front + 0.4 }, ...down, { x, z: behind }, { x, z: z - SEAT_OFFSET }]
+  const aisle = s.x - COLUMN_SPACING / 2
+  return [{ x: 0, z: front + 0.4 }, { x: aisle, z: front + ACROSS_LANDING }, { x: aisle, z: s.z }, fromDesk(s, 0, -SEAT_OFFSET - BEHIND_SEAT), fromDesk(s, 0, -SEAT_OFFSET)]
 }
 
 /** Standing behind a worker, looking at its screen. */
-export const deskSpot = (d: DeskSlot) => ({ x: d.x, z: d.z - SEAT_OFFSET - 2.3, yaw: 0 })
+export const deskSpot = (d: DeskSlot) => ({ ...fromDesk(d, 0, -SEAT_OFFSET - 2.3), yaw: (d.turn * Math.PI) / 180 })
 
 /** Where a game's cabinet stands, with its level, if its floor's arcade has room for it. */
 export function cabinetOf(p: Plan, project: string, id: string) {
@@ -719,6 +743,9 @@ function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[]
 /** The floor a shelf piece takes: `width` along its wall, half a metre out from it. */
 const shelfFloor = (s: ShelfSlot) => (s.turn % 180 === 0 ? box(s.x, s.z, s.width, 0.5) : box(s.x, s.z, 0.5, s.width))
 
+/** A workstation's floor in desk space: the desk and its return, and its chair behind it. */
+const WORKSTATION = box(RETURN.width / 2, -0.35, DESK.width + RETURN.width + 0.1, DESK.depth + 0.6 + SEAT_OFFSET)
+
 /** What a walker on a level's floor bumps into: its walls and the furniture. */
 export function colliders(p: Plan, level: Level): Box[] {
   const fixed = [...walls(p, level), ...level.zones.filter((z) => z.y === undefined).flatMap((z) => z.boxes)]
@@ -737,7 +764,7 @@ export function colliders(p: Plan, level: Level): Box[] {
   return [
     ...fixed,
     box(filingSpot(p).x, filingSpot(p).z, FILING.depth + 0.1, FILING.width + 0.1),
-    ...[...level.desks.filter((d) => !d.beside), ...level.free].map((s) => box(s.x + RETURN.width / 2, s.z - 0.35, DESK.width + RETURN.width + 0.1, DESK.depth + 0.6 + SEAT_OFFSET)),
+    ...[...level.desks.filter((d) => !d.beside), ...level.free].map((s) => turned(WORKSTATION, s)),
     ...(level.pigeonhole ? [box(level.pigeonhole.x, level.pigeonhole.z, PIGEONHOLE.depth + 0.1, PIGEONHOLE.columns * PIGEONHOLE.cell + 0.2)] : []),
     ...level.shelf.map(shelfFloor),
     ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),

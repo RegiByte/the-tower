@@ -1621,7 +1621,7 @@ const opened = wallNow() / 1000
  */
 /** What a petted cat sits on: the desk it watches once it is up there, else its floor, so a cat petted mid-walk stays down. */
 const petHeight = (cat: Cat, waiter: Desk | undefined) =>
-  cat.watching && cat.root.position.y > levelY(cat.level) + DESK.height / 2 ? deskPerch(waiter!).y : levelY(cat.level)
+  cat.watching && cat.root.position.y > levelY(cat.level) + DESK.height / 2 ? deskPerch(waiter!).at.y : levelY(cat.level)
 
 function tickCats(dt: number, t: number) {
   const places = new Map(CATS.map((name) => [name, catAt(name, opened + t, s.plan)]))
@@ -1636,7 +1636,10 @@ function tickCats(dt: number, t: number) {
     if (s.pet?.name === cat.name) {
       const stroke = strokeAt(petProgress(s.pet, s.simNow), s.pet.tailward)
       leanIn(cat, stroke?.reach ?? 0, stroke?.press ?? 0, petHeight(cat, waiter), t)
-    } else if (cat.watching) chase(cat, s.plan, level!, deskPerch(waiter!), Math.PI, dt, t)
+    } else if (cat.watching) {
+      const perch = deskPerch(waiter!)
+      chase(cat, s.plan, level!, perch.at, perch.face, dt, t)
+    }
     else if (cat.following) tagAlong(cat, s.plan, s.me, dt, t)
     else if (cat.returning) cat.returning = !steer(cat, s.plan, place.level, place, 0.05, CAT_SPEED, dt, t)
     else roam(cat, place, levelY(place.level), t)
