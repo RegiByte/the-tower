@@ -14,6 +14,7 @@
     "hub/renderers/tower3d/src/desk.ts#seatedPose",
     "hub/renderers/tower3d/src/life.ts#arrivalPose",
     "hub/renderers/tower3d/src/life.ts#leaverPose",
+    "hub/renderers/tower3d/src/rig.ts#seatedness",
     "hub/renderers/tower3d/kaykit/Characters/README.md",
     "hub/renderers/tower3d/src/rig.ts#loadCast",
     "hub/renderers/tower3d/src/rig.ts#pose",
@@ -116,7 +117,11 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   the sim clock is read against, and a summon from the sim moment the desk sees a new subagent, so frames stay a
   function of the clock and the board. Arriving and leaving, the worker sits down and stands up
   ([`arrivalPose`](ref:hub/renderers/tower3d/src/life.ts#arrivalPose),
-  [`leaverPose`](ref:hub/renderers/tower3d/src/life.ts#leaverPose)), its body lifted onto the seat over the clip. A
+  [`leaverPose`](ref:hub/renderers/tower3d/src/life.ts#leaverPose)). KayKit's sit clips carry the body straight back
+  onto a seat behind it, so the worker walks up from the side to where it stands in front of its chair, turns to the
+  desk and sits back; its chair, pulled back until then, comes in under it and the body is lifted onto the seat as
+  far as the clip's hips have travelled ([`seatedness`](ref:hub/renderers/tower3d/src/rig.ts#seatedness)), and the
+  reverse as it goes, the chair tucked back in once it steps away. A
   walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed.
 - Looks are data: `renderers/tower3d/wardrobe.json`, checked by a zod schema
   ([`Wardrobe`](ref:hub/renderers/tower3d/src/wardrobe.ts#Wardrobe)) as the bundle loads it
