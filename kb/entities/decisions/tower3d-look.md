@@ -52,7 +52,8 @@ The lighting costs GPU time, so anyone it annoys, or whose machine it slows, nee
   ([`inNeighbourhood`](ref:hub/renderers/tower3d/src/exterior/neighbourhood.ts#inNeighbourhood)); at night only a
   few of its windows light.
   The shell ([`frame`](ref:hub/renderers/tower3d/src/exterior/shell.ts#frame),
-  `spandrel`, `parapet`) is capped mullions, panelled spandrels and a coping. The roof plant
+  `spandrel`, `parapet`) is capped mullions, panelled spandrels and a coping, a floor's glass the height of its
+  6.6 m storey and the shaft's head over the roof 4.2 m. The roof plant
   ([`roofPlant`](ref:hub/renderers/tower3d/src/exterior/roof.ts#roofPlant), placed by
   [`plantOnRoof`](ref:hub/renderers/tower3d/src/world.ts#plantOnRoof)) is in steel and bronze.
 - *The city follows the clock*, every part a pure function of the wall clock's hour (`?at`) or sim time

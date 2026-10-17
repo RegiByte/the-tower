@@ -1218,11 +1218,13 @@ const nextWaiting = () => goMove('waiting')
 
 function startRide(to: number) {
   if (s.ride || to === s.me.level || !inside(carBox(s.plan), s.me.x, s.me.z)) return
-  s.ride = { from: s.me.level, to, t: 0, move: Math.min(3.5, 0.9 + 0.3 * Math.abs(to - s.me.level)) }
+  s.ride = { from: s.me.level, to, t: 0, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) }
   renderElevator()
 }
 
 const DOORS_SHUT = 0.55
+/** The car's ride: the seconds it takes to get going and stop, its speed in metres a second, and the longest a ride takes. */
+const RIDE = { start: 0.9, speed: 14, most: 3.5 }
 function floorY() {
   if (!s.ride) return levelY(s.me.level)
   const k = ease(THREE.MathUtils.clamp((s.ride.t - DOORS_SHUT) / s.ride.move, 0, 1))

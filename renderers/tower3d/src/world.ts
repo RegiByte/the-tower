@@ -11,7 +11,7 @@ import { WORLD, clockAt, paceWords, weekElapsed } from './cards.ts'
 import { wallNow } from './clock.ts'
 import type { Level, Plan } from './layout.ts'
 import { act } from './acts.ts'
-import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SLAB, STOREY, WALL, bigScreens, coreFront, levelHeight, loungeSpots, rateLimitBoxes, receptionBox, type BigScreen } from './layout.ts'
+import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SHAFT_HEAD, SLAB, STOREY, WALL, bigScreens, coreFront, levelHeight, loungeSpots, rateLimitBoxes, receptionBox, type BigScreen } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { buildParty, type Party } from './party.ts'
 import { floorPalette, tintOf } from './palette.ts'
@@ -94,7 +94,7 @@ function foot(p: Plan, level: Level) {
   return g
 }
 
-/** The shaft's walls, the full height of the building and a storey over the roof. */
+/** The shaft's walls, the full height of the building and its head over the roof. */
 function shaft(p: Plan, top: number) {
   const g = new THREE.Group()
   const back = -p.depth / 2
@@ -113,7 +113,7 @@ function landing(p: Plan, level: Level, tint: string, facingColor: THREE.ColorRe
   const g = new THREE.Group()
   const front = coreFront(p)
   const half = CORE.width / 2
-  const h = levelHeight(level.index)
+  const h = level.kind === 'roof' ? SHAFT_HEAD : levelHeight(level.index)
   const jambW = half - DOOR_WIDTH / 2
   const facing = toon(facingColor)
   g.add(block(jambW, h, WALL * 2, facing, -(DOOR_WIDTH / 2 + jambW / 2), 0, front))
@@ -287,7 +287,7 @@ for (const m of Object.values(ROOF_FINISH)) m.userData.shared = true
 
 /** The roof plant of exterior/roof.ts: plant on the shaft's cap, a water tank, AC units and a pipe run at the back. */
 function plantOnRoof(p: Plan) {
-  const cap = STOREY + 0.4
+  const cap = SHAFT_HEAD + 0.4
   const core = (-p.depth / 2 + coreFront(p)) / 2
   const d = p.depth / 2
   const made = roofPlant([
@@ -310,7 +310,7 @@ function roofLevel(p: Plan, level: Extract<Level, { kind: 'roof' }>, hostUp: boo
   g.add(new THREE.Mesh(parapet.panel, toonPainted('#141a26')), new THREE.Mesh(parapet.trim, toonPainted(SHELL.coping)))
   g.add(plantOnRoof(p))
   const crown = brandPlate(1.6)
-  crown.position.set(0, STOREY + 1.3, coreFront(p) + WALL + 0.05)
+  crown.position.set(0, SHAFT_HEAD + 1.3, coreFront(p) + WALL + 0.05)
   g.add(crown)
   if (!hostUp) {
     const down = sprite('HOST DOWN', 1.2, { color: '#fff', bg: WORLD.broken })
@@ -501,7 +501,7 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
   const doors = new Map<number, Doors>()
   const waitLamps = new Map<number, THREE.MeshBasicMaterial>()
   const roof = p.levels.at(-1)!
-  group.add(shaft(p, roof.y + STOREY))
+  group.add(shaft(p, roof.y + SHAFT_HEAD))
   let beacon = glowing('#ff3b3b')
   const { group: partyGroup, party } = buildParty(p, models, pickables)
   const limits = new THREE.Group()

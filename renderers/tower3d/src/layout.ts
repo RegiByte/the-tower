@@ -28,7 +28,7 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  */
 
 export const LOBBY_HEIGHT = 5.5
-export const STOREY = 4.2
+export const STOREY = 6.6
 export const SLAB = 0.3
 export const WALL = 0.25
 export const EYE = 1.6
@@ -156,6 +156,8 @@ export type Box = { minX: number; maxX: number; minZ: number; maxZ: number }
 
 export const levelY = (index: number) => (index === 0 ? 0 : LOBBY_HEIGHT + (index - 1) * STOREY)
 export const levelHeight = (index: number) => (index === 0 ? LOBBY_HEIGHT : STOREY)
+/** The shaft's head over the roof, which the roof's landing stands in. */
+export const SHAFT_HEAD = 4.2
 
 const rowsFor = (desks: number) => Math.max(MIN_ROWS, Math.ceil(desks / COLUMNS))
 
