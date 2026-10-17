@@ -4,7 +4,7 @@ import { act } from './acts.ts'
 import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from './cards.ts'
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
-import { ROOM, SLAB, STOREY, WALL, consoleSpot, roomBox, roomDoor, shelfX, videoWallZ } from './layout.ts'
+import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, shelfX, videoWallZ } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf, type FloorPalette } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
@@ -110,16 +110,17 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   const tint = tintOf(level.floor)
   const r = roomBox(p)
   const door = roomDoor(p)
-  const h = STOREY - SLAB
+  const h = ROOM_HEIGHT
   const cx = (r.minX + r.maxX) / 2
   const wall = toon(colors.wall)
   const trim = glowing(tint)
 
   g.add(block(ROOM.width, h, WALL, toon('#141a26'), cx, 0, r.minZ + WALL / 2 + 0.02))
-  g.add(block(ROOM.width - 0.6, 2.75, 0.06, toon('#0b0f18'), cx, 1.05, videoWallZ(p) - 0.05))
-  g.add(block(ROOM.width - 0.6, 0.04, 0.03, trim, cx, 1.0, videoWallZ(p) - 0.02))
+  const backing = { bottom: VIDEO_WALL.bottom - 0.15, top: VIDEO_WALL.top + 0.1 }
+  g.add(block(ROOM.width - 0.6, backing.top - backing.bottom, 0.06, toon('#0b0f18'), cx, backing.bottom, videoWallZ(p) - 0.05))
+  g.add(block(ROOM.width - 0.6, 0.04, 0.03, trim, cx, backing.bottom - 0.05, videoWallZ(p) - 0.02))
   const title = plate(`${String(level.index).padStart(2, '0')}  ·  ${level.name.toUpperCase()}  ·  CONTROL`, 0.22, { color: tint, px: 56 })
-  title.position.set(cx, 0.7, videoWallZ(p))
+  title.position.set(cx, backing.bottom - 0.35, videoWallZ(p))
   g.add(title)
 
   const side = (from: number, to: number) => block(WALL * 2, h, to - from, wall, r.maxX, 0, (from + to) / 2)
@@ -128,7 +129,7 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   g.add(block(0.04, 0.05, door.maxZ - door.minZ + 0.1, trim, r.maxX + WALL + 0.01, DOOR_HEIGHT, (door.minZ + door.maxZ) / 2))
   g.add(block(0.04, 0.05, r.maxZ - r.minZ, trim, r.maxX - WALL - 0.01, 0.1, (r.minZ + r.maxZ) / 2))
   const sign = plate('CONTROL ROOM', 0.3, { color: tint, px: 64 })
-  sign.position.set(r.maxX + WALL + 0.02, DOOR_HEIGHT + 0.5, (door.minZ + door.maxZ) / 2)
+  sign.position.set(r.maxX + WALL + 0.02, (DOOR_HEIGHT + h) / 2, (door.minZ + door.maxZ) / 2)
   sign.rotation.y = Math.PI / 2
   g.add(sign)
 

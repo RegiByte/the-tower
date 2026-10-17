@@ -131,7 +131,7 @@ const troughs = (from: number, to: number) => {
 
 /**
  * A floor's zones, from where its workstations stand: a rug under each, a lounge facing the front glass in the corner
- * left of the desks and in front of the control room, a round table to meet at in the front strip past the last aisle,
+ * left of the desks and in front of the control room, clear of the loft's stair, a round table to meet at in the front strip past the last aisle,
  * a coffee point along the right glass beside the landing, the floor's hero at the end of the aisle you look down from
  * the elevator, planters at the front glass where the other aisles end, low planters along the side glass, planters
  * framing the elevator's doors, and a couch facing the Running board. `tint` is the project's colour as `#rrggbb`.
@@ -145,7 +145,7 @@ function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: str
   const room = roomBox(p)
   const strip = { from: lastRow + DESK.depth / 2 + 0.7, to: front }
   const loungeZ = Math.max(strip.from, room.maxZ + WALL + 0.6) + LOUNGE.back
-  const loungeX = (room.minX + Math.min(...xs) - COLUMN_SPACING / 2) / 2
+  const loungeX = (room.minX + p.loft.stair.box.minX) / 2
   const aisles = [...new Set(xs)].sort((a, b) => a - b).slice(1).map((x) => x - COLUMN_SPACING / 2)
   const view = aisles.reduce((a, b) => (Math.abs(b) < Math.abs(a) ? b : a))
   const own = floorTheme(tint)

@@ -25,6 +25,7 @@ import type { LinePick, StatsRange } from '../../../src/shared/panels.ts'
 import type { Anchor } from '../../../src/shared/reviews.ts'
 import type { DeskTab, LogbookTab } from './ui.ts'
 import { STATS_ALL } from '../../../src/shared/panels.ts'
+import { loftOf } from './floorplan.ts'
 import { LIT } from './light/setting.ts'
 import type { Walker } from './walker.ts'
 import type { World } from './world.ts'
@@ -32,7 +33,8 @@ import type { World } from './world.ts'
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
 export type Ride = { from: number; to: number; t: number; move: number }
 export type Flight = { from: THREE.Vector3; to: THREE.Vector3; fromQ: THREE.Quaternion; toQ: THREE.Quaternion; start: number; ms: number; done?: () => void }
-export type Standing = { x: number; z: number; yaw: number; pitch?: number }
+/** Where to stand: `y` is how high over the level's floor, on a stair or the loft's deck, 0 unless given. */
+export type Standing = { x: number; z: number; yaw: number; pitch?: number; y?: number }
 /** A cut to elsewhere in the building: out to black, there once `at` has passed, back in. */
 export type Cut = { at: number; level: number; spot: Standing; then: () => void }
 export type Threads = Awaited<ReturnType<typeof tower.conversations>>
@@ -71,7 +73,7 @@ export type Panel =
   | GamePanel
 /** A verb whose key or button is held: it runs once held for long enough, `by` the key code, `mouse` or `door`. */
 export type Hold = { act: Act; verb: Verb; start: number; by: string }
-export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch'>
+export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch' | 'y'>
 export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
@@ -222,7 +224,7 @@ export type State = {
   replay: { id: string; session: string } | undefined
 }
 
-const NO_PLAN: Plan = { width: 0, depth: 0, roomDepth: 0, levels: [] }
+const NO_PLAN: Plan = { width: 0, depth: 0, roomDepth: 0, levels: [], loft: loftOf({ width: 0, depth: 0 }, 0) }
 
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,

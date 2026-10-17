@@ -52,6 +52,8 @@ landing doors of every level it passes go by.
   sim time, so a level shown again is posed where it should be, fading in from where it stopped.
 - Picking already skipped what is hidden (`shown` in `main.ts`), so other levels cannot be aimed at, which they
   already could not be through a slab.
+- A floor's loft ([[floor-plan]]) stands inside its level: the deck's top is 3.3 m over a 6.6 m storey, and
+  nothing on it reaches the slab over it, so the box still closes.
 - The door reports what the last frame drew ([`DoorState`](ref:hub/renderers/tower3d/src/door.ts#DoorState)
   `drawn`: calls and triangles, your hands aside), and the frames scenario leaves it out, as it does fps.
 

@@ -24,7 +24,7 @@ import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from '.
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
-import { CABINET, DESK, EYE, bigScreens, cabinetOf, carBox, colliders, coreFront, deskOf, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, walls, type Box, type Plan } from './layout.ts'
+import { CABINET, DESK, EYE, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
 import { loadModels } from './models.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
@@ -63,7 +63,8 @@ import { itemKind, itemPath, itemsCss, keptOf, readsText } from '../../../src/sh
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } from './stage.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
-import { aim, fall, jump, look, walk, type Walker } from './walker.ts'
+import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
+import { groundAt, layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
 
 const $ = (id: string) => document.getElementById(id)!
@@ -106,11 +107,12 @@ const screenDistance = (path: string) => {
   return at && Math.min(...at.map((p) => p.distanceTo(camera.position)))
 }
 
-/** What the walker bumps into on its level. */
-let boxesAt: { plan?: Plan; level: number; boxes: Box[] } = { level: -1, boxes: [] }
+/** What the walker bumps into on its level and layer. */
+let boxesAt: { plan?: Plan; level: number; layer?: Layer; boxes: Box[] } = { level: -1, boxes: [] }
 function boxesHere() {
-  if (boxesAt.plan === s.plan && boxesAt.level === s.me.level) return boxesAt.boxes
-  boxesAt = { plan: s.plan, level: s.me.level, boxes: colliders(s.plan, here()) }
+  const layer = layerAt(s.me.y)
+  if (boxesAt.plan === s.plan && boxesAt.level === s.me.level && boxesAt.layer === layer) return boxesAt.boxes
+  boxesAt = { plan: s.plan, level: s.me.level, layer, boxes: collidersOn(s.plan, here(), layer) }
   return boxesAt.boxes
 }
 
@@ -257,7 +259,7 @@ function lookAtNew() {
   if (s.panel?.kind === 'desk' && s.panel.id === newest.c.id) return openShown(newest.c.id, newest.sh)
   goShown(newest.c.id, newest.sh.target)
 }
-const spotOf = ({ level, x, z, yaw, pitch }: Walker): Spot => ({ level, x, z, yaw, pitch })
+const spotOf = ({ level, x, z, yaw, pitch, y }: Walker): Spot => ({ level, x, z, yaw, pitch, y })
 
 /** Every project's colour as `#rrggbb`, by id. */
 const tintsOf = (b: Board) => Object.fromEntries(b.floors.map((f) => [f.id, tintOf(f)]))
@@ -559,9 +561,9 @@ function frameAside(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
   flyTo(from, lookQuaternion(from, from.clone().sub(normal)))
 }
 
-/** Standing at `spot` on `level` at once, on its floor, out of any ride or flight. */
+/** Standing at `spot` on `level` at once, out of any ride or flight. */
 function place(level: number, spot: Standing) {
-  s.me = { ...s.me, pitch: 0, ...spot, level, y: 0, vy: 0 }
+  s.me = { ...s.me, pitch: 0, ...spot, level, y: spot.y ?? 0, vy: 0 }
   s.ride = undefined
   s.flight = undefined
   aim(camera, s.me, floorY())
@@ -1273,11 +1275,11 @@ const pickables = () => [
 ]
 
 let occluders: { plan?: Plan; level: number; boxes: THREE.Box3[] } = { level: -1, boxes: [] }
-/** The level's walls as boxes from its floor to its ceiling, rebuilt when the plan or your level changes. */
+/** What stops a look across the level, as boxes in the world, rebuilt when the plan or your level changes. */
 function occludersHere() {
   if (occluders.plan === s.plan && occluders.level === s.me.level) return occluders.boxes
   const y = levelY(s.me.level)
-  const boxes = walls(s.plan, here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y, b.minZ), new THREE.Vector3(b.maxX, y + levelHeight(s.me.level), b.maxZ)))
+  const boxes = solids(s.plan, here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y + b.bottom, b.minZ), new THREE.Vector3(b.maxX, y + b.top, b.maxZ)))
   occluders = { plan: s.plan, level: s.me.level, boxes }
   return boxes
 }
@@ -1495,7 +1497,7 @@ function tickWalker(f: Frame) {
 }
 
 function stepWalker({ dt, turned }: Frame) {
-  s.me = fall(s.me, dt)
+  s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(s.plan.loft, s.me.x, s.me.z, s.me.y) : 0, dt)
   if (s.view !== 'walk' || !captured()) return
   s.me = look(s.me, turned)
   if (s.ride || s.flight) return

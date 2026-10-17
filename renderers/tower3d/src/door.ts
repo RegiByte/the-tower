@@ -17,7 +17,7 @@ import { aim, facing, type Walker } from './walker.ts'
  *
  *   await tower3d.ready()                  the first board is built and its pictures read
  *   tower3d.capture()                      walk as if the mouse were locked (headless Chrome never grants the lock)
- *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once
+ *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once (y: how high over its floor, on the deck)
  *   tower3d.acts('station')                every thing in the world of a kind, as it is aimed at (all without a kind)
  *   tower3d.locate({ kind: 'desk', id })   where a thing stands: its level and its center; teleport within reach
  *                                          (on a stepped clock, guests and cats stand somewhere once a step follows the board)
@@ -38,7 +38,7 @@ export type Door = {
   pictured(): Promise<void>
   capture(): void
   release(): void
-  teleport(spot: Pick<Walker, 'level' | 'x' | 'z'> & Partial<Pick<Walker, 'yaw' | 'pitch'>>): void
+  teleport(spot: Pick<Walker, 'level' | 'x' | 'z'> & Partial<Pick<Walker, 'yaw' | 'pitch' | 'y'>>): void
   acts(kind?: Act['kind']): Act[]
   locate(target: Act): { level: number; x: number; y: number; z: number }
   aimAt(target: Act): Act | undefined
@@ -192,10 +192,10 @@ export function installDoor(e: Engine) {
       drive(undefined)
       e.captureChanged()
     },
-    teleport({ level, x, z, yaw = s.me.yaw, pitch = 0 }) {
+    teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
       if (!s.plan.levels[level]) throw new Error(`no level ${level}: the tower has ${s.plan.levels.length}`)
       if (s.view === 'overview') e.leaveOverview()
-      e.place(level, { x, z, yaw, pitch })
+      e.place(level, { x, z, yaw, pitch, y })
     },
     acts: (kind) => everyAct(kind),
     locate(target) {

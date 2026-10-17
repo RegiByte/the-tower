@@ -2,6 +2,7 @@ import { draftsOf } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
+import { DECK, loftOf, loftWalls, type Layer, type Loft } from './floorplan.ts'
 import { gamesOf } from './games.ts'
 import type { ZoneSlot } from './zones.ts'
 
@@ -20,7 +21,7 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  * Each floor's back-left corner is its control room, entered from the side facing the elevator: a video wall of
  * the floor's workers on its back wall, the floor's shells on a bench along the facade, the shelf along its inner
  * wall, and the console in the middle. A floor keeping games has an arcade along the room's glass front, a cabinet
- * per game.
+ * per game. Over the room is the loft's deck, reached by a stair along the room's inner wall (src/floorplan.ts).
  *
  * Right of the core, a partition stands free before the back glass: the floor's shared wall. A floor keeping drafts
  * has its corkboard on the wall's left, a note pinned on it per draft (what goes in); every floor hangs its gallery
@@ -58,7 +59,9 @@ export const ROOM = { width: 9, depth: 12 }
 /** The room's door, in its wall facing the core: centered this far in front of the core's front. */
 const ROOM_DOOR_AT = 3.4
 export const ROOM_DOOR = 2.4
-const VIDEO_WALL = { width: 8, bottom: 1.2, top: 3.65, gap: 0.12 }
+/** The control room's clear height: under the loft's deck. */
+export const ROOM_HEIGHT = DECK.top - DECK.thick
+export const VIDEO_WALL = { width: 8, bottom: 0.95, top: 2.7, gap: 0.12 }
 const SHELF_WIDTH: Record<'md' | 'html' | 'url' | 'link', number> = { md: 1.5, html: 1.5, url: 1.5, link: 1 }
 const SHELF_GAP = 0.3
 /** Where the shelf and the shell bench start, from the room's back wall. */
@@ -146,6 +149,8 @@ export type Plan = {
   roomDepth: number
   /** Lobby first, a floor per project, the roof last. */
   levels: Level[]
+  /** Every floor's loft, the same on each. */
+  loft: Loft
 }
 
 /** A worker off duty since today began, at the roof's party, with the project it worked for. Where it is changes with time (src/life.ts#guestAt). */
@@ -388,13 +393,14 @@ export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth
 
 const lastAt = (t: Floor['threads'][number]) => t.last?.at ?? ''
 
-function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDepth'>): PigeonholeSlot | undefined {
+/** A floor's pigeonhole against the room's outer wall, between the door and the stair, under the stair's landing. */
+function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDepth' | 'loft'>): PigeonholeSlot | undefined {
   if (!floor.collections.some((c) => c.id === REVIEWS)) return undefined
   const r = roomBox(p)
   const d = roomDoor(p)
   const fit = PIGEONHOLE.columns * PIGEONHOLE.rows
   const threads = floor.threads.toSorted((a, b) => lastAt(b).localeCompare(lastAt(a)) || a.checkout.localeCompare(b.checkout))
-  return { x: r.maxX + WALL + PIGEONHOLE.depth / 2, z: (d.maxZ + r.maxZ) / 2, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
+  return { x: r.maxX + WALL + PIGEONHOLE.depth / 2, z: (d.maxZ + p.loft.stair.box.minZ) / 2, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
 }
 
 /** The room's depth fitting what stands along its walls, the farthest end given from its back wall. */
@@ -416,6 +422,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     ...shells.filter((s) => s.length > 0).map((s) => roomFor(KIOSK_FROM + (s.length - 1) * KIOSK_SPACING + KIOSK_DEPTH / 2)),
   )
   const depth = Math.max(CORE.depth + LANDING + rows * ROW_SPACING + BACK_MARGIN, roomDepth + ROOM_FRONT)
+  const loft = loftOf({ width, depth }, WALL)
   const coreFront = -depth / 2 + CORE.depth
   const room = roomBox({ width, depth, roomDepth })
   const stationAt = (n: number): StationSlot => ({
@@ -449,7 +456,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       shelf: shelves[i].map((slot) => ({ ...slot, z: room.minZ + slot.z })),
       wall: wallFor(floor, depth),
       cork: corkFor(floor, depth),
-      pigeonhole: pigeonholeFor(floor, { width, depth, roomDepth }),
+      pigeonhole: pigeonholeFor(floor, { width, depth, roomDepth, loft }),
       arcade: arcadeFor(floor, { width, depth, roomDepth }),
     }
   })
@@ -460,6 +467,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     width,
     depth,
     roomDepth,
+    loft,
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
       ...floors,
@@ -571,26 +579,54 @@ function coreWalls(p: Plan): Box[] {
   ]
 }
 
-/** What stands floor to ceiling on a level and neither walks nor aims through: the building's shell, the core, the control room's walls and the shared wall. */
-export function walls(p: Plan, level: Level): Box[] {
+/** The building's shell round a level, as a walker meets it. */
+function shellWalls(p: Plan): Box[] {
   const w = p.width / 2
   const d = p.depth / 2
-  const shell: Box[] = [
+  return [
     { minX: -w - 1, maxX: -w + WALL, minZ: -d - 1, maxZ: d + 1 },
     { minX: w - WALL, maxX: w + 1, minZ: -d - 1, maxZ: d + 1 },
     { minX: -w - 1, maxX: w + 1, minZ: -d - 1, maxZ: -d + WALL },
     { minX: -w - 1, maxX: w + 1, minZ: d - WALL, maxZ: d + 1 },
   ]
-  if (level.kind !== 'floor') return [...shell, ...coreWalls(p)]
+}
+
+const sharedWall = (level: Extract<Level, { kind: 'floor' }>): Box => ({ minX: level.wall.minX, maxX: level.wall.maxX, minZ: level.wall.z - PARTITION.thick / 2, maxZ: level.wall.face + 0.1 })
+
+/** What stands on a level's floor and is walked round: the building's shell, the core, the control room's walls, the shared wall, and the loft's stair and post. */
+export function walls(p: Plan, level: Level): Box[] {
+  if (level.kind !== 'floor') return [...shellWalls(p), ...coreWalls(p)]
+  return [...shellWalls(p), ...coreWalls(p), ...roomWalls(p), sharedWall(level), ...loftWalls(p.loft, 'ground')]
+}
+
+/** A box that stops sight, from `bottom` to `top` over its level's floor. */
+export type Solid = Box & { bottom: number; top: number }
+
+/**
+ * What a look across a level can't pass through: the shell and the core from floor to ceiling, the control room's
+ * walls and the shared wall as high as they stand, and the loft's deck and landing.
+ */
+export function solids(p: Plan, level: Level): Solid[] {
+  const height = levelHeight(level.index)
+  const whole = (b: Box): Solid => ({ ...b, bottom: 0, top: height })
+  if (level.kind !== 'floor') return [...shellWalls(p), ...coreWalls(p)].map(whole)
+  const slab = (b: Box): Solid => ({ ...b, bottom: DECK.top - DECK.thick, top: DECK.top })
   return [
-    ...shell,
-    ...coreWalls(p),
-    ...roomWalls(p),
-    { minX: level.wall.minX, maxX: level.wall.maxX, minZ: level.wall.z - PARTITION.thick / 2, maxZ: level.wall.face + 0.1 },
+    ...[...shellWalls(p), ...coreWalls(p)].map(whole),
+    ...roomWalls(p).map((b) => ({ ...b, bottom: 0, top: ROOM_HEIGHT })),
+    { ...sharedWall(level), bottom: 0, top: PARTITION.height },
+    slab(p.loft.deck),
+    slab(p.loft.landing),
   ]
 }
 
-/** What a walker bumps into on a level: its walls and the furniture. */
+/** What a walker on a layer of a level bumps into. */
+export const collidersOn = (p: Plan, level: Level, layer: Layer) => (layer === 'deck' && level.kind === 'floor' ? deckColliders(p) : colliders(p, level))
+
+/** What a walker on a floor's deck bumps into: the shell and the deck's rails. */
+const deckColliders = (p: Plan): Box[] => [...shellWalls(p), ...loftWalls(p.loft, 'deck')]
+
+/** What a walker on a level's floor bumps into: its walls and the furniture. */
 export function colliders(p: Plan, level: Level): Box[] {
   const fixed = [...walls(p, level), ...level.zones.flatMap((z) => z.boxes)]
   if (level.kind === 'lobby') {

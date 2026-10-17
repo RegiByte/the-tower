@@ -16,6 +16,7 @@ import { instance, type Models } from './models.ts'
 import { buildParty, type Party } from './party.ts'
 import { floorPalette, tintOf } from './palette.ts'
 import { buildRoom, shellTag, shellTitle, type Bookcase } from './room.ts'
+import { buildLoft } from './loft.ts'
 import { block, dispose, glowing, glows, mesh, plate, sprite, toon, toonPainted } from './toon.ts'
 import { FINISHES, roofPlant, type Finish } from './exterior/roof.ts'
 import { mastLight } from './exterior/beacons.ts'
@@ -203,6 +204,7 @@ function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: M
   outside.position.set(-p.width / 2 + 2 + outside.geometry.parameters.width / 2, STOREY / 2, p.depth / 2 + 0.2)
   g.add(outside)
   g.add(buildRoom(p, level, colors, models, pickables, bookcases))
+  g.add(buildLoft(p.loft, colors, tint))
   g.add(buildWall(level.wall, colors.facing, tint))
   if (level.cork) g.add(buildCork(level.cork, level.floor.id, draftsOf(level.floor)!.label, tint, pickables))
   return g

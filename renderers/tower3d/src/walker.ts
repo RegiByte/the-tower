@@ -5,8 +5,8 @@ import { EYE, type Box } from './layout.ts'
 
 /**
  * You, walking: where you stand, which way you face (`yaw` 0 faces +z), the level you're on, and how high off its
- * floor you are mid-jump (`y`, rising at `vy`). `walk`, `look`, `jump` and `fall` turn a move and a turn into the
- * next walker.
+ * floor you are (`y`: on a stair, on the deck or mid-jump, rising at `vy`). `walk`, `look`, `jump` and `fallTo` turn a
+ * move and a turn into the next walker.
  */
 export type Walker = { x: number; z: number; yaw: number; pitch: number; level: number; y: number; vy: number }
 
@@ -31,15 +31,18 @@ export function walk(w: Walker, m: Move, dt: number, boxes: Box[]): Walker {
   return { ...w, ...step(boxes, w.x, w.z, dx, dz) }
 }
 
-/** Leaves the floor on a jump, if standing on it. */
-export const jump = (w: Walker, m: Move): Walker => (w.y === 0 && m.jump ? { ...w, vy: JUMP } : w)
+/** Leaves the ground on a jump, if standing on it. */
+export const jump = (w: Walker, m: Move): Walker => (w.vy === 0 && m.jump ? { ...w, vy: JUMP } : w)
 
-/** Gravity, until the walker lands. */
-export function fall(w: Walker, dt: number): Walker {
-  if (w.y === 0 && w.vy === 0) return w
+/** How far up or down a walker standing on the ground steps onto a new ground at once: a stair's tread. */
+const STEP = 0.45
+
+/** Gravity down to `ground` (the floor, a stair's tread, the deck), until the walker lands; standing within a step of it, on it. */
+export function fallTo(w: Walker, ground: number, dt: number): Walker {
+  if (w.vy === 0 && Math.abs(w.y - ground) < STEP) return w.y === ground ? w : { ...w, y: ground }
   const vy = w.vy - GRAVITY * dt
   const y = w.y + vy * dt
-  return y > 0 ? { ...w, y, vy } : { ...w, y: 0, vy: 0 }
+  return y > ground ? { ...w, y, vy } : { ...w, y: ground, vy: 0 }
 }
 
 /** The yaw and pitch that face `at` from eyes at `from`. */
