@@ -34,8 +34,8 @@ const OCTOBER = 9
 /** The scene document of a workstation's dressing: its return, its states by status, pile and season, and the places of what is drawn around its worker (slots). */
 export const DESK_DRESS = 'prefabs/desk_dress.json'
 
-/** The return's top: x and z of its center, and its half extents. */
-const TOP = { x: DESK.width / 2 + RETURN.width / 2, z: DESK.depth / 2 - RETURN.depth / 2 }
+/** The return's top: x of its center. */
+const TOP = { x: DESK.width / 2 + RETURN.width / 2 }
 
 /** The desk dressing's state for a worker's status: what it puts on the desk's right end. */
 export function statusState(card: Card): string {

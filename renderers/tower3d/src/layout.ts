@@ -45,8 +45,8 @@ export const EYE = 1.6
 export const CORE = { width: 4.4, depth: 4 }
 export const DOOR_WIDTH = 2
 export const DESK = { width: 2.4, depth: 1.1, height: 0.75 }
-/** The L's return off a desk's right end (+x), flush with its back edge and as high: `width` along x, `depth` along z. */
-export const RETURN = { width: 0.75, depth: 1.5 }
+/** The L's return off a desk's right end (+x), flush with its back edge and as high: `width` along x. */
+export const RETURN = { width: 0.75 }
 /** From a desk's center to its worker's seat, behind the desk (desk space -z). */
 export const SEAT_OFFSET = 1.0
 /** Which way every workstation faces, degrees about +y from +z: +x, its back to the control room. */
