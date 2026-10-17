@@ -62,7 +62,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
   another scene: prefabs are the hierarchy), boxes, labels, lamps, cameras, a theme (alt atlas and hue swaps per
   pack, and a model item's own laid over it by [`layTheme`](ref:hub/renderers/kaykit/src/scene.ts#layTheme)) and a light; slots (named places code fills from the board), guides (what the host draws itself: a ghost box, or one of the host's own models by name, which the editor draws)
-  and named states. A prefab is a pure function of the states its placement asks for:
+  and named states, in `groups` that exclude each other (at most one of each in a list). A prefab is a pure function of the states its placement asks for:
   [`resolve`](ref:hub/renderers/kaykit/src/scene.ts#resolve) applies each state's removals, changes and additions
   in the document's order, and [`flatten`](ref:hub/renderers/kaykit/src/scene.ts#flatten) places prefabs in their
   states, keeping each item's origin, the placements it came through and its frame, and each slot in world meters

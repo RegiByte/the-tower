@@ -122,6 +122,18 @@ export const Scene = z.object({
   slots: z.array(Slot).optional(),
   guides: z.array(Guide).optional(),
   states: z.record(z.string(), State).optional().describe('named states over the shared scene: the board picks a list of them, applied in this order'),
+  groups: z
+    .record(z.string(), z.array(z.string()))
+    .optional()
+    .describe('states that exclude each other, by group: a list of states picks at most one of each, a status, a season'),
+}).superRefine((scene, ctx) => {
+  const owner = new Map<string, string>()
+  for (const [group, names] of Object.entries(scene.groups ?? {}))
+    for (const name of names) {
+      if (!(name in (scene.states ?? {}))) ctx.addIssue({ code: 'custom', path: ['groups', group], message: `no state "${name}"` })
+      if (owner.has(name)) ctx.addIssue({ code: 'custom', path: ['groups', group], message: `"${name}" is in group ${owner.get(name)} too` })
+      owner.set(name, group)
+    }
 })
 
 export type ModelItem = z.infer<typeof ModelItem>
@@ -160,13 +172,32 @@ const SCHEMAS = { items: Item, boxes: Box, labels: Label, lamps: Lamp, slots: Sl
 export const keyOf = (e: { id?: string } | Slot) => ('name' in e ? e.name : e.id)
 
 /**
+ * The states of a scene by the group each excludes the others of: its `groups`, then each state outside them alone.
+ * A scene without groups has one, named '', of all its states: it is drawn in one at a time.
+ */
+export function groupsOf(scene: Scene): Record<string, string[]> {
+  const names = Object.keys(scene.states ?? {})
+  if (!scene.groups) return names.length ? { '': names } : {}
+  const grouped = new Set(Object.values(scene.groups).flat())
+  return { ...scene.groups, ...Object.fromEntries(names.filter((n) => !grouped.has(n)).map((n) => [n, [n]])) }
+}
+
+/** Every list of states a scene can be drawn in: at most one of each group, the shared scene first. */
+export const picks = (scene: Scene): string[][] =>
+  Object.values(groupsOf(scene)).reduce<string[][]>((lists, group) => lists.flatMap((l) => [l, ...group.map((n) => [...l, n])]), [[]])
+
+/**
  * The scene in the states `names`, applied in the document's own order of `states`: each removes, then sets fields
- * on, then adds. `doc` names the document in errors. A state the scene has not, or a name nothing answers to, is an
- * error.
+ * on, then adds. `doc` names the document in errors. A state the scene has not, two of one group, or a name nothing
+ * answers to, is an error.
  */
 export function resolve(scene: Scene, names: string[], doc: string): Resolved {
   const states = scene.states ?? {}
   for (const n of names) if (!(n in states)) throw new Error(`${doc}: no state "${n}" (its states: ${Object.keys(states).join(', ') || 'none'})`)
+  for (const [group, members] of Object.entries(scene.groups ?? {})) {
+    const picked = names.filter((n) => members.includes(n))
+    if (picked.length > 1) throw new Error(`${doc}: ${picked.join(' and ')} are both of group ${group}: pick one`)
+  }
   const { states: _, ...shared } = scene
   const sourced = (lists: Partial<{ [K in Kind]: Element<K>[] }>, prefix: string): Lists => {
     const tag = <K extends Kind>(k: K) => (lists[k] ?? []).map((e, i) => ({ ...e, src: `${prefix}${k}/${i}` })) as Sourced<Element<K>>[]

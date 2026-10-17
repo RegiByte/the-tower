@@ -31,7 +31,8 @@ catalog, its norms, themes and per-pack batches (decision `office-kaykit`).
   "cameras": { "name": { "pos": [x, y, z], "look": [x, y, z], "fov": 50 } | { "view": "iso", "frame": { "min": […], "max": […] } } },
   "slots":  [{ "name": "seat_1", "at": [x, y, z], "turn": 180, "pose": "sit" | "stand", "size": 1, "with": [{ "model": "…", "at": [0, 0, 0] }] }],
   "guides": [{ "name": "desk", "model": "desk", "at": [x, y, z], "turn": 0 }, { "name": "desk top", "size": [w, h, d], "at": [x, y, z], "turn": 0 }],
-  "states": { "working": { "remove": ["id", "slot"], "set": { "screen": { "color": "#e89a1a" } }, "add": { "items": […], "boxes": […], "lamps": […], "slots": […] } } }
+  "states": { "working": { "remove": ["id", "slot"], "set": { "screen": { "color": "#e89a1a" } }, "add": { "items": […], "boxes": […], "lamps": […], "slots": […] } } },
+  "groups": { "status": ["idle", "working"], "season": ["october"] }
 }
 ```
 
@@ -53,6 +54,8 @@ How it differs from the `Placement` and `Theme` sketched in the exploration's fi
   them, then adds its own, in that order. A prefab is a pure function of the states its placement asks for
   (`resolve(scene, states)` in `src/scene.ts`), applied in the document's own order, so the board picks a list
   (`["idle", "october"]`) and the document decides what wins. States, not a state machine: no transitions.
+  `groups` name states that exclude each other (a status, a season): a list picks at most one of each, and a state
+  outside every group is one of its own. The editor's picker draws a state of each.
 - **Slots** are named places, set by hand, that code fills from the board: a person's (`pose` sit or stand, at
   `size`) or a thing's the renderer draws itself (no `pose`). A trailing `_<n>` numbers a series (`seat_1…`): the
   slots are its capacity, filled from `_1` in order, and nobody is drawn past the last. `with` holds models drawn
