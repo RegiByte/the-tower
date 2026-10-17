@@ -12,6 +12,34 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.42.0
+
+Tower 3D's floor gets a plan: a loft over the control room, and rooms placed from anchors. No host restart, no config
+change, the renderer API unchanged. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`). The desks are not
+yet turned and the meeting rooms have no tables: later releases.
+
+- A floor is a 6.6 m storey, up from 4.2: three floors stand 25.3 m to the roof. The elevator's car keeps its speed, so
+  a floor takes a little longer to ride.
+- Every floor has a loft deck over the left wing's back, with a straight stair you walk up and glass rails on its open
+  edges. The walker stands on the stair's treads and on the deck, and what you see and bump into depends on which you
+  are on.
+- The control room stands on the deck, entered from the terrace, and its inner wall is glass toward the desks: from the
+  console you see the floor. Its video wall is a two-sided band in that glass, one face into the room and one out over
+  the desks, each read left to right from its side. Picks and sight pass the glass and stop at the band, and the door
+  finds the tile on the face turned toward you.
+- A floor's rooms are prefabs placed from its anchors, on a plate sized for three rows and a meeting strip: the archive,
+  holding the shelf, and the game room, holding the arcade, under the deck; the lounge; two meeting rooms, for eight and
+  for four, along the front glass, still empty; and the hero between them. A game room with no games hangs a sign saying
+  how to fill it, which comes down with the first game kept.
+- Every shelf entry and every shell is drawn: the pieces keep full size while they fit (seven shelf entries, four
+  shells), then shrink together to fit. The Running board reads whole at its nook's width.
+- The kit carries a prefab's boxes, drawn and walked round (glass writes no depth and casts no shadow), and the prefab
+  editor resizes them along each axis, by the gizmo or by numbers.
+- Boxes that shared a face no longer flicker: the rooms' walls, jambs, glazing and panes each belong to one box, and
+  what meets the building's glass, the deck's slab and the control room's shell included, runs 2 cm past it.
+- Closing anything that took the camera (a tile, a desk screen, a kiosk shell, a game, the overview) while you stand on
+  the deck no longer flies the camera 3.3 m low into the archive before it snaps back.
+
 ## v1.41.2
 
 The desk's remaining fixed places are placed by hand. No host restart, no config change, the renderer API unchanged. A
