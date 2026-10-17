@@ -97,10 +97,17 @@ export function deskSlots(slots: FlatSlot[]): DeskSlots {
   }
 }
 
-/** From a desk's origin to the origin of a reviewer's own desk space beside it: its chair at `SEAT` there stands at the `reviewer` slot. */
-export const besideOf = (slots: DeskSlots) => ({ x: slots.reviewer.at[0] - SEAT.x, z: slots.reviewer.at[2] - SEAT.z })
+/**
+ * From a desk's origin to the origin of a reviewer's own desk space beside it, and how far that space is turned from
+ * the desk's (degrees): its chair at `SEAT` there stands at the `reviewer` slot, turned as the slot is.
+ */
+export const besideOf = (slots: DeskSlots) => {
+  const seat = SEAT.clone().applyAxisAngle(UP, slots.reviewer.turn * DEG)
+  return { x: slots.reviewer.at[0] - seat.x, z: slots.reviewer.at[2] - seat.z, turn: slots.reviewer.turn }
+}
 
 const DEG = Math.PI / 180
+const UP = new THREE.Vector3(0, 1, 0)
 const vector = (at: readonly number[]) => new THREE.Vector3(at[0], at[1], at[2])
 
 export type Desk = {
@@ -333,20 +340,25 @@ function notebook(at: THREE.Vector3) {
   return { group, strip, screen }
 }
 
-/** Where the notebook's screen is, in its desk space: where a reviewer lays down what it held up. */
-const notebookScreen = (at: THREE.Vector3) => new THREE.Vector3(at.x, at.y + 0.02 + Math.cos(NOTEBOOK.tilt) * NOTEBOOK.lid / 2, at.z + NOTEBOOK.depth / 2 + Math.sin(NOTEBOOK.tilt) * NOTEBOOK.lid / 2 - 0.02)
-/** A slot of its author's desk in a reviewer's own desk space. */
-const besideAt = (slots: DeskSlots, slot: FlatSlot) => {
+/** Where the notebook's screen is, in its desk space, the notebook turned `turn` (radians): where a reviewer lays down what it held up. */
+const notebookScreen = (at: THREE.Vector3, turn: number) =>
+  new THREE.Vector3(0, 0.02 + Math.cos(NOTEBOOK.tilt) * NOTEBOOK.lid / 2, NOTEBOOK.depth / 2 + Math.sin(NOTEBOOK.tilt) * NOTEBOOK.lid / 2 - 0.02).applyAxisAngle(UP, turn).add(at)
+/** A place in its author's desk space, in a reviewer's own. */
+const fromAuthor = (slots: DeskSlots, at: THREE.Vector3) => {
   const by = besideOf(slots)
-  return vector(slot.at).sub(new THREE.Vector3(by.x, 0, by.z))
+  return at.sub(new THREE.Vector3(by.x, 0, by.z)).applyAxisAngle(UP, -by.turn * DEG)
 }
+/** A slot of its author's desk in a reviewer's own desk space. */
+const besideAt = (slots: DeskSlots, slot: FlatSlot) => fromAuthor(slots, vector(slot.at))
+/** A reviewer's notebook in its own desk space, turned as its slot is on its author's desk (radians). */
+const notebookOf = (slots: DeskSlots) => ({ at: besideAt(slots, slots.notebook), turn: (slots.notebook.turn - slots.reviewer.turn) * DEG })
 /**
  * A reviewer's tag hangs under its author's, in the same plane, so the two read as a pair from anywhere; what it says
  * floats over its head; its subagents stand where its author's desk has places for them (`visitor_1…`).
  */
 const visitMarks = (slots: DeskSlots): Marks => ({
-  tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, pair: true, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: notebookScreen(besideAt(slots, slots.notebook)), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => besideAt(slots, s)),
+  tag: fromAuthor(slots, new THREE.Vector3(slots.reviewer.at[0], TAG_Y - 0.2, LABELS_Z)), tagHeight: 0.12, branch: false, pair: true, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
+  lay: notebookScreen(notebookOf(slots).at, notebookOf(slots).turn), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => besideAt(slots, s)),
   papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
 
@@ -357,7 +369,7 @@ const visitMarks = (slots: DeskSlots): Marks => ({
  */
 const MEETING = { laptop: new THREE.Vector3(0, DESK.height, SEAT.z + 0.67), tag: 2.1, perch: new THREE.Vector3(0.36, DESK.height, SEAT.z + 0.62) }
 const meetingMarks = (stand: boolean): Marks => {
-  const laptop = stand ? SEAT.clone().setY(1.25) : notebookScreen(MEETING.laptop)
+  const laptop = stand ? SEAT.clone().setY(1.25) : notebookScreen(MEETING.laptop, 0)
   return {
     tag: new THREE.Vector3(0, MEETING.tag, SEAT.z), tagHeight: 0.1, branch: false, pair: false, speech: new THREE.Vector3(0, MEETING.tag + 0.16, SEAT.z),
     lay: laptop, layWidth: stand ? 0.3 : NOTEBOOK.width - 0.04, minis: [-0.36, -0.12, 0.12, 0.36].map((x) => new THREE.Vector3(x, 0, SEAT.z - 0.62)),
@@ -387,7 +399,9 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
-  const book = notebook(besideAt(slots, slots.notebook))
+  const place = notebookOf(slots)
+  const book = notebook(place.at)
+  book.group.rotation.y = place.turn
   group.add(book.group)
   return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }), notebook: book.group }
 }
@@ -404,7 +418,11 @@ export function situate(desk: Desk, slots: DeskSlots) {
   if (desk.twin) (desk.twin.group.position.copy(desk.marks.twin!.at), (desk.twin.group.rotation.y = desk.marks.twin!.turn))
   if (desk.binder) (desk.binder.position.copy(vector(slots.logbook.at)), (desk.binder.rotation.y = slots.logbook.turn * DEG))
   if (desk.side) (desk.side.group.position.copy(vector(slots.side.at)), (desk.side.group.rotation.y = slots.side.turn * DEG))
-  desk.notebook?.position.copy(besideAt(slots, slots.notebook))
+  if (desk.notebook) {
+    const place = notebookOf(slots)
+    desk.notebook.position.copy(place.at)
+    desk.notebook.rotation.y = place.turn
+  }
 }
 
 function relabel(desk: Desk, key: 'tag' | 'gist' | 'bubble', next: THREE.Sprite | undefined) {

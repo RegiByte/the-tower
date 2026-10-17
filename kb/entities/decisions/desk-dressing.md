@@ -56,7 +56,7 @@ loudest thing on the floor.
   (`card.subagentRuns`); its logbook right of the keyboard, drawn in code as thick as its lineage ([[logbook]]);
   the papers new to it; its second monitor (`side_monitor`); a frame per thing it showed (`trophy_<n>`, as many as
   there are); the cat's perch (`cat_perch`); and a reviewer beside it ([[reviewer]]): where its chair stands
-  (`reviewer`, which places the reviewer's own desk space, [`besideOf`](ref:hub/renderers/tower3d/src/desk.ts#besideOf)),
+  (`reviewer`, which places the reviewer's own desk space and turns it as the slot is turned, [`besideOf`](ref:hub/renderers/tower3d/src/desk.ts#besideOf)),
   its notebook and its subagents standing on the floor (`visitor_<n>`). `desk.glb`, which Tower 3D draws itself, is
   the document's guide by name (`"model": "desk"`), so the prefab editor draws it ([[prefab-editor]]).
 - [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, placed, frames, models)` answers the models in

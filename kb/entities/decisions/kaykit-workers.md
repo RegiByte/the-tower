@@ -127,7 +127,7 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   far as the clip's hips have travelled ([`seatedness`](ref:hub/renderers/tower3d/src/rig.ts#seatedness)), and the
   reverse as it goes, the chair tucked back in once it steps away. The way is laid on the level
   ([`walkway`](ref:hub/renderers/tower3d/src/layout.ts#walkway): across the landing, down the aisle behind the desk's
-  column, behind the chair) and taken into the desk's own space, where the side, the approach and the sitting are
+  column, the aisle of the quarter the desk faces so a reviewer's seat turned off it keeps to it, behind the chair) and taken into the desk's own space, where the side, the approach and the sitting are
   worked out with the worker facing +z; so a turned desk ([[workstations]]) changes nothing in how a worker sits, and
   standing up it turns to face its desk's way before it walks off. Going from one desk to another on its level (into a
   meeting room and back, [[whereabouts]]) it stands up from the one, walks round what stands on the floor by the grid

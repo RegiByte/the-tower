@@ -44,7 +44,8 @@ already opens.
 - A workstation carries its `turn` (degrees about +y, 0 facing +z): every one faces +x
   ([`DESK_TURN`](ref:hub/renderers/tower3d/src/layout.ts#DESK_TURN), [[floor-plan]]). What is placed about a desk is
   given in its desk space (its worker facing +z) and put on the level through that turn
-  ([`fromDesk`](ref:hub/renderers/tower3d/src/layout.ts#fromDesk)): a reviewer's place beside its author, its rug,
+  ([`fromDesk`](ref:hub/renderers/tower3d/src/layout.ts#fromDesk)): a reviewer's place beside its author (its own space turned further by
+  the `reviewer` slot's `turn`, [[desk-dressing]]), its rug,
   where you stand behind its worker when you go to its desk ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)),
   and its collider, the box round its turned footprint ([`turned`](ref:hub/renderers/tower3d/src/layout.ts#turned)).
   The scene turns the desk's and the station's groups, so everything on them follows.

@@ -489,10 +489,11 @@ const atPlace = (p: Place) => ({ ...fromDesk({ x: p.x, z: p.z, turn: p.turn }, 0
 
 /**
  * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
- * far a reviewer's place is from its author's along the floor, at the author's desk as it is drawn (`besideOf`);
+ * far a reviewer's place is from its author's along the floor and how far it is turned from it, at the author's desk
+ * as it is drawn (`besideOf`);
  * `meet`, the meeting rooms' furniture, where a crew gathers.
  */
-export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }, meet: MeetingKit): Plan {
+export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
   const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
@@ -527,7 +528,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       if (meeting) return { card, ...kept, ...atPlace(meeting.place), meeting: { room: meeting.room.id, label: meeting.room.label, place: meeting.place.name, stand: meeting.place.stand } }
       if ('n' in seat) return { card, ...kept }
       const by = beside(floor.cards.find((c) => c.id === seat.beside)!)
-      return { card, ...kept, ...fromDesk(kept, by.x, by.z), beside: seat.beside }
+      return { card, ...kept, ...fromDesk(kept, by.x, by.z), turn: kept.turn + by.turn, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
     const away = desks.flatMap((d) => (d.meeting && 'n' in d.card.seat! ? [{ ...stationAt(d.n), card: d.card, room: d.meeting.label }] : []))

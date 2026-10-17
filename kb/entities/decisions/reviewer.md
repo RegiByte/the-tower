@@ -90,7 +90,7 @@ and how its findings reach the author.
   beside the branch, Tower 3D on the desk's name tag. Nothing is stored.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
-  place them ([[desk-dressing]]): its chair at `reviewer`, its notebook at `reviewer_notebook`, its subagents standing
+  place them ([[desk-dressing]]): its chair at `reviewer`, turned as that slot is, its notebook at `reviewer_notebook`, its subagents standing
   on the floor at `visitor_<n>`; which desk it sits at is derived like every seat ([[workstations]]). It brings that
   chair: coming, it rolls it in ahead of it from the elevator and sets it down at its seat
   ([`carryIn`](ref:hub/renderers/tower3d/src/life.ts#carryIn)); going home, it stands up from it and rolls it ahead
