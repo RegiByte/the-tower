@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.41.2
+
+The desk's remaining fixed places are placed by hand. No host restart, no config change, the renderer API unchanged. A
+checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- A scene's states can fall in `groups` that exclude each other, and a desk takes one state from each: its status, the
+  pile its context has grown, and the season. The prefab editor picks a state per group.
+- The second monitor, the cat's perch, the trophies, a reviewer's seat and the visitors are slots of `desk_dress.json`,
+  and the context pile and October's candy are its states, placed in the editor; per-worker jitter is gone from them.
+- A desk's slots are read in its states, so a place moved in one state shows in the office as in the editor.
+- A reviewer going home stands up out of its chair and takes the chair along.
+
 ## v1.41.1
 
 The desk's props placed by hand, and a gizmo you can use from where you sit. No host restart, no config change, the
