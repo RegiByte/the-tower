@@ -20,7 +20,6 @@ import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { shownKey } from './showing.ts'
 import { hangOn } from './levels.ts'
 import { s, type WallItem } from './state.ts'
-import { instance } from './models.ts'
 import type { Card } from './api.ts'
 import { wallNow } from './clock.ts'
 
@@ -161,28 +160,6 @@ export const STATIONS: Layer<StationAt, Station> = {
     return true
   },
   root: (station) => station.group,
-}
-
-/** A chair at a meeting place nobody takes: the room's table seats and counter seats in its table's state. */
-type ChairAt = { level: number; y: number; x: number; z: number; turn: number }
-
-export const CHAIRS: Layer<ChairAt, THREE.Object3D> = {
-  slots: (p) => floors(p).flatMap((level) => level.tables.flatMap((table) => {
-    const taken = new Set(level.desks.filter((d) => d.meeting?.room === table.room).map((d) => d.meeting!.place))
-    return table.places.filter((pl) => !pl.stand && !taken.has(pl.name)).map((pl) => [`${level.floor.id}/${table.room}/${pl.name}`, { level: level.index, y: level.y, x: pl.x, z: pl.z, turn: pl.turn }] as [string, ChairAt])
-  })),
-  level: (at) => at.level,
-  make(at) {
-    const chair = instance(s.models!.desk).part('chair')
-    CHAIRS.keep(chair, at)
-    return chair
-  },
-  keep(chair, { x, y, z, turn }) {
-    chair.position.set(x, y, z)
-    chair.rotation.y = turn * DEG
-    return true
-  },
-  root: (chair) => chair,
 }
 
 type NoteAt = { project: string; id: string; tag: string; modifiedAt: number; level: number; x: number; y: number; z: number; tint: string }

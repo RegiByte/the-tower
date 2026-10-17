@@ -24,8 +24,9 @@ import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from '.
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
-import { CABINET, DESK, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
+import { CABINET, DESK, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
 import { loadModels } from './models.ts'
+import { chairKit, makeChairs, placeChairs } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
@@ -54,7 +55,7 @@ import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtur
 import * as loading from './loading.ts'
 import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { ARCADE_SIGNS, CABINETS, CHAIRS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
+import { ARCADE_SIGNS, CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
@@ -305,6 +306,18 @@ function dressLevels(board: Board) {
   for (const root of s.levels.slice(placed.length)) fillLayer(s.kit!, root.dressing, [])
 }
 
+/** Every level's empty meeting chairs, instanced on its root. */
+function seatChairs() {
+  const levels = Math.max(s.plan.levels.length, s.chairs.length)
+  for (let i = 0; i < levels; i++) {
+    const level = s.plan.levels[i]
+    const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
+    s.chairs[i] ??= makeChairs()
+    hangOn(i, s.chairs[i].group)
+    placeChairs(s.chairs[i], s.chairKit!, at)
+  }
+}
+
 /** The board's failure stays over the last board drawn, until the tower sends a board again. */
 function onBoardError(err: Error & { code: string }) {
   $('board-error').querySelector('b')!.textContent = boardErrorTitle(err.code)
@@ -335,8 +348,8 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   setShellTitles(s.world!, next.shells)
   reconcile(DESKS, s.desks, s.plan, discard)
   reconcile(STATIONS, s.stations, s.plan, discard)
-  reconcile(CHAIRS, s.chairs, s.plan, discard)
   dressLevels(next)
+  seatChairs()
   reconcile(WALLS, s.walls, s.plan, discard)
   reconcile(RUNNING, s.running, s.plan, discard)
   reconcile(PIGEONHOLES, s.pigeonholes, s.plan, discard)
@@ -2757,6 +2770,7 @@ idle(tower.framed)
 Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.renderer()]).then(([m, kept, , kit, renderer]) => {
   checkWardrobe(m.catalogue)
   s.models = m
+  s.chairKit = chairKit(m.desk.getObjectByName('chair')!)
   s.catNames = (renderer?.settings.cats ?? {}) as CatNames
   s.kit = kit
   flyPlane(m.plane)

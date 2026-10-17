@@ -712,6 +712,12 @@ function shellWalls(p: Plan): Box[] {
 /** Every workstation standing on a floor: its workers' own, the free ones, and those of workers in a meeting. */
 export const workstations = (level: Extract<Level, { kind: 'floor' }>): StationSlot[] => [...level.desks.filter((d) => !d.beside && !d.meeting), ...level.free, ...level.away]
 
+/** The chairs at meeting places nobody takes: the seats round each room's table in its state, and at its counter. */
+export function emptyChairs(level: Extract<Level, { kind: 'floor' }>): Place[] {
+  const taken = new Set(level.desks.flatMap((d) => (d.meeting ? [`${d.meeting.room}/${d.meeting.place}`] : [])))
+  return level.tables.flatMap((t) => t.places.filter((pl) => !pl.stand && !taken.has(`${t.room}/${pl.name}`)))
+}
+
 const sharedWall = (level: Extract<Level, { kind: 'floor' }>): Box => ({ minX: level.wall.minX, maxX: level.wall.maxX, minZ: level.wall.z - PARTITION.thick / 2, maxZ: level.wall.face + 0.1 })
 
 /** What stands on a level's floor and is walked round: the building's shell, the core, the shared wall, and the loft's stair and post. */

@@ -21,7 +21,8 @@
     "hub/renderers/tower3d/src/layout.ts#deskSpot",
     "hub/renderers/tower3d/src/layers.ts#DESKS",
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
-    "hub/renderers/tower3d/src/layers.ts#CHAIRS",
+    "hub/renderers/tower3d/src/layout.ts#emptyChairs",
+    "hub/renderers/tower3d/src/chairs.ts#placeChairs",
     "hub/renderers/tower3d/src/desk.ts#makeSeat",
     "hub/renderers/tower3d/src/desk.ts#syncStation",
     "hub/renderers/tower3d/src/screens.ts#awayScreen",
@@ -81,7 +82,10 @@ board field was added.
   ([`makeSeat`](ref:hub/renderers/tower3d/src/desk.ts#makeSeat)): a chair and a laptop whose screen is its live
   terminal, or, standing, neither. Sitting there is sitting at its desk ([[tower3d-desk]]); going to it stands you over
   its shoulder, inside the room ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)). Every other place in the
-  table's state and at the counter has an empty chair ([`CHAIRS`](ref:hub/renderers/tower3d/src/layers.ts#CHAIRS)).
+  table's state and at the counter has an empty chair ([`emptyChairs`](ref:hub/renderers/tower3d/src/layout.ts#emptyChairs)),
+  drawn with every other on its level as one instanced mesh per material of the desk model's chair
+  ([`placeChairs`](ref:hub/renderers/tower3d/src/chairs.ts#placeChairs)): they come and go as seats are taken, so
+  a board moves instances, and a level's chairs cost a draw call per material in each pass.
 - *Its desk stays* ([`AwaySlot`](ref:hub/renderers/tower3d/src/layout.ts#AwaySlot)): the workstation is drawn with its
   worker's dressing, its monitor reads AWAY with the room ([`awayScreen`](ref:hub/renderers/tower3d/src/screens.ts#awayScreen))
   and its sign "<CALLSIGN> · in Meeting · 8" ([`syncStation`](ref:hub/renderers/tower3d/src/desk.ts#syncStation)); E
@@ -106,6 +110,9 @@ board field was added.
   (waits, the cat's perch, going to a worker) would follow the empty desk. One desk per worker, at its place, and the
   workstation a station with a mark, as a free workstation is.
 - *Teleporting between desk and room*: rejected by the user; every move walks.
+- *The empty chairs in the level's KayKit dressing*, as the long tables are: the chair is the Blender desk model's,
+  which every seated worker's chair is too, not a KayKit model in the packs' atlases; and a clone per chair cost its
+  fourteen meshes in every pass (up to ~190 calls facing a room on the `busy` fixture).
 
 **Impact.** Tower 3D only; no board or API change. The tidy fixture's crew of three now gathers; a `crews` fixture
 board covers a gathered crew, an overflow onto the counter and a standing member, two crews in two rooms, and a
