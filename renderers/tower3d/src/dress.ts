@@ -1,8 +1,9 @@
 import { fnv1a, mix } from '../../../src/shared/hash.ts'
 import { fit, type Model } from '../../kaykit/src/catalog.ts'
-import type { ModelItem, Theme } from '../../kaykit/src/scene.ts'
+import type { Theme } from '../../kaykit/src/scene.ts'
 import type { Card } from './api.ts'
 import { DESK, RETURN } from './layout.ts'
+import type { Prefab, PrefabItem } from './zones.ts'
 
 /**
  * A workstation's KayKit Bits models (CC0, vendored in `renderers/tower3d/kaykit`) as data, in desk space.
@@ -51,35 +52,27 @@ export type Placement = { model: Prop; at: [x: number, z: number]; turn: number;
 
 const OCTOBER = 9
 
+/** The scene document of a workstation's dressing: its return, what its status puts on the desk, and the places of what is drawn around its worker (slots). */
+export const DESK_DRESS = 'prefabs/desk_dress.json'
+
 /** The return's top: x and z of its center, and its half extents. */
 const TOP = { x: DESK.width / 2 + RETURN.width / 2, z: DESK.depth / 2 - RETURN.depth / 2 }
 
-const returnPiece: Placement = { model: 'furniture/cabinet_medium', at: [TOP.x, TOP.z], turn: 90, y: 0 }
-
-/** A workstation nobody sits at: the L, bare. */
-export const bare = (): Placement[] => [returnPiece]
-
-/** What a worker's status puts on the desk's right end. */
-function now(card: Card): Placement[] {
+/** The desk dressing's state for a worker's status: what it puts on the desk's right end. */
+export function statusState(card: Card): string {
   switch (card.status) {
     case 'working':
     case 'booting':
-      return [
-        { model: 'furniture/lamp_desk', at: [1.02, 0.3], turn: 210 },
-        { model: 'furniture/cup_pencils', at: [0.78, 0.34], turn: 0 },
-      ]
+      return 'working'
     case 'watching':
-      return [
-        { model: 'furniture/lamp_desk', at: [1.02, 0.3], turn: 210 },
-        { model: 'furniture/mug_A', at: [0.8, 0.3], turn: 30 },
-      ]
+      return 'watching'
     case 'blocked':
     case 'needs_input':
-      return [{ model: 'furniture/lamp_desk_headphones', at: [1.0, 0.3], turn: 210 }]
+      return 'needs'
     case 'done':
-      return [{ model: 'restaurant/food_pizza_cheese_plated', at: [0.85, 0.25], turn: 0 }]
+      return 'done'
     default:
-      return [{ model: 'furniture/cactus_small_A', at: [0.95, 0.3], turn: 0 }]
+      return 'idle'
   }
 }
 
@@ -128,28 +121,34 @@ const CANDY: Placement[] = [
   { model: 'halloween/candycorn', at: [1.3, 0.05], turn: 70 },
 ]
 
-/** The same desk keeps the same mess: each placement nudged and turned a little by the worker's id. */
-const jitter = (id: string) => (p: Placement, i: number): Placement => {
-  if (p.model === 'furniture/cabinet_medium') return p
-  const h = mix(fnv1a(`${id}:${i}`))
+/** The same desk keeps the same mess: each model nudged and turned a little by the worker's id. */
+const jitter = (id: string, from: number) => (it: PrefabItem, i: number): PrefabItem => {
+  const h = mix(fnv1a(`${id}:${from + i}`))
   const nudge = (bits: number) => (((h >>> bits) & 0xff) / 255 - 0.5) * 0.06
-  return { ...p, at: [p.at[0] + nudge(0), p.at[1] + nudge(8)], turn: p.turn + (((h >>> 16) & 0xff) / 255 - 0.5) * 30 }
+  return { ...it, at: [it.at[0] + nudge(0), it.at[1], it.at[2] + nudge(8)], turn: it.turn + (((h >>> 16) & 0xff) / 255 - 0.5) * 30 }
 }
 
-export function dress(card: Card, month: number): Placement[] {
-  const context = card.context ?? 0
+/** What a session has piled up around its desk, in desk space. */
+const pile = (card: Card, month: number): Placement[] => [
+  ...PILE.filter((p) => (card.context ?? 0) >= p.from).flatMap((p) => p.items),
+  ...pizzas(card.turns),
+  ...trophies(card.shown.length),
+  ...(month === OCTOBER ? CANDY : []),
+]
+
+/** A worker's workstation in desk space: the dressing's models in its status's state, and its pile. */
+export function dress(card: Card, month: number, desk: Prefab, models: Map<string, Model>): PrefabItem[] {
+  const status = desk.states[statusState(card)]
+  const shared = desk.items.length
   return [
-    returnPiece,
-    ...now(card),
-    ...PILE.filter((p) => context >= p.from).flatMap((p) => p.items),
-    ...pizzas(card.turns),
-    ...trophies(card.shown.length),
-    ...(month === OCTOBER ? CANDY : []),
-  ].map(jitter(card.id))
+    ...status.slice(0, shared),
+    ...status.slice(shared).map(jitter(card.id, shared)),
+    ...pile(card, month).map((p) => itemOf(p, models.get(p.model)!)).map(jitter(card.id, status.length)),
+  ]
 }
 
 /** A placement as the playground places a model in the desk's frame: its base resting at its height. */
-export function itemOf(p: Placement, model: Model): ModelItem {
+function itemOf(p: Placement, model: Model): PrefabItem {
   const scale = PROPS[p.model]
   return { model: p.model, at: [p.at[0], (p.y ?? DESK.height) - fit(model).min[1] * scale, p.at[1]], turn: p.turn, scale }
 }

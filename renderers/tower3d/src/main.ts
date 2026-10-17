@@ -31,10 +31,10 @@ import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
 import { chooseLighting, LIT, lightingSection } from './light/setting.ts'
-import { fillLayer, loadKit, zonesPlaced, type Kit, type Placed } from './kit.ts'
+import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
-import { THEMES, bare, dress, itemOf, type Placement } from './dress.ts'
-import { cityModel, furnish } from './zones.ts'
+import { DESK_DRESS, THEMES, dress } from './dress.ts'
+import { cityModel, furnish, type PrefabItem } from './zones.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
 import { isMarkdown, isPosterTexture, isVideo, keepPosters, pictured, playFilms, shownHref, shownKey, type Shown } from './showing.ts'
@@ -264,10 +264,10 @@ const tintsOf = (b: Board) => Object.fromEntries(b.floors.map((f) => [f.id, tint
 /** The lobby's frame: level space at the ground. */
 const LOBBY = new THREE.Matrix4()
 
-/** A workstation's placements in its desk's frame. */
-function inDesk(kit: Kit, desk: THREE.Object3D, placements: Placement[]): Placed[] {
+/** A workstation's models in its desk's frame. */
+function inDesk(desk: THREE.Object3D, items: PrefabItem[]): Placed[] {
   desk.updateMatrix()
-  return placements.map((p) => ({ item: itemOf(p, kit.models.get(p.model)!), frame: desk.matrix, theme: THEMES[p.model] }))
+  return items.map((item) => ({ item, frame: desk.matrix, theme: THEMES[item.model as keyof typeof THEMES] }))
 }
 
 /** Every level's workstations in their KayKit models, and the city model in the lobby. */
@@ -277,8 +277,8 @@ function dressLevels(board: Board) {
     if (level.kind === 'lobby') return cityModel(s.plan, tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
     if (level.kind === 'roof') return []
     return [
-      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => inDesk(s.kit!, s.desks.get(slot.card.id)!.group, dress(slot.card, month))),
-      ...level.free.flatMap((slot) => inDesk(s.kit!, s.stations.get(`${level.floor.id}/${slot.n}`)!.group, bare())),
+      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, month, s.kit!.prefabs[DESK_DRESS], s.kit!.models))),
+      ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
     ]
   })
   placed.forEach((list, i) => fillLayer(s.kit!, onLevel(i).dressing, list))

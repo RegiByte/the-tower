@@ -1,6 +1,6 @@
 import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
-import type { ModelItem, Theme } from '../../kaykit/src/scene.ts'
+import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { ARCADE_DEPTH, CORE, COLUMN_SPACING, DESK, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, coreFront, partySpots, receptionBox, roomBox, runningSpot, type Box, type Level, type Plan } from './layout.ts'
 
 /**
@@ -48,8 +48,11 @@ const SPACE_ACCENT = '#e97d19'
 
 /** A model of a flattened prefab, in the prefab's own frame. */
 export type PrefabItem = { model: string; at: Vec3; turn: number; scale: number | Vec3; parts?: Record<string, Vec3> }
-/** A prefab as built (in `out/kaykit/kit.kaykit`): its models, and the floor they take that a walker bumps into. */
-export type Prefab = { items: PrefabItem[]; footprint: Box[] }
+/**
+ * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models, the floor they take that a walker bumps into, its
+ * slots, and the models it draws in each of its states alone (shared ones included).
+ */
+export type Prefab = { items: PrefabItem[]; footprint: Box[]; slots: FlatSlot[]; states: Record<string, PrefabItem[]> }
 export type Prefabs = Record<string, Prefab>
 
 /**
