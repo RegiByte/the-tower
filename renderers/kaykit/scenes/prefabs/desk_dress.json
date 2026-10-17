@@ -22,7 +22,7 @@
   { "name": "cat_perch", "at": [0.45, 0.75, 0.12] },
   { "name": "trophy_1", "at": [1.85, 0.75, 0.1], "turn": 135 },
   { "name": "trophy_2", "at": [1.85, 0.75, -0.22], "turn": 115 },
-  { "name": "reviewer", "pose": "sit", "at": [-1.2, 0, -1] },
+  { "name": "reviewer", "pose": "sit", "at": [-1.2, 0, -1], "turn": 26.8 },
   { "name": "visitor_1", "pose": "stand", "size": 0.28, "at": [-1.62, 0, -1] },
   { "name": "visitor_2", "pose": "stand", "size": 0.28, "at": [-1.79, 0, -1] },
   { "name": "visitor_3", "pose": "stand", "size": 0.28, "at": [-1.96, 0, -1] },
@@ -44,10 +44,16 @@
    "add": {
     "items": [
      { "id": "lamp", "model": "furniture/lamp_desk", "at": [1.02, 0.75, 0.3], "turn": 210, "scale": 0.55 },
-     { "id": "pencils", "model": "furniture/cup_pencils", "at": [0.78, 0.75, 0.34], "turn": 0, "scale": 0.5 }
+     { "id": "pencils", "model": "furniture/cup_pencils", "at": [0.829, 0.75, 0.143], "turn": -24.1, "scale": 0.5 }
     ]
    },
-   "set": { "logbook": { "at": [0.589, 0.75, -0.033], "turn": 8 } }
+   "set": {
+    "logbook": { "at": [1.44, 0.75, -0.531], "turn": 37.8 },
+    "subagent_4": { "at": [1.327, 0.75, -0.34], "turn": -33.8 },
+    "subagent_3": { "at": [1.099, 0.75, -0.34], "turn": -26.6 },
+    "subagent_1": { "at": [0.628, 0.75, -0.34], "turn": -35.9 },
+    "subagent_2": { "at": [0.87, 0.75, -0.34], "turn": -27.6 }
+   }
   },
   "watching": {
    "add": {
@@ -56,7 +62,12 @@
      { "id": "mug", "model": "furniture/mug_A", "at": [-0.072, 0.75, 0.07], "turn": -125.9, "scale": 0.45 }
     ]
    },
-   "set": { "desk_mug": { "at": [-0.301, 0.75, 0.083], "turn": 135.9, "scale": 0.45 } }
+   "set": {
+    "desk_mug": { "at": [-0.301, 0.75, 0.083], "turn": 135.9, "scale": 0.45 },
+    "logbook": { "at": [1.435, 0.75, -0.531], "turn": 39.5 },
+    "desk_cactus": { "at": [-1.087, 0.75, 0.409], "turn": 0, "scale": 0.5 },
+    "side_monitor": { "at": [-1.008, 0.75, 0.161], "turn": -30.8 }
+   }
   },
   "needs": {
    "add": {
@@ -100,7 +111,7 @@
      { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
      { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
      { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
-     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 }
+     { "model": "furniture/book_set", "at": [1.738, 0.853, -0.591], "turn": 103.9, "scale": 0.55 }
     ]
    }
   },
@@ -111,8 +122,8 @@
      { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
      { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
      { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
-     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
-     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 }
+     { "model": "furniture/book_set", "at": [1.735, 0.853, -0.57], "turn": 110.4, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.529, 0.75, -0.807], "turn": 0, "scale": 0.75 }
     ]
    }
   },
@@ -123,8 +134,8 @@
      { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
      { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
      { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
-     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
-     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 },
+     { "model": "furniture/book_set", "at": [1.662, 0.853, -0.402], "turn": 40.2, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.556, 0.75, -0.777], "turn": 0, "scale": 0.75 },
      { "model": "furniture/mug_A", "at": [1.78, 0.75, -0.78], "turn": 250, "scale": 0.45 }
     ]
    }
@@ -136,22 +147,30 @@
      { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
      { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
      { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
-     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
-     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 },
-     { "model": "furniture/mug_A", "at": [1.78, 0.75, -0.78], "turn": 250, "scale": 0.45 },
+     { "model": "furniture/book_set", "at": [1.737, 0.853, -0.531], "turn": 127.3, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.532, 0.75, -0.799], "turn": 0, "scale": 0.75 },
+     { "model": "furniture/mug_A", "at": [1.78, 0.75, -0.78], "turn": 154.9, "scale": 0.45 },
      { "model": "restaurant/jar_A_small", "at": [1.35, 0.75, -0.25], "turn": 0 }
     ]
+   },
+   "set": {
+    "return": { "at": [1.575, 0, -0.2], "turn": 90, "scale": 1 },
+    "subagent_4": { "at": [1.234, 0.75, -0.434], "turn": -162.9 },
+    "subagent_1": { "at": [0.619, 0.75, -0.288], "turn": -165.3 },
+    "subagent_2": { "at": [0.856, 0.75, -0.229], "turn": -18.9 },
+    "subagent_3": { "at": [1.065, 0.75, -0.34], "turn": 25 }
    }
   },
   "october": {
    "add": {
     "items": [
-     { "model": "halloween/candy_orange_A", "at": [0.62, 0.808125, 0.05], "turn": 30, "scale": 0.625 },
-     { "model": "halloween/candy_purple_A", "at": [1.48, 0.808125, -0.5], "turn": -50, "scale": 0.625 },
-     { "model": "halloween/candycorn", "at": [0.7, 0.78, 0.42], "turn": 10 },
+     { "model": "halloween/candy_orange_A", "at": [0.751, 0.808, 0.013], "turn": 30, "scale": 0.625 },
+     { "model": "halloween/candy_purple_A", "at": [0.847, 0.784, -0.377], "turn": -50, "scale": 0.625 },
+     { "model": "halloween/candycorn", "at": [0.892, 0.78, 0.446], "turn": 10, "scale": 1 },
      { "model": "halloween/candycorn", "at": [1.3, 0.78, 0.05], "turn": 70 }
     ]
-   }
+   },
+   "set": { "desk_cactus": { "at": [-0.951, 0.75, 0.455], "turn": 0, "scale": 0.5 } }
   }
  },
  "groups": {

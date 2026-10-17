@@ -5,28 +5,30 @@
   "seats_4": {
    "add": {
     "items": [
-     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.111, 1, 0.733] }
+     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.111, 1, 0.733] },
+     { "model": "furniture/mug_A", "at": [-0.598, 0.75, -0.326], "turn": 112.5, "scale": 1 }
     ],
     "slots": [
      { "name": "head", "pose": "sit", "at": [1.8, 0, 0], "turn": -90 },
-     { "name": "seat_1", "pose": "sit", "at": [0.375, 0, -1], "turn": 0 },
+     { "name": "seat_1", "pose": "sit", "at": [0.593, 0, -1], "turn": 0 },
      { "name": "seat_2", "pose": "sit", "at": [0.375, 0, 1], "turn": 180 },
-     { "name": "seat_3", "pose": "sit", "at": [-0.375, 0, -1], "turn": 0 }
+     { "name": "seat_3", "pose": "sit", "at": [-0.497, 0, -1], "turn": 0 }
     ]
    }
   },
   "seats_6": {
    "add": {
     "items": [
-     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.444, 1, 0.733] }
+     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.444, 1, 0.733] },
+     { "model": "restaurant/food_vegetableburger", "at": [-0.105, 0.75, 0.31], "turn": 0, "scale": 1 }
     ],
     "slots": [
      { "name": "head", "pose": "sit", "at": [2.175, 0, 0], "turn": -90 },
-     { "name": "seat_1", "pose": "sit", "at": [0.75, 0, -1], "turn": 0 },
+     { "name": "seat_1", "pose": "sit", "at": [1.041, 0, -1], "turn": 0 },
      { "name": "seat_2", "pose": "sit", "at": [0.75, 0, 1], "turn": 180 },
      { "name": "seat_3", "pose": "sit", "at": [0, 0, -1], "turn": 0 },
-     { "name": "seat_4", "pose": "sit", "at": [0, 0, 1], "turn": 180 },
-     { "name": "seat_5", "pose": "sit", "at": [-0.75, 0, -1], "turn": 0 }
+     { "name": "seat_4", "pose": "sit", "at": [-0.161, 0, 1], "turn": 180 },
+     { "name": "seat_5", "pose": "sit", "at": [-1.001, 0, -1], "turn": 0 }
     ]
    }
   },
@@ -39,11 +41,11 @@
      { "name": "head", "pose": "sit", "at": [2.55, 0, 0], "turn": -90 },
      { "name": "seat_1", "pose": "sit", "at": [1.125, 0, -1], "turn": 0 },
      { "name": "seat_2", "pose": "sit", "at": [1.125, 0, 1], "turn": 180 },
-     { "name": "seat_3", "pose": "sit", "at": [0.375, 0, -1], "turn": 0 },
-     { "name": "seat_4", "pose": "sit", "at": [0.375, 0, 1], "turn": 180 },
-     { "name": "seat_5", "pose": "sit", "at": [-0.375, 0, -1], "turn": 0 },
-     { "name": "seat_6", "pose": "sit", "at": [-0.375, 0, 1], "turn": 180 },
-     { "name": "seat_7", "pose": "sit", "at": [-1.125, 0, -1], "turn": 0 }
+     { "name": "seat_3", "pose": "sit", "at": [0.065, 0, -1], "turn": 0 },
+     { "name": "seat_4", "pose": "sit", "at": [-0.081, 0, 1], "turn": 180 },
+     { "name": "seat_5", "pose": "sit", "at": [-0.913, 0, -1], "turn": 0 },
+     { "name": "seat_6", "pose": "sit", "at": [-1.176, 0, 1], "turn": 180 },
+     { "name": "seat_7", "pose": "sit", "at": [-2.255, 0, 0], "turn": 90 }
     ]
    }
   }

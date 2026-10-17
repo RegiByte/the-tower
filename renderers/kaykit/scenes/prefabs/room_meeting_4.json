@@ -25,13 +25,13 @@
   { "id": "side_right", "size": [0.15, 3.2, 6.42], "at": [1.325, 0, -3.21], "color": "#6e6858" }
  ],
  "slots": [
-  { "name": "table", "at": [-1.8, 0, -2.9], "turn": 180 },
+  { "name": "table", "at": [-1.993, 0, -2.221], "turn": 180 },
   { "name": "counter_1", "pose": "sit", "at": [-3.9, 0, -5.05], "turn": 180 },
   { "name": "counter_2", "pose": "sit", "at": [-3, 0, -5.05], "turn": 180 },
   { "name": "counter_3", "pose": "sit", "at": [-2.1, 0, -5.05], "turn": 180 },
-  { "name": "stand_1", "pose": "stand", "at": [0.4, 0, -2], "turn": -90 },
-  { "name": "stand_2", "pose": "stand", "at": [0.4, 0, -2.7], "turn": -90 },
-  { "name": "stand_3", "pose": "stand", "at": [0.4, 0, -3.4], "turn": -90 }
+  { "name": "stand_1", "pose": "stand", "at": [0.258, 0, -2.445], "turn": -88 },
+  { "name": "stand_2", "pose": "stand", "at": [0.126, 0, -3.8], "turn": -78.4 },
+  { "name": "stand_3", "pose": "stand", "at": [-0.239, 0, -4.975], "turn": -57.1 }
  ],
  "cameras": { "iso": { "view": "iso" }, "top": { "view": "top" } }
 }
