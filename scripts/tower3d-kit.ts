@@ -121,7 +121,11 @@ function boxFootprint(b: PrefabBox) {
   return [{ minX: w.min[0], maxX: w.max[0], minZ: w.min[2], maxZ: w.max[2] }]
 }
 
-const prefabs: Record<string, Prefab> = Object.fromEntries(flats.map(({ name, items, boxes, slots, groups, states }) => [name, { items, boxes, footprint: [...items.flatMap(footprint), ...boxes.flatMap(boxFootprint)], slots, groups, states }]))
+const footprints = (items: PrefabItem[], boxes: PrefabBox[]) => [...items.flatMap(footprint), ...boxes.flatMap(boxFootprint)]
+const prefabs: Record<string, Prefab> = Object.fromEntries(flats.map(({ name, items, boxes, slots, groups, states }) => [
+  name,
+  { items, boxes, footprint: footprints(items, boxes), slots, groups, states: Object.fromEntries(Object.entries(states).map(([key, st]) => [key, { ...st, footprint: footprints(st.items, st.boxes) }])) },
+]))
 const meshes = Buffer.concat([Buffer.from(kit.floats.buffer), Buffer.from(kit.ints.buffer)])
 const atlases = Object.entries(kit.catalog.packs).flatMap(([pack, info]) => info.atlases.map((name) => ({ key: `${pack}/${name}`, png: readFileSync(path.join(ATLASES, pack, `${name}.png`)) })))
 const header: KitFile = {

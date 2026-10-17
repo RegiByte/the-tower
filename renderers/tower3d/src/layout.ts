@@ -2,9 +2,10 @@ import { draftsOf } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
-import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room } from './floorplan.ts'
+import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room, type RoomId } from './floorplan.ts'
 import { turnXZ } from '../../kaykit/src/catalog.ts'
 import { gamesOf } from './games.ts'
+import { stateFor, type MeetingKit, type Place } from './meetings.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
 type RateLimit = Board['rateLimits'][number]
@@ -128,6 +129,8 @@ export type StationSlot = { n: number; x: number; z: number; turn: number }
  * desk (`beside`, the author's id): `n` and `turn` are the author's workstation's, `x` and `z` the reviewer's own place there.
  */
 export type DeskSlot = StationSlot & { card: Card; beside?: string }
+/** A meeting room's long table on the level: its centre and turn, the state it is drawn in, the room's places with it so, and the floor it takes. */
+export type TableSlot = { room: RoomId; x: number; z: number; turn: number; state: string; places: Place[]; boxes: Box[] }
 
 /** A shell's kiosk on the control room's bench, facing +x: its centre, and how far it is scaled down so every shell's kiosk fits. */
 export type KioskSlot = { shell: Shell; x: number; z: number; scale: number }
@@ -167,7 +170,7 @@ export type ArcadeSignSlot = { x: number; z: number; declared: boolean }
 /** Every level has its KayKit zones (src/zones.ts), placed by `furnish` once the plan is made. */
 export type Level =
   | { kind: 'lobby'; index: number; y: number; name: string; zones: ZoneSlot[] }
-  | { kind: 'floor'; index: number; y: number; name: string; zones: ZoneSlot[]; floor: Floor; desks: DeskSlot[]; free: StationSlot[]; kiosks: KioskSlot[]; tiles: TileSlot[]; shelf: ShelfSlot[]; wall: WallSlot; cork: CorkSlot | undefined; pigeonhole: PigeonholeSlot | undefined; arcade: ArcadeSlot | undefined; arcadeSign: ArcadeSignSlot | undefined }
+  | { kind: 'floor'; index: number; y: number; name: string; zones: ZoneSlot[]; floor: Floor; desks: DeskSlot[]; free: StationSlot[]; tables: TableSlot[]; kiosks: KioskSlot[]; tiles: TileSlot[]; shelf: ShelfSlot[]; wall: WallSlot; cork: CorkSlot | undefined; pigeonhole: PigeonholeSlot | undefined; arcade: ArcadeSlot | undefined; arcadeSign: ArcadeSignSlot | undefined }
   | { kind: 'roof'; index: number; y: number; name: string; zones: ZoneSlot[]; limits: RateLimit[]; floors: DanceFloor[]; guests: GuestSlot[] }
 
 export type Plan = {
@@ -479,9 +482,10 @@ function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined 
 
 /**
  * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
- * far a reviewer's place is from its author's along the floor, at the author's desk as it is drawn (`besideOf`).
+ * far a reviewer's place is from its author's along the floor, at the author's desk as it is drawn (`besideOf`);
+ * `meet`, the meeting rooms' furniture, where a crew gathers.
  */
-export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }): Plan {
+export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }, meet: MeetingKit): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
   const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
@@ -504,6 +508,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     const { scale, at } = packed(list.map(() => KIOSK_DEPTH), KIOSK_SPACING - KIOSK_DEPTH, [bench])
     return list.map((shell, i) => ({ shell, x: at[i]!.x, z: at[i]!.z, scale }))
   }
+  const meetingRooms = rooms.filter((r) => r.seats).sort((a, b) => b.seats! - a.seats!)
   const floors = board.floors.map((floor, i): Level => {
     const own = (id: string) => stationAt((floor.cards.find((c) => c.id === id)!.seat as { n: number }).n)
     const desks = onDuty(floor.cards).map((card): DeskSlot => {
@@ -514,6 +519,10 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       return { card, ...at, ...fromDesk(at, by.x, by.z), beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
+    const tables = meetingRooms.map((room): TableSlot => {
+      const state = stateFor(room, Infinity, meet.states)
+      return { room: room.id, ...meet.table(room), state, places: meet.places(room, state), boxes: meet.footprint(room, state) }
+    })
     return {
       kind: 'floor',
       index: i + 1,
@@ -523,6 +532,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       floor,
       desks,
       free: Array.from({ length: rows * COLUMNS }, (_, n) => n).filter((n) => !taken.has(n)).map(stationAt),
+      tables,
       kiosks: kiosksOf(shells[i]),
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, card: desks[i].card })),
       shelf: shelfSlots(floor.shelf ?? [], runs),
@@ -765,6 +775,7 @@ export function colliders(p: Plan, level: Level): Box[] {
     ...fixed,
     box(filingSpot(p).x, filingSpot(p).z, FILING.depth + 0.1, FILING.width + 0.1),
     ...[...level.desks.filter((d) => !d.beside), ...level.free].map((s) => turned(WORKSTATION, s)),
+    ...level.tables.flatMap((t) => t.boxes),
     ...(level.pigeonhole ? [box(level.pigeonhole.x, level.pigeonhole.z, PIGEONHOLE.depth + 0.1, PIGEONHOLE.columns * PIGEONHOLE.cell + 0.2)] : []),
     ...level.shelf.map(shelfFloor),
     ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),

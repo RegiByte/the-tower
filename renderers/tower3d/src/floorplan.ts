@@ -79,9 +79,10 @@ export function loftOf(p: { width: number; depth: number }, wall: number): Loft 
 
 /**
  * A room on the floor, drawn by its prefab placed at its door: `door` is the middle of the door's gap on the wall's
- * line, `turn` the way out through it in degrees about +y (0 facing +z), as the prefab's own +z.
+ * line, `turn` the way out through it in degrees about +y (0 facing +z), as the prefab's own +z. A meeting room seats
+ * `seats` at its long table at most.
  */
-export type Room = { id: RoomId; label: string; prefab: string; box: Box; door: { x: number; z: number; turn: number }; height: number }
+export type Room = { id: RoomId; label: string; prefab: string; box: Box; door: { x: number; z: number; turn: number }; height: number; seats?: number }
 export type RoomId = 'archive' | 'game' | 'meeting-8' | 'meeting-4'
 
 /**
@@ -96,14 +97,14 @@ export function roomsOf(p: { width: number; depth: number }): Room[] {
   const front = p.depth / 2
   const edge = left + WING.width
   const strip = front - STRIP.depth
-  const meeting = (id: RoomId, label: string, minX: number, maxX: number): Room => ({
-    id, label, prefab: `prefabs/room_${id.replace('-', '_')}.json`, box: box(minX, maxX, strip, front), door: { x: minX + 1.4, z: strip, turn: 180 }, height: MEETING_HEIGHT,
+  const meeting = (id: RoomId, label: string, minX: number, maxX: number, seats: number): Room => ({
+    id, label, prefab: `prefabs/room_${id.replace('-', '_')}.json`, box: box(minX, maxX, strip, front), door: { x: minX + 1.4, z: strip, turn: 180 }, height: MEETING_HEIGHT, seats,
   })
   return [
     { id: 'archive', label: 'Archive', prefab: 'prefabs/room_archive.json', box: box(left, left + ARCHIVE.width, back, back + ARCHIVE.depth), door: { x: left + ARCHIVE.width, z: back + ARCHIVE.depth - 0.9, turn: 90 }, height: UNDER_DECK },
     { id: 'game', label: 'Game room', prefab: 'prefabs/room_game.json', box: box(left, edge, back + ARCHIVE.depth, back + WING.deck), door: { x: edge, z: back + 7.6, turn: 90 }, height: UNDER_DECK },
-    meeting('meeting-8', 'Meeting · 8', -8.2, 1.0),
-    meeting('meeting-4', 'Meeting · 4', 8.0, 14.4),
+    meeting('meeting-8', 'Meeting · 8', -8.2, 1.0, 8),
+    meeting('meeting-4', 'Meeting · 4', 8.0, 14.4, 4),
   ]
 }
 

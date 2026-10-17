@@ -35,6 +35,7 @@ export const PREFABS = [
   'prefabs/room_game.json',
   'prefabs/room_meeting_8.json',
   'prefabs/room_meeting_4.json',
+  'prefabs/meeting_long.json',
   'prefabs/lobby_runner.json',
   'prefabs/running_bench.json',
 ]
@@ -59,8 +60,8 @@ export type PrefabBox = { size: Vec3; at: Vec3; turn: number; color: string; glo
  * every list of states it can be drawn in, by `stateKey` (shared ones included).
  */
 export type Prefab = { items: PrefabItem[]; boxes: PrefabBox[]; footprint: Box[]; slots: FlatSlot[]; groups: Record<string, string[]>; states: Record<string, PrefabPick> }
-/** A prefab in a list of its states: its models, boxes and slots. */
-export type PrefabPick = { items: PrefabItem[]; boxes: PrefabBox[]; slots: FlatSlot[] }
+/** A prefab in a list of its states: its models, boxes and slots, and the floor they take. */
+export type PrefabPick = { items: PrefabItem[]; boxes: PrefabBox[]; slots: FlatSlot[]; footprint: Box[] }
 /** What a prefab's models in a list of its states are kept under: the names in any order. */
 export const stateKey = (names: string[]) => names.toSorted().join('+')
 export type Prefabs = Record<string, Prefab>
@@ -73,7 +74,7 @@ export type Prefabs = Record<string, Prefab>
 export type ZoneSlot = { prefab: string; x: number; z: number; y?: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[]; shapes: PrefabBox[] }
 
 /** A footprint in a prefab's frame, in level space once the prefab stands at (x, z), stretched, turned by `turn`. */
-const turnBox = (b: Box, x: number, z: number, turn: number, stretch = 1): Box => {
+export const turnBox = (b: Box, x: number, z: number, turn: number, stretch = 1): Box => {
   const corners = [[b.minX * stretch, b.minZ], [b.minX * stretch, b.maxZ], [b.maxX * stretch, b.minZ], [b.maxX * stretch, b.maxZ]].map(([cx, cz]) => turnXZ(cx, cz, turn))
   const xs = corners.map(([cx]) => x + cx)
   const zs = corners.map(([, cz]) => z + cz)

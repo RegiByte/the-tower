@@ -1,0 +1,53 @@
+{
+ "title": "long meeting table",
+ "note": "A meeting room's long table, origin at its centre on the floor, its length along x and its head at the +x end. A crew sits round it: its lead at head, facing down the table, its members at seat_<n> in pairs down both sides, seat_1 and seat_2 nearest the head, each chair a metre from the table's middle facing it. One state of its seats group is drawn, by how many the crew has been at most: seats_4, seats_6, seats_8 (the head included). Tower 3D draws each seated worker's chair and laptop, and an empty chair at every seat nobody takes.",
+ "states": {
+  "seats_4": {
+   "add": {
+    "items": [
+     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.111, 1, 0.733] }
+    ],
+    "slots": [
+     { "name": "head", "pose": "sit", "at": [1.8, 0, 0], "turn": -90 },
+     { "name": "seat_1", "pose": "sit", "at": [0.375, 0, -1], "turn": 0 },
+     { "name": "seat_2", "pose": "sit", "at": [0.375, 0, 1], "turn": 180 },
+     { "name": "seat_3", "pose": "sit", "at": [-0.375, 0, -1], "turn": 0 }
+    ]
+   }
+  },
+  "seats_6": {
+   "add": {
+    "items": [
+     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.444, 1, 0.733] }
+    ],
+    "slots": [
+     { "name": "head", "pose": "sit", "at": [2.175, 0, 0], "turn": -90 },
+     { "name": "seat_1", "pose": "sit", "at": [0.75, 0, -1], "turn": 0 },
+     { "name": "seat_2", "pose": "sit", "at": [0.75, 0, 1], "turn": 180 },
+     { "name": "seat_3", "pose": "sit", "at": [0, 0, -1], "turn": 0 },
+     { "name": "seat_4", "pose": "sit", "at": [0, 0, 1], "turn": 180 },
+     { "name": "seat_5", "pose": "sit", "at": [-0.75, 0, -1], "turn": 0 }
+    ]
+   }
+  },
+  "seats_8": {
+   "add": {
+    "items": [
+     { "id": "table", "model": "furniture/table_medium_long", "at": [0, 0, 0], "scale": [1.778, 1, 0.733] }
+    ],
+    "slots": [
+     { "name": "head", "pose": "sit", "at": [2.55, 0, 0], "turn": -90 },
+     { "name": "seat_1", "pose": "sit", "at": [1.125, 0, -1], "turn": 0 },
+     { "name": "seat_2", "pose": "sit", "at": [1.125, 0, 1], "turn": 180 },
+     { "name": "seat_3", "pose": "sit", "at": [0.375, 0, -1], "turn": 0 },
+     { "name": "seat_4", "pose": "sit", "at": [0.375, 0, 1], "turn": 180 },
+     { "name": "seat_5", "pose": "sit", "at": [-0.375, 0, -1], "turn": 0 },
+     { "name": "seat_6", "pose": "sit", "at": [-0.375, 0, 1], "turn": 180 },
+     { "name": "seat_7", "pose": "sit", "at": [-1.125, 0, -1], "turn": 0 }
+    ]
+   }
+  }
+ },
+ "groups": { "seats": ["seats_4", "seats_6", "seats_8"] },
+ "cameras": { "iso": { "view": "iso" }, "top": { "view": "top" } }
+}
