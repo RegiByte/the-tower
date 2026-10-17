@@ -7,7 +7,7 @@ import { DESK_DRESS } from './dress.ts'
 import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
-import { arrival, leaver } from './life.ts'
+import { arrival, carryChair, leaver } from './life.ts'
 import { seatedness } from './rig.ts'
 import { noteTitle } from './notes.ts'
 import { tintOf } from './palette.ts'
@@ -94,6 +94,7 @@ export const DESKS: Layer<DeskAt, Desk> = {
       const l = leaver(s.plan, desk, level, seated, s.models!)
       s.leavers.add(l)
       hangOn(level, l.group)
+      if (!desk.side) carryChair(l, desk)
     }
     s.arrivals.delete(id)
   },

@@ -24,6 +24,7 @@
     "hub/renderers/tower3d/src/acts.ts#KEY",
     "hub/src/bridge/seats.ts#seats",
     "hub/renderers/tower3d/src/desk.ts#makeVisitor",
+    "hub/renderers/tower3d/src/life.ts#carryChair",
     "hub/scripts/sandbox.ts"
   ],
   "links": [
@@ -87,7 +88,9 @@ and how its findings reach the author.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
   place them ([[desk-dressing]]): its chair at `reviewer`, its notebook at `reviewer_notebook`, its subagents standing
-  on the floor at `visitor_<n>`; which desk it sits at is derived like every seat ([[workstations]]).
+  on the floor at `visitor_<n>`; which desk it sits at is derived like every seat ([[workstations]]). Going home, it
+  stands up from that chair and takes it along, pushed in behind it
+  ([`carryChair`](ref:hub/renderers/tower3d/src/life.ts#carryChair)).
 
 **Alternatives considered.**
 - *The reviewer works in the author's worktree.* Sees exactly the author's files, but its tests and builds write

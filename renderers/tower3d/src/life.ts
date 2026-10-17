@@ -213,6 +213,13 @@ export function leaver(p: Plan, desk: Desk, level: number, seated: number, model
   return { group, models, avatar: w, level, desk: at, seat: from, path: [...back, car], heading, facing: seated > 0 ? 0 : heading, arriving: headingOf(out.at(-1)!, car), rose, t: 0 }
 }
 
+/** A reviewer leaving the chair beside its author takes it along, pushed in behind it as it goes: no workstation stands where it sat. */
+export function carryChair(l: Leaver, desk: Desk) {
+  const seat = l.group.worldToLocal(desk.group.localToWorld(SEAT.clone()))
+  l.group.attach(desk.chair)
+  l.chair = { chair: desk.chair, seat }
+}
+
 const standing = (l: Leaver) => l.rose < clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')
 
 /** How far a leaver walks before it pushes its chair back in, and over how far, meters: clear of the seat first. */
