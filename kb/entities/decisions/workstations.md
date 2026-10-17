@@ -8,6 +8,7 @@
   "date": "2026-10-04",
   "reviewed": "2026-10-17",
   "refs": [
+    "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#plan",
     "hub/renderers/tower3d/src/layout.ts#openStation",
     "hub/src/bridge/seats.ts#withSeats",
@@ -57,7 +58,8 @@ already opens.
   keyed by floor and number. An occupied one stays a worker's `Desk`, keyed by session, with its own copy of
   the same furniture ([`makeStation`](ref:hub/renderers/tower3d/src/desk.ts#makeStation) shares it). When a
   worker comes or goes, one gives way to the other at the same spot, so nothing visibly changes but the
-  occupant.
+  occupant. A worker in a meeting room keeps its workstation: it is a station again, dressed as its worker's, its
+  monitor and sign saying where it is, and E on it goes to the worker ([[whereabouts]]).
 - The `station` act carries `open`, the way the cat's carries `watching`. It's marked again when the open desk
   moves, so offers stay a pure read of the board.
 

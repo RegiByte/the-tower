@@ -5,7 +5,7 @@ import type { Card } from './api.ts'
 import { WORLD, branchLine, bubbleOf, pairLine, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
-import { ASLEEP, OFFLINE, OPEN_DESK, screenTexture } from './screens.ts'
+import { ASLEEP, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
 import { avatar, seatedAt, type Avatar, type Look } from './avatar.ts'
 import { WARDROBE } from './closet.ts'
 import { CHAIR } from './chair.ts'
@@ -193,31 +193,37 @@ function sideMonitor(slot: FlatSlot) {
   return { group, screen, ribbon }
 }
 
-/** A workstation nobody sits at. The open one, where the next worker on its floor sits, is lit and offers a hire. */
+/**
+ * A workstation nobody sits at. The open one, where the next worker on its floor sits, is lit and offers a hire. One
+ * whose worker is in a meeting room says so on its monitor and its sign.
+ */
 export type Station = {
   group: THREE.Group
   strip: THREE.MeshBasicMaterial
   screen: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
-  /** The open one's sign, where a worker's tag would be: read from anywhere on the floor. */
+  /** The open one's sign, or where its worker is, where a worker's tag would be: read from anywhere on the floor. */
   sign?: THREE.Sprite
-  open: boolean | undefined
+  /** What it shows: open, dark, or where its worker is. */
+  shows: string | undefined
   /** The chair at its seat: the one a worker leaving this workstation stands up from. */
   chair: THREE.Object3D
 }
 
 export function makeStation(models: Models): Station {
-  return { ...furniture(models), open: undefined }
+  return { ...furniture(models), shows: undefined }
 }
 
-export function syncStation(station: Station, open: boolean) {
-  if (station.open === open) return
-  station.open = open
+/** A workstation as it stands: `open` lit, or its worker `away` in a meeting room, else dark. */
+export function syncStation(station: Station, open: boolean, away: { callsign: string; room: string } | undefined) {
+  const shows = away ? `${away.callsign} · in ${away.room}` : open ? 'open' : 'dark'
+  if (station.shows === shows) return
+  station.shows = shows
   station.strip.color.set(open ? WORLD.accent : '#2a2f3a')
   if (station.sign) (station.group.remove(station.sign), dispose(station.sign))
-  station.sign = open ? sprite('OPEN DESK', 0.15, { color: '#fff', bg: WORLD.accent, px: 44 }) : undefined
+  station.sign = away ? sprite(shows, 0.13, { color: WORLD.ink, bg: WORLD.panel, px: 44 }) : open ? sprite('OPEN DESK', 0.15, { color: '#fff', bg: WORLD.accent, px: 44 }) : undefined
   station.sign?.position.set(0, TAG_Y, SCREEN.z + 0.05)
   if (station.sign) station.group.add(station.sign)
-  station.screen.material.map = open ? OPEN_DESK : ASLEEP
+  station.screen.material.map = away ? awayScreen(away.room) : open ? OPEN_DESK : ASLEEP
   station.screen.material.needsUpdate = true
 }
 

@@ -6,7 +6,7 @@ import { makeNote, type Note } from './cork.ts'
 import { DESK_DRESS, pickOf } from './dress.ts'
 import { deskSlots, heldUpAt, makeDesk, makeSeat, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
-import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
+import { openStation, type AwaySlot, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
 import { arrival, carryChair, leaver, moveTo, originOf } from './life.ts'
 import { seatedness } from './rig.ts'
 import { noteTitle } from './notes.ts'
@@ -131,17 +131,20 @@ export const DESKS: Layer<DeskAt, Desk> = {
   },
 }
 
-/** `open`: where the floor's next worker sits; `lit` while the floor can spawn. */
-type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean; lit: boolean }
+/** `open`: where the floor's next worker sits; `lit` while the floor can spawn; `away`, the worker whose it is while it is in a meeting room. */
+type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean; lit: boolean; away?: AwaySlot }
 
-/** Every workstation nobody sits at, by floor and number: the free ones, the open one lit while its floor can spawn, and those whose workers are in a meeting room. */
+/**
+ * Every workstation nobody sits at, by floor and number: the free ones, the open one lit while its floor can spawn,
+ * and those whose workers are in a meeting room, saying where.
+ */
 export const STATIONS: Layer<StationAt, Station> = {
   slots: (p) => floors(p).flatMap((level) => [
     ...level.free.map((slot) => {
       const open = slot === openStation(level)
       return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
     }),
-    ...level.away.map((slot) => [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open: false, lit: false }] as [string, StationAt]),
+    ...level.away.map((slot) => [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open: false, lit: false, away: slot }] as [string, StationAt]),
   ]),
   level: (at) => at.level,
   make(at) {
@@ -149,9 +152,10 @@ export const STATIONS: Layer<StationAt, Station> = {
     STATIONS.keep(station, at)
     return station
   },
-  keep(station, { slot, y, project, open, lit }) {
-    syncStation(station, lit)
-    act(station.group, { kind: 'station', project, n: slot.n, open }, [])
+  keep(station, { slot, y, project, open, lit, away }) {
+    syncStation(station, lit, away && { callsign: away.card.callsign, room: away.room })
+    if (away) act(station.group, { kind: 'desk', id: away.card.id }, [])
+    else act(station.group, { kind: 'station', project, n: slot.n, open }, [])
     station.group.position.set(slot.x, y, slot.z)
     station.group.rotation.y = slot.turn * DEG
     return true

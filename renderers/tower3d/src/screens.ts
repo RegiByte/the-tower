@@ -230,4 +230,11 @@ export const OPEN_DESK = still('OPEN', '#86b9cc', ['E  hire a worker', 'G  choos
 /** A free workstation's monitor while another is open. */
 export const ASLEEP = still('', '', [])
 
-export const isStillScreen = (t: THREE.Texture) => t === OFFLINE || t === OPEN_DESK || t === ASLEEP
+/** The monitors of workstations whose workers are in a meeting room, by room: where they are. */
+const away = new Map<string, THREE.Texture>()
+export const awayScreen = (room: string) => {
+  if (!away.has(room)) away.set(room, still('AWAY', '#86b9cc', [`in ${room}`, 'E  go to them']))
+  return away.get(room)!
+}
+
+export const isStillScreen = (t: THREE.Texture) => t === OFFLINE || t === OPEN_DESK || t === ASLEEP || [...away.values()].includes(t)

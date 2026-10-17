@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Whereabouts: a crew of three gathers in a meeting room until its lead goes home",
-  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting · 8, the next Meeting · 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk; every walk between the two is on the floor's real paths.",
+  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting · 8, the next Meeting · 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk, which says where it is; every walk between the two is on the floor's real paths.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
@@ -23,6 +23,8 @@
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/layers.ts#CHAIRS",
     "hub/renderers/tower3d/src/desk.ts#makeSeat",
+    "hub/renderers/tower3d/src/desk.ts#syncStation",
+    "hub/renderers/tower3d/src/screens.ts#awayScreen",
     "hub/renderers/tower3d/src/life.ts#originOf",
     "hub/renderers/tower3d/src/life.ts#moveTo",
     "hub/renderers/tower3d/src/life.ts#walkIn",
@@ -79,7 +81,9 @@ board field was added.
   its shoulder, inside the room ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)). Every other place in the
   table's state and at the counter has an empty chair ([`CHAIRS`](ref:hub/renderers/tower3d/src/layers.ts#CHAIRS)).
 - *Its desk stays* ([`AwaySlot`](ref:hub/renderers/tower3d/src/layout.ts#AwaySlot)): the workstation is drawn with its
-  worker's dressing, a station nobody sits at.
+  worker's dressing, its monitor reads AWAY with the room ([`awayScreen`](ref:hub/renderers/tower3d/src/screens.ts#awayScreen))
+  and its sign "<CALLSIGN> · in Meeting · 8" ([`syncStation`](ref:hub/renderers/tower3d/src/desk.ts#syncStation)); E
+  there goes to the worker.
 - *Walks.* A desk becoming another kind on the same level (own, beside, seat, standing) or a seat moving is a move:
   [`originOf`](ref:hub/renderers/tower3d/src/life.ts#originOf) takes where the worker sits or walks now, and
   [`moveTo`](ref:hub/renderers/tower3d/src/life.ts#moveTo) gives the new desk's arrival: standing up from the old chair,
