@@ -5,7 +5,10 @@ import { act } from './acts.ts'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_GAMES } from './fixtures.ts'
 import { GAMES, gamePath } from './games.ts'
-import { CABINET } from './layout.ts'
+import { WORLD } from './cards.ts'
+import { CABINET, type ArcadeSignSlot, type Level } from './layout.ts'
+import { tintOf } from './palette.ts'
+import { wrapped } from './running.ts'
 import { picture } from './room.ts'
 import { block, glowing, glows, mesh, toon } from './toon.ts'
 
@@ -75,4 +78,67 @@ export function makeCabinet(project: string, id: string, title: string, tag: str
   group.add(block(w, 0.1, 0.02, trim, 0, 0.04, d / 2 + 0.01))
   act(group, { kind: 'arcade', project, id }, [])
   return { group, title, tint, keptBy }
+}
+
+type FloorLevel = Extract<Level, { kind: 'floor' }>
+
+/** The empty arcade's sign: its size, how far its base is off the floor, its header, a step's line and the gap between steps. */
+const SIGN = { width: 2.4, height: 1.5, bottom: 0.85, header: 0.4, line: 0.115, gap: 0.08 }
+/** Pixels per metre on the sign's canvas. */
+const SIGN_PX = 360
+
+export type ArcadeSign = { group: THREE.Group; key: string }
+
+/** What the sign says: how to fill the room, from declaring `games` when the floor doesn't keep it. */
+const signSteps = (declared: boolean) => [
+  ...(declared ? [] : ['Declare a games collection for this floor in the tower\'s config.']),
+  'Ask a worker for a game: one self-contained .html file.',
+  'Each game it keeps with tower keep games stands here as a machine.',
+]
+
+export const arcadeSignKey = (level: FloorLevel) =>
+  level.arcadeSign ? JSON.stringify([level.arcadeSign, level.y, tintOf(level.floor)]) : ''
+
+/** A sign on the empty game room's front wall, facing into the room, telling the user how its arcade fills. */
+export function buildArcadeSign(level: FloorLevel, sign: ArcadeSignSlot): ArcadeSign {
+  const W = Math.round(SIGN.width * SIGN_PX)
+  const H = Math.round(SIGN.height * SIGN_PX)
+  const cv = Object.assign(document.createElement('canvas'), { width: W, height: H })
+  const g = cv.getContext('2d')!
+  const m = (metres: number) => metres * SIGN_PX
+  g.fillStyle = WORLD.panel
+  g.beginPath()
+  g.roundRect(0, 0, W, H, m(0.04))
+  g.fill()
+  g.fillStyle = WORLD.enamel
+  g.fillRect(0, 0, W, m(SIGN.header))
+  g.fillStyle = tintOf(level.floor)
+  g.fillRect(0, 0, m(0.05), H)
+  g.textBaseline = 'middle'
+  g.fillStyle = WORLD.panel
+  g.font = `900 ${m(0.15)}px ${type.display}`
+  g.letterSpacing = `${m(0.15) * 0.08}px`
+  g.fillText('ARCADE', m(0.18), m(0.15))
+  g.letterSpacing = '0px'
+  g.font = `700 ${m(0.08)}px ${type.ui}`
+  g.fillText(sign.declared ? 'no games kept on this floor yet' : 'this floor keeps no games', m(0.18), m(0.31))
+  let y = SIGN.header + 0.12
+  signSteps(sign.declared).forEach((step, i) => {
+    g.fillStyle = tintOf(level.floor)
+    g.font = `900 ${m(0.1)}px ${type.display}`
+    g.fillText(String(i + 1), m(0.2), m(y + SIGN.line / 2))
+    g.fillStyle = WORLD.ink
+    g.font = `600 ${m(0.088)}px ${type.ui}`
+    const lines = wrapped(g, step, W - m(0.5), 2)
+    lines.forEach((line, k) => g.fillText(line, m(0.38), m(y + SIGN.line / 2 + k * SIGN.line)))
+    y += lines.length * SIGN.line + SIGN.gap
+  })
+  const texture = new THREE.CanvasTexture(cv)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = 4
+  const group = new THREE.Group()
+  group.add(mesh(new THREE.PlaneGeometry(SIGN.width, SIGN.height), new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }), 0, SIGN.bottom + SIGN.height / 2, 0))
+  group.position.set(sign.x, level.y, sign.z - 0.01)
+  group.rotation.y = Math.PI
+  return { group, key: arcadeSignKey(level) }
 }

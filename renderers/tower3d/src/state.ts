@@ -6,7 +6,7 @@ import type { DiffLayout } from '../../../src/shared/panels.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Note } from './cork.ts'
-import type { Cabinet } from './arcade.ts'
+import type { ArcadeSign, Cabinet } from './arcade.ts'
 import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
 import type { Hands } from './hands.ts'
@@ -105,6 +105,7 @@ export type State = {
   /** Each floor's Running board, and its pigeonhole of review threads, by level index. */
   running: Map<string, Running>
   pigeonholes: Map<string, Pigeonhole>
+  arcadeSigns: Map<string, ArcadeSign>
   filings: Map<string, Filing>
   guests: Map<string, Guest>
   dance: Map<string, DanceFloors & { key: string }>
@@ -232,7 +233,7 @@ const NO_PLAN: Plan = { ...NO_PLATE, levels: [], loft: NO_LOFT, rooms: NO_ROOMS,
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
-  desks: new Map(), stations: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
+  desks: new Map(), stations: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   heed: { dismissed: new Set(), visited: new Set() }, ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', lighting: LIT, rungAt: 0, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), panel: undefined, deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),

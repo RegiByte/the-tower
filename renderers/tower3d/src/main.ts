@@ -53,7 +53,7 @@ import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtur
 import * as loading from './loading.ts'
 import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
+import { ARCADE_SIGNS, CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
@@ -324,6 +324,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   reconcile(WALLS, s.walls, s.plan, discard)
   reconcile(RUNNING, s.running, s.plan, discard)
   reconcile(PIGEONHOLES, s.pigeonholes, s.plan, discard)
+  reconcile(ARCADE_SIGNS, s.arcadeSigns, s.plan, discard)
   reconcile(FILINGS, s.filings, s.plan, discard)
   readArchives(next, archiveArrived, archiveFailed)
   dressAllPapers()

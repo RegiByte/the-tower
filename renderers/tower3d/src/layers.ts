@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { act } from './acts.ts'
-import { gameTitle, makeCabinet, type Cabinet } from './arcade.ts'
+import { arcadeSignKey, buildArcadeSign, gameTitle, makeCabinet, type ArcadeSign, type Cabinet } from './arcade.ts'
 import { can } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
 import { DESK_DRESS, pickOf } from './dress.ts'
@@ -233,6 +233,15 @@ export const PIGEONHOLES: Layer<{ level: FloorLevel; key: string }, Pigeonhole> 
   slots: (p) => floors(p).filter((level) => level.pigeonhole).map((level) => [String(level.index), { level, key: pigeonholeKey(level) }]),
   level: (at) => at.level.index,
   make: ({ level }) => buildPigeonhole(level, level.pigeonhole!),
+  keep: (item, { key }) => item.key === key,
+  root: (item) => item.group,
+}
+
+/** Each floor's arcade sign, while its game room holds no cabinet. */
+export const ARCADE_SIGNS: Layer<{ level: FloorLevel; key: string }, ArcadeSign> = {
+  slots: (p) => floors(p).filter((level) => level.arcadeSign).map((level) => [String(level.index), { level, key: arcadeSignKey(level) }]),
+  level: (at) => at.level.index,
+  make: ({ level }) => buildArcadeSign(level, level.arcadeSign!),
   keep: (item, { key }) => item.key === key,
   root: (item) => item.group,
 }

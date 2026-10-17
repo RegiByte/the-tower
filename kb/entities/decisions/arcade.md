@@ -10,6 +10,8 @@
   "refs": [
     "hub/renderers/tower3d/src/games.ts",
     "hub/renderers/tower3d/src/layout.ts#arcadeFor",
+    "hub/renderers/tower3d/src/layout.ts#arcadeSignFor",
+    "hub/renderers/tower3d/src/arcade.ts#buildArcadeSign",
     "hub/renderers/tower3d/src/arcade.ts",
     "hub/renderers/tower3d/src/layers.ts#CABINETS",
     "hub/renderers/tower3d/src/zones.ts#controlZones",
@@ -41,6 +43,12 @@ meaning by one renderer, with no change to the core.
   lounge, facing into the room, the newest (latest id, as created items are named) nearest the door, as many as fit
   (six on its 9 m wall), each with a collider. Moved there from the control room's glass front when the control
   room went up onto the deck.
+- **A sign while the room is empty** ([`arcadeSignFor`](ref:hub/renderers/tower3d/src/layout.ts#arcadeSignFor),
+  [`buildArcadeSign`](ref:hub/renderers/tower3d/src/arcade.ts#buildArcadeSign)): on a floor that keeps no game, or
+  doesn't declare `games`, a board on the front wall where the cabinets would stand says how to fill it: declare
+  `games` in the config (only when the floor lacks it), ask a worker for a game, each `.html` kept there becomes a
+  machine. Derived from the board (whether `games` is declared, how many items it holds); the first game kept takes it
+  down, the cabinets saying the rest.
 - **The cabinet** ([`arcade.ts`](ref:hub/renderers/tower3d/src/arcade.ts)): blocks in the floor's colour, a marquee
   (the room's `picture`) with the game's title and its keeper, an attract screen with the tag. The title is the
   html's `<title>`, else the tag, read once per `modifiedAt` through
@@ -75,8 +83,8 @@ meaning by one renderer, with no change to the core.
 - *Cabinets elsewhere in the room.* The side walls hold the shell bench and the shelf, the back wall the video wall;
   the glass front is the one stretch that grows with nothing else.
 - *Cabinets along the game room's left glass or its glazed side.* The front wall is solid and faces the door, so
-  every cabinet is seen on the way in; the glass stays clear toward the desks. Dummies and a plate saying how to
-  make a game when there are none are still not built.
+  every cabinet is seen on the way in; the glass stays clear toward the desks. Dummy cabinets in an empty room are
+  still not built.
 
-**Impact.** Tower 3D gains an act kind, a layer, a panel and a camera framing; the couch moves while a floor has
-games. No API, board or host change. Every floor shows its arcade once the user declares `games` in the config.
+**Impact.** Tower 3D gains an act kind, layers for the cabinets and the empty room's sign, a panel and a camera
+framing. No API, board or host change. Every floor shows its arcade once the user declares `games` in the config.

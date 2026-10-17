@@ -41,7 +41,7 @@ export const runningKey = (p: Plan, level: FloorLevel) =>
   ])
 
 /** `text` broken at spaces into at most `lines` lines that fit `width`, the last cut short if it must be. */
-function wrapped(g: CanvasRenderingContext2D, text: string, width: number, lines: number) {
+export function wrapped(g: CanvasRenderingContext2D, text: string, width: number, lines: number) {
   const out: string[] = []
   for (const word of text.split(' ')) {
     const last = out.at(-1)

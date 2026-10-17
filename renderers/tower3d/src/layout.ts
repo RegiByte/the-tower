@@ -148,11 +148,13 @@ export type PigeonholeSlot = { x: number; z: number; threads: Floor['threads']; 
 export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; z: number }
 /** A floor's arcade, when it keeps games: its cabinets, the newest by the door, as many as fit; `count` is all its games. */
 export type ArcadeSlot = { count: number; cabinets: CabinetSlot[] }
+/** The sign in an empty game room, on its front wall facing into it, saying how to fill it: `declared`, whether the floor keeps `games`. */
+export type ArcadeSignSlot = { x: number; z: number; declared: boolean }
 
 /** Every level has its KayKit zones (src/zones.ts), placed by `furnish` once the plan is made. */
 export type Level =
   | { kind: 'lobby'; index: number; y: number; name: string; zones: ZoneSlot[] }
-  | { kind: 'floor'; index: number; y: number; name: string; zones: ZoneSlot[]; floor: Floor; desks: DeskSlot[]; free: StationSlot[]; kiosks: KioskSlot[]; tiles: TileSlot[]; shelf: ShelfSlot[]; wall: WallSlot; cork: CorkSlot | undefined; pigeonhole: PigeonholeSlot | undefined; arcade: ArcadeSlot | undefined }
+  | { kind: 'floor'; index: number; y: number; name: string; zones: ZoneSlot[]; floor: Floor; desks: DeskSlot[]; free: StationSlot[]; kiosks: KioskSlot[]; tiles: TileSlot[]; shelf: ShelfSlot[]; wall: WallSlot; cork: CorkSlot | undefined; pigeonhole: PigeonholeSlot | undefined; arcade: ArcadeSlot | undefined; arcadeSign: ArcadeSignSlot | undefined }
   | { kind: 'roof'; index: number; y: number; name: string; zones: ZoneSlot[]; limits: RateLimit[]; floors: DanceFloor[]; guests: GuestSlot[] }
 
 export type Plan = {
@@ -440,6 +442,14 @@ function arcadeFor(floor: Floor, rooms: Room[]): ArcadeSlot | undefined {
   }
 }
 
+/** A floor's arcade sign, while its game room holds no cabinet: in the middle of the arcade's stretch of wall. */
+function arcadeSignFor(floor: Floor, rooms: Room[]): ArcadeSignSlot | undefined {
+  const games = gamesOf(floor)
+  if (games?.items.length) return undefined
+  const r = roomOf(rooms, 'game').box
+  return { x: (r.minX + ARCADE.fromFacade + r.maxX - ARCADE.fromInner) / 2, z: r.maxZ - ROOM_WALL, declared: games !== undefined }
+}
+
 /** A pigeonhole's slots, columns by rows, each a cell this wide and high. */
 export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth: 0.32, bottom: 0.4 }
 
@@ -506,6 +516,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       cork: corkFor(floor, depth),
       pigeonhole: pigeonholeFor(floor, rooms),
       arcade: arcadeFor(floor, rooms),
+      arcadeSign: arcadeSignFor(floor, rooms),
     }
   })
   const roof = board.floors.length + 1
