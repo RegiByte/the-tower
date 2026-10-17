@@ -630,13 +630,13 @@ export function turned(local: Box, s: Pick<StationSlot, 'x' | 'z' | 'turn'>): Bo
 
 /**
  * The way from just outside the elevator's doors to the seat at the workstation `s` (a reviewer's place beside its
- * author's counts as one): across the landing to the aisle along the backs of the desk's column, down it to the desk's
- * row, then behind the chair and into it.
+ * author's counts as one): across the landing to the aisle half a column's pitch behind the desk, down it to the desk,
+ * then behind the chair and into it. The aisles run along z from the landing, so this holds for desks facing ±x.
  */
 export function walkway(p: Plan, s: Pick<StationSlot, 'x' | 'z' | 'turn'>) {
   const front = coreFront(p)
-  const aisle = s.x - COLUMN_SPACING / 2
-  return [{ x: 0, z: front + 0.4 }, { x: aisle, z: front + ACROSS_LANDING }, { x: aisle, z: s.z }, fromDesk(s, 0, -SEAT_OFFSET - BEHIND_SEAT), fromDesk(s, 0, -SEAT_OFFSET)]
+  const aisle = fromDesk(s, 0, -COLUMN_SPACING / 2)
+  return [{ x: 0, z: front + 0.4 }, { x: aisle.x, z: front + ACROSS_LANDING }, aisle, fromDesk(s, 0, -SEAT_OFFSET - BEHIND_SEAT), fromDesk(s, 0, -SEAT_OFFSET)]
 }
 
 /** Standing behind a worker, looking at its screen. */

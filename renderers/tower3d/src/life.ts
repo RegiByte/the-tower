@@ -124,14 +124,12 @@ function upToChair(behind: number, place: THREE.Vector3, side: number) {
 const APPROACH = 0.85
 
 /**
- * The side (desk space x) a worker comes to its chair from and leaves it by: that of `toward` (desk space), the way it
- * comes from or goes to, unless someone sits beside: a reviewer at its author's left comes and goes by its own left,
- * and its author by its right.
+ * The side (desk space x) a worker comes to its chair from and leaves it by: its left (-x), the side a reviewer sits
+ * at, unless a reviewer sits there, when it comes and goes by its right. A reviewer uses its own left, away from its author.
  */
-function sideOf(p: Plan, desk: Desk, toward: THREE.Vector3) {
-  if (desk.side === undefined) return -APPROACH
-  if (p.levels.some((l) => l.kind === 'floor' && l.desks.some((d) => d.beside === desk.card.id))) return APPROACH
-  return toward.x < 0 ? -APPROACH : APPROACH
+function sideOf(p: Plan, desk: Desk) {
+  const reviewed = desk.side !== undefined && p.levels.some((l) => l.kind === 'floor' && l.desks.some((d) => d.beside === desk.card.id))
+  return reviewed ? APPROACH : -APPROACH
 }
 
 const BACK = new THREE.Vector3(0, 0, -1)
@@ -149,7 +147,7 @@ export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: numbe
 export function arrival(p: Plan, desk: Desk): Arrival {
   const way = pathTo(p, desk)
   const behind = way.at(-2)!
-  const path = [...way.slice(0, -2), ...upToChair(behind.z, standingAt(desk.models, desk.avatar, SEAT), sideOf(p, desk, way.at(-3) ?? behind))]
+  const path = [...way.slice(0, -2), ...upToChair(behind.z, standingAt(desk.models, desk.avatar, SEAT), sideOf(p, desk))]
   return { desk, path, t: 0, sat: 0, heading: headingOf(path[0], path[1]) }
 }
 
@@ -217,7 +215,7 @@ export function leaver(p: Plan, desk: Desk, level: number, seated: number, model
   const from = outOfDesk(desk, seat)
   const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
   const out = pathTo(p, desk).slice(0, -1).reverse()
-  const side = sideOf(p, desk, out[1] ?? out[0])
+  const side = sideOf(p, desk)
   const back = (seated > 0 ? [...upToChair(out[0].z, standingAt(models, w, seat), side).reverse(), ...out.slice(1)] : [seat, ...out]).map((v) => outOfDesk(desk, v))
   const car = back.at(-1)!.clone().setZ(coreFront(p) - 1.2)
   w.root.position.copy(from)
