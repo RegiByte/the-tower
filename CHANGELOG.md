@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.40.0
+
+Tower 3D's workers move by the board. No host restart, no config change, the renderer API unchanged. A checkout that
+serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- More clips: eight more of KayKit's, and nine of Quaternius's Universal Animation Library (CC0) baked onto KayKit's
+  Rig_Medium by the character packer, which takes the unpacked library as a sixth argument. The dresser plays any
+  packed clip (`tool:dresser shot --pose <clip>`).
+- Moments from the board: a failed worker flinches, then slumps; compacting casts a spell, a stuck worker picks a
+  lock, a new subagent run is summoned, an idle worker the user types to talks; parties dance and mingle.
+- Workers sit back into a chair pulled out for them and rise forward out of it, come and go by the side toward their
+  way, turn gradually, and walk with their feet planted, at 1.1 m/s.
+
 ## v1.39.0
 
 A prefab editor for Tower 3D's scenes, and scene documents that hold states and slots. No host restart, no config
