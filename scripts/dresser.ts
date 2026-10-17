@@ -10,13 +10,15 @@
  *                                                      it against the catalogue first). --wardrobe serves and saves
  *                                                      another file, renderers/tower3d/wardrobe.json by default: a
  *                                                      copy, to try saving without touching the real one
- *   npm run tool:dresser -- shot <outfit|body|id|CALLSIGN> [--wear part,…] [--pose stand|sit|type|walk|wave|cheer|dance]
+ *   npm run tool:dresser -- shot <outfit|body|id|CALLSIGN> [--wear part,…] [--pose stand|sit|type|walk|wave|cheer|dance|<clip>]
  *                                [--at <s>] [--view front|side|face|three-quarter] [--heads all] [--size 1200x900] [--out file.png]
  *                                                      a PNG of the look: an outfit of wardrobe.json, a body as it
  *                                                      starts (a character of the contract, or bot), or a session id
  *                                                      hashed as Tower 3D hashes it (a callsign is read from
  *                                                      `tower agent`), wearing --wear's parts besides, posed at --at
- *                                                      seconds; --heads all lines it up on every head
+ *                                                      seconds (a clip of the contract's CLIPS plays alone, in
+ *                                                      the chair if it is a Sit_Chair one); --heads all lines it
+ *                                                      up on every head
  *
  * Shots land in --out, else in $TMPDIR/dresser. Paths are printed, one per line.
  */

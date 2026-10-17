@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-import { CHARACTERS, SLOTS, bodyOf, type Slot } from './contract.ts'
+import { CHARACTERS, CLIPS, SLOTS, bodyOf, type ClipName, type Slot } from './contract.ts'
 import { avatar, fitted, place, seatedAt, type Avatar } from './avatar.ts'
 import { CHAIR } from './chair.ts'
 import { WARDROBE } from './closet.ts'
@@ -25,6 +25,7 @@ import { fitFrom, fitOf, fitsRig, formatWardrobe, lookNamed, lookOf, parseWardro
  *   dresser.select(part) · dresser.fit(part, fit | null, key?)
  *                                               fit a piece: `key` is the head worn (or `bot`) unless named
  *   dresser.pose('sit', 1.2) · dresser.view('face') · dresser.heads(true)
+ *                                               a pose, or any clip of the contract's CLIPS on its own
  *   dresser.outfit(name) · dresser.rename(from, to) · dresser.unkeep(name)
  *   await dresser.changes()                     what saving would change in the file on disk, line by line
  *   await dresser.save() · dresser.wardrobe()   write it (answers the file written); the edited wardrobe as its file holds it
@@ -34,14 +35,17 @@ import { fitFrom, fitOf, fitsRig, formatWardrobe, lookNamed, lookOf, parseWardro
  */
 
 const POSES = ['stand', 'sit', 'type', 'walk', 'wave', 'cheer', 'dance'] as const
-type PoseName = (typeof POSES)[number]
-const SEATED: ReadonlySet<PoseName> = new Set(['sit', 'type'])
+/** A pose, or any packed clip played on its own: those starting `Sit_Chair` in the chair. */
+type PoseName = (typeof POSES)[number] | ClipName
+const isClip = (name: string): name is ClipName => (CLIPS as readonly string[]).includes(name)
+const seatedIn = (name: PoseName) => name === 'sit' || name === 'type' || name.startsWith('Sit_Chair')
 const DANCE_MOVES: ClipKey[] = ['Cheering', 'Jump_Idle', 'Waving', 'Cheering:arms']
 /** How long the scrubber reaches, seconds. */
 const LOOP = 8
 
 /** A pose at sim time `t`, as Tower 3D poses it: at a desk (sit, type), on the floor (walk), at the party (wave, cheer, dance). */
 function poseAt(name: PoseName, t: number): Pose {
+  if (isClip(name)) return { layers: [{ clip: name, at: t }] }
   if (name === 'stand') return { layers: [{ clip: 'Idle_A', at: t }] }
   if (name === 'sit') return { layers: [{ clip: 'Sit_Chair_Idle', at: t }] }
   if (name === 'type') return { layers: [{ clip: 'Sit_Chair_Idle:rest', at: t }, { clip: 'Type', at: t }] }
@@ -199,7 +203,7 @@ function redress() {
 }
 
 function animate() {
-  const seated = SEATED.has(shown)
+  const seated = seatedIn(shown)
   for (const f of figures) {
     const { avatar: a } = f
     f.chair.visible = seated
@@ -542,6 +546,7 @@ function renderFit() {
 function renderBar() {
   document.getElementById('bar')!.innerHTML = `
     <div class="group">${POSES.map((p) => `<button data-pose="${p}" class="${p === shown ? 'on' : ''}">${p}</button>`).join('')}</div>
+    <select data-clip style="flex: none; width: 150px"><option value="">clip…</option>${CLIPS.map((c) => `<option ${c === shown ? 'selected' : ''}>${c}</option>`).join('')}</select>
     <button data-act="play">${playing ? 'Pause' : 'Play'}</button>
     <input type="range" id="scrub" min="0" max="${LOOP}" step="0.01" value="${t % LOOP}">
     <span id="clock">${(t % LOOP).toFixed(2)} s</span>
@@ -630,6 +635,7 @@ document.body.addEventListener('change', (e) => {
   const d = el.dataset
   if (d.slot) change(withPart(look, d.slot as Slot, el.value || undefined))
   if (d.paint !== undefined) change({ ...look, paint: el.value } as Look)
+  if (d.clip !== undefined && isClip(el.value)) setPose(el.value)
   if (el.type === 'range') (drawTags(), renderPanels())
   if (d.field && selected) {
     const inputs = [...document.querySelectorAll<HTMLInputElement>(`[data-field="${d.field}"]`)].map((i) => Number(i.value)) as Vec3
@@ -675,7 +681,7 @@ canvas.addEventListener('pointerup', (e) => {
 })
 
 function setPose(name: PoseName, at?: number) {
-  if (!POSES.includes(name)) throw new Error(`no pose "${name}": ${POSES.join(', ')}`)
+  if (!(POSES as readonly string[]).includes(name) && !isClip(name)) throw new Error(`no pose "${name}": ${POSES.join(', ')}, or a clip: ${CLIPS.join(', ')}`)
   shown = name
   for (const f of figures) f.avatar.rig.last = f.avatar.rig.fade = undefined
   if (at !== undefined) ((t = at), (playing = false))
