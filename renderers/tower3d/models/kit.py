@@ -150,14 +150,6 @@ def empty(name, position, parent=None):
     return obj
 
 
-def under(obj, parent):
-    """Re-parents `obj` keeping its world position."""
-    world = obj.matrix_world.copy()
-    obj.parent = parent
-    obj.matrix_world = world
-    return obj
-
-
 def out_path():
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     return args[0], (args[1] if len(args) > 1 else None)
