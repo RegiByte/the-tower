@@ -22,5 +22,13 @@
   { "id": "lounge_wall", "size": [0.15, 2.95, 8.72], "at": [-6.325, 0, -4.66], "color": "#6e6858" },
   { "id": "nook_wall", "size": [0.15, 2.95, 2.5], "at": [2.525, 0, -1.25], "color": "#6e6858" }
  ],
+ "slots": [
+  { "name": "stand_1", "pose": "stand", "at": [-4.158, 0, -6.2], "turn": -90 },
+  { "name": "stand_2", "pose": "stand", "at": [-4.061, 0, -4.6], "turn": -90 },
+  { "name": "stand_3", "pose": "stand", "at": [-4.292, 0, -3], "turn": -90 },
+  { "name": "stand_4", "pose": "stand", "at": [-2.855, 0, -6.882], "turn": -68.3 },
+  { "name": "stand_5", "pose": "stand", "at": [-3.24, 0, -5.35], "turn": -74.7 },
+  { "name": "stand_6", "pose": "stand", "at": [-3.638, 0, -2.186], "turn": -111.7 }
+ ],
  "cameras": { "iso": { "view": "iso" }, "top": { "view": "top" } }
 }
