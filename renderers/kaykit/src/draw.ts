@@ -124,10 +124,11 @@ const ghost = (opacity: number) => new THREE.MeshBasicMaterial({ color: GHOST, t
 function guides(flat: Flat) {
   return (flat.guides ?? []).map((g) => {
     const geometry = new THREE.BoxGeometry(...g.size)
-    const m = new THREE.Mesh(geometry, ghost(0.18))
-    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: GHOST, transparent: true, opacity: 0.6 })))
+    const m = new THREE.Mesh(geometry, ghost(0.1))
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: GHOST, transparent: true, opacity: 0.45 })))
     m.position.set(g.at[0], g.at[1] + g.size[1] / 2, g.at[2])
     m.rotation.y = (g.turn ?? 0) * DEG
+    m.userData.guide = g.name
     return m
   })
 }
@@ -141,6 +142,7 @@ export const FIGURE = { stand: 1.75, sit: 1.3, across: 0.45 }
  */
 function slots(flat: Flat) {
   const group = new THREE.Group()
+  group.name = 'slots'
   for (const slot of flat.slots) {
     const g = new THREE.Group()
     const h = slot.pose ? FIGURE[slot.pose] * slot.size : 0.02

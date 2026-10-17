@@ -1,21 +1,25 @@
 {
  "title": "desk",
  "note": "A desk dressed by its worker's state over one workstation: idle (a cactus, a grey screen), working (lamp on, a mug, pencils, an amber screen), needs (headphones lamp, the menu card raised, a red screen), done (a pizza box per finished turn, four here, a green screen).",
- "items": [{ "scene": "workstation.json", "at": [0, 0, 0] }],
- "boxes": [{ "id": "screen", "size": [0.86, 0.5, 0.01], "at": [-0.15, 0.98, -0.155], "color": "#a3aaa6", "glow": true }],
+ "items": [
+  { "scene": "workstation.json", "at": [0, 0, 0] }
+ ],
+ "boxes": [
+  { "id": "screen", "size": [0.86, 0.5, 0.01], "at": [-0.15, 0.98, -0.155], "color": "#a3aaa6", "glow": true }
+ ],
  "states": {
-  "idle": {
-   "add": { "items": [{ "model": "furniture/cactus_small_A", "at": [0.85, 0.75, -0.25] }] }
-  },
+  "idle": { "add": { "items": [{ "model": "furniture/cactus_small_A", "at": [0.85, 0.75, -0.25] }] } },
   "working": {
    "set": { "screen": { "color": "#e89a1a" } },
    "add": {
     "items": [
      { "model": "furniture/lamp_desk", "at": [0.85, 0.75, -0.25], "turn": -30 },
-     { "model": "furniture/mug_A", "at": [1.0, 0.75, 0.3], "turn": 40 },
+     { "model": "furniture/mug_A", "at": [1, 0.75, 0.3], "turn": 40 },
      { "model": "furniture/cup_pencils", "at": [-0.85, 0.75, -0.3] }
     ],
-    "lamps": [{ "at": [0.75, 1.5, -0.1], "intensity": 1.5, "distance": 3 }]
+    "lamps": [
+     { "at": [0.75, 1.5, -0.1], "intensity": 1.5, "distance": 3 }
+    ]
    }
   },
   "needs": {

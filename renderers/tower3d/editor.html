@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefab editor</title>
+<link rel="stylesheet" href="/design.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--enamel); color: var(--ink); font: 13px/1.45 var(--ui); }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#panel { position: fixed; top: 12px; bottom: 76px; left: 12px; width: 320px; padding: 10px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+#bar { position: fixed; left: 12px; right: 12px; bottom: 12px; height: 54px; padding: 8px 12px; display: flex; align-items: center; gap: 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+h1 { margin: 0; font: 900 16px/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
+h3 { margin: 6px 0 0; font: 800 10px/1 var(--display); text-transform: uppercase; letter-spacing: .1em; color: var(--faint); }
+.row { display: flex; align-items: center; gap: 6px; }
+label.row > span { color: var(--muted); font-size: 12px; flex: none; }
+select, input[type=text], input[type=number] { flex: 1; min-width: 0; font: 12px/1 var(--ui); padding: 4px 6px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); }
+input[type=number] { font-family: var(--mono); font-size: 11px; }
+button { font: 700 11px/1 var(--ui); padding: 5px 8px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
+button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+button:disabled { opacity: .45; cursor: default; }
+.group { display: flex; flex-wrap: wrap; gap: 4px; }
+#bar .group { flex-wrap: nowrap; }
+.axes { display: grid; grid-template-columns: 40px repeat(3, 1fr); gap: 3px; align-items: center; }
+.axes input { width: 100%; }
+.axes b { font: 700 11px/1 var(--ui); color: var(--muted); }
+.from, .crumbs { font: 11px/1.3 var(--mono); color: var(--muted); }
+.muted { color: var(--muted); font-size: 12px; }
+.hits { display: flex; flex-direction: column; gap: 2px; }
+.hits button { text-align: left; display: flex; justify-content: space-between; font-weight: 600; }
+.hits small { font-weight: 400; opacity: .7; }
+.keys { font-size: 11px; color: var(--faint); }
+kbd { font: 10px/1 var(--mono); padding: 1px 4px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+.confirm { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--ink); border-radius: var(--radius); }
+.confirm pre { margin: 0; max-height: 220px; overflow: auto; font: 10px/1.35 var(--mono); background: var(--sunk); padding: 6px; border-radius: var(--radius); white-space: pre; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="panel"></div>
+<div id="bar"></div>
+<script src="editor.js"></script>
+</body>
+</html>

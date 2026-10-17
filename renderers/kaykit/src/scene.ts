@@ -187,8 +187,11 @@ export function resolve(scene: Scene, names: string[], doc: string): Resolved {
   return { ...shared, ...out }
 }
 
-/** A slot placed in the world: its name under the ids of the items that placed its scene, `with` kept in its own frame. */
-export type FlatSlot = Slot & { from: string; turn: number; size: number }
+/**
+ * A slot placed in the world: its name under the ids of the items that placed its scene, where it was written (`from`,
+ * `via` as for models), `with` kept in its own frame.
+ */
+export type FlatSlot = Slot & { from: string; via: string[]; turn: number; size: number }
 
 /**
  * A scene with every prefab placed: models, boxes, labels, lamps and slots in world meters, guides as the outer scene
@@ -235,7 +238,7 @@ export async function flatten(scene: Scene, name: string, read: (ref: string, fr
     for (const { src: _, ...b } of s.boxes) out.boxes!.push({ ...b, at: place(f, b.at), turn: f.turn + (b.turn ?? 0), size: b.size.map((v) => v * f.scale) as Vec3 })
     for (const { src: _, ...l } of s.labels) out.labels!.push({ ...l, at: place(f, l.at), turn: f.turn + (l.turn ?? 0), height: (l.height ?? LABEL_HEIGHT) * f.scale })
     for (const { src: _, ...l } of s.lamps) out.lamps!.push({ ...l, at: place(f, l.at), distance: l.distance === undefined ? undefined : l.distance * f.scale })
-    for (const { src, ...l } of s.slots) out.slots.push({ ...l, name: `${under}${l.name}`, from: `${from}#${src}`, at: place(f, l.at), turn: f.turn + (l.turn ?? 0), size: (l.size ?? 1) * f.scale })
+    for (const { src, ...l } of s.slots) out.slots.push({ ...l, name: `${under}${l.name}`, from: `${from}#${src}`, via, at: place(f, l.at), turn: f.turn + (l.turn ?? 0), size: (l.size ?? 1) * f.scale })
   }
   await walk(outer, name, { at: [0, 0, 0], turn: 0, scale: 1 }, [name], [], '')
   return out

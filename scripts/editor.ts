@@ -1,0 +1,150 @@
+/**
+ * The prefab editor's tools (renderers/tower3d/editor.html): serve it to place a scene document's models, prefabs and
+ * slots by hand and save it, and shoot a document headless through the same page, so an agent checks a placement from
+ * a picture. The page draws over the KayKit playground's full catalog (`npm run tool:kaykit -- build` first).
+ *
+ *   npm run tool:editor -- serve <scene.json> [--port 4397]
+ *                                                      the editor at http://127.0.0.1:<port>/editor.html, rebuilt on
+ *                                                      every load, opening the scene; it reads and writes any scene
+ *                                                      document under the scene's folder of scenes (GET and PUT
+ *                                                      /doc?path=, each written checked by parseScene, as
+ *                                                      formatScene lays it out)
+ *   npm run tool:editor -- shot <scene.json> [--states a,b] [--select src] [--camera view|json] [--size 1600x1000] [--out file.png]
+ *                                                      a PNG of the scene in its states as the editor draws it: slots
+ *                                                      as ghost workers, guides, and the selection (items/0) under
+ *                                                      its gizmo; seen from where a worker sits unless --camera
+ *
+ * Shots land in --out, else in $TMPDIR/editor. Paths are printed, one per line.
+ */
+import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import http from 'node:http'
+import os from 'node:os'
+import path from 'node:path'
+import { parseArgs } from 'node:util'
+import { formatScene } from '../renderers/kaykit/src/format.ts'
+import { parseScene, VIEWS, type Camera, type Scene } from '../renderers/kaykit/src/scene.ts'
+import { designCss, fonts } from '../src/shared/design.ts'
+import { fontFile } from '../src/packages.ts'
+import { withPage } from './drive.ts'
+
+const REPO = path.resolve(import.meta.dirname, '..')
+const OUT = path.join(REPO, 'renderers/tower3d/out')
+const KAYKIT = path.join(REPO, 'renderers/kaykit/out')
+const SCENES = path.join(REPO, 'renderers/kaykit/scenes')
+
+const TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.map': 'application/json', '.png': 'image/png', '.bin': 'application/octet-stream', '.woff2': 'font/woff2' }
+
+const build = () => execFileSync('npm', ['run', '-s', 'tower3d'], { cwd: REPO, stdio: 'pipe' })
+
+/** The folder of scenes a served scene may reach: the playground's, or the scene's own folder when it lives elsewhere. */
+const rootOf = (file: string) => (file.startsWith(`${SCENES}${path.sep}`) ? SCENES : path.dirname(file))
+
+/** A document's path as the page names it, repo-relative, checked to lie under `root`. */
+function docPath(root: string, name: string | null) {
+  if (!name) throw new Error('doc wants ?path=')
+  const file = path.resolve(REPO, name)
+  if (!file.startsWith(`${root}${path.sep}`) || !file.endsWith('.json')) throw new Error(`${name} is not a scene under ${path.relative(REPO, root)}`)
+  return file
+}
+
+function writeDoc(file: string, req: http.IncomingMessage, res: http.ServerResponse) {
+  let body = ''
+  req.setEncoding('utf8')
+  req.on('data', (chunk: string) => (body += chunk))
+  req.on('end', () => {
+    try {
+      const raw = JSON.parse(body) as Scene
+      parseScene(raw, path.relative(REPO, file))
+      fs.writeFileSync(file, formatScene(raw))
+      console.log(`saved ${path.relative(REPO, file)}`)
+      res.writeHead(200, { 'content-type': 'text/plain' }).end(path.relative(REPO, file))
+    } catch (e) {
+      res.writeHead(422, { 'content-type': 'text/plain' }).end((e as Error).message)
+    }
+  })
+}
+
+/** The built Tower 3D pages, the playground's catalog under /kaykit/, and the scenes under `root`, on a loopback port. */
+async function serve(port: number, rebuild: boolean, start: string) {
+  const root = rootOf(start)
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url!, 'http://x')
+    const pathname = decodeURIComponent(url.pathname)
+    try {
+      if (pathname === '/start') return res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }).end(path.relative(REPO, start))
+      if (pathname === '/doc' && req.method === 'GET') return res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(fs.readFileSync(docPath(root, url.searchParams.get('path'))))
+      if (pathname === '/doc' && req.method === 'PUT') return writeDoc(docPath(root, url.searchParams.get('path')), req, res)
+    } catch (e) {
+      return res.writeHead(404, { 'content-type': 'text/plain' }).end((e as Error).message)
+    }
+    if (pathname === '/design.css') return res.writeHead(200, { 'content-type': 'text/css' }).end(designCss())
+    const face = fonts.find((f) => pathname === `/fonts/${f.file}`)
+    if (face) return res.writeHead(200, { 'content-type': 'font/woff2' }).end(fs.readFileSync(fontFile(face)))
+    if (pathname === '/editor.html' && rebuild) build()
+    const [base, rel] = pathname.startsWith('/kaykit/') ? [KAYKIT, pathname.slice('/kaykit'.length)] : [OUT, pathname]
+    const file = path.join(base, rel)
+    if (!file.startsWith(base) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return res.writeHead(404).end()
+    res.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' })
+    fs.createReadStream(file).pipe(res)
+  })
+  await new Promise<void>((r) => server.listen(port, '127.0.0.1', r))
+  return { server, url: `http://127.0.0.1:${(server.address() as { port: number }).port}/editor.html` }
+}
+
+const size = (s: string) => {
+  const [w, h] = s.split('x').map(Number)
+  if (!w || !h) throw new Error(`--size wants WxH, got ${s}`)
+  return { w, h }
+}
+
+const cameraArg = (s: string): Camera => (s.startsWith('{') ? (JSON.parse(s) as Camera) : { view: s as (typeof VIEWS)[number] })
+
+async function shot(file: string, opts: { states?: string; select?: string; camera?: string; size?: string; out?: string }) {
+  build()
+  const { server, url } = await serve(0, false, file)
+  try {
+    await withPage(url, { width: 1200, height: 800 }, async (page) => {
+      await page.eval('editor.ready()')
+      const states = opts.states?.split(',').filter(Boolean) ?? []
+      await page.eval(`editor.open(${JSON.stringify(path.relative(REPO, file))}, ${JSON.stringify(states)})`)
+      if (opts.select) await page.eval(`editor.select(${JSON.stringify(opts.select)})`)
+      const data = (await page.eval(`editor.shot(${JSON.stringify({ ...(opts.camera && { camera: cameraArg(opts.camera) }), ...size(opts.size ?? '1600x1000') })})`)) as string
+      const name = `${path.basename(file, '.json')}${states.length ? `-${states.join('+')}` : ''}.png`
+      const out = path.resolve(opts.out ?? path.join(os.tmpdir(), 'editor', name))
+      fs.mkdirSync(path.dirname(out), { recursive: true })
+      fs.writeFileSync(out, Buffer.from(data.split(',')[1], 'base64'))
+      console.log(out)
+    })
+  } finally {
+    server.close()
+  }
+}
+
+async function main() {
+  const [command, ...rest] = process.argv.slice(2)
+  const { values, positionals } = parseArgs({
+    args: rest,
+    allowPositionals: true,
+    options: { port: { type: 'string' }, states: { type: 'string' }, select: { type: 'string' }, camera: { type: 'string' }, size: { type: 'string' }, out: { type: 'string' } },
+  })
+  if (!fs.existsSync(path.join(KAYKIT, 'catalog.json'))) throw new Error('no renderers/kaykit/out/catalog.json: run `npm run tool:kaykit -- build --source <bundle>` first')
+  const file = path.resolve(positionals[0] ?? fail('usage: serve | shot <scene.json> (see scripts/editor.ts)'))
+  parseScene(JSON.parse(fs.readFileSync(file, 'utf8')), file)
+  if (command === 'serve') {
+    build()
+    const { url } = await serve(Number(values.port ?? 4397), true, file)
+    return console.log(`${url}\nediting ${path.relative(REPO, file)}`)
+  }
+  if (command === 'shot') return shot(file, values)
+  fail('usage: npm run tool:editor -- serve | shot <scene.json> (see scripts/editor.ts)')
+}
+
+function fail(message: string): never {
+  throw new Error(message)
+}
+
+main().catch((e: Error) => {
+  console.error(e.message)
+  process.exit(1)
+})
