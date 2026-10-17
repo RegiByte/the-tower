@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-10",
-  "reviewed": "2026-10-16",
+  "reviewed": "2026-10-17",
   "refs": [
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/light/setting.ts#startLighting",
