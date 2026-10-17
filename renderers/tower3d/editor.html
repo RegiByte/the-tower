@@ -22,6 +22,9 @@ select, input[type=text], input[type=number] { flex: 1; min-width: 0; font: 12px
 input[type=number] { font-family: var(--mono); font-size: 11px; }
 button { font: 700 11px/1 var(--ui); padding: 5px 8px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
 button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+button.on.edited { background: var(--accent); border-color: var(--accent); }
+.states { align-items: center; }
+.states > span { width: 44px; font-size: 11px; }
 button:disabled { opacity: .45; cursor: default; }
 .group { display: flex; flex-wrap: wrap; gap: 4px; }
 #bar .group { flex-wrap: nowrap; }

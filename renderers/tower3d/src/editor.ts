@@ -8,7 +8,7 @@ import { find } from '../../kaykit/src/find.ts'
 import { formatScene } from '../../kaykit/src/format.ts'
 import type { DocEntry } from '../../kaykit/src/listing.ts'
 import { loadMeshes } from '../../kaykit/src/meshes.ts'
-import { flatten, isModelGuide, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelGuide, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
+import { flatten, groupsOf, isModelGuide, parseScene, POSES, type Camera, type Flat, type FlatSlot, type Item, type ModelGuide, type ModelItem, type Scene, type Slot } from '../../kaykit/src/scene.ts'
 import { avatar, seatedAt } from './avatar.ts'
 import { CHAIR } from './chair.ts'
 import { MODEL_NAMES, type ModelName } from './contract.ts'
@@ -22,9 +22,10 @@ import { lookOf, type Look } from './wardrobe.ts'
  * The prefab editor (editor.html): a scene document drawn as the KayKit playground draws it, its models, prefabs and
  * slots placed by hand. Click to select (a prefab as a whole; Enter goes inside it), T/R/S to move, turn or scale with
  * the gizmo, G to snap (5 cm, 15°), F to drop onto what is below, Delete to remove, ⌘Z to undo. The states picker
- * draws the document in one state; while a state is shown, edits of what the document shares go to that state
- * (`set`, `remove`) or to every state, as the scope says, and what is added goes to it. A slot for a person is drawn as
- * a Tower 3D worker at its size in its pose, translucent; a slot for a thing as a tile; a guide naming one of Tower 3D's
+ * draws the document in a state of each of its groups (`groupsOf`: one at a time in a document without groups); the
+ * state picked last is the one edited: while it is shown, edits of what the document shares go to it (`set`, `remove`)
+ * or to every state, as the scope says, and what is added goes to it. A slot for a person is drawn as a Tower 3D worker
+ * at its size in its pose, translucent, sitting in a desk chair as Tower 3D seats it; a slot for a thing as a tile; a guide naming one of Tower 3D's
  * models as that model, where Tower 3D draws it, and any other guide as a ghost. Saving shows
  * what changed against the files on disk, line by line, and writes them through `tool:editor serve`. Open lists every
  * scene the serve reaches (its states and slots, who places it, whether Tower 3D reads it) and opens one at `?scene=`,
@@ -34,8 +35,10 @@ import { lookOf, type Look } from './wardrobe.ts'
  *   await editor.open(path, states?)            open a scene file (repo-relative), in a state: the page's ?scene= and
  *                                               ?states= say the same, so a reload opens it again
  *   await editor.docs()                         every scene the serve reaches, as the Open list shows them
- *   editor.info()                               the document, its states, the state shown, the selection and the scope
- *   await editor.state(name | undefined)        show a state, or the shared scene
+ *   editor.info()                               the document, its states and groups, the states shown, the one edited,
+ *                                               the selection and the scope
+ *   await editor.state(name | undefined)        show a state in place of its group's, and edit it; or the shared scene
+ *   await editor.unstate(group)                 show none of a group's states
  *   editor.scope('shared' | 'state')            where edits of shared things go while a state is shown
  *   await editor.select(src | undefined)        select by where the document writes it: items/3, slots/0,
  *                                               states/idle/add/items/0
@@ -51,7 +54,10 @@ import { lookOf, type Look } from './wardrobe.ts'
 
 type Ref = string
 type Place = { at?: Vec3; turn?: number; scale?: number | Vec3 }
-type Info = { path: string; trail: string[]; states: string[]; shown?: string; scope: 'shared' | 'state'; selected?: Ref; element?: unknown; dirty: string[] }
+type Info = {
+  path: string; trail: string[]; states: string[]; groups: Record<string, string[]>; shown: string[]; edited?: string; scope: 'shared' | 'state'; selected?: Ref; element?: unknown
+  dirty: string[]
+}
 
 declare global {
   interface Window {
@@ -61,6 +67,7 @@ declare global {
       docs(): Promise<DocEntry[]>
       info(): Info
       state(name: string | undefined): Promise<Info>
+      unstate(group: string): Promise<Info>
       scope(to: 'shared' | 'state'): Info
       select(src: Ref | undefined): Promise<Info>
       place(src: Ref, to: Place): Promise<Info>
@@ -110,7 +117,9 @@ let history: Map<string, Scene>[] = []
 let at = 0
 /** The documents entered, outermost first: the last one is edited, in the states its placement asks for. */
 let trail: { path: string; states: string[] }[] = []
-let shown: string | undefined
+/** The states drawn, at most one of each group, in the document's order, and the one edited: the one picked last. */
+let shown: string[] = []
+let edited: string | undefined
 let scopeTo: 'shared' | 'state' = 'state'
 let selected: Ref | undefined
 let snapping = false
@@ -133,7 +142,10 @@ let drawing = 0
 const current = () => trail.at(-1)!
 const doc = () => docs.get(current().path)!
 const states = () => Object.keys(doc().states ?? {})
-const drawnStates = () => (shown ? [shown] : [])
+const showing = (names: string[]) => {
+  shown = states().filter((n) => names.includes(n))
+  edited = names.findLast((n) => shown.includes(n))
+}
 const key = (src: Ref) => `${current().path}#${src}`
 
 /** A path relative to the file naming it, as a repo-relative path. */
@@ -180,9 +192,9 @@ async function edit(change: (scene: Scene) => void) {
   renderPanel()
 }
 
-const stateOwn = (src: Ref) => shown !== undefined && src.startsWith(`states/${shown}/add/`)
-/** Where an edit of a shared thing goes while a state is shown: into that state, else into what every state shares. */
-const intoState = (src: Ref) => shown !== undefined && scopeTo === 'state' && !stateOwn(src) && !src.startsWith('states/')
+const stateOwn = (src: Ref) => shown.some((n) => src.startsWith(`states/${n}/add/`))
+/** Where an edit of a shared thing goes while a state is edited: into that state, else into what every state shares. */
+const intoState = (src: Ref) => edited !== undefined && scopeTo === 'state' && !stateOwn(src) && !src.startsWith('states/')
 
 const nameOf = (e: Item | Slot) => ('name' in e ? e.name : e.id)
 
@@ -209,7 +221,7 @@ async function place(src: Ref, to: Place) {
   await edit((scene) => {
     const { element } = located(scene, src)
     if (!intoState(src)) return void Object.assign(element, fields)
-    const state = scene.states![shown!]
+    const state = scene.states![edited!]
     const name = 'name' in element ? element.name : idFor(scene, element)
     state.set = { ...state.set, [name]: { ...state.set?.[name], ...fields } }
   })
@@ -221,20 +233,20 @@ async function remove(src: Ref) {
   await edit((scene) => {
     const { list, index, element } = located(scene, src)
     if (!intoState(src)) return void list.splice(index, 1)
-    const state = scene.states![shown!]
+    const state = scene.states![edited!]
     state.remove = [...(state.remove ?? []), 'name' in element ? element.name : idFor(scene, element)]
   })
   return info()
 }
 
-/** The list new things go into: the state shown, or what every state shares. */
+/** The list new things go into: the state edited, or what every state shares. */
 function addTo(scene: Scene, kind: 'items' | 'slots') {
-  if (shown === undefined) return (scene[kind] ??= []) as unknown[]
-  const state = scene.states![shown]
+  if (edited === undefined) return (scene[kind] ??= []) as unknown[]
+  const state = scene.states![edited]
   state.add ??= {}
   return (state.add[kind] ??= []) as unknown[]
 }
-const srcOfNew = (scene: Scene, kind: 'items' | 'slots') => `${shown === undefined ? '' : `states/${shown}/add/`}${kind}/${addTo(scene, kind).length - 1}`
+const srcOfNew = (scene: Scene, kind: 'items' | 'slots') => `${edited === undefined ? '' : `states/${edited}/add/`}${kind}/${addTo(scene, kind).length - 1}`
 
 async function add(model: string, where?: Vec3) {
   const m = assets.byId.get(model)
@@ -295,7 +307,7 @@ async function drop() {
 /** The document's frame is the world while it is edited: placing it in an outer scene is the outer scene's to draw. */
 async function redraw() {
   const mine = ++drawing
-  const next = await flatten(doc(), current().path, read, drawnStates())
+  const next = await flatten(doc(), current().path, read, shown)
   if (mine !== drawing) return
   flat = next
   const hidden = selected && key(selected)
@@ -355,7 +367,18 @@ const personLook = () => {
   }
 }
 
-/** A slot as Tower 3D fills it: a worker at its size in its pose, translucent, or a tile for a thing; its name above. */
+/** A ghost's look: translucent, casting no shadow. */
+function fade(root: THREE.Object3D) {
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return
+    const faded = (m: THREE.Material) => Object.assign(m.clone(), { transparent: true, opacity: 0.55 })
+    o.material = Array.isArray(o.material) ? o.material.map(faded) : faded(o.material)
+    o.castShadow = false
+  })
+  return root
+}
+
+/** A slot as Tower 3D fills it: a worker at its size in its pose, translucent, seated in a desk chair, or a tile for a thing; its name above. */
 function ghost(slot: Pick<Slot, 'name' | 'pose' | 'size'>) {
   const g = new THREE.Group()
   const size = slot.size ?? 1
@@ -366,13 +389,12 @@ function ghost(slot: Pick<Slot, 'name' | 'pose' | 'size'>) {
     if (a.gear) a.gear.visible = false
     if (slot.pose === 'sit') a.body.position.copy(seatedAt(models.cast, a, CHAIR))
     pose(models.cast, a.rig, { layers: [{ clip: slot.pose === 'sit' ? 'Sit_Chair_Idle' : 'Idle_A', at: 0.5 }] }, 0.5)
-    a.root.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return
-      const faded = (m: THREE.Material) => Object.assign(m.clone(), { transparent: true, opacity: 0.55 })
-      o.material = Array.isArray(o.material) ? o.material.map(faded) : faded(o.material)
-      o.castShadow = false
-    })
-    g.add(a.root)
+    g.add(fade(a.root))
+    if (slot.pose === 'sit') {
+      const chair = fade(instance(models.desk).part('chair'))
+      chair.position.set(0, 0, 0)
+      g.add(chair)
+    }
     top = (slot.pose === 'sit' ? 1.3 : 1.8) * size
   } else {
     const tile = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.29), new THREE.MeshBasicMaterial({ color: GHOST, transparent: true, opacity: 0.6 }))
@@ -408,12 +430,12 @@ async function dressProxy() {
   if (gizmo.object !== proxy) gizmo.attach(proxy)
 }
 
-/** A selection's element as the state shown draws it: a shared thing with the state's `set` laid over it. */
+/** A selection's element as the states shown draw it: a shared thing with each state's `set` laid over it in turn. */
 function elementShown(src: Ref) {
   const { element } = located(doc(), src)
-  const set = shown ? doc().states?.[shown]?.set : undefined
   const name = nameOf(element)
-  return (name !== undefined && set?.[name] ? { ...element, ...set[name] } : element) as Item | Slot
+  if (name === undefined) return element
+  return shown.reduce((e, n) => ({ ...e, ...doc().states?.[n]?.set?.[name] }), element) as Item | Slot
 }
 
 const soloOf = (f: Flat) => build(f, assets).scene.children.filter((o) => o instanceof THREE.BatchedMesh)
@@ -500,7 +522,7 @@ async function enter(src: Ref) {
   const path = relative(element.scene, current().path)
   await readDoc(path)
   trail = [...trail, { path, states: element.states ?? [] }]
-  shown = element.states?.[0]
+  showing(element.states ?? [])
   selected = undefined
   await redraw()
   frame()
@@ -511,7 +533,7 @@ async function enter(src: Ref) {
 async function up() {
   if (trail.length < 2) return info()
   trail = trail.slice(0, -1)
-  shown = current().states[0]
+  showing(current().states)
   selected = undefined
   await redraw()
   frame()
@@ -525,7 +547,7 @@ async function travel(by: number) {
   at = to
   docs = history[at]
   if (selected && !locatable(selected)) selected = undefined
-  if (shown && !(shown in (doc().states ?? {}))) shown = undefined
+  showing(edited ? [...shown, edited] : shown)
   await redraw()
   renderPanel()
   return info()
@@ -547,7 +569,7 @@ async function open(path: string, states: string[] = []) {
   await readDoc(path)
   history = [docs]
   trail = [{ path, states }]
-  shown = states[0]
+  showing(states)
   selected = undefined
   picking = undefined
   window.history.replaceState(null, '', `?scene=${encodeURIComponent(path)}${states.length ? `&states=${states.map(encodeURIComponent).join(',')}` : ''}`)
@@ -571,18 +593,41 @@ function openPicked(path: string) {
   run(open(path))
 }
 
+const groupOf = (name: string) => Object.entries(groupsOf(doc())).find(([, names]) => names.includes(name))![0]
+
+/** Shows a state in place of its group's, edited from now on; `undefined` shows the shared scene alone. */
 async function showState(name: string | undefined) {
   if (name !== undefined && !(name in (doc().states ?? {}))) throw new Error(`${current().path} has no state "${name}" (its states: ${states().join(', ') || 'none'})`)
-  shown = name
+  if (name === undefined) showing([])
+  else {
+    const group = groupsOf(doc())[groupOf(name)]
+    showing([...shown.filter((n) => !group.includes(n)), name])
+  }
+  return reshown()
+}
+
+/** Shows none of a group's states. */
+async function unstate(group: string) {
+  const names = groupsOf(doc())[group]
+  if (!names) throw new Error(`${current().path} has no group "${group}" (its groups: ${Object.keys(groupsOf(doc())).join(', ') || 'none'})`)
+  showing([...shown.filter((n) => !names.includes(n) && n !== edited), ...(edited && !names.includes(edited) ? [edited] : [])])
+  return reshown()
+}
+
+async function reshown() {
   if (selected && selected.startsWith('states/') && !stateOwn(selected)) selected = undefined
   await redraw()
   renderPanel()
   return info()
 }
 
-async function addState(name: string) {
+/** A new state, in `group` when the document has groups, shown and edited. */
+async function addState(name: string, group: string) {
   if (!name || name in (doc().states ?? {})) throw new Error(`a state needs a new name`)
-  await edit((scene) => void (scene.states = { ...scene.states, [name]: {} }))
+  await edit((scene) => {
+    scene.states = { ...scene.states, [name]: {} }
+    if (scene.groups && group in scene.groups) scene.groups = { ...scene.groups, [group]: [...scene.groups[group], name] }
+  })
   return showState(name)
 }
 
@@ -625,12 +670,14 @@ async function save() {
 }
 
 function info(): Info {
-  if (!trail.length) return { path: '', trail: [], states: [], scope: scopeTo, dirty: [] }
+  if (!trail.length) return { path: '', trail: [], states: [], groups: {}, shown: [], scope: scopeTo, dirty: [] }
   return {
     path: current().path,
     trail: trail.map((t) => t.path),
     states: states(),
+    groups: groupsOf(doc()),
     shown,
+    edited,
     scope: scopeTo,
     selected,
     element: selected && elementShown(selected),
@@ -717,6 +764,16 @@ function renderPicker(docs: DocEntry[]) {
   `
 }
 
+/** A row per group, its states to pick one of (the edited one marked) and none; a document without groups has one row. */
+function statesPicker() {
+  const grouped = !!doc().groups
+  return Object.entries(groupsOf(doc())).map(([group, names]) => `
+    <div class="group states">${grouped ? `<span class="muted">${esc(group)}</span><button data-unstate="${esc(group)}" class="${names.some((n) => shown.includes(n)) ? '' : 'on'}" title="none of ${esc(group)}">–</button>` : ''}
+      ${names.map((n) => `<button data-state="${esc(n)}" class="${shown.includes(n) ? 'on' : ''} ${edited === n ? 'edited' : ''}" title="${edited === n ? 'shown, edited' : shown.includes(n) ? 'shown: click to edit it' : 'show it'}">${esc(n)}</button>`).join('')}
+      ${grouped && doc().groups![group] ? `<button data-act="new-state" data-group="${esc(group)}" title="a new state of ${esc(group)}">+</button>` : ''}
+    </div>`).join('')
+}
+
 function renderPanel() {
   if (picking) return renderPicker(picking)
   if (!trail.length) return void (panel.innerHTML = `<h1>Open a scene</h1><div class="muted">${message ? esc(message) : 'reading the scenes…'}</div>`)
@@ -728,12 +785,9 @@ function renderPanel() {
     <div class="crumbs">${trail.map((t, i) => `<span>${i ? '› ' : ''}${esc(t.path.split('/').at(-1)!)}</span>`).join(' ')}${trail.length > 1 ? ' <button data-act="up">up</button>' : ''}</div>
     <div class="muted">${esc(doc().title ?? '')}</div>
     <h3>State</h3>
-    <div class="group">
-      <button data-state="" class="${shown === undefined ? 'on' : ''}">shared</button>
-      ${states().map((s) => `<button data-state="${esc(s)}" class="${shown === s ? 'on' : ''}">${esc(s)}</button>`).join('')}
-      <button data-act="new-state" title="a new state">+</button>
-    </div>
-    ${shown ? `<label class="row"><span>shared edits</span><select id="scope"><option value="state" ${scopeTo === 'state' ? 'selected' : ''}>this state only</option><option value="shared" ${scopeTo === 'shared' ? 'selected' : ''}>every state</option></select></label>` : ''}
+    <div class="group"><button data-state="" class="${shown.length ? '' : 'on'}">shared</button>${doc().groups ? '' : '<button data-act="new-state" data-group="" title="a new state">+</button>'}</div>
+    ${statesPicker()}
+    ${edited ? `<label class="row"><span>shared edits</span><select id="scope"><option value="state" ${scopeTo === 'state' ? 'selected' : ''}>${esc(edited)} only</option><option value="shared" ${scopeTo === 'shared' ? 'selected' : ''}>every state</option></select></label>` : ''}
     <h3>Selected</h3>
     ${e && selected ? `
       <div>${describe(e)}</div>
@@ -783,13 +837,14 @@ panel.addEventListener('click', (ev) => {
   if (d.act === 'docs') return run(showDocs())
   if (d.act === 'close-docs') return ((picking = undefined), renderPanel())
   if (d.state !== undefined) return run(showState(d.state || undefined))
+  if (d.unstate !== undefined) return run(unstate(d.unstate))
   if (d.add) return run(add(d.add))
   if (d.act === 'up') return run(up())
   if (d.act === 'enter' && selected) return run(enter(selected))
   if (d.act === 'drop') return run(drop())
   if (d.act === 'delete' && selected) return run(remove(selected))
   if (d.act === 'none') return run(select(undefined))
-  if (d.act === 'new-state') return run(addState(prompt('name of the new state') ?? ''))
+  if (d.act === 'new-state') return run(addState(prompt('name of the new state') ?? '', d.group ?? ''))
   if (d.act === 'add-slot') {
     const base = (document.getElementById('slot-name') as HTMLInputElement).value.trim()
     const pose = (document.getElementById('slot-pose') as HTMLSelectElement).value as Slot['pose'] | ''
@@ -893,6 +948,7 @@ window.editor = {
   docs: docsListed,
   info,
   state: showState,
+  unstate,
   scope: (to) => ((scopeTo = to), renderPanel(), info()),
   select,
   place,

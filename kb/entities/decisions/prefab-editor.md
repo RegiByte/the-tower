@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The prefab editor: scenes placed by hand, with states and slots, saved as their documents",
-  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose, a guide naming one of Tower 3D's own models as that model (the workstation's desk.glb, where Tower 3D draws it) and any other guide as a ghost, and lets a person select a model, a placed prefab or a slot, move, turn and scale it with a gizmo (snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the state drawn, edits of shared things going to that state or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
+  "summary": "A Tower 3D page beside the dresser (editor.html) draws any KayKit scene document as the playground draws it, with its slots as translucent Tower 3D workers in their pose, a guide naming one of Tower 3D's own models as that model (the workstation's desk.glb, where Tower 3D draws it) and any other guide as a ghost, and lets a person select a model, a placed prefab or a slot, move, turn and scale it with a gizmo (snapping, dropping onto what is below), add from the catalog, delete, undo, go inside a prefab, and pick the states drawn, one of each of the document's groups, edits of shared things going to the state picked last or to all. tool:editor serve shows what saving changes, file by file, and writes it; tool:editor shot renders a document headless through the same page.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-16",
@@ -20,6 +20,7 @@
     "hub/renderers/kaykit/src/format.ts#formatScene",
     "hub/renderers/kaykit/src/listing.ts#listing",
     "hub/renderers/kaykit/src/scene.ts#resolve",
+    "hub/renderers/kaykit/src/scene.ts#groupsOf",
     "hub/scripts/editor.ts",
     "hub/package.json"
   ],
@@ -55,9 +56,14 @@ code fills from the board.
 - The selection is drawn alone under the gizmo and left out of the drawing; on release its place is written to the
   document ([`place`](ref:hub/renderers/tower3d/src/editor.ts#place)), which is redrawn
   ([`redraw`](ref:hub/renderers/tower3d/src/editor.ts#redraw)). The documents are kept raw as their files hold them
-  (key order included); every edit is a copy, so undo steps through the copies. While a state is shown, a shared
+  (key order included); every edit is a copy, so undo steps through the copies. While a state is edited, a shared
   thing's move is written as that state's `set` (a name given if it has none) and a delete as its `remove`, or to
   what every state shares, as the scope says; what is added goes to the state.
+- A document's states may fall in `groups` that exclude each other ([`groupsOf`](ref:hub/renderers/kaykit/src/scene.ts#groupsOf)):
+  the desk's status, pile and season. The picker has a row per group, one state of each or none, and the state picked
+  last is the one edited (`editor.info().edited`); a state outside every group is a group of its own, and a document
+  without groups is drawn in one state at a time. [`resolve`](ref:hub/renderers/kaykit/src/scene.ts#resolve) refuses
+  two states of one group. A sitting slot is drawn in desk.glb's chair, as Tower 3D seats a fork or a reviewer.
 - Saving lists each changed file's lines against disk ([`changes`](ref:hub/renderers/tower3d/src/editor.ts#changes)),
   then writes through [`tool:editor serve`](ref:hub/scripts/editor.ts), which checks each document and writes it as
   [`formatScene`](ref:hub/renderers/kaykit/src/format.ts#formatScene) lays it out: a placed thing per line, so a
@@ -75,6 +81,7 @@ code fills from the board.
   a viewer without a write path.
 - *Prefab overrides on the placing item* (as Unity does): a second, quieter mechanism beside states. Editing inside a
   prefab writes its own file and changes every scene placing it.
+- *A state per combination* (`idle_pile_15_october`): status, pile and season multiply; groups keep each placed once.
 - *A state machine with transitions in the data*: the board derives the state; transitions wait for an animated
   in-between that asks for them.
 
