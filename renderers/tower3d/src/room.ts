@@ -5,7 +5,7 @@ import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from '
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
 import { DECK } from './floorplan.ts'
-import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallBand, videoWallSpot } from './layout.ts'
+import { GLASS_PAST, ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallBand, videoWallSpot } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
@@ -116,7 +116,7 @@ export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables:
   const cx = (r.minX + r.maxX) / 2
   const trim = glowing(tint)
 
-  g.add(block(ROOM.width, h, WALL, toon('#141a26'), cx, 0, r.minZ + WALL / 2 + 0.02))
+  g.add(block(ROOM.width + GLASS_PAST, h, WALL, toon('#141a26'), cx - GLASS_PAST / 2, 0, r.minZ + WALL / 2 + 0.02))
   const title = plate(`${String(level.index).padStart(2, '0')}  ·  ${level.name.toUpperCase()}  ·  CONTROL`, 0.22, { color: tint, px: 56 })
   title.position.set(cx, 2.2, r.minZ + WALL + 0.03)
   g.add(title)
@@ -124,7 +124,8 @@ export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables:
   const mullion = toon('#1d2433')
   const side = mesh(new THREE.PlaneGeometry(r.maxZ - r.minZ, h - 0.2), glass, r.maxX, 0.1 + (h - 0.2) / 2, (r.minZ + r.maxZ) / 2)
   side.rotation.y = Math.PI / 2
-  g.add(side, block(0.12, 0.1, r.maxZ - r.minZ, mullion, r.maxX, 0, (r.minZ + r.maxZ) / 2), block(0.13, 0.04, r.maxZ - r.minZ, trim, r.maxX, 1.1, (r.minZ + r.maxZ) / 2))
+  const sideFrom = r.minZ - GLASS_PAST
+  g.add(side, block(0.12, 0.1, r.maxZ - sideFrom, mullion, r.maxX, 0, (sideFrom + r.maxZ) / 2), block(0.13, 0.04, r.maxZ - sideFrom, trim, r.maxX, 1.1, (sideFrom + r.maxZ) / 2))
   for (let z = r.minZ + 1.5; z < r.maxZ; z += 1.5) g.add(block(0.08, h, 0.06, mullion, r.maxX, 0, z))
   const band = videoWallBand(p)
   g.add(block(band.maxX - band.minX, band.top - band.bottom, band.maxZ - band.minZ, toon('#0b0f18'), r.maxX, band.bottom - DECK.top, (band.minZ + band.maxZ) / 2))
@@ -134,7 +135,7 @@ export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables:
   g.add(pane(r.minX, door.minX), pane(door.maxX, r.maxX))
   for (let x = r.minX + 1.5; x < r.maxX; x += 1.5) if (x < door.minX - 0.05 || x > door.maxX + 0.05) g.add(block(0.06, h, 0.08, mullion, x, 0, r.maxZ))
   const sill = (from: number, to: number) => [block(to - from, 0.1, 0.12, mullion, (from + to) / 2, 0, r.maxZ), block(to - from, 0.04, 0.13, trim, (from + to) / 2, 1.1, r.maxZ)]
-  g.add(...sill(r.minX, door.minX), ...sill(door.maxX, r.maxX))
+  g.add(...sill(r.minX - GLASS_PAST, door.minX), ...sill(door.maxX, r.maxX))
   const dx = (door.minX + door.maxX) / 2
   g.add(block(door.maxX - door.minX, h - DOOR_HEIGHT, 0.12, mullion, dx, DOOR_HEIGHT, r.maxZ))
   for (const x of [door.minX, door.maxX]) g.add(block(0.08, DOOR_HEIGHT, 0.12, mullion, x, 0, r.maxZ))

@@ -34,6 +34,8 @@ export const LOBBY_HEIGHT = 5.5
 export const STOREY = 6.6
 export const SLAB = 0.3
 export const WALL = 0.25
+/** How far a wall or slab meeting the building's glass runs past its pane, so its end never lies in the pane's plane. */
+export const GLASS_PAST = 0.02
 export const EYE = 1.6
 
 export const CORE = { width: 4.4, depth: 4 }

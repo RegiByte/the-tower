@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { DECK, STAIR, stairHeight, type Loft } from './floorplan.ts'
-import type { Box } from './layout.ts'
+import { GLASS_PAST, type Box } from './layout.ts'
 import type { FloorPalette } from './palette.ts'
 import { block, glowing, mesh, toon } from './toon.ts'
 
@@ -78,7 +78,9 @@ export function buildLoft(l: Loft, colors: FloorPalette, tint: string) {
   const under = toon(colors.ceiling)
   const edge = glowing(tint)
   const steel = toon(STEEL)
-  g.add(slab(l.deck, top, under, edge), slab(l.landing, top, under, edge))
+  // The deck's left and back edges meet the building's glass.
+  const deck = { ...l.deck, minX: l.deck.minX - GLASS_PAST, minZ: l.deck.minZ - GLASS_PAST }
+  g.add(slab(deck, top, under, edge), slab(l.landing, top, under, edge))
   for (const r of l.rails) g.add(rail(r, steel))
   for (const r of l.stairRails) g.add(stairRail(l, r, steel))
   const p = l.post
