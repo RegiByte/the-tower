@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { transformControls } from './gizmo.ts'
 import { loadAtlases } from '../../kaykit/src/atlas.ts'
 import { fit, type Catalog, type Vec3 } from '../../kaykit/src/catalog.ts'
 import { build, cameraFor, type Assets, type Built } from '../../kaykit/src/draw.ts'
@@ -93,7 +93,7 @@ renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 const camera = new THREE.PerspectiveCamera(40, 1, 0.02, 500)
 const orbit = new OrbitControls(camera, canvas)
-const gizmo = new TransformControls(camera, canvas)
+const gizmo = transformControls(camera, canvas)
 gizmo.setSize(0.8)
 gizmo.addEventListener('dragging-changed', (e) => (orbit.enabled = !e.value))
 const panel = document.getElementById('panel')!

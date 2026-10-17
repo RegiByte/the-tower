@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
+import { transformControls } from './gizmo.ts'
 import { CHARACTERS, CLIPS, SLOTS, bodyOf, type ClipName, type Slot } from './contract.ts'
 import { avatar, fitted, place, seatedAt, type Avatar } from './avatar.ts'
 import { CHAIR } from './chair.ts'
@@ -71,7 +71,7 @@ sun.position.set(-4, 8, 6)
 scene.add(new THREE.HemisphereLight('#b9c8ff', '#2a2430', 1.9), sun, new THREE.AmbientLight('#ffffff', 0.35))
 const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100)
 const orbit = new OrbitControls(camera, canvas)
-const gizmo = new TransformControls(camera, canvas)
+const gizmo = transformControls(camera, canvas)
 gizmo.setSpace('local')
 gizmo.setSize(0.7)
 scene.add(gizmo.getHelper())
