@@ -153,10 +153,16 @@ export const PACK_SLOTS = Object.fromEntries(SLOTS.map((s) => [s, [...(ADVENTURE
 export const ATLASES = ADVENTURERS.map((a) => `${a.toLowerCase()}_texture`)
 
 /** KayKit's own clips on `Rig_Medium` (Character Animations 1.1) that poses play. */
-export const CLIPS = [
+export const KAYKIT_CLIPS = [
   'Idle_A', 'Idle_B', 'Walking_A', 'Sit_Chair_Idle', 'Cheering', 'Waving', 'Jump_Idle', 'Interact', 'Use_Item', 'Working_A', 'Holding_A',
   'Sit_Chair_Down', 'Sit_Chair_StandUp', 'Ranged_Magic_Summon', 'Ranged_Magic_Spellcasting_Long', 'Hit_B', 'Lockpicking', 'Throw', 'Lie_Idle',
 ] as const
+/** Clips of Quaternius's Universal Animation Library (UAL1_Standard.glb), by its names, baked onto Rig_Medium by the packer. */
+export const UAL_CLIPS = [
+  'Idle_Talking_Loop', 'Sitting_Talking_Loop', 'Sitting_Idle_Loop', 'Walk_Formal_Loop', 'Walk_Loop', 'Dance_Loop', 'PickUp_Table', 'Fixing_Kneeling', 'Push_Loop',
+] as const
+/** Every clip packed on both rigs: KayKit's by their names, UAL's as `UAL_<name>`. */
+export const CLIPS = [...KAYKIT_CLIPS, ...UAL_CLIPS.map((c) => `UAL_${c}` as const)] as const
 export type ClipName = (typeof CLIPS)[number]
 
 /**

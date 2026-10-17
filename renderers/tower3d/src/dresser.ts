@@ -35,10 +35,10 @@ import { fitFrom, fitOf, fitsRig, formatWardrobe, lookNamed, lookOf, parseWardro
  */
 
 const POSES = ['stand', 'sit', 'type', 'walk', 'wave', 'cheer', 'dance'] as const
-/** A pose, or any packed clip played on its own: those starting `Sit_Chair` in the chair. */
+/** A pose, or any packed clip played on its own: those starting `Sit_Chair` or `UAL_Sitting` in the chair. */
 type PoseName = (typeof POSES)[number] | ClipName
 const isClip = (name: string): name is ClipName => (CLIPS as readonly string[]).includes(name)
-const seatedIn = (name: PoseName) => name === 'sit' || name === 'type' || name.startsWith('Sit_Chair')
+const seatedIn = (name: PoseName) => name === 'sit' || name === 'type' || name.startsWith('Sit_Chair') || name.startsWith('UAL_Sitting')
 const DANCE_MOVES: ClipKey[] = ['Cheering', 'Jump_Idle', 'Waving', 'Cheering:arms']
 /** How long the scrubber reaches, seconds. */
 const LOOP = 8

@@ -5,8 +5,9 @@
  *   adventurers.glb   every part the contract names (`ADVENTURER_PARTS` in renderers/tower3d/src/contract.ts) from
  *                     the KayKit Adventurers 1.0, on one skeleton: bodies, heads, helms, capes and gear, each in its
  *                     adventurer's atlas, without the clips each file embeds
- *   rig_medium.glb    the clips the contract names (`CLIPS`) from KayKit Character Animations 1.1, on Rig_Medium's
- *                     bones, without its mannequin
+ *   rig_medium.glb    the clips the contract names (`CLIPS`) on Rig_Medium's bones, without its mannequin: KayKit
+ *                     Character Animations 1.1's (`KAYKIT_CLIPS`), and Quaternius's Universal Animation Library's
+ *                     (`UAL_CLIPS`) retargeted onto Rig_Medium (scripts/ual.ts), as `UAL_<name>`
  *   medium.glb        the parts of the contract's other Rig_Medium characters (`KAYKIT`), skinned to adventurers.glb's
  *                     joints, with their atlases and colourways
  *   large.glb         the parts of its Rig_Large characters, on the first one's skeleton, with the Clanker family's
@@ -14,24 +15,27 @@
  *   rig_large.glb     the clips of rig_medium.glb on that skeleton: rotations as they are, every translation moved
  *                     from Rig_Medium's rest to the large rest by the ratio of the hips' heights
  *
- *   tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers>
+ *   tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers> <ual>
  *
  * `<adventurers>` holds Knight.glb, Mage.glb, Rogue.glb, Rogue_Hooded.glb, Barbarian.glb and LICENSE.txt (the pack's
  * GitHub release); `<animations>` the Rig_Medium_*.glb of the animations pack (itch.io); `<skeletons>` the KayKit
  * Skeletons 1.1 folder, `<series5>` the KayKit Mystery Monthly Series 5 folder, each with its License.txt; `<clankers>`
- * the Clanker family's GLBs, one per variant (sentinel.glb …), generated from the Clanker. Every pack is CC0. Every
+ * the Clanker family's GLBs, one per variant (sentinel.glb …), generated from the Clanker; `<ual>` the unpacked
+ * `Universal Animation Library[Standard].zip` (Quaternius), its Unreal-Godot/UAL1_Standard.glb and License.txt. Every
+ * pack is CC0. Every
  * character of a rig is skinned to the same joints, by name, with the same inverse binds (to 1e-5): checked, since a
  * part moves onto the rig's one skeleton.
  */
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { ADVENTURER_PARTS, ATLAS_NAMES, CLANKER_FAMILY, CLANKER_PROPS, CLIPS, COLOURWAYS, KAYKIT, bodyOf, glowOf, textureOf, type RigKind } from '../renderers/tower3d/src/contract.ts'
+import { ADVENTURER_PARTS, ATLAS_NAMES, CLANKER_FAMILY, CLANKER_PROPS, COLOURWAYS, KAYKIT, KAYKIT_CLIPS, UAL_CLIPS, bodyOf, glowOf, textureOf, type RigKind } from '../renderers/tower3d/src/contract.ts'
 import { readGlb, writeGlb, writer, type Glb, type Json } from './glb.ts'
+import { retargetUal, sanitized } from './ual.ts'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(REPO, 'renderers/tower3d/kaykit/Characters')
-const [adventurers, animations, skeletons, series5, clankers] = process.argv.slice(2).map((p) => path.resolve(p))
-if (!clankers) throw new Error('tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers>')
+const [adventurers, animations, skeletons, series5, clankers, ual] = process.argv.slice(2).map((p) => path.resolve(p))
+if (!ual) throw new Error('tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers> <ual>')
 const PACKS: Record<string, string> = { skeletons, series5 }
 
 const parentsOf = (json: Json) => {
@@ -105,7 +109,17 @@ function packAdventurers() {
   writeGlb(path.join(OUT, 'adventurers.glb'), json, out.bin())
 }
 
-/** The contract's clips from every Rig_Medium file, aimed at one copy of its bones. */
+/**
+ * UAL's sitting clips sit for a human chair, their hips lower than KayKit's: they are moved so their first frame's hips
+ * are where Sit_Chair_Idle's are, on the seat every chair's height is measured from.
+ */
+const SITTING = /^Sitting_/
+function reseat(hips: Float32Array, to: Float32Array) {
+  const by = [0, 1, 2].map((i) => to[i] - hips[i])
+  for (let i = 0; i < hips.length; i++) hips[i] += by[i % 3]
+}
+
+/** The contract's clips, KayKit's from every Rig_Medium file and UAL's baked onto adventurers.glb's bones, aimed at one copy of Rig_Medium's bones. */
 function packClips() {
   const files = readdirSync(animations).filter((f) => /^Rig_Medium_.*\.glb$/.test(f)).sort().map((f) => readGlb(path.join(animations, f)))
   const base = files[0]
@@ -122,7 +136,7 @@ function packClips() {
   }
   json.scenes = [{ nodes: base.json.scenes[0].nodes.filter((r: number) => index.has(r)).map((r: number) => index.get(r)) }]
   const out = writer(json)
-  for (const name of CLIPS) {
+  for (const name of KAYKIT_CLIPS) {
     const src = files.find((g) => g.json.animations.some((a: Json) => a.name === name))
     if (!src) throw new Error(`no Rig_Medium file holds the clip ${name}`)
     const clip = src.json.animations.find((a: Json) => a.name === name)
@@ -134,6 +148,23 @@ function packClips() {
         if (node < 0) throw new Error(`${name} moves ${src.json.nodes[c.target.node].name}, which Rig_Medium lacks`)
         return { ...c, target: { ...c.target, node } }
       }),
+    })
+  }
+  const floats = (count: number, type: string, values: Float32Array, minMax = false) =>
+    out.data({ componentType: 5126, count, type, ...(minMax && { min: [values[0]], max: [values.at(-1)] }) }, Buffer.from(values.buffer, values.byteOffset, values.byteLength))
+  const nodeOf = new Map<string, number>(json.nodes.map((n: Json, i: number) => [sanitized(n.name), i]))
+  const baked = retargetUal(readGlb(path.join(ual, 'Unreal-Godot/UAL1_Standard.glb')), readGlb(path.join(OUT, 'adventurers.glb')), UAL_CLIPS)
+  const sitter = files.find((g) => g.json.animations.some((a: Json) => a.name === 'Sit_Chair_Idle'))!
+  const sit = sitter.json.animations.find((a: Json) => a.name === 'Sit_Chair_Idle')
+  const sitHips = sit.channels.find((c: Json) => sitter.json.nodes[c.target.node].name === 'hips' && c.target.path === 'translation')
+  const seatedHips = floatsOf(sitter, sit.samplers[sitHips.sampler].output).subarray(0, 3)
+  for (const { name, tracks } of baked) {
+    if (SITTING.test(name)) reseat(tracks.find((t) => t.bone === 'hips' && t.path === 'translation')!.values, seatedHips)
+    const onRig = tracks.filter((t) => nodeOf.has(t.bone))
+    json.animations.push({
+      name: `UAL_${name}`,
+      samplers: onRig.map((t) => ({ input: floats(t.times.length, 'SCALAR', t.times, true), output: floats(t.times.length, t.path === 'rotation' ? 'VEC4' : 'VEC3', t.values), interpolation: 'LINEAR' })),
+      channels: onRig.map((t, i) => ({ sampler: i, target: { node: nodeOf.get(t.bone), path: t.path } })),
     })
   }
   json.nodes.forEach((n: Json) => n.children?.length === 0 && delete n.children)
@@ -400,7 +431,8 @@ CC0, its licence beside the files packed from it:
 - \`adventurers.glb\`: the parts of the KayKit Adventurers 1.0 the workers' looks use, on one Rig_Medium skeleton, in
   the four adventurers' atlases, without the clips each character file embeds (\`License-Adventurers.txt\`).
 - \`rig_medium.glb\`: the clips their poses play, from KayKit Character Animations 1.1, without its mannequin
-  (\`License-Animations.txt\`).
+  (\`License-Animations.txt\`), and clips of Quaternius's Universal Animation Library (quaternius.com, CC0,
+  \`License-UAL.txt\`) retargeted onto Rig_Medium by the packer, named \`UAL_<name>\`.
 - \`medium.glb\`: the Rig_Medium characters of KayKit Skeletons 1.1 (\`License-Skeletons.txt\`) and of the KayKit
   Mystery Monthly Series 5 (the Helpers and the Combat Mech, \`License-Series5.txt\`), skinned to adventurers.glb's
   joints, with their atlases and colourways.
@@ -408,7 +440,7 @@ CC0, its licence beside the files packed from it:
 - \`rig_large.glb\`: rig_medium.glb's clips on that skeleton, retargeted by the packer.
 
 Only the parts Tower 3D uses are packed, never a whole pack. All are packed from the packs' own files by
-\`tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers>\`, which takes the parts
+\`tsx scripts/tower3d-characters.ts <adventurers> <animations> <skeletons> <series5> <clankers> <ual>\`, which takes the parts
 and clips \`renderers/tower3d/src/contract.ts\` names.
 
 ## The Clanker family
@@ -433,6 +465,7 @@ packLargeClips(large)
 copyFileSync(path.join(adventurers, 'LICENSE.txt'), path.join(OUT, 'License-Adventurers.txt'))
 copyFileSync(path.join(skeletons, 'License.txt'), path.join(OUT, 'License-Skeletons.txt'))
 copyFileSync(path.join(series5, 'License.txt'), path.join(OUT, 'License-Series5.txt'))
+copyFileSync(path.join(ual, 'License.txt'), path.join(OUT, 'License-UAL.txt'))
 writeFileSync(path.join(OUT, 'README.md'), README)
 const size = (f: string) => `${f} ${(readFileSync(path.join(OUT, f)).length / 1024).toFixed(0)} KB`
 console.log(`${['adventurers.glb', 'rig_medium.glb', 'medium.glb', 'large.glb', 'rig_large.glb'].map(size).join(' · ')} → ${path.relative(REPO, OUT)}`)
