@@ -13,9 +13,9 @@ import { stateKey, turnBox, type Prefabs } from './zones.ts'
  * to gather takes Meeting · 8, the next Meeting · 4, a crew finding both taken stays at its desks until one frees.
  * Inside, the lead takes the table's head and the members the seats in the order they came, a reviewer a free seat
  * next to its author's or, with none free, stands behind its author's chair; past the table's seats they sit at the
- * counter's laptops, then stand at the table's foot. Who
- * holds which room and seat is replayed from the crews' comings and goings, so nobody moves when someone else does,
- * and every reload draws the same room.
+ * counter's laptops, then stand at the table's foot. A worker resumed comes back as a new arrival. Who holds which room
+ * and seat is replayed from the crews' comings and goings, so nobody moves when someone else does, and every reload
+ * draws the same room.
  */
 
 /** A crew gathers once this many of it, its lead among them, are on duty at once. */
@@ -94,9 +94,12 @@ export function stateFor(room: Room, n: number, states: TableState[]) {
   return (fits.find((s) => s.seats >= n) ?? fits.at(-1)!).name
 }
 
-/** A worker's time on duty (epoch ms): from its first session's start to when it stopped, if it has. */
+/**
+ * A worker's time on duty (epoch ms): from its latest session's start to when it stopped, if it has. A resume comes on
+ * duty anew: the board says when each session started, not when the one before it stopped.
+ */
 type Life = { card: Card; from: number; to: number }
-const lifeOf = (c: Card): Life => ({ card: c, from: c.lineage[0].startedAt, to: c.onDuty ? Infinity : (c.letGoAt ?? c.enteredAt) })
+const lifeOf = (c: Card): Life => ({ card: c, from: c.lineage.at(-1)!.startedAt, to: c.onDuty ? Infinity : (c.letGoAt ?? c.enteredAt) })
 const onAt = (l: Life, t: number) => l.from <= t && t < l.to
 
 /** A crew whose lead had `GATHER` on duty at once: its lives, the lead's first, when it gathered and when its lead left. */
@@ -181,7 +184,8 @@ function meetingIn(room: Room, { crew, since }: { crew: Crew; since: number }, k
     const author = crew.lives.find((l) => l.card.callsign === life.card.reviews && at.has(l.card.id))
     const theirs = author && placeNamed(places, at.get(author.card.id)!)
     const next = theirs && free.filter((p) => !p.stand && apart(p, theirs) <= NEXT_TO).toSorted((a, b) => apart(a, theirs) - apart(b, theirs))[0]
-    const place = theirs ? (next?.name ?? `${BEHIND}${theirs.name}`) : free[0]?.name
+    const behind = theirs && `${BEHIND}${theirs.name}`
+    const place = theirs ? (next?.name ?? (taken.has(behind!) ? free[0]?.name : behind)) : free[0]?.name
     if (place) at.set(life.card.id, place)
   }
   const state = stateFor(room, most, kit.states)
