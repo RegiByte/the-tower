@@ -150,6 +150,7 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   for (const k of level.kiosks) {
     const piece = kiosk(k.shell, tint, models, pickables)
     piece.position.set(k.x, 0, k.z)
+    piece.scale.setScalar(k.scale)
     piece.rotation.y = Math.PI / 2
     g.add(piece)
   }
@@ -166,6 +167,7 @@ export function buildShelf(level: FloorLevel, models: Models, pickables: THREE.O
     const piece = shelfPiece(slot, level.floor.id, tint, models, pickables, bookcases)
     piece.position.set(slot.x, 0, slot.z)
     piece.rotation.y = (slot.turn * Math.PI) / 180
+    piece.scale.setScalar(slot.scale)
     g.add(piece)
   }
   return g

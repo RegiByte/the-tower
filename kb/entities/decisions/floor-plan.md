@@ -84,7 +84,7 @@ shoulders.
   ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall on the back wall, the shells'
   bench along the facade, a solid inner wall (which closes the deck's edge behind the landing, so no rail stands
   there) and the console in the middle, entered through a door in its glass front onto the terrace, the rest of the
-  deck. Its depth is fixed: the bench holds as many shells as fit (four). Its walls, console, bench and furniture
+  deck. Its depth is fixed: the bench holds four shells at full size, and past that every kiosk and the pitch between them shrink together until all fit (`packed` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)), so no shell goes undrawn. Its walls, console, bench and furniture
   are the deck layer's colliders ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing
   on the deck carries its `y`.
 - *The plate is sized for three rows* (`PLATE_ROWS` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)):
@@ -102,7 +102,7 @@ shoulders.
   meeting strip, the hero and the lounge's front to the front glass; the desk rows and the lounge stretch between.
   - *Under the deck* (2.95 m high): the archive, 6.5 × 5 in the back corner, holding the shelf along its back glass,
     its left glass and the wall it shares with the game room
-    ([`buildShelf`](ref:hub/renderers/tower3d/src/room.ts#buildShelf)), as many entries as fit; its outer wall is
+    ([`buildShelf`](ref:hub/renderers/tower3d/src/room.ts#buildShelf)), every entry: when the walls are full (about seven at full size), every piece and the pitch shrink together by steps until all fit; its outer wall is
     solid, its door at that wall's front end, and in the nook beside it stand the filing cabinet and the Running
     board ([[logbook]]). The game room, 9 × 9 before it, glazed toward the desks, the arcade along its front wall
     ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).

@@ -110,11 +110,15 @@ export type StationSlot = { n: number; x: number; z: number }
  */
 export type DeskSlot = StationSlot & { card: Card; beside?: string }
 
-export type KioskSlot = { shell: Shell; x: number; z: number }
+/** A shell's kiosk on the control room's bench, facing +x: its centre, and how far it is scaled down so every shell's kiosk fits. */
+export type KioskSlot = { shell: Shell; x: number; z: number; scale: number }
 /** A worker's screen on the video wall: its center on the wall (facing +z) and its size. */
 export type TileSlot = { card: Card; x: number; y: number; w: number; h: number }
-/** A shelf entry against one of the archive's walls: its centre on the floor, `width` along the wall, facing `turn` degrees about +y (0 facing +z). */
-export type ShelfSlot = { entry: ShelfEntry; n: number; kind: keyof typeof SHELF_WIDTH; x: number; z: number; turn: number; width: number }
+/**
+ * A shelf entry against one of the archive's walls: its centre on the floor, `width` along the wall, facing `turn`
+ * degrees about +y (0 facing +z), and how far it is scaled down so every entry fits.
+ */
+export type ShelfSlot = { entry: ShelfEntry; n: number; kind: keyof typeof SHELF_WIDTH; x: number; z: number; turn: number; width: number; scale: number }
 /** A draft's note on the corkboard: its center on the board's face, in level space. */
 export type NoteSlot = { id: string; tag: string; modifiedAt: number; x: number; y: number }
 /** A floor's corkboard on its shared wall, facing +z: its center, the drafts it holds, and the notes it has room for. */
@@ -195,14 +199,38 @@ function tiles(cards: Card[]): Omit<TileSlot, 'card'>[] {
   })
 }
 
-/** A stretch of wall a shelf runs along: where it starts, which way it runs, how long it is, and the way its pieces face. */
-type ShelfRun = { x: number; z: number; dx: number; dz: number; length: number; turn: number }
+/** A stretch of wall pieces stand along: where it starts, which way it runs, how long it is, and the way its pieces face. */
+type Run = { x: number; z: number; dx: number; dz: number; length: number; turn: number }
+
+/** How much smaller pieces get at each step while they don't all fit their runs. */
+const SHRINK = 0.9
+
+/**
+ * Where pieces `widths` wide stand along `runs` in turn, `gap` apart, each whole on one run: all at full size when
+ * they fit, else all scaled down together (their widths and the gaps) by the largest step of `SHRINK` that fits every
+ * one, so none is left out. Each piece's centre and turn, and the scale.
+ */
+function packed(widths: number[], gap: number, runs: Run[]) {
+  for (let scale = 1; ; scale *= SHRINK) {
+    let run = 0
+    let along = 0
+    const at = widths.map((w) => {
+      while (run < runs.length && along + w * scale > runs[run].length) (run += 1, (along = 0))
+      if (run === runs.length) return undefined
+      const r = runs[run]
+      const mid = along + (w * scale) / 2
+      along += (w + gap) * scale
+      return { x: r.x + r.dx * mid, z: r.z + r.dz * mid, turn: r.turn }
+    })
+    if (at.every((a) => a !== undefined)) return { scale, at }
+  }
+}
 
 /**
  * The runs of the archive's walls the shelf takes in turn: the back glass from the left, the left glass toward the
  * front, then the wall it shares with the game room back toward the door, each piece standing off its wall.
  */
-function shelfRuns(a: Box): ShelfRun[] {
+function shelfRuns(a: Box): Run[] {
   const w = ROOM_WALL + SHELF_OFF
   const c = SHELF_CORNER + SHELF_OFF
   return [
@@ -212,21 +240,14 @@ function shelfRuns(a: Box): ShelfRun[] {
   ]
 }
 
-/** The shelf's entries along the archive's runs in turn, each piece where it fits, as many as fit. */
-function shelfSlots(entries: ShelfEntry[], runs: ShelfRun[]): ShelfSlot[] {
-  let run = 0
-  let along = 0
-  return entries.flatMap((entry, n) => {
+/** Every shelf entry along the archive's runs in turn (`packed`). */
+function shelfSlots(entries: ShelfEntry[], runs: Run[]): ShelfSlot[] {
+  const kinds = entries.map((entry): ShelfSlot['kind'] => {
     const own = shelfKind(entry)
-    const kind: ShelfSlot['kind'] = own === 'renderer' ? 'html' : own
-    const width = SHELF_WIDTH[kind]
-    while (run < runs.length && along + width > runs[run].length) (run += 1, (along = 0))
-    if (run === runs.length) return []
-    const r = runs[run]
-    const mid = along + width / 2
-    along += width + SHELF_GAP
-    return [{ entry, n, kind, x: r.x + r.dx * mid, z: r.z + r.dz * mid, turn: r.turn, width }]
+    return own === 'renderer' ? 'html' : own
   })
+  const { scale, at } = packed(kinds.map((k) => SHELF_WIDTH[k]), SHELF_GAP, runs)
+  return entries.map((entry, n) => ({ entry, n, kind: kinds[n], ...at[n]!, width: SHELF_WIDTH[kinds[n]] * scale, scale }))
 }
 
 /** A big screen (src/tv.ts) on a level: its center (y over the level's floor) and size, facing +z. */
@@ -433,8 +454,7 @@ function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined 
 export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
-  const kiosksFit = Math.floor((ROOM.depth - WALL - SHELF_GAP - KIOSK_FROM - KIOSK_DEPTH) / KIOSK_SPACING) + 1
-  const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id).slice(0, kiosksFit))
+  const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
   const depth = CORE.depth + LANDING + Math.max(rows, PLATE_ROWS) * ROW_SPACING + BACK_MARGIN + STRIP.depth + STRIP.aisle
   const rooms = roomsOf({ width, depth })
   const runs = shelfRuns(roomOf(rooms, 'archive').box)
@@ -448,7 +468,11 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     x: ROOM.width / 2 + (n % COLUMNS - (COLUMNS - 1) / 2) * COLUMN_SPACING,
     z: firstRow + Math.floor(n / COLUMNS) * ROW_SPACING,
   })
-  const kioskAt = (shell: Shell, i: number): KioskSlot => ({ shell, x: room.minX + 0.6, z: room.minZ + KIOSK_FROM + i * KIOSK_SPACING })
+  const bench: Run = { x: room.minX + 0.6, z: room.minZ + KIOSK_FROM - KIOSK_DEPTH / 2, dx: 0, dz: 1, length: ROOM.depth - WALL - (KIOSK_FROM - KIOSK_DEPTH / 2), turn: 90 }
+  const kiosksOf = (list: Shell[]): KioskSlot[] => {
+    const { scale, at } = packed(list.map(() => KIOSK_DEPTH), KIOSK_SPACING - KIOSK_DEPTH, [bench])
+    return list.map((shell, i) => ({ shell, x: at[i]!.x, z: at[i]!.z, scale }))
+  }
   const floors = board.floors.map((floor, i): Level => {
     const own = (id: string) => stationAt((floor.cards.find((c) => c.id === id)!.seat as { n: number }).n)
     const desks = onDuty(floor.cards).map((card): DeskSlot => {
@@ -469,7 +493,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       floor,
       desks,
       free: Array.from({ length: rows * COLUMNS }, (_, n) => n).filter((n) => !taken.has(n)).map(stationAt),
-      kiosks: shells[i].map(kioskAt),
+      kiosks: kiosksOf(shells[i]),
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, x: center + t.x, card: desks[i].card })),
       shelf: shelfSlots(floor.shelf ?? [], runs),
       wall: wallFor(floor, depth),
@@ -656,7 +680,7 @@ function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[]
     ...roomWalls(p),
     ...level.zones.filter((z) => z.y === DECK.top).flatMap((z) => z.boxes),
     box(consoleSpot(p).x, consoleSpot(p).z + 0.25, 2.6, 2.2),
-    ...level.kiosks.map((k) => box(k.x, k.z, 0.8, KIOSK_DEPTH)),
+    ...level.kiosks.map((k) => box(k.x, k.z, 0.8 * k.scale, KIOSK_DEPTH * k.scale)),
   ]
 }
 

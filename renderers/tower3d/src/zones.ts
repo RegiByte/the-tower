@@ -178,7 +178,7 @@ const RACKS: Theme = { atlas: { prototype: 'alt_C' } }
 function controlZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: string): Zone[] {
   const room = roomBox(p)
   const front = room.maxZ - 0.1
-  const benchEnds = Math.max(room.minZ, ...level.kiosks.map((k) => k.z + KIOSK_DEPTH / 2))
+  const benchEnds = Math.max(room.minZ, ...level.kiosks.map((k) => k.z + (KIOSK_DEPTH * k.scale) / 2))
   const racks = [front - 0.9, front - 1.7].filter((z) => z - 0.5 > benchEnds)
   const y = DECK.top
   return [
