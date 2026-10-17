@@ -135,7 +135,8 @@ export const briefConfig = (config: Config, projectId: string): Required<BriefCo
 })
 
 /**
- * How long a session's log stays plain: `days` after its worker ended, Tidy offers to archive it (gzip it in place).
+ * How long a session's log stays plain: `days` after its worker ended, Tidy offers to archive it (gzip it in place),
+ * and a probe's stream file `days` after its month closed.
  * Unset: never offered.
  */
 export type RetentionConfig = { days?: number }
@@ -266,7 +267,7 @@ export type Config = {
    * written: no `~` expanded, a relative path against the session's cwd.
    */
   plugins?: string[]
-  /** Renderers served at `/r/<name>/`, beside the core's (`page`, `tower3d`): a new name adds one, a built-in's name overrides its fields. */
+  /** Renderers served at `/r/<name>/`, beside the core's (`page`, `week`, `tower3d`): a new name adds one, a built-in's name overrides its fields. */
   renderers?: Record<string, RendererConfig>
   /** The renderer `/` opens, `page` unless set. */
   renderer?: string
