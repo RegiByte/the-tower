@@ -1,26 +1,26 @@
 {
  "title": "game room",
- "note": "The game room under the loft's deck, 9 x 9 m, origin at the middle of its door on the outer face of its glass door wall, facing out (+z): glazed toward the desks, a wall at -x toward the lounge (the arcade's cabinets stand against it, code), a stub at +x closing the nook; the archive's wall and the left glass close the rest. 2.95 m high, to the deck's underside.",
+ "note": "The game room under the loft's deck, 9 x 9 m, origin at the middle of its door on the outer face of its glass door wall, facing out (+z): glazed toward the desks, a wall at -x toward the lounge (the arcade's cabinets stand against it, code), a stub at +x closing the nook, the deck's post in its front corner, which its walls stop at; the archive's wall and the left glass close the rest. 2.95 m high, to the deck's underside.",
  "boxes": [
-  { "id": "door_wall_1_sill", "size": [5.6, 0.1, 0.17], "at": [-3.6, 0, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_1_glass", "size": [5.6, 2.77, 0.03], "at": [-3.6, 0.1, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
-  { "id": "door_wall_1_head", "size": [5.6, 0.08, 0.17], "at": [-3.6, 2.87, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_1_mullion_1", "size": [0.06, 2.77, 0.15], "at": [-6.4, 0.1, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_sill", "size": [5.3, 0.1, 0.17], "at": [-3.45, 0, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_glass", "size": [5.29, 2.79, 0.03], "at": [-3.455, 0.09, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
+  { "id": "door_wall_1_head", "size": [5.3, 0.08, 0.17], "at": [-3.45, 2.87, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_mullion_1", "size": [0.06, 2.77, 0.15], "at": [-6.07, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_2", "size": [0.06, 2.77, 0.15], "at": [-5, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_3", "size": [0.06, 2.77, 0.15], "at": [-3.6, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_4", "size": [0.06, 2.77, 0.15], "at": [-2.2, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_5", "size": [0.06, 2.77, 0.15], "at": [-0.8, 0.1, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_2_sill", "size": [1.8, 0.1, 0.17], "at": [1.7, 0, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_2_glass", "size": [1.8, 2.77, 0.03], "at": [1.7, 0.1, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
-  { "id": "door_wall_2_head", "size": [1.8, 0.08, 0.17], "at": [1.7, 2.87, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_2_sill", "size": [1.65, 0.1, 0.17], "at": [1.625, 0, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_2_glass", "size": [1.64, 2.79, 0.03], "at": [1.63, 0.09, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
+  { "id": "door_wall_2_head", "size": [1.65, 0.08, 0.17], "at": [1.625, 2.87, -0.085], "color": "#1d2433" },
   { "id": "door_wall_2_mullion_1", "size": [0.06, 2.77, 0.15], "at": [0.8, 0.1, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_2_mullion_2", "size": [0.06, 2.77, 0.15], "at": [2.6, 0.1, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_2_mullion_2", "size": [0.06, 2.77, 0.15], "at": [2.42, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_transom", "size": [1.6, 0.08, 0.17], "at": [0, 2.2, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_over_door", "size": [1.6, 0.67, 0.03], "at": [0, 2.28, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
+  { "id": "door_wall_over_door", "size": [1.62, 0.69, 0.03], "at": [0, 2.27, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
   { "id": "door_wall_jamb_right", "size": [0.08, 2.2, 0.17], "at": [-0.8, 0, -0.085], "color": "#1d2433" },
   { "id": "door_wall_jamb_left", "size": [0.08, 2.2, 0.17], "at": [0.8, 0, -0.085], "color": "#1d2433" },
-  { "id": "lounge_wall", "size": [0.15, 2.95, 8.85], "at": [-6.325, 0, -4.575], "color": "#6e6858" },
-  { "id": "nook_wall", "size": [0.15, 2.95, 2.35], "at": [2.525, 0, -1.325], "color": "#6e6858" }
+  { "id": "lounge_wall", "size": [0.15, 2.95, 8.72], "at": [-6.325, 0, -4.66], "color": "#6e6858" },
+  { "id": "nook_wall", "size": [0.15, 2.95, 2.5], "at": [2.525, 0, -1.25], "color": "#6e6858" }
  ],
  "cameras": { "iso": { "view": "iso" }, "top": { "view": "top" } }
 }

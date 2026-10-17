@@ -105,7 +105,9 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   in turn up the building. The lobby's [`cityModel`](ref:hub/renderers/tower3d/src/zones.ts#cityModel) stands a
   building per project, taller with its workers on duty. Lantern glass and City windows glow by the hour
   ([`glowKit`](ref:hub/renderers/tower3d/src/kit.ts#glowKit)). A prefab may hold boxes besides models: a room's
-  walls, glass (a box with an `opacity`) and trim, sized in metres along their own axes. The kit carries them
+  walls, glass (a box with an `opacity`) and trim, sized in metres along their own axes, no two sharing a face
+  (coincident faces z-fight): a wall stops where a frame or the deck's post begins, a pane sinks into its frame, and a
+  wall meeting the building's glass runs 2 cm past it. The kit carries them
   ([`PrefabBox`](ref:hub/renderers/tower3d/src/zones.ts#PrefabBox)), [`furnish`](ref:hub/renderers/tower3d/src/zones.ts#furnish)
   places them on the level as the zone's `shapes`, the building draws them one mesh per look, and a box standing on
   the floor counts in the footprint (walls and glass are walked round, a door's gap walked through); an opaque one at
