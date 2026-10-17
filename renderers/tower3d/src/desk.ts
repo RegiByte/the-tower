@@ -149,6 +149,8 @@ export type Desk = {
   binderSessions: number
   /** A reviewer's notebook on its author's desk, or a crew member's laptop at its meeting seat; a worker at its own desk has none. */
   notebook?: THREE.Group
+  /** How far a reviewer's own desk space is turned from its author's desk (radians), as the `reviewer` slot is. */
+  besideTurn?: number
   /** A crew member in a meeting room: at a seat, or standing (no chair, no laptop). */
   meeting?: { stand: boolean }
   /** How many subagents stood at the desk when last posed, and since when (sim seconds) the worker summoned the newest. */
@@ -403,7 +405,7 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
   const book = notebook(place.at)
   book.group.rotation.y = place.turn
   group.add(book.group)
-  return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }), notebook: book.group }
+  return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }), notebook: book.group, besideTurn: slots.reviewer.turn * DEG }
 }
 
 /**
@@ -419,6 +421,7 @@ export function situate(desk: Desk, slots: DeskSlots) {
   if (desk.binder) (desk.binder.position.copy(vector(slots.logbook.at)), (desk.binder.rotation.y = slots.logbook.turn * DEG))
   if (desk.side) (desk.side.group.position.copy(vector(slots.side.at)), (desk.side.group.rotation.y = slots.side.turn * DEG))
   if (desk.notebook) {
+    desk.besideTurn = slots.reviewer.turn * DEG
     const place = notebookOf(slots)
     desk.notebook.position.copy(place.at)
     desk.notebook.rotation.y = place.turn

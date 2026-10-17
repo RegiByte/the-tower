@@ -99,12 +99,12 @@ const behindOf = (desk: Desk) => outOfDesk(desk, new THREE.Vector3(0, 0, SEAT.z 
 
 /**
  * The way from just outside the elevator's doors to a desk's chair, in its desk space: along the aisles to a workstation
- * or beside its author (`walkway`, down the aisle of the quarter it faces: a reviewer's seat may be turned off it); to a place in a meeting room, round what stands on the floor (`route`), behind the
+ * or beside its author (`walkway`, down its author's aisle: a reviewer's seat may be turned off its author's desk); to a place in a meeting room, round what stands on the floor (`route`), behind the
  * chair, or to where it stands.
  */
 const pathTo = (p: Plan, desk: Desk) => {
   const { position: at, rotation } = desk.group
-  if (!desk.meeting) return walkway(p, { x: at.x, z: at.z, turn: Math.round(THREE.MathUtils.radToDeg(rotation.y) / 90) * 90 }).map(({ x, z }) => intoDesk(desk, new THREE.Vector3(x, at.y, z)))
+  if (!desk.meeting) return walkway(p, { x: at.x, z: at.z, turn: THREE.MathUtils.radToDeg(rotation.y - (desk.besideTurn ?? 0)) }).map(({ x, z }) => intoDesk(desk, new THREE.Vector3(x, at.y, z)))
   const seat = outOfDesk(desk, SEAT)
   const way = desk.meeting.stand ? route(p, levelOfDesk(p, desk), doorstep(p), seat) : [...route(p, levelOfDesk(p, desk), doorstep(p), behindOf(desk)), seat]
   return way.map((v) => intoDesk(desk, v.setY(at.y)))
