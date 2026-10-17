@@ -37,7 +37,7 @@ Every checkout has one **review thread**: your worktree (by name, across every r
 - `tower send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.
 - `tower review <CALLSIGN> [tell]`: hires a reviewer in a fork of that worker's checkout (uncommitted work included). It reviews once against the worker's goal and leaves notes on its thread; `tell` also sends them to the worker. When your task asks for a review, hire one on yourself: `tower review <your callsign> tell`.
 
-When told of new notes, or `tower thread` lists some: read the thread, act on each note (change the code, or decide it stays), and answer each with `tower note on <checkout> re n<k>`: what you changed (with the commit) or why it stays. There are no statuses. Write notes on your own work when it helps the next reader of the diff: a non-obvious choice, a risk, something left undone. Only `tower note` writes the thread: never edit its file.
+When told of new notes, or `tower thread` lists some: read the thread, act on each note (change the code, or decide it stays), and answer each with `tower note on <checkout> re n<k>`: what you changed (with the commit) or why it stays. Then, when a worker hired you (`hired by` in `tower whoami`), report to it: what changed after the review and whether the work is ready. The thread alone is no report: your hirer is not watching it. There are no statuses. Write notes on your own work when it helps the next reader of the diff: a non-obvious choice, a risk, something left undone. Only `tower note` writes the thread: never edit its file.
 
 ## Hiring and crews
 
@@ -48,7 +48,7 @@ Hire when the user asks, or when the task calls for work done apart from yours. 
 - `tower home <CALLSIGN>`: ends that worker and everyone under it (resumable); a worker in no crew, such as a run of a policy, ends alone. Send your hires home once you have what you need. Read `tower agents` first, and never name your hirer or anyone above you unless the user asks. To end yourself (a run whose job says it ends itself), name your own callsign from `tower whoami`: you go home, with your crew, once this turn ends, so end the turn with your last answer; a prompt before then keeps you on duty.
 - `tower let-go <CALLSIGN>`: takes a worker stranded by a host restart (stopped or lost, resumable) off duty without resuming it; it stays resumable from the floor's archive. Only when the user asks.
 
-The floor limits how deep hires chain and how many of yours run at once. When `tower hire` refuses, don't work around it: tell the user what you would hire and why. `tower review` is never limited. When a worker hired you, report to it as its prompt asks.
+The floor limits how deep hires chain and how many of yours run at once. When `tower hire` refuses, don't work around it: tell the user what you would hire and why. `tower review` is never limited. When a worker hired you, report to it as its prompt asks, and again once you have answered a review's notes.
 
 ## Showing and keeping
 

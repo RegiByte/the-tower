@@ -4,9 +4,9 @@
   "name": "Review round",
   "summary": "One review end to end: a worker (or the user) hires a reviewer in a fork of the author's checkout, the reviewer leaves notes on the checkout's thread, delivers a pointer to them, and the author answers each note on the same thread.",
   "in": "tower",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
-  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/server.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md"]
+  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/server.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 ```mermaid
@@ -29,8 +29,10 @@ sequenceDiagram
   H->>M: reviewer (with tell): tower send <CALLSIGN>
   M->>T: POST /submit {id: author, text: sendText(...)}
   T->>H: the pointer typed into the author's composer
+  Note over H: reviewer, when the author was hired: SendMessage the author's hirer the verdict
   A->>T: tower note on <checkout> re n<k> (one answer per note)
   T->>R: review/append
+  Note over A: when hired: SendMessage its hirer what changed and whether it is ready
 ```
 
 - **Who starts it.** Any worker with `tower review <CALLSIGN>`, or the user from the card's `review` verb. The
@@ -49,7 +51,10 @@ sequenceDiagram
   new to the target ([`unseenBy`](ref:hub/src/shared/reviews.ts#unseenBy)) and how to read and answer them; it
   is typed into the author's composer, so the author must be at it (the card's `submit` call).
 - **One round.** The reviewer stops after delivering; a re-review is a new hire. The author answers with
-  `tower note on <checkout> re n<k>`. The reviewer reports to its author, so sending the author home sends it too
+  `tower note on <checkout> re n<k>`.
+- **The loop closes at the hirer.** When the author was hired, the reviewer tells the author's hirer its verdict in
+  one line, and the author, once it has answered every note, reports to its hirer what changed and whether the work
+  is ready: the thread alone reaches no one who isn't reading it (the `review` skill and the handbook's Reviews). The reviewer reports to its author, so sending the author home sends it too
   ([[crews]]); once the checkout's work lands, [[tidy]] files the thread.
 - **Failure.** `tower review` fails when the card offers no review, saying which of those is missing, when the tower is down, or when the worker
   was not started by the tower (no `TOWER_SESSION_ID` or `TOWER_HOOKS_SOCKET`).

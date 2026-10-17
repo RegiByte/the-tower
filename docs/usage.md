@@ -81,6 +81,8 @@ and its reviewers discuss the work before it lands.
   reviews once against the worker's goal and leaves notes on the thread.
 - A worker can ask for one itself: "when you're done, get yourself reviewed" makes it run
   `tower review <its callsign> tell`, then answer each note.
+- A hired worker reports to whoever hired it once it has answered the notes, and its reviewer tells that hirer
+  the verdict, so a coordinator hears the review loop close without you relaying it.
 - `tower note` writes a note, `tower thread` reads one, and `tower send <CALLSIGN>` points a worker at its new notes.
 
 ## Keeping things for later

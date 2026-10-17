@@ -4,7 +4,7 @@
   "name": "tower mod",
   "summary": "The Claude Code mod loaded into every session, posting Claude's mod events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and three skills, tower:handbook, tower:review and tower:guide.",
   "in": "host",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/guide/SKILL.md"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock; from the tower command, tower.show and tower.keep" },
@@ -38,7 +38,7 @@ mods, as it keeps `session.compact` inside an organization ([[claude-code]]). Ea
 
 The plugin's `bin/tower` is on the Bash tool's PATH in every session. The brief in the system prompt gives the
 everyday recipes, and the `tower:handbook` skill is the handbook beside it ([[brief-first]]): it tells Claude what the tower is, how to find itself and other workers, and how to reach one with `SendMessage` ([[agent-directory]]); how
-to show the user a page ([[agent-show]]) or open a file on their desktop ([[open-files]]), keep an item ([[workers-edit-kept-items]]), answer review notes ([[review-threads]]), hire
+to show the user a page ([[agent-show]]) or open a file on their desktop ([[open-files]]), keep an item ([[workers-edit-kept-items]]), answer review notes and report to its hirer after ([[review-threads]]), hire
 a reviewer ([[reviewer]]) or a worker, within the floor's limits ([[hiring-limits]]), and send a crew home ([[crews]]); and, in a worktree the tower cut,
 how to keep to it ([[tower-cuts-worktrees]]). Its `review` skill is what a reviewer starts on
 (`/tower:review <CALLSIGN> [tell]`). Its `guide` skill is for the user, not for work: when they ask how to use the

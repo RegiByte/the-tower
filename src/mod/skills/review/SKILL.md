@@ -52,5 +52,6 @@ EOF
 
 - With `tell`: `tower send <CALLSIGN>` submits a pointer to your notes into the author.
 - Without it, leave them: the user reads them in the Reviews tab and sends them on.
+- When the author was hired (`hired by` in `tower agent <CALLSIGN>`), also tell its hirer the verdict, in one line with `SendMessage` to its **message as** name (`tower agent <HIRER>` gives it): your callsign, the author's, the verdict and the thread (`tower thread <checkout>`). The hirer then knows the review is in even if the author stalls.
 
 Then stop. A review is one round: never wait for the author's answers, and never review again unless you are asked. A re-review is a new request.
