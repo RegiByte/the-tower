@@ -157,6 +157,9 @@ const walked = (p: Plan, desk: Desk, way: THREE.Vector3[]) =>
 
 const BACK = new THREE.Vector3(0, 0, -1)
 
+/** A chair at its desk, pulled back from `SEAT` as for its worker to sit down. */
+const PULLED: Placed = { at: SEAT.clone().addScaledVector(BACK, PULL), turn: 0 }
+
 /** A chair `k` of the way into its worker sitting down: pulled back, the way its back faces, until the hips come down onto it. */
 const pullChair = (chair: THREE.Object3D, seat: THREE.Vector3, k: number) =>
   chair.position.copy(seat).addScaledVector(BACK.clone().applyQuaternion(chair.quaternion), PULL * (1 - k))
@@ -219,7 +222,7 @@ export function carryIn(a: Arrival) {
 /** An arriving worker's chair as it walks `d` along its way: pulled back from its seat, or rolled in ahead of it. */
 function chairOnWay(a: Arrival, d: number) {
   if (!a.carried) return pullChair(a.desk.chair, SEAT, 0)
-  rollChair(a.desk.chair, SEAT, 0, a.path, d, Math.min(1, (lengthOf(a.path) - d) / CARRY.take))
+  rollChair(a.desk.chair, PULLED, a.path, d, Math.min(1, (lengthOf(a.path) - d) / CARRY.take))
 }
 
 const rising = (a: Arrival) => a.rise !== undefined && a.rise.at < clipLength(a.desk.models.cast, a.desk.avatar.rig, 'Sit_Chair_StandUp')
@@ -287,12 +290,12 @@ function sitPose(models: Models, a: Avatar, clip: 'Sit_Chair_Down' | 'Sit_Chair_
  * A worker gone off duty: standing up `rose` seconds from the chair at `seat` (world space), turning from `heading` to
  * its desk, which faces `turn`, then walking `t` meters into the elevator on its level, setting off facing `facing` and stepping in
  * facing `arriving`, then turning to its doors, before it leaves the building. `chair` is the workstation's chair it rose from, once its workstation stands there;
- * `carried`, the chair a reviewer takes along, rolled ahead of it along `way`.
+ * `carried`, the chair a reviewer takes along, rolled ahead of it along `way` from where it stood as the reviewer set off (`from`).
  */
 export type Leaver = {
   group: THREE.Group; models: Models; avatar: Avatar; level: number; desk: THREE.Vector3; turn: number; seat: THREE.Vector3; path: THREE.Vector3[]; heading: number; facing: number; arriving: number; rose: number; t: number
   chair?: { chair: THREE.Object3D; seat: THREE.Vector3 }
-  carried?: { chair: THREE.Object3D; seat: THREE.Vector3; way: THREE.Vector3[] }
+  carried?: { chair: THREE.Object3D; seat: THREE.Vector3; way: THREE.Vector3[]; from?: Placed }
 }
 
 /**
@@ -333,15 +336,14 @@ export function carryChair(l: Leaver, desk: Desk) {
 /** How far ahead of its walker a carried chair rolls, pushed by its back, and how far the walker goes to bring it from its seat to there, meters. */
 const CARRY = { ahead: 0.7, take: 0.9 }
 
-/**
- * A carried chair `k` of the way from standing pulled back from `seat`, its desk facing `turn` (0), to rolling ahead
- * of its walker `d` along `way`, facing the way it goes (1).
- */
-function rollChair(chair: THREE.Object3D, seat: THREE.Vector3, turn: number, way: THREE.Vector3[], d: number, k: number) {
+/** Where a chair stands and which way it faces (radians). */
+type Placed = { at: THREE.Vector3; turn: number }
+
+/** A carried chair `k` of the way from standing at `from` (0) to rolling ahead of its walker `d` along `way`, facing the way it goes (1). */
+function rollChair(chair: THREE.Object3D, from: Placed, way: THREE.Vector3[], d: number, k: number) {
   const ahead = along(way, Math.min(d + CARRY.ahead, lengthOf(way)))!
-  const pulled = seat.clone().addScaledVector(BACK.clone().applyAxisAngle(Y, turn), PULL)
-  chair.position.copy(pulled).lerp(ahead.at, smooth(k))
-  chair.rotation.y = turned(turn, ahead.heading, k)
+  chair.position.copy(from.at).lerp(ahead.at, smooth(k))
+  chair.rotation.y = turned(from.turn, ahead.heading, k)
 }
 
 const standing = (l: Leaver) => l.rose < clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')
@@ -366,7 +368,11 @@ export function walkOut(l: Leaver, dt: number) {
   }
   l.t += dt * WALK_SPEED
   if (l.chair) pullChair(l.chair.chair, l.chair.seat, smooth(Math.min(1, Math.max(0, (l.t - TUCK.after) / TUCK.over))))
-  if (l.carried) rollChair(l.carried.chair, l.carried.seat, l.turn, l.carried.way, l.t, Math.min(1, l.t / CARRY.take))
+  if (l.carried) {
+    const { chair } = l.carried
+    l.carried.from ??= { at: chair.position.clone(), turn: chair.rotation.y }
+    rollChair(chair, l.carried.from, l.carried.way, l.t, Math.min(1, l.t / CARRY.take))
+  }
   const step = along(l.path, l.t)
   if (!step) {
     const total = lengthOf(l.path)
