@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.39.0
+
+A prefab editor for Tower 3D's scenes, and scene documents that hold states and slots. No host restart, no config
+change, the renderer API unchanged. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- Scene documents (`renderers/kaykit/src/scene.ts`) gain optional `id`s, `states` (named changes over the shared
+  scene: remove, set, add, applied as a list in the document's order), `slots` (named places set by hand that code
+  fills from the board: a person's, sitting or standing, or a thing's) and `guides` (ghost boxes for what the host
+  draws itself). `tool:kaykit check` covers them and `render --states` draws a state. The playground's four desk
+  scenes are one `prefabs/desk.json`, and the meeting nook has `seat_1..5`.
+- Tower 3D's desk props come from `prefabs/desk_dress.json`, a state per status, and the places around a worker (the
+  twin, subagents, logbook, papers, a reviewer's notebook) from its slots. Hand-placed props are no longer nudged per
+  worker. The idle desk's cactus no longer cuts through the monitor.
+- The editor (`renderers/tower3d/editor.html`, `npm run tool:editor -- serve [scene.json]`, `shot`): open any scene
+  from a list, select models, placed prefabs and slots (people drawn as posed ghost workers), move, turn and scale
+  them with a gizmo, snap, drop onto the surface below, add from the catalog, edit inside a prefab, edit per state,
+  undo, and save after seeing each file's changed lines. `window.editor` drives it for agents. It needs the playground's
+  catalog built (`npm run tool:kaykit -- build`).
+
 ## v1.38.0
 
 A tool that checks a new Claude Code release against the tower. No host restart, no config change, the renderer API
