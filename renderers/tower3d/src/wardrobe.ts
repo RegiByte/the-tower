@@ -353,5 +353,3 @@ export function formatWardrobe(w: Wardrobe): string {
   doc.mix = ordered(doc.mix, Object.keys(Mix.shape)) as typeof doc.mix
   return `${JSON.stringify(doc, null, 2).replace(/\[\s+([^[\]{}]*?)\s+\]/g, (_, inner: string) => `[${inner.split(/,\s+/).join(', ')}]`)}\n`
 }
-
-export const isBone = (name: string): name is Bone => (BONES as readonly string[]).includes(name)

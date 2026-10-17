@@ -600,9 +600,6 @@ export const carBox = (p: Plan): Box => ({ minX: -CORE.width / 2 + WALL, maxX: C
 
 export const inside = (b: Box, x: number, z: number) => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
 
-/** Standing in the car, facing out of its doors. */
-export const carSpot = (p: Plan) => ({ x: 0, z: coreFront(p) - CORE.depth / 2 + 0.2, yaw: 0 })
-
 /** The control room's footprint on the deck: the plate's back-left corner. */
 export const roomBox = (p: Pick<Plan, 'width' | 'depth'>): Box => ({ minX: -p.width / 2, maxX: -p.width / 2 + ROOM.width, minZ: -p.depth / 2, maxZ: -p.depth / 2 + ROOM.depth })
 
@@ -691,10 +688,6 @@ export function cabinetOf(p: Plan, project: string, id: string) {
   const cabinet = level?.arcade?.cabinets.find((c) => c.id === id)
   return level && cabinet && { level, cabinet }
 }
-
-/** Where a showing hangs, if it is still among its floor's latest. */
-export const pictureOf = (p: Plan, id: string, target: string) =>
-  p.levels.flatMap((l) => (l.kind === 'floor' ? l.wall.pictures : [])).find((pic) => pic.worker.id === id && pic.shown.target === target)
 
 export const levelOfCard = (p: Plan, id: string) => p.levels.find((l) => l.kind === 'floor' && l.desks.some((d) => d.card.id === id))
 export const deskOf = (p: Plan, id: string) => p.levels.flatMap((l) => (l.kind === 'floor' ? l.desks : [])).find((d) => d.card.id === id)

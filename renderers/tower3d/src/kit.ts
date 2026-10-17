@@ -156,9 +156,3 @@ export function zonesPlaced(kit: Kit, level: Level): Placed[] {
     return kit.prefabs[z.prefab].items.map((item) => ({ item, frame, theme: layTheme(z.theme, item.theme) }))
   })
 }
-
-/** Frees a layer's batches; the materials and atlases are the kit's, shared by every layer. */
-export function disposeLayer(layer: KitLayer) {
-  for (const { mesh } of layer.batches.values()) (mesh.removeFromParent(), mesh.dispose())
-  layer.batches.clear()
-}
