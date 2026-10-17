@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.43.1
+
+Tower 3D stays smooth near workers. No host restart, no config change, the renderer API unchanged. A checkout that
+serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- Aiming tests a worker's shape exactly only when the crosshair's ray enters the box round its posed bones. Near a
+  crowd, a crew's meeting room or a row of desks, the frame's CPU time drops from 10–24 ms to 3–7 ms, and what you aim
+  at is the same as before.
+
 ## v1.43.0
 
 Tower 3D's desks turn, and crews meet. No host restart, no config change, the renderer API unchanged. A checkout that
