@@ -1,6 +1,7 @@
 import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
+import { DECK } from './floorplan.ts'
 import { ARCADE_DEPTH, CORE, COLUMN_SPACING, DESK, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, coreFront, partySpots, receptionBox, roomBox, runningSpot, type Box, type Level, type Plan } from './layout.ts'
 
 /**
@@ -63,11 +64,11 @@ export const stateKey = (names: string[]) => names.toSorted().join('+')
 export type Prefabs = Record<string, Prefab>
 
 /**
- * A prefab on a level: where its origin stands, its turn in degrees about +Y, how far it is stretched along its own x
+ * A prefab on a level: where its origin stands (`y` over the level's floor when it stands on the loft's deck), its turn in degrees about +Y, how far it is stretched along its own x
  * (a table made to fit), the theme its packs draw in, the floor it takes, and its boxes in level space (a room's walls
  * and glass).
  */
-export type ZoneSlot = { prefab: string; x: number; z: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[]; shapes: PrefabBox[] }
+export type ZoneSlot = { prefab: string; x: number; z: number; y?: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[]; shapes: PrefabBox[] }
 
 /** A footprint in a prefab's frame, in level space once the prefab stands at (x, z), stretched, turned by `turn`. */
 const turnBox = (b: Box, x: number, z: number, turn: number, stretch = 1): Box => {
@@ -90,7 +91,7 @@ type Zone = Omit<ZoneSlot, 'boxes' | 'shapes'>
 const shapeAt = (b: PrefabBox, z: Zone): PrefabBox => {
   const stretch = z.stretch ?? 1
   const [dx, dz] = turnXZ(b.at[0] * stretch, b.at[2], z.turn)
-  return { ...b, at: [z.x + dx, b.at[1], z.z + dz], turn: z.turn + b.turn, size: [b.size[0] * stretch, b.size[1], b.size[2]] }
+  return { ...b, at: [z.x + dx, (z.y ?? 0) + b.at[1], z.z + dz], turn: z.turn + b.turn, size: [b.size[0] * stretch, b.size[1], b.size[2]] }
 }
 
 /**
@@ -181,7 +182,7 @@ function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: str
 const RACKS: Theme = { atlas: { prototype: 'alt_C' } }
 
 /**
- * A control room's furnishings, kept off the video wall so every tile stays readable: a couch facing the wall from the
+ * A control room's furnishings on the deck, kept off the video wall so every tile stays readable: a couch facing the wall from the
  * front glass (stepped back into the room while an arcade stands at the glass), and in the front corners, where the
  * shell bench and the shelf leave room, two racks by the facade and a planter by the shelf.
  */
@@ -191,10 +192,11 @@ function controlZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: s
   const benchEnds = Math.max(room.minZ, ...level.kiosks.map((k) => k.z + KIOSK_DEPTH / 2))
   const shelfEnds = Math.max(room.minZ, ...level.shelf.map((s) => s.z + s.width / 2))
   const racks = [front - 0.9, front - 1.7].filter((z) => z - 0.5 > benchEnds)
+  const y = DECK.top
   return [
-    { prefab: 'prefabs/control_watch.json', x: (room.minX + room.maxX) / 2, z: level.arcade?.cabinets.length ? front - ARCADE_DEPTH : front, turn: 0, theme: floorTheme(tint) },
-    ...racks.map((z) => ({ prefab: 'prefabs/control_rack.json', x: room.minX + 0.5, z, turn: 90, theme: RACKS })),
-    ...(front - 1.5 > shelfEnds ? [{ prefab: 'prefabs/planter.json', x: room.maxX - WALL - 0.6, z: front - 0.7, turn: 0, theme: floorTheme(tint) }] : []),
+    { prefab: 'prefabs/control_watch.json', x: (room.minX + room.maxX) / 2, z: level.arcade?.cabinets.length ? front - ARCADE_DEPTH : front, y, turn: 0, theme: floorTheme(tint) },
+    ...racks.map((z) => ({ prefab: 'prefabs/control_rack.json', x: room.minX + 0.5, z, y, turn: 90, theme: RACKS })),
+    ...(front - 1.5 > shelfEnds ? [{ prefab: 'prefabs/planter.json', x: room.maxX - WALL - 0.6, z: front - 0.7, y, turn: 0, theme: floorTheme(tint) }] : []),
   ]
 }
 

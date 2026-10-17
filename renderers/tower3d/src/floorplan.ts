@@ -15,6 +15,8 @@ export const DECK = { top: 3.3, thick: 0.35, rail: 1.05 }
 export const STAIR = { width: 1.6, run: 5.4, risers: 18 }
 /** The wing's width from the left glass, how far the deck reaches from the back, and the stair's landing, from the back. */
 const WING = { width: 9, deck: 14, landing: { from: 9.2, to: 10.8 } }
+/** The archive under the deck, from the plate's back-left corner: as wide along x and as deep along z. */
+export const ARCHIVE = { width: 6.5, depth: 5 }
 /** A rail's half thickness, as a walker bumps into it. */
 const RAIL = 0.08
 const POST = 0.3
@@ -30,7 +32,7 @@ export type Loft = {
   /** Where the stair arrives, beside the deck. */
   landing: Box
   stair: Stair
-  /** Rails standing on the deck and the landing along their open edges, as thin boxes. */
+  /** Rails standing on the deck and the landing along their open edges (the control room's inner wall closes the deck's edge behind the landing), as thin boxes. */
   rails: Box[]
   /** Rails along the stair's open sides, sloping with it. */
   stairRails: Box[]
@@ -60,7 +62,6 @@ export function loftOf(p: { width: number; depth: number }, wall: number): Loft 
     landing,
     stair,
     rails: [
-      railX(edge, back + wall, landing.minZ),
       railX(edge, landing.maxZ, front),
       railZ(front, left + wall, edge),
       railZ(landing.minZ, edge, landing.maxX),

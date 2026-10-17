@@ -4,15 +4,16 @@ import { act } from './acts.ts'
 import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from './cards.ts'
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
-import { ROOM, ROOM_HEIGHT, SLAB, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, roomPastDeck, shelfX, videoWallZ } from './layout.ts'
+import { DECK } from './floorplan.ts'
+import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, shelfX, videoWallZ } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf, type FloorPalette } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
 import { block, glowing, glows, mesh, plate, sprite, toon } from './toon.ts'
 
 /**
- * A floor's control room, in level space (src/layout.ts places it): the walls, the console, the shell bench and the
- * shelf are built with the building; the video wall and the books change on their own.
+ * A floor's control room on the loft's deck, in level space (src/layout.ts places it): the walls, the console, the
+ * shell bench and the shelf are built with the building; the video wall and the books change on their own.
  */
 
 type FloorLevel = Extract<Level, { kind: 'floor' }>
@@ -123,23 +124,22 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   title.position.set(cx, backing.bottom - 0.35, videoWallZ(p))
   g.add(title)
 
-  const side = (from: number, to: number) => block(WALL * 2, h, to - from, wall, r.maxX, 0, (from + to) / 2)
-  g.add(side(r.minZ, door.minZ), side(door.maxZ, r.maxZ - WALL))
-  g.add(block(WALL * 2, h - DOOR_HEIGHT, door.maxZ - door.minZ, wall, r.maxX, DOOR_HEIGHT, (door.minZ + door.maxZ) / 2))
-  g.add(block(0.04, 0.05, door.maxZ - door.minZ + 0.1, trim, r.maxX + WALL + 0.01, DOOR_HEIGHT, (door.minZ + door.maxZ) / 2))
+  g.add(block(WALL * 2, h, r.maxZ - r.minZ - WALL, wall, r.maxX, 0, (r.minZ + r.maxZ - WALL) / 2))
   g.add(block(0.04, 0.05, r.maxZ - r.minZ, trim, r.maxX - WALL - 0.01, 0.1, (r.minZ + r.maxZ) / 2))
-  const sign = plate('CONTROL ROOM', 0.3, { color: tint, px: 64 })
-  sign.position.set(r.maxX + WALL + 0.02, (DOOR_HEIGHT + h) / 2, (door.minZ + door.maxZ) / 2)
-  sign.rotation.y = Math.PI / 2
+
+  const mullion = toon('#1d2433')
+  const pane = (from: number, to: number) => mesh(new THREE.PlaneGeometry(to - from, h - 0.2), glass, (from + to) / 2, 0.1 + (h - 0.2) / 2, r.maxZ)
+  g.add(pane(r.minX, door.minX), pane(door.maxX, r.maxX))
+  for (let x = r.minX + 1.5; x < r.maxX; x += 1.5) if (x < door.minX - 0.05 || x > door.maxX + 0.05) g.add(block(0.06, h, 0.08, mullion, x, 0, r.maxZ))
+  const sill = (from: number, to: number) => [block(to - from, 0.1, 0.12, mullion, (from + to) / 2, 0, r.maxZ), block(to - from, 0.04, 0.13, trim, (from + to) / 2, 1.1, r.maxZ)]
+  g.add(...sill(r.minX, door.minX), ...sill(door.maxX, r.maxX))
+  const dx = (door.minX + door.maxX) / 2
+  g.add(block(door.maxX - door.minX, h - DOOR_HEIGHT, 0.12, mullion, dx, DOOR_HEIGHT, r.maxZ))
+  for (const x of [door.minX, door.maxX]) g.add(block(0.08, DOOR_HEIGHT, 0.12, mullion, x, 0, r.maxZ))
+  g.add(block(door.maxX - door.minX + 0.1, 0.05, 0.04, trim, dx, DOOR_HEIGHT, r.maxZ + 0.07))
+  const sign = plate('CONTROL ROOM', 0.22, { color: tint, px: 64 })
+  sign.position.set(dx, (DOOR_HEIGHT + h) / 2, r.maxZ + 0.07)
   g.add(sign)
-
-  const past = roomPastDeck(p)
-  if (past) g.add(block(ROOM.width, SLAB, past.maxZ - past.minZ, toon(colors.ceiling), cx, h, (past.minZ + past.maxZ) / 2))
-
-  const front = mesh(new THREE.PlaneGeometry(ROOM.width, h - 0.2), glass, cx, 0.1 + (h - 0.2) / 2, r.maxZ)
-  g.add(front)
-  for (let x = r.minX + 1.5; x < r.maxX; x += 1.5) g.add(block(0.06, h, 0.08, toon('#1d2433'), x, 0, r.maxZ))
-  g.add(block(ROOM.width, 0.1, 0.12, toon('#1d2433'), cx, 0, r.maxZ), block(ROOM.width, 0.04, 0.13, trim, cx, 1.1, r.maxZ))
 
   const desk = instance(models.console)
   desk.material<THREE.MeshBasicMaterial>('tint_glow_own')!.color.set(tint)
@@ -160,6 +160,7 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
     piece.rotation.y = -Math.PI / 2
     g.add(piece)
   }
+  g.position.y = DECK.top
   return g
 }
 
@@ -205,7 +206,7 @@ export function buildVideoWall(p: Plan, level: FloorLevel): VideoWall {
     const label = plate(`${c.callsign}  ·  ${statusName(c)}`, Math.min(0.16, t.h * 0.12), { color: onStatusColor(c), bg: statusColor(c), px: 44 })
     label.position.set(0, -t.h / 2 + Math.min(0.16, t.h * 0.12) / 2 + 0.03, 0.01)
     tile.add(label)
-    tile.position.set(t.x, level.y + t.y, z)
+    tile.position.set(t.x, level.y + DECK.top + t.y, z)
     group.add(act(tile, { kind: 'tile', id: c.id }, []))
   }
   return { group, frames }

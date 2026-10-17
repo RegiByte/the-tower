@@ -31,9 +31,9 @@ every board, so a status change never tears the floor down. Only the levels you 
 ([[tower3d-levels]]). Every workstation is an L dressed from its worker's card ([[desk-dressing]]); every level has
 KayKit zones placed from the plan ([[office-kaykit]]). A worker's desk is `card.seat`, and every floor has the same
 workstations whether anyone sits at them or not, the lowest free one open and offering a hire ([[workstations]]).
-Every floor has a shared wall with the corkboard and the gallery ([[shared-wall]], [[corkboard]]). The control room
-deepens to fit its floor's shelf and shells, and the plate with it. Every floor is a 6.6 m storey with a loft: a deck
-over the control room's wing, reached by a stair along the room's inner wall ([[floor-plan]]).
+Every floor has a shared wall with the corkboard and the gallery ([[shared-wall]], [[corkboard]]). Every floor
+is a 6.6 m storey with a loft: a deck over the left wing, reached by a stair along its edge, the control room on the
+deck ([[floor-plan]]).
 
 **Inside** ([[tower3d-registries]]): one state record ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)); the
 things drawn per board (desks, free workstations, video walls, Running boards, pigeonholes, filing cabinets, arcade
@@ -72,11 +72,11 @@ framing it ([[attention-list]]); an arrow on the screen's edge points to each wo
 out of view ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
 
 **The control room** ([`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)), in each floor's back-left
-corner under the loft's deck: a video wall with a live tile per worker on duty; the console, which opens the floor panel (dirs, new
+corner on the loft's deck, entered from the terrace before it: a video wall with a live tile per worker on duty; the console, which opens the floor panel (dirs, new
 shell, archive, spawn, and a tray per collection, [[collection-trays]]); the floor's shells on a bench; the shelf,
-a bookcase, TV or poster per entry ([[shelf-items]]); and on a floor keeping games, the arcade ([[arcade]]). Outside
-it, on its outer wall, stand the filing cabinet, the floor's archive by day ([[logbook]],
-[`readFloorArchive`](ref:hub/renderers/tower3d/src/archive.ts#readFloorArchive)), the Running board, and under the stair's landing a pigeonhole
+a bookcase, TV or poster per entry ([[shelf-items]]); and on a floor keeping games, the arcade ([[arcade]]). Under
+the deck, in the nook against the archive's outer wall, stand the filing cabinet, the floor's archive by day ([[logbook]],
+[`readFloorArchive`](ref:hub/renderers/tower3d/src/archive.ts#readFloorArchive)), the Running board, and a pigeonhole
 holding the floor's review threads ([`buildPigeonhole`](ref:hub/renderers/tower3d/src/pigeonhole.ts#buildPigeonhole),
 [[review-threads]]). A [[reviewer]] sits beside its author with a notebook, and notes new to a worker lie on its
 desk.

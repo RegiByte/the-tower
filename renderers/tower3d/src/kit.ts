@@ -152,7 +152,7 @@ const UP = new THREE.Vector3(0, 1, 0)
 /** Every model of a level's zones, each prefab's items in the frame its zone stands in. */
 export function zonesPlaced(kit: Kit, level: Level): Placed[] {
   return level.zones.flatMap((z) => {
-    const frame = new THREE.Matrix4().compose(new THREE.Vector3(z.x, level.y, z.z), new THREE.Quaternion().setFromAxisAngle(UP, (z.turn * Math.PI) / 180), new THREE.Vector3(z.stretch ?? 1, 1, 1))
+    const frame = new THREE.Matrix4().compose(new THREE.Vector3(z.x, level.y + (z.y ?? 0), z.z), new THREE.Quaternion().setFromAxisAngle(UP, (z.turn * Math.PI) / 180), new THREE.Vector3(z.stretch ?? 1, 1, 1))
     return kit.prefabs[z.prefab].items.map((item) => ({ item, frame, theme: layTheme(z.theme, item.theme) }))
   })
 }

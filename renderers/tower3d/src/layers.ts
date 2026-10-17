@@ -163,7 +163,7 @@ type CabinetAt = { project: string; id: string; tag: string; modifiedAt: number;
 /** Every game's cabinet in its floor's arcade, facing into the room, drawn again when its title, keeper or tint changes. */
 export const CABINETS: Layer<CabinetAt, Cabinet> = {
   slots: (p) => floors(p).flatMap((level) => (level.arcade?.cabinets ?? []).map((c) => {
-    const at = { project: level.floor.id, id: c.id, tag: c.tag, modifiedAt: c.modifiedAt, keptBy: c.keptBy, level: level.index, x: c.x, y: level.y, z: c.z, tint: tintOf(level.floor) }
+    const at = { project: level.floor.id, id: c.id, tag: c.tag, modifiedAt: c.modifiedAt, keptBy: c.keptBy, level: level.index, x: c.x, y: level.y + c.y, z: c.z, tint: tintOf(level.floor) }
     return [`${at.project}/${at.id}`, at] as [string, CabinetAt]
   })),
   level: (at) => at.level,

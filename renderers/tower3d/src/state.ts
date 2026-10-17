@@ -224,7 +224,7 @@ export type State = {
   replay: { id: string; session: string } | undefined
 }
 
-const NO_PLAN: Plan = { width: 0, depth: 0, roomDepth: 0, levels: [], loft: loftOf({ width: 0, depth: 0 }, 0) }
+const NO_PLAN: Plan = { width: 0, depth: 0, levels: [], loft: loftOf({ width: 0, depth: 0 }, 0) }
 
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,

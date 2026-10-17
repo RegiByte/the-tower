@@ -2,7 +2,7 @@ import { draftsOf } from '../../../src/shared/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
-import { DECK, loftOf, loftWalls, type Layer, type Loft } from './floorplan.ts'
+import { ARCHIVE, DECK, loftOf, loftWalls, type Layer, type Loft } from './floorplan.ts'
 import { gamesOf } from './games.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
@@ -18,10 +18,10 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  * elevator you look over the workers' shoulders at their screens. Every floor has the same workstations, a row of
  * them added to the building only when some floor has no free one left for its workers.
  *
- * Each floor's back-left corner is its control room, entered from the side facing the elevator: a video wall of
- * the floor's workers on its back wall, the floor's shells on a bench along the facade, the shelf along its inner
- * wall, and the console in the middle. A floor keeping games has an arcade along the room's glass front, a cabinet
- * per game. Over the room is the loft's deck, reached by a stair along the room's inner wall (src/floorplan.ts).
+ * Each floor's back-left corner is a loft (src/floorplan.ts): a deck over the wing, reached by a stair along its edge.
+ * The control room stands on the deck's back, entered from the terrace before it: a video wall of the floor's workers
+ * on its back wall, the floor's shells on a bench along the facade, the shelf along its inner wall, and the console
+ * in the middle. A floor keeping games has an arcade along the room's glass front, a cabinet per game.
  *
  * Right of the core, a partition stands free before the back glass: the floor's shared wall. A floor keeping drafts
  * has its corkboard on the wall's left, a note pinned on it per draft (what goes in); every floor hangs its gallery
@@ -54,21 +54,19 @@ const KIOSK_SPACING = 1.9
 /** A shell kiosk's footprint along the bench. */
 export const KIOSK_DEPTH = 1.2
 
-/** The room's width, and its depth unless its shelf or shells need more. */
-export const ROOM = { width: 9, depth: 12 }
-/** The room's door, in its wall facing the core: centered this far in front of the core's front. */
-const ROOM_DOOR_AT = 3.4
-export const ROOM_DOOR = 2.4
-/** The control room's clear height: under the loft's deck. */
-export const ROOM_HEIGHT = DECK.top - DECK.thick
+/** The control room's footprint on the deck, from the back wall. */
+export const ROOM = { width: 9, depth: 9 }
+/** The room's door, in its glass front onto the terrace: centred this far in from the wing's edge. */
+const ROOM_DOOR_IN = 2.2
+export const ROOM_DOOR = 1.6
+/** The control room's clear height: from the deck to the ceiling. */
+export const ROOM_HEIGHT = STOREY - SLAB - DECK.top
 export const VIDEO_WALL = { width: 8, bottom: 0.95, top: 2.7, gap: 0.12 }
 const SHELF_WIDTH: Record<'md' | 'html' | 'url' | 'link', number> = { md: 1.5, html: 1.5, url: 1.5, link: 1 }
 const SHELF_GAP = 0.3
 /** Where the shelf and the shell bench start, from the room's back wall. */
 const SHELF_FROM = 2.2
 const KIOSK_FROM = 2.4
-/** Clear floor between the room's front and the facade. */
-const ROOM_FRONT = 3
 /** The shared wall: its gap from the core, how far it stands off the back glass, how tall and thick it is. */
 const PARTITION = { fromCore: 0.9, fromBack: 1.6, height: 3.2, thick: 0.2, margin: 0.5 }
 /** The corkboard: its size, how far its base is off the floor, and the band its sign takes. */
@@ -131,8 +129,8 @@ export type WallSlot = { minX: number; maxX: number; z: number; face: number; he
  */
 export type PigeonholeSlot = { x: number; z: number; threads: Floor['threads']; more: number }
 
-/** A game's cabinet at the control room's glass front, facing into the room (-z): its center on the floor, and who kept it. */
-export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; z: number }
+/** A game's cabinet at the control room's glass front, facing into the room (-z): its center on the surface it stands on `y` over the level's floor, and who kept it. */
+export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; y: number; z: number }
 /** A floor's arcade, when it keeps games: its cabinets, the newest by the door, as many as fit; `count` is all its games. */
 export type ArcadeSlot = { count: number; cabinets: CabinetSlot[] }
 
@@ -145,8 +143,6 @@ export type Level =
 export type Plan = {
   width: number
   depth: number
-  /** The control room's depth, the same on every floor. */
-  roomDepth: number
   /** Lobby first, a floor per project, the roof last. */
   levels: Level[]
   /** Every floor's loft, the same on each. */
@@ -191,17 +187,17 @@ function tiles(cards: Card[]): Omit<TileSlot, 'card'>[] {
   })
 }
 
-/** The shelf's entries in a row along the room's inner wall, from `from`, skipping the door; z from the plate's back. */
-function shelfSlots(entries: ShelfEntry[], from: number, door: { from: number; to: number }): ShelfSlot[] {
+/** The shelf's entries in a row along the room's inner wall from `from` to `to`, as many as fit; z from the room's back. */
+function shelfSlots(entries: ShelfEntry[], from: number, to: number): ShelfSlot[] {
   let z = from
-  return entries.map((entry, n) => {
+  return entries.flatMap((entry, n) => {
     const own = shelfKind(entry)
     const kind: ShelfSlot['kind'] = own === 'renderer' ? 'html' : own
     const width = SHELF_WIDTH[kind]
-    if (z + width > door.from && z < door.to) z = door.to + SHELF_GAP
+    if (z + width > to) return []
     const slot = { entry, n, kind, z: z + width / 2, width }
     z += width + SHELF_GAP
-    return slot
+    return [slot]
   })
 }
 
@@ -371,7 +367,7 @@ function corkFor(floor: Floor, depth: number): CorkSlot | undefined {
  * A floor's arcade, when it keeps games: a cabinet per game along the control room's glass front, the newest (the
  * latest id, as created items are named) nearest the door, as many as fit.
  */
-function arcadeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDepth'>): ArcadeSlot | undefined {
+function arcadeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth'>): ArcadeSlot | undefined {
   const games = gamesOf(floor)
   if (!games) return undefined
   const r = roomBox(p)
@@ -384,7 +380,7 @@ function arcadeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDepth'>)
   const z = r.maxZ - WALL - 0.05 - CABINET.depth / 2
   return {
     count: games.items.length,
-    cabinets: items.map((item, i) => ({ id: item.id, tag: item.tag, modifiedAt: item.modifiedAt, keptBy: item.keptBy?.callsign, x: right - i * pitch, z })),
+    cabinets: items.map((item, i) => ({ id: item.id, tag: item.tag, modifiedAt: item.modifiedAt, keptBy: item.keptBy?.callsign, x: right - i * pitch, y: DECK.top, z })),
   }
 }
 
@@ -393,18 +389,14 @@ export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth
 
 const lastAt = (t: Floor['threads'][number]) => t.last?.at ?? ''
 
-/** A floor's pigeonhole against the room's outer wall, between the door and the stair, under the stair's landing. */
-function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDepth' | 'loft'>): PigeonholeSlot | undefined {
+/** A floor's pigeonhole in the nook, on the archive's outer wall past the Running board. */
+function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth'>): PigeonholeSlot | undefined {
   if (!floor.collections.some((c) => c.id === REVIEWS)) return undefined
-  const r = roomBox(p)
-  const d = roomDoor(p)
+  const wall = nookWall(p)
   const fit = PIGEONHOLE.columns * PIGEONHOLE.rows
   const threads = floor.threads.toSorted((a, b) => lastAt(b).localeCompare(lastAt(a)) || a.checkout.localeCompare(b.checkout))
-  return { x: r.maxX + WALL + PIGEONHOLE.depth / 2, z: (d.maxZ + p.loft.stair.box.minZ) / 2, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
+  return { x: wall.x + PIGEONHOLE.depth / 2, z: wall.back + NOOK.pigeonhole, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
 }
-
-/** The room's depth fitting what stands along its walls, the farthest end given from its back wall. */
-const roomFor = (end: number) => end + SHELF_GAP + WALL
 
 /**
  * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
@@ -413,18 +405,13 @@ const roomFor = (end: number) => end + SHELF_GAP + WALL
 export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
-  const doorAt = CORE.depth + ROOM_DOOR_AT
-  const shelves = board.floors.map((f) => shelfSlots(f.shelf ?? [], SHELF_FROM, { from: doorAt - ROOM_DOOR / 2 - 0.2, to: doorAt + ROOM_DOOR / 2 + 0.2 }))
-  const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
-  const roomDepth = Math.max(
-    ROOM.depth,
-    ...shelves.flatMap((s) => s.slice(-1).map((last) => roomFor(last.z + last.width / 2))),
-    ...shells.filter((s) => s.length > 0).map((s) => roomFor(KIOSK_FROM + (s.length - 1) * KIOSK_SPACING + KIOSK_DEPTH / 2)),
-  )
-  const depth = Math.max(CORE.depth + LANDING + rows * ROW_SPACING + BACK_MARGIN, roomDepth + ROOM_FRONT)
+  const shelves = board.floors.map((f) => shelfSlots(f.shelf ?? [], SHELF_FROM, ROOM.depth - WALL - SHELF_GAP))
+  const kiosksFit = Math.floor((ROOM.depth - WALL - SHELF_GAP - KIOSK_FROM - KIOSK_DEPTH) / KIOSK_SPACING) + 1
+  const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id).slice(0, kiosksFit))
+  const depth = CORE.depth + LANDING + rows * ROW_SPACING + BACK_MARGIN
   const loft = loftOf({ width, depth }, WALL)
   const coreFront = -depth / 2 + CORE.depth
-  const room = roomBox({ width, depth, roomDepth })
+  const room = roomBox({ width, depth })
   const stationAt = (n: number): StationSlot => ({
     n,
     x: ROOM.width / 2 + (n % COLUMNS - (COLUMNS - 1) / 2) * COLUMN_SPACING,
@@ -456,8 +443,8 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       shelf: shelves[i].map((slot) => ({ ...slot, z: room.minZ + slot.z })),
       wall: wallFor(floor, depth),
       cork: corkFor(floor, depth),
-      pigeonhole: pigeonholeFor(floor, { width, depth, roomDepth, loft }),
-      arcade: arcadeFor(floor, { width, depth, roomDepth }),
+      pigeonhole: pigeonholeFor(floor, { width, depth }),
+      arcade: arcadeFor(floor, { width, depth }),
     }
   })
   const roof = board.floors.length + 1
@@ -466,7 +453,6 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
   return {
     width,
     depth,
-    roomDepth,
     loft,
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
@@ -486,20 +472,14 @@ export const inside = (b: Box, x: number, z: number) => x >= b.minX && x <= b.ma
 /** Standing in the car, facing out of its doors. */
 export const carSpot = (p: Plan) => ({ x: 0, z: coreFront(p) - CORE.depth / 2 + 0.2, yaw: 0 })
 
-/** The control room's footprint: the plate's back-left corner. */
-export const roomBox = (p: Pick<Plan, 'width' | 'depth' | 'roomDepth'>): Box => ({ minX: -p.width / 2, maxX: -p.width / 2 + ROOM.width, minZ: -p.depth / 2, maxZ: -p.depth / 2 + p.roomDepth })
+/** The control room's footprint on the deck: the plate's back-left corner. */
+export const roomBox = (p: Pick<Plan, 'width' | 'depth'>): Box => ({ minX: -p.width / 2, maxX: -p.width / 2 + ROOM.width, minZ: -p.depth / 2, maxZ: -p.depth / 2 + ROOM.depth })
 
-/** The part of the control room a deep shelf or bench takes out past the loft's deck, which the room roofs itself. */
-export const roomPastDeck = (p: Pick<Plan, 'width' | 'depth' | 'roomDepth' | 'loft'>): Box | undefined => {
-  const r = roomBox(p)
-  return r.maxZ > p.loft.deck.maxZ ? { ...r, minZ: p.loft.deck.maxZ } : undefined
-}
-
-/** The door's gap in the room's wall facing the core. */
+/** The door's gap in the room's glass front, onto the terrace. */
 export const roomDoor = (p: Pick<Plan, 'width' | 'depth'>): Box => {
-  const x = -p.width / 2 + ROOM.width
-  const z = -p.depth / 2 + CORE.depth + ROOM_DOOR_AT
-  return { minX: x - WALL, maxX: x + WALL, minZ: z - ROOM_DOOR / 2, maxZ: z + ROOM_DOOR / 2 }
+  const r = roomBox(p)
+  const x = r.maxX - ROOM_DOOR_IN
+  return { minX: x - ROOM_DOOR / 2, maxX: x + ROOM_DOOR / 2, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL }
 }
 
 /** Where the console stands in the room, facing the video wall (-z). */
@@ -509,26 +489,25 @@ export const consoleSpot = (p: Plan) => {
 }
 
 /**
- * The floor's "Running" board on the room's outer side wall, between the back glass and the door, facing +x: its
- * face, its center along the wall and its width.
+ * The nook under the deck beside the archive: the archive's outer wall facing +x, with the filing cabinet, the Running
+ * board and the pigeonhole along it from the back glass (their centres, from the back), and the Running board's width.
  */
+const NOOK = { filing: 0.6, running: 2.05, width: 2.1, pigeonhole: 3.95 }
+const nookWall = (p: Pick<Plan, 'width' | 'depth'>) => ({ x: -p.width / 2 + ARCHIVE.width + WALL / 2, back: -p.depth / 2 })
+
+/** The floor's "Running" board in the nook, facing +x: its face, its center along the wall and its width. */
 export const runningSpot = (p: Plan) => {
-  const r = roomBox(p)
-  const from = r.minZ + WALL + 0.5
-  const to = roomDoor(p).minZ - 0.5
-  return { x: r.maxX + WALL + 0.02, z: (from + to) / 2, width: Math.min(5, to - from) }
+  const wall = nookWall(p)
+  return { x: wall.x + 0.02, z: wall.back + NOOK.running, width: NOOK.width }
 }
 
 /** A floor's filing cabinet: `width` along the wall, `depth` out from it, its drawers stacked from the floor. */
 export const FILING = { width: 0.48, depth: 0.6, height: 1.32, drawers: 4 }
 
-/**
- * Where a floor's filing cabinet stands: against the control room's outer wall, between the back glass and the Running
- * board, facing the same way (+x); its center on the floor.
- */
+/** Where a floor's filing cabinet stands in the nook, by the back glass, facing +x as the Running board does; its center on the floor. */
 export const filingSpot = (p: Plan) => {
-  const r = roomBox(p)
-  return { x: r.maxX + WALL + FILING.depth / 2, z: r.minZ + WALL + 0.5 - FILING.width / 2 - 0.02 }
+  const wall = nookWall(p)
+  return { x: wall.x + FILING.depth / 2, z: wall.back + NOOK.filing }
 }
 
 /** The video wall's face: tiles sit on it, facing +z. */
@@ -599,18 +578,19 @@ function shellWalls(p: Plan): Box[] {
 
 const sharedWall = (level: Extract<Level, { kind: 'floor' }>): Box => ({ minX: level.wall.minX, maxX: level.wall.maxX, minZ: level.wall.z - PARTITION.thick / 2, maxZ: level.wall.face + 0.1 })
 
-/** What stands on a level's floor and is walked round: the building's shell, the core, the control room's walls, the shared wall, and the loft's stair and post. */
+/** What stands on a level's floor and is walked round: the building's shell, the core, the shared wall, and the loft's stair and post. */
 export function walls(p: Plan, level: Level): Box[] {
   if (level.kind !== 'floor') return [...shellWalls(p), ...coreWalls(p)]
-  return [...shellWalls(p), ...coreWalls(p), ...roomWalls(p), sharedWall(level), ...loftWalls(p.loft, 'ground')]
+  return [...shellWalls(p), ...coreWalls(p), sharedWall(level), ...loftWalls(p.loft, 'ground')]
 }
 
 /** A box that stops sight, from `bottom` to `top` over its level's floor. */
 export type Solid = Box & { bottom: number; top: number }
 
 /**
- * What a look across a level can't pass through: the shell and the core from floor to ceiling, the control room's
- * walls and the shared wall as high as they stand, the loft's deck and landing, and the room's own roof past the deck.
+ * What a look across a level can't pass through: the shell and the core from floor to ceiling, the loft's deck and
+ * landing, the control room's walls on the deck and the shared wall as high as they stand, and the prefabs' opaque
+ * walls.
  */
 export function solids(p: Plan, level: Level): Solid[] {
   const height = levelHeight(level.index)
@@ -619,11 +599,10 @@ export function solids(p: Plan, level: Level): Solid[] {
   const slab = (b: Box): Solid => ({ ...b, bottom: DECK.top - DECK.thick, top: DECK.top })
   return [
     ...[...shellWalls(p), ...coreWalls(p)].map(whole),
-    ...roomWalls(p).map((b) => ({ ...b, bottom: 0, top: ROOM_HEIGHT })),
+    ...roomWalls(p).map((b) => ({ ...b, bottom: DECK.top, top: DECK.top + ROOM_HEIGHT })),
     { ...sharedWall(level), bottom: 0, top: PARTITION.height },
     slab(p.loft.deck),
     slab(p.loft.landing),
-    ...[roomPastDeck(p)].filter((b) => b !== undefined).map((b) => ({ ...b, bottom: ROOM_HEIGHT, top: ROOM_HEIGHT + SLAB })),
     ...level.zones.flatMap((z) => z.shapes).filter((b) => b.opacity === undefined && b.size[1] >= EYE).map(shapeSolid),
   ]
 }
@@ -636,14 +615,25 @@ function shapeSolid(b: PrefabBox): Solid {
 }
 
 /** What a walker on a layer of a level bumps into. */
-export const collidersOn = (p: Plan, level: Level, layer: Layer) => (layer === 'deck' && level.kind === 'floor' ? deckColliders(p) : colliders(p, level))
+export const collidersOn = (p: Plan, level: Level, layer: Layer) => (layer === 'deck' && level.kind === 'floor' ? deckColliders(p, level) : colliders(p, level))
 
-/** What a walker on a floor's deck bumps into: the shell and the deck's rails. */
-const deckColliders = (p: Plan): Box[] => [...shellWalls(p), ...loftWalls(p.loft, 'deck')]
+/** What a walker on a floor's deck bumps into: the shell, the deck's rails, and the control room's walls and furniture. */
+function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[] {
+  return [
+    ...shellWalls(p),
+    ...loftWalls(p.loft, 'deck'),
+    ...roomWalls(p),
+    ...level.zones.filter((z) => z.y === DECK.top).flatMap((z) => z.boxes),
+    box(consoleSpot(p).x, consoleSpot(p).z + 0.25, 2.6, 2.2),
+    ...level.kiosks.map((k) => box(k.x, k.z, 0.8, KIOSK_DEPTH)),
+    ...level.shelf.map((s) => box(shelfX(p) - 0.25, s.z, 0.5, s.width)),
+    ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),
+  ]
+}
 
 /** What a walker on a level's floor bumps into: its walls and the furniture. */
 export function colliders(p: Plan, level: Level): Box[] {
-  const fixed = [...walls(p, level), ...level.zones.flatMap((z) => z.boxes)]
+  const fixed = [...walls(p, level), ...level.zones.filter((z) => z.y === undefined).flatMap((z) => z.boxes)]
   if (level.kind === 'lobby') {
     const lounge = loungeSpots(p)
     return [...fixed, receptionBox(p), box(lounge.couch.x, lounge.couch.z, 2.8, 1), box(lounge.table.x, lounge.table.z, 1.8, 0.9)]
@@ -658,24 +648,20 @@ export function colliders(p: Plan, level: Level): Box[] {
   }
   return [
     ...fixed,
-    box(consoleSpot(p).x, consoleSpot(p).z + 0.25, 2.6, 2.2),
     box(filingSpot(p).x, filingSpot(p).z, FILING.depth + 0.1, FILING.width + 0.1),
     ...[...level.desks.filter((d) => !d.beside), ...level.free].map((s) => box(s.x + RETURN.width / 2, s.z - 0.35, DESK.width + RETURN.width + 0.1, DESK.depth + 0.6 + SEAT_OFFSET)),
-    ...level.kiosks.map((k) => box(k.x, k.z, 0.8, KIOSK_DEPTH)),
-    ...level.shelf.map((s) => box(shelfX(p) - 0.25, s.z, 0.5, s.width)),
     ...(level.pigeonhole ? [box(level.pigeonhole.x, level.pigeonhole.z, PIGEONHOLE.depth + 0.1, PIGEONHOLE.columns * PIGEONHOLE.cell + 0.2)] : []),
-    ...(level.arcade?.cabinets ?? []).map((c) => box(c.x, c.z - 0.1, CABINET.width + 0.1, CABINET.depth + 0.3)),
   ]
 }
 
-/** The room's walls facing the floor: its front, and its inner side but for the door. */
+/** The control room's walls toward the terrace and the floor: its front but for the door, and its inner side. */
 export function roomWalls(p: Plan): Box[] {
   const r = roomBox(p)
   const d = roomDoor(p)
   return [
-    { minX: r.minX, maxX: r.maxX + WALL, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL },
-    { minX: r.maxX - WALL, maxX: r.maxX + WALL, minZ: r.minZ, maxZ: d.minZ },
-    { minX: r.maxX - WALL, maxX: r.maxX + WALL, minZ: d.maxZ, maxZ: r.maxZ },
+    { minX: r.minX, maxX: d.minX, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL },
+    { minX: d.maxX, maxX: r.maxX + WALL, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL },
+    { minX: r.maxX - WALL, maxX: r.maxX + WALL, minZ: r.minZ, maxZ: r.maxZ },
   ]
 }
 

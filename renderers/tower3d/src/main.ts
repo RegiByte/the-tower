@@ -64,7 +64,7 @@ import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } from './stage.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
-import { groundAt, layerAt, type Layer } from './floorplan.ts'
+import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
 
 const $ = (id: string) => document.getElementById(id)!
@@ -684,7 +684,7 @@ function openGame(project: string, id: string) {
 /** The camera on the game's cabinet, where the arcade stands it now: a game kept since moves every cabinet along. */
 function frameCabinet(panel: GamePanel, { cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
   panel.x = cabinet.x
-  const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
+  const front = new THREE.Vector3(cabinet.x, level.y + cabinet.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
   frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
 }
 
@@ -941,7 +941,7 @@ function goShell(id: string) {
   if (!level || !k) return
   if (s.view === 'overview') leaveOverview()
   closeSide()
-  travel(level.index, { x: k.x + 1.9, z: k.z, yaw: -Math.PI / 2 }, () => focusShell(id))
+  travel(level.index, { x: k.x + 1.9, z: k.z, y: DECK.top, yaw: -Math.PI / 2 }, () => focusShell(id))
 }
 
 /** A draft deleted, said with an Undo that puts its file back under its id. */

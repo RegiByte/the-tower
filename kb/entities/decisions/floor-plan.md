@@ -2,14 +2,16 @@
 {
   "type": "decision",
   "name": "A floor's plan: a wing loft over the control room, in a 6.6 m storey",
-  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices, the deck and the stair first.",
+  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices: the deck and the stair, then the control room lifted onto the deck and the rooms placed from anchors.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
   "reviewed": "2026-10-17",
   "refs": [
     "hub/renderers/tower3d/src/floorplan.ts#loftOf",
-    "hub/renderers/tower3d/src/layout.ts#roomPastDeck",
+    "hub/renderers/tower3d/src/layout.ts#roomBox",
+    "hub/renderers/tower3d/src/layout.ts#roomWalls",
+    "hub/renderers/tower3d/src/room.ts#buildRoom",
     "hub/renderers/tower3d/src/floorplan.ts#DECK",
     "hub/renderers/tower3d/src/floorplan.ts#STAIR",
     "hub/renderers/tower3d/src/floorplan.ts#groundAt",
@@ -72,12 +74,15 @@ shoulders.
 - *Sight is blocked by height* ([`solids`](ref:hub/renderers/tower3d/src/layout.ts#solids)): the shell and core floor
   to ceiling, the control room's walls and the shared wall as high as they stand, the deck and landing as slabs, so
   you aim down from the deck past the room below and not through the deck from under it.
-- *The control room is still on the ground*, under the deck, 2.95 m clear
-  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall a lower band; where a
-  floor's shelf or shells deepen it past the deck, it roofs the rest itself
-  ([`roomPastDeck`](ref:hub/renderers/tower3d/src/layout.ts#roomPastDeck)); the pigeonhole
-  stands under the stair's landing and the lounge left of the stair, clear of it. The deck is empty, railed where the
-  control room's glass will stand.
+- *The control room stands on the deck* as it stood on the ground
+  ([`roomBox`](ref:hub/renderers/tower3d/src/layout.ts#roomBox), [`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)):
+  9 × 9 m from the back-left corner, 3.0 m clear to the ceiling
+  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall on the back wall, the shells'
+  bench along the facade, the shelf along its solid inner wall (which closes the deck's edge behind the landing, so no
+  rail stands there) and the console in the middle, entered through a door in its glass front onto the terrace, the
+  rest of the deck. Its depth is fixed: a bench holds as many shells as fit (four) and the inner wall as many shelf
+  entries as fit. Its walls, console, bench, shelf and furniture are the deck layer's colliders
+  ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing on the deck carries its `y`.
 
 **Still to build**, each its own change: the rooms as prefabs placed from named anchors (`elevator.doors`,
 `desks.first-row`, `glass.front`, `stair.foot`, `stair.top`, `deck.rail`, the rooms' doors, `lounge`, `hero`; the
