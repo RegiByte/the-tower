@@ -15,6 +15,7 @@
     "hub/renderers/tower3d/src/life.ts#arrivalPose",
     "hub/renderers/tower3d/src/life.ts#leaverPose",
     "hub/renderers/tower3d/src/rig.ts#seatedness",
+    "hub/renderers/tower3d/src/life.ts#headingAt",
     "hub/renderers/tower3d/kaykit/Characters/README.md",
     "hub/renderers/tower3d/src/rig.ts#loadCast",
     "hub/renderers/tower3d/src/rig.ts#pose",
@@ -118,11 +119,14 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   function of the clock and the board. Arriving and leaving, the worker sits down and stands up
   ([`arrivalPose`](ref:hub/renderers/tower3d/src/life.ts#arrivalPose),
   [`leaverPose`](ref:hub/renderers/tower3d/src/life.ts#leaverPose)). KayKit's sit clips carry the body straight back
-  onto a seat behind it, so the worker walks up from the side to where it stands in front of its chair, turns to the
-  desk and sits back; its chair, pulled back until then, comes in under it and the body is lifted onto the seat as
+  onto a seat behind it, so the worker walks up from the side its way comes from (a reviewer by its own left, away
+  from its author, and its author by its right) to where it stands in front of its chair, turns to the desk and sits
+  back; its chair, pulled back until then, comes in under it and the body is lifted onto the seat as
   far as the clip's hips have travelled ([`seatedness`](ref:hub/renderers/tower3d/src/rig.ts#seatedness)), and the
   reverse as it goes, the chair tucked back in once it steps away. A
-  walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed.
+  walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed, and a walker faces
+  the mean of its way around it ([`headingAt`](ref:hub/renderers/tower3d/src/life.ts#headingAt)), so it turns corners
+  over a stretch of its way, as a function of the distance walked.
 - Looks are data: `renderers/tower3d/wardrobe.json`, checked by a zod schema
   ([`Wardrobe`](ref:hub/renderers/tower3d/src/wardrobe.ts#Wardrobe)) as the bundle loads it
   ([`WARDROBE`](ref:hub/renderers/tower3d/src/closet.ts#WARDROBE)), over a catalogue of parts derived from the files
