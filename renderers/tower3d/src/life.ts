@@ -4,12 +4,12 @@ import { avatar, seatedAt, type Avatar } from './avatar.ts'
 import { CHAIR } from './chair.ts'
 import { WARDROBE } from './closet.ts'
 import { pick, roll } from './hashed.ts'
-import type { Desk } from './desk.ts'
+import { SEAT, type Desk } from './desk.ts'
 import { DESK, WALL, carBox, colliders, coreFront, danceSpot, floorOfProject, levelY, partySpots, rateLimitBoxes, walkway, type Box, type Level, type Plan } from './layout.ts'
 import type { Card } from './api.ts'
 import { SOUNDS, type Sound } from './cards.ts'
 import { instance, type Models } from './models.ts'
-import { clipLength, pose } from './rig.ts'
+import { clipLength, pose, seatedness } from './rig.ts'
 import { lookOfWorker } from './wardrobe.ts'
 
 /**
@@ -62,68 +62,115 @@ function along(path: THREE.Vector3[], d: number) {
 const pathTo = (p: Plan, desk: THREE.Vector3) => walkway(p, desk.x, desk.z).map(({ x, z }) => new THREE.Vector3(x, desk.y, z))
 
 /**
- * A new worker on its way from the elevator to its chair: its desk's worker, walked in desk space `t` meters, then
- * `sat` seconds into sitting down.
+ * How far a worker's chair is pulled back while it sits down or stands up, meters: its seat clear of the legs of a
+ * worker standing where KayKit's sit clips start, a seat's depth in front of where they end.
  */
-export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number }
+const PULL = 0.4
+/** How long a worker takes to turn to its desk as it starts to sit down, or from it as it stands up, seconds. */
+const TURN = 0.3
 
-export function arrival(p: Plan, desk: Desk): Arrival {
-  return { desk, path: pathTo(p, desk.group.position).map((v) => v.sub(desk.group.position)), t: 0, sat: 0 }
-}
-
-const smooth = (k: number) => k * k * (3 - 2 * k)
-
-/** Walks an arriving worker toward its seat, then sits it down; true once it sits. Its bones are posed apart (`arrivalPose`). */
-export function walkIn(a: Arrival, dt: number) {
-  const w = a.desk.avatar
-  const step = along(a.path, a.t + dt * WALK_SPEED)
-  if (!step) {
-    a.sat += dt
-    w.root.position.copy(a.path.at(-1)!)
-    w.root.rotation.y = 0
-    if (w.gear) w.gear.visible = false
-    return a.sat >= clipLength(a.desk.models.cast, w.rig, 'Sit_Chair_Down')
-  }
-  a.t += dt * WALK_SPEED
-  w.root.position.copy(step.at)
-  w.root.rotation.y = step.heading
-  return false
-}
-
-/** An arriving worker walking, or sitting down, its body lifted onto the seat as the clip lowers it. */
-export function arrivalPose(models: Models, a: Arrival, t: number) {
-  const w = a.desk.avatar
-  if (a.sat > 0) return sitPose(models, w, 'Sit_Chair_Down', a.sat, smooth(Math.min(1, a.sat / clipLength(models.cast, w.rig, 'Sit_Chair_Down'))), t)
-  walkPose(models, w, a.t, t)
-}
-
-/** Sitting down or standing up `at` seconds into `clip`, the body `lift` of the way from the floor onto the chair. */
-function sitPose(models: Models, a: Avatar, clip: 'Sit_Chair_Down' | 'Sit_Chair_StandUp', at: number, lift: number, t: number) {
-  a.body.position.copy(seatedAt(models.cast, a, CHAIR)).multiplyScalar(lift)
-  a.body.rotation.set(0, 0, 0)
-  pose(models.cast, a.rig, { layers: [{ clip, at, once: true }] }, t)
+/** Where a worker stands before it sits down at the chair `seat`, and after it stands up: the seated body's place, at floor height. */
+function standingAt(models: Models, a: Avatar, seat: THREE.Vector3) {
+  const at = seatedAt(models.cast, a, CHAIR)
+  return seat.clone().add(new THREE.Vector3(at.x, 0, at.z))
 }
 
 /**
- * A worker gone off duty, standing up from its chair `rose` seconds, facing its desk at `heading`, then walking `t`
- * meters into the elevator on its level before it leaves the building.
+ * The way from the walkway behind a desk to where its worker stands to sit (desk space): along the row to the side it
+ * comes from, up between its chair, pulled back, and its desk, and across to its place.
  */
-export type Leaver = { group: THREE.Group; models: Models; avatar: Avatar; level: number; path: THREE.Vector3[]; heading: number; rose: number; t: number }
+function upToChair(behind: THREE.Vector3, place: THREE.Vector3, side: number) {
+  return [behind, new THREE.Vector3(side, behind.y, behind.z), new THREE.Vector3(side, place.y, place.z), place]
+}
 
-/** A leaver from the desk at `desk` on `level`, starting where its worker sits facing `heading` (world space). */
-export function leaver(p: Plan, id: string, callsign: string, level: number, desk: THREE.Vector3, from: THREE.Vector3, heading: number, models: Models): Leaver {
+/** A chair `k` of the way into its worker sitting down: pulled back until the hips come down onto it. */
+const pullChair = (chair: THREE.Object3D, seat: THREE.Vector3, k: number) => chair.position.copy(seat).setZ(seat.z - PULL * (1 - k))
+
+/**
+ * A new worker on its way from the elevator to its chair: its desk's worker, walked in desk space `t` meters, then
+ * `sat` seconds into sitting down, turning from `heading`, the way it walked in.
+ */
+export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number }
+
+export function arrival(p: Plan, desk: Desk): Arrival {
+  const way = pathTo(p, desk.group.position).map((v) => v.sub(desk.group.position))
+  const path = [...way.slice(0, -2), ...upToChair(way.at(-2)!, standingAt(desk.models, desk.avatar, SEAT), desk.marks.approach)]
+  return { desk, path, t: 0, sat: 0, heading: 0 }
+}
+
+const smooth = (k: number) => k * k * (3 - 2 * k)
+const turned = (from: number, to: number, k: number) => from + (Math.atan2(Math.sin(to - from), Math.cos(to - from))) * smooth(Math.min(1, k))
+
+/** Walks an arriving worker up to its chair, then sits it down; true once it sits. Its bones are posed apart (`arrivalPose`). */
+export function walkIn(a: Arrival, dt: number) {
+  const { avatar: w, chair } = a.desk
+  const step = along(a.path, a.t + dt * WALK_SPEED)
+  if (!step) {
+    a.sat += dt
+    w.root.position.copy(SEAT)
+    w.root.rotation.y = turned(a.heading, 0, a.sat / TURN)
+    if (w.gear) w.gear.visible = false
+    const sat = a.sat >= clipLength(a.desk.models.cast, w.rig, 'Sit_Chair_Down')
+    if (sat) pullChair(chair, SEAT, 1)
+    return sat
+  }
+  a.t += dt * WALK_SPEED
+  w.root.position.copy(step.at)
+  w.root.rotation.y = a.heading = step.heading
+  pullChair(chair, SEAT, 0)
+  return false
+}
+
+/** An arriving worker walking, or sitting down: its chair comes in under it and its body is lifted onto the seat as the clip carries its hips back. */
+export function arrivalPose(models: Models, a: Arrival, t: number) {
+  const w = a.desk.avatar
+  if (a.sat === 0) return walkPose(models, w, a.t, t)
+  pullChair(a.desk.chair, SEAT, sitPose(models, w, 'Sit_Chair_Down', a.sat, t))
+}
+
+/** Sitting down or standing up `at` seconds into `clip`, lifted onto the chair as far as its hips are on the seat; answers how far that is. */
+function sitPose(models: Models, a: Avatar, clip: 'Sit_Chair_Down' | 'Sit_Chair_StandUp', at: number, t: number) {
+  pose(models.cast, a.rig, { layers: [{ clip, at, once: true }] }, t)
+  const k = seatedness(models.cast, a.rig)
+  const seated = seatedAt(models.cast, a, CHAIR)
+  a.body.position.set(seated.x, seated.y * k, seated.z)
+  a.body.rotation.set(0, 0, 0)
+  return k
+}
+
+/**
+ * A worker gone off duty: standing up `rose` seconds from the chair at `seat` (world space), turning to its desk from
+ * `heading`, then walking `t` meters into the elevator on its level before it leaves the building. `chair` is the
+ * workstation's chair it rose from, once its workstation stands there.
+ */
+export type Leaver = {
+  group: THREE.Group; models: Models; avatar: Avatar; level: number; desk: THREE.Vector3; seat: THREE.Vector3; path: THREE.Vector3[]; heading: number; rose: number; t: number
+  chair?: { chair: THREE.Object3D; seat: THREE.Vector3 }
+}
+
+/**
+ * A leaver from the desk at `desk` on `level`, its root at `from` facing `heading` (world space), `seated` of the way
+ * onto its chair (`seatedness`: 0 when it went before it reached it, and only walks out), leaving by the side
+ * `approach` (desk space).
+ */
+export function leaver(p: Plan, id: string, callsign: string, level: number, desk: THREE.Vector3, from: THREE.Vector3, heading: number, seated: number, approach: number, models: Models): Leaver {
   const w = avatar(models, lookOfWorker(id, callsign, WARDROBE, models.catalogue), WARDROBE)
   w.bulb.color.set('#3a4458')
   const group = new THREE.Group()
   group.add(w.root)
   const out = pathTo(p, desk).slice(0, -1).reverse()
   const car = out.at(-1)!.clone().setZ(coreFront(p) - 1.2)
+  const back = seated > 0 ? upToChair(out[0].clone().sub(desk), standingAt(models, w, from.clone().sub(desk)), approach).reverse().slice(0, -1).map((v) => v.add(desk)) : [from]
   w.root.position.copy(from)
   w.root.rotation.y = heading
-  return { group, models, avatar: w, level, path: [from, ...out, car], heading, rose: 0, t: 0 }
+  const rose = clipLength(models.cast, w.rig, 'Sit_Chair_StandUp') * (1 - seated)
+  return { group, models, avatar: w, level, desk: desk.clone(), seat: from, path: [...back, ...out, car], heading, rose, t: 0 }
 }
 
 const standing = (l: Leaver) => l.rose < clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')
+
+/** How far a leaver walks before it pushes its chair back in, and over how far, meters: clear of the seat first. */
+const TUCK = { after: 0.6, over: 0.5 }
 
 /** How far ahead of a leaver its elevator's doors open: they are open by the time it reaches them. */
 const DOORS_AHEAD = 2.5
@@ -133,9 +180,15 @@ export const nearDoors = (l: Leaver) => !along(l.path, l.t + DOORS_AHEAD)
 
 /** Stands a leaver up, then walks it into the elevator, where it turns to face the doors; true once it stands inside. Its bones are posed apart. */
 export function walkOut(l: Leaver, dt: number) {
-  if (standing(l)) return ((l.rose += dt), false)
-  l.t += dt * WALK_SPEED
   const w = l.group.children[0]
+  if (standing(l)) {
+    l.rose += dt
+    w.position.copy(l.seat)
+    w.rotation.y = turned(l.heading, 0, l.rose / TURN)
+    return false
+  }
+  l.t += dt * WALK_SPEED
+  if (l.chair) pullChair(l.chair.chair, l.chair.seat, smooth(Math.min(1, Math.max(0, (l.t - TUCK.after) / TUCK.over))))
   const step = along(l.path, l.t)
   if (!step) {
     w.position.copy(l.path.at(-1)!)
@@ -147,9 +200,13 @@ export function walkOut(l: Leaver, dt: number) {
   return false
 }
 
-/** A leaver standing up from its chair, its body lowered off the seat as the clip raises it, then walking; standing inside the car once `inside`. */
+/** A leaver standing up from its chair, the chair pushed back as its hips leave the seat, then walking; standing inside the car once `inside`. */
 export function leaverPose(l: Leaver, inside: boolean, t: number) {
-  if (standing(l)) return sitPose(l.models, l.avatar, 'Sit_Chair_StandUp', l.rose, 1 - smooth(l.rose / clipLength(l.models.cast, l.avatar.rig, 'Sit_Chair_StandUp')), t)
+  if (standing(l)) {
+    const k = sitPose(l.models, l.avatar, 'Sit_Chair_StandUp', l.rose, t)
+    if (l.chair) pullChair(l.chair.chair, l.chair.seat, k)
+    return
+  }
   if (inside) return standPose(l.models, l.avatar, t)
   walkPose(l.models, l.avatar, l.t, t)
 }

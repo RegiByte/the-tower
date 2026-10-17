@@ -330,6 +330,12 @@ export function wearRigid(cast: Cast, rig: Rig, name: string, material: THREE.Ma
 /** Whether a part of the pack is skinned to the bones, else hung on one. */
 export const skinned = (cast: Cast, name: string) => cast.parts.get(name)!.bone === undefined
 
+/**
+ * How far a rig is into sitting down, from its hips' travel back from standing: 0 standing, 1 on the seat where
+ * Sit_Chair_Idle has them. KayKit's sit clips carry the body straight back, so this is the share of that travel done.
+ */
+export const seatedness = (cast: Cast, rig: Rig) => Math.min(1, Math.max(0, rig.bone('hips').position.z / cast.skeletons[rig.kind].seated.hips.z))
+
 /** How long a clip of a rig lasts, seconds. */
 export const clipLength = (cast: Cast, rig: Rig, clip: ClipKey) => cast.skeletons[rig.kind].clips.get(clip)!.duration
 

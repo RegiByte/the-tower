@@ -8,6 +8,7 @@ import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, syncDesk, sync
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
 import { arrival, leaver } from './life.ts'
+import { seatedness } from './rig.ts'
 import { noteTitle } from './notes.ts'
 import { tintOf } from './palette.ts'
 import { buildDanceFloors, makeGuest, type DanceFloors, type Guest } from './party.ts'
@@ -89,7 +90,10 @@ export const DESKS: Layer<DeskAt, Desk> = {
     if (desk.avatar.root.visible) {
       const level = s.plan.levels.find((l) => l.y === desk.group.position.y)!.index
       const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
-      const l = leaver(s.plan, id, desk.card.callsign, level, desk.group.position, desk.group.localToWorld(desk.avatar.root.position.clone()), heading, s.models!)
+      const arriving = s.arrivals.get(id)
+      const seated = !arriving ? 1 : arriving.sat > 0 ? seatedness(s.models!.cast, desk.avatar.rig) : 0
+      const at = desk.group.localToWorld(desk.avatar.root.position.clone())
+      const l = leaver(s.plan, id, desk.card.callsign, level, desk.group.position, at, heading, seated, desk.marks.approach, s.models!)
       s.leavers.add(l)
       hangOn(level, l.group)
     }

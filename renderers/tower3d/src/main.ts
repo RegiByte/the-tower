@@ -1578,6 +1578,12 @@ function tickHold() {
   run(a, verb)
 }
 
+/** The chair of the workstation standing where a worker left its desk at `desk`, once one stands there. */
+function chairLeft(desk: THREE.Vector3) {
+  const station = [...s.stations.values()].find((st) => st.group.position.equals(desk))
+  return station && { chair: station.chair, seat: station.chair.position.clone() }
+}
+
 /** Everyone moves where they go every frame; bones are posed only on the levels drawn (`levelsShown`). */
 function tickPeople({ dt, t }: Frame) {
   const shown = levelsShown(s)
@@ -1590,6 +1596,7 @@ function tickPeople({ dt, t }: Frame) {
     else poseRigs(desk, t, opened + t)
   }
   for (const l of s.leavers) {
+    l.chair ??= chairLeft(l.desk)
     const inside = walkOut(l, dt)
     if (shown(l.level)) leaverPose(l, inside, t)
     if (inside && s.doorOpen.get(l.level) === 0) (s.leavers.delete(l), discard(l.group))

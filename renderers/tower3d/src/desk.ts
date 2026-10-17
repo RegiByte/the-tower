@@ -30,7 +30,7 @@ const SPEECH_Y = GIST_Y + 0.13
 const SPEECH_LINE = 0.11
 const SPEECH_GAP = 0.04
 /** The worker's chair on the floor, at the keyboard. */
-const SEAT = new THREE.Vector3(0, 0, -SEAT_OFFSET)
+export const SEAT = new THREE.Vector3(0, 0, -SEAT_OFFSET)
 const Y = new THREE.Vector3(0, 1, 0)
 /** The second monitor, on the desk's left, turned toward the seat: what the worker last showed you. */
 export const SIDE = { width: 0.66, height: 0.41, x: -0.98, y: 1.07, z: 0.06, turn: -0.55 }
@@ -63,6 +63,8 @@ type Marks = {
   twin?: { at: THREE.Vector3; turn: number; size: number }
   /** Where the papers new to the worker are stacked. */
   papers: THREE.Vector3
+  /** The side (x, desk space) a worker comes to its chair from and leaves it by, clear of whoever sits beside it. */
+  approach: number
 }
 
 /**
@@ -94,7 +96,8 @@ export type Desk = {
   models: Models
   look: Look
   avatar: Avatar
-  /** The chair's seat and back, swivelling with the worker as it turns. */
+  /** The worker's chair, pulled back from `SEAT` while it sits down or stands up, and its seat and back, swivelling with the worker as it turns. */
+  chair: THREE.Object3D
   swivel: THREE.Object3D
   strip: THREE.MeshBasicMaterial
   screen: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
@@ -180,6 +183,8 @@ export type Station = {
   /** The open one's sign, where a worker's tag would be: read from anywhere on the floor. */
   sign?: THREE.Sprite
   open: boolean | undefined
+  /** The chair at its seat: the one a worker leaving this workstation stands up from. */
+  chair: THREE.Object3D
 }
 
 export function makeStation(models: Models): Station {
@@ -199,12 +204,14 @@ export function syncStation(station: Station, open: boolean) {
 }
 
 const LABELS_Z = SCREEN.z + 0.05
+/** How far off its chair, along the desk, a worker walks up: its own desk's right, a reviewer's left, away from its author. */
+const APPROACH = 0.85
 const SIDE_CENTER = new THREE.Vector3(SIDE.x, SIDE.y, SIDE.z - 0.03)
 const ownMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
   speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
   twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
-  papers: vector(slots.papers.at),
+  papers: vector(slots.papers.at), approach: APPROACH,
 })
 /**
  * A worker's logbook right of its keyboard, clear of the cat's perch and its subagents: a thin notebook on a first
@@ -249,7 +256,7 @@ export function dressBinder(desk: Desk, sessions: number) {
 const PAPERS = { sheet: { width: 0.26, depth: 0.18, thick: 0.012 }, most: 8, flag: 0.36, above: 0.4 }
 
 /** The worker in its chair at a desk's seat, its subagents, speech and the papers it hasn't read, around `furniture`. */
-function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 'group' | 'swivel' | 'strip' | 'screen' | 'side' | 'binder'>): Desk {
+function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 'group' | 'chair' | 'swivel' | 'strip' | 'screen' | 'side' | 'binder'>): Desk {
   const look = lookOfWorker(card.id, card.callsign, WARDROBE, models.catalogue)
   const w = avatar(models, look, WARDROBE)
   w.root.position.copy(SEAT)
@@ -281,7 +288,7 @@ export function makeDesk(card: Card, models: Models, slots: DeskSlots): Desk {
   binder.position.copy(vector(slots.logbook.at))
   binder.rotation.y = slots.logbook.turn * DEG
   group.add(binder)
-  return seated(card, models, ownMarks(slots), { group, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder })
+  return seated(card, models, ownMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder })
 }
 
 /** A notebook open on a desk, its base's near edge toward -z; its screen faces the one sitting there. */
@@ -315,7 +322,7 @@ const notebookAt = (slots: DeskSlots) => vector(slots.notebook.at).sub(new THREE
 const VISIT_MINIS = Array.from({ length: 4 }, (_, i) => new THREE.Vector3(-0.42 - i * 0.17, 0, -SEAT_OFFSET))
 const visitMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at),
+  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at), approach: -APPROACH,
 })
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
@@ -326,7 +333,7 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
   group.add(chair)
   const book = notebook(notebookAt(slots))
   group.add(book.group)
-  return seated(card, models, visitMarks(slots), { group, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
+  return seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
 }
 
 function relabel(desk: Desk, key: 'tag' | 'gist' | 'bubble', next: THREE.Sprite | undefined) {
