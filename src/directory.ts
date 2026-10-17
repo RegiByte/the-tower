@@ -141,6 +141,9 @@ const noReviewReason = (card: Card) =>
 /** Where work that landed is read once no worktree holds it. */
 const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
 
+/** The hand-off back to whoever hired the worker, said where the worker reads its review notes. */
+const reportToHirer = (hirer: string) => ` Once you have answered them, report to ${hirer}, who hired you: what changed and whether the work is ready.`
+
 const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${card.hiredBy!.callsign}`)
 
 /** The floor's crews: each worker under the one it reports to, those that went home among them. */
@@ -852,7 +855,7 @@ switch (verb) {
     const text = await readThread(board.floors.find((f) => f.id === target.project)!, target.checkout)
     if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
     const notes = unseenBy(parseThread(text), target.callsign).map((m) => m.n)
-    await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes), by: me })
+    await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes) + (target.hiredBy ? reportToHirer(target.hiredBy.callsign) : ''), by: me })
     console.log(`Sent ${target.callsign} a pointer to ${notes.length ? notes.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.`)
     break
   }

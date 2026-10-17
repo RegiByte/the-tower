@@ -106,7 +106,8 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
 - *Workers:* `tower thread [checkout]` prints the thread, the notes new to the caller and the repos an anchor can
   name; `tower note [on <checkout>] [re n<k>] [repo:path:lines …]` appends under the caller's callsign, quoting each
   anchor from the checkout's copy (or the caller's own when it works in a fork of it, the version a reviewer read);
-  `tower send <CALLSIGN>` is Send for workers.
+  `tower send <CALLSIGN>` is Send for workers; to a hired worker its pointer adds whom to report to once the notes
+  are answered, its hirer.
 
 **The thread view model** (this is its one home). Every renderer draws a thread through the shared Reviews panel
 ([[shared-panels]]), and what it shows is built in shared code. New is relative to whose view is open: author and
