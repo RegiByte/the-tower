@@ -275,6 +275,9 @@
     const doors = { x: -0.5, z: -7.5, y: 2.6, yaw: Math.PI - 0.15, pitch: -0.35 }
     watch(380, doors); snap('reviewer-on-the-landing')
     watch(150, doors); snap('reviewer-boarding')
+    watch(300, doors)
+    tryDo('reviewer-back', () => t.advance()); watch(40, doors); snap('reviewer-coming-back')
+    watch(560, aisle); snap('reviewer-rolling-in')
   }
   return out
 })()

@@ -471,7 +471,8 @@ export const FIXTURE_CHANGES: Record<string, RepoChanges[]> = { [idOf('lab', 0)]
 
 /**
  * The review flow: an author at work with a reviewer beside it and notes it hasn't read, an author that answered its
- * notes, a worker in the main checkout, and a thread whose worker went home. On the next board the reviewer goes home.
+ * notes, a worker in the main checkout, and a thread whose worker went home. On the next board the reviewer goes home, and on
+ * the one after it comes back.
  */
 const review = (now: number, reviewed = false) => boardOf([{
   id: 'lab', name: 'lab', color: '#5fb3b3', repos: ['/work/lab-api'], threads: reviewThreads(),
@@ -615,7 +616,7 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
   empty: (now) => [empty(now)],
   tall: (now) => [tall(now)],
   party: (now) => [party(now)],
-  review: (now) => [review(now), review(now, true)],
+  review: (now) => [review(now), review(now, true), review(now)],
   attention: (now) => [attention(now)],
   tidy: (now) => [tidyFloor(now)],
   logbook: (now) => [logbook(now)],

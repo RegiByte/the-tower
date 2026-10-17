@@ -27,7 +27,7 @@ import { aim, eyes, facing, type Walker } from './walker.ts'
  *   tower3d.step(60)                       stop the clock and run 60 frames of 1/60 s; play() lets it run again
  *                                          (open the page with ?stepped to start stopped, ?seed=<n> for its chance and
  *                                          ?at=<ISO time> for its wall clock: the same frames every load, any day)
- *   tower3d.advance()                      a fixture's next board, as if the tower had sent it (?board=busy has three: a new showing, then nobody waits; review two: the reviewer goes home)
+ *   tower3d.advance()                      a fixture's next board, as if the tower had sent it (?board=busy has three: a new showing, then nobody waits; review three: the reviewer goes home, then comes back)
  *   await tower3d.pictured()               every picture being read is painted (one a later board brought too)
  *   tower3d.state()                        where you are, what you aim at, what's open, frame times, what the last frame drew and counters
  *   tower3d.shot()                         the scene alone as a PNG data URL (no DOM panels: use CDP for those)
