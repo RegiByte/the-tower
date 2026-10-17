@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.41.1
+
+The desk's props placed by hand, and a gizmo you can use from where you sit. No host restart, no config change, the
+renderer API unchanged. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- The desk dressing's props are placed by hand in the prefab editor, clear of the monitor: the desk's own cactus and
+  mug, the watching mug, the done pizza, and the logbook and papers per state.
+- The prefab editor's and the dresser's two-axis handles stand on the side of the object you look from: a desk seen
+  from the worker's seat no longer hides them behind its monitor.
+
 ## v1.41.0
 
 Tower 3D loads its models as files, and the prefab editor shows the real desk. No host restart, the renderer API
