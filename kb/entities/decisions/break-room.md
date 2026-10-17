@@ -10,7 +10,6 @@
   "refs": [
     "hub/renderers/tower3d/src/breaks.ts#breaksOf",
     "hub/renderers/tower3d/src/breaks.ts#GRACE",
-    "hub/renderers/tower3d/src/breaks.ts#STANDING",
     "hub/renderers/tower3d/src/breaks.ts#standingIn",
     "hub/renderers/tower3d/src/breaks.ts#nextBreak",
     "hub/renderers/tower3d/src/layout.ts#breakPlaces",
@@ -61,8 +60,7 @@ nobody has typed to it since, its latest prompt was its hirer's and the hirer ru
 - *Places* ([`breakPlaces`](ref:hub/renderers/tower3d/src/layout.ts#breakPlaces)). Before each cabinet, facing it,
   playing (`Idle_A` with `Type`'s arms, [`standingPose`](ref:hub/renderers/tower3d/src/desk.ts#standingPose)); then the
   room's standing places ([`standingIn`](ref:hub/renderers/tower3d/src/breaks.ts#standingIn)): the room prefab's
-  `stand_<n>` slots, and until it has any, a default of six in two rows behind the players
-  ([`STANDING`](ref:hub/renderers/tower3d/src/breaks.ts#STANDING)), marked to be moved by hand. A floor keeping no
+  `stand_<n>` slots, placed by hand in the prefab editor. A floor keeping no
   games has only the standing places, beside the empty room's sign. Past them all, a worker stays where it was.
 - *Who takes which.* Workers are placed in the order their breaks began; each takes a free cabinet while any is, else a
   free standing place, the one its id scores highest for (`rendezvous`). The board keeps no history of who left the

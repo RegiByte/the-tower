@@ -24,25 +24,11 @@ const leavesAt = (c: Card) => (c.waitsOn && !('beside' in c.seat!) ? c.enteredAt
 /** A place in the game room: before a cabinet, playing it, or standing about. */
 export type BreakPlace = Place & { play: boolean }
 
-/**
- * DEFAULT, to be moved by hand: where workers stand in the game room, in its prefab's frame (its door's middle, +z out
- * through it), two loose rows behind the players facing the cabinets. A `stand_<n>` slot in the room's prefab replaces
- * them all.
- */
-const STANDING = [
-  { name: 'stand_1', at: [-3.7, 0, -6.2], turn: -90 },
-  { name: 'stand_2', at: [-3.7, 0, -4.6], turn: -90 },
-  { name: 'stand_3', at: [-3.7, 0, -3.0], turn: -90 },
-  { name: 'stand_4', at: [-2.3, 0, -5.4], turn: -90 },
-  { name: 'stand_5', at: [-2.3, 0, -3.8], turn: -90 },
-  { name: 'stand_6', at: [-2.3, 0, -2.2], turn: -90 },
-]
-
 /** The game room's standing places on the level: its prefab's `stand_<n>` slots. */
 export function standingIn(room: Room, prefabs: Prefabs): BreakPlace[] {
   const own = series(prefabs[room.prefab].slots, 'stand')
   const inRoom = frame(room.door.x, room.door.z, room.door.turn)
-  return (own.length ? own : STANDING).map((s) => ({ name: s.name, ...inRoom(s.at, s.turn), stand: true, play: false }))
+  return own.map((s) => ({ name: s.name, ...inRoom(s.at, s.turn), stand: true, play: false }))
 }
 
 /** The workers on `cards` in the break room at `now`, each at the place it took among `places`. */
