@@ -489,6 +489,12 @@ export const carSpot = (p: Plan) => ({ x: 0, z: coreFront(p) - CORE.depth / 2 + 
 /** The control room's footprint: the plate's back-left corner. */
 export const roomBox = (p: Pick<Plan, 'width' | 'depth' | 'roomDepth'>): Box => ({ minX: -p.width / 2, maxX: -p.width / 2 + ROOM.width, minZ: -p.depth / 2, maxZ: -p.depth / 2 + p.roomDepth })
 
+/** The part of the control room a deep shelf or bench takes out past the loft's deck, which the room roofs itself. */
+export const roomPastDeck = (p: Pick<Plan, 'width' | 'depth' | 'roomDepth' | 'loft'>): Box | undefined => {
+  const r = roomBox(p)
+  return r.maxZ > p.loft.deck.maxZ ? { ...r, minZ: p.loft.deck.maxZ } : undefined
+}
+
 /** The door's gap in the room's wall facing the core. */
 export const roomDoor = (p: Pick<Plan, 'width' | 'depth'>): Box => {
   const x = -p.width / 2 + ROOM.width
@@ -604,7 +610,7 @@ export type Solid = Box & { bottom: number; top: number }
 
 /**
  * What a look across a level can't pass through: the shell and the core from floor to ceiling, the control room's
- * walls and the shared wall as high as they stand, and the loft's deck and landing.
+ * walls and the shared wall as high as they stand, the loft's deck and landing, and the room's own roof past the deck.
  */
 export function solids(p: Plan, level: Level): Solid[] {
   const height = levelHeight(level.index)
@@ -617,6 +623,7 @@ export function solids(p: Plan, level: Level): Solid[] {
     { ...sharedWall(level), bottom: 0, top: PARTITION.height },
     slab(p.loft.deck),
     slab(p.loft.landing),
+    ...[roomPastDeck(p)].filter((b) => b !== undefined).map((b) => ({ ...b, bottom: ROOM_HEIGHT, top: ROOM_HEIGHT + SLAB })),
   ]
 }
 

@@ -4,7 +4,7 @@ import { act } from './acts.ts'
 import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from './cards.ts'
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
-import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, shelfX, videoWallZ } from './layout.ts'
+import { ROOM, ROOM_HEIGHT, SLAB, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, roomPastDeck, shelfX, videoWallZ } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf, type FloorPalette } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
@@ -132,6 +132,9 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   sign.position.set(r.maxX + WALL + 0.02, (DOOR_HEIGHT + h) / 2, (door.minZ + door.maxZ) / 2)
   sign.rotation.y = Math.PI / 2
   g.add(sign)
+
+  const past = roomPastDeck(p)
+  if (past) g.add(block(ROOM.width, SLAB, past.maxZ - past.minZ, toon(colors.ceiling), cx, h, (past.minZ + past.maxZ) / 2))
 
   const front = mesh(new THREE.PlaneGeometry(ROOM.width, h - 0.2), glass, cx, 0.1 + (h - 0.2) / 2, r.maxZ)
   g.add(front)

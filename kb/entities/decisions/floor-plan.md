@@ -9,6 +9,7 @@
   "reviewed": "2026-10-17",
   "refs": [
     "hub/renderers/tower3d/src/floorplan.ts#loftOf",
+    "hub/renderers/tower3d/src/layout.ts#roomPastDeck",
     "hub/renderers/tower3d/src/floorplan.ts#DECK",
     "hub/renderers/tower3d/src/floorplan.ts#STAIR",
     "hub/renderers/tower3d/src/floorplan.ts#groundAt",
@@ -72,7 +73,9 @@ shoulders.
   to ceiling, the control room's walls and the shared wall as high as they stand, the deck and landing as slabs, so
   you aim down from the deck past the room below and not through the deck from under it.
 - *The control room is still on the ground*, under the deck, 2.95 m clear
-  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall a lower band; the pigeonhole
+  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall a lower band; where a
+  floor's shelf or shells deepen it past the deck, it roofs the rest itself
+  ([`roomPastDeck`](ref:hub/renderers/tower3d/src/layout.ts#roomPastDeck)); the pigeonhole
   stands under the stair's landing and the lounge left of the stair, clear of it. The deck is empty, railed where the
   control room's glass will stand.
 
