@@ -18,6 +18,7 @@
     "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#TableSlot",
     "hub/renderers/tower3d/src/layout.ts#workstations",
+    "hub/renderers/tower3d/src/layout.ts#deskSpot",
     "hub/renderers/tower3d/src/layers.ts#DESKS",
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/layers.ts#CHAIRS",
@@ -73,7 +74,9 @@ board field was added.
 - *Drawn as a desk at a place.* [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan) gives a member a `DeskSlot` at its
   place, with `meeting` and its own workstation's `n`; the desk layer
   ([`DESKS`](ref:hub/renderers/tower3d/src/layers.ts#DESKS)) draws it as a seat
-  ([`makeSeat`](ref:hub/renderers/tower3d/src/desk.ts#makeSeat)): a chair, or, standing, none. Every other place in the
+  ([`makeSeat`](ref:hub/renderers/tower3d/src/desk.ts#makeSeat)): a chair and a laptop whose screen is its live
+  terminal, or, standing, neither. Sitting there is sitting at its desk ([[tower3d-desk]]); going to it stands you over
+  its shoulder, inside the room ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)). Every other place in the
   table's state and at the counter has an empty chair ([`CHAIRS`](ref:hub/renderers/tower3d/src/layers.ts#CHAIRS)).
 - *Its desk stays* ([`AwaySlot`](ref:hub/renderers/tower3d/src/layout.ts#AwaySlot)): the workstation is drawn with its
   worker's dressing, a station nobody sits at.

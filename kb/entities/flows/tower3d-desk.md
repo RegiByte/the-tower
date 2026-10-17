@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-10-17",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#relay", "hub/src/tower/server.ts#muxWatch", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#terminalStream", "hub/src/tower/server.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#relay", "hub/src/tower/server.ts#muxWatch", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#terminalStream", "hub/src/tower/server.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
 }
 ---
 ```mermaid
@@ -49,7 +49,9 @@ sequenceDiagram
   [`goDesk`](ref:hub/renderers/tower3d/src/main.ts#goDesk) cuts to the desk's floor if needed, and
   [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel, a modal over the dimmed
   world. The camera stays at your eyes, and while the modal is open the scene isn't drawn: the canvas keeps its last frame and updates go
-  on. A video-wall tile opens the same terminal in place.
+  on. A video-wall tile opens the same terminal in place. A worker gathered with its crew sits at a meeting table
+  instead, its desk at its seat ([[whereabouts]]): aiming at it, or at its empty desk, and pressing E opens the same panel,
+  standing you over its shoulder in the room, and its laptop shows the same live screen as a monitor.
 - **The transport depends on where Tower 3D runs.** At `/r/tower3d/` `/tower.js` calls the routes and
   opens one `/mux` stream; framed from a shelf in the tower page, it posts to the page, which makes the same requests
   through its `tower.relay` ([`relay`](ref:hub/src/tower/tower.js#relay)). The server parses each command by its schema

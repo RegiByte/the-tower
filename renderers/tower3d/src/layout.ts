@@ -662,8 +662,8 @@ export function walkway(p: Plan, s: Pick<StationSlot, 'x' | 'z' | 'turn'>) {
   return [{ x: 0, z: front + 0.4 }, { x: aisle.x, z: front + ACROSS_LANDING }, aisle, fromDesk(s, 0, -SEAT_OFFSET - BEHIND_SEAT), fromDesk(s, 0, -SEAT_OFFSET)]
 }
 
-/** Standing behind a worker, looking at its screen. */
-export const deskSpot = (d: DeskSlot) => ({ ...fromDesk(d, 0, -SEAT_OFFSET - 2.3), yaw: (d.turn * Math.PI) / 180 })
+/** Standing behind a worker, looking at its screen: at a meeting, close over its shoulder, inside the room. */
+export const deskSpot = (d: DeskSlot) => ({ ...fromDesk(d, 0, -SEAT_OFFSET - (d.meeting ? 0.9 : 2.3)), yaw: (d.turn * Math.PI) / 180 })
 
 /** Where a game's cabinet stands, with its level, if its floor's arcade has room for it. */
 export function cabinetOf(p: Plan, project: string, id: string) {

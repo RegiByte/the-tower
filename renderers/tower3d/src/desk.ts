@@ -140,7 +140,7 @@ export type Desk = {
   /** Its logbook beside the keyboard, as thick as the sessions it ran as; a reviewer beside its author has none. */
   binder?: THREE.Group
   binderSessions: number
-  /** A reviewer's notebook on its author's desk; a worker at its own desk has none. */
+  /** A reviewer's notebook on its author's desk, or a crew member's laptop at its meeting seat; a worker at its own desk has none. */
   notebook?: THREE.Group
   /** A crew member in a meeting room: at a seat, or standing (no chair, no laptop). */
   meeting?: { stand: boolean }
@@ -346,8 +346,8 @@ const visitMarks = (slots: DeskSlots): Marks => ({
 
 /**
  * A crew member's place in a meeting room, in its own desk space (its chair at `SEAT`, the table or the counter before
- * it): where a laptop would stand in front of it, its tag over its head, its subagents on the floor behind its chair,
- * the cat's perch on the table. Standing at the table's foot, it has no chair.
+ * it): its laptop on the table in front of it, its tag over its head, its subagents on the floor behind its chair, the
+ * cat's perch beside the laptop. Standing at the table's foot, it has neither chair nor laptop.
  */
 const MEETING = { laptop: new THREE.Vector3(0, DESK.height, SEAT.z + 0.67), tag: 2.1, perch: new THREE.Vector3(0.36, DESK.height, SEAT.z + 0.62) }
 const meetingMarks = (stand: boolean): Marks => {
@@ -359,14 +359,20 @@ const meetingMarks = (stand: boolean): Marks => {
   }
 }
 
-/** A crew member at its place in a meeting room: its own chair; standing, none. It has no screen to show. */
+/** A crew member at its place in a meeting room: its own chair and its laptop, whose screen is its terminal; standing, neither. */
 export function makeSeat(card: Card, models: Models, stand: boolean): Desk {
   const group = new THREE.Group()
-  const chair = stand ? new THREE.Group() : instance(models.desk).part('chair')
+  if (stand) {
+    const none = new THREE.Group()
+    group.add(none)
+    return { ...seated(card, models, meetingMarks(true), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }), meeting: { stand } }
+  }
+  const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
-  const screen = mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false }))
-  return { ...seated(card, models, meetingMarks(stand), { group, chair, swivel: chair.getObjectByName('swivel') ?? chair, strip: new THREE.MeshBasicMaterial(), screen }), meeting: { stand } }
+  const laptop = notebook(MEETING.laptop)
+  group.add(laptop.group)
+  return { ...seated(card, models, meetingMarks(false), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }), notebook: laptop.group, meeting: { stand } }
 }
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
