@@ -279,5 +279,24 @@
     tryDo('reviewer-back', () => t.advance()); watch(40, doors); snap('reviewer-coming-back')
     watch(560, aisle); snap('reviewer-rolling-in')
   }
+  if (cabinet) {
+    t.key('Escape'); t.step(10); t.capture()
+    tryDo('break-room', () => {
+      const l = t.locate(cabinet)
+      t.teleport({ level: l.level, x: l.x + 1.1, z: l.z - 6.3 })
+      t.step(1)
+      t.aimAt(cabinet)
+    }); t.step(30); snap('break-room')
+  }
+  if (new URLSearchParams(location.search).get('board') === 'breakroom') {
+    /** The reviewer on `quiet`, done and waiting on its author, stays beside it. */
+    const reviewer = t.acts('desk').find((a) => a.id.endsWith('-090021-quie'))
+    tryDo('reviewer-stays', () => {
+      const l = t.locate(reviewer)
+      t.teleport({ level: l.level, x: l.x - 3.4, z: l.z + 0.4, yaw: Math.PI / 2, pitch: -0.18 })
+      t.step(1)
+      t.aimAt(reviewer)
+    }); t.step(30); snap('reviewer-stays')
+  }
   return out
 })()

@@ -36,6 +36,7 @@ import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
 import { cityModel, furnish, stateKey, type PrefabItem } from './zones.ts'
+import { standingIn } from './breaks.ts'
 import { TABLE, meetingKit } from './meetings.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
@@ -337,7 +338,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.boards++
   s.board = next
   s.self = at
-  s.plan = furnish(plan(next, new Date(wallNow()).setHours(0, 0, 0, 0), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
+  s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
   ringFor(began)
@@ -1775,6 +1776,7 @@ function update(dt: number) {
   s.simNow += dt * 1000
   const turned = takeTurn()
   if (!s.board || !s.world) return
+  if (wallNow() >= s.plan.until) onBoard(s.board, s.self)
   const f: Frame = { dt, t: s.simNow / 1000, turned }
   for (const tick of TICKS) tick(f)
 }

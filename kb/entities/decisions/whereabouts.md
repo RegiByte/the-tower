@@ -70,7 +70,8 @@ board field was added.
   author's (within a table's pitch), or stands behind its author's chair, looking over its shoulder (a second reviewer
   finding that taken takes the next free place)
   ([`placeNamed`](ref:hub/renderers/tower3d/src/meetings.ts#placeNamed)). A member sent home frees its place; nobody
-  else moves.
+  else moves. A member whose answer waits on its lead steps out to the game room for a break ([[break-room]]), its
+  place kept, drawn as an empty chair, until it walks back.
 - *The table grows with the crew.* The long table ([`meeting_long.json`](ref:hub/renderers/kaykit/scenes/prefabs/meeting_long.json))
   has a state per size, `seats_4`, `seats_6`, `seats_8`, each with its `head` and `seat_<n>` slots; a meeting draws the
   smallest that seats the most it has held at once, up to its room's `seats`

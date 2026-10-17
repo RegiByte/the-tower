@@ -5,6 +5,7 @@ import { onDuty, shelfKind } from './cards.ts'
 import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room, type RoomId } from './floorplan.ts'
 import { turnXZ } from '../../kaykit/src/catalog.ts'
 import { gamesOf } from './games.ts'
+import { breaksOf, nextBreak, type BreakPlace } from './breaks.ts'
 import { meetingsOf, stateFor, type MeetingKit, type Place } from './meetings.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
@@ -127,11 +128,12 @@ export type StationSlot = { n: number; x: number; z: number; turn: number }
 /**
  * A workstation with its worker. A reviewer whose author is at a desk sits beside it, at the free end of the author's
  * desk (`beside`, the author's id): `n` and `turn` are the author's workstation's, `x` and `z` the reviewer's own place there.
- * A worker gathered with its crew (src/meetings.ts) sits or stands at its `meeting` place instead, as if at a desk
- * there: its chair at the seat; `n` is still the workstation it keeps.
+ * A worker gathered with its crew (src/meetings.ts), or on a break in the game room (src/breaks.ts), sits or stands at
+ * its `meeting` place in that room instead, as if at a desk there: its chair at the seat, or standing, playing a
+ * cabinet (`play`) or not; `n` is still the workstation it keeps.
  */
-export type DeskSlot = StationSlot & { card: Card; beside?: string; meeting?: { room: RoomId; label: string; place: string; stand: boolean } }
-/** A worker's workstation while it is in a meeting room, with the room's name. */
+export type DeskSlot = StationSlot & { card: Card; beside?: string; meeting?: { room: RoomId; label: string; place: string; stand: boolean; play: boolean } }
+/** A worker's workstation while it is in a meeting room or the game room, with the room's name. */
 export type AwaySlot = StationSlot & { card: Card; room: string }
 /** A meeting room's long table on the level: its centre and turn, the state it is drawn in, the room's places with it so, and the floor it takes. */
 export type TableSlot = { room: RoomId; x: number; z: number; turn: number; state: string; places: Place[]; boxes: Box[] }
@@ -187,6 +189,8 @@ export type Plan = {
   /** Every floor's rooms on the ground and its named points, the same on each (src/floorplan.ts). */
   rooms: Room[]
   anchors: Anchors
+  /** When, on the wall clock, the plan stops holding by time alone: the next worker leaves for the break room. */
+  until: number
 }
 
 /** A worker off duty since today began, at the roof's party, with the project it worked for. Where it is changes with time (src/life.ts#guestAt). */
@@ -487,13 +491,23 @@ function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined 
 /** The workstation standing at a meeting place: its seat (its chair, at `SEAT_OFFSET` behind the desk's centre) on the place. */
 const atPlace = (p: Place) => ({ ...fromDesk({ x: p.x, z: p.z, turn: p.turn }, 0, SEAT_OFFSET), turn: p.turn })
 
+/** How far before a cabinet's front its player stands. */
+const AT_CABINET = 0.5
+
+/** The places in a game room with `arcade`'s cabinets: before each one, facing it, then `standing`. */
+const breakPlaces = (arcade: ArcadeSlot | undefined, standing: BreakPlace[]): BreakPlace[] => [
+  ...(arcade?.cabinets ?? []).map((c) => ({ name: `cabinet_${c.id}`, x: c.x, z: c.z - CABINET.depth / 2 - AT_CABINET, turn: 0, stand: true, play: true })),
+  ...standing,
+]
+
 /**
- * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
- * far a reviewer's place is from its author's along the floor and how far it is turned from it, at the author's desk
- * as it is drawn (`besideOf`);
- * `meet`, the meeting rooms' furniture, where a crew gathers.
+ * The building for a board at `now` on the wall clock, which decides who is on a break and, by when the viewer's day
+ * began, who's at the party. `beside` is how far a reviewer's place is from its author's along the floor and how far it
+ * is turned from it, at the author's desk as it is drawn (`besideOf`); `meet`, the meeting rooms' furniture, where a
+ * crew gathers; `standing`, where workers on a break stand in the game room.
  */
-export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit): Plan {
+export function plan(board: Board, now: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit, standing: (room: Room) => BreakPlace[]): Plan {
+  const today = new Date(now).setHours(0, 0, 0, 0)
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
   const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
@@ -517,21 +531,25 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     return list.map((shell, i) => ({ shell, x: at[i]!.x, z: at[i]!.z, scale }))
   }
   const meetingRooms = rooms.filter((r) => r.seats).sort((a, b) => b.seats! - a.seats!)
+  const gameRoom = roomOf(rooms, 'game')
   const floors = board.floors.map((floor, i): Level => {
     const own = (id: string) => stationAt((floor.cards.find((c) => c.id === id)!.seat as { n: number }).n)
     const meetings = meetingsOf(floor.cards, meetingRooms, meet)
-    const gathered = new Map(meetings.flatMap((m) => m.seats.map(({ card, place }) => [card.id, { room: m.room, place }] as const)))
+    const gathered = new Map(meetings.flatMap((m) => m.seats.map(({ card, place }) => [card.id, { room: m.room, place: { ...place, play: false } }] as const)))
+    const arcade = arcadeFor(floor, rooms)
+    const onBreak = breaksOf(onDuty(floor.cards), breakPlaces(arcade, standing(gameRoom)), now)
+    const away = new Map([...gathered, ...onBreak.map(({ card, place }) => [card.id, { room: gameRoom, place }] as const)])
     const desks = onDuty(floor.cards).map((card): DeskSlot => {
       const seat = card.seat!
       const kept = 'n' in seat ? stationAt(seat.n) : own(seat.beside)
-      const meeting = gathered.get(card.id)
-      if (meeting) return { card, ...kept, ...atPlace(meeting.place), meeting: { room: meeting.room.id, label: meeting.room.label, place: meeting.place.name, stand: meeting.place.stand } }
+      const meeting = away.get(card.id)
+      if (meeting) return { card, ...kept, ...atPlace(meeting.place), meeting: { room: meeting.room.id, label: meeting.room.label, place: meeting.place.name, stand: meeting.place.stand, play: meeting.place.play } }
       if ('n' in seat) return { card, ...kept }
       const by = beside(floor.cards.find((c) => c.id === seat.beside)!)
       return { card, ...kept, ...fromDesk(kept, by.x, by.z), turn: kept.turn + by.turn, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
-    const away = desks.flatMap((d) => (d.meeting && 'n' in d.card.seat! ? [{ ...stationAt(d.n), card: d.card, room: d.meeting.label }] : []))
+    const stations = desks.flatMap((d) => (d.meeting && 'n' in d.card.seat! ? [{ ...stationAt(d.n), card: d.card, room: d.meeting.label }] : []))
     const tables = meetingRooms.map((room): TableSlot => {
       const state = meetings.find((m) => m.room === room)?.state ?? stateFor(room, Infinity, meet.states)
       return { room: room.id, ...meet.table(room), state, places: meet.places(room, state), boxes: meet.footprint(room, state) }
@@ -545,7 +563,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       floor,
       desks,
       free: Array.from({ length: rows * COLUMNS }, (_, n) => n).filter((n) => !taken.has(n)).map(stationAt),
-      away,
+      away: stations,
       tables,
       kiosks: kiosksOf(shells[i]),
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, card: desks[i].card })),
@@ -553,7 +571,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       wall: wallFor(floor, depth),
       cork: corkFor(floor, depth),
       pigeonhole: pigeonholeFor(floor, rooms),
-      arcade: arcadeFor(floor, rooms),
+      arcade,
       arcadeSign: arcadeSignFor(floor, rooms),
     }
   })
@@ -566,6 +584,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
     loft,
     rooms,
     anchors,
+    until: nextBreak(board.floors.flatMap((f) => onDuty(f.cards)), now),
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
       ...floors,

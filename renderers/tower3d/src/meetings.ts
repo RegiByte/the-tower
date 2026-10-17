@@ -41,7 +41,7 @@ export type MeetingKit = {
 /** A crew gathered in a meeting room: its lead, the table's state, and where each of its members on duty sits or stands. */
 export type Meeting = { room: Room; lead: Card; state: string; seats: { card: Card; place: Place }[] }
 
-const series = (slots: FlatSlot[], base: string) => {
+export const series = (slots: FlatSlot[], base: string) => {
   const n = new RegExp(`^${base}_(\\d+)$`)
   return slots.filter((s) => n.test(s.name)).sort((a, b) => Number(n.exec(a.name)![1]) - Number(n.exec(b.name)![1]))
 }
@@ -53,7 +53,7 @@ function named(slots: FlatSlot[], name: string, prefab: string) {
 }
 
 /** A prefab's frame on the level: its origin at (x, z), turned `turn`. */
-const frame = (x: number, z: number, turn: number) => (at: Vec3 | readonly number[], t: number) => {
+export const frame = (x: number, z: number, turn: number) => (at: Vec3 | readonly number[], t: number) => {
   const [dx, dz] = turnXZ(at[0], at[2], turn)
   return { x: x + dx, z: z + dz, turn: turn + t }
 }

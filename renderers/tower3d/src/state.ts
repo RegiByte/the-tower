@@ -234,7 +234,7 @@ export type State = {
 const NO_PLATE = { width: 0, depth: 0 }
 const NO_LOFT = loftOf(NO_PLATE, 0)
 const NO_ROOMS = roomsOf(NO_PLATE)
-const NO_PLAN: Plan = { ...NO_PLATE, levels: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }) }
+const NO_PLAN: Plan = { ...NO_PLATE, levels: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,

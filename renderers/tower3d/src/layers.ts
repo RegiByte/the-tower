@@ -94,7 +94,7 @@ export const DESKS: Layer<DeskAt, Desk> = {
   level: (at) => at.level,
   make({ slot, y, author }) {
     const slots = slotsAt(author)
-    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slot.meeting.stand) : slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
+    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slot.meeting.stand, slot.meeting.play) : slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)

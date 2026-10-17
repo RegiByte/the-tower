@@ -151,8 +151,8 @@ export type Desk = {
   notebook?: THREE.Group
   /** How far a reviewer's own desk space is turned from its author's desk (radians), as the `reviewer` slot is. */
   besideTurn?: number
-  /** A crew member in a meeting room: at a seat, or standing (no chair, no laptop). */
-  meeting?: { stand: boolean }
+  /** A crew member in a meeting room, or a worker on a break in the game room: at a seat, or standing (no chair, no laptop), playing a cabinet or not. */
+  meeting?: { stand: boolean; play: boolean }
   /** How many subagents stood at the desk when last posed, and since when (sim seconds) the worker summoned the newest. */
   summoned: { count: number; at?: number }
   turn: number
@@ -379,20 +379,20 @@ const meetingMarks = (stand: boolean): Marks => {
   }
 }
 
-/** A crew member at its place in a meeting room: its own chair and its laptop, whose screen is its terminal; standing, neither. */
-export function makeSeat(card: Card, models: Models, stand: boolean): Desk {
+/** A crew member at its place in a meeting room: its own chair and its laptop, whose screen is its terminal; standing, neither, at a cabinet it `play`s or not. */
+export function makeSeat(card: Card, models: Models, stand: boolean, play: boolean): Desk {
   const group = new THREE.Group()
   if (stand) {
     const none = new THREE.Group()
     group.add(none)
-    return { ...seated(card, models, meetingMarks(true), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }), meeting: { stand } }
+    return { ...seated(card, models, meetingMarks(true), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }), meeting: { stand, play } }
   }
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
   const laptop = notebook(MEETING.laptop)
   group.add(laptop.group)
-  return { ...seated(card, models, meetingMarks(false), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }), notebook: laptop.group, meeting: { stand } }
+  return { ...seated(card, models, meetingMarks(false), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }), notebook: laptop.group, meeting: { stand, play } }
 }
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
@@ -640,10 +640,11 @@ function seatedPose(card: Card, p: number, wall: number, holding: boolean, summo
 }
 
 /** What a crew member standing at the table's foot is doing: waving you over while it asks, cheering while it holds something up, else standing about. */
-function standingPose(card: Card, p: number, holding: boolean): Pose {
+function standingPose(card: Card, p: number, holding: boolean, play: boolean): Pose {
   const stand = { clip: 'Idle_A:rest', at: p } as const
   if (holding) return { layers: [stand, { clip: 'Cheering:arms', at: p * 0.5 }] }
   if (card.status === 'needs_input' || card.status === 'blocked') return { layers: [stand, { clip: 'Waving:arms', at: p }] }
+  if (play) return { layers: [stand, { clip: 'Type:arms', at: p }] }
   return { layers: [{ clip: 'Idle_A', at: p }] }
 }
 
@@ -688,7 +689,7 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
 export function poseRigs(desk: Desk, t: number, wall: number) {
   const { cast } = desk.models
   const p = t + desk.phase
-  const own = desk.meeting?.stand ? standingPose(desk.card, p, holdingUp(desk, t)) : seatedPose(desk.card, p, wall, holdingUp(desk, t), summoning(desk, t), clipLength(cast, desk.avatar.rig, 'Hit_B'))
+  const own = desk.meeting?.stand ? standingPose(desk.card, p, holdingUp(desk, t), desk.meeting.play) : seatedPose(desk.card, p, wall, holdingUp(desk, t), summoning(desk, t), clipLength(cast, desk.avatar.rig, 'Hit_B'))
   pose(cast, desk.avatar.rig, own, t)
   if (desk.twin) pose(cast, desk.twin.avatar.rig, { layers: [{ clip: 'Sit_Chair_Idle:rest', at: p + 1.3 }, { clip: 'Type', at: p + 1.3 }] }, t)
   desk.minis.avatars.forEach((m, i) => pose(cast, m.rig, { layers: [{ clip: 'Cheering', at: p + i * 0.4 }] }, t))

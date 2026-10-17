@@ -67,7 +67,7 @@ type Facts = {
   landed?: boolean
   /** How many sessions it ran as, this one the last: each earlier one started a day before the next. */
   sessions?: number
-  /** Minutes since it went off duty, a minute after it started unless given. */
+  /** Minutes since it entered its status (went off duty, or its answer came), a minute after it started unless given. */
   left?: number
   /** Why it can't be resumed where it ran. */
   unresumable?: Card['unresumable']
@@ -610,6 +610,43 @@ function growing(now: number): Board[] {
   return [floor([lead, ...hires.slice(0, 3)]), floor([lead, ...hires.slice(0, 4)]), floor([lead, ...hires]), floor(secondAs(home)), floor(secondAs(yesterday))]
 }
 
+/** A crew's hire whose answer waits on its hirer, at `by`, since `left` minutes ago. */
+const waitingHire = (by: number, ago: number, left: number, prompt: string, answer: string): Facts =>
+  hire(by, ago, prompt, { status: 'done', waitsOn: by, left, answer, tool: undefined })
+
+/**
+ * The break room. On `arcade`, a crew of six in Meeting · 8: three hires whose answers wait on their lead step out of it
+ * for the game room, two playing at its cabinets and one standing, their chairs at the table kept; a fourth answered a
+ * minute ago and stays at the table. A lead with one hire waiting on it sends that hire from its desk to stand in the
+ * room; a done lead with no hirer waits on you at its desk. On `quiet`, keeping no games, a hire stands in the empty
+ * game room beside its sign, and a reviewer whose verdict waits on its author stays beside it.
+ */
+const breakroom = (now: number) => boardOf([
+  {
+    id: 'arcade', name: 'arcade', color: '#e0af68', games: ALPHA_GAMES.slice(0, 2),
+    workers: [
+      { status: 'working', prompt: 'Coordinate the parser rewrite', tool: 'Bash', turns: 8, ago: 90 },
+      waitingHire(0, 80, 12, 'Split the lexer out', 'Split; the tests pass.'),
+      waitingHire(0, 75, 10, 'Port the error messages', 'Ported all forty.'),
+      waitingHire(0, 70, 8, 'Measure the parse times', 'Twice as fast on the big files.'),
+      waitingHire(0, 65, 1, 'Drop the old grammar', 'Dropped.'),
+      hire(0, 60, 'Write the migration notes'),
+      { status: 'done', waiting: true, prompt: 'Tidy the changelog', answer: 'Tidied.', ago: 50 },
+      { status: 'working', prompt: 'Lead the docs pass', tool: 'Read', ago: 45 },
+      waitingHire(7, 40, 6, 'Read the old docs', 'Read; three pages are stale.'),
+    ],
+  },
+  {
+    id: 'quiet', name: 'quiet', color: '#7dcfff',
+    workers: [
+      { status: 'working', prompt: 'Plan the release', tool: 'Read', ago: 40 },
+      waitingHire(0, 30, 20, 'List the open issues', 'Seven, two of them blockers.'),
+      { status: 'working', prompt: 'Rework the release script', tool: 'Edit', worktree: 'release-script', ago: 35 },
+      hire(2, 25, reviewPrompt(who('quiet', 2), false), { status: 'done', waitsOn: 2, left: 15, answer: 'Two notes left on the thread.', tool: undefined, worktree: 'release-script-review', reviews: 2 }),
+    ],
+  },
+], now)
+
 /** Each fixture's boards, in the order the door's `advance` delivers them. */
 export const FIXTURES: Record<string, (now: number) => Board[]> = {
   busy: (now) => [busyBoard(busyFloors(now), now), busyBoard(busyFloors(now, true), now), busyBoard(answered(busyFloors(now, true)), now)],
@@ -622,6 +659,7 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
   logbook: (now) => [logbook(now)],
   crews: (now) => [crews(now)],
   growing,
+  breakroom: (now) => [breakroom(now)],
 }
 
 /** The fixture named by `?board=`, if the page was opened with one. */
@@ -638,7 +676,9 @@ export const FIXTURE_DRAFTS: Record<string, string> = Object.fromEntries(
 
 /** The fixture board's games' texts, by `<project>/<id>`: what their marquees read. */
 export const FIXTURE_GAMES: Record<string, string> =
-  FIXTURE === 'busy' ? Object.fromEntries(ALPHA_GAMES.map((g, n) => [`alpha/${gameId(n)}`, g.html])) : {}
+  FIXTURE === 'busy' ? Object.fromEntries(ALPHA_GAMES.map((g, n) => [`alpha/${gameId(n)}`, g.html]))
+  : FIXTURE === 'breakroom' ? Object.fromEntries(ALPHA_GAMES.slice(0, 2).map((g, n) => [`arcade/${gameId(n)}`, g.html]))
+  : {}
 
 /** A fixture board has no host behind it: its streams are never opened, so monitors stay blank and desks stay open. */
 export const watchStream: typeof tower.watch = FIXTURE === undefined ? (...a) => tower.watch(...a) : () => () => {}
