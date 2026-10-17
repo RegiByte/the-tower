@@ -1,6 +1,6 @@
 {
  "title": "office meeting nook",
- "note": "A round table to meet at on the office floor, origin at the table's centre (its rug is meeting_rug.json, drawn in the rugs' colour): five wooden chairs round it facing in, a laptop-sized book set and mugs on top, a planter beside.",
+ "note": "A round table to meet at on the office floor, origin at the table's centre (its rug is meeting_rug.json, drawn in the rugs' colour): five wooden chairs round it facing in, a laptop-sized book set and mugs on top, a planter beside, and a seat on each chair for whoever meets there.",
  "items": [
   { "model": "restaurant/table_round_B", "at": [0, 0, 0], "scale": 0.8 },
   { "model": "furniture/chair_A_wood", "at": [0, 0, 1.25], "turn": 180 },
@@ -12,5 +12,12 @@
   { "model": "furniture/mug_A", "at": [-0.35, 0.6, 0.25], "turn": 40, "scale": 0.45 },
   { "model": "furniture/mug_B", "at": [0.4, 0.6, 0.35], "turn": 200, "scale": 0.45 },
   { "scene": "planter.json", "at": [1.9, 0, -1.4] }
+ ],
+ "slots": [
+  { "name": "seat_1", "pose": "sit", "at": [0, 0, 1.25], "turn": 180 },
+  { "name": "seat_2", "pose": "sit", "at": [1.19, 0, 0.39], "turn": 252 },
+  { "name": "seat_3", "pose": "sit", "at": [0.73, 0, -1.01], "turn": 324 },
+  { "name": "seat_4", "pose": "sit", "at": [-0.73, 0, -1.01], "turn": 36 },
+  { "name": "seat_5", "pose": "sit", "at": [-1.19, 0, 0.39], "turn": 108 }
  ]
 }

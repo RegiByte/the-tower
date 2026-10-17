@@ -31,7 +31,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_working.json",
+   "scene": "prefabs/desk.json", "states": ["working"],
    "at": [
     -8.7,
     0,
@@ -53,7 +53,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_working.json",
+   "scene": "prefabs/desk.json", "states": ["working"],
    "at": [
     -2.9,
     0,
@@ -75,7 +75,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_needs.json",
+   "scene": "prefabs/desk.json", "states": ["needs"],
    "at": [
     2.9,
     0,
@@ -97,7 +97,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_idle.json",
+   "scene": "prefabs/desk.json", "states": ["idle"],
    "at": [
     8.7,
     0,
@@ -119,7 +119,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_done.json",
+   "scene": "prefabs/desk.json", "states": ["done"],
    "at": [
     -8.7,
     0,
@@ -141,7 +141,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_working.json",
+   "scene": "prefabs/desk.json", "states": ["working"],
    "at": [
     -2.9,
     0,
@@ -163,7 +163,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_idle.json",
+   "scene": "prefabs/desk.json", "states": ["idle"],
    "at": [
     2.9,
     0,
@@ -185,7 +185,7 @@
    ]
   },
   {
-   "scene": "prefabs/desk_working.json",
+   "scene": "prefabs/desk.json", "states": ["working"],
    "at": [
     8.7,
     0,

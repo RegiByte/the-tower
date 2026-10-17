@@ -1,12 +1,12 @@
 {
  "title": "desk states",
- "note": "The desk dressed by its worker's state, side by side: each desk is a prefab composed over one workstation.",
+ "note": "The desk dressed by its worker's state, side by side: one desk prefab placed in each of its states.",
  "sky": "#d8d2c4",
  "items": [
-  { "scene": "prefabs/desk_idle.json", "at": [-4.8, 0, 0] },
-  { "scene": "prefabs/desk_working.json", "at": [-1.6, 0, 0] },
-  { "scene": "prefabs/desk_needs.json", "at": [1.6, 0, 0] },
-  { "scene": "prefabs/desk_done.json", "at": [4.8, 0, 0] }
+  { "scene": "prefabs/desk.json", "states": ["idle"], "at": [-4.8, 0, 0] },
+  { "scene": "prefabs/desk.json", "states": ["working"], "at": [-1.6, 0, 0] },
+  { "scene": "prefabs/desk.json", "states": ["needs"], "at": [1.6, 0, 0] },
+  { "scene": "prefabs/desk.json", "states": ["done"], "at": [4.8, 0, 0] }
  ],
  "boxes": [{ "size": [14, 0.05, 6], "at": [0, -0.05, 0], "color": "#6b6355" }],
  "labels": [
