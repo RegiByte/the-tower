@@ -27,7 +27,7 @@
   "idle": {
    "add": {
     "items": [
-     { "id": "cactus", "model": "furniture/cactus_small_A", "at": [0.95, 0.75, 0.3], "turn": 0, "scale": 0.7 }
+     { "id": "cactus", "model": "furniture/cactus_small_A", "at": [1, 0.75, 0.18], "turn": 0, "scale": 0.7 }
     ]
    }
   },
