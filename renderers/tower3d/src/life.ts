@@ -165,7 +165,7 @@ const pullChair = (chair: THREE.Object3D, seat: THREE.Vector3, k: number) =>
  * A worker on its way to its chair: its desk's worker, walked in desk space `t` meters, then `sat` seconds into sitting
  * down (standing, it only turns to face its desk), turning from `heading`, the way it walked in. Coming from another
  * chair on its level (`rise`), it first stands up from it, `at` seconds into the clip, its body at `seat` turning to
- * `turn` (desk space). It sets off facing `facing`. A reviewer coming to sit beside its author brings its chair (`carried`).
+ * `turn` (desk space). It sets off facing `facing`. A reviewer coming from the elevator to sit beside its author brings its chair (`carried`).
  */
 export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number; facing: number; rise?: { seat: THREE.Vector3; turn: number; at: number }; carried?: true }
 
@@ -211,7 +211,7 @@ export function moveTo(p: Plan, desk: Desk, from: Origin): Arrival {
 const smooth = (k: number) => k * k * (3 - 2 * k)
 const turned = (from: number, to: number, k: number) => from + (Math.atan2(Math.sin(to - from), Math.cos(to - from))) * smooth(Math.min(1, k))
 
-/** A reviewer coming to sit beside its author rolls its chair in ahead of it, and sets it down pulled back from its seat as it gets there. */
+/** A reviewer coming from the elevator to sit beside its author rolls its chair in ahead of it, and sets it down pulled back from its seat as it gets there. */
 export function carryIn(a: Arrival) {
   a.carried = true
 }

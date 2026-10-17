@@ -102,7 +102,7 @@ export const DESKS: Layer<DeskAt, Desk> = {
     const from = s.moves.get(slot.card.id)
     s.moves.delete(slot.card.id)
     const coming = from ? moveTo(s.plan, desk, from) : s.first ? undefined : arrival(s.plan, desk)
-    if (coming && kindOfDesk(desk) === 'beside') carryIn(coming)
+    if (!from && coming && kindOfDesk(desk) === 'beside') carryIn(coming)
     if (coming) s.arrivals.set(slot.card.id, coming)
     return desk
   },
