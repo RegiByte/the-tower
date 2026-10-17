@@ -102,7 +102,7 @@ shoulders.
   meeting strip, the hero and the lounge's front to the front glass; the desk rows and the lounge stretch between.
   - *Under the deck* (2.95 m high): the archive, 6.5 × 5 in the back corner, holding the shelf along its back glass,
     its left glass and the wall it shares with the game room
-    ([`buildShelf`](ref:hub/renderers/tower3d/src/room.ts#buildShelf)), every entry: when the walls are full (about seven at full size), every piece and the pitch shrink together by steps until all fit; its outer wall is
+    ([`buildShelf`](ref:hub/renderers/tower3d/src/room.ts#buildShelf)), every entry: when the walls are full (seven at full size, as many as a floor shelves today), every piece and the pitch shrink together by steps until all fit; its outer wall is
     solid, its door at that wall's front end, and in the nook beside it stand the filing cabinet and the Running
     board ([[logbook]]). The game room, 9 × 9 before it, glazed toward the desks, the arcade along its front wall
     ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).

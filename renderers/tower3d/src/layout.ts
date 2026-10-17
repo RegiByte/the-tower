@@ -69,9 +69,10 @@ const SHELF_WIDTH: Record<'md' | 'html' | 'url' | 'link', number> = { md: 1.5, h
 const SHELF_GAP = 0.3
 /** Where the shell bench starts, from the room's back wall. */
 const KIOSK_FROM = 2.4
-/** How far a shelf piece stands off its wall, to its centre, and keeps clear of a corner. */
+/** How far a shelf piece stands off its wall, to its centre. */
 const SHELF_OFF = 0.22
-const SHELF_CORNER = 0.5
+/** The archive's floor kept clear before its door, along the wall it shares with the game room. */
+const SHELF_DOORWAY = 2.2
 /** The shared wall: its gap from the core, how far it stands off the back glass, how tall and thick it is. */
 const PARTITION = { fromCore: 0.9, fromBack: 1.6, height: 3.2, thick: 0.2, margin: 0.5 }
 /** The corkboard: its size, how far its base is off the floor, and the band its sign takes. */
@@ -231,12 +232,13 @@ function packed(widths: number[], gap: number, runs: Run[]) {
  * front, then the wall it shares with the game room back toward the door, each piece standing off its wall.
  */
 function shelfRuns(a: Box): Run[] {
-  const w = ROOM_WALL + SHELF_OFF
-  const c = SHELF_CORNER + SHELF_OFF
+  const glass = WALL + SHELF_OFF
+  const partition = ROOM_WALL + SHELF_OFF
+  const corner = WALL + 2 * SHELF_OFF + 0.1
   return [
-    { x: a.minX + c + SHELF_OFF, z: a.minZ + w, dx: 1, dz: 0, length: a.maxX - a.minX - 2 * c - SHELF_OFF, turn: 0 },
-    { x: a.minX + w, z: a.minZ + c + SHELF_OFF + 0.6, dx: 0, dz: 1, length: a.maxZ - a.minZ - 2 * c - 0.6, turn: 90 },
-    { x: a.minX + c + SHELF_OFF + 0.6, z: a.maxZ - w, dx: 1, dz: 0, length: a.maxX - a.minX - 2 * c - SHELF_OFF - 2.2, turn: 180 },
+    { x: a.minX + corner, z: a.minZ + glass, dx: 1, dz: 0, length: a.maxX - ROOM_WALL - 0.3 - (a.minX + corner), turn: 0 },
+    { x: a.minX + glass, z: a.minZ + corner, dx: 0, dz: 1, length: a.maxZ - ROOM_WALL - 2 * SHELF_OFF - 0.1 - (a.minZ + corner), turn: 90 },
+    { x: a.minX + corner, z: a.maxZ - partition, dx: 1, dz: 0, length: a.maxX - SHELF_DOORWAY - (a.minX + corner), turn: 180 },
   ]
 }
 
