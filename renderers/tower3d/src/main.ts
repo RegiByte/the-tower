@@ -33,7 +33,7 @@ import { rigFrame } from './light/rig.ts'
 import { chooseLighting, LIT, lightingSection } from './light/setting.ts'
 import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
-import { DESK_DRESS, dress } from './dress.ts'
+import { DESK_DRESS, dress, pickOf } from './dress.ts'
 import { cityModel, furnish, type PrefabItem } from './zones.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
@@ -53,7 +53,7 @@ import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtur
 import * as loading from './loading.ts'
 import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile } from './layers.ts'
+import { CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
@@ -277,7 +277,10 @@ function dressLevels(board: Board) {
     if (level.kind === 'lobby') return cityModel(s.plan, tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
     if (level.kind === 'roof') return []
     return [
-      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, month, s.kit!.prefabs[DESK_DRESS], deskSlots(s.kit!.prefabs[DESK_DRESS].slots).trophies, s.kit!.models))),
+      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => {
+        const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
+        return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
+      }),
       ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
     ]
   })
@@ -304,7 +307,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.boards++
   s.board = next
   s.self = at
-  s.plan = furnish(plan(next, new Date(wallNow()).setHours(0, 0, 0, 0), besideOf(deskSlots(s.kit!.prefabs[DESK_DRESS].slots))), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
+  s.plan = furnish(plan(next, new Date(wallNow()).setHours(0, 0, 0, 0), (author) => besideOf(slotsAt(author))), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
   ringFor(began)

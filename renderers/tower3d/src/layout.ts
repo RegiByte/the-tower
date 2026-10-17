@@ -400,9 +400,9 @@ const roomFor = (end: number) => end + SHELF_GAP + WALL
 
 /**
  * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
- * far a reviewer's place is from its author's along the floor (`besideOf`).
+ * far a reviewer's place is from its author's along the floor, at the author's desk as it is drawn (`besideOf`).
  */
-export function plan(board: Board, today: number, beside: { x: number; z: number }): Plan {
+export function plan(board: Board, today: number, beside: (author: Card) => { x: number; z: number }): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
   const doorAt = CORE.depth + ROOM_DOOR_AT
@@ -428,7 +428,8 @@ export function plan(board: Board, today: number, beside: { x: number; z: number
       const seat = card.seat!
       if ('n' in seat) return { card, ...stationAt(seat.n) }
       const at = own(seat.beside)
-      return { card, ...at, x: at.x + beside.x, z: at.z + beside.z, beside: seat.beside }
+      const by = beside(floor.cards.find((c) => c.id === seat.beside)!)
+      return { card, ...at, x: at.x + by.x, z: at.z + by.z, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
     const center = (room.minX + room.maxX) / 2

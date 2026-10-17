@@ -10,6 +10,8 @@
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#pileState",
+    "hub/renderers/tower3d/src/dress.ts#pickOf",
+    "hub/renderers/tower3d/src/desk.ts#situate",
     "hub/renderers/tower3d/src/desk.ts#besideOf",
     "hub/renderers/tower3d/src/zones.ts#stateKey",
     "hub/renderers/kaykit/src/scene.ts#picks",
@@ -41,10 +43,14 @@ loudest thing on the floor.
   [`statusState`](ref:hub/renderers/tower3d/src/dress.ts#statusState); `pile`, what the session piled up on the
   return, `pile_<n>` from n % of its context on (2 to 33, so a typical session is already messy), each state the whole
   pile at that share, picked by [`pileState`](ref:hub/renderers/tower3d/src/dress.ts#pileState); and `season`,
-  `october`'s candy. The kit holds the models of every list of states it can be drawn in
+  `october`'s candy. The kit holds the models and slots of every list of states it can be drawn in
   ([`picks`](ref:hub/renderers/kaykit/src/scene.ts#picks), under
-  [`stateKey`](ref:hub/renderers/tower3d/src/zones.ts#stateKey)). Its slots are the places of what is drawn around the
-  worker, read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots), each missing one a clear error:
+  [`stateKey`](ref:hub/renderers/tower3d/src/zones.ts#stateKey)), and a desk is drawn in its card's
+  ([`pickOf`](ref:hub/renderers/tower3d/src/dress.ts#pickOf)), so the office shows what the editor shows. Its slots are
+  the places of what is drawn around the worker, in those states (a state may move one: the logbook and the papers
+  idle), read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots), each missing one a clear error, and
+  set again on every board ([`situate`](ref:hub/renderers/tower3d/src/desk.ts#situate)); a reviewer's are its
+  author's desk's:
   its running fork in a second chair at its right (`twin`), in the worker's own look, its twin (a reviewer beside its
   author seats none); its running subagents standing along the near edge, one per `subagent_<n>` slot and no more
   (`card.subagentRuns`); its logbook right of the keyboard, drawn in code as thick as its lineage ([[logbook]]);
@@ -53,7 +59,7 @@ loudest thing on the floor.
   (`reviewer`, which places the reviewer's own desk space, [`besideOf`](ref:hub/renderers/tower3d/src/desk.ts#besideOf)),
   its notebook and its subagents standing on the floor (`visitor_<n>`). `desk.glb`, which Tower 3D draws itself, is
   the document's guide by name (`"model": "desk"`), so the prefab editor draws it ([[prefab-editor]]).
-- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month, desk, frames, models)` answers the models in
+- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, placed, frames, models)` answers the models in
   desk space: the document's in the card's states, then what is counted in code: a pizza box per finished turn
   (`card.turns`) on the floor past the desk's back edge, stacks of six, up to three, each nudged by the worker's id so
   no two stacks are clones; and up to one standing frame per `trophy_<n>` slot, facing the aisle, for what the worker

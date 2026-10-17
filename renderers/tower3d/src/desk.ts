@@ -139,6 +139,8 @@ export type Desk = {
   /** Its logbook beside the keyboard, as thick as the sessions it ran as; a reviewer beside its author has none. */
   binder?: THREE.Group
   binderSessions: number
+  /** A reviewer's notebook on its author's desk; a worker at its own desk has none. */
+  notebook?: THREE.Group
   /** How many subagents stood at the desk when last posed, and since when (sim seconds) the worker summoned the newest. */
   summoned: { count: number; at?: number }
   turn: number
@@ -347,7 +349,21 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
   group.add(chair)
   const book = notebook(besideAt(slots, slots.notebook))
   group.add(book.group)
-  return seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
+  return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }), notebook: book.group }
+}
+
+/**
+ * Places what the dressing's slots place around a worker again, as its desk is drawn now: a slot may stand elsewhere in
+ * another of its states. A reviewer's are its author's desk's.
+ */
+export function situate(desk: Desk, slots: DeskSlots) {
+  desk.marks = desk.side ? ownMarks(slots) : visitMarks(slots)
+  desk.papers.position.copy(desk.marks.papers)
+  desk.minis.avatars.forEach((m, i) => m.root.position.copy(desk.marks.minis[i]))
+  if (desk.twin) (desk.twin.group.position.copy(desk.marks.twin!.at), (desk.twin.group.rotation.y = desk.marks.twin!.turn))
+  if (desk.binder) (desk.binder.position.copy(vector(slots.logbook.at)), (desk.binder.rotation.y = slots.logbook.turn * DEG))
+  if (desk.side) (desk.side.group.position.copy(vector(slots.side.at)), (desk.side.group.rotation.y = slots.side.turn * DEG))
+  desk.notebook?.position.copy(besideAt(slots, slots.notebook))
 }
 
 function relabel(desk: Desk, key: 'tag' | 'gist' | 'bubble', next: THREE.Sprite | undefined) {

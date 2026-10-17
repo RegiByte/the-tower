@@ -45,15 +45,18 @@ async function modelsOf(name: string, states: string[]) {
   return { flat, items: flat.items.map(({ model, at, turn, scale, parts, theme }): PrefabItem => ({ model, at, turn: turn ?? 0, scale: scale ?? 1, parts, theme })) }
 }
 
-/** Every prefab the office places, flattened shared and in every list of its states it can be drawn in, with its slots. */
+/** Every prefab the office places, flattened shared and in every list of its states it can be drawn in, each with its slots. */
 const flats = await Promise.all([...PREFABS, DESK_DRESS].map(async (name) => {
   const { flat, items } = await modelsOf(name, [])
   const scene = readScene(path.join(SCENES, name))
-  const each = await Promise.all(picks(scene).slice(1).map(async (names) => [stateKey(names), (await modelsOf(name, names)).items] as const))
+  const each = await Promise.all(picks(scene).slice(1).map(async (names) => {
+    const { flat, items } = await modelsOf(name, names)
+    return [stateKey(names), { items, slots: flat.slots }] as const
+  }))
   return { name, items, slots: flat.slots, groups: groupsOf(scene), states: Object.fromEntries(each) }
 }))
 
-const ids = [...new Set([...Object.keys(PROPS), ...CITY_MODELS, ...flats.flatMap((f) => [...f.items, ...Object.values(f.states).flat()].map((it) => it.model))])].sort()
+const ids = [...new Set([...Object.keys(PROPS), ...CITY_MODELS, ...flats.flatMap((f) => [...f.items, ...Object.values(f.states).flatMap((s) => s.items)].map((it) => it.model))])].sort()
 
 const VENDORED_README = `# KayKit models
 

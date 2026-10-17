@@ -3,8 +3,8 @@ import { act } from './acts.ts'
 import { gameTitle, makeCabinet, type Cabinet } from './arcade.ts'
 import { can } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
-import { DESK_DRESS } from './dress.ts'
-import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
+import { DESK_DRESS, pickOf } from './dress.ts'
+import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
 import { arrival, carryChair, leaver } from './life.ts'
@@ -20,6 +20,8 @@ import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { shownKey } from './showing.ts'
 import { hangOn } from './levels.ts'
 import { s, type WallItem } from './state.ts'
+import type { Card } from './api.ts'
+import { wallNow } from './clock.ts'
 
 /**
  * Scene objects kept in step with the plan, one per slot it wants, by key, each hung on the level its slot stands on.
@@ -64,13 +66,19 @@ const floors = (p: Plan) => p.levels.filter((l): l is FloorLevel => l.kind === '
  * A desk per worker on duty, a reviewer's beside its author's. One that appears after the first board walks in from
  * the elevator; one that goes walks out. A reviewer whose author leaves first takes a desk of its own, walking in anew.
  */
-type DeskAt = { slot: DeskSlot; level: number; y: number }
+type DeskAt = { slot: DeskSlot; level: number; y: number; author: Card }
+
+/** The dressing's slots of the desk a worker sits at, in that desk's states: a reviewer's are its author's. */
+export const slotsAt = (author: Card) => deskSlots(pickOf(author, new Date(wallNow()).getMonth(), s.kit!.prefabs[DESK_DRESS]).slots)
 
 export const DESKS: Layer<DeskAt, Desk> = {
-  slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => [slot.card.id, { slot, level: level.index, y: level.y }] as [string, DeskAt])),
+  slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => {
+    const author = slot.beside ? level.desks.find((d) => d.card.id === slot.beside)!.card : slot.card
+    return [slot.card.id, { slot, level: level.index, y: level.y, author }] as [string, DeskAt]
+  })),
   level: (at) => at.level,
-  make({ slot, y }) {
-    const slots = deskSlots(s.kit!.prefabs[DESK_DRESS].slots)
+  make({ slot, y, author }) {
+    const slots = slotsAt(author)
     const desk = slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
@@ -78,9 +86,10 @@ export const DESKS: Layer<DeskAt, Desk> = {
     if (!s.first) s.arrivals.set(slot.card.id, arrival(s.plan, desk))
     return desk
   },
-  keep(desk, { slot, y }) {
+  keep(desk, { slot, y, author }) {
     const visiting = desk.side === undefined
     if (visiting !== Boolean(slot.beside)) return false
+    situate(desk, slotsAt(author))
     syncDesk(desk, slot.card)
     desk.group.position.set(slot.x, y, slot.z)
     return true

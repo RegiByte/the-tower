@@ -3,7 +3,7 @@ import { fit, type Model } from '../../kaykit/src/catalog.ts'
 import type { Card } from './api.ts'
 import { DESK, RETURN } from './layout.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
-import { stateKey, type Prefab, type PrefabItem } from './zones.ts'
+import { stateKey, type PrefabPick, type Prefab, type PrefabItem } from './zones.ts'
 
 /**
  * A workstation's KayKit Bits models (CC0, vendored in `renderers/tower3d/kaykit`) as data, in desk space.
@@ -87,15 +87,19 @@ const jitter = (id: string) => (it: PrefabItem, i: number): PrefabItem => {
 const trophies = (slots: FlatSlot[], shown: number): Placement[] =>
   slots.slice(0, shown).map((s) => ({ model: 'furniture/pictureframe_standing_A', at: [s.at[0], s.at[2]], turn: s.turn, y: s.at[1] }))
 
-/**
- * A worker's workstation in desk space: the dressing's models as placed by hand, in a state of each of its groups (its
- * status, what its context piled up, October's candy), its pizza boxes and the frames for what it showed, at `frames`
- * (`DeskSlots.trophies`).
- */
-export function dress(card: Card, month: number, desk: Prefab, frames: FlatSlot[], models: Map<string, Model>): PrefabItem[] {
+/** A worker's desk dressing in a state of each of its groups: its status, what its context piled up, October's candy. */
+export function pickOf(card: Card, month: number, desk: Prefab): PrefabPick {
   const names = [statusState(card), pileState(desk.groups.pile, card.context ?? 0), month === OCTOBER ? 'october' : undefined].filter((n) => n !== undefined)
-  const placed = [...pizzas(card.turns).map((p) => itemOf(p, models.get(p.model)!)).map(jitter(card.id)), ...trophies(frames, card.shown.length).map((p) => itemOf(p, models.get(p.model)!))]
-  return [...desk.states[stateKey(names)], ...placed]
+  return desk.states[stateKey(names)]
+}
+
+/**
+ * A worker's workstation in desk space: its dressing's models as placed by hand (`pickOf`), its pizza boxes and the
+ * frames for what it showed, at `frames` (`DeskSlots.trophies`).
+ */
+export function dress(card: Card, placed: PrefabItem[], frames: FlatSlot[], models: Map<string, Model>): PrefabItem[] {
+  const counted = [...pizzas(card.turns).map((p) => itemOf(p, models.get(p.model)!)).map(jitter(card.id)), ...trophies(frames, card.shown.length).map((p) => itemOf(p, models.get(p.model)!))]
+  return [...placed, ...counted]
 }
 
 /** A placement as the playground places a model in the desk's frame: its base resting at its height. */
