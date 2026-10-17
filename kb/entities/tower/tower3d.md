@@ -51,7 +51,8 @@ frame, and which verbs a thing offers comes from the board's verbs ([[board-verb
 read-only; a stranded one offers Let go beside Resume ([[let-go]], [[carry-on]]). Beside every keyboard lies the
 worker's logbook ([[logbook]]). Each floor's Running board
 ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)) lists what the floor's workers left running
-and the hires whose work landed, ended from there or from the floor panel's Tidy ([[tidy]], [[carried]],
+and the hires whose work landed (2.2 m wide in the nook: Tidy's line wraps under the title, and each row takes two
+lines, the worker, pid and ports over the command), ended from there or from the floor panel's Tidy ([[tidy]], [[carried]],
 [[discard]]); a panel button that ends something asks on a second click ([[press-feedback]]). Digits and R go to a
 floor, by the elevator from inside the car and a fade from anywhere else; N goes to the next worker waiting on
 you, M opens the directory, H shows the tower from outside, P lets go of the mouse for a screenshot. Where you stand
