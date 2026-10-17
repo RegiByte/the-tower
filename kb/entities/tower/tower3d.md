@@ -73,8 +73,10 @@ framing it ([[attention-list]]); an arrow on the screen's edge points to each wo
 out of view ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
 
 **The control room** ([`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)), in each floor's back-left
-corner on the loft's deck, entered from the terrace before it: a video wall with a live tile per worker on duty; the console, which opens the floor panel (dirs, new
-shell, archive, spawn, and a tray per collection, [[collection-trays]]); the floor's shells on a bench. Under the deck, the archive holds the shelf, a bookcase,
+corner on the loft's deck, entered from the terrace before it and glazed toward the desks: a video wall in that
+glass's upper band with a live tile per worker on duty, one face into the room and one over the floor, either opening
+the worker's desk panel; the console facing it, which opens the floor panel (dirs, new
+shell, archive, spawn, and a tray per collection, [[collection-trays]]); the floor's shells on a bench along the facade. Under the deck, the archive holds the shelf, a bookcase,
 TV or poster per entry ([[shelf-items]]), and the game room, on a floor keeping games, the arcade ([[arcade]]); along
 the front glass stand two meeting rooms with the hero between them ([[floor-plan]]). In the nook against the
 archive's outer wall stand the filing cabinet, the floor's archive by day ([[logbook]],

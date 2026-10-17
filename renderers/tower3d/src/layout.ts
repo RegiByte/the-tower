@@ -19,8 +19,9 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
  * them added to the building only when some floor has no free one left for its workers.
  *
  * Each floor's back-left corner is a loft (src/floorplan.ts): a deck over the wing, reached by a stair along its edge.
- * The control room stands on the deck's back, entered from the terrace before it: a video wall of the floor's workers
- * on its back wall, the floor's shells on a bench along the facade, and the console in the middle. Under the deck,
+ * The control room stands on the deck's back, entered from the terrace before it and glazed toward the desks: a video
+ * wall of the floor's workers in the upper band of that glass, one face into the room and one over the floor, the
+ * console before it facing out, and the floor's shells on a bench along the facade. Under the deck,
  * the archive holds the shelf along its walls, and a floor keeping games has an arcade in the game room before it, a
  * cabinet per game. Meeting rooms take the strip along the front glass (src/floorplan.ts's rooms and anchors).
  *
@@ -64,11 +65,15 @@ const ROOM_DOOR_IN = 2.2
 export const ROOM_DOOR = 1.6
 /** The control room's clear height: from the deck to the ceiling. */
 export const ROOM_HEIGHT = STOREY - SLAB - DECK.top
-export const VIDEO_WALL = { width: 8, bottom: 0.95, top: 2.7, gap: 0.12 }
+/**
+ * The video wall: a band of the room's glass toward the desks, the tiles' width, their height over the deck and the gap
+ * between them, its centre from the back, and the band's thickness and how far it reaches past the tiles.
+ */
+export const VIDEO_WALL = { width: 7.6, bottom: 1.35, top: 2.9, gap: 0.12, fromBack: 4.5, thick: 0.1, margin: 0.15 }
 const SHELF_WIDTH: Record<'md' | 'html' | 'url' | 'link', number> = { md: 1.5, html: 1.5, url: 1.5, link: 1 }
 const SHELF_GAP = 0.3
 /** Where the shell bench starts, from the room's back wall. */
-const KIOSK_FROM = 2.4
+const KIOSK_FROM = 1.2
 /** How far a shelf piece stands off its wall, to its centre. */
 const SHELF_OFF = 0.22
 /** The archive's floor kept clear before its door, along the wall it shares with the game room. */
@@ -113,7 +118,7 @@ export type DeskSlot = StationSlot & { card: Card; beside?: string }
 
 /** A shell's kiosk on the control room's bench, facing +x: its centre, and how far it is scaled down so every shell's kiosk fits. */
 export type KioskSlot = { shell: Shell; x: number; z: number; scale: number }
-/** A worker's screen on the video wall: its center on the wall (facing +z) and its size. */
+/** A worker's screen on the video wall: its centre along the wall from the wall's middle, its height over the deck, and its size. */
 export type TileSlot = { card: Card; x: number; y: number; w: number; h: number }
 /**
  * A shelf entry against one of the archive's walls: its centre on the floor, `width` along the wall, facing `turn`
@@ -178,7 +183,7 @@ const rowsFor = (desks: number) => Math.max(MIN_ROWS, Math.ceil(desks / COLUMNS)
 /** Where the next worker on a floor sits: its lowest free workstation, as the bridge's seat replay gives it. */
 export const openStation = (level: Extract<Level, { kind: 'floor' }>) => level.free[0]
 
-/** The video wall's grid for `n` tiles: the column count giving the largest tiles of a screen's aspect. */
+/** The video wall's grid for `n` tiles: the column count giving the largest tiles of a screen's aspect, the rows centred in the band. */
 function tiles(cards: Card[]): Omit<TileSlot, 'card'>[] {
   const { width, bottom, top, gap } = VIDEO_WALL
   const aspect = 1.6
@@ -193,7 +198,7 @@ function tiles(cards: Card[]): Omit<TileSlot, 'card'>[] {
     const inRow = Math.min(best.cols, cards.length - row * best.cols)
     return {
       x: (i % best.cols - (inRow - 1) / 2) * (best.w + gap),
-      y: top - (best.h + gap) * (row + 0.5),
+      y: (top + bottom) / 2 + (best.h + gap) * (best.rows / 2 - row - 0.5),
       w: best.w,
       h: best.h,
     }
@@ -485,7 +490,6 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       return { card, ...at, x: at.x + by.x, z: at.z + by.z, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
-    const center = (room.minX + room.maxX) / 2
     return {
       kind: 'floor',
       index: i + 1,
@@ -496,7 +500,7 @@ export function plan(board: Board, today: number, beside: (author: Card) => { x:
       desks,
       free: Array.from({ length: rows * COLUMNS }, (_, n) => n).filter((n) => !taken.has(n)).map(stationAt),
       kiosks: kiosksOf(shells[i]),
-      tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, x: center + t.x, card: desks[i].card })),
+      tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, card: desks[i].card })),
       shelf: shelfSlots(floor.shelf ?? [], runs),
       wall: wallFor(floor, depth),
       cork: corkFor(floor, depth),
@@ -541,11 +545,13 @@ export const roomDoor = (p: Pick<Plan, 'width' | 'depth'>): Box => {
   return { minX: x - ROOM_DOOR / 2, maxX: x + ROOM_DOOR / 2, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL }
 }
 
-/** Where the console stands in the room, facing the video wall (-z). */
+/** Where the console stands in the room, facing the video wall and the desks beyond it (+x). */
 export const consoleSpot = (p: Plan) => {
-  const r = roomBox(p)
-  return { x: (r.minX + r.maxX) / 2, z: r.minZ + 4.45 }
+  const wall = videoWallSpot(p)
+  return { x: wall.x - CONSOLE_OFF, z: wall.z }
 }
+/** From the video wall's glass back to the console's centre. */
+const CONSOLE_OFF = 2.8
 
 /**
  * The nook under the deck beside the archive: the archive's outer wall facing +x, with the filing cabinet and the
@@ -569,8 +575,18 @@ export const filingSpot = (p: Plan) => {
   return { x: wall.x + FILING.depth / 2, z: wall.back + NOOK.filing }
 }
 
-/** The video wall's face: tiles sit on it, facing +z. */
-export const videoWallZ = (p: Plan) => roomBox(p).minZ + WALL + 0.08
+/** The video wall's middle, on the line of the room's glass toward the desks: its tiles face both ways off it. */
+export const videoWallSpot = (p: Pick<Plan, 'width' | 'depth'>) => {
+  const r = roomBox(p)
+  return { x: r.maxX, z: r.minZ + VIDEO_WALL.fromBack }
+}
+
+/** The opaque band the video wall's two faces hang on, in the room's glass: from just under the tiles to the ceiling. */
+export const videoWallBand = (p: Pick<Plan, 'width' | 'depth'>): Solid => {
+  const at = videoWallSpot(p)
+  const { width, bottom, thick, margin } = VIDEO_WALL
+  return { minX: at.x - thick / 2, maxX: at.x + thick / 2, minZ: at.z - width / 2 - margin, maxZ: at.z + width / 2 + margin, bottom: DECK.top + bottom - margin, top: DECK.top + ROOM_HEIGHT }
+}
 
 
 /**
@@ -646,8 +662,8 @@ export type Solid = Box & { bottom: number; top: number }
 
 /**
  * What a look across a level can't pass through: the shell and the core from floor to ceiling, the loft's deck and
- * landing, the control room's walls on the deck and the shared wall as high as they stand, and the prefabs' opaque
- * walls.
+ * landing, the control room's front on the deck and its video wall's band, the shared wall as high as it stands, and
+ * the prefabs' opaque walls.
  */
 export function solids(p: Plan, level: Level): Solid[] {
   const height = levelHeight(level.index)
@@ -656,7 +672,8 @@ export function solids(p: Plan, level: Level): Solid[] {
   const slab = (b: Box): Solid => ({ ...b, bottom: DECK.top - DECK.thick, top: DECK.top })
   return [
     ...[...shellWalls(p), ...coreWalls(p)].map(whole),
-    ...roomWalls(p).map((b) => ({ ...b, bottom: DECK.top, top: DECK.top + ROOM_HEIGHT })),
+    ...roomFront(p).map((b) => ({ ...b, bottom: DECK.top, top: DECK.top + ROOM_HEIGHT })),
+    videoWallBand(p),
     { ...sharedWall(level), bottom: 0, top: PARTITION.height },
     slab(p.loft.deck),
     slab(p.loft.landing),
@@ -681,7 +698,7 @@ function deckColliders(p: Plan, level: Extract<Level, { kind: 'floor' }>): Box[]
     ...loftWalls(p.loft, 'deck'),
     ...roomWalls(p),
     ...level.zones.filter((z) => z.y === DECK.top).flatMap((z) => z.boxes),
-    box(consoleSpot(p).x, consoleSpot(p).z + 0.25, 2.6, 2.2),
+    box(consoleSpot(p).x - 0.25, consoleSpot(p).z, 2.2, 2.6),
     ...level.kiosks.map((k) => box(k.x, k.z, 0.8 * k.scale, KIOSK_DEPTH * k.scale)),
   ]
 }
@@ -714,15 +731,20 @@ export function colliders(p: Plan, level: Level): Box[] {
   ]
 }
 
-/** The control room's walls toward the terrace and the floor: its front but for the door, and its inner side. */
-export function roomWalls(p: Plan): Box[] {
+/** The control room's front onto the terrace, but for the door. */
+function roomFront(p: Plan): Box[] {
   const r = roomBox(p)
   const d = roomDoor(p)
   return [
     { minX: r.minX, maxX: d.minX, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL },
     { minX: d.maxX, maxX: r.maxX + WALL, minZ: r.maxZ - WALL, maxZ: r.maxZ + WALL },
-    { minX: r.maxX - WALL, maxX: r.maxX + WALL, minZ: r.minZ, maxZ: r.maxZ },
   ]
+}
+
+/** The control room's glass walked into: its front but for the door, and its side toward the desks. */
+export function roomWalls(p: Plan): Box[] {
+  const r = roomBox(p)
+  return [...roomFront(p), { minX: r.maxX - WALL, maxX: r.maxX + WALL, minZ: r.minZ, maxZ: r.maxZ }]
 }
 
 export const receptionBox = (p: Plan): Box => box(7, coreFront(p) + 5, 4.4, 1.2)

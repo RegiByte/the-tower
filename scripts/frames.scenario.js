@@ -27,12 +27,19 @@
       out.push({ name: `${name}:error`, error: e.message })
     }
   }
-  /** Stand `d` m from the target on the side facing where the walker stands now, `y` over its floor, then aim at it. */
-  const near = (target, d, y = 0) => {
+  /** Stand `d` m from the target on the side facing where the walker stands now, then aim at it. */
+  const near = (target, d) => {
     const l = t.locate(target)
     const w = t.state().walker
     const len = Math.hypot(w.x - l.x, w.z - l.z) || 1
-    t.teleport({ level: l.level, x: l.x + ((w.x - l.x) / len) * d, z: l.z + ((w.z - l.z) / len) * d, y })
+    t.teleport({ level: l.level, x: l.x + ((w.x - l.x) / len) * d, z: l.z + ((w.z - l.z) / len) * d })
+    t.step(1)
+    return t.aimAt(target)
+  }
+  /** Stand `dx` m along x from the target (the control room's glass runs along z), `y` over its floor, then aim at it. */
+  const toward = (target, dx, y = 0) => {
+    const l = t.locate(target)
+    t.teleport({ level: l.level, x: l.x + dx, z: l.z, y })
     t.step(1)
     return t.aimAt(target)
   }
@@ -49,7 +56,7 @@
   t.key('Escape'); t.step(60); snap('back')
   t.capture()
   if (waiter) {
-    tryDo('aim-tile', () => near({ kind: 'tile', id: waiter }, 3, DECK)); t.step(1); snap('aimed-tile')
+    tryDo('aim-tile', () => toward({ kind: 'tile', id: waiter }, -4, DECK)); t.step(1); snap('aimed-tile')
     tryDo('use-tile', () => t.press('use')); t.step(60); snap('tile-open')
     t.key('Escape'); t.step(60); t.capture(); snap('tile-closed')
     tryDo('aim-desk', () => {
@@ -118,7 +125,7 @@
     t.capture()
     tryDo('aim-leftover', () => near(leftover, 3)); t.step(1); snap('aimed-leftover')
     const desk = t.acts('floor').find((a) => t.locate(a).level === t.locate(leftover).level)
-    tryDo('open-floor-panel', () => (near(desk, 2, DECK), t.press('use'))); t.step(5); snap('floor-panel')
+    tryDo('open-floor-panel', () => (toward(desk, -1.8, DECK), t.press('use'))); t.step(5); snap('floor-panel')
   }
   const video = t.acts('picture').find((a) => /\.(mp4|webm)$/.test(a.target))
   if (video) {
@@ -225,6 +232,12 @@
     await new Promise((resolve) => setTimeout(resolve))
     t.step(5); snap('folder-logbook')
     t.key('Escape'); t.step(10)
+  }
+  if (waiter) {
+    t.capture()
+    tryDo('aim-tile-outside', () => toward({ kind: 'tile', id: waiter }, 5)); t.step(1); snap('aimed-tile-outside')
+    tryDo('use-tile-outside', () => t.press('use')); t.step(60); snap('tile-outside-open')
+    t.key('Escape'); t.step(60)
   }
   return out
 })()

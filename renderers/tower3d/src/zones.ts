@@ -2,7 +2,7 @@ import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
-import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, coreFront, partySpots, inside, receptionBox, roomBox, runningSpot, type Box, type Level, type Plan } from './layout.ts'
+import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, type Box, type Level, type Plan } from './layout.ts'
 
 /**
  * The office's places beyond the desks, composed from the KayKit playground's scene documents
@@ -170,10 +170,13 @@ function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: str
 
 /** The dark lockers that stand in for server racks: the Prototype pack's dark grey atlas. */
 const RACKS: Theme = { atlas: { prototype: 'alt_C' } }
+/** The watch couch's prefab origin (its back, the prefab's glass) from the room's facade wall: an aisle before the shell bench. */
+const WATCH_FROM_FACADE = 1.6
 
 /**
- * A control room's furnishings on the deck, kept off the video wall so every tile stays readable: a couch facing the wall from the
- * front glass, and in the front corners two racks by the facade where the shell bench leaves room, and a planter by the inner wall.
+ * A control room's furnishings on the deck, kept off the video wall so every tile stays readable: a couch behind the
+ * console facing the wall and the glass (+x), clear of the shell bench along the facade; in the front corners two racks
+ * by the facade where the bench leaves room, and a planter beside the door.
  */
 function controlZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: string): Zone[] {
   const room = roomBox(p)
@@ -182,9 +185,9 @@ function controlZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: s
   const racks = [front - 0.9, front - 1.7].filter((z) => z - 0.5 > benchEnds)
   const y = DECK.top
   return [
-    { prefab: 'prefabs/control_watch.json', x: (room.minX + room.maxX) / 2, z: front, y, turn: 0, theme: floorTheme(tint) },
+    { prefab: 'prefabs/control_watch.json', x: room.minX + WATCH_FROM_FACADE, z: consoleSpot(p).z, y, turn: 270, theme: floorTheme(tint) },
     ...racks.map((z) => ({ prefab: 'prefabs/control_rack.json', x: room.minX + 0.5, z, y, turn: 90, theme: RACKS })),
-    { prefab: 'prefabs/planter.json', x: room.maxX - WALL - 0.6, z: front - 0.7, y, turn: 0, theme: floorTheme(tint) },
+    { prefab: 'prefabs/planter.json', x: roomDoor(p).minX - 0.9, z: front - 0.6, y, turn: 0, theme: floorTheme(tint) },
   ]
 }
 

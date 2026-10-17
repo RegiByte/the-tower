@@ -241,7 +241,7 @@ function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: M
   const outside = signPlate(signOf(level, tint), 1)
   outside.position.set(-p.width / 2 + 2 + outside.geometry.parameters.width / 2, STOREY / 2, p.depth / 2 + 0.2)
   g.add(outside)
-  g.add(buildRoom(p, level, colors, models, pickables), buildShelf(level, models, pickables, bookcases), roomSigns(p, tint))
+  g.add(buildRoom(p, level, models, pickables), buildShelf(level, models, pickables, bookcases), roomSigns(p, tint))
   g.add(buildLoft(p.loft, colors, tint))
   g.add(buildWall(level.wall, colors.facing, tint))
   if (level.cork) g.add(buildCork(level.cork, level.floor.id, draftsOf(level.floor)!.label, tint, pickables))

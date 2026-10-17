@@ -5,15 +5,16 @@ import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from '
 import type { Shell } from './api.ts'
 import type { Level, Plan, ShelfSlot } from './layout.ts'
 import { DECK } from './floorplan.ts'
-import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallZ } from './layout.ts'
+import { ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallBand, videoWallSpot } from './layout.ts'
 import { instance, type Models } from './models.ts'
-import { tintOf, type FloorPalette } from './palette.ts'
+import { tintOf } from './palette.ts'
 import { OFFLINE, screenTexture } from './screens.ts'
 import { block, glowing, glows, mesh, plate, sprite, toon } from './toon.ts'
 
 /**
- * A floor's control room on the loft's deck, in level space (src/layout.ts places it): the walls, the console and the
- * shell bench are built with the building; the video wall changes on its own. The shelf stands in the archive under
+ * A floor's control room on the loft's deck, in level space (src/layout.ts places it): the walls, the glass toward
+ * the desks with the video wall's band in it, the console and the shell bench are built with the building; the video
+ * wall's tiles change on their own. The shelf stands in the archive under
  * the deck, its books filled once the shelf's files are read.
  */
 
@@ -106,28 +107,29 @@ function kiosk(shell: Shell, tint: string, models: Models, pickables: THREE.Obje
   return act(g, { kind: 'shell', id: shell.id }, pickables)
 }
 
-export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, models: Models, pickables: THREE.Object3D[]) {
+export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables: THREE.Object3D[]) {
   const g = new THREE.Group()
   const tint = tintOf(level.floor)
   const r = roomBox(p)
   const door = roomDoor(p)
   const h = ROOM_HEIGHT
   const cx = (r.minX + r.maxX) / 2
-  const wall = toon(colors.wall)
   const trim = glowing(tint)
 
   g.add(block(ROOM.width, h, WALL, toon('#141a26'), cx, 0, r.minZ + WALL / 2 + 0.02))
-  const backing = { bottom: VIDEO_WALL.bottom - 0.15, top: VIDEO_WALL.top + 0.1 }
-  g.add(block(ROOM.width - 0.6, backing.top - backing.bottom, 0.06, toon('#0b0f18'), cx, backing.bottom, videoWallZ(p) - 0.05))
-  g.add(block(ROOM.width - 0.6, 0.04, 0.03, trim, cx, backing.bottom - 0.05, videoWallZ(p) - 0.02))
   const title = plate(`${String(level.index).padStart(2, '0')}  ·  ${level.name.toUpperCase()}  ·  CONTROL`, 0.22, { color: tint, px: 56 })
-  title.position.set(cx, backing.bottom - 0.35, videoWallZ(p))
+  title.position.set(cx, 2.2, r.minZ + WALL + 0.03)
   g.add(title)
 
-  g.add(block(WALL * 2, h, r.maxZ - r.minZ - WALL, wall, r.maxX, 0, (r.minZ + r.maxZ - WALL) / 2))
-  g.add(block(0.04, 0.05, r.maxZ - r.minZ, trim, r.maxX - WALL - 0.01, 0.1, (r.minZ + r.maxZ) / 2))
-
   const mullion = toon('#1d2433')
+  const side = mesh(new THREE.PlaneGeometry(r.maxZ - r.minZ, h - 0.2), glass, r.maxX, 0.1 + (h - 0.2) / 2, (r.minZ + r.maxZ) / 2)
+  side.rotation.y = Math.PI / 2
+  g.add(side, block(0.12, 0.1, r.maxZ - r.minZ, mullion, r.maxX, 0, (r.minZ + r.maxZ) / 2), block(0.13, 0.04, r.maxZ - r.minZ, trim, r.maxX, 1.1, (r.minZ + r.maxZ) / 2))
+  for (let z = r.minZ + 1.5; z < r.maxZ; z += 1.5) g.add(block(0.08, h, 0.06, mullion, r.maxX, 0, z))
+  const band = videoWallBand(p)
+  g.add(block(band.maxX - band.minX, band.top - band.bottom, band.maxZ - band.minZ, toon('#0b0f18'), r.maxX, band.bottom - DECK.top, (band.minZ + band.maxZ) / 2))
+  g.add(block(band.maxX - band.minX + 0.04, 0.04, band.maxZ - band.minZ, trim, r.maxX, band.bottom - DECK.top - 0.04, (band.minZ + band.maxZ) / 2))
+
   const pane = (from: number, to: number) => mesh(new THREE.PlaneGeometry(to - from, h - 0.2), glass, (from + to) / 2, 0.1 + (h - 0.2) / 2, r.maxZ)
   g.add(pane(r.minX, door.minX), pane(door.maxX, r.maxX))
   for (let x = r.minX + 1.5; x < r.maxX; x += 1.5) if (x < door.minX - 0.05 || x > door.maxX + 0.05) g.add(block(0.06, h, 0.08, mullion, x, 0, r.maxZ))
@@ -145,6 +147,7 @@ export function buildRoom(p: Plan, level: FloorLevel, colors: FloorPalette, mode
   desk.material<THREE.MeshBasicMaterial>('tint_glow_own')!.color.set(tint)
   const spot = consoleSpot(p)
   desk.root.position.set(spot.x, 0, spot.z)
+  desk.root.rotation.y = -Math.PI / 2
   g.add(act(desk.root, { kind: 'floor', id: level.floor.id }, pickables))
 
   for (const k of level.kiosks) {
@@ -197,14 +200,19 @@ export function fillBooks(b: Bookcase, files: string[], pickables: THREE.Object3
   }
 }
 
-/** The video wall's tiles for a floor, in world space: every worker's screen, framed in its status. */
+/** The video wall's tiles for a floor, in world space: every worker's screen, framed in its status, on both faces. */
 export type VideoWall = { group: THREE.Group; frames: { id: string; material: THREE.MeshBasicMaterial }[] }
+
+/** The video wall's faces, each turned about +y: into the room (-x) for the console, out (+x) over the floor. */
+const FACES = [-Math.PI / 2, Math.PI / 2]
 
 export function buildVideoWall(p: Plan, level: FloorLevel): VideoWall {
   const group = new THREE.Group()
   const frames: VideoWall['frames'] = []
-  const z = videoWallZ(p)
-  for (const t of level.tiles) {
+  const at = videoWallSpot(p)
+  const off = VIDEO_WALL.thick / 2 + 0.03
+  for (const turn of FACES) for (const t of level.tiles) {
+    const out = Math.sin(turn)
     const c = t.card
     const tile = new THREE.Group()
     const live = c.live
@@ -212,10 +220,12 @@ export function buildVideoWall(p: Plan, level: FloorLevel): VideoWall {
     frames.push({ id: c.id, material })
     tile.add(mesh(new THREE.PlaneGeometry(t.w + 0.08, t.h + 0.08), material, 0, 0, -0.01))
     tile.add(mesh(new THREE.PlaneGeometry(t.w, t.h), glows(new THREE.MeshBasicMaterial({ map: live ? screenTexture(`screen/${c.id}`) : OFFLINE, toneMapped: false }))))
-    const label = plate(`${c.callsign}  ·  ${statusName(c)}`, Math.min(0.16, t.h * 0.12), { color: onStatusColor(c), bg: statusColor(c), px: 44 })
-    label.position.set(0, -t.h / 2 + Math.min(0.16, t.h * 0.12) / 2 + 0.03, 0.01)
+    const size = Math.min(0.16, t.h * 0.2)
+    const label = plate(`${c.callsign}  ·  ${statusName(c)}`, size, { color: onStatusColor(c), bg: statusColor(c), px: 44 })
+    label.position.set(0, -t.h / 2 + size / 2 + 0.03, 0.01)
     tile.add(label)
-    tile.position.set(t.x, level.y + DECK.top + t.y, z)
+    tile.position.set(at.x + out * off, level.y + DECK.top + t.y, at.z - out * t.x)
+    tile.rotation.y = turn
     group.add(act(tile, { kind: 'tile', id: c.id }, []))
   }
   return { group, frames }

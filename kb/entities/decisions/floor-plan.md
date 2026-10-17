@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A floor's plan: a wing loft over the control room, in a 6.6 m storey",
-  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices: the deck and the stair, then the control room lifted onto the deck and the rooms placed from anchors.",
+  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices: the deck and the stair, then the control room lifted onto the deck and the rooms placed from anchors, then the control room glazed toward the desks with a two-sided video wall in that glass.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
@@ -27,7 +27,11 @@
     "hub/renderers/tower3d/src/layout.ts#plan",
     "hub/renderers/tower3d/src/floorplan.ts#roomsOf",
     "hub/renderers/tower3d/src/floorplan.ts#anchorsOf",
-    "hub/renderers/tower3d/src/room.ts#buildShelf"
+    "hub/renderers/tower3d/src/room.ts#buildShelf",
+    "hub/renderers/tower3d/src/room.ts#buildVideoWall",
+    "hub/renderers/tower3d/src/layout.ts#videoWallSpot",
+    "hub/renderers/tower3d/src/layout.ts#videoWallBand",
+    "hub/renderers/tower3d/src/layout.ts#consoleSpot"
   ]
 }
 ---
@@ -76,15 +80,22 @@ shoulders.
   post and the stair's sides and back (open at its foot); on the deck, the shell and every rail. Workers, guests and
   cats stay on the ground layer.
 - *Sight is blocked by height* ([`solids`](ref:hub/renderers/tower3d/src/layout.ts#solids)): the shell and core floor
-  to ceiling, the control room's walls and the shared wall as high as they stand, the deck and landing as slabs, so
+  to ceiling, the control room's front and its video wall's band, and the shared wall as high as they stand, the deck and landing as slabs, so
   you aim down from the deck past the room below and not through the deck from under it.
 - *The control room stands on the deck* as it stood on the ground
   ([`roomBox`](ref:hub/renderers/tower3d/src/layout.ts#roomBox), [`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)):
   9 × 9 m from the back-left corner, 3.0 m clear to the ceiling
-  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), its video wall on the back wall, the shells'
-  bench along the facade, a solid inner wall (which closes the deck's edge behind the landing, so no rail stands
-  there) and the console in the middle, entered through a door in its glass front onto the terrace, the rest of the
-  deck. Its depth is fixed: the bench holds four shells at full size, and past that every kiosk and the pitch between them shrink together until all fit (`packed` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)), so no shell goes undrawn. Its walls, console, bench and furniture
+  ([`ROOM_HEIGHT`](ref:hub/renderers/tower3d/src/layout.ts#ROOM_HEIGHT)), entered through a door in its glass front
+  onto the terrace (centred 2.2 m in from the wing's edge), the rest of the deck. Its inner side is glass toward the
+  desks (it closes the deck's edge behind the landing, so no rail stands there). The video wall is that glass's upper
+  band ([`videoWallSpot`](ref:hub/renderers/tower3d/src/layout.ts#videoWallSpot),
+  [`videoWallBand`](ref:hub/renderers/tower3d/src/layout.ts#videoWallBand)): 7.6 m wide, 1.35 to 2.90 m over the
+  deck, centred 4.5 m from the back, with two faces built from the same tiles
+  ([`buildVideoWall`](ref:hub/renderers/tower3d/src/room.ts#buildVideoWall)), one looking into the room for the
+  console and one looking out over the floor, each read left to right from its side. Under the band is glass, so
+  from the console you see the desks. The console stands 2.8 m back from the glass, level with the wall's middle,
+  facing it ([`consoleSpot`](ref:hub/renderers/tower3d/src/layout.ts#consoleSpot)); the watch couch behind it faces
+  the same way; the shells' bench runs along the facade from 1.2 m off the back. Its depth is fixed: the bench holds four shells at full size, and past that every kiosk and the pitch between them shrink together until all fit (`packed` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)), so no shell goes undrawn. Its walls, console, bench and furniture
   are the deck layer's colliders ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing
   on the deck carries its `y`.
 - *The plate is sized for three rows* (`PLATE_ROWS` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)):
@@ -112,9 +123,8 @@ shoulders.
     meeting table and its rug are gone.
   - Each room's name hangs over its door, in the floor's colour.
 
-**Still to build**, each its own change: the control room glazed toward the desks with its two-sided video wall,
-the console facing +x and its door's place on the terrace; turned desks with turn-aware walks; and the meeting
-rooms' long tables with a seat per crew member.
+**Still to build**, each its own change: turned desks with turn-aware walks; and the meeting rooms' long tables
+with a seat per crew member.
 
 **Alternatives considered.** The four other plans, above. A mezzanine as a level of its own would break the rule
 that a level is a box closed by slabs, and with it the levels drawn. Picking the layer from position alone (inside the deck's box) cannot tell standing on the deck from
