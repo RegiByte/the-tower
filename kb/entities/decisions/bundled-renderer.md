@@ -41,8 +41,8 @@ files it loads, and the four pages share them.
   to make only if a measurement asks for it.
 - *Staying in one file*: rejected for size, even with no build step.
 
-**Consequences.** The renderer has a build step, and its output is git-ignored; `npm run tower3d` clears
-`out/assets/` first, so old hashes don't pile up. Models and other assets are files beside the pages or come from
+**Consequences.** The renderer has a build step, and its output is git-ignored; `npm run tower3d` measures the
+KayKit kit, then clears `out/assets/` so old hashes don't pile up: a kit that fails leaves the last build whole. Models and other assets are files beside the pages or come from
 a CORS-enabled CDN, never shelf files. Tower 3D's models are Blender scripts (`renderers/tower3d/models/*.py`,
 `npm run tower3d:models`) exported to `.glb` files that are committed; the KayKit models the office uses are
 measured at build time into one file (`out/kaykit/kit.kaykit`, [[office-kaykit]]). The build bundles four entries

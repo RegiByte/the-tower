@@ -21,7 +21,7 @@ import { parseArgs } from 'node:util'
 import { fit, worldBox, type Vec3 } from '../renderers/kaykit/src/catalog.ts'
 import { flatFile, readScene } from '../renderers/kaykit/src/files.ts'
 import { groupsOf, picks } from '../renderers/kaykit/src/scene.ts'
-import { measureKit, sourceFiles } from '../renderers/kaykit/src/measure.ts'
+import { gltfOf, measureKit, sourceFiles } from '../renderers/kaykit/src/measure.ts'
 import { DESK_DRESS, PROPS } from '../renderers/tower3d/src/dress.ts'
 import type { KitFile } from '../renderers/tower3d/src/kitfile.ts'
 import { CITY_MODELS, PREFABS, stateKey, type Prefab, type PrefabBox, type PrefabItem } from '../renderers/tower3d/src/zones.ts'
@@ -98,6 +98,14 @@ if (positionals[0] === 'vendor') {
   process.exit(0)
 }
 if (positionals.length) throw new Error(`unknown verb ${positionals[0]}: tsx scripts/tower3d-kit.ts [vendor <bundle>]`)
+
+const missing = ids.filter((id) => !existsSync(path.join(VENDORED, gltfOf(id))))
+if (missing.length) {
+  const placing = (id: string) => flats.filter((f) => [...f.items, ...Object.values(f.states).flatMap((s) => s.items)].some((it) => it.model === id)).map((f) => f.name)
+  const named = (id: string) => (placing(id).length ? `${id} (in ${placing(id).join(', ')})` : id)
+  console.error(`${path.relative(REPO, VENDORED)} lacks ${missing.map(named).join(', ')}: copy the models the office places from the full KayKit Bits bundle with \`tsx scripts/tower3d-kit.ts vendor <bundle>\``)
+  process.exit(1)
+}
 
 rmSync(OUT, { recursive: true, force: true })
 mkdirSync(OUT, { recursive: true })

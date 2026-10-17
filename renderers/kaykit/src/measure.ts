@@ -191,10 +191,16 @@ function atlasFiles(source: string, pack: Pack): Record<string, string> {
 
 const packsOf = (ids: string[]) => PACKS.filter((pack) => ids.some((id) => id.startsWith(`${pack}/`)))
 
+/** The glTF of the model `id` (`pack/name`), relative to a KayKit folder. */
+export function gltfOf(id: string) {
+  const [pack, name] = id.split('/') as [Pack, string]
+  return path.join(DIRS[pack], 'Assets/gltf', `${name}.gltf`)
+}
+
 /** The files under `source` that measuring the models `ids` reads: each glTF with its buffers, and its pack's atlases. */
 export function sourceFiles(source: string, ids: string[]): string[] {
   return packsOf(ids).flatMap((pack) => {
-    const gltfs = ids.filter((id) => id.startsWith(`${pack}/`)).map((id) => path.join(DIRS[pack], 'Assets/gltf', `${id.slice(pack.length + 1)}.gltf`))
+    const gltfs = ids.filter((id) => id.startsWith(`${pack}/`)).map(gltfOf)
     const buffers = gltfs.flatMap((f) => (JSON.parse(fs.readFileSync(path.join(source, f), 'utf8')) as Gltf).buffers.map((b) => path.join(path.dirname(f), decodeURIComponent(b.uri))))
     const atlases = Object.values(atlasFiles(source, pack)).map((f) => path.relative(source, f))
     return [...gltfs, ...buffers, ...atlases]

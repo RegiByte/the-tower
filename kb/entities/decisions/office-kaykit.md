@@ -87,7 +87,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   [`kit.ts`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) places scene items with the playground's matrices and
   draws each layer as one BatchedMesh per pack and theme. It measures from the subset of the bundle vendored in
   `renderers/tower3d/kaykit` (`tower3d-kit.ts vendor`, which leaves the workers' `Characters/` alone,
-  [[kaykit-workers]]), so a fresh clone builds it.
+  [[kaykit-workers]]), so a fresh clone builds it; a model the office places that the folder lacks fails the build
+  before anything is cleared, naming it, the prefab placing it and that `vendor` command.
 - Two layers per level ([[tower3d-levels]]): the desks' props and the lobby's city model are refilled on every
   board; the zones on every rebuild of the building (its structure key, which also holds the month).
 - Zones from the plan. A floor's are placed from its named anchors
