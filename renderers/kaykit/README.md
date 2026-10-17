@@ -96,6 +96,11 @@ applies a colour swap live (across the whole collection on the gallery), toggles
 JSON. Click a model for its facts, palette, where it was placed, and a copyable placement. `#<id>` in the URL
 frames a model on load.
 
+To place things by hand, open a scene in the prefab editor, a Tower 3D page over this catalog: `npm run tool:editor
+-- serve <scene.json>` (`scripts/editor.ts`). Click a model, a placed prefab or a slot; T/R/S move, turn or scale it,
+G snaps, F drops it onto what is below, Enter goes inside a prefab; pick a state to edit; Save shows each file's
+changed lines before writing. Slots for people are drawn as Tower 3D workers in their pose, guides as ghosts.
+
 ## For an agent
 
 Every command is `npm run tool:kaykit -- <command>`. The script's header lists the flags.
@@ -108,6 +113,7 @@ Every command is `npm run tool:kaykit -- <command>`. The script's header lists t
 | Check | `check <scene.json>` | unknown ids and parts, models sunk below the floor, two models in one spot, wall corners with no pillar, props at room scale, in the shared scene and each state; ids and slot names named twice, states naming nothing, series with gaps; exits 1 on an error |
 | Render | `render <scene.json\|gallery> [--states a,b] [--camera name\|view\|json]… [--theme json] [--night] [--size WxH] [--out dir]` | a PNG per camera, in the states given |
 | Look | `serve`, then open `?scene=<path>` | the same scene, live |
+| Place | `npm run tool:editor -- shot <scene.json> [--states a] [--select src]` | the scene as the editor draws it, slots as workers |
 
 Rendering drives the page itself in headless Chrome through `window.kaykit` (`show`, `dress`, `look`, `shot`,
 `state`). An agent's picture and a human's view are one drawing.
