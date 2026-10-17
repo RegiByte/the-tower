@@ -8,6 +8,7 @@
   "date": "2026-10-16",
   "reviewed": "2026-10-17",
   "refs": [
+    "hub/renderers/kaykit/scenes/prefabs/meeting_long.json",
     "hub/renderers/tower3d/editor.html",
     "hub/renderers/tower3d/src/editor.ts",
     "hub/renderers/tower3d/src/editor.ts#place",
@@ -88,4 +89,6 @@ code fills from the board.
   in-between that asks for them.
 
 **Impact.** Hand placement reaches Tower 3D through `desk_dress.json`; the zones and a floor plan can follow the same
-path (draft `muddy-gecko`), and the whereabouts work fills the slots it defines.
+path (draft `muddy-gecko`). The meeting rooms' long table (`meeting_long.json`, a state per crew size, each with its
+`head` and `seat_<n>` slots) and the rooms' `table`, `counter_<n>` and `stand_<n>` slots are filled by the board the same
+way ([[whereabouts]]).

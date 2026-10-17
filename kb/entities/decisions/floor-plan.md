@@ -2,12 +2,13 @@
 {
   "type": "decision",
   "name": "A floor's plan: a wing loft over the control room, in a 6.6 m storey",
-  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices: the deck and the stair, then the control room lifted onto the deck and the rooms placed from anchors, then the control room glazed toward the desks with a two-sided video wall in that glass, then the desks turned to face +x with the walks to them.",
+  "summary": "Every floor is a 6.6 m storey with a mezzanine: a deck over the left wing's back (top 3.30, 0.35 thick, 2.95 m clear under it), reached by a straight stair along the wing's face that rises toward the back to a landing beside the deck. The walker stands on a ground height (a stair is a ramp, the deck a second collision layer chosen by height). The plan chosen is A+ (A's wing loft, B's ground floor of different rooms, C's glazed control room); it is built in slices: the deck and the stair, then the control room lifted onto the deck and the rooms placed from anchors, then the control room glazed toward the desks with a two-sided video wall in that glass, then the desks turned to face +x with the walks to them, then the meeting rooms' long tables where crews gather.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
   "reviewed": "2026-10-17",
   "refs": [
+    "hub/renderers/tower3d/src/meetings.ts#meetingKit",
     "hub/renderers/tower3d/src/floorplan.ts#loftOf",
     "hub/renderers/tower3d/src/layout.ts#roomBox",
     "hub/renderers/tower3d/src/layout.ts#roomWalls",
@@ -121,8 +122,9 @@ shoulders.
     ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).
   - *The lounge* is open, the wing from the deck's front to the front glass.
   - *Along the front glass*, Meeting · 8 (9.2 × 6.4) and Meeting · 4 (6.4 × 6.4): 3.2 m walls, open above, glazed
-    and doored toward the desks, empty until their long tables come; the hero stands between them. The round
-    meeting table and its rug are gone.
+    and doored toward the desks, each with a long table at its `table` slot, a counter of laptop seats along the front
+    glass and places to stand at the table's foot, where a crew of three gathers ([[whereabouts]]); the hero stands
+    between them. The round meeting table and its rug are gone.
   - Each room's name hangs over its door, in the floor's colour.
 - *Desks face +x* ([`DESK_TURN`](ref:hub/renderers/tower3d/src/layout.ts#DESK_TURN)), their backs to the wing, so from
   the console the supervisor sees the backs of the workers' heads and their monitors' faces. The columns stay at x
@@ -130,8 +132,6 @@ shoulders.
   which leaves aisles 3.1 m wide along z between the columns and 1.55 m between the rows. Workers walk from the
   elevator across the landing, down the aisle behind their desk's column to its row, and in behind the chair
   ([`walkway`](ref:hub/renderers/tower3d/src/layout.ts#walkway); [[workstations]], [[kaykit-workers]]).
-
-**Still to build**: the meeting rooms' long tables with a seat per crew member.
 
 **Alternatives considered.** The four other plans, above. A mezzanine as a level of its own would break the rule
 that a level is a box closed by slabs, and with it the levels drawn. Picking the layer from position alone (inside the deck's box) cannot tell standing on the deck from

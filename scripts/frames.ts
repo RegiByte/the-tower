@@ -27,7 +27,7 @@ import { sandboxUrl } from './sandbox-root.ts'
 const REPO = path.join(import.meta.dirname, '..')
 const ROOT = process.env.TOWER_FRAMES ?? '/tmp/tower-frames'
 const TOWER = sandboxUrl()
-const BOARDS = ['busy', 'empty', 'tall', 'party', 'review', 'attention', 'tidy', 'logbook']
+const BOARDS = ['busy', 'empty', 'tall', 'party', 'review', 'attention', 'tidy', 'logbook', 'crews']
 const PAGE = (board: string) => `${TOWER}/r/tower3d/?board=${board}&seed=1&stepped&at=2026-10-04T15:00`
 const SCENARIO = readFileSync(path.join(import.meta.dirname, 'frames.scenario.js'), 'utf8')
 

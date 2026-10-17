@@ -11,7 +11,7 @@ import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
 import type { Hands } from './hands.ts'
 import type { Plan } from './layout.ts'
-import type { Arrival, Cat, CatName, Leaver } from './life.ts'
+import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
 import type { Models } from './models.ts'
 import type { Pet } from './pet.ts'
 import type { Kit } from './kit.ts'
@@ -117,6 +117,8 @@ export type State = {
   /** Workers walking in from the elevator, by worker, and those walking out to it. */
   arrivals: Map<string, Arrival>
   leavers: Set<Leaver>
+  /** Where each worker leaving its desk for another on its level (to or from a meeting) sets off from, until its new desk is made. */
+  moves: Map<string, Origin>
   cats: Map<CatName, Cat>
   /** What the renderer's settings name the cats. */
   catNames: CatNames
@@ -235,7 +237,7 @@ const NO_PLAN: Plan = { ...NO_PLATE, levels: [], loft: NO_LOFT, rooms: NO_ROOMS,
 export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
-  desks: new Map(), stations: new Map(), chairs: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
+  desks: new Map(), stations: new Map(), chairs: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   heed: { dismissed: new Set(), visited: new Set() }, ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', lighting: LIT, rungAt: 0, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), panel: undefined, deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),

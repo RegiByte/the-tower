@@ -276,18 +276,25 @@ function inDesk(desk: THREE.Object3D, items: PrefabItem[]): Placed[] {
 /** A model's frame on a level: at (x, z) over the level's floor at `y`, turned `turn` degrees about +y. */
 const frameAt = (x: number, y: number, z: number, turn: number) => new THREE.Matrix4().makeRotationY((turn * Math.PI) / 180).setPosition(x, y, z)
 
-/** Every level's workstations in their KayKit models, the meeting rooms' long tables in their states, and the city model in the lobby. */
+/**
+ * Every level's workstations in their KayKit models (a worker's dressing on its own, also while it is in a meeting
+ * room), the meeting rooms' long tables in their states, and the city model in the lobby.
+ */
 function dressLevels(board: Board) {
   const month = new Date(wallNow()).getMonth()
   const placed = s.plan.levels.map((level): Placed[] => {
     if (level.kind === 'lobby') return cityModel(s.plan, tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
     if (level.kind === 'roof') return []
     return [
-      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => {
+      ...level.desks.filter((slot) => !slot.beside && !slot.meeting).flatMap((slot) => {
         const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
         return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
       }),
       ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
+      ...level.away.flatMap((slot) => {
+        const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
+        return inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
+      }),
       ...level.tables.flatMap((t) => {
         const frame = frameAt(t.x, level.y, t.z, t.turn)
         return s.kit!.prefabs[TABLE].states[stateKey([t.state])].items.map((item) => ({ item, frame, theme: item.theme }))

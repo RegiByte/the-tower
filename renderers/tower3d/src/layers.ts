@@ -4,10 +4,10 @@ import { arcadeSignKey, buildArcadeSign, gameTitle, makeCabinet, type ArcadeSign
 import { can } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
 import { DESK_DRESS, pickOf } from './dress.ts'
-import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
+import { deskSlots, heldUpAt, makeDesk, makeSeat, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
-import { arrival, carryChair, leaver } from './life.ts'
+import { arrival, carryChair, leaver, moveTo, originOf } from './life.ts'
 import { seatedness } from './rig.ts'
 import { noteTitle } from './notes.ts'
 import { tintOf } from './palette.ts'
@@ -66,10 +66,23 @@ type FloorLevel = Extract<Level, { kind: 'floor' }>
 const floors = (p: Plan) => p.levels.filter((l): l is FloorLevel => l.kind === 'floor')
 
 /**
- * A desk per worker on duty, a reviewer's beside its author's. One that appears after the first board walks in from
- * the elevator; one that goes walks out. A reviewer whose author leaves first takes a desk of its own, walking in anew.
+ * A desk per worker on duty, a reviewer's beside its author's, a crew member's at its place in a meeting room. One that
+ * appears after the first board walks in from the elevator; one that goes walks out. A worker whose desk becomes
+ * another on its level (a reviewer whose author leaves first, taking a desk of its own; a crew gathering in a meeting
+ * room or dispersing, a member moved to another place there) walks from the one to the other.
  */
 type DeskAt = { slot: DeskSlot; level: number; y: number; author: Card }
+
+/** What kind of desk a slot asks for, and what kind a desk is: a worker's own, beside its author, a seat in a meeting room, or a place to stand there. */
+const kindOfSlot = (slot: DeskSlot) => (slot.meeting ? (slot.meeting.stand ? 'stand' : 'seat') : slot.beside ? 'beside' : 'own')
+const kindOfDesk = (desk: Desk) => (desk.meeting ? (desk.meeting.stand ? 'stand' : 'seat') : desk.side ? 'own' : 'beside')
+
+/** How far onto its chair a worker at `desk` sits: not at all while it still walks there, or standing at a meeting. */
+const seatedAt = (desk: Desk, id: string) => {
+  const arriving = s.arrivals.get(id)
+  if (desk.meeting?.stand) return 0
+  return !arriving ? 1 : arriving.sat > 0 ? seatedness(s.models!.cast, desk.avatar.rig) : 0
+}
 
 /** The dressing's slots of the desk a worker sits at, in that desk's states: a reviewer's are its author's. */
 export const slotsAt = (author: Card) => deskSlots(pickOf(author, new Date(wallNow()).getMonth(), s.kit!.prefabs[DESK_DRESS]).slots)
@@ -82,17 +95,23 @@ export const DESKS: Layer<DeskAt, Desk> = {
   level: (at) => at.level,
   make({ slot, y, author }) {
     const slots = slotsAt(author)
-    const desk = slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
+    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slot.meeting.stand) : slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
     desk.group.rotation.y = slot.turn * DEG
-    if (!s.first) s.arrivals.set(slot.card.id, arrival(s.plan, desk))
+    const from = s.moves.get(slot.card.id)
+    s.moves.delete(slot.card.id)
+    if (from) s.arrivals.set(slot.card.id, moveTo(s.plan, desk, from))
+    else if (!s.first) s.arrivals.set(slot.card.id, arrival(s.plan, desk))
     return desk
   },
   keep(desk, { slot, y, author }) {
-    const visiting = desk.side === undefined
-    if (visiting !== Boolean(slot.beside)) return false
+    const moved = desk.meeting && (desk.group.position.x !== slot.x || desk.group.position.z !== slot.z)
+    if (kindOfDesk(desk) !== kindOfSlot(slot) || moved) {
+      if (desk.avatar.root.visible) s.moves.set(slot.card.id, originOf(s.plan, desk, seatedAt(desk, slot.card.id)))
+      return false
+    }
     situate(desk, slotsAt(author))
     syncDesk(desk, slot.card)
     desk.group.position.set(slot.x, y, slot.z)
@@ -103,12 +122,10 @@ export const DESKS: Layer<DeskAt, Desk> = {
   leave(desk, id) {
     if (desk.avatar.root.visible) {
       const level = s.plan.levels.find((l) => l.y === desk.group.position.y)!.index
-      const arriving = s.arrivals.get(id)
-      const seated = !arriving ? 1 : arriving.sat > 0 ? seatedness(s.models!.cast, desk.avatar.rig) : 0
-      const l = leaver(s.plan, desk, level, seated, s.models!)
+      const l = leaver(s.plan, desk, level, seatedAt(desk, id), s.models!)
       s.leavers.add(l)
       hangOn(level, l.group)
-      if (!desk.side) carryChair(l, desk)
+      if (kindOfDesk(desk) === 'beside') carryChair(l, desk)
     }
     s.arrivals.delete(id)
   },
@@ -117,12 +134,15 @@ export const DESKS: Layer<DeskAt, Desk> = {
 /** `open`: where the floor's next worker sits; `lit` while the floor can spawn. */
 type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean; lit: boolean }
 
-/** Every free workstation, by floor and number. The open one is lit while its floor can spawn. */
+/** Every workstation nobody sits at, by floor and number: the free ones, the open one lit while its floor can spawn, and those whose workers are in a meeting room. */
 export const STATIONS: Layer<StationAt, Station> = {
-  slots: (p) => floors(p).flatMap((level) => level.free.map((slot) => {
-    const open = slot === openStation(level)
-    return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
-  })),
+  slots: (p) => floors(p).flatMap((level) => [
+    ...level.free.map((slot) => {
+      const open = slot === openStation(level)
+      return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
+    }),
+    ...level.away.map((slot) => [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open: false, lit: false }] as [string, StationAt]),
+  ]),
   level: (at) => at.level,
   make(at) {
     const station = makeStation(s.models!)
@@ -139,12 +159,13 @@ export const STATIONS: Layer<StationAt, Station> = {
   root: (station) => station.group,
 }
 
-/** A chair at every meeting place to sit: the room's table seats and counter seats in its table's state. */
+/** A chair at a meeting place nobody takes: the room's table seats and counter seats in its table's state. */
 type ChairAt = { level: number; y: number; x: number; z: number; turn: number }
 
 export const CHAIRS: Layer<ChairAt, THREE.Object3D> = {
   slots: (p) => floors(p).flatMap((level) => level.tables.flatMap((table) => {
-    return table.places.filter((pl) => !pl.stand).map((pl) => [`${level.floor.id}/${table.room}/${pl.name}`, { level: level.index, y: level.y, x: pl.x, z: pl.z, turn: pl.turn }] as [string, ChairAt])
+    const taken = new Set(level.desks.filter((d) => d.meeting?.room === table.room).map((d) => d.meeting!.place))
+    return table.places.filter((pl) => !pl.stand && !taken.has(pl.name)).map((pl) => [`${level.floor.id}/${table.room}/${pl.name}`, { level: level.index, y: level.y, x: pl.x, z: pl.z, turn: pl.turn }] as [string, ChairAt])
   })),
   level: (at) => at.level,
   make(at) {

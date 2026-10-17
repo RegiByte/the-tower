@@ -90,10 +90,24 @@ const Y = new THREE.Vector3(0, 1, 0)
 const intoDesk = (desk: Desk, v: THREE.Vector3) => v.clone().sub(desk.group.position).applyAxisAngle(Y, -desk.group.rotation.y)
 const outOfDesk = (desk: Desk, v: THREE.Vector3) => v.clone().applyAxisAngle(Y, desk.group.rotation.y).add(desk.group.position)
 
-/** The walkway to a desk, in its desk space. */
+/** The level a desk stands on. */
+const levelOfDesk = (p: Plan, desk: Desk) => p.levels.find((l) => l.y === desk.group.position.y)!.index
+
+/** Behind a worker's chair (desk space), where its way to its desk comes in. */
+const BEHIND = 0.9
+const behindOf = (desk: Desk) => outOfDesk(desk, new THREE.Vector3(0, 0, SEAT.z - BEHIND))
+
+/**
+ * The way from just outside the elevator's doors to a desk's chair, in its desk space: along the aisles to a workstation
+ * or beside its author (`walkway`); to a place in a meeting room, round what stands on the floor (`route`), behind the
+ * chair, or to where it stands.
+ */
 const pathTo = (p: Plan, desk: Desk) => {
   const { position: at, rotation } = desk.group
-  return walkway(p, { x: at.x, z: at.z, turn: THREE.MathUtils.radToDeg(rotation.y) }).map(({ x, z }) => intoDesk(desk, new THREE.Vector3(x, at.y, z)))
+  if (!desk.meeting) return walkway(p, { x: at.x, z: at.z, turn: THREE.MathUtils.radToDeg(rotation.y) }).map(({ x, z }) => intoDesk(desk, new THREE.Vector3(x, at.y, z)))
+  const seat = outOfDesk(desk, SEAT)
+  const way = desk.meeting.stand ? route(p, levelOfDesk(p, desk), doorstep(p), seat) : [...route(p, levelOfDesk(p, desk), doorstep(p), behindOf(desk)), seat]
+  return way.map((v) => intoDesk(desk, v.setY(at.y)))
 }
 
 /**
@@ -125,12 +139,21 @@ const APPROACH = 0.85
 
 /**
  * The side (desk space x) a worker comes to its chair from and leaves it by: its left (-x), the side a reviewer sits
- * at, unless a reviewer sits there, when it comes and goes by its right. A reviewer uses its own left, away from its author.
+ * at, unless a reviewer sits there, when it comes and goes by its right. A reviewer uses its own left, away from its
+ * author. At a meeting seat, the side its way comes from, `from` (desk space).
  */
-function sideOf(p: Plan, desk: Desk) {
+function sideOf(p: Plan, desk: Desk, from: THREE.Vector3) {
+  if (desk.meeting) return from.x < 0 ? -APPROACH : APPROACH
   const reviewed = desk.side !== undefined && p.levels.some((l) => l.kind === 'floor' && l.desks.some((d) => d.beside === desk.card.id))
   return reviewed ? APPROACH : -APPROACH
 }
+
+/**
+ * A way to a desk's chair (desk space) as walked: its last stretch, from behind the chair (`way`'s second to last
+ * point) to the chair, becomes the walk up beside the chair to stand before it. A way to where a worker stands is walked as it is.
+ */
+const walked = (p: Plan, desk: Desk, way: THREE.Vector3[]) =>
+  desk.meeting?.stand ? way : [...way.slice(0, -2), ...upToChair(way.at(-2)!.z, standingAt(desk.models, desk.avatar, SEAT), sideOf(p, desk, way.at(-3) ?? way[0]))]
 
 const BACK = new THREE.Vector3(0, 0, -1)
 
@@ -139,25 +162,77 @@ const pullChair = (chair: THREE.Object3D, seat: THREE.Vector3, k: number) =>
   chair.position.copy(seat).addScaledVector(BACK.clone().applyQuaternion(chair.quaternion), PULL * (1 - k))
 
 /**
- * A new worker on its way from the elevator to its chair: its desk's worker, walked in desk space `t` meters, then
- * `sat` seconds into sitting down, turning from `heading`, the way it walked in.
+ * A worker on its way to its chair: its desk's worker, walked in desk space `t` meters, then `sat` seconds into sitting
+ * down (standing, it only turns to face its desk), turning from `heading`, the way it walked in. Coming from another
+ * chair on its level (`rise`), it first stands up from it, `at` seconds into the clip, its body at `seat` turning to
+ * `turn` (desk space). It sets off facing `facing`.
  */
-export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number }
+export type Arrival = { desk: Desk; path: THREE.Vector3[]; t: number; sat: number; heading: number; facing: number; rise?: { seat: THREE.Vector3; turn: number; at: number } }
 
+/** A new worker walking in from the elevator. */
 export function arrival(p: Plan, desk: Desk): Arrival {
-  const way = pathTo(p, desk)
-  const behind = way.at(-2)!
-  const path = [...way.slice(0, -2), ...upToChair(behind.z, standingAt(desk.models, desk.avatar, SEAT), sideOf(p, desk))]
-  return { desk, path, t: 0, sat: 0, heading: headingOf(path[0], path[1]) }
+  const path = walked(p, desk, pathTo(p, desk))
+  const facing = headingOf(path[0], path[1])
+  return { desk, path, t: 0, sat: 0, heading: facing, facing }
+}
+
+/**
+ * Where a worker leaving one desk for another on its level sets off from (level space): the chair it rises from and
+ * how far onto it it sat (`seated`, 0 when it was still on its way), which way it faced, and its way from there to
+ * where it can walk off.
+ */
+export type Origin = { seat: THREE.Vector3; heading: number; seated: number; way: THREE.Vector3[] }
+
+/** A worker `seated` of the way onto its chair at `desk` (0 on its way there, or standing at a meeting) as it leaves for another desk. */
+export function originOf(p: Plan, desk: Desk, seated: number): Origin {
+  const seat = desk.avatar.root.position.clone()
+  const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
+  if (seated === 0) return { seat: outOfDesk(desk, seat), heading, seated, way: [outOfDesk(desk, seat)] }
+  const out = pathTo(p, desk).slice(0, -1).reverse()
+  const way = upToChair(out[0].z, standingAt(desk.models, desk.avatar, seat), sideOf(p, desk, out[1] ?? out[0])).reverse()
+  return { seat: outOfDesk(desk, seat), heading, seated, way: way.map((v) => outOfDesk(desk, v)) }
+}
+
+/**
+ * A worker going from `from` to its chair at `desk` on the same level: standing up first if it sat, then round what
+ * stands on the floor (`route`) to behind its chair, or to where it stands.
+ */
+export function moveTo(p: Plan, desk: Desk, from: Origin): Arrival {
+  const to = desk.meeting?.stand ? outOfDesk(desk, SEAT) : behindOf(desk)
+  const level = levelOfDesk(p, desk)
+  const world = [...from.way.slice(0, -1), ...route(p, level, from.way.at(-1)!, to), ...(desk.meeting?.stand ? [] : [outOfDesk(desk, SEAT)])]
+  const path = walked(p, desk, world.map((v) => intoDesk(desk, v.setY(desk.group.position.y))))
+  const turn = desk.group.rotation.y
+  const facing = from.seated > 0 ? from.heading - turn : headingOf(path[0], path[1] ?? path[0])
+  const rise = from.seated > 0 ? { seat: intoDesk(desk, from.seat.clone().setY(desk.group.position.y)), turn: from.heading - turn, at: clipLength(desk.models.cast, desk.avatar.rig, 'Sit_Chair_StandUp') * (1 - from.seated) } : undefined
+  return { desk, path, t: 0, sat: 0, heading: facing, facing, rise }
 }
 
 const smooth = (k: number) => k * k * (3 - 2 * k)
 const turned = (from: number, to: number, k: number) => from + (Math.atan2(Math.sin(to - from), Math.cos(to - from))) * smooth(Math.min(1, k))
 
-/** Walks an arriving worker up to its chair, then sits it down; true once it sits. Its bones are posed apart (`arrivalPose`). */
+const rising = (a: Arrival) => a.rise !== undefined && a.rise.at < clipLength(a.desk.models.cast, a.desk.avatar.rig, 'Sit_Chair_StandUp')
+
+/**
+ * Walks an arriving worker up to its chair, then sits it down, standing up first from the chair it comes from; true
+ * once it sits, or stands at its place. Its bones are posed apart (`arrivalPose`).
+ */
 export function walkIn(a: Arrival, dt: number) {
   const { avatar: w, chair } = a.desk
+  if (a.rise && rising(a)) {
+    a.rise.at += dt
+    w.root.position.copy(a.rise.seat)
+    w.root.rotation.y = a.rise.turn
+    pullChair(chair, SEAT, 0)
+    return false
+  }
   const step = along(a.path, a.t + dt * WALK_SPEED)
+  if (!step && a.desk.meeting?.stand) {
+    a.sat += dt
+    w.root.position.copy(a.path.at(-1)!)
+    w.root.rotation.y = turned(a.heading, 0, turning(a.heading, 0, a.sat))
+    return turning(a.heading, 0, a.sat) >= 1
+  }
   if (!step) {
     a.sat += dt
     w.root.position.copy(SEAT)
@@ -169,15 +244,20 @@ export function walkIn(a: Arrival, dt: number) {
   }
   a.t += dt * WALK_SPEED
   w.root.position.copy(step.at)
-  w.root.rotation.y = a.heading = headingAt(a.path, a.t, headingOf(a.path[0], a.path[1]), 0)
+  w.root.rotation.y = a.heading = headingAt(a.path, a.t, a.facing, 0)
   pullChair(chair, SEAT, 0)
   return false
 }
 
-/** An arriving worker walking, or sitting down: its chair comes in under it and its body is lifted onto the seat as the clip carries its hips back. */
+/**
+ * An arriving worker standing up from the chair it comes from, walking, or sitting down: its chair comes in under it
+ * and its body is lifted onto the seat as the clip carries its hips back. Standing at a meeting, it stands about.
+ */
 export function arrivalPose(models: Models, a: Arrival, t: number) {
   const w = a.desk.avatar
+  if (a.rise && rising(a)) return void sitPose(models, w, 'Sit_Chair_StandUp', a.rise.at, t)
   if (a.sat === 0) return walkPose(models, w, a.t, t)
+  if (a.desk.meeting?.stand) return standPose(models, w, t)
   pullChair(a.desk.chair, SEAT, sitPose(models, w, 'Sit_Chair_Down', a.sat, t))
 }
 
@@ -215,7 +295,7 @@ export function leaver(p: Plan, desk: Desk, level: number, seated: number, model
   const from = outOfDesk(desk, seat)
   const heading = new THREE.Euler().setFromQuaternion(desk.avatar.body.getWorldQuaternion(new THREE.Quaternion()), 'YXZ').y
   const out = pathTo(p, desk).slice(0, -1).reverse()
-  const side = sideOf(p, desk)
+  const side = sideOf(p, desk, out[1] ?? out[0])
   const back = (seated > 0 ? [...upToChair(out[0].z, standingAt(models, w, seat), side).reverse(), ...out.slice(1)] : [seat, ...out]).map((v) => outOfDesk(desk, v))
   const car = back.at(-1)!.clone().setZ(coreFront(p) - 1.2)
   w.root.position.copy(from)

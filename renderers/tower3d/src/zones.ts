@@ -2,7 +2,7 @@ import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
-import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, type Box, type Level, type Plan } from './layout.ts'
+import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, workstations, type Box, type Level, type Plan } from './layout.ts'
 
 /**
  * The office's places beyond the desks, composed from the KayKit playground's scene documents
@@ -149,7 +149,7 @@ const troughs = (from: number, to: number) => {
  */
 function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: string): Zone[] {
   const a = p.anchors
-  const stations = [...level.desks.filter((d) => !d.beside), ...level.free]
+  const stations = workstations(level)
   const front = a['glass.front'].z - WALL
   const right = a['glass.right'].x - WALL
   const left = a['glass.left'].x + WALL

@@ -254,5 +254,10 @@
     tryDo('use-tile-again', () => t.press('use')); t.step(60)
     t.key('Escape'); t.step(18); snap('tile-closing')
   }
+  const front = t.acts('desk').map((a) => ({ a, l: t.locate(a) })).reduce((m, x) => (!m || x.l.z > m.l.z ? x : m), undefined)
+  if (front) {
+    t.key('Escape'); t.step(10); t.capture()
+    tryDo('meeting-room', () => t.teleport({ level: front.l.level, x: front.l.x - 1.5, z: front.l.z - 3.6, y: 2.9, yaw: 0, pitch: -0.9 })); t.step(1); snap('meeting-room')
+  }
   return out
 })()

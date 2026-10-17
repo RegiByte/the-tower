@@ -8,6 +8,7 @@
   "date": "2026-10-11",
   "reviewed": "2026-10-17",
   "refs": [
+    "hub/renderers/tower3d/src/life.ts#moveTo",
     "hub/scripts/tower3d-characters.ts",
     "hub/scripts/ual.ts#retargetUal",
     "hub/renderers/tower3d/src/contract.ts#UAL_CLIPS",
@@ -128,7 +129,9 @@ from sim time keeps `?stepped` frames identical ([[tower3d-door]]).
   ([`walkway`](ref:hub/renderers/tower3d/src/layout.ts#walkway): across the landing, down the aisle behind the desk's
   column, behind the chair) and taken into the desk's own space, where the side, the approach and the sitting are
   worked out with the worker facing +z; so a turned desk ([[workstations]]) changes nothing in how a worker sits, and
-  standing up it turns to face its desk's way before it walks off. A
+  standing up it turns to face its desk's way before it walks off. Going from one desk to another on its level (into a
+  meeting room and back, [[whereabouts]]) it stands up from the one, walks round what stands on the floor by the grid
+  the cats walk, and sits down at the other the same way ([`moveTo`](ref:hub/renderers/tower3d/src/life.ts#moveTo)). A
   walk's clip runs by the distance walked over the rig's stride, so feet stay planted at any speed, and a walker faces
   the mean of its way around it ([`headingAt`](ref:hub/renderers/tower3d/src/life.ts#headingAt)), so it turns corners
   over a stretch of its way, as a function of the distance walked.

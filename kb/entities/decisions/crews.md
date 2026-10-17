@@ -6,8 +6,9 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "refs": [
+    "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeOffer",
@@ -69,7 +70,8 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   a resume costs (`sendHomeAsk`). `tower agents` lists crews and whom each reports to, `tower agent` who is under a
   worker, and `tower home <CALLSIGN>` runs the card's call (the handbook says to read `tower agents` first and never
   name a worker above you); with the caller's own callsign it logs a leave the tower
-  acts on once the turn ends ([[leave]]). Tower 3D sends a worker home with its crew and draws no crew tree on duty.
+  acts on once the turn ends ([[leave]]). Tower 3D sends a worker home with its crew and draws no crew tree on duty; a crew of three on duty gathers in a meeting room
+  until its lead goes home ([[whereabouts]]).
 - *The archive by crew.* [`pastCrews`](ref:hub/src/shared/cards.ts#pastCrews) groups `pastOf`'s cards (the board's
   off-duty ones and the archive read, [[board-archive]], so a crew split between them stays whole) into the same tree:
   archived cards carry `reportsTo` because `withCrews` runs over every card before the past ones are picked. A worker

@@ -56,7 +56,8 @@ const BUBBLE: Record<string, { color: string; bg: string }> = {
  * tag is smaller and leaves out its fork's branch, and it carries no gist.
  */
 type Marks = {
-  tag: THREE.Vector3; tagHeight: number; branch: boolean; gist?: THREE.Vector3; speech: THREE.Vector3; lay: THREE.Vector3; layWidth: number
+  /** The tag's place and height, and whether it names the worker's branch and whom it works with as well as its status. */
+  tag: THREE.Vector3; tagHeight: number; branch: boolean; pair: boolean; gist?: THREE.Vector3; speech: THREE.Vector3; lay: THREE.Vector3; layWidth: number
   /** Where each subagent stands, in order: as many stand as there are places. */
   minis: THREE.Vector3[]
   /** Where a fork of the worker sits beside it, in a chair of its own (turned, radians, at its size); a reviewer beside its author seats none. */
@@ -141,6 +142,8 @@ export type Desk = {
   binderSessions: number
   /** A reviewer's notebook on its author's desk; a worker at its own desk has none. */
   notebook?: THREE.Group
+  /** A crew member in a meeting room: at a seat, or standing (no chair, no laptop). */
+  meeting?: { stand: boolean }
   /** How many subagents stood at the desk when last posed, and since when (sim seconds) the worker summoned the newest. */
   summoned: { count: number; at?: number }
   turn: number
@@ -221,7 +224,7 @@ export function syncStation(station: Station, open: boolean) {
 const LABELS_Z = SCREEN.z + 0.05
 const sideCenter = (side: FlatSlot) => new THREE.Vector3(side.at[0], side.at[1] - DESK.height + SIDE.y, side.at[2] - 0.03)
 const ownMarks = (slots: DeskSlots): Marks => ({
-  tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
+  tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, pair: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
   speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: sideCenter(slots.side), layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
   twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
   papers: vector(slots.papers.at), perch: vector(slots.perch.at),
@@ -336,10 +339,35 @@ const besideAt = (slots: DeskSlots, slot: FlatSlot) => {
  * floats over its head; its subagents stand where its author's desk has places for them (`visitor_1…`).
  */
 const visitMarks = (slots: DeskSlots): Marks => ({
-  tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
+  tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, pair: true, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
   lay: notebookScreen(besideAt(slots, slots.notebook)), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => besideAt(slots, s)),
   papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
+
+/**
+ * A crew member's place in a meeting room, in its own desk space (its chair at `SEAT`, the table or the counter before
+ * it): where a laptop would stand in front of it, its tag over its head, its subagents on the floor behind its chair,
+ * the cat's perch on the table. Standing at the table's foot, it has no chair.
+ */
+const MEETING = { laptop: new THREE.Vector3(0, DESK.height, SEAT.z + 0.67), tag: 2.1, perch: new THREE.Vector3(0.36, DESK.height, SEAT.z + 0.62) }
+const meetingMarks = (stand: boolean): Marks => {
+  const laptop = stand ? SEAT.clone().setY(1.25) : notebookScreen(MEETING.laptop)
+  return {
+    tag: new THREE.Vector3(0, MEETING.tag, SEAT.z), tagHeight: 0.1, branch: false, pair: false, speech: new THREE.Vector3(0, MEETING.tag + 0.16, SEAT.z),
+    lay: laptop, layWidth: stand ? 0.3 : NOTEBOOK.width - 0.04, minis: [-0.36, -0.12, 0.12, 0.36].map((x) => new THREE.Vector3(x, 0, SEAT.z - 0.62)),
+    papers: MEETING.laptop.clone().setX(-0.36), perch: MEETING.perch,
+  }
+}
+
+/** A crew member at its place in a meeting room: its own chair; standing, none. It has no screen to show. */
+export function makeSeat(card: Card, models: Models, stand: boolean): Desk {
+  const group = new THREE.Group()
+  const chair = stand ? new THREE.Group() : instance(models.desk).part('chair')
+  chair.position.copy(SEAT)
+  group.add(chair)
+  const screen = mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false }))
+  return { ...seated(card, models, meetingMarks(stand), { group, chair, swivel: chair.getObjectByName('swivel') ?? chair, strip: new THREE.MeshBasicMaterial(), screen }), meeting: { stand } }
+}
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
 export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk {
@@ -357,6 +385,7 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
  * another of its states. A reviewer's are its author's desk's.
  */
 export function situate(desk: Desk, slots: DeskSlots) {
+  if (desk.meeting) return
   desk.marks = desk.side ? ownMarks(slots) : visitMarks(slots)
   desk.papers.position.copy(desk.marks.papers)
   desk.minis.avatars.forEach((m, i) => m.root.position.copy(desk.marks.minis[i]))
@@ -389,7 +418,7 @@ export function syncDesk(desk: Desk, card: Card) {
   desk.avatar.root.visible = !card.stranded
   showOnMonitor(desk, monitorOf(card))
 
-  const tagText = [card.callsign, statusName(card), desk.marks.branch && card.worktree && branchLine(card), pairLine(card)].filter(Boolean).join('  ·  ')
+  const tagText = [card.callsign, statusName(card), desk.marks.branch && card.worktree && branchLine(card), desk.marks.pair && pairLine(card)].filter(Boolean).join('  ·  ')
   if (`${tagText}|${card.attention}` !== desk.tagText) {
     desk.tagText = `${tagText}|${card.attention}`
     const tag = sprite(tagText, desk.marks.tagHeight, { color: onStatusColor(card), bg: color, px: 44 })
@@ -577,6 +606,14 @@ function seatedPose(card: Card, p: number, wall: number, holding: boolean, summo
   return { layers: [{ clip: 'Sit_Chair_Idle', at: p }], lean }
 }
 
+/** What a crew member standing at the table's foot is doing: waving you over while it asks, cheering while it holds something up, else standing about. */
+function standingPose(card: Card, p: number, holding: boolean): Pose {
+  const stand = { clip: 'Idle_A:rest', at: p } as const
+  if (holding) return { layers: [stand, { clip: 'Cheering:arms', at: p * 0.5 }] }
+  if (card.status === 'needs_input' || card.status === 'blocked') return { layers: [stand, { clip: 'Waving:arms', at: p }] }
+  return { layers: [{ clip: 'Idle_A', at: p }] }
+}
+
 /** Whether the worker holds a showing up over its head at `t`. */
 const holdingUp = (desk: Desk, t: number) => desk.raised !== undefined && t - desk.raised.start < RAISE.hold
 
@@ -603,7 +640,8 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   if (desk.minis.avatars.length > desk.summoned.count) desk.summoned.at = t
   desk.summoned.count = desk.minis.avatars.length
   const hop = asks ? Math.max(0, Math.sin(p * 5)) * 0.08 : 0
-  a.body.position.copy(seatedAt(desk.models.cast, a, CHAIR).applyAxisAngle(Y, desk.turn)).add(new THREE.Vector3(0, hop, 0))
+  const off = desk.meeting?.stand ? new THREE.Vector3() : seatedAt(desk.models.cast, a, CHAIR).applyAxisAngle(Y, desk.turn)
+  a.body.position.copy(off).add(new THREE.Vector3(0, hop, 0))
   if (desk.twin) desk.twin.avatar.body.position.copy(seatedAt(desk.models.cast, desk.twin.avatar, { y: CHAIR.y / desk.marks.twin!.size, back: CHAIR.back / desk.marks.twin!.size }))
   desk.minis.avatars.forEach((m, i) => (m.root.position.y = desk.marks.minis[i].y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
   if (desk.bubble) desk.bubble.position.set(SEAT.x + 0.32, BUBBLE_Y + Math.sin(p * 3) * 0.05 + hop, SEAT.z)
@@ -617,7 +655,8 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
 export function poseRigs(desk: Desk, t: number, wall: number) {
   const { cast } = desk.models
   const p = t + desk.phase
-  pose(cast, desk.avatar.rig, seatedPose(desk.card, p, wall, holdingUp(desk, t), summoning(desk, t), clipLength(cast, desk.avatar.rig, 'Hit_B')), t)
+  const own = desk.meeting?.stand ? standingPose(desk.card, p, holdingUp(desk, t)) : seatedPose(desk.card, p, wall, holdingUp(desk, t), summoning(desk, t), clipLength(cast, desk.avatar.rig, 'Hit_B'))
+  pose(cast, desk.avatar.rig, own, t)
   if (desk.twin) pose(cast, desk.twin.avatar.rig, { layers: [{ clip: 'Sit_Chair_Idle:rest', at: p + 1.3 }, { clip: 'Type', at: p + 1.3 }] }, t)
   desk.minis.avatars.forEach((m, i) => pose(cast, m.rig, { layers: [{ clip: 'Cheering', at: p + i * 0.4 }] }, t))
 }

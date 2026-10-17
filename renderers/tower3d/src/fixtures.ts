@@ -540,6 +540,57 @@ const logbook = (now: number) => boardOf([{
   ],
 }], now)
 
+/** A crew's hire on a fixture floor: at work, hired by the worker at `by`, `ago` minutes ago. */
+const hire = (by: number, ago: number, prompt: string, more: Partial<Facts> = {}): Facts => ({ status: 'working', prompt, tool: 'Edit', hiredBy: by, ago, ...more })
+
+/**
+ * Crews in the meeting rooms. On `crew`, a coordinator and fourteen hires (one sent home, one a reviewer of the first)
+ * fill Meeting · 8's table and its counter's laptops, and the last stand at the table's foot; a worker of its own sits at
+ * its desk. On `pairs`,
+ * the first crew to gather (three) takes Meeting · 8 at its smallest table, the next (five) Meeting · 4 and one seat
+ * at its counter, and the last (three) finds both rooms taken and stays at its desks.
+ */
+const crews = (now: number) => boardOf([
+  {
+    id: 'crew', name: 'crew', color: '#ff9e64',
+    workers: [
+      { status: 'working', prompt: 'Coordinate the storage rewrite', tool: 'Bash', turns: 12, context: 52, ago: 90 },
+      hire(0, 80, 'Split the storage layer into reads and writes', { worktree: 'storage-split' }),
+      hire(0, 78, 'Write the migration'),
+      hire(0, 76, 'Benchmark the new layer', { status: 'needs_input', waiting: true, tool: 'Bash' }),
+      hire(0, 74, 'Port the readers'),
+      hire(0, 72, 'Port the writers', { status: 'done', answer: 'Ported.' }),
+      hire(0, 70, 'Update the docs', { status: 'exited', answer: 'Documented.' }),
+      hire(1, 68, reviewPrompt(who('crew', 1), false), { worktree: 'storage-split-review', reviews: 1 }),
+      hire(0, 66, 'Fix the flaky test'),
+      hire(0, 64, 'Profile the cache'),
+      hire(0, 62, 'Trim the indexes', { status: 'idle', answer: 'Trimmed.' }),
+      hire(0, 60, 'Check the backups'),
+      hire(0, 58, 'Rename the tables'),
+      hire(0, 56, 'Read the old schema'),
+      hire(0, 54, 'Count the rows', { status: 'done', answer: 'Forty million.' }),
+      hire(0, 52, 'Draw the new schema'),
+      { status: 'working', prompt: 'Something else entirely', tool: 'Read', ago: 50 },
+    ],
+  },
+  {
+    id: 'pairs', name: 'pairs', color: '#73daca',
+    workers: [
+      { status: 'working', prompt: 'Lead the API review', tool: 'Read', ago: 60 },
+      hire(0, 50, 'Read the routes'),
+      hire(0, 45, 'Read the schemas', { status: 'done', waiting: true, answer: 'The schemas agree.' }),
+      { status: 'working', prompt: 'Lead the release', tool: 'Bash', ago: 55 },
+      hire(3, 40, 'Write the notes'),
+      hire(3, 35, 'Tag the build'),
+      hire(3, 30, 'Check the installers', { status: 'idle', answer: 'Checked.' }),
+      hire(3, 25, 'Bump the version'),
+      { status: 'working', prompt: 'Lead the cleanup', tool: 'Edit', ago: 30 },
+      hire(8, 20, 'Delete the dead code'),
+      hire(8, 15, 'Drop the old flags'),
+    ],
+  },
+], now)
+
 /** Each fixture's boards, in the order the door's `advance` delivers them. */
 export const FIXTURES: Record<string, (now: number) => Board[]> = {
   busy: (now) => [busyBoard(busyFloors(now), now), busyBoard(busyFloors(now, true), now), busyBoard(answered(busyFloors(now, true)), now)],
@@ -550,6 +601,7 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
   attention: (now) => [attention(now)],
   tidy: (now) => [tidyFloor(now)],
   logbook: (now) => [logbook(now)],
+  crews: (now) => [crews(now)],
 }
 
 /** The fixture named by `?board=`, if the page was opened with one. */
