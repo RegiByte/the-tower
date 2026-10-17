@@ -267,12 +267,15 @@ function nextInSeries(base: string) {
 function surfaceAhead(): Vec3 {
   const ray = new THREE.Raycaster()
   ray.setFromCamera(new THREE.Vector2(0, 0), camera)
-  const hit = ray.intersectObjects(solids(), true)[0]
+  const hit = surfaceHit(ray)
   const p = hit?.point ?? ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3()) ?? orbit.target
   return [p.x, p.y, p.z]
 }
 
 const solids = () => (built ? built.scene.children.filter((o) => o instanceof THREE.BatchedMesh || o.userData.guide !== undefined) : [])
+
+/** The first surface a ray meets: a face of a model or a guide, never a guide's edge lines (three.js hits a line within a metre of it). */
+const surfaceHit = (ray: THREE.Raycaster) => ray.intersectObjects(solids(), true).find((h) => h.object instanceof THREE.Mesh)
 
 /** The selection dropped onto the first surface below it: its base resting there. */
 async function drop() {
@@ -281,7 +284,7 @@ async function drop() {
   const box = new THREE.Box3().setFromObject(proxy)
   const from = new THREE.Vector3(proxy.position.x, Math.max(box.max.y, proxy.position.y) + 0.01, proxy.position.z)
   const ray = new THREE.Raycaster(from, new THREE.Vector3(0, -1, 0))
-  const hit = ray.intersectObjects(solids(), true)[0]
+  const hit = surfaceHit(ray)
   const floor = hit?.point.y ?? 0
   const base = box.isEmpty() ? proxy.position.y : box.min.y
   return place(selected, { at: [proxy.position.x, proxy.position.y + floor - base, proxy.position.z] })
