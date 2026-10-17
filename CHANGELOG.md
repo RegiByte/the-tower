@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.44.0
+
+A review loop closes at whoever hired the author, and Tower 3D's meeting rooms are lighter and solid. No host restart,
+no config change. The renderer API moves to 1.59, additions only. Restart the tower (`tower down tower && tower up
+tower`), rebuild Tower 3D (`npm run tower3d`) and reload both. Workers started after the update read the new skills.
+
+- A hired worker reports to its hirer once it has answered a review's notes, and its reviewer tells the hirer the
+  verdict, so a coordinator hears the loop close without you relaying it. Send, from a worker (`tower send`), the
+  tower page or Tower 3D, tells a hired worker whom to report to (`sendText` takes the hirer).
+- Tower 3D draws a level's empty meeting chairs as two instanced meshes, up to ~180 fewer draw calls facing a room,
+  and you no longer walk through meeting chairs, taken or empty.
+- The meeting tables, rooms and lounge are placed by hand: seats spread so workers stop brushing elbows, the eighth
+  seat at the table's foot, counter chairs tucked in. October's candy and the working pencils clear the monitor.
+
 ## v1.43.1
 
 Tower 3D stays smooth near workers. No host restart, no config change, the renderer API unchanged. A checkout that
