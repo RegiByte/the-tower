@@ -2136,7 +2136,7 @@ async function sendNotes(at: ThreadPlace, to: Card | undefined) {
   if (!to) return toast(`Pick a worker to send the notes on ${checkout} to`)
   const thread = await threadRead(s.board!, at).catch((err: Error) => (toast(err.message), undefined))
   if (!thread) return
-  const text = sendText(THE_USER, checkout, unseenBy(thread, to.callsign).map((m) => m.n))
+  const text = sendText(THE_USER, checkout, unseenBy(thread, to.callsign).map((m) => m.n), to.hiredBy?.callsign)
   if (await offered(to.calls.submit!, { text })) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 

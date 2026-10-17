@@ -231,8 +231,9 @@ export const anchorState = (anchor: Anchor, repos: RepoChanges[]): AnchorState =
 }
 
 /**
- * The prompt that sends a worker to a thread: who sent it (a callsign, or `THE_USER`), which notes are new to it, and how to read and answer
- * them. One line, so it lands in the composer as typed.
+ * The prompt that sends a worker to a thread: who sent it (a callsign, or `THE_USER`), which notes are new to it, how to read and answer
+ * them, and, to a hired worker, that it reports to its `hirer` once it has (the card's `hiredBy`). One line, so it lands in the composer as typed.
  */
-export const sendText = (sender: string, checkout: string, notes: number[]): string =>
-  `Review notes from ${sender}${notes.length ? ` (${notes.map((n) => `n${n}`).join(', ')})` : ''} on checkout ${checkout}: read the thread with \`tower thread ${checkout}\`, act on them, and answer each with \`tower note on ${checkout} re n<k>\` (the reply on stdin).`
+export const sendText = (sender: string, checkout: string, notes: number[], hirer: string | undefined): string =>
+  `Review notes from ${sender}${notes.length ? ` (${notes.map((n) => `n${n}`).join(', ')})` : ''} on checkout ${checkout}: read the thread with \`tower thread ${checkout}\`, act on them, and answer each with \`tower note on ${checkout} re n<k>\` (the reply on stdin).` +
+  (hirer ? ` Once you have answered them, report to ${hirer}, who hired you: what changed and whether the work is ready.` : '')

@@ -78,7 +78,8 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   What a worker hasn't seen is every message after its own last one (`unseenBy`), worked out, not stored.
 - *Delivery: `submit` into a worker the user picks* (by default the one most recently active in the checkout).
   [`sendText`](ref:hub/src/shared/reviews.ts#sendText) never carries notes inline: one line naming the sender, the
-  notes new to the target and the checkout, and how to read and answer them. Sending a few notes and "go read the
+  notes new to the target and the checkout, how to read and answer them, and, to a hired worker, that it reports
+  to its hirer (`card.hiredBy`) once it has, whoever sends it. Sending a few notes and "go read the
   new ones" are the same call.
 - *Where the work stands.* [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState) folds each checkout to
   `live`, `landed` or `gone`: `main` is always live; a worktree is landed by the rule Tidy files on (absorbed or
@@ -106,8 +107,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
 - *Workers:* `tower thread [checkout]` prints the thread, the notes new to the caller and the repos an anchor can
   name; `tower note [on <checkout>] [re n<k>] [repo:path:lines …]` appends under the caller's callsign, quoting each
   anchor from the checkout's copy (or the caller's own when it works in a fork of it, the version a reviewer read);
-  `tower send <CALLSIGN>` is Send for workers; to a hired worker its pointer adds whom to report to once the notes
-  are answered, its hirer.
+  `tower send <CALLSIGN>` is Send for workers.
 
 **The thread view model** (this is its one home). Every renderer draws a thread through the shared Reviews panel
 ([[shared-panels]]), and what it shows is built in shared code. New is relative to whose view is open: author and

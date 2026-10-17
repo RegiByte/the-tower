@@ -1325,7 +1325,7 @@ const pickedFor = (c) => sendPicks.get(`${c.project}/${threadCheckoutOf(c)}`)
 function sendNotes(button, c) {
   const target = sendTarget(floorOf(c.project), threadCheckoutOf(c), pickedFor(c))
   const thread = threadOf(c)
-  const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [])
+  const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
   told(pressing(button, () => tower.run(target.calls.submit, { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
 }
 

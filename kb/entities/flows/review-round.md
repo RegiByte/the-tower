@@ -49,8 +49,8 @@ sequenceDiagram
   ([[hire]]), never refused by the hiring limits ([[hiring-limits]]).
 - **Delivery is a submit.** [`sendText`](ref:hub/src/shared/reviews.ts#sendText) is one line naming the notes
   new to the target ([`unseenBy`](ref:hub/src/shared/reviews.ts#unseenBy)) and how to read and answer them; it
-  is typed into the author's composer, so the author must be at it (the card's `submit` call). `tower send` to a
-  hired author ends it with whom to report to once the notes are answered: its hirer (`card.hiredBy`).
+  is typed into the author's composer, so the author must be at it (the card's `submit` call). To a hired
+  author it ends with whom to report to once the notes are answered: its hirer (`card.hiredBy`).
 - **One round.** The reviewer stops after delivering; a re-review is a new hire. The author answers with
   `tower note on <checkout> re n<k>`.
 - **The loop closes at the hirer.** When the author was hired, the reviewer tells the author's hirer its verdict in
