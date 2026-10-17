@@ -131,6 +131,7 @@ board field was added.
 **Impact.** Tower 3D only; no board or API change. The tidy fixture's crew of three now gathers; a `crews` fixture
 board covers a gathered crew, an overflow onto the counter and a standing member, two crews in two rooms, and a
 third crew waiting at its desks. A `growing` fixture has one crew over five boards (`seats_4`, `seats_6`, `seats_8`, a member
-sent home, then that member dropped at the day's turn), and a frames stage shoots its room as the table grows, mid-walk
-and settled. Off-duty members staying around as roamers while their lead works is a later idea
+sent home, then the day's turn, that member's times moved two days back so the replay forgets it), and a frames stage
+shoots its room as the table grows from `seats_4` to `seats_6`, mid-walk and settled; the later boards are checked by
+hand through the door's `advance`. Off-duty members staying around as roamers while their lead works is a later idea
 (draft `wintry-pebble`).

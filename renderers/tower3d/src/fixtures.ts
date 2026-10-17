@@ -596,7 +596,8 @@ const crews = (now: number) => boardOf([
 /**
  * One crew's table changing state as it grows and shrinks, a board each: a lead and three hires at `seats_4`, a fourth
  * hire bringing `seats_6`, two more `seats_8`; then the second hire goes home, its seat left empty and the table kept,
- * and last that hire falls off the board, as at the day's turn, and the table is drawn for the six on duty.
+ * and last the day's turn: that hire stays on the board with times from two days ago, which the replay and the party
+ * read as gone (dropping it would renumber every later id), and the table is drawn for the six on duty.
  */
 function growing(now: number): Board[] {
   const lead: Facts = { status: 'working', prompt: 'Coordinate the parser rewrite', tool: 'Bash', ago: 60 }
