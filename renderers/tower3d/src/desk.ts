@@ -3,7 +3,8 @@ import { act } from './acts.ts'
 import { random } from './random.ts'
 import type { Card } from './api.ts'
 import { WORLD, branchLine, bubbleOf, pairLine, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
-import { DESK, SEAT_OFFSET } from './layout.ts'
+import type { FlatSlot } from '../../kaykit/src/scene.ts'
+import { BESIDE_X, DESK, SEAT_OFFSET } from './layout.ts'
 import { ASLEEP, OFFLINE, OPEN_DESK, screenTexture } from './screens.ts'
 import { avatar, seatedAt, type Avatar, type Look } from './avatar.ts'
 import { WARDROBE } from './closet.ts'
@@ -37,7 +38,7 @@ export const SIDE = { width: 0.66, height: 0.41, x: -0.98, y: 1.07, z: 0.06, tur
  * A reviewer's notebook on its author's desk, off the reviewer's middle toward the author (`x`) so it stays on the
  * desk: its lid's screen shows the reviewer's terminal, facing the reviewer.
  */
-const NOTEBOOK = { width: 0.44, depth: 0.36, lid: 0.34, screen: 0.3, tilt: 0.28, x: 0.2, z: -0.24 }
+const NOTEBOOK = { width: 0.44, depth: 0.36, lid: 0.34, screen: 0.3, tilt: 0.28 }
 /** Holding up something new: rising over its head, held there, then laid onto the second monitor (seconds). */
 const RAISE = { rise: 0.45, hold: 3.6, lay: 4.4 }
 const HELD_UP = { y: 2.35, width: 1.12 }
@@ -56,11 +57,35 @@ const BUBBLE: Record<string, { color: string; bg: string }> = {
  */
 type Marks = {
   tag: THREE.Vector3; tagHeight: number; branch: boolean; gist?: THREE.Vector3; speech: THREE.Vector3; lay: THREE.Vector3; layWidth: number
-  /** Where the first subagent stands, how far apart they stand along x, on what. */
-  minis: { x: number; step: number; y: number; z: number }
-  /** Where a fork of the worker sits beside it, in a chair of its own, turned toward the monitor; a reviewer beside its author seats none. */
-  twin?: { x: number; z: number; turn: number }
+  /** Where each subagent stands, in order: as many stand as there are places. */
+  minis: THREE.Vector3[]
+  /** Where a fork of the worker sits beside it, in a chair of its own (turned, radians, at its size); a reviewer beside its author seats none. */
+  twin?: { at: THREE.Vector3; turn: number; size: number }
+  /** Where the papers new to the worker are stacked. */
+  papers: THREE.Vector3
 }
+
+/**
+ * The places around a worker at its desk, in desk space, as the desk dressing's slots set them
+ * (`prefabs/desk_dress.json`): its fork's chair, its subagents on the desk (`subagent_1…`), its logbook, the papers new to
+ * it, and the notebook of a reviewer sitting beside it.
+ */
+export type DeskSlots = { twin: FlatSlot; subagents: FlatSlot[]; logbook: FlatSlot; papers: FlatSlot; notebook: FlatSlot }
+
+const SUBAGENT = /^subagent_(\d+)$/
+
+export function deskSlots(slots: FlatSlot[]): DeskSlots {
+  const named = (name: string) => {
+    const slot = slots.find((s) => s.name === name)
+    if (!slot) throw new Error(`the desk dressing has no slot ${name}: add it to renderers/kaykit/scenes/prefabs/desk_dress.json`)
+    return slot
+  }
+  const subagents = slots.filter((s) => SUBAGENT.test(s.name)).sort((a, b) => Number(SUBAGENT.exec(a.name)![1]) - Number(SUBAGENT.exec(b.name)![1]))
+  return { twin: named('twin'), subagents, logbook: named('logbook'), papers: named('papers'), notebook: named('reviewer_notebook') }
+}
+
+const DEG = Math.PI / 180
+const vector = (at: readonly number[]) => new THREE.Vector3(at[0], at[1], at[2])
 
 export type Desk = {
   group: THREE.Group
@@ -173,16 +198,17 @@ export function syncStation(station: Station, open: boolean) {
 
 const LABELS_Z = SCREEN.z + 0.05
 const SIDE_CENTER = new THREE.Vector3(SIDE.x, SIDE.y, SIDE.z - 0.03)
-const OWN: Marks = {
+const ownMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
-  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: { x: 0.72, step: 0.15, y: DESK.height, z: -0.34 },
-  twin: { x: 1.05, z: -0.3, turn: -0.4 },
-}
+  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
+  twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
+  papers: vector(slots.papers.at),
+})
 /**
  * A worker's logbook right of its keyboard, clear of the cat's perch and its subagents: a thin notebook on a first
  * session, a binder growing a page block and a tab per session after (thickness and tabs stop growing at `most`).
  */
-const BINDER = { x: 0.52, z: -0.2, turn: 0.14, width: 0.22, depth: 0.29, notebook: 0.012, thick: 0.02, page: 0.009, most: 9 }
+const BINDER = { width: 0.22, depth: 0.29, notebook: 0.012, thick: 0.02, page: 0.009, most: 9 }
 const TABS = ['#e5484d', '#f5d90a', '#4f7cff', '#30a46c', '#e9a13a', '#c792ea', '#5fa8d3', '#f76b15']
 
 /** The binder for `sessions`, built anew when the count changes; picked as a whole, up to a reach over it. */
@@ -218,7 +244,7 @@ export function dressBinder(desk: Desk, sessions: number) {
  * The papers new to a worker, at the near edge in front of its mouse: where a reviewer beside it hands them over. They
  * are picked up to `above` over their flag, so they can be aimed at over the heads around them.
  */
-const PAPERS = { x: -0.58, z: -0.42, sheet: { width: 0.26, depth: 0.18, thick: 0.012 }, most: 8, flag: 0.36, above: 0.4 }
+const PAPERS = { sheet: { width: 0.26, depth: 0.18, thick: 0.012 }, most: 8, flag: 0.36, above: 0.4 }
 
 /** The worker in its chair at a desk's seat, its subagents, speech and the papers it hasn't read, around `furniture`. */
 function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 'group' | 'swivel' | 'strip' | 'screen' | 'side' | 'binder'>): Desk {
@@ -233,7 +259,7 @@ function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 
   speech.position.copy(marks.speech)
   furniture.group.add(speech)
   const papers = new THREE.Group()
-  papers.position.set(PAPERS.x, DESK.height, PAPERS.z)
+  papers.position.copy(marks.papers)
   furniture.group.add(papers)
   const desk: Desk = {
     ...furniture, marks, card, models, look, avatar: w, minis, speech, papers, papersCount: 0, binderSessions: 0,
@@ -243,20 +269,20 @@ function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 
   return desk
 }
 
-export function makeDesk(card: Card, models: Models): Desk {
+export function makeDesk(card: Card, models: Models, slots: DeskSlots): Desk {
   const { group, strip, screen, chair } = furniture(models)
   chair.position.copy(SEAT)
   const side = sideMonitor()
   group.add(side.group)
   const binder = new THREE.Group()
-  binder.position.set(BINDER.x, DESK.height, BINDER.z)
-  binder.rotation.y = BINDER.turn
+  binder.position.copy(vector(slots.logbook.at))
+  binder.rotation.y = slots.logbook.turn * DEG
   group.add(binder)
-  return seated(card, models, OWN, { group, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder })
+  return seated(card, models, ownMarks(slots), { group, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder })
 }
 
 /** A notebook open on a desk, its base's near edge toward -z; its screen faces the one sitting there. */
-function notebook() {
+function notebook(at: THREE.Vector3) {
   const group = new THREE.Group()
   const shell = toon('#39404c')
   group.add(block(NOTEBOOK.width, 0.02, NOTEBOOK.depth, shell))
@@ -271,30 +297,33 @@ function notebook() {
   screen.userData.screen = true
   lid.add(screen)
   group.add(lid)
-  group.position.set(NOTEBOOK.x, DESK.height, NOTEBOOK.z)
+  group.position.copy(at)
   return { group, strip, screen }
 }
 
 /** Where the notebook's screen is, in its desk space: where a reviewer lays down what it held up. */
-const NOTEBOOK_SCREEN = new THREE.Vector3(NOTEBOOK.x, DESK.height + 0.02 + Math.cos(NOTEBOOK.tilt) * NOTEBOOK.lid / 2, NOTEBOOK.z + NOTEBOOK.depth / 2 + Math.sin(NOTEBOOK.tilt) * NOTEBOOK.lid / 2 - 0.02)
+const notebookScreen = (at: THREE.Vector3) => new THREE.Vector3(at.x, at.y + 0.02 + Math.cos(NOTEBOOK.tilt) * NOTEBOOK.lid / 2, at.z + NOTEBOOK.depth / 2 + Math.sin(NOTEBOOK.tilt) * NOTEBOOK.lid / 2 - 0.02)
+/** A reviewer's notebook in the reviewer's own desk space: its slot is on its author's desk, the reviewer `BESIDE_X` along it. */
+const notebookAt = (slots: DeskSlots) => vector(slots.notebook.at).sub(new THREE.Vector3(BESIDE_X, 0, 0))
 /**
  * A reviewer's tag hangs under its author's, in the same plane, so the two read as a pair from anywhere; what it says
  * floats over its head; its subagents stand on the floor at its left.
  */
-const VISIT: Marks = {
+const VISIT_MINIS = Array.from({ length: 4 }, (_, i) => new THREE.Vector3(-0.42 - i * 0.17, 0, -SEAT_OFFSET))
+const visitMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: NOTEBOOK_SCREEN, layWidth: NOTEBOOK.width - 0.04, minis: { x: -0.42, step: -0.17, y: 0, z: -SEAT_OFFSET },
-}
+  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at),
+})
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
-export function makeVisitor(card: Card, models: Models): Desk {
+export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk {
   const group = new THREE.Group()
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
-  const book = notebook()
+  const book = notebook(notebookAt(slots))
   group.add(book.group)
-  return seated(card, models, VISIT, { group, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
+  return seated(card, models, visitMarks(slots), { group, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
 }
 
 function relabel(desk: Desk, key: 'tag' | 'gist' | 'bubble', next: THREE.Sprite | undefined) {
@@ -361,21 +390,18 @@ export function syncDesk(desk: Desk, card: Card) {
   const running = card.stranded ? [] : card.subagentRuns.filter((run) => run.running)
   const fork = desk.marks.twin && running.find((run) => run.type === 'fork')
   if (fork?.id !== desk.twin?.run) seatTwin(desk, fork?.id)
-  const minis = Math.min(running.filter((run) => run !== fork).length, 4)
+  const minis = Math.min(running.filter((run) => run !== fork).length, desk.marks.minis.length)
   if (desk.minis.avatars.length !== minis) {
     dispose(desk.minis.group)
     desk.minis.group.clear()
     desk.minis.avatars = Array.from({ length: minis }, (_, i) => {
       const m = mini(desk.models, desk.look, `${card.id}/${i}`)
-      const at = desk.marks.minis
-      m.root.position.set(at.x + i * at.step, at.y, at.z)
+      m.root.position.copy(desk.marks.minis[i])
       desk.minis.group.add(m.root)
       return m
     })
   }
 }
-
-const TWIN_SCALE = 0.85
 
 /** A fork of the worker in the second chair: the worker's own look, a little smaller, its twin; none when `run` is. */
 function seatTwin(desk: Desk, run: string | undefined) {
@@ -387,10 +413,10 @@ function seatTwin(desk: Desk, run: string | undefined) {
   const chair = instance(desk.models.desk).part('chair')
   chair.position.set(0, 0, 0)
   const twin = avatar(desk.models, desk.look, WARDROBE)
-  twin.root.scale.setScalar(TWIN_SCALE)
+  twin.root.scale.setScalar(at.size)
   if (twin.gear) twin.gear.visible = false
   group.add(chair, twin.root)
-  group.position.set(SEAT.x + at.x, SEAT.y, SEAT.z + at.z)
+  group.position.copy(at.at)
   group.rotation.y = at.turn
   desk.group.add(group)
   desk.twin = { run, group, avatar: twin }
@@ -514,8 +540,8 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   a.body.rotation.y = desk.turn
   const hop = asks ? Math.max(0, Math.sin(p * 5)) * 0.08 : 0
   a.body.position.copy(seatedAt(desk.models.cast, a, CHAIR).applyAxisAngle(Y, desk.turn)).add(new THREE.Vector3(0, hop, 0))
-  if (desk.twin) desk.twin.avatar.body.position.copy(seatedAt(desk.models.cast, desk.twin.avatar, { y: CHAIR.y / TWIN_SCALE, back: CHAIR.back / TWIN_SCALE }))
-  desk.minis.avatars.forEach((m, i) => (m.root.position.y = desk.marks.minis.y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
+  if (desk.twin) desk.twin.avatar.body.position.copy(seatedAt(desk.models.cast, desk.twin.avatar, { y: CHAIR.y / desk.marks.twin!.size, back: CHAIR.back / desk.marks.twin!.size }))
+  desk.minis.avatars.forEach((m, i) => (m.root.position.y = desk.marks.minis[i].y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
   if (desk.bubble) desk.bubble.position.set(SEAT.x + 0.32, BUBBLE_Y + Math.sin(p * 3) * 0.05 + hop, SEAT.z)
   a.bulb.color.set(statusColor(card)).multiplyScalar(card.waiting ? 0.6 + Math.abs(Math.sin(p * 4)) * 0.6 : 1)
 }

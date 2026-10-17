@@ -6,12 +6,14 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-16",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#PROPS",
     "hub/renderers/tower3d/src/dress.ts#THEMES",
-    "hub/renderers/tower3d/src/dress.ts#itemOf",
+    "hub/renderers/tower3d/src/dress.ts#statusState",
+    "hub/renderers/tower3d/src/desk.ts#deskSlots",
+    "hub/renderers/kaykit/scenes/prefabs/desk_dress.json",
     "hub/renderers/tower3d/src/kit.ts#fillLayer",
     "hub/renderers/tower3d/src/layout.ts#RETURN",
     "hub/scripts/tower3d-kit.ts",
@@ -28,21 +30,27 @@ run, what it is doing and what it showed, at a glance and without text, while th
 loudest thing on the floor.
 
 **How.**
-- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month)` answers placements in desk space
-  (model id, `[x, z]`, turn, optional base height). The desk's right end holds the status (cactus idle; lamp and
-  pencils working; lamp and a mug watching, [[watching-status]]; headphones lamp asking; a plated pizza done). The return holds what the session piled up,
-  each item from a context share (2% to 33%, so a typical session is already messy). The floor past the desk's
-  back edge holds a pizza box per finished turn (`card.turns`), stacks of six, up to three. Up to two standing
-  frames face the aisle for what the worker showed. Candy in October. Each placement is nudged by the worker's
-  id so no two desks are clones. Right of the keyboard lies the worker's logbook, drawn in code as thick as its
-  lineage ([[logbook]]), and its running subagents stand along the near edge past it (`card.subagentRuns`, up to
-  four). A running fork of the worker sits in a second chair at its right, in the worker's own look, its twin; a
-  reviewer beside its author seats none.
+- The workstation's dressing is a scene document, [`desk_dress.json`](ref:hub/renderers/kaykit/scenes/prefabs/desk_dress.json),
+  placed by hand: shared, the return; a state per status, what it puts on the desk's right end
+  (cactus idle; lamp and pencils working; lamp and a mug watching, [[watching-status]]; headphones lamp asking; a
+  plated pizza done), picked by [`statusState`](ref:hub/renderers/tower3d/src/dress.ts#statusState); and its slots,
+  the places of what is drawn around the worker, read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots):
+  its running fork in a second chair at its right (`twin`), in the worker's own look, its twin (a reviewer beside its
+  author seats none); its running subagents standing along the near edge, one per `subagent_<n>` slot and no more
+  (`card.subagentRuns`); its logbook right of the keyboard, drawn in code as thick as its lineage ([[logbook]]);
+  the papers new to it; and the notebook of a reviewer beside it. The guides stand for `desk.glb`, which Tower 3D
+  draws itself.
+- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month, desk, models)` answers the models in desk
+  space: the state's from the kit, then the pile. The return holds what the session piled up, each item from a
+  context share (2% to 33%, so a typical session is already messy). The floor past the desk's back edge holds a
+  pizza box per finished turn (`card.turns`), stacks of six, up to three. Up to two standing frames face the aisle
+  for what the worker showed. Candy in October. The pile is code: each placement nudged by the worker's id so no two
+  desks are clones.
 - Every workstation is an L: a `cabinet_medium` return off the desk's right end
   ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in the Furniture pack's alt_C atlas (grey,
   beside `desk.glb`'s black legs); free stations draw it bare. The collider is widened to match.
-- The placements go through the office's KayKit path ([[office-kaykit]]): [`itemOf`](ref:hub/renderers/tower3d/src/dress.ts#itemOf)
-  turns each into the playground's scene item in the desk's frame, its base resting at its height, its scale from
+- The pile goes through the office's KayKit path ([[office-kaykit]]): each placement becomes the playground's scene
+  item in the desk's frame, its base resting at its height, its scale from
   [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms (room packs ×0.75,
   Restaurant and Halloween food and kitchenware ×0.4 more). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
   refills one layer for every workstation on each board: a BatchedMesh per pack and theme, 4 draw calls for the

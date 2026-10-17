@@ -3,7 +3,8 @@ import { act } from './acts.ts'
 import { gameTitle, makeCabinet, type Cabinet } from './arcade.ts'
 import { can } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
-import { heldUpAt, makeDesk, makeStation, makeVisitor, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
+import { DESK_DRESS } from './dress.ts'
+import { deskSlots, heldUpAt, makeDesk, makeStation, makeVisitor, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
 import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
 import { arrival, leaver } from './life.ts'
@@ -68,7 +69,8 @@ export const DESKS: Layer<DeskAt, Desk> = {
   slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => [slot.card.id, { slot, level: level.index, y: level.y }] as [string, DeskAt])),
   level: (at) => at.level,
   make({ slot, y }) {
-    const desk = slot.beside ? makeVisitor(slot.card, s.models!) : makeDesk(slot.card, s.models!)
+    const slots = deskSlots(s.kit!.prefabs[DESK_DRESS].slots)
+    const desk = slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
