@@ -2,13 +2,17 @@
 {
   "type": "decision",
   "name": "Desk dressing: a workstation's KayKit props derived from its worker's card",
-  "summary": "Every workstation in Tower 3D is an L (the Blender desk plus a KayKit cabinet return), and what stands on it is a pure function of the worker's card: status props on the desk, a mess growing with context on the return, a pizza box per finished turn on the floor, frames for what it showed, candy in October. Drawn on the office's KayKit path, one batch per pack and theme.",
+  "summary": "Every workstation in Tower 3D is an L (the Blender desk plus a KayKit cabinet return), and what stands on it is a pure function of the worker's card over a scene document placed by hand: a state of each of its groups (status props on the desk, a mess growing with context on the return, candy in October), and in code a pizza box per finished turn on the floor and a frame in a slot for each thing it showed. Drawn on the office's KayKit path, one batch per pack and theme.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-17",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
+    "hub/renderers/tower3d/src/dress.ts#pileState",
+    "hub/renderers/tower3d/src/desk.ts#besideOf",
+    "hub/renderers/tower3d/src/zones.ts#stateKey",
+    "hub/renderers/kaykit/src/scene.ts#picks",
     "hub/renderers/tower3d/src/dress.ts#PROPS",
     "hub/renderers/tower3d/src/dress.ts#statusState",
     "hub/renderers/tower3d/src/desk.ts#deskSlots",
@@ -30,27 +34,37 @@ loudest thing on the floor.
 
 **How.**
 - The workstation's dressing is a scene document, [`desk_dress.json`](ref:hub/renderers/kaykit/scenes/prefabs/desk_dress.json),
-  placed by hand: shared, the return and the desk's own cactus and mug (once modelled into `desk.glb`); a state per status, what it puts on the desk's right end
-  (cactus idle; lamp and pencils working; lamp and a mug watching, [[watching-status]]; headphones lamp asking; a
-  plated pizza done), picked by [`statusState`](ref:hub/renderers/tower3d/src/dress.ts#statusState); and its slots,
-  the places of what is drawn around the worker, read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots):
+  placed by hand. Shared: the return and the desk's own cactus and mug (once modelled into `desk.glb`). Its states
+  fall in three `groups`, and a desk is drawn in one state of each (decided by the user on 2026-10-17):
+  `status`, what it puts on the desk's right end (cactus idle; lamp and pencils working; lamp and a mug watching,
+  [[watching-status]]; headphones lamp asking; a plated pizza done), picked by
+  [`statusState`](ref:hub/renderers/tower3d/src/dress.ts#statusState); `pile`, what the session piled up on the
+  return, `pile_<n>` from n % of its context on (2 to 33, so a typical session is already messy), each state the whole
+  pile at that share, picked by [`pileState`](ref:hub/renderers/tower3d/src/dress.ts#pileState); and `season`,
+  `october`'s candy. The kit holds the models of every list of states it can be drawn in
+  ([`picks`](ref:hub/renderers/kaykit/src/scene.ts#picks), under
+  [`stateKey`](ref:hub/renderers/tower3d/src/zones.ts#stateKey)). Its slots are the places of what is drawn around the
+  worker, read by [`deskSlots`](ref:hub/renderers/tower3d/src/desk.ts#deskSlots), each missing one a clear error:
   its running fork in a second chair at its right (`twin`), in the worker's own look, its twin (a reviewer beside its
   author seats none); its running subagents standing along the near edge, one per `subagent_<n>` slot and no more
   (`card.subagentRuns`); its logbook right of the keyboard, drawn in code as thick as its lineage ([[logbook]]);
-  the papers new to it; and the notebook of a reviewer beside it. `desk.glb`, which Tower 3D draws itself, is the
-  document's guide by name (`"model": "desk"`), so the prefab editor draws it ([[prefab-editor]]).
-- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month, desk, models)` answers the models in desk
-  space: the state's from the kit, then the pile. The return holds what the session piled up, each item from a
-  context share (2% to 33%, so a typical session is already messy). The floor past the desk's back edge holds a
-  pizza box per finished turn (`card.turns`), stacks of six, up to three. Up to two standing frames face the aisle
-  for what the worker showed. Candy in October. The pile is code: each placement nudged by the worker's id so no two
-  desks are clones.
+  the papers new to it; its second monitor (`side_monitor`); a frame per thing it showed (`trophy_<n>`, as many as
+  there are); the cat's perch (`cat_perch`); and a reviewer beside it ([[reviewer]]): where its chair stands
+  (`reviewer`, which places the reviewer's own desk space, [`besideOf`](ref:hub/renderers/tower3d/src/desk.ts#besideOf)),
+  its notebook and its subagents standing on the floor (`visitor_<n>`). `desk.glb`, which Tower 3D draws itself, is
+  the document's guide by name (`"model": "desk"`), so the prefab editor draws it ([[prefab-editor]]).
+- [`dress`](ref:hub/renderers/tower3d/src/dress.ts#dress)`(card, month, desk, frames, models)` answers the models in
+  desk space: the document's in the card's states, then what is counted in code: a pizza box per finished turn
+  (`card.turns`) on the floor past the desk's back edge, stacks of six, up to three, each nudged by the worker's id so
+  no two stacks are clones; and up to one standing frame per `trophy_<n>` slot, facing the aisle, for what the worker
+  showed. Nothing placed by hand is nudged (the user, 2026-10-17): variety will come as several layouts picked by the
+  id.
 - Every workstation is an L: a `cabinet_medium` return off the desk's right end
   ([`RETURN`](ref:hub/renderers/tower3d/src/layout.ts#RETURN)), in the Furniture pack's alt_C atlas (grey,
   beside `desk.glb`'s black legs); free stations draw it bare. The collider is widened to match.
-- The pile goes through the office's KayKit path ([[office-kaykit]]): each placement becomes the playground's scene
-  item in the desk's frame, its base resting at its height, its scale from
-  [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms (room packs ×0.75,
+- The dressing goes through the office's KayKit path ([[office-kaykit]]): what `dress` places in code becomes the
+  playground's scene item in the desk's frame, its base resting at its height, its scale from
+  [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms, as the document's items carry theirs (room packs ×0.75,
   Restaurant and Halloween food and kitchenware ×0.4 more). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
   refills one layer for every workstation on each board: a BatchedMesh per pack and theme, 4 draw calls for the
   building. The return is drawn in the Furniture pack's grey alt_C, the theme its item in `desk_dress.json` carries, so the
@@ -69,6 +83,10 @@ loudest thing on the floor.
   calls): the first version. It converged with the playground's on 2026-10-06 ([[office-kaykit]]), with identical
   pictures.
 - *Pizza boxes by context.* The stand-in until the board carried `turns`.
+- *The pile in code, each placement nudged by the worker's id* (until 2026-10-17): it could not be placed by hand, and
+  a nudge moves what a person placed.
+- *One state at a time, or a pile state adding only its own items over the last.* Status, pile and season change
+  apart, so a desk needs one of each; a state holding the whole pile at its share can be arranged on its own.
 
 **Impact.** The first KayKit models in the office, and placement as data beside `layout.ts`. The models the office
 uses are vendored in `renderers/tower3d/kaykit/`, so building Tower 3D needs no bundle on disk. The office has one

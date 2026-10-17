@@ -5,7 +5,7 @@ import { CHAIR } from './chair.ts'
 import { WARDROBE } from './closet.ts'
 import { pick, roll } from './hashed.ts'
 import { SEAT, type Desk } from './desk.ts'
-import { DESK, WALL, carBox, colliders, coreFront, danceSpot, floorOfProject, levelY, partySpots, rateLimitBoxes, walkway, type Box, type Level, type Plan } from './layout.ts'
+import { WALL, carBox, colliders, coreFront, danceSpot, floorOfProject, levelY, partySpots, rateLimitBoxes, walkway, type Box, type Level, type Plan } from './layout.ts'
 import type { Card } from './api.ts'
 import { SOUNDS, type Sound } from './cards.ts'
 import { instance, type Models } from './models.ts'
@@ -755,7 +755,7 @@ export function tagAlong(cat: Cat, p: Plan, me: Point & { level: number }, dt: n
 }
 
 /** Where a cat sits to keep an eye on the worker at `desk`: on its desk, beside the monitor, facing its chair. */
-export const deskPerch = (desk: Desk) => desk.group.position.clone().add(new THREE.Vector3(0.45, DESK.height, 0.12))
+export const deskPerch = (desk: Desk) => desk.group.position.clone().add(desk.marks.perch)
 
 /** How near the open cell beside a desk a cat comes before it hops, and how far short of its spot it lands. */
 const TAKEOFF = 0.1

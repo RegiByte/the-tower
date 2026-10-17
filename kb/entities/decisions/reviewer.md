@@ -85,9 +85,9 @@ and how its findings reach the author.
   `card.worktree.from`. Both renderers draw [`pairLine`](ref:hub/src/shared/cards.ts#pairLine) ("reviews MARCO-87")
   beside the branch, Tower 3D on the desk's name tag. Nothing is stored.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
-  terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor), the notebook where the desk dressing's
-  `reviewer_notebook` slot stands it, [[desk-dressing]]); the seat is derived like every seat
-  ([[workstations]]).
+  terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
+  place them ([[desk-dressing]]): its chair at `reviewer`, its notebook at `reviewer_notebook`, its subagents standing
+  on the floor at `visitor_<n>`; which desk it sits at is derived like every seat ([[workstations]]).
 
 **Alternatives considered.**
 - *The reviewer works in the author's worktree.* Sees exactly the author's files, but its tests and builds write

@@ -1,9 +1,8 @@
 {
  "title": "Tower desk dressing",
- "note": "What a Tower 3D workstation holds, in desk space: the desk (desk.glb, drawn by Tower 3D: the editor draws it, the playground leaves it out) centred on the origin, its monitor at the far edge (+z), the worker's chair at z -1; the second monitor Tower 3D shows beside it once its worker has shown something, as a guide. The worker sits facing +z, so +x is on its left. Shared: the L's return, a filing cabinet off the desk's right end, and a cactus and a mug toward its other end (-x). Each state is a worker's status: idle, working (and booting), watching, needs (asking, or held by Claude's trust or sign-in screen), done. Slots are the places of what Tower 3D draws around the worker: its fork in a second chair, its subagents standing on the desk, its logbook, the papers new to it, and the notebook of a reviewer sitting at the desk's left end.",
+ "note": "What a Tower 3D workstation holds, in desk space: the desk (desk.glb, drawn by Tower 3D: the editor draws it, the playground leaves it out) centred on the origin, its monitor at the far edge (+z), the worker's chair at z -1. The worker sits facing +z, so +x is on its left. Shared: the L's return, a filing cabinet off the desk's right end, and a cactus and a mug toward its other end (-x). A desk is drawn in one state of each group. status, the worker's: idle, working (and booting), watching, needs (asking, or held by Claude's trust or sign-in screen), done. pile, what its session piled up on the return, pile_<n> from n % of its context on. season: october, the candy it hoards. Slots are the places of what Tower 3D draws around the worker: its fork in a second chair, its subagents standing on the desk, its logbook, the papers new to it, the second monitor it shows on once it has shown something, the frames for what it showed (trophy_<n>), the cat's perch beside its monitor, and a reviewer sitting at the desk's left end, with its notebook and its own subagents standing on the floor beside it (visitor_<n>).",
  "guides": [
-  { "name": "desk", "model": "desk", "at": [0, 0, 0] },
-  { "name": "second monitor", "size": [0.71, 0.46, 0.04], "at": [-0.98, 0.84, 0.06], "turn": -31.5 }
+  { "name": "desk", "model": "desk", "at": [0, 0, 0] }
  ],
  "items": [
   { "id": "return", "model": "furniture/cabinet_medium", "at": [1.575, 0, -0.2], "turn": 90, "theme": { "atlas": { "furniture": "alt_C" } } },
@@ -18,7 +17,16 @@
   { "name": "subagent_4", "pose": "stand", "size": 0.28, "at": [1.17, 0.75, -0.34] },
   { "name": "logbook", "at": [0.52, 0.75, -0.2], "turn": 8.021409131831525 },
   { "name": "papers", "at": [-0.58, 0.75, -0.42] },
-  { "name": "reviewer_notebook", "at": [-1, 0.75, -0.24] }
+  { "name": "reviewer_notebook", "at": [-1, 0.75, -0.24] },
+  { "name": "side_monitor", "at": [-0.98, 0.75, 0.06], "turn": -31.51267873219528 },
+  { "name": "cat_perch", "at": [0.45, 0.75, 0.12] },
+  { "name": "trophy_1", "at": [1.85, 0.75, 0.1], "turn": 135 },
+  { "name": "trophy_2", "at": [1.85, 0.75, -0.22], "turn": 115 },
+  { "name": "reviewer", "pose": "sit", "at": [-1.2, 0, -1] },
+  { "name": "visitor_1", "pose": "stand", "size": 0.28, "at": [-1.62, 0, -1] },
+  { "name": "visitor_2", "pose": "stand", "size": 0.28, "at": [-1.79, 0, -1] },
+  { "name": "visitor_3", "pose": "stand", "size": 0.28, "at": [-1.96, 0, -1] },
+  { "name": "visitor_4", "pose": "stand", "size": 0.28, "at": [-2.13, 0, -1] }
  ],
  "states": {
   "idle": {
@@ -63,6 +71,92 @@
      { "id": "pizza", "model": "restaurant/food_pizza_cheese_plated", "at": [1.356, 0.75, -0.513], "turn": 0, "scale": 0.5 }
     ]
    }
+  },
+  "pile_2": {
+   "add": { "items": [{ "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 }] }
+  },
+  "pile_6": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 }
+    ]
+   }
+  },
+  "pile_10": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
+     { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
+     { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 }
+    ]
+   }
+  },
+  "pile_15": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
+     { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
+     { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
+     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 }
+    ]
+   }
+  },
+  "pile_20": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
+     { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
+     { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
+     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 }
+    ]
+   }
+  },
+  "pile_26": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
+     { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
+     { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
+     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 },
+     { "model": "furniture/mug_A", "at": [1.78, 0.75, -0.78], "turn": 250, "scale": 0.45 }
+    ]
+   }
+  },
+  "pile_33": {
+   "add": {
+    "items": [
+     { "model": "furniture/mug_B", "at": [1.42, 0.75, 0.3], "turn": 150, "scale": 0.45 },
+     { "model": "furniture/cup", "at": [1.72, 0.75, 0.38], "turn": 0, "scale": 0.45 },
+     { "model": "restaurant/plate_dirty", "at": [1.6, 0.75, -0.02], "turn": 0, "scale": 0.875 },
+     { "model": "restaurant/food_pizza_pepperoni_slice", "at": [1.6, 0.78, 0.08], "turn": 40, "scale": 0.75 },
+     { "model": "furniture/book_set", "at": [1.62, 0.85285, -0.42], "turn": 90, "scale": 0.55 },
+     { "model": "restaurant/bowl_dirty", "at": [1.42, 0.75, -0.72], "turn": 0, "scale": 0.75 },
+     { "model": "furniture/mug_A", "at": [1.78, 0.75, -0.78], "turn": 250, "scale": 0.45 },
+     { "model": "restaurant/jar_A_small", "at": [1.35, 0.75, -0.25], "turn": 0 }
+    ]
+   }
+  },
+  "october": {
+   "add": {
+    "items": [
+     { "model": "halloween/candy_orange_A", "at": [0.62, 0.808125, 0.05], "turn": 30, "scale": 0.625 },
+     { "model": "halloween/candy_purple_A", "at": [1.48, 0.808125, -0.5], "turn": -50, "scale": 0.625 },
+     { "model": "halloween/candycorn", "at": [0.7, 0.78, 0.42], "turn": 10 },
+     { "model": "halloween/candycorn", "at": [1.3, 0.78, 0.05], "turn": 70 }
+    ]
+   }
   }
+ },
+ "groups": {
+  "status": ["idle", "working", "watching", "needs", "done"],
+  "pile": ["pile_2", "pile_6", "pile_10", "pile_15", "pile_20", "pile_26", "pile_33"],
+  "season": ["october"]
  }
 }

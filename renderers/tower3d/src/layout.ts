@@ -104,8 +104,6 @@ export type StationSlot = { n: number; x: number; z: number }
  */
 export type DeskSlot = StationSlot & { card: Card; beside?: string }
 
-/** From a desk's center to where a reviewer sits beside its worker: the desk's left end, a body's width clear of the worker. */
-export const BESIDE_X = -1.2
 export type KioskSlot = { shell: Shell; x: number; z: number }
 /** A worker's screen on the video wall: its center on the wall (facing +z) and its size. */
 export type TileSlot = { card: Card; x: number; y: number; w: number; h: number }
@@ -400,8 +398,11 @@ function pigeonholeFor(floor: Floor, p: Pick<Plan, 'width' | 'depth' | 'roomDept
 /** The room's depth fitting what stands along its walls, the farthest end given from its back wall. */
 const roomFor = (end: number) => end + SHELF_GAP + WALL
 
-/** The building for a board; `today` is when the viewer's day began, which decides who's at the party. */
-export function plan(board: Board, today: number): Plan {
+/**
+ * The building for a board; `today` is when the viewer's day began, which decides who's at the party. `beside` is how
+ * far a reviewer's place is from its author's along the floor (`besideOf`).
+ */
+export function plan(board: Board, today: number, beside: { x: number; z: number }): Plan {
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
   const doorAt = CORE.depth + ROOM_DOOR_AT
@@ -427,7 +428,7 @@ export function plan(board: Board, today: number): Plan {
       const seat = card.seat!
       if ('n' in seat) return { card, ...stationAt(seat.n) }
       const at = own(seat.beside)
-      return { card, ...at, x: at.x + BESIDE_X, beside: seat.beside }
+      return { card, ...at, x: at.x + beside.x, z: at.z + beside.z, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
     const center = (room.minX + room.maxX) / 2

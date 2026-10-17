@@ -3,8 +3,8 @@
  * measuring (renderers/kaykit/src/measure.ts): the models a workstation may hold (`PROPS` in
  * renderers/tower3d/src/dress.ts), every model of the scene documents the office places (`PREFABS` in
  * renderers/tower3d/src/zones.ts) and the lobby city model's (`CITY_MODELS`): measured, their meshes packed, the
- * atlases of their packs, and each prefab (those and the desk's dressing, `DESK_DRESS`) flattened shared and in each
- * of its states, with its slots and the footprints a walker bumps into, all in one file
+ * atlases of their packs, and each prefab (those and the desk's dressing, `DESK_DRESS`) flattened shared and in every
+ * list of its states it can be drawn in (one of each of its groups), with its slots and the footprints a walker bumps into, all in one file
  * (`out/kaykit/kit.kaykit`, laid out as `KitFile` in renderers/tower3d/src/kitfile.ts) that the bundle embeds.
  *
  * It measures from renderers/tower3d/kaykit, the files of those models copied from the KayKit Bits Bundle 1 (CC0) in
@@ -20,10 +20,11 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { fit, worldBox, type Vec3 } from '../renderers/kaykit/src/catalog.ts'
 import { flatFile, readScene } from '../renderers/kaykit/src/files.ts'
+import { groupsOf, picks } from '../renderers/kaykit/src/scene.ts'
 import { measureKit, sourceFiles } from '../renderers/kaykit/src/measure.ts'
 import { DESK_DRESS, PROPS } from '../renderers/tower3d/src/dress.ts'
 import type { KitFile } from '../renderers/tower3d/src/kitfile.ts'
-import { CITY_MODELS, PREFABS, type Prefab, type PrefabItem } from '../renderers/tower3d/src/zones.ts'
+import { CITY_MODELS, PREFABS, stateKey, type Prefab, type PrefabItem } from '../renderers/tower3d/src/zones.ts'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const VENDORED = path.join(REPO, 'renderers/tower3d/kaykit')
@@ -44,12 +45,12 @@ async function modelsOf(name: string, states: string[]) {
   return { flat, items: flat.items.map(({ model, at, turn, scale, parts, theme }): PrefabItem => ({ model, at, turn: turn ?? 0, scale: scale ?? 1, parts, theme })) }
 }
 
-/** Every prefab the office places, flattened shared and in each of its states alone, with its slots. */
+/** Every prefab the office places, flattened shared and in every list of its states it can be drawn in, with its slots. */
 const flats = await Promise.all([...PREFABS, DESK_DRESS].map(async (name) => {
   const { flat, items } = await modelsOf(name, [])
-  const states = Object.keys(readScene(path.join(SCENES, name)).states ?? {})
-  const each = await Promise.all(states.map(async (state) => [state, (await modelsOf(name, [state])).items] as const))
-  return { name, items, slots: flat.slots, states: Object.fromEntries(each) }
+  const scene = readScene(path.join(SCENES, name))
+  const each = await Promise.all(picks(scene).slice(1).map(async (names) => [stateKey(names), (await modelsOf(name, names)).items] as const))
+  return { name, items, slots: flat.slots, groups: groupsOf(scene), states: Object.fromEntries(each) }
 }))
 
 const ids = [...new Set([...Object.keys(PROPS), ...CITY_MODELS, ...flats.flatMap((f) => [...f.items, ...Object.values(f.states).flat()].map((it) => it.model))])].sort()
@@ -106,7 +107,7 @@ function footprint(it: PrefabItem) {
   return [{ minX: b.min[0], maxX: b.max[0], minZ: b.min[2], maxZ: b.max[2] }]
 }
 
-const prefabs: Record<string, Prefab> = Object.fromEntries(flats.map(({ name, items, slots, states }) => [name, { items, footprint: items.flatMap(footprint), slots, states }]))
+const prefabs: Record<string, Prefab> = Object.fromEntries(flats.map(({ name, items, slots, groups, states }) => [name, { items, footprint: items.flatMap(footprint), slots, groups, states }]))
 const meshes = Buffer.concat([Buffer.from(kit.floats.buffer), Buffer.from(kit.ints.buffer)])
 const atlases = Object.entries(kit.catalog.packs).flatMap(([pack, info]) => info.atlases.map((name) => ({ key: `${pack}/${name}`, png: readFileSync(path.join(ATLASES, pack, `${name}.png`)) })))
 const header: KitFile = {

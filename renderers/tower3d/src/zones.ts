@@ -50,9 +50,12 @@ const SPACE_ACCENT = '#e97d19'
 export type PrefabItem = { model: string; at: Vec3; turn: number; scale: number | Vec3; parts?: Record<string, Vec3>; theme?: Theme }
 /**
  * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models, the floor they take that a walker bumps into, its
- * slots, and the models it draws in each of its states alone (shared ones included).
+ * slots, its states by the group each excludes the others of (`groupsOf`), and the models it draws in every list of
+ * states it can be drawn in, by `stateKey` (shared ones included).
  */
-export type Prefab = { items: PrefabItem[]; footprint: Box[]; slots: FlatSlot[]; states: Record<string, PrefabItem[]> }
+export type Prefab = { items: PrefabItem[]; footprint: Box[]; slots: FlatSlot[]; groups: Record<string, string[]>; states: Record<string, PrefabItem[]> }
+/** What a prefab's models in a list of its states are kept under: the names in any order. */
+export const stateKey = (names: string[]) => names.toSorted().join('+')
 export type Prefabs = Record<string, Prefab>
 
 /**

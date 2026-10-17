@@ -16,7 +16,7 @@ import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Flo
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
-import { dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
+import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
 import { launch, tickFireworks } from './fireworks.ts'
 import { beatAt, duck, pause, play, playing, setRoom } from './music.ts'
 import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, makeCat, nearDoors, purr, ring, roam, steer, tada, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat, type CatName } from './life.ts'
@@ -277,7 +277,7 @@ function dressLevels(board: Board) {
     if (level.kind === 'lobby') return cityModel(s.plan, tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
     if (level.kind === 'roof') return []
     return [
-      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, month, s.kit!.prefabs[DESK_DRESS], s.kit!.models))),
+      ...level.desks.filter((slot) => !slot.beside).flatMap((slot) => inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, month, s.kit!.prefabs[DESK_DRESS], deskSlots(s.kit!.prefabs[DESK_DRESS].slots).trophies, s.kit!.models))),
       ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
     ]
   })
@@ -304,7 +304,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.boards++
   s.board = next
   s.self = at
-  s.plan = furnish(plan(next, new Date(wallNow()).setHours(0, 0, 0, 0)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
+  s.plan = furnish(plan(next, new Date(wallNow()).setHours(0, 0, 0, 0), besideOf(deskSlots(s.kit!.prefabs[DESK_DRESS].slots))), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
   ringFor(began)

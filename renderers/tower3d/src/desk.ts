@@ -4,7 +4,7 @@ import { random } from './random.ts'
 import type { Card } from './api.ts'
 import { WORLD, branchLine, bubbleOf, pairLine, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
-import { BESIDE_X, DESK, SEAT_OFFSET } from './layout.ts'
+import { DESK, SEAT_OFFSET } from './layout.ts'
 import { ASLEEP, OFFLINE, OPEN_DESK, screenTexture } from './screens.ts'
 import { avatar, seatedAt, type Avatar, type Look } from './avatar.ts'
 import { WARDROBE } from './closet.ts'
@@ -32,8 +32,8 @@ const SPEECH_GAP = 0.04
 /** The worker's chair on the floor, at the keyboard. */
 export const SEAT = new THREE.Vector3(0, 0, -SEAT_OFFSET)
 const Y = new THREE.Vector3(0, 1, 0)
-/** The second monitor, on the desk's left, turned toward the seat: what the worker last showed you. */
-export const SIDE = { width: 0.66, height: 0.41, x: -0.98, y: 1.07, z: 0.06, turn: -0.55 }
+/** The second monitor, where the dressing's `side_monitor` slot stands it: its screen's size and its centre's height over the desk's floor. */
+const SIDE = { width: 0.66, height: 0.41, y: 1.07 }
 /**
  * A reviewer's notebook on its author's desk, off the reviewer's middle toward the author (`x`) so it stays on the
  * desk: its lid's screen shows the reviewer's terminal, facing the reviewer.
@@ -63,16 +63,20 @@ type Marks = {
   twin?: { at: THREE.Vector3; turn: number; size: number }
   /** Where the papers new to the worker are stacked. */
   papers: THREE.Vector3
+  /** Where a cat sits to keep an eye on the worker. */
+  perch: THREE.Vector3
 }
 
 /**
  * The places around a worker at its desk, in desk space, as the desk dressing's slots set them
  * (`prefabs/desk_dress.json`): its fork's chair, its subagents on the desk (`subagent_1…`), its logbook, the papers new to
- * it, and the notebook of a reviewer sitting beside it.
+ * it, its second monitor, the frames for what it showed (`trophy_1…`), the cat's perch, and a reviewer sitting beside
+ * it (`reviewer`, where its chair stands), its notebook and its subagents (`visitor_1…`).
  */
-export type DeskSlots = { twin: FlatSlot; subagents: FlatSlot[]; logbook: FlatSlot; papers: FlatSlot; notebook: FlatSlot }
-
-const SUBAGENT = /^subagent_(\d+)$/
+export type DeskSlots = {
+  twin: FlatSlot; subagents: FlatSlot[]; logbook: FlatSlot; papers: FlatSlot; side: FlatSlot; trophies: FlatSlot[]; perch: FlatSlot
+  reviewer: FlatSlot; notebook: FlatSlot; visitors: FlatSlot[]
+}
 
 export function deskSlots(slots: FlatSlot[]): DeskSlots {
   const named = (name: string) => {
@@ -80,9 +84,20 @@ export function deskSlots(slots: FlatSlot[]): DeskSlots {
     if (!slot) throw new Error(`the desk dressing has no slot ${name}: add it to renderers/kaykit/scenes/prefabs/desk_dress.json`)
     return slot
   }
-  const subagents = slots.filter((s) => SUBAGENT.test(s.name)).sort((a, b) => Number(SUBAGENT.exec(a.name)![1]) - Number(SUBAGENT.exec(b.name)![1]))
-  return { twin: named('twin'), subagents, logbook: named('logbook'), papers: named('papers'), notebook: named('reviewer_notebook') }
+  const series = (base: string) => {
+    const n = new RegExp(`^${base}_(\\d+)$`)
+    const found = slots.filter((s) => n.test(s.name)).sort((a, b) => Number(n.exec(a.name)![1]) - Number(n.exec(b.name)![1]))
+    if (!found.length) throw new Error(`the desk dressing has no slot ${base}_1: add it to renderers/kaykit/scenes/prefabs/desk_dress.json`)
+    return found
+  }
+  return {
+    twin: named('twin'), subagents: series('subagent'), logbook: named('logbook'), papers: named('papers'), side: named('side_monitor'), trophies: series('trophy'),
+    perch: named('cat_perch'), reviewer: named('reviewer'), notebook: named('reviewer_notebook'), visitors: series('visitor'),
+  }
 }
+
+/** From a desk's origin to the origin of a reviewer's own desk space beside it: its chair at `SEAT` there stands at the `reviewer` slot. */
+export const besideOf = (slots: DeskSlots) => ({ x: slots.reviewer.at[0] - SEAT.x, z: slots.reviewer.at[2] - SEAT.z })
 
 const DEG = Math.PI / 180
 const vector = (at: readonly number[]) => new THREE.Vector3(at[0], at[1], at[2])
@@ -154,8 +169,8 @@ function furniture(models: Models) {
   return { group, strip, screen, chair: model.part('chair') }
 }
 
-/** A small monitor on a neck and foot, its screen facing -z like the big one's. */
-function sideMonitor() {
+/** A small monitor on a neck and foot at `slot`, its screen facing -z like the big one's. */
+function sideMonitor(slot: FlatSlot) {
   const group = new THREE.Group()
   const dark = toon('#1d2421')
   const neck = SIDE.y - SIDE.height / 2 - DESK.height
@@ -167,8 +182,8 @@ function sideMonitor() {
   const ribbon = sprite('NEW', 0.085, { color: '#fff', bg: WORLD.accent, px: 44 })
   ribbon.position.set(SIDE.width / 2 - 0.06, SIDE.y - DESK.height + SIDE.height / 2 + 0.07, -0.05)
   group.add(screen, ribbon)
-  group.position.set(SIDE.x, DESK.height, SIDE.z)
-  group.rotation.y = SIDE.turn
+  group.position.copy(vector(slot.at))
+  group.rotation.y = slot.turn * DEG
   group.visible = false
   return { group, screen, ribbon }
 }
@@ -202,12 +217,12 @@ export function syncStation(station: Station, open: boolean) {
 }
 
 const LABELS_Z = SCREEN.z + 0.05
-const SIDE_CENTER = new THREE.Vector3(SIDE.x, SIDE.y, SIDE.z - 0.03)
+const sideCenter = (side: FlatSlot) => new THREE.Vector3(side.at[0], side.at[1] - DESK.height + SIDE.y, side.at[2] - 0.03)
 const ownMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
-  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: SIDE_CENTER, layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
+  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: sideCenter(slots.side), layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
   twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
-  papers: vector(slots.papers.at),
+  papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
 /**
  * A worker's logbook right of its keyboard, clear of the cat's perch and its subagents: a thin notebook on a first
@@ -278,7 +293,7 @@ function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 
 export function makeDesk(card: Card, models: Models, slots: DeskSlots): Desk {
   const { group, strip, screen, chair } = furniture(models)
   chair.position.copy(SEAT)
-  const side = sideMonitor()
+  const side = sideMonitor(slots.side)
   group.add(side.group)
   const binder = new THREE.Group()
   binder.position.copy(vector(slots.logbook.at))
@@ -309,16 +324,19 @@ function notebook(at: THREE.Vector3) {
 
 /** Where the notebook's screen is, in its desk space: where a reviewer lays down what it held up. */
 const notebookScreen = (at: THREE.Vector3) => new THREE.Vector3(at.x, at.y + 0.02 + Math.cos(NOTEBOOK.tilt) * NOTEBOOK.lid / 2, at.z + NOTEBOOK.depth / 2 + Math.sin(NOTEBOOK.tilt) * NOTEBOOK.lid / 2 - 0.02)
-/** A reviewer's notebook in the reviewer's own desk space: its slot is on its author's desk, the reviewer `BESIDE_X` along it. */
-const notebookAt = (slots: DeskSlots) => vector(slots.notebook.at).sub(new THREE.Vector3(BESIDE_X, 0, 0))
+/** A slot of its author's desk in a reviewer's own desk space. */
+const besideAt = (slots: DeskSlots, slot: FlatSlot) => {
+  const by = besideOf(slots)
+  return vector(slot.at).sub(new THREE.Vector3(by.x, 0, by.z))
+}
 /**
  * A reviewer's tag hangs under its author's, in the same plane, so the two read as a pair from anywhere; what it says
- * floats over its head; its subagents stand on the floor at its left.
+ * floats over its head; its subagents stand where its author's desk has places for them (`visitor_1…`).
  */
-const VISIT_MINIS = Array.from({ length: 4 }, (_, i) => new THREE.Vector3(-0.42 - i * 0.17, 0, -SEAT_OFFSET))
 const visitMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y - 0.2, LABELS_Z), tagHeight: 0.12, branch: false, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: notebookScreen(notebookAt(slots)), layWidth: NOTEBOOK.width - 0.04, minis: VISIT_MINIS, papers: vector(slots.papers.at),
+  lay: notebookScreen(besideAt(slots, slots.notebook)), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => besideAt(slots, s)),
+  papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
@@ -327,7 +345,7 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots): Desk 
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
-  const book = notebook(notebookAt(slots))
+  const book = notebook(besideAt(slots, slots.notebook))
   group.add(book.group)
   return seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen })
 }
