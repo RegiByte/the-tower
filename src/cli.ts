@@ -32,7 +32,7 @@
  *   tower app                    open the tower as a Mac app, built from this checkout on first use or when its source
  *                                changed (`src/app.ts`); the browser stays the default
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { openApp } from './app.ts'
@@ -79,8 +79,6 @@ const sessionLogFile = (id: string | undefined): string => {
 }
 
 const readSessionLog = (id: string | undefined): SessionLog => readLog(sessionLogFile(id), everyEvent).log
-
-const readConfigFile = (): Config => JSON.parse(readFileSync(paths.config, 'utf8'))
 
 const counted = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -150,7 +148,7 @@ const resumeAtHost = async (log: SessionLog, conversation: string, prompt: strin
   const id = log.header.id
   const sessions = readSessions()
   const source = sessions.find((s) => s.header.id === id)!
-  const config = readConfigFile()
+  const config = readConfig(paths.config)
   const live = await liveIds(paths)
   const holder = heldBy(conversation, sessions, live)
   if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": attach to it`)
@@ -223,7 +221,7 @@ const main = async (): Promise<void> => {
         options: { cwd: { type: 'string' }, callsign: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
       })
       const usage = 'Usage: tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]'
-      const config = readConfigFile()
+      const config = readConfig(paths.config)
       const project = config.projects[id]
       if (!project) throw new CliError(`No project "${id ?? ''}". Projects: ${Object.keys(config.projects).join(', ')}`, usage)
       const prompt = positionals.join(' ') || undefined
@@ -253,7 +251,7 @@ const main = async (): Promise<void> => {
     case 'kill': {
       const by = process.env.TOWER_SESSION_ID
       const live = await liveIds(paths)
-      const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfigFile()))?.header.id ?? id)
+      const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfig(paths.config)))?.header.id ?? id)
       if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: { hook_event_name: KILLED_BY, by } }))
       print(await request({ t: 'kill', id: target }))
       break
@@ -304,7 +302,7 @@ const main = async (): Promise<void> => {
       if (!existsSync(paths.config)) throw new CliError(`No config at ${paths.config}`, 'tower init [hub] [repos...]: a first project from a directory')
       const problems = checkConfigFile(paths.config)
       const fails = problems.filter((p) => p.level === 'fail').length
-      console.log([`${paths.config}: ${fails ? `${fails} problem${fails === 1 ? '' : 's'} the tower can't take` : `the tower takes it, ${checkedSummary(readConfigFile())}`}${problems.length > fails ? `, ${problems.length - fails} key${problems.length - fails === 1 ? '' : 's'} it ignores` : ''}.`, ...problemLines(problems), `Every key is documented in ${CONFIG_DOCS}. The tower reads the file again on every change, so an edit needs no restart, but for port.`].join('\n'))
+      console.log([`${paths.config}: ${fails ? `${fails} problem${fails === 1 ? '' : 's'} the tower can't take` : `the tower takes it, ${checkedSummary(readConfig(paths.config))}`}${problems.length > fails ? `, ${problems.length - fails} key${problems.length - fails === 1 ? '' : 's'} it ignores` : ''}.`, ...problemLines(problems), `Every key is documented in ${CONFIG_DOCS}. The tower reads the file again on every change, so an edit needs no restart, but for port.`].join('\n'))
       if (fails) process.exitCode = 1
       break
     }

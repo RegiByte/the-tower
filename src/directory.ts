@@ -470,7 +470,7 @@ const hireArgs = (args: string[]): HireArgs => {
 }
 
 /** A session's callsign as the tower names it: from the names in the config the board was read from. */
-const callsignOn = (board: Board, id: string) => callsignsOf(JSON.parse(readFileSync(board.config, 'utf8')))(id)
+const callsignOn = (board: Board, id: string) => callsignsOf(readConfig(board.config))(id)
 
 /** `board`: read once the hire is counted, so it holds the hire's card and the callsign it runs under. */
 const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: SpawnForm): string[] => {
