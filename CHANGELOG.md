@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.41.0
+
+Tower 3D loads its models as files, and the prefab editor shows the real desk. No host restart, the renderer API
+unchanged. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- **config**, only if your shelf frames one of Tower 3D's built pages as an `html` entry (such as
+  `renderers/tower3d/out/lab.html`): it can no longer load its models, because an `html` shelf page fetches nothing
+  beside it. Declare it as a renderer, `"renderers": { "lab": { "root": "<checkout>/renderers/tower3d/out", "entry":
+  "lab.html" } }`, and make the shelf entry `{ "label": "Lab", "renderer": "lab" }`.
+- Tower 3D's pages fetch their models, the KayKit kit and the test film from `out/assets/` as they start, instead of
+  carrying them inlined: `tower3d.js` goes from about 18 MB to 2 MB, and the four pages share one copy of the files.
+- The prefab editor draws the workstation's real desk, monitor and chair where it drew ghost boxes, so what you place
+  is what the office shows. A scene's guide can name a host model (`{ "model": "desk" }`). Drops land on faces, never
+  on a guide's edge lines.
+- The desk's own cactus and mug leave its model and become items of `desk_dress.json`, placed in the editor like any
+  other prop. A model item can carry its own `theme`: the desk's grey return says so in its document.
+
 ## v1.40.0
 
 Tower 3D's workers move by the board. No host restart, no config change, the renderer API unchanged. A checkout that
