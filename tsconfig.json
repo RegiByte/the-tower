@@ -17,5 +17,8 @@
     "spikes",
     "src",
     "test"
+  ],
+  "exclude": [
+    "src/tower/client.d.ts"
   ]
 }

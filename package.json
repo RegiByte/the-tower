@@ -30,7 +30,7 @@
     "tool:kaykit": "tsx scripts/kaykit.ts",
     "tool:tour": "tsx scripts/tour.ts",
     "spike:pty": "tsx spikes/pty/passthrough.ts",
-    "typecheck": "tsc -p . && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
+    "typecheck": "tsc -p . && tsc -p tsconfig.client.json && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
     "test": "node --import tsx --test test/*.test.ts",
     "tool:contrast": "tsx scripts/contrast.ts",
     "tool:claude-check": "tsx scripts/claude-check.ts",

@@ -73,43 +73,98 @@
  * routes directly, every stream multiplexed on one connection.
  */
 ;(() => {
-  /** Filled in by the tower as it serves this script, from src/shared/api.ts. */
+  /**
+   * @typedef {import('../shared/shelf-page.ts').BoardError} BoardError
+   * @typedef {import('../shared/shelf-page.ts').BoardMsg} BoardMsg
+   * @typedef {import('../shared/shelf-page.ts').FromPage} FromPage
+   * @typedef {import('../shared/shelf-page.ts').ShelfSelf} ShelfSelf
+   * @typedef {import('../shared/shelf-page.ts').StreamMsg} StreamMsg
+   * @typedef {import('../shared/shelf-page.ts').ToPage} ToPage
+   * @typedef {import('../shared/shelf-page.ts').Tower} Tower
+   * @typedef {import('../bridge/board.ts').Board} Board
+   * @typedef {import('../shared/prefs.ts').Prefs} Prefs
+   */
+  /** An API error as an `Error` with its code. @typedef {Error & { code: BoardError['code'] }} Failure */
+  /** The tower's latest word on the board. @typedef {{ board: Board, self: ShelfSelf | undefined, error?: undefined } | { error: Failure, board?: undefined, self?: undefined }} Latest */
+  /**
+   * How the page reaches the tower: the routes at its origin, or the framing tower over `postMessage`.
+   * @typedef {{
+   *   board(): unknown,
+   *   call: Tower['call'],
+   *   get(path: string): Promise<any>,
+   *   text(path: string): Promise<string>,
+   *   blob(path: string): Promise<Blob>,
+   *   watch(path: string, fn: (msg: StreamMsg) => void): () => void,
+   *   ui: Tower['ui'],
+   *   setPrefs(patch: Partial<Prefs>): void,
+   *   remember(value: unknown): void,
+   *   recall(): Promise<unknown>,
+   *   store: Tower['store'],
+   * }} Api
+   */
+  /** A message of `/mux`: the connection's id, then each watched stream's messages by key. @typedef {{ t: 'mux', id: string } | { t?: undefined, key: string, data: StreamMsg }} MuxMsg */
+  /** A page's message, with the token its relay knows it by. @typedef {FromPage & { token: string }} PageMsg */
+  /** A message that awaits an answer, before `request` gives it its id. @typedef {FromPage extends infer M ? M extends { id: number } ? Omit<M, 'id'> : never : never} Request */
+
+  /** Filled in by the tower as it serves this script, from src/shared/api.ts. @type {typeof import('../shared/api.ts').API_VERSION} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const VERSION = API_VERSION
   /**
    * The appearance a viewer starts from and the families CSS names by keyword, from src/shared/prefs.ts; the shipped
    * faces each stack ends in, from src/shared/design.ts.
+   * @type {Prefs}
    */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const PREFS_DEFAULT = PREFS_DEFAULT
+  /** @type {typeof import('../shared/prefs.ts').PREF_CHOICES} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const PREF_CHOICES = PREF_CHOICES
+  /** @type {typeof import('../shared/prefs.ts').TERM_SIZES} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const TERM_SIZES = TERM_SIZES
+  /** @type {typeof import('../shared/prefs.ts').GENERIC_FACES} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const GENERIC_FACES = GENERIC_FACES
+  /** @type {typeof import('../shared/design.ts').type} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
   const FACES = FACES
+  /** @param {string} text */
   const versionOf = (text) => {
     const match = /^(\d+)\.(\d+)$/.exec(text)
     if (!match) throw new Error(`tower.js: "${text}" is not an API version: <major>.<minor>`)
     return { major: Number(match[1]), minor: Number(match[2]) }
   }
-  /** Whether a speaker of `speaks` serves a reader written against `wants`: the same major, at least its minor. */
+  /**
+   * Whether a speaker of `speaks` serves a reader written against `wants`: the same major, at least its minor.
+   * @param {string} speaks
+   * @param {string} wants
+   */
   const serves = (speaks, wants) => {
     const [s, w] = [versionOf(speaks), versionOf(wants)]
     return s.major === w.major && s.minor >= w.minor
   }
-  const pinned = document.currentScript && new URL(document.currentScript.src).searchParams.get('v')
+  const pinned = document.currentScript && new URL(/** @type {HTMLScriptElement} */ (document.currentScript).src).searchParams.get('v')
   if (pinned && !serves(VERSION, pinned)) throw new Error(`tower.js: the tower speaks version ${VERSION}, this page was written against ${pinned}`)
   /** Relayed: framed at an origin of its own, as the tower frames a shelf page. A frame at the tower's origin calls the routes itself. */
-  const framed = window.parent !== window && window.origin !== new URL(document.currentScript.src).origin
+  const framed = window.parent !== window && window.origin !== new URL(/** @type {HTMLScriptElement} */ (document.currentScript).src).origin
   if (!framed && window.origin === 'null') throw new Error('tower.js: open this page from its shelf inside the tower, at /run/<project>/<n>, or declare it as a renderer')
 
   const LOST = 'The tower stopped answering: reconnecting as soon as it is back (tower up starts it).'
   /** How long to wait before opening a stream the browser gave up on, as it does when the tower answers with an error. */
   const REOPEN_MS = 3000
 
+  /** @type {Set<(board: Board, self: ShelfSelf | undefined) => void>} */
   const subscribers = new Set()
+  /** @type {Set<(err: Failure) => void>} */
   const errorWatchers = new Set()
-  /** The tower's latest word on the board: `{ board, self }`, or `{ error }` while it can't build one. */
+  /** The tower's latest word on the board: `{ board, self }`, or `{ error }` while it can't build one. @type {Latest | undefined} */
   let latest
 
-  /** A `/board` message: the board, or why the tower can't build it. */
+  /**
+   * A `/board` message: the board, or why the tower can't build it.
+   * @param {BoardMsg} msg
+   * @param {ShelfSelf | undefined} self
+   */
   const publish = (msg, self) => {
     checkVersion(msg.v)
     if ('error' in msg) {
@@ -128,16 +183,27 @@
     for (const fn of errorWatchers) fn(latest.error)
   }
 
+  /** @param {string} v */
   const checkVersion = (v) => {
     if (!serves(v, VERSION)) throw new Error(`tower.js: the tower speaks version ${v}, this page version ${VERSION}`)
   }
 
-  /** An API error as an `Error` whose `code` says what went wrong: invalid, not_found, refused or unavailable. */
+  /**
+   * An API error as an `Error` whose `code` says what went wrong: invalid, not_found, refused or unavailable.
+   * @param {string} message
+   * @param {BoardError['code']} code
+   * @returns {Failure}
+   */
   const failure = (message, code) => Object.assign(new Error(message), { code })
 
+  /** @param {Response} res */
   const isJson = (res) => res.headers.get('content-type')?.startsWith('application/json')
 
-  /** A JSON answer as data, anything else (a shelf's markdown) as text. */
+  /**
+   * A JSON answer as data, anything else (a shelf's markdown) as text.
+   * @param {Response} res
+   * @returns {Promise<any>}
+   */
   const answer = async (res) => {
     const reply = isJson(res) ? await res.json().catch(() => undefined) : await res.text()
     if (reply?.t === 'error') throw failure(reply.message, reply.code)
@@ -145,30 +211,40 @@
     return reply
   }
 
-  /** A successful answer as text, whatever its type; a failure as `answer` throws it. */
+  /** A successful answer as text, whatever its type; a failure as `answer` throws it. @param {Response} res @returns {Promise<string>} */
   const textOf = (res) => (res.ok ? res.text() : answer(res))
+  /** @param {Response} res @returns {Promise<Blob>} */
   const blobOf = (res) => (res.ok ? res.blob() : answer(res))
 
-  /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). */
+  /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). @returns {Api} */
   const viaRoutes = () => {
     const [, kind, name, n] = location.pathname.split('/')
     const self = kind === 'run' ? { project: name, n: Number(n) } : undefined
+    /** @param {string} verb @param {unknown} body */
     const call = (verb, body) =>
       fetch(`/${verb}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then(answer)
+    /** @type {Map<string, { path: string, fn: (msg: StreamMsg) => void }>} */
     const watchers = new Map()
+    /** @type {string | undefined} */
     let mux
     let keys = 0
+    /** @type {EventSource | undefined} */
     let source
-    /** The watch in flight per key: an unwatch is sent once it has settled, so the tower never drops a stream before it holds it. */
+    /** The watch in flight per key: an unwatch is sent once it has settled, so the tower never drops a stream before it holds it. @type {Map<string, Promise<unknown>>} */
     const settling = new Map()
+    /** @param {string} key */
     const watchOn = (key) => {
-      const settled = call('mux/watch', { mux, key, path: watchers.get(key).path }).catch((err) => watchers.get(key)?.fn({ t: 'error', message: err.message }))
+      const settled = call('mux/watch', { mux, key, path: /** @type {{ path: string }} */ (watchers.get(key)).path }).catch((err) => watchers.get(key)?.fn({ t: 'error', message: err.message }))
       settling.set(key, settled)
       return settled
     }
     /**
      * An EventSource reconnects on its own after a dropped connection, and gives up after an error answer: `onLost`
      * hears both, and a stream given up on is opened again.
+     * @template T
+     * @param {string} path
+     * @param {(msg: T) => void} onMessage
+     * @param {() => void} onLost
      */
     const stream = (path, onMessage, onLost) => {
       const open = () => {
@@ -181,13 +257,13 @@
     }
     /** A new mux id means the connection came back, as after a tower restart: every stream starts over with a snapshot. */
     const connect = () => {
-      source = stream('/mux', (msg) => {
+      source = stream('/mux', (/** @type {MuxMsg} */ msg) => {
         if (msg.t === 'mux') return (mux = msg.id, [...watchers.keys()].forEach(watchOn))
         watchers.get(msg.key)?.fn(msg.data)
       }, () => (mux = undefined))
     }
     return {
-      board: () => stream('/board', (msg) => publish(msg, self), lost),
+      board: () => stream('/board', (/** @type {BoardMsg} */ msg) => publish(msg, self), lost),
       call,
       get: (path) => fetch(`/${path}`).then(answer),
       text: (path) => fetch(`/${path}`).then(textOf),
@@ -228,13 +304,18 @@
     }
   }
 
+  /** @returns {Api} */
   const viaTower = () => {
+    /** @type {Map<number, { resolve: (data: unknown) => void, reject: (err: Failure) => void }>} */
     const pending = new Map()
+    /** @type {Map<number, (msg: StreamMsg) => void>} */
     const watchers = new Map()
     let ids = 0
     /** The tower framing this page put a token in its URL; every message carries it back. */
     const token = new URLSearchParams(location.search).get('tower')
+    /** @param {FromPage} msg */
     const send = (msg) => window.parent.postMessage({ ...msg, token }, '*')
+    /** @param {Request} msg @returns {Promise<any>} */
     const request = (msg) =>
       new Promise((resolve, reject) => {
         const id = ++ids
@@ -243,11 +324,12 @@
       })
     addEventListener('message', (e) => {
       if (e.source !== window.parent) return
+      /** @type {ToPage} */
       const msg = e.data
       if (msg.t === 'board') publish(msg, msg.self)
       if (msg.t === 'event') watchers.get(msg.id)?.(msg.data)
       if (msg.t === 'answer') {
-        const { resolve, reject } = pending.get(msg.id)
+        const { resolve, reject } = /** @type {NonNullable<ReturnType<typeof pending.get>>} */ (pending.get(msg.id))
         pending.delete(msg.id)
         if ('error' in msg) reject(failure(msg.error, msg.code))
         else resolve(msg.data)
@@ -266,7 +348,7 @@
         send({ t: 'watch', id, path })
         return () => (watchers.delete(id), send({ t: 'unwatch', id }))
       },
-      ui: (verb, fields) => send({ t: 'tower', verb, ...fields }),
+      ui: (verb, fields) => send(/** @type {FromPage} */ ({ t: 'tower', verb, ...fields })),
       setPrefs: (patch) => send({ t: 'tower', verb: 'prefs', prefs: patch }),
       remember: (value) => send({ t: 'remember', value }),
       recall: () => request({ t: 'recall' }),
@@ -285,44 +367,55 @@
    */
   const root = document.documentElement
   const darkSystem = matchMedia('(prefers-color-scheme: dark)')
+  /** @type {Set<(prefs: Prefs) => void>} */
   const prefsWatchers = new Set()
+  /** @type {Set<(scheme: 'light' | 'dark') => void>} */
   const schemeWatchers = new Set()
-  /** A face's name as a CSS font family, as `faceFamily` of src/shared/prefs.ts writes it: a generic family's unquoted. */
+  /** A face's name as a CSS font family, as `faceFamily` of src/shared/prefs.ts writes it: a generic family's unquoted. @param {string} name */
   const family = (name) => (GENERIC_FACES.includes(name) ? name : `"${name.replace(/["\\]/g, '\\$&')}"`)
+  /** @param {Prefs} prefs @param {Face} face */
   const stack = (prefs, face) => `${family(prefs[face])}, ${FACES[face]}`
+  /** @typedef {'ui' | 'display' | 'mono'} Face */
+  /** @type {Face[]} */
   const FACE_KEYS = ['ui', 'display', 'mono']
   let prefs = PREFS_DEFAULT
+  /** @returns {'light' | 'dark'} */
   const scheme = () => prefs.scheme || (darkSystem.matches ? 'dark' : 'light')
   const announceScheme = () => schemeWatchers.forEach((fn) => fn(scheme()))
   /**
    * A record as the page takes it in, whoever wrote it (storage, a framed page, `set`): each choice one of its values,
    * each face a name, the terminal's size a whole number in its range; anything else is the default.
+   * @param {any} raw
+   * @returns {Prefs}
    */
   const normalized = (raw) => {
+    /** @param {keyof Prefs} key @param {(v: unknown) => boolean} ok */
     const pick = (key, ok) => (ok(raw?.[key]) ? raw[key] : PREFS_DEFAULT[key])
     const size = Math.round(Number(raw?.termSize))
-    return {
-      ...Object.fromEntries(Object.entries(PREF_CHOICES).map(([key, values]) => [key, pick(key, (v) => values.includes(v))])),
+    return /** @type {Prefs} */ ({
+      ...Object.fromEntries(Object.entries(PREF_CHOICES).map(([key, values]) => [key, pick(/** @type {keyof Prefs} */ (key), (v) => /** @type {unknown[]} */ (values).includes(v))])),
       ...Object.fromEntries(FACE_KEYS.map((face) => [face, pick(face, (v) => typeof v === 'string').trim()])),
       termSize: Number.isFinite(size) ? Math.min(TERM_SIZES.max, Math.max(TERM_SIZES.min, size)) : PREFS_DEFAULT.termSize,
-    }
+    })
   }
+  /** @param {unknown} next */
   const applyPrefs = (next) => {
     const was = scheme()
     prefs = normalized(next)
     root.dataset.scheme = prefs.scheme
     for (const face of FACE_KEYS) prefs[face] ? root.style.setProperty(`--${face}`, stack(prefs, face)) : root.style.removeProperty(`--${face}`)
-    for (const key of ['motion', 'contrast']) prefs[key] ? (root.dataset[key] = prefs[key]) : delete root.dataset[key]
+    for (const key of /** @type {const} */ (['motion', 'contrast'])) prefs[key] ? (root.dataset[key] = prefs[key]) : delete root.dataset[key]
     scaled() ? root.style.setProperty('--scale', scaled()) : root.style.removeProperty('--scale')
     prefsWatchers.forEach((fn) => fn(prefs))
     if (scheme() !== was) announceScheme()
   }
   /** The root's text size as a factor of the browser's, read by `/design.css` as `--scale`; none at 100%. */
   const scaled = () => (prefs.scale === PREFS_DEFAULT.scale ? '' : String(prefs.scale / 100))
+  /** @param {string} text */
   const escAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   const attributes = () => {
     const faces = [...FACE_KEYS.filter((face) => prefs[face]).map((face) => `--${face}: ${stack(prefs, face)};`), ...(scaled() ? [`--scale: ${scaled()};`] : [])].join(' ')
-    const data = ['motion', 'contrast'].filter((key) => prefs[key]).map((key) => ` data-${key}="${escAttr(prefs[key])}"`).join('')
+    const data = /** @type {const} */ (['motion', 'contrast']).filter((key) => prefs[key]).map((key) => ` data-${key}="${escAttr(prefs[key])}"`).join('')
     return `data-scheme="${escAttr(scheme())}"${data}${faces ? ` style="${escAttr(faces)}"` : ''}`
   }
   darkSystem.addEventListener('change', () => prefs.scheme || announceScheme())
@@ -352,7 +445,7 @@
   let listening = false
   const listen = () => listening || ((listening = true), api.board())
 
-  /** A stream ends with its session's or shell's exit. */
+  /** A stream ends with its session's or shell's exit. @type {Tower['watch']} */
   const watch = (path, fn) => {
     const stop = api.watch(path, (msg) => {
       fn(msg)
@@ -361,8 +454,13 @@
     return stop
   }
 
-  /** Each chunk is its own write, one at a time: Claude reads text and Enter arriving in one write as a paste. */
+  /**
+   * Each chunk is its own write, one at a time: Claude reads text and Enter arriving in one write as a paste.
+   * @param {'keys' | 'shell/keys'} verb
+   * @returns {(id: string, data: string) => void}
+   */
   const keySender = (verb) => {
+    /** @type {Promise<unknown>} */
     let queue = Promise.resolve()
     return (id, data) => (queue = queue.then(() => api.call(verb, { id, data })).catch((err) => console.error(`tower.js ${verb}:`, err)))
   }
@@ -373,26 +471,31 @@
    * navigates to never has it. Nothing is sent until the page says hello; a frame that loads without saying hello
    * holds another document, and the relay pauses until one does. `self` is the entry the page is; `ui` moves this
    * page's own view (`select`, `home`, `shelf`); `stored` hears each key the page sets in `tower.store`.
+   * @type {Tower['relay']}
    */
   const relay = (frame, url, { self, ui, stored }) => {
     const token = crypto.randomUUID()
     let open = true
     let paired = false
     let helloSinceLoad = false
+    /** @type {Map<number, () => void>} */
     const watches = new Map()
     const closeWatches = () => {
       for (const unwatch of watches.values()) unwatch()
       watches.clear()
     }
+    /** @param {ToPage} msg */
     const toPage = (msg) => open && paired && frame.contentWindow?.postMessage(msg, '*')
     const sendBoard = () => {
       if (!latest) return
+      /** @type {{ t: 'board', v: typeof VERSION, self: ShelfSelf }} */
       const msg = { t: 'board', v: VERSION, self }
       toPage(latest.error ? { ...msg, error: { code: latest.error.code, message: latest.error.message } } : { ...msg, board: latest.board })
     }
     const sendPrefs = () => toPage({ t: 'prefs', prefs })
     /** Where the page's remembered value is kept: one per shelf entry. */
     const memoryKey = `shelf-page:${self.project}/${self.n}`
+    /** @type {Record<string, (msg: any) => unknown>} */
     const requests = {
       call: ({ verb, body }) => api.call(verb, body),
       get: ({ path }) => api.get(path),
@@ -403,6 +506,7 @@
       },
       stored: ({ key }) => api.store.get(key),
     }
+    /** @type {Record<string, (msg: any) => void>} */
     const towerVerbs = {
       ...ui,
       prefs: ({ prefs }) => api.setPrefs(prefs),
@@ -413,8 +517,10 @@
       if (!helloSinceLoad) (paired = false, closeWatches())
       helloSinceLoad = false
     }
+    /** @param {MessageEvent} e */
     const onMessage = async (e) => {
       if (!e.source || e.source !== frame.contentWindow) return
+      /** @type {PageMsg | undefined} */
       const msg = e.data
       if (msg?.token !== token) return
       if (msg.t === 'hello') return ((paired = true), (helloSinceLoad = true), closeWatches(), sendPrefs(), sendBoard())
@@ -427,10 +533,11 @@
       if (msg.t === 'store') return (api.store.set(msg.key, msg.value), stored(msg.key))
       if (msg.t === 'watch') return watches.set(msg.id, watch(msg.path, (data) => toPage({ t: 'event', id: msg.id, data })))
       if (msg.t === 'unwatch') return (watches.get(msg.id)?.(), watches.delete(msg.id))
+      /** @param {{ data: unknown } | { error: string, code: import('../shared/api.ts').ErrorCode }} reply */
       const answer = (reply) => toPage({ t: 'answer', id: msg.id, ...reply })
       try {
         answer({ data: await requests[msg.t](msg) })
-      } catch (err) {
+      } catch (/** @type {any} */ err) {
         answer({ error: err.message, code: err.code })
       }
     }
@@ -466,15 +573,15 @@
     },
     conversations: (session) => api.get(`conversations/${encodeURIComponent(session)}`),
     archive: (project) => api.get(`archive/${encodeURIComponent(project)}`),
-    renderer: async () => (served === 'r' ? (await api.get('renderers')).renderers.find((r) => r.name === servedAs) ?? null : null),
+    renderer: async () => (served === 'r' ? (await api.get('renderers')).renderers.find((/** @type {import('../shared/model.ts').Renderer} */ r) => r.name === servedAs) ?? null : null),
     landing: (query) => api.get(`landing?${new URLSearchParams(query)}`),
-    probe: (name, query = {}) => api.get(`probe/${encodeURIComponent(name)}?${new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined))}`),
-    stats: (query = {}) => api.get(`stats?${new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined))}`),
+    probe: (name, query = {}) => api.get(`probe/${encodeURIComponent(name)}?${new URLSearchParams(/** @type {string[][]} */ (Object.entries(query).filter(([, v]) => v !== undefined)))}`),
+    stats: (query = {}) => api.get(`stats?${new URLSearchParams(/** @type {string[][]} */ (Object.entries(query).filter(([, v]) => v !== undefined)))}`),
     get: api.get,
     text: api.text,
     blob: api.blob,
     call: api.call,
-    run: ([verb, body], fields) => api.call(verb, { ...body, ...fields }),
+    run: ([verb, body], fields) => api.call(verb, /** @type {import('../shared/api.ts').Verbs[typeof verb]} */ ({ ...body, ...fields })),
     keys: keySender('keys'),
     shellKeys: keySender('shell/keys'),
     watch,

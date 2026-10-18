@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json"]
 }
 ---
 **Problem.** The [[renderer-api]] is the contract the next renderer reads, and that renderer may not be written in
@@ -61,7 +61,9 @@ went wrong, and know which changes can break it.
   the contract. [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name with the major
   it was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
-  diff. There is no plugin API: customizing is a copy of a renderer with the user's own layer on top
+  diff. `window.tower` is typed once, as [`Tower`](ref:hub/src/shared/shelf-page.ts#Tower) beside the protocol it
+  speaks: `tower.js` is checked against it through JSDoc ([`tsconfig.client.json`](ref:hub/tsconfig.client.json), run
+  by `npm run typecheck`), and Tower 3D and The Week are checked against the same type. There is no plugin API: customizing is a copy of a renderer with the user's own layer on top
   ([`docs/extending.md`](ref:hub/docs/extending.md)).
 
 **Alternatives considered.**
