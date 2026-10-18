@@ -270,7 +270,8 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
 /**
  * A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work
  * has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the
- * floor's sessions', and the system's streams' closed months (`oldStreams`), which every floor's Tidy lists.
+ * floor's sessions', and the closed months (`oldStreams`) of the floor's own streams and of the system's, which every
+ * floor's Tidy lists.
  */
 export type TidyPlan = { worktrees: string[]; branches: string[]; threads: string[]; prune: Prune[]; logs: OldLog[]; streams: OldStream[] }
 
@@ -755,7 +756,7 @@ export const board = (
         threads: floorThreadsNow.filter((t) => t.landed).map((t) => t.checkout),
         prune: prunable(floorCards, worktrees, cards),
         logs: oldLogs(floorCards, logs, config.retention?.days, now),
-        streams: systemStreams,
+        streams: [...systemStreams, ...oldStreams(streams.filter((m) => m.file.startsWith(`projects/${id}/`)), config.retention?.days, now)],
       }
       return {
         id,

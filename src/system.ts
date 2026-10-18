@@ -353,8 +353,9 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let policyStreamsTimer: NodeJS.Timeout | undefined
   const rescanPolicyStreams = () => {
     const next = policyStreamsIn(projectsStreamsPath(paths), policyStreamFiles)
+    const filesBefore = [...policyStreamFiles.keys()]
     policyStreamFiles = next.files
-    if (asJson(next.facts) === asJson(policies)) return
+    if (asJson(next.facts) === asJson(policies) && asJson([...policyStreamFiles.keys()]) === asJson(filesBefore)) return
     policies = next.facts
     onChange()
   }
@@ -490,7 +491,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     probes: () => probes,
     probeReads: (name) => probeStreams.get(name) ?? [],
     streamMonths: () =>
-      [...streamFiles].map(([file, { bytes }]) => ({ file: path.relative(paths.streams, file), archived: isArchived(file), bytes })),
+      [...streamFiles, ...policyStreamFiles].map(([file, { bytes }]) => ({ file: path.relative(paths.streams, file), archived: isArchived(file), bytes })),
     live: () => live,
     running: () => running,
     peers: () => peers,

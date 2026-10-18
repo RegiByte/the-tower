@@ -136,7 +136,7 @@ export const briefConfig = (config: Config, projectId: string): Required<BriefCo
 
 /**
  * How long a session's log stays plain: `days` after its worker ended, Tidy offers to archive it (gzip it in place),
- * and a probe's stream file `days` after its month closed.
+ * and a stream's month file, a probe's or a policy's, `days` after its month closed.
  * Unset: never offered.
  */
 export type RetentionConfig = { days?: number }

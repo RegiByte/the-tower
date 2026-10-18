@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Log retention: ended workers' logs archived by Tidy, gzipped in place",
-  "summary": "A session's log whose worker, as it runs now, ended more than the config's retention.days ago (not running, not stranded with a conversation to resume) is offered by its floor's Tidy to be archived: gzipped in place as <id>.jsonl.gz; so is a system stream's month file closed that long, on every floor's Tidy. Every reader reads an archived log as the plain log it was, its offsets in plain bytes; the fold takes the checkpoint archiving leaves at the log's end without inflating it. Never automatic, never deleted; retention.days unset offers nothing.",
+  "summary": "A session's log whose worker, as it runs now, ended more than the config's retention.days ago (not running, not stranded with a conversation to resume) is offered by its floor's Tidy to be archived: gzipped in place as <id>.jsonl.gz; so is a stream's month file closed that long, a system stream's on every floor's Tidy and a project's on its own floor's. Every reader reads an archived log as the plain log it was, its offsets in plain bytes; the fold takes the checkpoint archiving leaves at the log's end without inflating it. Never automatic, never deleted; retention.days unset offers nothing.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
@@ -30,7 +30,7 @@
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "sessions/<id>.jsonl.gz: an ended worker's log, gzipped in place by Tidy" },
     { "to": "tidy", "verb": "extends", "carries": "the plan's logs: the old logs to archive, each with its size" },
-    { "to": "tidy", "verb": "extends", "carries": "the plan's streams: the system streams' closed months to archive, each with its size" },
+    { "to": "tidy", "verb": "extends", "carries": "the plan's streams: the system's and the floor's own streams' closed months to archive, each with its size" },
     { "to": "probes", "verb": "reads", "carries": "streams/system/probe.<name>/YYYY-MM.jsonl.gz: a closed month, gzipped in place by Tidy" }
   ]
 }
@@ -75,8 +75,8 @@ most of the space; moving logs to another directory gives back none.
   Streams under `streams/system/` belong to no floor, so every floor's Tidy lists them in the plan's `streams`, each
   `{file, bytes}` by its path under `streams/`, as one row; whichever
   floor applies it archives them, and the others' plans move on. Two floors' Tidy pressed together pass the same check,
-  so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams (`streams/projects/`,
-  [[policies]]' runs and approvals) are not offered yet. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
+  so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams (`streams/projects/<project>/`,
+  [[policies]]' runs and approvals) are listed in that floor's Tidy alone, after the system's. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
   no fold first (streams keep no checkpoints); the live view reads a month plain while it is, else archived
   ([`StreamMonth`](ref:hub/src/bridge/retention.ts#StreamMonth) on `system.streamMonths()`), and its reads fold the same.
 

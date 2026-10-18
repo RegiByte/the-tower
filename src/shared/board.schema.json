@@ -2471,7 +2471,7 @@
         "streams"
       ],
       "additionalProperties": false,
-      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the floor's sessions', and the system's streams' closed months (`oldStreams`), which every floor's Tidy lists."
+      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the floor's sessions', and the closed months (`oldStreams`) of the floor's own streams and of the system's, which every floor's Tidy lists."
     },
     "Prune": {
       "anyOf": [

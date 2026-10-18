@@ -75,8 +75,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   the same. Time alone makes a worker stuck, so the tower republishes the board every minute; an unchanged board is
   not sent.
 - The floor's [`TidyPlan`](ref:hub/src/bridge/board.ts#TidyPlan), `floor.tidy`: worktrees and branches by name,
-  landed threads by checkout, `prune`, `logs`, and `streams`, the system streams' closed months every floor lists
-  ([[log-retention]]). `tidy` is offered while it lists anything, its call `['tidy', { project, plan }]`
+  landed threads by checkout, `prune`, `logs`, and `streams`, the closed months of the system's streams, which every floor
+  lists, and of the floor's own ([[log-retention]]). `tidy` is offered while it lists anything, its call `['tidy', { project, plan }]`
   ([`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)).
 - [`tidyProject`](ref:hub/src/tower/server.ts#tidyProject) checks the plan against the floor as read now
   ([`movedOn`](ref:hub/src/tower/server.ts#movedOn): processes, workers, threads, logs, stream months) and git's part
