@@ -5,7 +5,7 @@
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
+  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#readBody", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -56,7 +56,8 @@ The routes are the renderer API ([[renderer-api]]); the tower page (`renderers/p
 through [`/tower.js`](ref:hub/src/tower/tower.js) like any other: the board, commands (the board's `calls` where it
 offers them), reads and streams. It relays a framed shelf page's requests to the same `tower.js`.
 
-Every command goes through [`command`](ref:hub/src/tower/server.ts#command): the body is parsed by the verb's
+Every command goes through [`command`](ref:hub/src/tower/server.ts#command): the body, read up to 8 MiB
+([`readBody`](ref:hub/src/tower/server.ts#readBody), refused past it as `invalid` with the rest left unread), is parsed by the verb's
 schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 [`HANDLERS`](ref:hub/src/tower/server.ts#HANDLERS), and the reply checked against the verb's reply schema. Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused`, one that doesn't answer

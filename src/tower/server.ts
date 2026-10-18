@@ -57,7 +57,7 @@
  *   POST /open {dir}    open a project directory in a new window of the user's editor
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
  *
- * Every command's body is parsed by its schema in src/shared/api.ts. A failure, of a command or a read, answers
+ * Every command's body, up to 8 MiB, is parsed by its schema in src/shared/api.ts. A failure, of a command or a read, answers
  * `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
  */
 import { randomUUID } from 'node:crypto'
@@ -1360,12 +1360,26 @@ const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answe
   'mux/unwatch': muxUnwatch,
 }
 
-const readBody = (req: http.IncomingMessage): Promise<string> =>
+/**
+ * The largest command body read. The largest real requests are a `collection/write` of a self-contained html item
+ * and a `review/append` carrying a diff, tens of KB; this leaves room for one with its images inlined.
+ */
+const MAX_BODY = 8 * 1024 * 1024
+
+/** A command's body, or `undefined` once it passes `MAX_BODY`: the rest is left unread. */
+const readBody = (req: http.IncomingMessage): Promise<string | undefined> =>
   new Promise((resolve) => {
-    let body = ''
-    req.setEncoding('utf8')
-    req.on('data', (chunk: string) => (body += chunk))
-    req.on('end', () => resolve(body))
+    if (Number(req.headers['content-length']) > MAX_BODY) return resolve(undefined)
+    const chunks: Buffer[] = []
+    let size = 0
+    const onData = (chunk: Buffer) => {
+      size += chunk.length
+      if (size <= MAX_BODY) return void chunks.push(chunk)
+      req.off('data', onData).pause()
+      resolve(undefined)
+    }
+    req.on('data', onData)
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
   })
 
 const send = (res: http.ServerResponse, answer: Answer) =>
@@ -1386,7 +1400,12 @@ const parseJson = (text: string): { json: unknown } | undefined => {
 /** Every command: its body parsed by the verb's schema, handled, and its reply checked against the verb's. */
 async function command(req: http.IncomingMessage, res: http.ServerResponse, route: string) {
   if (!isRoute(route)) return fail(res, 'not_found', `No verb "${route}"`)
-  const body = parseJson(await readBody(req))
+  const text = await readBody(req)
+  if (text === undefined) {
+    res.setHeader('connection', 'close')
+    return fail(res, 'invalid', `The body is over ${MAX_BODY / 1024 / 1024} MiB`)
+  }
+  const body = parseJson(text)
   if (!body) return fail(res, 'invalid', 'The body is not JSON')
   const input = ROUTES[route].input.safeParse(body.json)
   if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
