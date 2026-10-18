@@ -1,6 +1,7 @@
 /** The renderers the tower serves at `/r/<name>/`: the built-ins, then the config's, which add to them or override them. */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { hiddenBelow } from './shelf.ts'
 import { ConfigError, type Config, type Renderer, type RendererConfig } from './shared/model.ts'
 
 /** The default of `renderer` in the config. */
@@ -38,9 +39,9 @@ export const defaultRenderer = (config: Config, renderers: Renderer[]): Renderer
   return renderer
 }
 
-/** The file `/r/<name>/<file>` serves: anything below the renderer's root, `undefined` for a path that leaves it. */
+/** The file `/r/<name>/<file>` serves: anything below the renderer's root and not hidden there, `undefined` for any other path. */
 export const rendererFile = (renderer: Renderer, file: string): string | undefined => {
   const full = path.join(renderer.root, file)
   const rel = path.relative(renderer.root, full)
-  return rel.startsWith('..') || path.isAbsolute(rel) ? undefined : full
+  return rel.startsWith('..') || path.isAbsolute(rel) || hiddenBelow(renderer.root, full) ? undefined : full
 }

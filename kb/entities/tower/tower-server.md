@@ -45,7 +45,7 @@ skipped, is closed once what waits for it hasn't drained within a time or a size
 watch with the failure and leaves nothing behind on the mux.
 
 Renderers are served at [`/r/<name>/`](ref:hub/src/tower/server.ts#rendered): the entry, or any file below the
-renderer's root, at the tower's origin and unsandboxed, since the user declared them; its files are readable from
+renderer's root that isn't hidden there (`.git`, `.env`), at the tower's origin and unsandboxed, since the user declared them; its files are readable from
 any origin, so a renderer framed on a shelf at an opaque origin still loads its modules. Framed at the tower's
 origin, as a shown URL, `tower.js` calls the routes itself; only a frame at an origin of its own is relayed. `/` redirects to the configured
 one ([`home`](ref:hub/src/tower/server.ts#home)), and `GET /renderers` lists every one

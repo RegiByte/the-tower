@@ -184,7 +184,7 @@ The tower page frames each one sandboxed, at an opaque origin, and relays the bo
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
 `tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. An `html` or
 `item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin.
-Framed, a `renderer` still reads every file below its root: the tower serves them with CORS, so it may `fetch` them
+Framed, a `renderer` still reads every file below its root but the hidden ones (a path with a part starting with `.`, never served): the tower serves them with CORS, so it may `fetch` them
 and import them as modules at its opaque origin. An `html` page framed reads the files beside it only as classic
 scripts, stylesheets and images: shelf files are served without CORS, which would let any site read them, so a
 `fetch` or a module import of them fails. A page that loads its own data or models is a `renderer`. The viewer's appearance follows the framing page: `tower.prefs.get()` and

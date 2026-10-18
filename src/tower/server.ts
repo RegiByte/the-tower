@@ -2,7 +2,7 @@
  * The control tower: a local web view of every project and session, built from the logs.
  *
  *   GET  /              the renderer the config picks (`renderer`, `page` unless set): a redirect to it at `/r/<name>/`
- *   GET  /r/<name>/[<file>]   a renderer the core or the config declares: its entry, or any file below its root, at the
+ *   GET  /r/<name>/[<file>]   a renderer the core or the config declares: its entry, or any file below its root but hidden ones, at the
  *                       tower's origin; an HTML page saying why when it isn't declared or built or the config can't be read
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
