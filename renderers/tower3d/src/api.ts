@@ -1,64 +1,14 @@
 import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait } from '../../../src/bridge/board.ts'
 import type { Brief } from '../../../src/bridge/turns.ts'
-import type { Stats, StatsQuery } from '../../../src/bridge/stats.ts'
-import type { LandingRead } from '../../../src/bridge/worktrees.ts'
+import type { Stats } from '../../../src/bridge/stats.ts'
 import type { Status } from '../../../src/bridge/status.ts'
-import type { API_VERSION, Call, Replies, Verb, Verbs } from '../../../src/shared/api.ts'
-import type { Renderer } from '../../../src/shared/model.ts'
-import type { BoardError, Reads, SchemeChoice, ScreenMsg, ShelfSelf, TerminalMsg, TowerVerb } from '../../../src/shared/shelf-page.ts'
-import type { ShellStream } from '../../../src/shared/terms.ts'
-import type { Scheme } from '../../../src/shared/design.ts'
-import type { Prefs } from '../../../src/shared/prefs.ts'
+import type { ShelfSelf, StreamMsg, Tower } from '../../../src/shared/shelf-page.ts'
 
-export type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait }
+export type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait, StreamMsg }
 
 export type Shell = Board['shells'][number]
 export type Today = Board['today']
 export type { Stats }
-
-/** The verbs a framed page moves its framing page's own view with. */
-export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<TowerVerb, { verb: V }>) => void }
-
-/** What a watch hands its callback: a stream's messages, or the error that ended it. */
-export type StreamMsg = ScreenMsg | TerminalMsg | ShellStream
-
-/** `window.tower`, from `/tower.js` (src/tower/tower.js). */
-export type Tower = {
-  framed: boolean
-  version: typeof API_VERSION
-  subscribe(fn: (board: Board, self: ShelfSelf | undefined) => void): () => void
-  /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
-  onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void
-  conversations(session: string): Promise<Brief[]>
-  archive(project: string): Promise<Card[]>
-  /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */
-  renderer(): Promise<Renderer | null>
-  stats(query?: Partial<StatsQuery & { project: string }>): Promise<Stats>
-  /** What landing changed on a carried branch: each commit landed edited, its copy and `git range-diff`. */
-  landing(query: { project: string; branch: string }): Promise<LandingRead>
-  get<K extends keyof Reads>(path: K): Promise<Reads[K]>
-  text(path: string): Promise<string>
-  blob(path: string): Promise<Blob>
-  call<K extends keyof Verbs>(verb: K, body: Verbs[K]): Promise<Replies[K]>
-  run<V extends Verb>(call: Call<V>, fields?: Partial<Verbs[V]>): Promise<Replies[V]>
-  keys(id: string, data: string): void
-  shellKeys(id: string, data: string): void
-  watch(path: string, fn: (msg: StreamMsg) => void): () => void
-  remember(value: unknown): void
-  recall(): Promise<unknown>
-  store: { set(key: string, value: unknown): void; get(key: string): Promise<unknown> }
-  ui<V extends TowerVerb['verb']>(verb: V, fields?: Omit<Extract<TowerVerb, { verb: V }>, 'verb'>): void
-  /** A shelf page framed by this page, given the board and the API: `ui` is this page's own view, `stored` hears each key it sets in `store`. */
-  relay(frame: HTMLIFrameElement, url: string, opts: { self: ShelfSelf; ui: RelayedUi; stored(key: string): void }): { close(): void }
-  /** The viewer's appearance, on the root before the page paints. */
-  prefs: { get(): Prefs; set(patch: Partial<Prefs>): void; on(fn: (prefs: Prefs) => void): () => void; attributes(): string }
-  scheme(): Scheme
-  onScheme(fn: (scheme: Scheme) => void): () => void
-  /** @deprecated `prefs.get().scheme` */
-  schemeChoice(): SchemeChoice
-  /** @deprecated `prefs.set({ scheme })` */
-  chooseScheme(choice: SchemeChoice): void
-}
 
 declare global {
   interface Window {
