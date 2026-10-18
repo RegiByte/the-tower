@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": ["hub/src/directory.ts#USAGES", "hub/src/directory.ts", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/cards.ts#spawnCall"]
 }
 ---
@@ -35,7 +35,7 @@ name belongs to which callsign, floor or task.
 - `tower hire` sends what a quick hire in a renderer sends, built by the same
   [`spawnCall`](ref:hub/src/shared/cards.ts#spawnCall) over the floor's offered calls, on a prompt from stdin or from
   any item of the floor's collections by its tag: the core reads an item's text and never what a draft means
-  ([[collections]]).
+  ([[collections]]). `floor <id>` sends it to another floor's calls, when the user asks for work there ([[hire]]).
 - Its skill (`skills/handbook`) teaches the tower, the command, and how to reach out, and pre-approves `Bash(tower *)`.
   Every spawn and resume also appends a short tower brief to Claude's system prompt (`--append-system-prompt`): the
   session is a tower worker, a callsign is not a `SendMessage` name, and the recipe to reach one ([[brief-first]],

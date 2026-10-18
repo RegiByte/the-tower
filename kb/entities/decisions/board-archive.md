@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/server.ts#archive", "hub/src/shared/cards.ts#pastOf", "hub/src/shared/cards.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/bridge/seats.ts#withSeats", "hub/src/bridge/board.ts#galleryOf", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#findCard", "hub/src/directory.ts", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
@@ -25,8 +25,8 @@ every card.
   ([`withSeats`](ref:hub/src/bridge/seats.ts#withSeats): `{n}` a workstation, `{beside}` the author's id);
   `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf)): the floor's last showings, newest
   first, each `{worker: {id, callsign}, shown}` ([[shared-wall]]); [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
-  a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` and
-  `hiredBy` carry `{session, callsign}`. [`bubbleOf`](ref:hub/src/shared/cards.ts#bubbleOf), a status's glyph, is in
+  a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` carries
+  `{session, callsign}` and `hiredBy` `{session, callsign, project}`. [`bubbleOf`](ref:hub/src/shared/cards.ts#bubbleOf), a status's glyph, is in
   the shared cards.
 - [`allCards`](ref:hub/src/bridge/board.ts#allCards) derives every card (seats, crews, the gallery and
   Tidy's plan run over all of them); [`board`](ref:hub/src/bridge/board.ts#board) keeps those

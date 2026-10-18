@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": [
     "hub/src/shared/api.ts#VERBS",
     "hub/src/tower/server.ts#onPath",

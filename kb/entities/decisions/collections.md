@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": [
     "hub/src/shared/model.ts#CollectionType",
     "hub/src/shared/model.ts#projectCollections",
