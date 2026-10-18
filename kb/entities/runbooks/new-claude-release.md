@@ -5,7 +5,7 @@
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
@@ -38,6 +38,10 @@ recorded again, up to `--retries` times (1 unless set), and only its last attemp
 earlier one missed ([`scenarioDifferences`](ref:hub/scripts/claude-check.report.ts#scenarioDifferences)): Haiku's
 timing, or the classic-renderer fallback after a scenario died mid-start ([[claude-code]]), clears on a second take,
 drift doesn't.
+`npm run -s tool:claude-check -- due` ([`due`](ref:hub/scripts/claude-check.ts#due)) says whether the installed
+release still needs a run: exit 0 when it reads `above` and no pull request titled `Claude <release>` is open or
+merged, the title a clean run's pull request takes (step 1), 1 when not, 2 when it can't tell. It is the check line of
+a policy ([[policies]]) that offers the run on each new release, and never again once one passed.
 - **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
   out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
   the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary
@@ -77,7 +81,7 @@ sleep or the board. Compaction takes `autoCompactEnabled` in the directory's `.c
 
 **Fix: move the range.**
 1. Exit 0: raise `CLAUDE_TESTED.highest` to the release, and `npm run tool:claude-check -- accept` to take the
-   baseline on it, both in one commit. A release that drops what an older one had raises `lowest` too.
+   baseline on it, both in one commit. Its pull request is titled `Claude <release>: tested`, which `due` reads. A release that drops what an older one had raises `lowest` too.
 2. Exit 1: read each difference in `<root>/report.md`. A scenario that stopped short is run again with `--only`.
    A `fullscreen TUI` miss on one session whose output opens with Claude's classic-renderer notice is the
    fallback after an earlier scenario died mid-start ([[claude-code]]), not drift: run that scenario again with

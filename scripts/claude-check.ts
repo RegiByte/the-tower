@@ -13,6 +13,11 @@
  *                                                              up to `--retries` times (default 1), before the report,
  *                                                              which reads its last attempt and says it was retried
  *   npm run tool:claude-check -- report                        the report of the last run again
+ *   npm run tool:claude-check -- due                           exit 0 when the installed Claude reads above the
+ *                                                              tested range and no pull request titled
+ *                                                              `Claude <release>` is open or merged, 1 when not, 2
+ *                                                              when it can't tell: the check line of a policy that runs
+ *                                                              the check on each new release
  *   npm run tool:claude-check -- accept                        the last run's shapes become the baseline: on the
  *                                                              baseline's release they are merged with its own (a key
  *                                                              some take missed is optional), on a new one they
@@ -440,7 +445,38 @@ function accept() {
   console.log(`${BASELINE}: ${taken.length} recordings taken on Claude ${result.claude}`)
 }
 
+/**
+ * Whether the installed release is due a run, said in one line. A run that reads clean opens a pull request titled
+ * `Claude <release>` raising the range, so once one is open or merged the release has passed.
+ */
+function due(): 0 | 1 {
+  const claude = installedClaude()
+  const reads = claudeRange(claude)
+  if (reads !== 'above') {
+    console.log(`Claude ${claude} reads ${reads} against the tested ${CLAUDE_TESTED.lowest} to ${CLAUDE_TESTED.highest}: nothing to check`)
+    return 1
+  }
+  const prs: { number: number; state: string; title: string }[] = JSON.parse(
+    execFileSync('gh', ['pr', 'list', '--state', 'all', '--search', `"Claude ${claude}" in:title`, '--json', 'number,state,title'], { cwd: REPO, encoding: 'utf8' }),
+  )
+  const passed = prs.find((pr) => pr.state !== 'CLOSED' && new RegExp(`^Claude ${claude.replaceAll('.', '\\.')}\\b`).test(pr.title))
+  if (passed) {
+    console.log(`Claude ${claude} reads above ${CLAUDE_TESTED.highest}, and #${passed.number} (${passed.state.toLowerCase()}) raises the range to it: nothing to check`)
+    return 1
+  }
+  console.log(`Claude ${claude} reads above the tested ${CLAUDE_TESTED.lowest} to ${CLAUDE_TESTED.highest}, and no pull request raises the range to it`)
+  return 0
+}
+
 if (command === 'run') await run()
+else if (command === 'due') {
+  try {
+    process.exitCode = due()
+  } catch (err) {
+    console.error((err as Error).message)
+    process.exitCode = 2
+  }
+}
 else if (command === 'report') report()
 else if (command === 'accept') accept()
-else throw new Error('usage: npm run tool:claude-check -- run [--only <scenario,...>] [--retries <n>] | report | accept   [--root <dir>] [--port <n>]')
+else throw new Error('usage: npm run tool:claude-check -- run [--only <scenario,...>] [--retries <n>] | report | due | accept   [--root <dir>] [--port <n>]')
