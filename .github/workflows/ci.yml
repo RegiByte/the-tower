@@ -1,6 +1,6 @@
 # Every pull request, and main, gets the checks a release gets (release.yml), then proves they left the tree as committed
-# and the knowledge base consistent. If main moves between a PR's event and its run, kb verify says HEAD does not contain
-# origin/main: re-run once GitHub has recomputed the merge.
+# and the knowledge base consistent. A pull request runs on its merge commit, whose first parent is the base it was merged
+# onto: origin/<base> is set to it, so main moving during the run leaves kb verify reading the same base.
 name: ci
 on:
   pull_request:
@@ -25,10 +25,12 @@ jobs:
         run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
       - name: Tests and builds added and rewrote no file
         run: test -z "$(git status --porcelain)" || { git status; git diff; exit 1; }
+      - name: A pull request's base is the one its merge commit was made on
+        if: github.event_name == 'pull_request'
+        run: git update-ref "refs/remotes/origin/${{ github.base_ref }}" HEAD^1
       - name: The knowledge base verifies
         run: node .claude/skills/kb/tool/kb.mjs verify
       - name: A pull request's own kb suspects, as warnings
         if: github.event_name == 'pull_request'
         run: |
-          git fetch origin "${{ github.base_ref }}"
           node .claude/skills/kb/tool/kb.mjs verify --since "origin/${{ github.base_ref }}" | grep ': suspect: ' | while IFS= read -r line; do echo "::warning title=kb suspect::${line#"${line%%[![:space:]]*}"}"; done || true
