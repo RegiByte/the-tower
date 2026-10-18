@@ -15,8 +15,8 @@ import type { BlockedKind } from '../src/bridge/blocked.ts'
 
 /**
  * What a status replay leaves out to compare a recording with its fixture (`comparedForm`): `trust`, the trust screen's
- * leading `blocked`, left out of every scenario but a `fresh` one, since a fixture and a run may differ in whether the
- * directory was trusted; `watching` and `repeats`, for subagents that race the main loop to the end of its turn and
+ * leading `blocked`, left out of every scenario but a `fresh` one or one held at start by a `blocked` screen, since a
+ * fixture and a run may differ in whether the directory was trusted; `watching` and `repeats`, for subagents that race the main loop to the end of its turn and
  * report in as many turns as the race leaves.
  */
 export type Ignore = 'trust' | 'watching' | 'repeats'

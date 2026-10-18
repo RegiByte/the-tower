@@ -5,7 +5,7 @@ import {
   changelogOf, comparedForm, FULLSCREEN_MODES, heldBack, modesEnabled, shapeChanges, shapesOf, statusesOf, usageChanges, versionPosted,
   type Baseline, type ShapeChange,
 } from './claude-check.read.ts'
-import { SCENARIOS, UNRECORDED } from './claude-check.scenarios.ts'
+import { SCENARIOS, UNRECORDED, type Scenario } from './claude-check.scenarios.ts'
 
 /** What a scenario's run kept beside its recordings: why it stopped short, and what it read of the live system. */
 export type ScenarioRun = {
@@ -38,9 +38,12 @@ type Check = { surface: string; ok: boolean; says: string }
 
 const started = (log: SessionLog) => log.events.some((e) => e[1] === 'h' && e[2].hook_event_name === 'SessionStart')
 
+/** A scenario whose session starts held by a screen it names: its leading `blocked` is that screen, never the trust one. */
+const heldAtStart = (s: Scenario) => s.steps.some((step) => step.do && 'spawn' in step.do && step.do.blocked)
+
 /** What each scenario's own recordings read: their replays against their fixtures, and the per-session surface checks. */
 const readings = ({ run, recordings, fixture }: Pick<ReportInput, 'recordings' | 'fixture'> & { run: Pick<Run, 'claude' | 'scenarios'> }) => {
-  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings).map(([name, r]) => [name, { ...r, ignore: s.fresh ? (r.ignore ?? []) : ['trust' as const, ...(r.ignore ?? [])] }] as const)))
+  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings).map(([name, r]) => [name, { ...r, ignore: s.fresh || heldAtStart(s) ? (r.ignore ?? []) : ['trust' as const, ...(r.ignore ?? [])] }] as const)))
   const replays = Object.entries(recordings).flatMap(([name, log]) => {
     const { fixture: of, ignore = [] } = declared.get(name) ?? {}
     if (!of) return []
