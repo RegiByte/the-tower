@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Workers hold every capability; the boundary is the machine",
-  "summary": "A worker may call every verb of the renderer API, spawning, prompting, resuming and killing workers included, and uses them when the task calls for it; same-user processes are trusted, and what the tower guards against is the outside: browser pages and other users.",
+  "summary": "A worker may call every verb of the renderer API, spawning, prompting, resuming and killing workers included, and uses them when the task calls for it; same-user processes are trusted, and what the tower guards against is browser pages; the machine's own accounts and network are the machine's to guard.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": ["hub/src/tower/server.ts#isFromTower", "hub/src/directory.ts#command", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/host/main.ts", "hub/src/git.ts#spawnGit"]
 }
 ---
@@ -24,8 +24,11 @@ from the agents the user runs. This follows from [[renderer-is-disposable]]: a c
 open to every renderer and every agent.
 
 **How.**
-- *Trusted:* every process running as the user, workers included. Sockets are `0600`, so other OS users are
-  out.
+- *Trusted:* every process running as the user, workers included.
+- *The machine's to guard:* its other accounts and its network. The tower listens on loopback only, so nothing
+  off the machine reaches it. The host's and terms' sockets are `0600`, but the tower's port answers every local
+  account: another account on the machine can read and drive it. A machine shared with people the user does not
+  trust is a breach the tower can't close.
 - *Guarded:* browser pages. The tower answers only its own Host names and requires its own Origin on every
   POST ([`isFromTower`](ref:hub/src/tower/server.ts#isFromTower)), which stops DNS rebinding and cross-site
   requests. A GET passes on its Host alone, so no read changes the system: every route that writes, starts, kills or
@@ -43,6 +46,12 @@ open to every renderer and every agent.
 - *Identity before delegation* (a per-session secret minted at spawn, grants as data, every delegated act
   logged). Deferred: it answers untrusted agents (sandboxed, remote, another user's), which this local
   system does not run. The order stands if they ever arrive.
+
+- *A token for the tower's port* (an `access` key, a 0600 token file, a cookie traded at `tower open`), to shut out
+  other local accounts. Deferred (2026-10-18): the pages the tower shows run sandboxed at an opaque origin, and the
+  browser sends a SameSite cookie with none of their requests, so their own files would need a second key carried
+  in the URL. That much mechanism answers a threat the machine owns. It returns when the tower answers beyond
+  loopback, where a token is the capability a remote client needs.
 
 **Impact.** Workers can compose the tower's verbs into their own tools (a reviewer, a runner, a night shift);
 `tower hire` is the first general one: a worker starts another on a prompt ([[agent-directory]]), and `tower home`

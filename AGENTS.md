@@ -20,7 +20,7 @@ What follows for every change (decisions `renderer-is-disposable`, `agents-have-
 
 - **No capability lives in a renderer.** Before adding anything, ask: could a sibling renderer written from scratch against the board, the routes and `tower.js`, or a worker, reach it? If not, it belongs in the core, as a non-prescriptive primitive that renderers compose (collections are the model: the core keeps files, renderers decide what a draft means). A capability lands, in this order: derived in the bridge; a generic verb or read on the API; a host change only as a new general fact in the log.
 - **A renderer may be as sophisticated as it likes.** Disposable means no capability is lost when it goes, not that it is small. View state it keeps goes through a shared facility (`tower.store`).
-- **Same-user processes are trusted.** Workers hold every verb of the API and use them when the task calls for it. The tower guards against what is outside the machine: browser pages and other users.
+- **Same-user processes are trusted.** Workers hold every verb of the API and use them when the task calls for it. The tower guards against browser pages; the machine's other accounts and its network are the machine's to guard.
 
 ## Architecture
 
