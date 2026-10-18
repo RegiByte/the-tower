@@ -35,10 +35,11 @@
  *                                   card's `send-home`);
  *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
  *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
- *   tower hire [<tag|id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]   start a worker on
- *                                   this floor, placed as a quick hire in a renderer places it, on a prompt: the text
- *                                   of an item of the floor's collections, or stdin; refused past the floor's `hiring`
- *                                   limits. `callsign` names the worker, `name` its new worktree
+ *   tower hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]   start a
+ *                                   worker on this floor, or the floor named, placed as a quick hire in a renderer
+ *                                   places it there, on a prompt: the text of an item of this floor's collections, or
+ *                                   stdin; refused past the hiring floor's `hiring` limits. `callsign` names the worker,
+ *                                   `name` its new worktree
  *
  * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go to the host, which logs them
  * (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board. `hire` and `review` spawn
@@ -58,7 +59,7 @@ import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
 import { heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -118,7 +119,7 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
   ].filter(Boolean)
   const gist = gistLine(card).replace(/\s+/g, ' ')
   return [
-    `${indent}  ${depth ? '└ ' : ''}${card.callsign}${card.id === me ? ' (you)' : ''}  ·  ${facts.join('  ·  ')}${depth ? `  ·  ${reportLine(card)}` : ''}`,
+    `${indent}  ${depth ? '└ ' : ''}${card.callsign}${card.id === me ? ' (you)' : ''}  ·  ${facts.join('  ·  ')}${depth || hiredOff(card) ? `  ·  ${reportLine(card)}` : ''}`,
     `${indent}    in ${card.cwd}`,
     ...(gist ? [`${indent}    ${gist}`] : []),
   ]
@@ -141,12 +142,30 @@ const noReviewReason = (card: Card) =>
 /** Where work that landed is read once no worktree holds it. */
 const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
 
-const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${card.hiredBy!.callsign}`)
+const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${hirerName(card.hiredBy!, card.project)}`)
 
-/** The floor's crews: each worker under the one it reports to, those that went home among them. */
-const floorLines = (floor: Floor, me: string | undefined, now: number): string[] => {
+/** A worker hired from another floor: it heads a crew on its own, and is linked under its hirer's there. */
+const hiredOff = (card: Card) => card.hiredBy !== undefined && card.hiredBy.project !== card.project
+
+/** A hire on another floor under its hirer's crew: one line pointing to its card there. */
+const awayLine = (card: Card, depth: number) => `${'    '.repeat(depth)}  └ ${card.callsign}  ·  ${statusName(card)}  ·  on ${card.project}`
+
+/** A floor's crews (`crewTree`), each worker followed by its hires on other floors, linked: each is drawn in full on its own. */
+const crewRows = (floor: Floor, everyone: Card[]): { card: Card; depth: number; away?: true }[] =>
+  crewTree(floor.cards).flatMap((row) => [
+    row,
+    ...hiresOf(everyone, row.card)
+      .filter((h) => h.project !== floor.id)
+      .map((card) => ({ card, depth: row.depth + 1, away: true as const })),
+  ])
+
+/** The floor's crews: each worker under the one it reports to, those that went home among them, and its hires on other floors. */
+const floorLines = (floor: Floor, everyone: Card[], me: string | undefined, now: number): string[] => {
   const onDuty = floor.cards.filter((c) => c.onDuty)
-  return [`${floorTitle(floor)}: ${onDuty.length} on duty`, ...crewTree(floor.cards).flatMap(({ card, depth }) => cardLines(card, me, now, depth))]
+  return [
+    `${floorTitle(floor)}: ${onDuty.length} on duty`,
+    ...crewRows(floor, everyone).flatMap(({ card, depth, away }) => (away ? [awayLine(card, depth)] : cardLines(card, me, now, depth))),
+  ]
 }
 
 const ownCard = (board: Board, me: string | undefined): Card => {
@@ -162,7 +181,7 @@ const whoami = (board: Board, me: string | undefined): string[] => {
   return [
     `You are ${card.callsign}, session ${card.id}, a worker on ${floorTitle(floor)}.`,
     card.peer ? `Other Claude sessions message you as "${card.peer}".` : 'Your Claude session name is not known to the tower yet.',
-    ...(card.hiredBy ? [`${card.hiredBy.callsign} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
+    ...(card.hiredBy ? [`${hirerWords(card)} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
     ...(card.run ? runLines(floor, card.run) : []),
     ...(card.worktree ? worktreeLines(floor, card.worktree) : [`You work in ${card.cwd}.`]),
     `The floor's hub is ${floor.hub}${floor.repos?.length ? `, with repos ${floor.repos.map(base).join(', ')}` : ''}.`,
@@ -172,6 +191,9 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     `The tower's config is ${board.config}: \`tower config check\` checks it.`,
   ]
 }
+
+/** A worker's hirer, with its floor when it hired from another: `PEDRINHO-33 (floor tower)`. */
+const hirerWords = (card: Card) => `${card.hiredBy!.callsign}${hiredOff(card) ? ` (floor ${card.hiredBy!.project})` : ''}`
 
 /** A run's start in words. */
 const startWords = (start: RunRead['start'], by: string | undefined) => (start === 'auto' ? 'auto' : start === 'hand' ? `by hand${by ? `, ${by}` : ''}` : `offer, ${by ?? 'the user'}`)
@@ -250,7 +272,7 @@ const threadLines = (thread: Brief, promptBy: string | undefined): string[] => [
 const earlierLine = (p: BriefPart) =>
   `  ${sessionLabel(p.n, p.of, p.session.startedAt)}, session ${p.session.id}: ${p.threads.length} conversation${p.threads.length === 1 ? '' : 's'}`
 
-/** `cards`: the cards its hires are found among, the floor's archive's too for a worker the board leaves out. */
+/** `cards`: the cards its hires are found among, every floor's, and its floor's archive's too for a worker the board leaves out. */
 const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: number): string[] => {
   const floor = board.floors.find((f) => f.id === card.project)!
   const hires = hiresOf(cards, card)
@@ -261,8 +283,8 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     `  in ${card.cwd}`,
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
     ...(card.reviews ? [`  reviews ${card.reviews}'s work`] : []),
-    ...(card.hiredBy ? [`  hired by ${card.hiredBy.callsign}`] : []),
-    ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${statusName(h)})`).join(', ')}`] : []),
+    ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
+    ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${[statusName(h), ...(h.project === card.project ? [] : [`on ${h.project}`])].join(', ')})`).join(', ')}`] : []),
     ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, card.conversations.find((conv) => conv.id === t.id)?.promptBy)]) : ['', 'No saved conversation yet.']),
     ...(earlier.length ? ['', `Earlier sessions of ${card.callsign}, each read in full at /conversations/<session>:`, ...earlier.map(earlierLine)] : []),
   ]
@@ -453,20 +475,30 @@ const quoted = (floor: Floor, checkout: string, anchor: Omit<Anchor, 'quote'>): 
   return { ...anchor, quote: { lang: langOf(anchor.path), lines: lines.slice(anchor.from - 1, anchor.to) } }
 }
 
-const HIRE_USAGE = 'Usage: tower hire [<tag|id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>], the prompt on stdin when no item names it'
+const HIRE_USAGE =
+  'Usage: tower hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>], the prompt on stdin when no item names it'
 const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
 
-type HireArgs = { item?: string; fields: Partial<Pick<SpawnForm, (typeof HIRE_FIELDS)[number]>> }
+type HireArgs = { item?: string; floor?: string; fields: Partial<Pick<SpawnForm, (typeof HIRE_FIELDS)[number]>> }
 
 const hireArgs = (args: string[]): HireArgs => {
   const hire: HireArgs = { fields: {} }
   for (let i = 0; i < args.length; i++) {
     const field = HIRE_FIELDS.find((f) => f === args[i])
     if (field && args[i + 1]) hire.fields[field] = args[++i]
+    else if (args[i] === 'floor' && args[i + 1]) hire.floor = args[++i]
     else if (!hire.item) hire.item = args[i]
     else throw new CliError(`"${args[i]}" is a second item. ${HIRE_USAGE}`)
   }
   return hire
+}
+
+/** The floor a hire works on: the one named, else the hirer's own. */
+const hireFloor = (board: Board, own: Floor, id: string | undefined): Floor => {
+  if (id === undefined) return own
+  const floor = board.floors.find((f) => f.id === id)
+  if (!floor) throw new CliError(`No floor is called "${id}". The floors: ${board.floors.map(floorTitle).join(', ')}.`)
+  return floor
 }
 
 /** A session's callsign as the tower names it: from the names in the config the board was read from. */
@@ -600,7 +632,7 @@ const USAGES: Record<string, string> = {
   note: 'note [on <checkout>] [re n<k>] [repo:path:lines …]',
   send: 'send <CALLSIGN>',
   review: 'review <CALLSIGN> [tell]',
-  hire: 'hire [<tag|id>] […]',
+  hire: 'hire [<tag|id>] [floor <id>] […]',
   home: 'home <CALLSIGN>',
   'let-go': 'let-go <CALLSIGN>',
   api: 'api [name]',
@@ -632,7 +664,8 @@ switch (verb) {
   case 'agents': {
     const board = await readBoard()
     const floors = flag === '--all' ? board.floors.filter((f) => f.cards.some((c) => c.onDuty)) : [board.floors.find((f) => f.id === ownCard(board, me).project)!]
-    console.log(floors.map((f) => floorLines(f, me, now).join('\n')).join('\n\n'))
+    const everyone = board.floors.flatMap((f) => f.cards)
+    console.log(floors.map((f) => floorLines(f, everyone, me, now).join('\n')).join('\n\n'))
     break
   }
   case 'agent': {
@@ -640,7 +673,8 @@ switch (verb) {
     const board = await readBoard()
     const card = await cardNamed(board, flag)
     const floor = board.floors.find((f) => f.id === card.project)!
-    const cards = floor.cards.includes(card) ? floor.cards : [...floor.cards, ...(await readArchive(floor.id))]
+    const onBoard = board.floors.flatMap((f) => f.cards)
+    const cards = floor.cards.includes(card) ? onBoard : [...onBoard, ...(await readArchive(floor.id))]
     console.log(agent(board, card, cards, await readThreads(card.id), now).join('\n'))
     break
   }
@@ -804,10 +838,11 @@ switch (verb) {
     if (!hire.item && process.stdin.isTTY) throw new CliError(HIRE_USAGE)
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
-    const floor = ownFloor(board, me)
+    const own = ownFloor(board, me)
+    const floor = hireFloor(board, own, hire.floor)
     if (!floor.calls.spawn) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
-    const named = hire.item ? itemNamed(floor, hire.item) : undefined
-    const prompt = named ? await readItem(floor, named.collection.id, named.item.id) : await readStdin()
+    const named = hire.item ? itemNamed(own, hire.item) : undefined
+    const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
     const form = { ...spawnDefaults(floor, prompt), ...hire.fields }
     const [[verbName, body], given] = spawnCall(floor, form)
@@ -824,15 +859,14 @@ switch (verb) {
     if (card.id === me) {
       if (!process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
       await postToHost(me, { hook_event_name: 'tower.leave' })
-      const crew = crewOf(board.floors.find((f) => f.id === card.project)!.cards, card).filter((c) => c.live)
+      const crew = crewOf(board.floors.flatMap((f) => f.cards), card).filter((c) => c.live)
       console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
       break
     }
     const calls = card.calls['send-home']
     if (!calls) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker whose session runs can be sent home. \`tower agents --all\` shows who is on duty.`)
     for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })
-    const floor = board.floors.find((f) => f.id === card.project)!
-    const sent = [card, ...crewOf(floor.cards, card)].filter((c) => calls.some(([, { id }]) => id === c.id))
+    const sent = [card, ...crewOf(board.floors.flatMap((f) => f.cards), card)].filter((c) => calls.some(([, { id }]) => id === c.id))
     console.log(`Sent home ${sent.map((c) => c.callsign).join(', ')}: ${sent.length === 1 ? 'its session ended, and it can' : 'their sessions ended, and each can'} be resumed.`)
     break
   }

@@ -4,9 +4,9 @@
   "name": "Hire",
   "summary": "A worker starts another on a prompt with tower hire: a spawn marked as its hire, which the tower weighs against the floor's hiring limits, starts, and logs as a fact in the hirer's log, one hire of a hirer at a time; the board turns the fact into the new card's hiredBy.",
   "in": "tower",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/tower/server.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/cards.ts#spawnDefaults", "hub/src/shared/cards.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/tower/server.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/cards.ts#spawnDefaults", "hub/src/shared/cards.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
 }
 ---
 ```mermaid
@@ -17,10 +17,10 @@ sequenceDiagram
   participant H as [[host-daemon]]
   participant R as [[system-root]]
   participant F as [[log-reductions]]
-  W->>M: tower hire [tag|id] [model|effort|name|base ...] (prompt on stdin or a kept item)
+  W->>M: tower hire [tag|id] [floor|model|effort|name|base ...] (prompt on stdin or a kept item)
   M->>T: GET /board
   M->>T: POST /spawn (spawnCall of the defaults and the given fields, by: hirer, hire: true)
-  T->>T: in the hirer's turn: hireRefusal(every card, floor, hirer's card)
+  T->>T: in the hirer's turn: hireRefusal(every card, the spawn's floor, hirer's card)
   T->>H: spawn a new session on the prompt
   T->>H: fact tower.hire {id: new session} in the hirer's log
   H->>R: h event in the hirer's log
@@ -38,9 +38,15 @@ sequenceDiagram
   ([`spawnDefaults`](ref:hub/src/shared/cards.ts#spawnDefaults), [`spawnCall`](ref:hub/src/shared/cards.ts#spawnCall)):
   a new worktree when the floor cuts by default, else the hub. The prompt is stdin or a kept item's text; an empty
   one is refused.
+- **On another floor.** `floor <id>` ([`hireFloor`](ref:hub/src/directory.ts#hireFloor)) hires on that floor, with
+  that floor's defaults, as the caller's hire; a kept item is still read from the hirer's floor, and an unknown id is
+  refused with the floors listed. The spawn's `project` is that floor, so its `hiring` decides the hire, while the
+  depth and the live hires counted are the hirer's, wherever they work. The handbook says to hire across floors only
+  when the user asks. The board's `hiredBy.project` is the hirer's floor, and [[crews]] link the hire under its hirer.
 - **The fact.** Right after the spawn the host appends `tower.hire` to the hirer's own log through its `fact`; a hire
   that can't be logged is killed (it can be resumed), so every hire that runs is counted. The board inverts it across
-  resumes ([`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf)): the hired card's `hiredBy` names the hirer's callsign.
+  resumes ([`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf)): the hired card's `hiredBy` names the hirer's callsign
+  and floor.
 - **Its answer is the hirer's.** While the hirer runs, a hire's answer to the hirer's prompt waits on the hirer, not
   on the user: off the attention list, its status word "waiting on <HIRER>" ([[waiting-on-you]]).
 - **Going home.** The hire reports to its hirer ([[crews]]): `tower home` ends the hirer's crew, deepest first. A

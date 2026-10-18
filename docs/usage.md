@@ -51,8 +51,9 @@ after a change brings it back up. In Tower 3D, `V` looks at the newest thing a w
 
 A worker hires others with `tower hire`, each in its own git worktree when the floor cuts worktrees, within the
 floor's `hiring` limits. Hires are listed under the worker that hired them (`tower agents`), report back to it, and
-are sent home with `tower home <CALLSIGN>` when their work is in. From the tower page, the `+` on a floor starts a
-worker, and a kept draft can start one too.
+are sent home with `tower home <CALLSIGN>` when their work is in. Asked for work in another project, a worker hires
+on that floor with `tower hire … floor <id>`: the hire works there and still reports to it. From the tower page, the
+`+` on a floor starts a worker, and a kept draft can start one too.
 
 A worker's callsign is drawn at random unless you type one as it starts: the New worker dialog's Callsign,
 `tower hire … callsign ZECA` or `tower spawn <project> --callsign ZECA`. A name typed without a number gets one
