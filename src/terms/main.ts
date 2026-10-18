@@ -38,7 +38,7 @@ const shells = new Map<string, LiveShell>()
 
 const liveShell = (id: string): LiveShell => {
   const s = shells.get(id)
-  if (!s) throw new Error(`No shell "${id}"`)
+  if (!s) throw Object.assign(new Error(`No shell "${id}"`), { code: 'not_found' as const })
   return s
 }
 
@@ -136,7 +136,8 @@ const reply = (msg: Exclude<ToTerms, { t: 'attach' }>): FromTerms => {
   try {
     return handle(msg)
   } catch (err) {
-    return { t: 'error', message: (err as Error).message }
+    const { message, code } = err as Error & { code?: unknown }
+    return { t: 'error', message, ...(code === 'not_found' && { code }) }
   }
 }
 

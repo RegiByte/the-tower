@@ -380,7 +380,7 @@ export const TRANSPORT = {
 }
 
 /**
- * `invalid`: the request is malformed. `not_found`: no such verb, read, session, collection or item. `refused`: the
+ * `invalid`: the request is malformed. `not_found`: no such verb, read, session, shell, collection or item. `refused`: the
  * system won't do it now (the daemon said no, the thing isn't in a state for it). `unavailable`: a daemon doesn't
  * answer. Worktrees add `exists` (the name, path or branch is taken), `would_lose` (removing would lose uncommitted or
  * unpushed work), `lost` (the worktree's folder is gone: recut it), `offline` (origin couldn't be fetched) and

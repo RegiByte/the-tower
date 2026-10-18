@@ -27,7 +27,8 @@ export type FromTerms =
   | { t: 'spawned'; id: string }
   | { t: 'ok' }
   | { t: 'shells'; shells: Shell[] }
-  | { t: 'error'; message: string }
+  /** `not_found` when the message names a shell the daemon doesn't hold. */
+  | { t: 'error'; message: string; code?: 'not_found' }
 
 /** A snapshot of the shell's screen, then its output, resizes and exit as they happen. */
 export type ShellStream =

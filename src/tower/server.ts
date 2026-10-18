@@ -698,11 +698,11 @@ const OK = { t: 'ok' } as const
 /** The branches a verb kept, each with why, when it kept any. */
 const keptOf = (kept: string[]) => (kept.length ? { kept } : {})
 
-/** A daemon that answers no refuses; one that doesn't answer is unavailable. */
+/** A daemon that answers no refuses, or says what it doesn't know; one that doesn't answer is unavailable. */
 async function daemon(ask: () => Promise<FromHost | FromTerms>): Promise<Answer> {
   try {
     const reply = await ask()
-    return reply.t === 'error' ? apiError('refused', reply.message) : reply
+    return reply.t === 'error' ? apiError('code' in reply && reply.code ? reply.code : 'refused', reply.message) : reply
   } catch (err) {
     return apiError('unavailable', (err as Error).message)
   }
