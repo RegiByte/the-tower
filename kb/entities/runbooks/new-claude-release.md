@@ -5,7 +5,7 @@
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
@@ -33,6 +33,11 @@ What says a release is new to the tower:
 [`SCENARIOS`](ref:hub/scripts/claude-check.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
 with none, and reports, by scenario and event, everything that reads differently from the release the baseline was
 taken on. It exits 0 when nothing does, 1 when there is something to read. About 30 Haiku sessions and six minutes.
+Before it reports, each scenario that stopped short, replays differently or misses a check of its own sessions is
+recorded again, up to `--retries` times (1 unless set), and only its last attempt is read, the report naming what each
+earlier one missed ([`scenarioDifferences`](ref:hub/scripts/claude-check.report.ts#scenarioDifferences)): Haiku's
+timing, or the classic-renderer fallback after a scenario died mid-start ([[claude-code]]), clears on a second take,
+drift doesn't.
 - **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
   out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
   the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary

@@ -5,8 +5,13 @@
  * statuses against its fixture's, the surfaces no fixture covers, and the release's changelog with the entries about
  * those surfaces marked.
  *
- *   npm run tool:claude-check -- run [--only <scenario,...>]   start a throwaway system, record, stop it, report;
- *                                                              about 30 Haiku sessions, 5 at a time, ~6 minutes
+ *   npm run tool:claude-check -- run [--only <scenario,...>] [--retries <n>]
+ *                                                              start a throwaway system, record, stop it, report;
+ *                                                              about 30 Haiku sessions, 5 at a time, ~6 minutes.
+ *                                                              A scenario that stopped short, replays differently or
+ *                                                              misses a check of its own sessions is recorded again,
+ *                                                              up to `--retries` times (default 1), before the report,
+ *                                                              which reads its last attempt and says it was retried
  *   npm run tool:claude-check -- report                        the report of the last run again
  *   npm run tool:claude-check -- accept                        the last run's shapes become the baseline: on the
  *                                                              baseline's release they are merged with its own (a key
@@ -42,7 +47,7 @@ import { claudeRange, CLAUDE_TESTED } from '../src/shared/claude.ts'
 import type { BlockedKind } from '../src/bridge/blocked.ts'
 import type { Config, LogEvent, SessionHeader } from '../src/shared/model.ts'
 import { sessionLogPath, systemPaths } from '../src/shared/paths.ts'
-import { renderReport, type Run, type ScenarioRun } from './claude-check.report.ts'
+import { renderReport, scenarioDifferences, type Run, type ScenarioRun } from './claude-check.report.ts'
 import { mergedShapes, shapesOf, type Baseline } from './claude-check.read.ts'
 import { LAUNCHES, SCENARIOS, type Act, type Launch, type On, type Scenario, type Step } from './claude-check.scenarios.ts'
 
@@ -54,7 +59,7 @@ const MARKER = '.claude-check'
 
 const { positionals: [command], values } = parseArgs({
   allowPositionals: true,
-  options: { only: { type: 'string' }, root: { type: 'string', default: '/tmp/tower-claude-check' }, port: { type: 'string', default: '4396' } },
+  options: { only: { type: 'string' }, retries: { type: 'string', default: '1' }, root: { type: 'string', default: '/tmp/tower-claude-check' }, port: { type: 'string', default: '4396' } },
 })
 const ROOT = path.resolve(values.root)
 const CONFIG = path.join(ROOT, 'config.json')
@@ -62,6 +67,7 @@ const RUN = path.join(ROOT, 'run.json')
 const RECORDINGS = path.join(ROOT, 'recordings')
 const KEPT = 'scenarios'
 const PORT = Number(values.port)
+const RETRIES = Number(values.retries)
 const TOWER = `http://127.0.0.1:${PORT}`
 const paths = systemPaths(CONFIG)
 
@@ -337,6 +343,33 @@ async function pooled<T>(jobs: (() => Promise<T>)[], limit: number): Promise<T[]
   return results
 }
 
+/**
+ * Each scenario of `group` recorded once, in its directory seeded again: the scenarios with the same launch together,
+ * the config written for them. A recording replaces the one an earlier attempt left under its name.
+ */
+async function recorded(hub: string, group: Scenario[]): Promise<ScenarioRun[]> {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)
+  const dirOf = (s: Scenario) => (s.fresh ? path.join(ROOT, 'fresh', stamp, s.name) : path.join(ROOT, KEPT, s.name))
+  for (const s of group) seedDir(dirOf(s), s.seed)
+  rmSync(path.join(ROOT, 'signed-out'), { recursive: true, force: true })
+  mkdirSync(path.join(ROOT, 'signed-out'))
+  const dirs = group.map(dirOf)
+  const scenarios: ScenarioRun[] = []
+  for (const launch of Object.values(LAUNCHES)) {
+    const launched = group.filter((s) => s.launch === launch)
+    if (!launched.length) continue
+    writeConfig(configFor(hub, dirs, launch))
+    log(`launch ${launch.name}: ${launched.map((s) => s.name).join(', ')}`)
+    scenarios.push(...(await pooled(launched.map((s) => () => runScenario(s, dirOf(s))), AT_ONCE)))
+  }
+  return scenarios
+}
+
+const fixtureOf = (name: string) => parseLog(readFileSync(path.join(REPO, 'test', 'fixtures', `${name}.jsonl`), 'utf8'))
+
+const recordingsOf = (scenarios: ScenarioRun[]) =>
+  Object.fromEntries(scenarios.flatMap((s) => s.recordings).map(({ name }) => [name, parseLog(readFileSync(path.join(RECORDINGS, `${name}.jsonl`), 'utf8'))]))
+
 async function run() {
   const only = values.only?.split(',')
   const picked = only ? SCENARIOS.filter((s) => only.includes(s.name)) : SCENARIOS
@@ -344,30 +377,29 @@ async function run() {
   if (unknown?.length) throw new Error(`no scenario ${unknown.join(', ')}: ${SCENARIOS.map((s) => s.name).join(', ')}`)
   const claude = installedClaude()
   await emptiedRoot()
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)
   const hub = path.join(ROOT, 'hub')
-  const dirOf = (s: Scenario) => (s.fresh ? path.join(ROOT, 'fresh', stamp, s.name) : path.join(ROOT, KEPT, s.name))
   seedDir(hub, { 'README.md': '# check\n' })
-  for (const s of picked) seedDir(dirOf(s), s.seed)
-  mkdirSync(path.join(ROOT, 'signed-out'))
-  const dirs = picked.map(dirOf)
-  writeConfig(configFor(hub, dirs, LAUNCHES.plain))
+  writeConfig(configFor(hub, [], LAUNCHES.plain))
   const startedAt = Date.now()
-  log(`Claude ${claude}, ${picked.length} scenarios in ${ROOT}`)
+  log(`Claude ${claude}, ${picked.length} scenarios in ${ROOT}, ${RETRIES} retr${RETRIES === 1 ? 'y' : 'ies'}`)
   for (const [daemon, answer] of await bringAllUp(daemons(paths, PORT))) log(daemon.name, answer)
-  const scenarios: ScenarioRun[] = []
+  let scenarios: ScenarioRun[]
   try {
-    for (const launch of Object.values(LAUNCHES)) {
-      const group = picked.filter((s) => s.launch === launch)
-      if (!group.length) continue
-      writeConfig(configFor(hub, dirs, launch))
-      log(`launch ${launch.name}: ${group.map((s) => s.name).join(', ')}`)
-      scenarios.push(...(await pooled(group.map((s) => () => runScenario(s, dirOf(s))), AT_ONCE)))
+    scenarios = await recorded(hub, picked)
+    for (let attempt = 1; attempt <= RETRIES; attempt++) {
+      const differing = scenarioDifferences({ run: { claude, scenarios }, recordings: recordingsOf(scenarios), fixture: fixtureOf })
+      if (!differing.size) break
+      log(`retry ${attempt} of ${RETRIES}: ${[...differing.keys()].join(', ')}`)
+      const again = await recorded(hub, picked.filter((s) => differing.has(s.name)))
+      scenarios = scenarios.map((s) => {
+        const retry = again.find((a) => a.name === s.name)
+        return retry ? { ...retry, retried: [...(s.retried ?? []), differing.get(s.name)!] } : s
+      })
     }
   } finally {
     for (const [daemon, answer] of await bringAllDown(daemons(paths, PORT))) log(daemon.name, answer instanceof Error ? answer.message : answer)
   }
-  writeConfig(configFor(hub, dirs, LAUNCHES.plain))
+  writeConfig(configFor(hub, [], LAUNCHES.plain))
   const usage = await readUsage(readJson<Config>(CONFIG))
   const result: Run = { claude, startedAt, minutes: Math.round((Date.now() - startedAt) / 60_000), scenarios, usage }
   writeJson(RUN, result)
@@ -377,14 +409,14 @@ async function run() {
 function report() {
   if (!existsSync(RUN)) throw new Error(`no run in ${ROOT}: npm run tool:claude-check -- run`)
   const result = readJson<Run>(RUN)
-  const recordings = Object.fromEntries(result.scenarios.flatMap((s) => s.recordings).map(({ name }) => [name, parseLog(readFileSync(path.join(RECORDINGS, `${name}.jsonl`), 'utf8'))]))
+  const recordings = recordingsOf(result.scenarios)
   const changelog = path.join(os.homedir(), '.claude', 'cache', 'changelog.md')
   const debugLog = path.join(ROOT, 'debug.log')
   const { markdown, clean } = renderReport({
     run: result,
     recordings,
     baseline: readJson<Baseline>(BASELINE),
-    fixture: (name) => parseLog(readFileSync(path.join(REPO, 'test', 'fixtures', `${name}.jsonl`), 'utf8')),
+    fixture: fixtureOf,
     usageFixture: readFileSync(path.join(REPO, 'test', 'fixtures', 'probe-usage.out'), 'utf8'),
     changelog: existsSync(changelog) ? readFileSync(changelog, 'utf8') : undefined,
     debugLog: existsSync(debugLog) ? readFileSync(debugLog, 'utf8') : undefined,
@@ -411,4 +443,4 @@ function accept() {
 if (command === 'run') await run()
 else if (command === 'report') report()
 else if (command === 'accept') accept()
-else throw new Error('usage: npm run tool:claude-check -- run [--only <scenario,...>] | report | accept   [--root <dir>] [--port <n>]')
+else throw new Error('usage: npm run tool:claude-check -- run [--only <scenario,...>] [--retries <n>] | report | accept   [--root <dir>] [--port <n>]')

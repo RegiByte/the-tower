@@ -17,6 +17,8 @@ export type ScenarioRun = {
   resumed: { id: string; from: string }[]
   /** Whether `GET /conversations/<id>` of each resumed session names the session it resumes. */
   chain?: boolean
+  /** What differed on each earlier attempt, when it was run again (`--retries`). */
+  retried?: string[][]
 }
 
 export type Run = { claude: string; startedAt: number; minutes: number; scenarios: ScenarioRun[]; usage: { answer: unknown } | { error: string } }
@@ -36,6 +38,46 @@ type Check = { surface: string; ok: boolean; says: string }
 
 const started = (log: SessionLog) => log.events.some((e) => e[1] === 'h' && e[2].hook_event_name === 'SessionStart')
 
+/** What each scenario's own recordings read: their replays against their fixtures, and the per-session surface checks. */
+const readings = ({ run, recordings, fixture }: Pick<ReportInput, 'recordings' | 'fixture'> & { run: Pick<Run, 'claude' | 'scenarios'> }) => {
+  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings).map(([name, r]) => [name, { ...r, ignore: s.fresh ? (r.ignore ?? []) : ['trust' as const, ...(r.ignore ?? [])] }] as const)))
+  const replays = Object.entries(recordings).flatMap(([name, log]) => {
+    const { fixture: of, ignore = [] } = declared.get(name) ?? {}
+    if (!of) return []
+    const is = comparedForm(statusesOf(log), ignore)
+    const was = comparedForm(statusesOf(fixture(of)), ignore)
+    return [{ name, of, ignore, is, was, same: is.join() === was.join() }]
+  })
+  const recorded = Object.entries(recordings).filter(([, log]) => started(log))
+  return {
+    replays,
+    recorded,
+    registry: run.scenarios.flatMap((s) => Object.entries(s.registry)),
+    versions: recorded.map(([name, log]) => [name, versionPosted(log)] as const),
+    unmoded: recorded.filter(([, log]) => modesEnabled(log).length < FULLSCREEN_MODES.length).map(([name]) => name),
+    chains: run.scenarios.filter((s) => s.resumed.length),
+  }
+}
+
+/**
+ * What reads differently in each scenario, from its own recordings alone, by scenario: what running it again can tell
+ * from Haiku's timing. Shapes are read over the whole run, and stay out.
+ */
+export const scenarioDifferences = (input: Parameters<typeof readings>[0]): Map<string, string[]> => {
+  const { run } = input
+  const { replays, versions, unmoded } = readings(input)
+  const scenarioOf = (recording: string) => run.scenarios.find((s) => s.recordings.some((r) => r.name === recording))!.name
+  const differences: [string, string][] = [
+    ...run.scenarios.filter((s) => s.error).map((s): [string, string] => [s.name, `stopped short: ${s.error}`]),
+    ...replays.filter((r) => !r.same).map((r): [string, string] => [scenarioOf(r.name), `${r.name} replays differently from \`${r.of}\``]),
+    ...run.scenarios.flatMap((s) => Object.entries(s.registry).filter(([, ok]) => !ok).map(([name]): [string, string] => [s.name, `${name} not registered with \`pid\` and \`name\``])),
+    ...versions.filter(([, v]) => v !== run.claude).map(([name, v]): [string, string] => [scenarioOf(name), `${name} posted ${v}`]),
+    ...unmoded.map((name): [string, string] => [scenarioOf(name), `no ${FULLSCREEN_MODES.join(' and ')} in ${name}`]),
+    ...run.scenarios.filter((s) => s.resumed.length && !s.chain).map((s): [string, string] => [s.name, 'a resumed session does not name the one it resumes']),
+  ]
+  return differences.reduce((by, [name, why]) => by.set(name, [...(by.get(name) ?? []), why]), new Map<string, string[]>())
+}
+
 const changeLine = (c: ShapeChange) => `- \`${c.sign}\` \`${c.event}${c.key ? `\` key \`${c.key}` : ''}\`: ${c.sign === '-' ? 'was in' : 'in'} ${c.in.join(', ')}`
 
 export const renderReport = ({ run, recordings, baseline, fixture, usageFixture, changelog, debugLog, range }: ReportInput): { markdown: string; clean: boolean } => {
@@ -45,22 +87,9 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
   const unbased = Object.keys(compared).filter((name) => !(name in baseline.recordings))
   const changes = shapeChanges(baseline.recordings, compared)
 
-  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings).map(([name, r]) => [name, { ...r, ignore: s.fresh ? (r.ignore ?? []) : ['trust' as const, ...(r.ignore ?? [])] }] as const)))
-  const replays = Object.entries(recordings).flatMap(([name, log]) => {
-    const { fixture: of, ignore = [] } = declared.get(name) ?? {}
-    if (!of) return []
-    const is = comparedForm(statusesOf(log), ignore)
-    const was = comparedForm(statusesOf(fixture(of)), ignore)
-    return [{ name, of, ignore, is, was, same: is.join() === was.join() }]
-  })
-
-  const recorded = Object.entries(recordings).filter(([, log]) => started(log))
+  const { replays, registry, versions, unmoded, chains } = readings({ run, recordings, fixture })
   const usage = 'error' in run.usage ? undefined : usageChanges((usageAnswer(usageFixture) as { answer: unknown }).answer, run.usage.answer)
   const ran = (name: string) => run.scenarios.find((s) => s.name === name)
-  const registry = run.scenarios.flatMap((s) => Object.entries(s.registry))
-  const versions = recorded.map(([name, log]) => [name, versionPosted(log)] as const)
-  const unmoded = recorded.filter(([, log]) => modesEnabled(log).length < FULLSCREEN_MODES.length).map(([name]) => name)
-  const chains = run.scenarios.filter((s) => s.resumed.length)
   const checks: Check[] = [
     'error' in run.usage
       ? { surface: '`get_usage`', ok: false, says: run.usage.error }
@@ -88,6 +117,7 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
     ...(chains.length ? [{ surface: 'resume chain', ok: chains.every((s) => s.chain), says: chains.every((s) => s.chain) ? '`GET /conversations/<id>` names the session it resumes' : 'a resumed session does not name the one it resumes' }] : []),
   ]
 
+  const retried = run.scenarios.filter((s) => s.retried?.length)
   const clean = failed.length === 0 && unbased.length === 0 && changes.length === 0 && replays.every((r) => r.same) && checks.every((c) => c.ok)
   const entries = changelog && changelogOf(changelog, run.claude)
   const held = debugLog ? heldBack(debugLog) : new Map()
@@ -104,6 +134,9 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
     '',
     '## Scenarios',
     failed.length ? failed.map((s) => `- **${s.name}** stopped short: ${s.error}`).join('\n') : `All ${run.scenarios.length} ran to their last step.`,
+    ...(retried.length
+      ? ['', 'Run again before this report, only the last attempt read here:', ...retried.map((s) => `- **${s.name}**: ${s.retried!.map((why, i) => `attempt ${i + 1}: ${why.join('; ')}`).join('; ')}`)]
+      : []),
     '',
     '## Shapes',
     'Event names and payload keys against the baseline, over every recording of a scenario that ran through.',
