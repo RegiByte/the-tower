@@ -18,7 +18,7 @@
   `done` ([[watching-status]]); the mod's `turn.complete` and `tower.tool.abandoned` decide interrupts and failures,
   and a turn the autocompact breaker ends is `failed` (`reason: error`). A compaction runs from its `PreCompact` to its
   `SessionStart` with `source: compact` ([[claude-code]]): a manual `/compact` is `working` between the two, then
-  `idle`; an automatic one leaves the status as it was (it runs inside a turn that carries on, or summarizes a waiting
+  `idle`, or `watching` again when it started while the session watched (the state's `resumes`); an automatic one leaves the status as it was (it runs inside a turn that carries on, or summarizes a waiting
   session, which keeps waiting). The state keeps the compaction's `trigger`, and the card says `compacting` while one
   runs inside a turn or by `/compact`. A subagent's compaction raises the same hooks, so its start can show a working
   main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps). A session

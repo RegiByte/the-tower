@@ -79,13 +79,13 @@ test('automatic compactions mid-turn, one that gives up and two that finish, kee
   ])
 })
 
-test('a subagent compacting during a manual /compact leaves the main loop idle when its own compaction ends', () => {
+test("a manual /compact while watching a subagent goes back to watching, here when the subagent's own compaction ends", () => {
   assert.deepEqual(timeline(fixture('compact-subagent')), [
     ['idle', 0.872],
     ['working', 0.947],
     ['watching', 3.847],
     ['working', 9.798],
-    ['idle', 13.912],
+    ['watching', 13.912],
     ['working', 23.089],
     ['done', 26.26],
     ['exited', 71.65],
