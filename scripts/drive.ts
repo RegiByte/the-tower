@@ -47,14 +47,14 @@ function parse(argv: string[]) {
   return { url, steps, width, height, scheme: values.scheme, motion: values.motion }
 }
 
-const freePort = () => new Promise<number>((resolve, reject) => {
+export const freePort = () => new Promise<number>((resolve, reject) => {
   const server = createServer().listen(0, '127.0.0.1', () => {
     const { port } = server.address() as { port: number }
     server.close(() => resolve(port))
   }).on('error', reject)
 })
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function pageSocket(port: number): Promise<string> {
   for (let i = 0; i < 100; i++) {
@@ -132,22 +132,31 @@ export type Page = {
   press(chord: string, down: boolean): Promise<void>
   key(chord: string): Promise<void>
   type(text: string): Promise<void>
+  /** Every page error, unhandled rejection and console error so far, as printed. */
+  errors: string[]
 }
 
-/** Opens `url` in a fresh headless Chrome, runs `use` on it, and closes everything after. Page errors go to stderr. */
-export async function withPage<T>(url: string, { width = 1280, height = 800, scheme, motion }: { width?: number; height?: number; scheme?: string; motion?: string }, use: (page: Page) => Promise<T>): Promise<T> {
+/**
+ * Opens `url` in a fresh headless Chrome, runs `use` on it, and closes everything after. Page errors go to stderr.
+ * `flags` are Chrome's own, after the driver's.
+ */
+export async function withPage<T>(url: string, { width = 1280, height = 800, scheme, motion, flags = [] }: { width?: number; height?: number; scheme?: string; motion?: string; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
   const port = await freePort()
   const profile = mkdtempSync(path.join(os.tmpdir(), 'tower-drive-'))
   const chrome = spawn(CHROME, [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${height}`,
-    '--no-first-run', '--no-default-browser-check', '--mute-audio', '--hide-scrollbars', 'about:blank',
+    '--no-first-run', '--no-default-browser-check', '--mute-audio', '--hide-scrollbars', ...flags, 'about:blank',
   ], { stdio: 'ignore' })
   try {
     const cdp = connect(await pageSocket(port))
     await cdp.opened
-    cdp.on('Runtime.exceptionThrown', (p) => console.error(`page error: ${describe(p.exceptionDetails)}`))
-    cdp.on('Runtime.consoleAPICalled', (p) => p.type === 'error' && console.error(`page console: ${p.args.map((a: any) => a.value ?? a.description).join(' ')}`))
+    const errors: string[] = []
+    const report = (line: string) => (errors.push(line), console.error(line))
+    cdp.on('Runtime.exceptionThrown', (p) => report(`page error: ${describe(p.exceptionDetails)}`))
+    cdp.on('Runtime.consoleAPICalled', (p) => p.type === 'error' && report(`page console: ${p.args.map((a: any) => a.value ?? a.description).join(' ')}`))
+    cdp.on('Log.entryAdded', (p) => p.entry.level === 'error' && !p.entry.url?.endsWith('/favicon.ico') && report(`page log: ${p.entry.text}${p.entry.url ? ` (${p.entry.url})` : ''}`))
     await cdp.send('Runtime.enable')
+    await cdp.send('Log.enable')
     await cdp.send('Page.enable')
     await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
     const features = [scheme && { name: 'prefers-color-scheme', value: scheme }, motion && { name: 'prefers-reduced-motion', value: motion }].filter(Boolean)
@@ -158,6 +167,7 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
     let pointer = { x: 0, y: 0 }
     let buttons = 0
     const result = await use({
+      errors,
       async eval(expression) {
         const r = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
         if (r.exceptionDetails) throw new Error(`${expression}\n  threw: ${describe(r.exceptionDetails)}`)
