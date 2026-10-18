@@ -245,7 +245,7 @@ export type Config = {
   /** Command every session starts with, before the arguments the host adds. */
   argv: string[]
   /** Added to every session's environment after the parent-session scrub. */
-  env: Record<string, string>
+  env?: Record<string, string>
   projects: Record<string, Project>
   /** Collections every project has. */
   collections?: Record<string, CollectionType>
@@ -286,6 +286,17 @@ export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collect
 
 /** The keys the tower reads in a project. */
 export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins'])
+
+/** The keys the tower reads in each object below the top level and a project's, by the type it is. */
+export const COLLECTION_KEYS = keysOf<CollectionType>()(['label', 'description'])
+export const WORKTREES_KEYS = keysOf<WorktreesConfig>()(['branchPrefix', 'links', 'cutByDefault'])
+export const HIRING_KEYS = keysOf<HiringConfig>()(['depth', 'live'])
+export const BRIEF_KEYS = keysOf<BriefConfig>()(['pairs'])
+export const RETENTION_KEYS = keysOf<RetentionConfig>()(['days'])
+export const PROBE_KEYS = keysOf<ProbeConfig>()(['reads', 'every', 'off'])
+export const USER_KEYS = keysOf<UserConfig>()(['name'])
+export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
+export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings'])
 
 /**
  * A renderer: `root`, the absolute directory of its built files, all served below `/r/<name>/`; `entry`, its page in

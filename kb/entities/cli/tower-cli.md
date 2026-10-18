@@ -41,8 +41,9 @@ Mac app from this checkout when its source changed and opens it, a window over t
 `tower config check` reads the config as the tower does
 ([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, the shape of each
 project, each shelf entry, collection and worktrees setting, and the keys it doesn't know, each problem at its key path, exiting 1 on any `fail` (an
-unknown key is a `warn`). The known keys (`CONFIG_KEYS`, `PROJECT_KEYS` in `src/shared/model.ts`) are held to the
-`Config` and `Project` types by the typecheck. `tower doctor` sums up the same check. Every key is documented in
+unknown key is a `warn`, at any depth: a project's, a shelf entry's, a probe's, a renderer's, a collection's). The known
+keys (`CONFIG_KEYS`, `PROJECT_KEYS` and each nested object's, such as `HIRING_KEYS`, in `src/shared/model.ts`) are held
+to their types by the typecheck. `tower doctor` sums up the same check. Every key is documented in
 `docs/config.md`, whose path the check prints.
 
 Every verb, the workers' too, fails in one of two ways ([`reported`](ref:hub/src/cli-error.ts#reported)): an

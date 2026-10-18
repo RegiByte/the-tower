@@ -9,7 +9,29 @@ import path from 'node:path'
 import { probesOf } from './bridge/probes.ts'
 import { defaultRenderer, renderersOf } from './renderers.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
-import { callsignsOf, CONFIG_KEYS, ConfigError, configuredUser, editorArgv, projectCollections, PROJECT_KEYS, towerPort, type Config, type EditorAction, type Project, type Renderer } from './shared/model.ts'
+import {
+  BRIEF_KEYS,
+  callsignsOf,
+  COLLECTION_KEYS,
+  CONFIG_KEYS,
+  ConfigError,
+  configuredUser,
+  EDITOR_KEYS,
+  editorArgv,
+  HIRING_KEYS,
+  PROBE_KEYS,
+  projectCollections,
+  PROJECT_KEYS,
+  RENDERER_KEYS,
+  RETENTION_KEYS,
+  towerPort,
+  USER_KEYS,
+  WORKTREES_KEYS,
+  type Config,
+  type EditorAction,
+  type Project,
+  type Renderer,
+} from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
 import { readConfig } from './system.ts'
 
@@ -42,12 +64,26 @@ const unknownKeys = (at: string, value: Record<string, unknown>, known: readonly
     .filter((key) => !known.includes(key))
     .map((key) => ({ level: 'warn', key: `${at}${key}`, problem: `the tower reads no "${key}" here: known keys are ${known.join(', ')}` }))
 
-const counts = (at: string, value: unknown, keys: string[]): ConfigProblem[] =>
+/** The unknown keys of the object at `at`, when it is one. */
+const unknownKeysAt = (at: string, value: unknown, known: readonly string[]): ConfigProblem[] => (isObject(value) ? unknownKeys(`${at}.`, value, known) : [])
+
+/** The unknown keys of each object in a set of them by name, such as `probes.quota`. */
+const unknownKeysEach = (at: string, value: unknown, known: readonly string[]): ConfigProblem[] =>
+  isObject(value) ? Object.entries(value).flatMap(([name, each]) => unknownKeysAt(`${at}.${name}`, each, known)) : []
+
+/** A shelf entry reads its `label`, its kind's key and, for `md`, its `order`. */
+const shelfKeys = (entry: Record<string, unknown>): string[] => ['label', ...SHELF_KINDS.filter((kind) => kind in entry), ...('md' in entry ? ['order'] : [])]
+
+/** An object of whole numbers, each of its `keys`. */
+const counts = (at: string, value: unknown, keys: readonly string[]): ConfigProblem[] =>
   value === undefined
     ? []
     : !isObject(value)
       ? [fail(at, 'takes an object')]
-      : keys.filter((key) => value[key] !== undefined && !(Number.isInteger(value[key]) && (value[key] as number) >= 0)).map((key) => fail(`${at}.${key}`, `${JSON.stringify(value[key])} is no whole number of 0 or more`))
+      : [
+          ...unknownKeys(`${at}.`, value, keys),
+          ...keys.filter((key) => value[key] !== undefined && !(Number.isInteger(value[key]) && (value[key] as number) >= 0)).map((key) => fail(`${at}.${key}`, `${JSON.stringify(value[key])} is no whole number of 0 or more`)),
+        ]
 
 /** A set of collections by id, each with the `label` it is shown by and an optional `description`. */
 const collections = (at: string, value: unknown): ConfigProblem[] => {
@@ -56,6 +92,7 @@ const collections = (at: string, value: unknown): ConfigProblem[] => {
   return Object.entries(value).flatMap(([id, collection]) => {
     if (!isObject(collection)) return [fail(`${at}.${id}`, `takes an object with a "label", not ${JSON.stringify(collection)}`)]
     return [
+      ...unknownKeys(`${at}.${id}.`, collection, COLLECTION_KEYS),
       ...(typeof collection.label === 'string' && collection.label ? [] : [fail(`${at}.${id}.label`, 'takes the name the collection is shown by')]),
       ...(collection.description === undefined || typeof collection.description === 'string' ? [] : [fail(`${at}.${id}.description`, 'takes a sentence or two of text')]),
     ]
@@ -66,6 +103,7 @@ const worktrees = (at: string, value: unknown): ConfigProblem[] => {
   if (value === undefined) return []
   if (!isObject(value)) return [fail(at, 'takes an object: branchPrefix, links, cutByDefault')]
   return [
+    ...unknownKeys(`${at}.`, value, WORKTREES_KEYS),
     ...(value.branchPrefix === undefined || typeof value.branchPrefix === 'string' ? [] : [fail(`${at}.branchPrefix`, 'takes a string')]),
     ...(value.links === undefined || (isObject(value.links) && Object.values(value.links).every((v) => typeof v === 'string')) ? [] : [fail(`${at}.links`, 'takes an object of paths: a path inside each worktree → its source')]),
     ...(value.cutByDefault === undefined || typeof value.cutByDefault === 'boolean' ? [] : [fail(`${at}.cutByDefault`, 'takes true or false')]),
@@ -96,7 +134,7 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
         : project.shelf.flatMap((entry, n) => {
             if (!isObject(entry)) return [fail(`${at}.shelf[${n}]`, `takes an object: a label and one of ${SHELF_KINDS.join(', ')}`)]
             const problem = renderers && shelfProblem(project, entry, renderers, collectionIds)
-            return problem ? [fail(`${at}.shelf[${n}]`, problem)] : []
+            return [...unknownKeysAt(`${at}.shelf[${n}]`, entry, shelfKeys(entry)), ...(problem ? [fail(`${at}.shelf[${n}]`, problem)] : [])]
           })
   return [
     ...unknownKeys(`${at}.`, project, PROJECT_KEYS),
@@ -105,8 +143,8 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
     ...collections(`${at}.collections`, project.collections),
     ...(isObject(config.collections ?? {}) && isObject(project.collections ?? {}) ? checked(`${at}.collections`, () => projectCollections(config, id)) : []),
     ...worktrees(`${at}.worktrees`, project.worktrees),
-    ...counts(`${at}.hiring`, project.hiring, ['depth', 'live']),
-    ...counts(`${at}.brief`, project.brief, ['pairs']),
+    ...counts(`${at}.hiring`, project.hiring, HIRING_KEYS),
+    ...counts(`${at}.brief`, project.brief, BRIEF_KEYS),
     ...directories(`${at}.plugins`, project.plugins, 'absolute plugin directories'),
   ]
 }
@@ -128,18 +166,22 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...(Array.isArray(config.argv) && config.argv.length && config.argv.every((arg) => typeof arg === 'string') ? [] : [fail('argv', 'takes the command sessions start with, such as ["claude"]')]),
     ...(config.env === undefined || (isObject(config.env) && Object.values(config.env).every((v) => typeof v === 'string')) ? [] : [fail('env', 'takes an object of strings, {} for none')]),
     ...(projects.length ? [] : [fail('projects', 'names no project: add one, or `tower init` on a fresh system')]),
+    ...unknownKeysAt('user', config.user, USER_KEYS),
     ...checked('user.name', () => configuredUser(config)),
     ...checked('callsigns', () => callsignsOf(config)),
     ...checked('port', () => towerPort(config)),
     ...checked('renderers', () => renderersOf(config)),
+    ...unknownKeysEach('renderers', config.renderers, RENDERER_KEYS),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),
+    ...unknownKeysAt('editor', config.editor, EDITOR_KEYS),
     ...(config.editor === undefined ? [] : (Object.keys(EDITOR_VALUES) as EditorAction[]).flatMap((action) => checked(`editor.${action}`, () => editorArgv(config, action, EDITOR_VALUES[action])))),
     ...collections('collections', config.collections),
     ...worktrees('worktrees', config.worktrees),
-    ...counts('hiring', config.hiring, ['depth', 'live']),
-    ...counts('brief', config.brief, ['pairs']),
-    ...counts('retention', config.retention, ['days']),
+    ...counts('hiring', config.hiring, HIRING_KEYS),
+    ...counts('brief', config.brief, BRIEF_KEYS),
+    ...counts('retention', config.retention, RETENTION_KEYS),
     ...(config.probes === undefined || isObject(config.probes) ? checked('probes', () => probesOf(config)) : [fail('probes', 'takes an object of probes by name, such as { "quota": { "off": true } }')]),
+    ...unknownKeysEach('probes', config.probes, PROBE_KEYS),
     ...directories('plugins', config.plugins, 'absolute plugin directories'),
     ...(config.keys === undefined ? [] : keysProblems(config.keys).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...projects.flatMap(([id, project]) => projectProblems(config, id, project, renderers)),

@@ -5,7 +5,7 @@ holds it is the system root: session logs, collections, sockets and the cache li
 file again whenever it changes, so an edit needs no restart, but for `port`.
 
 `tower config check` reads the config the way the tower does and prints each problem at its key path
-(`projects.my-app.shelf[0]`), exiting 1 on any the tower can't take. A key the tower doesn't know is a warning: the tower ignores it, and
+(`projects.my-app.shelf[0]`), exiting 1 on any the tower can't take. A key the tower doesn't know, at any depth, is a warning: the tower ignores it, and
 it is often a misspelled one. `tower doctor` runs the same check among its others.
 
 ```json
