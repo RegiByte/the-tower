@@ -58,8 +58,8 @@ const BUBBLE: Record<string, { color: string; bg: string }> = {
 type Marks = {
   /** The tag's place and height, and whether it names the worker's branch and whom it works with as well as its status. */
   tag: THREE.Vector3; tagHeight: number; branch: boolean; pair: boolean; gist?: THREE.Vector3; speech: THREE.Vector3; lay: THREE.Vector3; layWidth: number
-  /** Where each subagent stands, in order: as many stand as there are places. */
-  minis: THREE.Vector3[]
+  /** Where each subagent stands, in order, at its size: as many stand as there are places. */
+  minis: { at: THREE.Vector3; size: number }[]
   /** Where a fork of the worker sits beside it, in a chair of its own (turned, radians, at its size); a reviewer beside its author seats none. */
   twin?: { at: THREE.Vector3; turn: number; size: number }
   /** Where the papers new to the worker are stacked. */
@@ -160,12 +160,12 @@ export type Desk = {
 }
 
 /** A subagent: a small one of its worker's kind, a look of its own, wearing nothing. */
-function mini(models: Models, parent: Look, id: string) {
+function mini(models: Models, parent: Look, id: string, size: number) {
   const own = lookOf(id, WARDROBE, models.catalogue)
   const look: Look = parent.species === 'bot' ? { ...parent, hue: own.species === 'bot' ? own.hue : parent.hue } : own.species === 'character' ? own : parent
   const bare = look.parts.filter((p) => models.catalogue.parts[p].from !== 'wear' && models.catalogue.parts[p].slot !== 'Gear')
   const a = avatar(models, { ...look, parts: bare }, WARDROBE)
-  a.root.scale.setScalar(0.28)
+  a.root.scale.setScalar(size)
   return a
 }
 
@@ -240,7 +240,7 @@ const LABELS_Z = SCREEN.z + 0.05
 const sideCenter = (side: FlatSlot) => new THREE.Vector3(side.at[0], side.at[1] - DESK.height + SIDE.y, side.at[2] - 0.03)
 const ownMarks = (slots: DeskSlots): Marks => ({
   tag: new THREE.Vector3(0, TAG_Y, LABELS_Z), tagHeight: 0.15, branch: true, pair: true, gist: new THREE.Vector3(0, GIST_Y, LABELS_Z),
-  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: sideCenter(slots.side), layWidth: SIDE.width, minis: slots.subagents.map((s) => vector(s.at)),
+  speech: new THREE.Vector3(0, SPEECH_Y, LABELS_Z), lay: sideCenter(slots.side), layWidth: SIDE.width, minis: slots.subagents.map((s) => ({ at: vector(s.at), size: s.size })),
   twin: { at: vector(slots.twin.at), turn: slots.twin.turn * DEG, size: slots.twin.size },
   papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
@@ -360,39 +360,39 @@ const notebookOf = (slots: DeskSlots) => ({ at: besideAt(slots, slots.notebook),
  */
 const visitMarks = (slots: DeskSlots): Marks => ({
   tag: fromAuthor(slots, new THREE.Vector3(slots.reviewer.at[0], TAG_Y - 0.2, LABELS_Z)), tagHeight: 0.12, branch: false, pair: true, speech: new THREE.Vector3(0, BUBBLE_Y + 0.25, -SEAT_OFFSET),
-  lay: notebookScreen(notebookOf(slots).at, notebookOf(slots).turn), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => besideAt(slots, s)),
+  lay: notebookScreen(notebookOf(slots).at, notebookOf(slots).turn), layWidth: NOTEBOOK.width - 0.04, minis: slots.visitors.map((s) => ({ at: besideAt(slots, s), size: s.size })),
   papers: vector(slots.papers.at), perch: vector(slots.perch.at),
 })
 
 /**
  * A crew member's place in a meeting room, in its own desk space (its chair at `SEAT`, the table or the counter before
- * it): its laptop on the table in front of it, its tag over its head, its subagents on the floor behind its chair, the
- * cat's perch beside the laptop. Standing at the table's foot, it has neither chair nor laptop.
+ * it): its laptop on the table in front of it, its tag over its head, its subagents on the floor behind its chair (at
+ * the size the desk dressing's subagents stand), the cat's perch beside the laptop. Standing at the table's foot, it has neither chair nor laptop.
  */
 const MEETING = { laptop: new THREE.Vector3(0, DESK.height, SEAT.z + 0.67), tag: 2.1, perch: new THREE.Vector3(0.36, DESK.height, SEAT.z + 0.62) }
-const meetingMarks = (stand: boolean): Marks => {
+const meetingMarks = (stand: boolean, slots: DeskSlots): Marks => {
   const laptop = stand ? SEAT.clone().setY(1.25) : notebookScreen(MEETING.laptop, 0)
   return {
     tag: new THREE.Vector3(0, MEETING.tag, SEAT.z), tagHeight: 0.1, branch: false, pair: false, speech: new THREE.Vector3(0, MEETING.tag + 0.16, SEAT.z),
-    lay: laptop, layWidth: stand ? 0.3 : NOTEBOOK.width - 0.04, minis: [-0.36, -0.12, 0.12, 0.36].map((x) => new THREE.Vector3(x, 0, SEAT.z - 0.62)),
+    lay: laptop, layWidth: stand ? 0.3 : NOTEBOOK.width - 0.04, minis: [-0.36, -0.12, 0.12, 0.36].map((x) => ({ at: new THREE.Vector3(x, 0, SEAT.z - 0.62), size: slots.subagents[0].size })),
     papers: MEETING.laptop.clone().setX(-0.36), perch: MEETING.perch,
   }
 }
 
 /** A crew member at its place in a meeting room: its own chair and its laptop, whose screen is its terminal; standing, neither, at a cabinet it `play`s or not. */
-export function makeSeat(card: Card, models: Models, stand: boolean, play: boolean): Desk {
+export function makeSeat(card: Card, models: Models, slots: DeskSlots, stand: boolean, play: boolean): Desk {
   const group = new THREE.Group()
   if (stand) {
     const none = new THREE.Group()
     group.add(none)
-    return { ...seated(card, models, meetingMarks(true), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }), meeting: { stand, play } }
+    return { ...seated(card, models, meetingMarks(true, slots), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }), meeting: { stand, play } }
   }
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
   const laptop = notebook(MEETING.laptop)
   group.add(laptop.group)
-  return { ...seated(card, models, meetingMarks(false), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }), notebook: laptop.group, meeting: { stand, play } }
+  return { ...seated(card, models, meetingMarks(false, slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }), notebook: laptop.group, meeting: { stand, play } }
 }
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
@@ -416,7 +416,7 @@ export function situate(desk: Desk, slots: DeskSlots) {
   if (desk.meeting) return
   desk.marks = desk.side ? ownMarks(slots) : visitMarks(slots)
   desk.papers.position.copy(desk.marks.papers)
-  desk.minis.avatars.forEach((m, i) => m.root.position.copy(desk.marks.minis[i]))
+  desk.minis.avatars.forEach((m, i) => m.root.position.copy(desk.marks.minis[i].at))
   if (desk.twin) (desk.twin.group.position.copy(desk.marks.twin!.at), (desk.twin.group.rotation.y = desk.marks.twin!.turn))
   if (desk.binder) (desk.binder.position.copy(vector(slots.logbook.at)), (desk.binder.rotation.y = slots.logbook.turn * DEG))
   if (desk.side) (desk.side.group.position.copy(vector(slots.side.at)), (desk.side.group.rotation.y = slots.side.turn * DEG))
@@ -497,8 +497,8 @@ export function syncDesk(desk: Desk, card: Card) {
     dispose(desk.minis.group)
     desk.minis.group.clear()
     desk.minis.avatars = Array.from({ length: minis }, (_, i) => {
-      const m = mini(desk.models, desk.look, `${card.id}/${i}`)
-      m.root.position.copy(desk.marks.minis[i])
+      const m = mini(desk.models, desk.look, `${card.id}/${i}`, desk.marks.minis[i].size)
+      m.root.position.copy(desk.marks.minis[i].at)
       desk.minis.group.add(m.root)
       return m
     })
@@ -677,7 +677,7 @@ export function poseDesk(desk: Desk, t: number, dt: number) {
   const off = desk.meeting?.stand ? new THREE.Vector3() : seatedAt(desk.models.cast, a, CHAIR).applyAxisAngle(Y, desk.turn)
   a.body.position.copy(off).add(new THREE.Vector3(0, hop, 0))
   if (desk.twin) desk.twin.avatar.body.position.copy(seatedAt(desk.models.cast, desk.twin.avatar, { y: CHAIR.y / desk.marks.twin!.size, back: CHAIR.back / desk.marks.twin!.size }))
-  desk.minis.avatars.forEach((m, i) => (m.root.position.y = desk.marks.minis[i].y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
+  desk.minis.avatars.forEach((m, i) => (m.root.position.y = desk.marks.minis[i].at.y + Math.max(0, Math.sin(p * 6 + i * 1.7)) * 0.08))
   if (desk.bubble) desk.bubble.position.set(SEAT.x + 0.32, BUBBLE_Y + Math.sin(p * 3) * 0.05 + hop, SEAT.z)
   a.bulb.color.set(statusColor(card)).multiplyScalar(card.waiting ? 0.6 + Math.abs(Math.sin(p * 4)) * 0.6 : 1)
 }
