@@ -33,6 +33,6 @@ date on an unread change is worse than a stale entity, because it hides the stal
    holds its history: one absorbed by another, superseded or rejected is merged into the decision that stands
    (rewritten as today's reasoning) or deleted. Fix every `[[link]]`, link target and `supersedes` the merge or
    deletion breaks.
-7. **Render** with `node <skill-dir>/tool/kb.mjs render` until there are no errors.
+7. **Render** with `node <skill-dir>/tool/kb.mjs render` until there are no errors. Then `node <skill-dir>/tool/kb.mjs diagrams`: mermaid refuses some text the KB accepts (a `;` inside a sequence diagram's message ends the statement), and the page then draws an error in its place. It needs Chrome (`CHROME=<binary>` when it isn't found) and the network.
 8. **Report** briefly: the number confirmed unchanged, what was updated (one line each on what
    changed), what needs the human, and the path to the HTML file.

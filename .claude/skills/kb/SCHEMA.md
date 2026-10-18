@@ -23,6 +23,7 @@ node <skill-dir>/tool/kb.mjs tree [id]   print the entity tree (id, type, name, 
 node <skill-dir>/tool/kb.mjs verify      report repo freshness, errors and warnings
 node <skill-dir>/tool/kb.mjs verify --since <rev>   the same, with only the suspects commits in <rev>..HEAD caused
 node <skill-dir>/tool/kb.mjs render      build kb/dist/<project-id>.html (refuses on errors)
+node <skill-dir>/tool/kb.mjs diagrams    parse every diagram the page draws with its mermaid, in headless Chrome
 ```
 
 ## kb.config.json

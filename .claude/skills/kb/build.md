@@ -49,7 +49,7 @@ Document piece by piece: one scope per session, done well, beats breadth.
    Parallel subagents work well here, one per repo or part. Give them the truth rules from `SKILL.md`.
 7. **Write** one file per entity under `kb/entities/<system-id>/` (project-level entities at the
    root of `entities/`). Set `reviewed` to today for everything you wrote and confirmed.
-8. **Render.** Run `node <skill-dir>/tool/kb.mjs render` and fix every error. Warnings that remain must be explained.
+8. **Render.** Run `node <skill-dir>/tool/kb.mjs render` and fix every error. Then `node <skill-dir>/tool/kb.mjs diagrams`: mermaid refuses some text the KB accepts (a `;` inside a sequence diagram's message ends the statement), and the page then draws an error in its place. It needs Chrome (`CHROME=<binary>` when it isn't found) and the network. Warnings that remain must be explained.
 9. **Report:** the entities created or updated, contradictions found, open questions, the suggested
    next piece, and the path to the HTML file.
 

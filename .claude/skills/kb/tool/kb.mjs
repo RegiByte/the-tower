@@ -4,7 +4,8 @@ import path from "node:path";
 import { loadKb } from "./model.mjs";
 import { execFileSync } from "node:child_process";
 import { collectEvidence, rankSuspects, suspectsSince } from "./evidence.mjs";
-import { buildPayload, renderHtml } from "./render.mjs";
+import { buildPayload, diagramsOf, renderHtml } from "./render.mjs";
+import { brokenDiagrams } from "./diagrams.mjs";
 
 const ROOT = path.resolve("kb");
 const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the project root, next to kb/)
@@ -18,6 +19,8 @@ const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the pro
               the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/
               (a branch's own: verify --since origin/main)
   render      build kb/dist/<project-id>.html (refuses on errors)
+  diagrams    parse every diagram the page draws (entity maps, mermaid fences) with the mermaid it loads,
+              in headless Chrome (CHROME=<binary> if not found; needs the network); exit 1 on any refused
 
 The repo holding kb/ is read at HEAD, which must contain its origin/<branch>; every other repo at its
 origin/<branch>. Nothing is fetched: run git fetch for fresh results.`;
@@ -109,6 +112,12 @@ if (cmd === "tree") {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, html);
   console.log(`\nwrote ${path.relative(process.cwd(), out)} (${(Buffer.byteLength(html) / 1024).toFixed(1)} kB)`);
+} else if (cmd === "diagrams") {
+  const sources = diagramsOf(kb);
+  const broken = brokenDiagrams(sources);
+  for (const { where, error } of broken) console.log(`  ${where}: ${error}`);
+  console.log(`${sources.length} diagram(s), ${broken.length} refused by mermaid`);
+  process.exit(broken.length ? 1 : 0);
 } else {
   console.log(USAGE);
   process.exit(cmd ? 1 : 0);

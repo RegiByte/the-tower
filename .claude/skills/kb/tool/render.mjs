@@ -128,6 +128,20 @@ function renderCode(kb, s) {
   return s.raw;
 }
 
+/** Every diagram the page draws, as mermaid source: each entity's map and each diagram fence of an entity or view. */
+export function diagramsOf(kb) {
+  const fenced = (where, doc) => doc.segments
+    .filter((s) => s.kind === "code" && (s.lang === "mermaid" || s.lang === "kb-lineage"))
+    .map((s) => ({ where, source: renderCode(kb, s).replace(/^```mermaid\n/, "").replace(/\n```$/, "") }));
+  return [
+    ...[...kb.entities.values()].flatMap((e) => {
+      const map = diagramFor(kb, e.id);
+      return [...(map ? [{ where: `${e.id} (map)`, source: map }] : []), ...fenced(e.id, e)];
+    }),
+    ...kb.views.flatMap((v) => fenced(`view ${v.id}`, v)),
+  ];
+}
+
 function listTable(kb, query) {
   const found = sortEntities(kb, queryEntities(kb, query));
   if (found.length === 0) return "_Nothing matches yet._";
