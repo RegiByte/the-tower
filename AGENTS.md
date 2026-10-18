@@ -53,7 +53,7 @@ shells (PTY) ◀──────▶ terms ◀──terms.sock──▶ rendere
 
 ## Code
 
-- TypeScript on Node ≥24, run with `tsx`, typecheck with `npm run typecheck`.
+- TypeScript on Node ≥24, run with `tsx`, typecheck with `npm run typecheck`. The JavaScript served as written (`src/tower/tower.js`, `renderers/week/week.js`, the mod's `register.js`) is checked by it too, typed through JSDoc from the TypeScript types (`tsconfig.client.json`).
 - A fresh clone runs with `npm run setup` (`scripts/setup.ts`): `npm ci`, `tower init` (a first config, never over one), the checks of `tower doctor` (`src/doctor.ts`: what the tower needs, one fix per failure), then `tower up` (decision `setup`).
 - Functional core, imperative shell: pure functions over plain data; I/O and mutable state at the edges, named and isolated.
 - Tagged plain-data messages; no classes as the default unit.

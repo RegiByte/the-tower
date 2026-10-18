@@ -9,12 +9,27 @@
  */
 
 /**
+ * The part of Claude Code's mods API this module calls. Claude writes the whole API's types for each of its builds,
+ * beside a mod it loads (`.claude-plugin/types/claude-code/index.d.ts`); they are not in the repo. Event inputs and
+ * results are Claude's, forwarded as they come.
+ * @typedef {{
+ *   env: { get(name: string): Promise<string | undefined> },
+ *   http: { fetch(url: string, init: { method: string, socketPath?: string, headers: Record<string, string>, body: string }): Promise<{ ok: boolean, status: number }> },
+ *   session: { version(): Promise<object> },
+ * }} Engine
+ * @typedef {((e: any) => any) & { signal: AbortSignal }} Next
+ * @typedef {(event: string, hook: ($: Engine, e: any, next: Next) => unknown) => void} On
+ */
+
+/**
  * Tool calls whose event was abandoned (the user denied the permission, or interrupted the turn), until the
  * `turn.complete` of their loop. An abandoned event cancels the mods API calls made within it, so the call
  * can't be posted when it settles.
+ * @type {{ tool: string, tool_use_id: string, agentId: string | undefined }[]}
  */
 let abandoned = []
 
+/** @param {Engine} $ @param {string} name @param {object} data */
 async function forward($, name, data) {
   const socketPath = await $.env.get('TOWER_HOOKS_SOCKET')
   const sessionId = await $.env.get('TOWER_SESSION_ID')
@@ -27,6 +42,7 @@ async function forward($, name, data) {
   if (!response.ok) throw new Error(`host answered ${response.status} to ${name}`)
 }
 
+/** @param {On} on */
 export function register(on) {
   on('session.start', async ($, e, next) => {
     await forward($, 'session.start', e)

@@ -14,5 +14,5 @@
     "checkJs": true,
     "paths": { "/*.js": ["./src/shared/*.ts"] }
   },
-  "include": ["src/tower/client.d.ts", "src/tower/tower.js", "renderers/week/week.js"]
+  "include": ["src/tower/client.d.ts", "src/tower/tower.js", "renderers/week/week.js", "src/mod/hooks/register.js"]
 }
