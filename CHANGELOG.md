@@ -12,6 +12,35 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.46.0
+
+Hardening: one way to start a worker, a stricter API, the client JavaScript and the tower page's script under the
+typecheck, and the tower's API and Tower 3D tested in CI. No host restart, no config change, the renderer API
+unchanged. Restart the tower (`tower down tower && tower up tower`) and reload the page. Restart the terms daemon
+(`tower down terms && tower up terms`, which ends open shells) when convenient: until then an unknown shell still
+answers `refused`.
+
+- `tower spawn` and `tower resume` go through the tower's `/spawn` and `/resume`, so the CLI follows the tower's
+  rules (a lost worktree refused, a typed callsign checked against the workers on duty), and fail clearly when no
+  tower runs. `spawn`'s usage names `--callsign`.
+- The API reads a command's body up to 8 MiB and refuses one past it as `invalid`. `/shown/<id>/` and
+  `/r/<name>/` serve nothing hidden below a shown page's folder or a renderer's root (`.git`, `.env`, `.ssh`). Every
+  GET is read-only, as the decision `agents-have-every-capability` now says.
+- `tower.js`, The Week's `week.js`, the mod's `register.js` and the tower page's script, now its own `page.js`
+  beside `index.html`, are checked by `npm run typecheck` through JSDoc. The check found a worktrees tray that
+  threw on a floor with an edited kept branch, fixed.
+- Claude Code 2.1.302 is tested. `tool:claude-check` takes `--retries` (default 1), keeps its scenario folders
+  across runs so Claude's trust list stops growing, and answers `due`, exit 0 when the installed release is
+  untested: a policy's `check` line, so a floor can be offered a check run on each new release (runbook
+  `new-claude-release`).
+- An unknown shell answers `not_found`. A manual `/compact` while a worker watches a subagent leaves it `watching`.
+  Tidy archives a floor's closed project-stream months. `tower config check` flags unknown keys at any depth. `tower
+  runs --limit` stops at 20. A bare `*` minute in a policy's cron says why it is refused.
+- The kb skill's `kb.mjs diagrams` parses every diagram its page draws with the mermaid the page loads, in headless
+  Chrome; two broken flow diagrams are fixed.
+- CI runs one integration test of the tower's API and boots Tower 3D (`npm run test:tower3d-boot`), and reads the
+  kb's suspects against a pull request's base without racing it.
+
 ## v1.45.0
 
 Tower 3D gets a break room, and reviewers carry their chairs. No host restart, no config change, the renderer API
