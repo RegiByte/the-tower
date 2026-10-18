@@ -346,9 +346,6 @@ const step = (by) => {
   const back = Math.max(0, (/^\d{4}-\d{2}-\d{2}$/.test(date) ? backOf(resetsAt, Date.now(), date) : 0) + by)
   location.hash = back === 0 ? '' : localDate(weekOf(resetsAt, Date.now(), back).end)
 }
-earlier.addEventListener('click', () => step(1))
-later.addEventListener('click', () => step(-1))
-addEventListener('hashchange', () => draw().catch(failed))
 
 /** @param {Error} err */
 const failed = (err) => { book.innerHTML = `<p class="note broken">${esc(err.message)}</p>` }
@@ -358,4 +355,8 @@ tower.onBoardError((err) => { if (!state.board) failed(err) })
 const first = new Promise((resolve) => tower.subscribe((board) => { state.board = board; resolve(board) }))
 const board = await first
 state.cards = (await Promise.all(board.floors.map((f) => tower.archive(f.id)))).flat()
+earlier.addEventListener('click', () => step(1))
+later.addEventListener('click', () => step(-1))
+addEventListener('hashchange', () => draw().catch(failed))
+earlier.disabled = false
 draw().catch(failed)
