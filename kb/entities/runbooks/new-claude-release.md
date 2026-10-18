@@ -71,6 +71,9 @@ sleep or the board. Compaction takes `autoCompactEnabled` in the directory's `.c
 1. Exit 0: raise `CLAUDE_TESTED.highest` to the release, and `npm run tool:claude-check -- accept` to take the
    baseline on it, both in one commit. A release that drops what an older one had raises `lowest` too.
 2. Exit 1: read each difference in `<root>/report.md`. A scenario that stopped short is run again with `--only`.
+   A `fullscreen TUI` miss on one session whose output opens with Claude's classic-renderer notice is the
+   fallback after an earlier scenario died mid-start ([[claude-code]]), not drift: run that scenario again with
+   `--only`.
    A replay that differs because of how it was driven is fixed in the scenario. A key or event gone, or a replay
    that differs, is drift: fix the fold (`src/bridge/facts.ts`, `status.ts`, `conversation.ts`, `blocked.ts`)
    against the recording in `<root>/recordings/`, replace the fixture with it under the name the tests already

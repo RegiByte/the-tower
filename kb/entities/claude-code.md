@@ -4,7 +4,7 @@
   "name": "Claude Code",
   "summary": "The Claude Code TUI, run in a real PTY per session, with its classic hooks and mods API.",
   "in": "tower",
-  "reviewed": "2026-10-16",
+  "reviewed": "2026-10-17",
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "settings-hook input JSON (SessionStart, UserPromptSubmit, PreToolUse, Stop, ...) via curl POST /hooks/<id> on hooks.sock" },
     { "to": "tower-mod", "verb": "triggers", "carries": "mod events: session.*, prompt.submit, turn.*, tool.*, agent.spawn" }
@@ -20,6 +20,10 @@ the runbook [[new-claude-release]].
 Every session runs Claude's fullscreen TUI ([[fullscreen-tui]]): the conversation on the alternate screen
 (`?1049h`) with mouse reporting (`?1000h ?1002h ?1003h ?1006h`), so a viewer's xterm keeps no scrollback and its wheel
 scrolls Claude's own transcript, a wheel report per row of travel (`reportWheel`).
+A fullscreen start that dies before it finishes (a session killed while it boots) makes Claude's next launch
+on the machine, any project's, fall back to the classic renderer once, saying so in its first line of output
+("Claude Code's fullscreen renderer didn't finish starting last time on this machine"); the launch after it tries
+fullscreen again. A worker started in that window keeps the classic screen until it is resumed.
 
 Inside a Team or Enterprise organization, or on a machine with managed settings, Claude seats its built-in mod
 `sec-default`, which sends some mod events straight past the user tier: since 2.1.299 no user mod, the tower's
