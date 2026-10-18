@@ -5,7 +5,7 @@
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#readBody", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html"],
+  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#readBody", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/test/server.test.ts"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -88,3 +88,8 @@ An open `html` entry is framed with scripts, popups and pointer lock allowed. It
 `postMessage` and reaches every route through the page's `tower.relay`;
 [`/run/<project>/<n>`](ref:hub/src/tower/server.ts#run) serves the same entry at the tower's origin, unsandboxed,
 as a renderer of its own; its redirect to the entry's page keeps the query (`?board=`, `?seed=`).
+
+One integration test ([`server.test.ts`](ref:hub/test/server.test.ts)) boots this file as its own process on a throwaway
+root, with no host or terms daemon (a session is a log written into the root), and drives it over HTTP: a board event
+checked against the committed schema, every read, the collection verbs and `review/append`, the Origin and Host guards,
+the body cap and the hidden paths below a shown page and a renderer.
