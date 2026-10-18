@@ -25,6 +25,8 @@ const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
 
+const BOOT_MS = 15_000
+
 let tower: ChildProcess
 let base: string
 
@@ -83,7 +85,10 @@ const freePort = (): Promise<number> =>
     })
   })
 
-/** The tower on `port`, once it says it is up; `undefined` when another process took the port first. */
+/**
+ * The tower on `port`, once it says it is up; `undefined` when another process took the port first. One that says
+ * nothing within `BOOT_MS` is killed and fails the boot: node:test would wait on the hook forever.
+ */
 const boot = (port: number): Promise<ChildProcess | undefined> =>
   new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['--import', 'tsx', path.join('src', 'tower', 'server.ts')], {
@@ -92,9 +97,14 @@ const boot = (port: number): Promise<ChildProcess | undefined> =>
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let err = ''
+    const silent = setTimeout(() => child.kill(), BOOT_MS)
     child.stderr!.on('data', (chunk) => (err += chunk))
-    child.stdout!.on('data', (chunk) => String(chunk).includes('tower up:') && resolve(child))
-    child.once('exit', () => (err.includes('EADDRINUSE') ? resolve(undefined) : reject(new Error(`the tower exited before it was up:\n${err}`))))
+    child.stdout!.on('data', (chunk) => String(chunk).includes('tower up:') && (clearTimeout(silent), resolve(child)))
+    child.once('exit', (code) => {
+      clearTimeout(silent)
+      if (err.includes('EADDRINUSE')) resolve(undefined)
+      else reject(new Error(code === null ? `the tower said nothing within ${BOOT_MS} ms:\n${err}` : `the tower exited before it was up:\n${err}`))
+    })
   })
 
 before(async () => {
@@ -207,6 +217,7 @@ test('server: every read answers', async () => {
   }
   assert.equal((await get('/')).status, 302)
   assert.ok(await firstEvent(`/screen/${SESSION}`))
+  assert.equal(((await firstEvent('/shell/none')) as { t: string }).t, 'error')
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
 })
 
