@@ -4,7 +4,7 @@
   "name": "Tower",
   "summary": "The process started beside the host and terms at the config's port: the renderer API every renderer and worker drives, the modules renderers share, git for the floors' worktrees, and the disposable renderers it serves at /r/<name>/.",
   "in": "tower",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "refs": ["hub/src/tower/server.ts#run", "hub/src/renderers.ts#renderersOf", "hub/src/tower/served.ts"]
 }
 ---

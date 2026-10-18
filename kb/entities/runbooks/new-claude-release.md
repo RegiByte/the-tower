@@ -4,7 +4,7 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
-  "reviewed": "2026-10-16",
+  "reviewed": "2026-10-17",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/cards.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
@@ -50,6 +50,10 @@ taken on. It exits 0 when nothing does, 1 when there is something to read. About
   cc-plugin-sec-default` lines say what Claude's built-in `sec-default` mod kept from the tower's inside a Team or
   Enterprise organization, as it keeps `session.compact` since 2.1.299 ([[claude-code]]): such an event is read
   from a classic hook, which still fires.
+- **Mods API.** [`register.js`](ref:hub/src/mod/hooks/register.js#register) declares, in JSDoc, the slice of the
+  mods API it calls (`$.env.get`, `$.http.fetch`, `$.session.version`, `next.signal`), checked by `npm run
+  typecheck`; Claude writes the release's own types beside a mod it loads (`.claude-plugin/types/claude-code/`), the
+  place a rename of one of them shows first.
 - **Changelog.** The release's section of `~/.claude/cache/changelog.md`, each entry naming a surface the tower
   reads (hooks, mods, compaction, trust, permissions, peers, usage) marked.
 
