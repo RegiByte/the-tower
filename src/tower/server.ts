@@ -1417,7 +1417,8 @@ const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
 
 /**
  * Any page open in the browser can reach the tower: through DNS rebinding, under a foreign Host, or with a
- * cross-site POST, which browsers send without a preflight but always mark with its Origin.
+ * cross-site POST, which browsers send without a preflight but always mark with its Origin. A GET passes on its Host
+ * alone: no read changes the system (what it writes is `cache/`), and a page at another origin can't read the answer.
  */
 const isFromTower = (req: http.IncomingMessage): boolean =>
   TOWER_HOSTS.has(req.headers.host ?? '') && (req.method !== 'POST' || req.headers.origin === `http://${req.headers.host}`)
