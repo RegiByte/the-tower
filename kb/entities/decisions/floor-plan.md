@@ -121,7 +121,7 @@ shoulders.
     board ([[logbook]]). The game room, 9 × 9 before it, glazed toward the desks, the arcade along its front wall
     ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).
   - *The lounge* is open, the wing from the deck's front to the front glass.
-  - *Along the front glass*, Meeting · 8 (9.2 × 8.2) and Meeting · 4 (6.4 × 8.2): 3.2 m walls, open above, glazed
+  - *Along the front glass*, Meeting · 8 (9.2 × 8.2) and Meeting · 4 (8.2 × 8.2): 3.2 m walls, open above, glazed
     and doored toward the desks, each with a long table at its `table` slot, centred between the door wall and the
     counter's chairs with about 1.9 m to walk on either side, a counter of laptop seats along the front
     glass and places to stand at the table's foot, where a crew of three gathers ([[whereabouts]]); the hero stands

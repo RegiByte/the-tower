@@ -104,7 +104,7 @@ export function roomsOf(p: { width: number; depth: number }): Room[] {
     { id: 'archive', label: 'Archive', prefab: 'prefabs/room_archive.json', box: box(left, left + ARCHIVE.width, back, back + ARCHIVE.depth), door: { x: left + ARCHIVE.width, z: back + ARCHIVE.depth - 0.9, turn: 90 }, height: UNDER_DECK },
     { id: 'game', label: 'Game room', prefab: 'prefabs/room_game.json', box: box(left, edge, back + ARCHIVE.depth, back + WING.deck), door: { x: edge, z: back + 7.6, turn: 90 }, height: UNDER_DECK },
     meeting('meeting-8', 'Meeting · 8', -8.2, 1.0, 8),
-    meeting('meeting-4', 'Meeting · 4', 8.0, 14.4, 4),
+    meeting('meeting-4', 'Meeting · 4', 8.0, 16.2, 4),
   ]
 }
 

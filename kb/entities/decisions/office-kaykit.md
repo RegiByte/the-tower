@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/kaykit/src/scene.ts#layTheme",

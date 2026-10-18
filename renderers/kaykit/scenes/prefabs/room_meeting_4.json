@@ -1,14 +1,15 @@
 {
  "title": "meeting room for four",
- "note": "Meeting · 4 on the front glass, 6.4 x 8.2 m, origin at the middle of its door on the outer face of its glass door wall, facing out (+z, toward the desks): glazed and doored toward the desks, walls either side, the front glass closing it. 3.2 m walls, open above. Slots: where its long table stands (table, prefabs/meeting_long.json, its head away from the door), the laptop seats along the counter at the front glass (counter_<n>) where a crew sits past the table's seats, and where the rest stand at the table's foot (stand_<n>).",
+ "note": "Meeting · 4 on the front glass, 8.2 x 8.2 m, origin at the middle of its door on the outer face of its glass door wall, facing out (+z, toward the desks): glazed and doored toward the desks, walls either side, the front glass closing it. 3.2 m walls, open above. Slots: where its long table stands (table, prefabs/meeting_long.json, its head away from the door), the laptop seats along the counter at the front glass (counter_<n>) where a crew sits past the table's seats, and where the rest stand at the table's foot (stand_<n>).",
  "items": [
-  { "id": "counter", "model": "furniture/table_medium_long", "at": [-3, 0, -7.6], "scale": [1.333, 1, 0.4] }
+  { "id": "counter", "model": "furniture/table_medium_long", "at": [-3.7, 0, -7.6], "scale": [2, 1, 0.4] }
  ],
  "boxes": [
-  { "id": "door_wall_1_sill", "size": [4.05, 0.1, 0.17], "at": [-2.825, 0, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_1_glass", "size": [4.04, 3.04, 0.03], "at": [-2.83, 0.09, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
-  { "id": "door_wall_1_head", "size": [4.05, 0.08, 0.17], "at": [-2.825, 3.12, -0.085], "color": "#1d2433" },
-  { "id": "door_wall_1_mullion_1", "size": [0.06, 3.02, 0.15], "at": [-4.82, 0.1, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_sill", "size": [5.85, 0.1, 0.17], "at": [-3.725, 0, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_glass", "size": [5.84, 3.04, 0.03], "at": [-3.73, 0.09, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
+  { "id": "door_wall_1_head", "size": [5.85, 0.08, 0.17], "at": [-3.725, 3.12, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_mullion_1", "size": [0.06, 3.02, 0.15], "at": [-6.62, 0.1, -0.085], "color": "#1d2433" },
+  { "id": "door_wall_1_mullion_5", "size": [0.06, 3.02, 0.15], "at": [-5, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_2", "size": [0.06, 3.02, 0.15], "at": [-3.6, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_3", "size": [0.06, 3.02, 0.15], "at": [-2.2, 0.1, -0.085], "color": "#1d2433" },
   { "id": "door_wall_1_mullion_4", "size": [0.06, 3.02, 0.15], "at": [-0.8, 0.1, -0.085], "color": "#1d2433" },
@@ -21,14 +22,15 @@
   { "id": "door_wall_over_door", "size": [1.62, 0.92, 0.03], "at": [0, 2.27, -0.075], "color": "#9cc4ff", "opacity": 0.16 },
   { "id": "door_wall_jamb_right", "size": [0.08, 2.2, 0.17], "at": [-0.8, 0, -0.085], "color": "#1d2433" },
   { "id": "door_wall_jamb_left", "size": [0.08, 2.2, 0.17], "at": [0.8, 0, -0.085], "color": "#1d2433" },
-  { "id": "side_left", "size": [0.15, 3.2, 8.22], "at": [-4.925, 0, -4.11], "color": "#6e6858" },
+  { "id": "side_left", "size": [0.15, 3.2, 8.22], "at": [-6.725, 0, -4.11], "color": "#6e6858" },
   { "id": "side_right", "size": [0.15, 3.2, 8.22], "at": [1.325, 0, -4.11], "color": "#6e6858" }
  ],
  "slots": [
-  { "name": "table", "at": [-1.993, 0, -3.25], "turn": 180 },
-  { "name": "counter_1", "pose": "sit", "at": [-3.9, 0, -6.85], "turn": 180 },
-  { "name": "counter_2", "pose": "sit", "at": [-3, 0, -6.85], "turn": 180 },
-  { "name": "counter_3", "pose": "sit", "at": [-2.1, 0, -6.85], "turn": 180 },
+  { "name": "table", "at": [-2.893, 0, -3.25], "turn": 180 },
+  { "name": "counter_1", "pose": "sit", "at": [-5.05, 0, -6.85], "turn": 180 },
+  { "name": "counter_2", "pose": "sit", "at": [-4.15, 0, -6.85], "turn": 180 },
+  { "name": "counter_3", "pose": "sit", "at": [-3.25, 0, -6.85], "turn": 180 },
+  { "name": "counter_4", "pose": "sit", "at": [-2.35, 0, -6.85], "turn": 180 },
   { "name": "stand_1", "pose": "stand", "at": [0.258, 0, -3.474], "turn": -88 },
   { "name": "stand_2", "pose": "stand", "at": [0.126, 0, -4.829], "turn": -78.4 },
   { "name": "stand_3", "pose": "stand", "at": [-0.239, 0, -6.004], "turn": -57.1 }

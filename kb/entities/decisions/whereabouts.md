@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/renderers/tower3d/src/meetings.ts#meetingKit",
@@ -99,8 +99,8 @@ board field was added.
 - *Walked round.* The long table's footprint in its state is among the floor's
   [`colliders`](ref:hub/renderers/tower3d/src/layout.ts#colliders), which everyone walks round. Every chair at a
   sitting place, taken or empty, stops you alone ([`collidersOn`](ref:hub/renderers/tower3d/src/layout.ts#collidersOn)):
-  a worker pulls its chair out to sit, and the far side's chairs and the counter's stand back to back with no way
-  between them, so the grid workers and cats walk leaves the chairs out.
+  a worker pulls its chair out to sit, so the grid workers and cats walk leaves the chairs out. The table stands
+  centred between the door wall and the counter's chairs, with room to walk on either side of it.
 - *Its desk stays* ([`AwaySlot`](ref:hub/renderers/tower3d/src/layout.ts#AwaySlot)): the workstation is drawn with its
   worker's dressing, its monitor reads AWAY with the room ([`awayScreen`](ref:hub/renderers/tower3d/src/screens.ts#awayScreen))
   and its sign "<CALLSIGN> · in Meeting · 8" ([`syncStation`](ref:hub/renderers/tower3d/src/desk.ts#syncStation)); E
