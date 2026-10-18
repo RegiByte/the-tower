@@ -130,7 +130,7 @@ const USAGES: Record<string, string> = {
   up: 'up [host|terms|tower...]',
   down: 'down [host|terms|tower...]',
   update: 'update',
-  spawn: 'spawn <project> [--cwd <dir>] [--model <m>] [--effort <e>] [-- <prompt...>]',
+  spawn: 'spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]',
   resume: 'resume <id> [--carry-on]',
   submit: 'submit <id> <text...>',
   kill: 'kill <id|CALLSIGN>',
