@@ -214,14 +214,14 @@ const worktreeHtml = (f, w) => {
   </div>`
 }
 
-const keptBranchHtml = (b) =>
+const keptBranchHtml = (f, b) =>
   `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}">
     <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${b.carried ? landingButtonHtml({ project: f.id, branch: b.name }) : ''}${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
 
 /** The floor's worktrees and the branches the tower kept. */
 const worktreesHtml = (f) => `<div class="worktrees">
     <div class="drafts-head eyebrow">Worktrees</div>
-    ${f.worktrees.map((w) => worktreeHtml(f, w)).join('')}${f.branches.map(keptBranchHtml).join('')}</div>`
+    ${f.worktrees.map((w) => worktreeHtml(f, w)).join('')}${f.branches.map((b) => keptBranchHtml(f, b)).join('')}</div>`
 
 /** A floor's review threads, each named by its checkout beside its tag, and the threads Tidy filed once their work landed, folded. */
 const threadsHtml = (f) => {
