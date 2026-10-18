@@ -15,7 +15,7 @@
  *   tower policies [approve|run <tag|id>]  the floor's policies: each one's rule, approval, live runs, last run and
  *                        where it stands now; `approve` approves its words as they are, `run` starts it now (an open
  *                        offer's slot when it has one)
- *   tower runs [<tag|id>] [--limit n]  a policy's latest runs (5 unless told), each with its worker, what it showed and
+ *   tower runs [<tag|id>] [--limit n]  a policy's latest runs (5 unless told, 20 at most), each with its worker, what it showed and
  *                        its latest answer cut short; no policy named, the one this session is a run of
  *   tower show <file|url> [title]   put a file this session wrote, or a web page, in front of the user beside this session
  *   tower open <url> [title]        ask the user to open a page in a browser tab (one that can't be shown in place)
@@ -569,11 +569,13 @@ const runReadLines = (run: RunRead, tz: string | undefined, now: number): string
 
 const RUNS_USAGE = 'Usage: tower runs [<tag|id>] [--limit n]'
 const RUNS_SHOWN = 5
+const RUNS_MOST = 20
 
 const runsArgs = (args: string[]): { policy?: string; limit: number } => {
   const at = args.indexOf('--limit')
   const limit = at === -1 ? RUNS_SHOWN : Number(args[at + 1])
   if (at !== -1 && !(Number.isInteger(limit) && limit > 0)) throw new CliError(RUNS_USAGE)
+  if (limit > RUNS_MOST) throw new CliError(`tower runs shows at most ${RUNS_MOST} runs: \`tower agent <CALLSIGN>\` reads any run's worker in full`)
   const rest = at === -1 ? args : [...args.slice(0, at), ...args.slice(at + 2)]
   if (rest.length > 1) throw new CliError(RUNS_USAGE)
   return { policy: rest[0], limit }
