@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-17",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D entirely, and tested it by brute force: stubbing pointer lock, dispatching
@@ -38,12 +38,14 @@ registries ([[tower3d-registries]]) needs a before/after it can be checked again
   attention, liveness, verbs and on-duty come from the bridge's own functions, so a contract change breaks the
   build. A fixture's monitors open no streams: there is no host behind it, and replies landing between steps
   made frames differ.
-- `npm run drive` is a headless Chrome driver (fresh profile, free port, page errors printed, steps in order);
+- `npm run drive` is a headless Chrome driver (fresh profile, free port, page errors printed and collected, steps in order);
   `npm run sandbox -- up | down` a throwaway system with a tower on port 4399. Model names the renderer reads
   are data (`contract.ts`), checked against every `.glb` by `npm test`; `lab.html` shows one model with its draw
   calls and names. `npm run tool:frames` (`record <label>`, `compare <a> <b>`) walks a fixed scenario through the
   door on every fixture board and compares each stage's state and PNG byte for byte; it refuses a scenario that
-  does not repeat.
+  does not repeat, and stays a manual check. CI runs one boot instead (`npm run test:tower3d-boot`): the built
+  bundle served by a tower alone over a throwaway root, `?board=busy` opened through `ready()`, and a board, desks,
+  stations, walls and draw calls asserted with no page error, unhandled rejection, console error or failed load.
 
 **Alternatives considered.**
 - Keep driving real input over CDP: fragile and slow.

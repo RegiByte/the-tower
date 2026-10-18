@@ -32,6 +32,7 @@
     "spike:pty": "tsx spikes/pty/passthrough.ts",
     "typecheck": "tsc -p . && tsc -p tsconfig.client.json && tsc -p renderers/tower3d && tsc -p renderers/kaykit",
     "test": "node --import tsx --test test/*.test.ts",
+    "test:tower3d-boot": "tsx scripts/tower3d-boot.ts",
     "tool:contrast": "tsx scripts/contrast.ts",
     "tool:claude-check": "tsx scripts/claude-check.ts",
     "served:update": "UPDATE_SERVED=1 node --import tsx --test test/served.test.ts",

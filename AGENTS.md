@@ -79,7 +79,7 @@ shells (PTY) ◀──────▶ terms ◀──terms.sock──▶ rendere
 
 A pull request is checked by CI (`.github/workflows/ci.yml`); run the same before pushing, and leave the tree as committed:
 
-- `npm run typecheck`, `npm test`, `npm run tower3d`, and `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed. `git status` is clean after them (CI fails on a file they add or rewrite).
+- `npm run typecheck`, `npm test`, `npm run tower3d`, then `npm run test:tower3d-boot` (the built Tower 3D boots on a fixture board in headless Chrome, clean of page errors: `scripts/tower3d-boot.ts`), and `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed. `git status` is clean after them (CI fails on a file they add or rewrite).
 - `node .claude/skills/kb/tool/kb.mjs verify`. A change that contradicts a kb entity updates it in the same commit (Knowledge base, above), and a branch lands with no suspect of its own: `kb.mjs verify --since origin/main` lists those its commits caused, each cleared by checking the entity's claims and setting its `reviewed`. CI lists them on a pull request as warnings, and does not fail on them.
 - A served module's exports change: `npm run served:update`. A board shape change: `npm run schema:board`. An addition moves `API_VERSION`'s minor, in the PR. A removal or rename is an API major: the PR says what renderers use instead, for the CHANGELOG (decision `renderer-api-contract`).
 - `CHANGELOG.md`, tags and releases are the maintainer's: leave them.
