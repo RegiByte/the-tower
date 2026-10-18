@@ -41,7 +41,9 @@ drift doesn't.
 `npm run -s tool:claude-check -- due` ([`due`](ref:hub/scripts/claude-check.ts#due)) says whether the installed
 release still needs a run: exit 0 when it reads `above` and no pull request titled `Claude <release>` is open or
 merged, the title a clean run's pull request takes (step 1), 1 when not, 2 when it can't tell. It is the check line of
-a policy ([[policies]]) that offers the run on each new release, and never again once one passed.
+a policy ([[policies]]) that offers the run on each new release, and never again once one passed. Run by the tower,
+it reads `claude`, `gh` and `npm` from the tower's own PATH, and `gh` signed in and reaching GitHub: a tower started
+without them reads exit 2 at every slot, a `check-failed` pass, and offers nothing.
 - **Shapes.** Every event Claude posted and its payload keys, one level into objects (a tool's own input left
   out), against [`test/claude-shapes.json`](ref:hub/test/claude-shapes.json), the shapes of the last accepted run:
   the fixtures come from mixed releases, so they are no baseline for shapes. The run is compared as one vocabulary
