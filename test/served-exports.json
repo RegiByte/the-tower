@@ -310,6 +310,7 @@
       "heededWaits",
       "hireDepth",
       "hireRefusal",
+      "hirerName",
       "hiresOf",
       "hostState",
       "isOffer",

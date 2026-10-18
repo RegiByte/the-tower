@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-17",
-  "refs": ["hub/src/directory.ts", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/cards.ts#pairLine"]
+  "reviewed": "2026-10-18",
+  "refs": ["hub/src/directory.ts", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#hireDepth", "hub/src/shared/cards.ts#liveHires", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/cards.ts#pairLine", "hub/src/shared/cards.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -26,7 +26,8 @@ the easy path stops them, as long as it is named for what it is.
   the same way); the facts fold it into `hired`. A hire that can't be logged is killed, so none runs uncounted.
   `tower hire` and `tower review` spawn this way.
 - *The board.* [`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf) maps each hired session to its hirer (session and
-  callsign); a card's `hiredBy` is the hirer of the first session of its worker's lineage, so it survives resumes.
+  callsign and floor); a card's `hiredBy` is the hirer of the first session of its worker's lineage, so it survives
+  resumes.
   `floor.hiring` is the floor's limits.
 - *The limits* (config `hiring: {depth, live}`, top level and per project, the project's winning per key, through
   [`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig); defaults in [[docs-config]]). A worker nobody hired stands at
@@ -34,7 +35,9 @@ the easy path stops them, as long as it is named for what it is.
   at most `depth` deep. At most `live` of a worker's hires run at once, reviewers aside
   ([`liveHires`](ref:hub/src/shared/cards.ts#liveHires)). [`hireRefusal`](ref:hub/src/shared/cards.ts#hireRefusal)
   says why a worker may not hire, as a sentence; the tower answers a hire past the spawn's floor's limits with it,
-  as error `limited`, and `tower hire` tells the worker to ask the user.
+  as error `limited`, and `tower hire` tells the worker to ask the user. A hire on another floor (`tower hire floor
+  <id>`) meets that floor's limits, the floor it would crowd, with the hirer's depth and live hires counted on every
+  floor: a chain can't escape its limits by crossing floors.
 - *One at a time.* Claude runs a worker's Bash calls in parallel, so hires that each read the board first would all
   pass. The tower takes a hirer's hires in turn, by its callsign
   ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), each holding the turn until the system counts it (its log tracked,
@@ -44,7 +47,8 @@ the easy path stops them, as long as it is named for what it is.
   doesn't enforce them. A hire whose prompt starts a reviewer (`reviewedIn`, as `liveHires` leaves it out) is not
   weighed, and still logs `tower.hire`, so the pair is attributed.
 - *Drawn.* `tower whoami` tells a hired worker who hired it, and every renderer says "hired by X" through
-  [`pairLine`](ref:hub/src/shared/cards.ts#pairLine).
+  [`pairLine`](ref:hub/src/shared/cards.ts#pairLine), "hired by X (floor)" when X works on another floor
+  ([`hirerName`](ref:hub/src/shared/cards.ts#hirerName)).
 - *Whose prompt.* A conversation's `promptBy` is the hirer while its latest prompt is still the one the worker was
   hired on (the first session's launch prompt, as `card.reviews` reads it); `tower agent` and both renderers' Brief
   name it in place of the user. A prompt typed later is the user's again.

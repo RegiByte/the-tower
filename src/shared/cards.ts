@@ -1,4 +1,4 @@
-import type { Attention, Board, Card, CardSubagent, Floor, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
+import type { Attention, Board, Card, CardSubagent, Floor, HiredBy, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
 import type { Exposure, FloorWorktree, LandingRead, WorktreeState } from '../bridge/worktrees.ts'
@@ -816,9 +816,12 @@ export const shownTitle = (s: Card['shown'][number]) => s.title ?? (s.kind === '
 /** The branch a worker works on, `⎇ tower/hugin-02`; `''` in a main checkout. */
 export const branchLine = (c: Card) => (c.worktree ? `⎇ ${c.worktree.branch ?? `${c.worktree.name}, detached`}` : '')
 
+/** A hirer by callsign, with its floor when it hired onto another than `project`: `PEDRINHO-33 (tower)`. */
+export const hirerName = (by: HiredBy, project: string) => `${by.callsign}${by.project === project ? '' : ` (${by.project})`}`
+
 /** How a worker's work stands to others': whose it reviews, else the checkout its worktree was forked from; and who hired it, when that isn't whose work it reviews. */
 export const pairLine = (c: Card) =>
-  [c.reviews ? `reviews ${c.reviews}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== c.reviews ? `hired by ${c.hiredBy.callsign}` : '']
+  [c.reviews ? `reviews ${c.reviews}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== c.reviews ? `hired by ${hirerName(c.hiredBy, c.project)}` : '']
     .filter(Boolean)
     .join(' · ')
 

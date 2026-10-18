@@ -219,8 +219,8 @@ export type GalleryShowing = { worker: SessionRef; shown: CardShown }
 
 export type { SessionRef }
 
-/** A hirer: the session it hired from, and its callsign. */
-export type HiredBy = { session: string; callsign: string }
+/** A hirer: the session it hired from, its callsign, and the floor it works on, which a hire on another floor doesn't share. */
+export type HiredBy = { session: string; callsign: string; project: string }
 
 /** The worker that kept an item (`tower keep`), in the conversation it was in. An item made any other way has none. */
 export type KeptBy = { session: string; callsign: string; conversation?: string }
@@ -539,7 +539,7 @@ const withCrews = (cards: Card[]): Card[] => {
 
 /** Each hired session, by id, with the worker that hired it. */
 const hirersOf = (sessions: Session[], nameOf: (s: Session) => string): Map<string, HiredBy> =>
-  new Map(sessions.flatMap((session) => session.facts.hired.map((id) => [id, { session: session.header.id, callsign: nameOf(session) }] as const)))
+  new Map(sessions.flatMap((session) => session.facts.hired.map((id) => [id, { session: session.header.id, callsign: nameOf(session), project: session.header.project }] as const)))
 
 const collectionsOf = (config: Config, projectId: string, root: string, items: CollectionItem[], keptBy: Map<string, KeptBy>): FloorCollection[] =>
   Object.entries(projectCollections(config, projectId)).map(([id, { label, description }]) => ({

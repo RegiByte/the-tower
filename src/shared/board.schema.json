@@ -760,14 +760,18 @@
         },
         "callsign": {
           "type": "string"
+        },
+        "project": {
+          "type": "string"
         }
       },
       "required": [
         "session",
-        "callsign"
+        "callsign",
+        "project"
       ],
       "additionalProperties": false,
-      "description": "A hirer: the session it hired from, and its callsign."
+      "description": "A hirer: the session it hired from, its callsign, and the floor it works on, which a hire on another floor doesn't share."
     },
     "CheckoutState": {
       "anyOf": [
