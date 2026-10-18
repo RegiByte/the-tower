@@ -58,7 +58,7 @@ async function main() {
     const url = `http://127.0.0.1:${port}`
     await answers(url)
     const started = Date.now()
-    const { booted, errors } = await withPage(`${url}/r/tower3d/?board=busy&seed=1&stepped`, { flags: ['--enable-unsafe-swiftshader'] }, async (page) => ({ booted: (await page.eval(BOOT)) as Booted, errors: page.errors }))
+    const { booted, errors } = await withPage(`${url}/r/tower3d/?board=busy&seed=1&stepped&at=2026-10-04T15:00`, { flags: ['--enable-unsafe-swiftshader'] }, async (page) => ({ booted: (await page.eval(BOOT)) as Booted, errors: page.errors }))
     console.log(`booted in ${Date.now() - started} ms on ${booted.renderer}: ${JSON.stringify(booted.counts)}, ${booted.drawn.calls} draw calls`)
     const failed = problems(booted, errors)
     if (failed.length) throw new Error(`Tower 3D did not boot clean:\n  ${failed.join('\n  ')}`)
