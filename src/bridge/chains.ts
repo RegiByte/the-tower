@@ -1,6 +1,5 @@
 import { latestSaved, type Conversation } from './conversation.ts'
 import type { Session } from './facts.ts'
-import { nameIn } from '../shared/callsign.ts'
 
 const byStart = (a: Session, b: Session) => a.header.startedAt - b.header.startedAt
 
@@ -86,10 +85,6 @@ export const heldCallsigns = (sessions: Session[], ids: ReadonlySet<string>, cal
     return session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id)
   })
 }
-
-/** The names, numbers left out, of the workers of sessions `ids` (`heldCallsigns`). */
-export const heldNames = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): Set<string> =>
-  new Set(heldCallsigns(sessions, ids, callsign).map(nameIn))
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
 export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>

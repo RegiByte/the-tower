@@ -15,12 +15,13 @@
  *                                check it out, install, rebuild Tower 3D if built, restart the tower if running; say
  *                                when the host needs a restart, never restart it
  *   tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]
- *                                start a session (in the project's hub by default), print its id; --callsign names
- *                                its worker (NAME-NN, or NAME given the id's number), refused when the name is a running worker's
+ *                                start a session through the tower (in the project's hub by default), print its
+ *                                id; --callsign names its worker (NAME-NN, or NAME given the id's number), refused
+ *                                when the name is a running worker's
  *   tower resume <id> [--carry-on]
  *                                start a session that continues <id>'s conversation, print its id; through the
- *                                tower's resume queue while it runs, else straight to the host. --carry-on tells
- *                                Claude it was cut off mid-turn by the host and to carry on (a card's `carry-on`)
+ *                                tower's resume queue. --carry-on tells Claude it was cut off mid-turn by the host
+ *                                and to carry on (a card's `carry-on`)
  *   tower submit <id> <text...>  type a prompt and submit it; a worker's prompt (TOWER_SESSION_ID) is named in its log first
  *   tower kill <id|CALLSIGN>     end a session, by its id or its worker's callsign; a worker's kill (TOWER_SESSION_ID) is named in its log first
  *   tower live                   ids of running sessions
@@ -44,18 +45,16 @@ import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
 import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
-import { carriesOn, heldBy, heldCallsigns, heldNames, resumeName, runningNamed, runsAs } from './bridge/chains.ts'
+import { runningNamed } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
-import { callsignRefused, freshId, typedCallsign } from './shared/callsign.ts'
-import { callsignsOf, configuredUser, outsideProject, projectPlugins, sessionDirs, towerPort, towerUrl, worktreesConfig, type Config, type SessionLog } from './shared/model.ts'
+import { callsignsOf, towerPort, towerUrl, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
-import { CARRY_ON, newSessionId, resumeRequest, spawnRequest } from './shared/launch.ts'
-import { briefFor } from './worktrees.ts'
-import { configPath, projectCollectionsPath, systemPaths } from './shared/paths.ts'
+import { CARRY_ON } from './shared/launch.ts'
+import { configPath, systemPaths } from './shared/paths.ts'
 import { everyEvent, logFileOf, logFilesIn, readLog } from './tail.ts'
 import type { FromHost, ToHost } from './shared/protocol.ts'
 
@@ -93,24 +92,6 @@ const readSessions = (): Session[] =>
     .sort()
     .flatMap((file) => foldLog(paths.cache, path.join(paths.sessions, file))?.session ?? [])
 
-/** A new worker's session id, its callsign's name held by no running worker (`freshId`). */
-const workerId = (sessions: Session[], live: Set<string>, callsign: (id: string) => string) =>
-  freshId(newSessionId, callsign, heldNames(sessions, live, callsign))
-
-/** A new worker's session id and callsign, drawn (`workerId`). */
-const drawnWorker = (sessions: Session[], live: Set<string>, callsign: (id: string) => string): [string, string] => {
-  const id = workerId(sessions, live, callsign)
-  return [id, callsign(id)]
-}
-
-/** A new worker's session id and the callsign typed, refused when it can't be had (`callsignRefused`). */
-const chosenWorker = (typed: string, sessions: Session[], live: Set<string>, callsign: (id: string) => string, usage: string): [string, string] => {
-  const refused = callsignRefused(typed, heldCallsigns(sessions, live, callsign))
-  if (refused) throw new CliError(refused, usage)
-  const id = newSessionId()
-  return [id, typedCallsign(typed, id)]
-}
-
 const summary = (running: Resource[]): string => {
   if (!running.length) return ''
   const orphans = running.filter((r) => r.orphan).length
@@ -131,31 +112,14 @@ const print = (reply: FromHost) => {
   if (reply.t === 'live') console.log(reply.ids.join('\n'))
 }
 
-/**
- * A resume asked of the tower, which runs resumes one at a time and refuses a conversation a running session holds;
- * undefined when no tower answers.
- */
-const resumeThroughTower = async (id: string, conversation: string, prompt: string | undefined): Promise<FromHost | undefined> => {
+/** A verb asked of the tower, which builds every session's launch and holds its callsigns and conversations. */
+const towerCommand = async (verb: 'spawn' | 'resume', body: unknown): Promise<FromHost> => {
   const tower = towerUrl(readConfig(paths.config))
-  const res = await fetch(`${tower}/resume`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify({ id, conversation, prompt }) }).catch((err) => {
-    if (err.cause?.code === 'ECONNREFUSED') return undefined
+  const res = await fetch(`${tower}/${verb}`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify(body) }).catch((err) => {
+    if (err.cause?.code === 'ECONNREFUSED') throw new CliError(`The tower is not running: no tower answers at ${tower}`, 'tower up')
     throw err
   })
-  return res && res.json()
-}
-
-const resumeAtHost = async (log: SessionLog, conversation: string, prompt: string | undefined): Promise<FromHost> => {
-  const id = log.header.id
-  const sessions = readSessions()
-  const source = sessions.find((s) => s.header.id === id)!
-  const config = readConfig(paths.config)
-  const live = await liveIds(paths)
-  const holder = heldBy(conversation, sessions, live)
-  if (holder) throw new CliError(`${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": attach to it`)
-  const heir = carriesOn(source, conversation) ? newSessionId() : workerId(sessions, live, callsignsOf(config))
-  const project = config.projects[log.header.project]
-  const brief = await briefFor(project, worktreesConfig(config, log.header.project).links, log.header.cwd)
-  return request(resumeRequest(log.header, conversation, prompt, heir, resumeName(source, conversation, heir, sessions, callsignsOf(config)), sessionDirs(project, log.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, log.header.project), projectPlugins(config, log.header.project)))
+  return res.json()
 }
 
 /** What each of the user's verbs takes: `tower <verb> --help` prints it. */
@@ -220,17 +184,9 @@ const main = async (): Promise<void> => {
         allowPositionals: true,
         options: { cwd: { type: 'string' }, callsign: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
       })
-      const usage = 'Usage: tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]'
-      const config = readConfig(paths.config)
-      const project = config.projects[id]
-      if (!project) throw new CliError(`No project "${id ?? ''}". Projects: ${Object.keys(config.projects).join(', ')}`, usage)
+      if (!id) throw new CliError(`Usage: tower ${USAGES.spawn}`)
       const prompt = positionals.join(' ') || undefined
-      const cwd = values.cwd ?? project.hub
-      const outside = outsideProject(project, cwd)
-      if (outside) throw new CliError(outside)
-      const { callsign: typed, ...launch } = values
-      const [session, callsign] = typed === undefined ? drawnWorker(readSessions(), await liveIds(paths), callsignsOf(config)) : chosenWorker(typed, readSessions(), await liveIds(paths), callsignsOf(config), usage)
-      print(await request(spawnRequest(session, callsign, id, cwd, sessionDirs(project, cwd), { ...launch, prompt }, configuredUser(config), await briefFor(project, worktreesConfig(config, id).links, cwd), projectCollectionsPath(paths, id), projectPlugins(config, id))))
+      print(await towerCommand('spawn', { project: id, ...values, prompt }))
       break
     }
     case 'resume': {
@@ -239,7 +195,7 @@ const main = async (): Promise<void> => {
       const log = readSessionLog(id)
       const conversation = latestSaved(conversationsOf(log))
       if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
-      print((await resumeThroughTower(log.header.id, conversation.id, prompt)) ?? (await resumeAtHost(log, conversation.id, prompt)))
+      print(await towerCommand('resume', { id: log.header.id, conversation: conversation.id, prompt }))
       break
     }
     case 'submit': {

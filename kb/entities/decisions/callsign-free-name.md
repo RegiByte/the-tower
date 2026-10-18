@@ -12,7 +12,6 @@
     "hub/src/shared/callsign.ts#nameIn",
     "hub/src/shared/callsign.ts#callsignRefused",
     "hub/src/bridge/chains.ts#heldCallsigns",
-    "hub/src/bridge/chains.ts#heldNames",
     "hub/src/bridge/chains.ts#workerName",
     "hub/src/bridge/chains.ts#runsAs",
     "hub/src/bridge/chains.ts#namer",
@@ -20,8 +19,7 @@
     "hub/src/shared/launch.ts#spawnRequest",
     "hub/src/tower/server.ts#newWorker",
     "hub/src/tower/server.ts#workerIds",
-    "hub/src/tower/server.ts#freeName",
-    "hub/src/cli.ts#workerId"
+    "hub/src/tower/server.ts#freeName"
   ]
 }
 ---
@@ -40,10 +38,10 @@ deriving it again from a list that can change can say it wrongly.
 - *Drawn free.* The random part of a new session id is drawn again while its callsign's name
   ([`nameIn`](ref:hub/src/shared/callsign.ts#nameIn)) is held ([`freshId`](ref:hub/src/shared/callsign.ts#freshId)), up
   to a bound past which nearly every name is held and the last draw stands, its number telling it apart. The held names
-  are those of the sessions given ([`heldNames`](ref:hub/src/bridge/chains.ts#heldNames)), a session whose log isn't
-  read yet holding its id's callsign. The tower passes its workers on duty with the host's live set
-  ([`workerIds`](ref:hub/src/tower/server.ts#workerIds)), so a burst of spawns and a worker stranded by a host restart
-  both count; the CLI, which reads no board, passes the host's live set ([`workerId`](ref:hub/src/cli.ts#workerId)).
+  are those of the tower's workers on duty with the host's live set
+  ([`workerIds`](ref:hub/src/tower/server.ts#workerIds), [`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns)),
+  a session whose log isn't read yet holding its id's callsign, so a burst of spawns and a worker stranded by a host
+  restart both count. `tower spawn` asks the tower, so it draws the same way.
   Spawns, worktree cuts (whose draw also needs a free worktree name, [`freeName`](ref:hub/src/tower/server.ts#freeName)),
   forking resumes, reviewers and policy runs draw; a resume that carries a worker on keeps its name.
 - *Typed.* A callsign typed as a worker starts (the spawn verb's `callsign`, the New worker dialog, `tower spawn
