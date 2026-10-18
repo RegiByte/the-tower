@@ -7,8 +7,8 @@
  *
  * The page is served by a tower alone (`src/tower/server.ts`) over a throwaway system root with no projects and the
  * quota probe off: a fixture board needs no host, terms or sessions, only the tower's routes (`/tower.js`, the
- * design, `/renderers`, `/origins`). Chrome may fall back to SwiftShader where it finds no GPU, as on a CI runner;
- * the WebGL renderer it used is printed.
+ * design, `/renderers`, `/origins`). Chrome uses the GPU where it finds one (on CI, the macOS runner's paravirtual
+ * Metal device) and falls back to SwiftShader on a machine with none; the WebGL renderer it used is printed.
  */
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -18,7 +18,7 @@ import { freePort, sleep, withPage } from './drive.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
 const ENTRY = path.join(REPO, 'renderers', 'tower3d', 'out', 'tower3d.js')
-const READY_MS = 45_000
+const READY_MS = 90_000
 
 async function answers(url: string) {
   for (let i = 0; i < 100; i++) {
@@ -33,7 +33,7 @@ const BOOT = `(async () => {
   await Promise.race([tower3d.ready(), new Promise((_, reject) => setTimeout(() => reject(new Error('tower3d.ready() did not settle in ${READY_MS} ms')), ${READY_MS}))])
   const { counts, drawn } = tower3d.step(2)
   const gl = document.createElement('canvas').getContext('webgl2')
-  const renderer = gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL)
+  const renderer = gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info')?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER)
   return { counts, drawn, renderer }
 })()`
 
