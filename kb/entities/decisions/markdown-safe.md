@@ -15,7 +15,7 @@
     "hub/src/shared/markdown.ts#imagePath",
     "hub/src/tower/served.ts#MODULES",
     "hub/test/markdown.test.ts",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#docHtml",
     "hub/renderers/tower3d/src/showing.ts"
   ],

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/tags.ts#tagOf", "hub/src/shared/hash.ts", "hub/src/bridge/board.ts#FloorItem", "hub/src/bridge/board.ts#FloorCollection", "hub/src/directory.ts#itemNamed", "hub/renderers/page/index.html", "hub/renderers/tower3d/src/cork.ts#noteTexture", "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"]
+  "refs": ["hub/src/shared/tags.ts#tagOf", "hub/src/shared/hash.ts", "hub/src/bridge/board.ts#FloorItem", "hub/src/bridge/board.ts#FloorCollection", "hub/src/directory.ts#itemNamed", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/cork.ts#noteTexture", "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"]
 }
 ---
 **Problem.** Workers name kept items in their answers and pages, while the user sees titles on screen: a reference

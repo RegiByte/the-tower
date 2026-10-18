@@ -21,7 +21,7 @@
     "hub/src/shared/panels.ts#threadFiles",
     "hub/src/bridge/board.ts#Board",
     "hub/src/directory.ts",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#pictureHeadHtml",
     "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"
   ],

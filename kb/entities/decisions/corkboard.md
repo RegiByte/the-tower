@@ -17,7 +17,7 @@
     "hub/renderers/tower3d/src/main.ts#sendCarried",
     "hub/renderers/tower3d/src/main.ts#openDraftPanel",
     "hub/renderers/tower3d/src/hands.ts#holdNote",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/tower/server.ts#design"
   ]
 }

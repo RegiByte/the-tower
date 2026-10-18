@@ -19,7 +19,7 @@
     "hub/src/system.ts#readConfig",
     "hub/src/system.ts#watchSystem",
     "hub/src/tower/tower.js",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/main.ts#onBoardError"
   ]
 }

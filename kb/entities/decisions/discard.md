@@ -17,7 +17,7 @@
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/cards.ts#discardAsk",
     "hub/src/shared/cards.ts#discardedLine",
-    "hub/renderers/page/index.html"
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js"
   ]
 }
 ---

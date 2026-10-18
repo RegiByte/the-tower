@@ -11,7 +11,7 @@
     "hub/src/tower/tower.js",
     "hub/src/shared/shelf-page.ts#FromPage",
     "hub/src/shared/api.ts#API_VERSION",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/shelf.ts#shownServes",
     "hub/src/shelf.ts#shelfServes",
     "hub/renderers/tower3d/src/showing.ts#posterOf",

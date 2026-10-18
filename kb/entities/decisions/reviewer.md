@@ -20,7 +20,7 @@
     "hub/src/shared/cards.ts#pairLine",
     "hub/src/mod/skills/review/SKILL.md",
     "hub/src/directory.ts",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/acts.ts#KEY",
     "hub/src/bridge/seats.ts#seats",
     "hub/renderers/tower3d/src/desk.ts#makeVisitor",

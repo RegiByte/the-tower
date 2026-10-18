@@ -21,7 +21,7 @@
     "hub/src/shared/cards.ts#dutyOrder",
     "hub/src/directory.ts",
     "hub/src/mod/skills/handbook/SKILL.md",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/acts.ts#sentHome",
     "hub/src/shared/cards.ts#sendHomeAsk",
     "hub/src/shared/cards.ts#pastCrews",

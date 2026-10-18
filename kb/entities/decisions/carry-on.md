@@ -20,7 +20,7 @@
     "hub/src/shared/cards.ts#resumeAllAsk",
     "hub/src/shared/cards.ts#resumeStranded",
     "hub/src/cli.ts",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts",
     "hub/test/fixtures/host-stopped-mid-turn.jsonl",
     "hub/test/board.test.ts"

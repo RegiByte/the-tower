@@ -22,7 +22,7 @@
     "hub/src/shared/cards.ts#offerTransitions",
     "hub/src/shared/cards.ts#ringingSound",
     "hub/renderers/tower3d/src/compass.ts#pointers",
-    "hub/renderers/page/index.html"
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js"
   ]
 }
 ---

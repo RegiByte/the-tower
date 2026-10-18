@@ -20,7 +20,7 @@
     "hub/src/collections.ts#restoreItem",
     "hub/src/shared/api.ts#API_VERSION",
     "hub/src/shared/cards.ts#spawnFormHtml",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/main.ts",
     "hub/renderers/tower3d/src/main.ts#confirmed",
     "hub/renderers/tower3d/src/ui.ts#askingButton",

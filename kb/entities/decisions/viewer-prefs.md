@@ -34,7 +34,7 @@
     "hub/src/shared/design.ts#reduced",
     "hub/src/shared/design.ts#designCss",
     "hub/src/shared/shelf-page.ts",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/term.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
     "hub/renderers/tower3d/src/main.ts#paintSettings"

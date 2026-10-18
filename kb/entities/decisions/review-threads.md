@@ -27,7 +27,7 @@
     "hub/src/changes.ts#changesIn",
     "hub/src/worktrees.ts#cut",
     "hub/src/worktrees.ts#ownCommits",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/shared/cards.ts#sendTargets",
     "hub/src/shared/cards.ts#sendTarget",
     "hub/src/shared/panels.ts#threadViewOf",

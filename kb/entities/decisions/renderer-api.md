@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html"]
+  "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
 **Context.** Shelf pages and renderers need to read the system and act on it, or no renderer could ever do what

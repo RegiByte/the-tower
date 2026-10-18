@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/renderers/tower3d/src/term.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/src/bridge/screen.ts#lastFrame"]
+  "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/renderers/tower3d/src/term.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
 **Context.** A session's screen is replayed into a viewer's xterm with no scrollback: the log is the history, and a

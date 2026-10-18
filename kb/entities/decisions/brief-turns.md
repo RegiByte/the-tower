@@ -36,7 +36,7 @@
     "hub/src/shared/model.ts#briefConfig",
     "hub/src/tower/server.ts#conversations",
     "hub/src/directory.ts#threadLines",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
     "hub/renderers/tower3d/src/main.ts#chooseBriefMarkdown",
     "hub/test/turns.test.ts"

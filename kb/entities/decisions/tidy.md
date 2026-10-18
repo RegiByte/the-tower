@@ -25,7 +25,7 @@
     "hub/src/shared/cards.ts#tidyLine",
     "hub/src/shared/cards.ts#tidyRows",
     "hub/src/shared/cards.ts#editedRows",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
     "hub/renderers/tower3d/src/cards.ts#landedRow",
     "hub/test/prunable.test.ts",

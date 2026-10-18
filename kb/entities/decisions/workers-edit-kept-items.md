@@ -23,7 +23,7 @@
     "hub/src/shared/paths.ts#projectCollectionsPath",
     "hub/src/shared/drafts.ts#follow",
     "hub/src/mod/skills/handbook/SKILL.md",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"
   ]
 }

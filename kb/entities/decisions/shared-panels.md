@@ -25,7 +25,7 @@
     "hub/src/shared/panels.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
     "hub/src/shared/words.ts#markRanges",
-    "hub/renderers/page/index.html",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/main.ts#drawChanges",
     "hub/renderers/tower3d/src/main.ts#drawThread"
   ],
