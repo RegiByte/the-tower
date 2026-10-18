@@ -4,7 +4,7 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every probe's stream folded, every collection's items, every policy parsed and each project's policy facts folded, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-15",
+  "reviewed": "2026-10-17",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/bridge/probes.ts#probeFacts", "hub/src/bridge/policies.ts#policyFacts", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, read to its last full line from its checkpoint on, then tailed while the session runs; collections/ rescanned on any change" },
@@ -38,7 +38,8 @@ only a newly tracked log.
 
 **Collections and streams.** The collections directory, the system's streams (`streams/system/`) and the projects'
 streams (`streams/projects/`) are each watched recursively (one FSEvents stream on macOS, no descriptor per file) and
-read again once changes settle, so a burst of writes costs one read, signalling only when the result differs:
+read again once changes settle, so a burst of writes costs one read, signalling only when the result or a stream's
+set of files (a month archived) differs:
 collections rescanned ([`scanCollections`](ref:hub/src/collections.ts#scanCollections), every item with its size and
 mtime; the store doesn't read the config, the board picks the declared ones), each probe's month files folded in order
 ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts), [[probes]]), each project's `runs` and `approvals` folded
