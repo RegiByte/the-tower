@@ -76,6 +76,7 @@
   t.key('Escape'); t.step(10)
   const open = t.acts('station').find((a) => a.open)
   if (open) {
+    t.capture()
     tryDo('aim-station', () => {
       const l = t.locate(open)
       t.teleport({ level: l.level, x: l.x - 3.5, z: l.z, yaw: Math.PI / 2 })
@@ -199,11 +200,15 @@
   const cabinet = t.acts('arcade')[0]
   if (cabinet) {
     t.key('Escape'); t.step(10); t.capture()
+    /** In front of the cabinet, else beside the worker playing it, whom an aim from the front lands on. */
     tryDo('aim-cabinet', () => {
       const l = t.locate(cabinet)
-      t.teleport({ level: l.level, x: l.x, z: l.z - 2.2, yaw: 0 })
-      t.step(1)
-      t.aimAt(cabinet)
+      for (const [dx, dz] of [[0, -2.2], [0.8, -0.9]]) {
+        t.teleport({ level: l.level, x: l.x + dx, z: l.z + dz, yaw: 0 })
+        t.step(1)
+        if (t.aimAt(cabinet)?.kind === 'arcade') return
+      }
+      throw new Error('a worker stands in the way of the cabinet')
     }); t.step(1); snap('aimed-cabinet')
     tryDo('play', () => t.press('use')); t.step(60); snap('playing')
     tryDo('stop-playing', () => document.querySelector('#game-head [data-act=close]').click()); t.step(60); snap('stopped-playing')
