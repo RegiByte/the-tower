@@ -52,7 +52,7 @@ checkpoint to the new offset when it read anything. A checkpoint is `{fold, head
 - **Archived logs**: a log Tidy gzipped keeps the checkpoint archiving leaves at its end, which holds without
   inflating it ([[log-retention]]).
 - **Readers**: [`watchSystem`](ref:hub/src/system.ts#watchSystem)'s `track` (the tower's start and every new log),
-  `tower ls`/`tower resume` ([`src/cli.ts`](ref:hub/src/cli.ts)) and archiving a log
+  `tower ls`/`tower kill` ([`src/cli.ts`](ref:hub/src/cli.ts)) and archiving a log
   ([`archiveLog`](ref:hub/src/archive.ts#archiveLog), which folds it to its end first). The archive read (`GET /archive/<project>`) reads
   the live system's sessions in memory and folds nothing. Screens (`/screen`, `tower screen`, `tower attach`) replay
   output and keep no checkpoint.
