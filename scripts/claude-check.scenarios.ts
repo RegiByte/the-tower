@@ -186,9 +186,9 @@ export const SCENARIOS: Scenario[] = [
     steps: [{ on: DONE }],
   }),
   one('subagent-resume', {
-    prompt: 'Use the Agent tool to start one general-purpose subagent (not in the background) named reader, whose task is to read facts.txt with the Read tool and report it in one line. When it returns, tell me what it found in one sentence.',
+    prompt: 'Use the Agent tool to start one general-purpose subagent (not in the background) named reader, whose task is to run the Bash command "sleep 5", then read facts.txt with the Read tool and report it in one line. When it returns, tell me what it found in one sentence.',
     steps: [
-      { on: DONE, do: { submit: 'Now use SendMessage to send the subagent you started (by its agent ID or name) this message: read more.txt with the Read tool and report it in one line. Wait for its answer, then tell me what it said in one sentence.' } },
+      { on: DONE, do: { submit: 'Now use SendMessage to send the subagent you started (by its agent ID or name) this message: run the Bash command "sleep 5", then read more.txt with the Read tool and report it in one line. Wait for its answer, then tell me what it said in one sentence.' } },
       { on: DONE },
     ],
   }),
