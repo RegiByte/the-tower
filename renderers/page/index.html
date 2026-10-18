@@ -152,6 +152,12 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess.gone { opacity: .55; }
 .gone-home { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-xs); min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border-color: transparent; }
 .gone-home:hover { color: var(--ink); }
+.away { justify-self: start; display: inline-flex; align-items: center; gap: var(--sp-s); max-width: 100%; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; border: 1px dashed var(--line); border-left: 4px solid var(--p, var(--line)); }
+.away:hover { color: var(--ink); border-color: var(--ink); border-left-color: var(--p, var(--ink)); }
+.away .call { font: 800 var(--fs-s)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
+.away .on { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.away .st { flex: none; font-weight: 700; }
+.away:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
 .sess.gone:hover, .sess.gone.sel { opacity: 1; }
 .sess .act button { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); }
 .unresumable { color: var(--faint); font-size: var(--fs-s); white-space: nowrap; }

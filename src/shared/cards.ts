@@ -313,6 +313,9 @@ export const loudest = (cards: Card[]) => LOUDNESS.find((a) => cards.some((c) =>
 /** The workers that report to a worker: its hires and its reviewers, by start. */
 export const hiresOf = (cards: Card[], c: Card) => cards.filter((h) => h.reportsTo === c.id).sort((a, b) => a.startedAt - b.startedAt)
 
+/** A worker's hires on other floors than its own, by start: each is drawn in full on its floor and linked under its hirer. */
+export const awayHiresOf = (cards: Card[], c: Card) => hiresOf(cards, c).filter((h) => h.project !== c.project)
+
 /** Everyone under a worker, each before those under it. */
 export const crewOf = (cards: Card[], c: Card): Card[] => hiresOf(cards, c).flatMap((h) => [h, ...crewOf(cards, h)])
 

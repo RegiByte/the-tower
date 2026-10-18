@@ -59,7 +59,7 @@ import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
 import { heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, awayHiresOf, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -154,9 +154,7 @@ const awayLine = (card: Card, depth: number) => `${'    '.repeat(depth)}  └ ${
 const crewRows = (floor: Floor, everyone: Card[]): { card: Card; depth: number; away?: true }[] =>
   crewTree(floor.cards).flatMap((row) => [
     row,
-    ...hiresOf(everyone, row.card)
-      .filter((h) => h.project !== floor.id)
-      .map((card) => ({ card, depth: row.depth + 1, away: true as const })),
+    ...awayHiresOf(everyone, row.card).map((card) => ({ card, depth: row.depth + 1, away: true as const })),
   ])
 
 /** The floor's crews: each worker under the one it reports to, those that went home among them, and its hires on other floors. */

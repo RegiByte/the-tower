@@ -15,6 +15,7 @@
     "hub/src/shared/cards.ts#hiresOf",
     "hub/src/shared/cards.ts#crewOf",
     "hub/src/shared/cards.ts#crewTree",
+    "hub/src/shared/cards.ts#awayHiresOf",
     "hub/src/shared/cards.ts#goneHome",
     "hub/src/shared/cards.ts#crewFold",
     "hub/src/shared/cards.ts#workerNamed",
@@ -73,8 +74,10 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   acts on once the turn ends ([[leave]]). A crew can span floors (a hire on another floor, [[hire]]): `reportsTo` and
   `send-home` are derived over every floor's cards and `crewTree` runs per floor, so the hire heads a crew on its own
   floor, its card saying "hired by X (floor)", while `tower agents` links it under its hirer in one line,
-  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`); the
-  renderers draw no link yet. Tower 3D sends a worker home with its crew and draws no crew tree on duty; a crew of three on duty gathers in a meeting room
+  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`), folded by
+  [`awayHiresOf`](ref:hub/src/shared/cards.ts#awayHiresOf): the tower page draws each such hire still on duty as a
+  link row in its hirer's crew, painted in its floor's colour, that opens the hire's card on its floor. Tower 3D draws
+  no link. Tower 3D sends a worker home with its crew and draws no crew tree on duty; a crew of three on duty gathers in a meeting room
   until its lead goes home ([[whereabouts]]).
 - *The archive by crew.* [`pastCrews`](ref:hub/src/shared/cards.ts#pastCrews) groups `pastOf`'s cards (the board's
   off-duty ones and the archive read, [[board-archive]], so a crew split between them stays whole) into the same tree:
