@@ -29,7 +29,7 @@ sequenceDiagram
   M->>S: the same with terms.sock, terms.log, terms.pid
   M->>T: the same with the tower's port, tower.log, tower.pid
   O->>M: tower down [host|terms|tower...]
-  M->>T: SIGTERM the pid in tower.pid, if it still runs src/tower/server.ts; wait for it to exit
+  M->>T: SIGTERM the pid in tower.pid, if it still runs src/tower/server.ts, then wait for it to exit
   M->>S: the same with terms.pid
   M->>H: the same with host.pid
 ```

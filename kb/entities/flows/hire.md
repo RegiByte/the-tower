@@ -24,7 +24,7 @@ sequenceDiagram
   T->>H: spawn a new session on the prompt
   T->>H: fact tower.hire {id: new session} in the hirer's log
   H->>R: h event in the hirer's log
-  R-->>F: facts.hired gains the id; board: card.hiredBy
+  R-->>F: facts.hired gains the id, so the board sets card.hiredBy
   T->>T: the hirer's turn ends once the system counts the hire
 ```
 
