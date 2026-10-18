@@ -40,9 +40,16 @@ const besidePage = (page: string, file: string): boolean => {
   return !rel.startsWith('..') && !path.isAbsolute(rel)
 }
 
-/** What a shown page may pull in beside or below it: an html page anything, a markdown page its images. */
+/** A file in a hidden folder below a page, or hidden itself: `.git`, `.env`, a home's `.ssh`. */
+const hiddenBelow = (page: string, file: string): boolean =>
+  path.relative(path.dirname(page), path.normalize(file)).split(path.sep).some((part) => part.startsWith('.'))
+
+/**
+ * What a shown page may pull in beside or below it, outside anything hidden there: an html page anything, a markdown
+ * page its images.
+ */
 const servesBeside = (page: string, file: string): boolean =>
-  (path.extname(page) === '.html' || (path.extname(page) === '.md' && IMAGE.test(file))) && besidePage(page, file)
+  (path.extname(page) === '.html' || (path.extname(page) === '.md' && IMAGE.test(file))) && besidePage(page, file) && !hiddenBelow(page, file)
 
 /** Whether what a worker showed lets `file` (absolute) be read: a file it showed, or what a shown page pulls in. */
 export const shownServes = (shown: Shown[], file: string): boolean =>

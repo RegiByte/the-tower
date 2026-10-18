@@ -29,7 +29,7 @@
  *   GET  /run/<project>/<n>[/<file>]   an html or item entry as a renderer of its own, at the tower's origin; an HTML page saying why when the config can't be read
  *   GET  /collection/<project>/<collection>/<item>   one of a collection's files
  *   GET  /shown/<id>/<path>   a file the session showed (its absolute path), or what a page it showed pulls in: anything
- *                             beside or below an html file, an image beside or below a markdown one
+ *                             beside or below an html file, an image beside or below a markdown one, none of it hidden
  *   GET  /design.css    the design tokens as variables, and the faces;  GET /design.js  the design module (src/shared/design.ts)
  *   GET  /drafts.js     the drafts editor renderers share (src/shared/drafts.ts)
  *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)

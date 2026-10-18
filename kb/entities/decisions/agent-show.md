@@ -35,8 +35,18 @@ worker that made it.
 - What a worker made and didn't show is derived beside it: `card.pages` lists each html file the worker wrote
   (`Write`), at its first write, with `shown` true when the worker showed that path.
 - `GET /shown/<id>/<path>` serves a file the session showed, anything beside or below an html file it showed
-  (the shelf's rule), or an image beside or below a markdown one ([[blob-reads]]), with the shelf's CSP `sandbox`
-  (a video with `nosniff` instead, which both renderers play in a `<video>` with controls).
+  (the shelf's rule), or an image beside or below a markdown one ([[blob-reads]]), none of it hidden: no file whose
+  path below the page's folder has a part starting with `.` ([`shownServes`](ref:hub/src/shelf.ts#shownServes)).
+  It is served with the shelf's CSP `sandbox` (a video with `nosniff` instead, which both renderers play in a
+  `<video>` with controls).
+- Who can read it bounds the route, more than what it serves. The answer carries no CORS header, so a page at
+  another origin can load it as an `<img>` or a frame but never read it; the tower answers only its own Host names,
+  so DNS rebinding gets a 403 ([[agents-have-every-capability]]); a shown page runs at an opaque origin and reads
+  nothing of the tower. Only pages at the tower's origin (renderers and `/run` pages, which the user declared) and
+  the user's own browser tab read it. The session id is no secret and needs to be none. What is left to bound is
+  how much one showing opens to those readers: a page shown from a home or a repo's root would open `.ssh`, `.aws`,
+  `.git` and `.env` with it, and no page pulls those in. Links below the folder are followed, so a page's assets
+  linked in from elsewhere still load.
 - The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
   worker and notifying when you are not; markdown renders, an image fits the pane, any other file is framed as
   served, and a `link` is one Open ↗, since a browser opens no tab by itself. × closes a showing for this viewer
@@ -51,10 +61,15 @@ worker that made it.
   resumed worker would come back with empty tabs while the gallery named its stopped predecessor.
 - *Snapshot the file's content when shown.* Logs stay small, and a worker updates a file and shows it
   again.
+- *Serve only the types a page can pull in* (the tower's web types). A page at an opaque origin pulls in audio,
+  AVIF or PDF frames the tower serves as `application/octet-stream`, and secrets are named by where they live more
+  than by their extension.
+- *Refuse links that leave the page's folder.* Breaks pages whose assets are linked in, and guards against no reader
+  the origin doesn't already stop.
 - *A tower verb that opens things on the user's machine, for showing.* Not needed: showing puts the page beside the
   worker. Opening a file in the user's Finder or editor has its own verbs, `tower reveal` and `tower edit`
   ([[open-files]]).
 
-**Consequences.** Showing an html file exposes its directory and below to the tower's loopback port, as an html
-shelf entry does. A file deleted after it was shown answers `not_found`. Closing a showing is per browser
+**Consequences.** Showing an html file exposes its directory and below, its hidden files and folders apart, to
+pages at the tower's origin; an html shelf entry, which the user declares, still serves everything below its page. A file deleted after it was shown answers `not_found`. Closing a showing is per browser
 in the tower page; Tower 3D keeps no ×, and what it has opened is kept with its spot.
