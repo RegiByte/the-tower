@@ -1428,7 +1428,7 @@ function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   }, failStart)
 }
 
-const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(`start: ${err.message}`))
+const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(`start: ${err.message}`), unbuilt(err))
 
 /**
  * The first board under the loading screen: a paint so the screen shows each stage, the building, then every program
@@ -2814,7 +2814,8 @@ setInterval(() => {
 requestAnimationFrame(frame)
 
 let built: () => void
-const ready = new Promise<void>((resolve) => (built = resolve))
+let unbuilt: (err: Error) => void
+const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
 
 installDoor({
   ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, showPrompt, startHold, floorY, pickables, advance,

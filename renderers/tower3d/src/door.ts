@@ -14,7 +14,7 @@ import { aim, eyes, facing, type Walker } from './walker.ts'
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
  * produce, and steps the same clock the screen's frames do.
  *
- *   await tower3d.ready()                  the first board is built and its pictures read
+ *   await tower3d.ready()                  the first board is built and its pictures read; rejects with why a start failed (a file that would not load)
  *   tower3d.capture()                      walk as if the mouse were locked (headless Chrome never grants the lock)
  *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once (y: how high over its floor, on the deck)
  *   tower3d.acts('station')                every thing in the world of a kind, as it is aimed at (all without a kind)
