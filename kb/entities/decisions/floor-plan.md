@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-18",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingKit",
     "hub/renderers/tower3d/src/floorplan.ts#loftOf",
@@ -102,7 +102,7 @@ shoulders.
   are the deck layer's colliders ([`roomWalls`](ref:hub/renderers/tower3d/src/layout.ts#roomWalls)); a zone standing
   on the deck carries its `y`.
 - *The plate is sized for three rows* (`PLATE_ROWS` in [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)):
-  core 4 + landing 4.2 + rows × 4.8 + back margin 2.4 + the meeting strip 6.4 and its aisle 1.6, at least three rows'
+  core 4 + landing 4.2 + rows × 4.8 + back margin 0.6 + the meeting strip 8.2 and its aisle 1.6, at least three rows'
   worth: 33.0 m, 37.8 at four. The board still draws the rows it needs (two at least); the third's floor stands empty
   before the strip. The roof's dance floors grow with it.
 - *Rooms are prefabs placed from anchors* ([`roomsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#roomsOf),
@@ -121,8 +121,9 @@ shoulders.
     board ([[logbook]]). The game room, 9 × 9 before it, glazed toward the desks, the arcade along its front wall
     ([[arcade]]), the pigeonhole on its outer wall by the nook ([[review-threads]]).
   - *The lounge* is open, the wing from the deck's front to the front glass.
-  - *Along the front glass*, Meeting · 8 (9.2 × 6.4) and Meeting · 4 (6.4 × 6.4): 3.2 m walls, open above, glazed
-    and doored toward the desks, each with a long table at its `table` slot, a counter of laptop seats along the front
+  - *Along the front glass*, Meeting · 8 (9.2 × 8.2) and Meeting · 4 (6.4 × 8.2): 3.2 m walls, open above, glazed
+    and doored toward the desks, each with a long table at its `table` slot, centred between the door wall and the
+    counter's chairs with about 1.9 m to walk on either side, a counter of laptop seats along the front
     glass and places to stand at the table's foot, where a crew of three gathers ([[whereabouts]]); the hero stands
     between them. The round meeting table and its rug are gone.
   - Each room's name hangs over its door, in the floor's colour.

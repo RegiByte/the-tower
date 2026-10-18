@@ -65,7 +65,7 @@ const PLATE_ROWS = 3
 /** Clear floor between the elevator doors and the first row of desks. */
 const LANDING = 4.2
 const SIDE_MARGIN = 4
-const BACK_MARGIN = 2.4
+const BACK_MARGIN = 0.6
 const KIOSK_SPACING = 1.9
 /** A shell kiosk's footprint along the bench. */
 export const KIOSK_DEPTH = 1.2

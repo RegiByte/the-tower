@@ -18,7 +18,7 @@ const WING = { width: 9, deck: 14, landing: { from: 9.2, to: 10.8 } }
 /** The archive under the deck, from the plate's back-left corner: as wide along x and as deep along z. */
 export const ARCHIVE = { width: 6.5, depth: 5 }
 /** The strip along the front glass the meeting rooms take, and the aisle before it. */
-export const STRIP = { depth: 6.4, aisle: 1.6 }
+export const STRIP = { depth: 8.2, aisle: 1.6 }
 /** How high the rooms under the deck stand, and the meeting rooms' walls, open above. */
 const UNDER_DECK = 2.95
 const MEETING_HEIGHT = 3.2
