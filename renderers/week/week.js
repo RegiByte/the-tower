@@ -6,41 +6,69 @@
 import { usd, hours, duration } from '/panels.js'
 import { markdownHtml, markdownCss } from '/markdown.js'
 
+/**
+ * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
+ * @import { Lasted, SessionShare, Stats } from '../../src/bridge/stats.ts'
+ */
+/** A week of the book: `from` to `end`, `to` what has happened of it, `back` weeks before the latest. @typedef {{ from: number, end: number, to: number, back: number }} Week */
+/** One worker's week, summed over its sessions. @typedef {{ project: string, callsign: string, sessions: number, turns: number, agentHours: number, spend: number, latest: Card }} Worker */
+/** A local day of the hourly series. @typedef {ReturnType<typeof daysOf>[number]} Day */
+/** A conversation Claude answered. @typedef {Card['conversations'][number] & { answer: string }} Said */
+/** One superlative drawn. @typedef {{ title: string, who?: string, color?: string, value: string, more: string }} Superlative */
+
 const DAY = 86400_000
 const WEEK = 7 * DAY
 const PHOTO_ROWS = 24
 
+/** @param {unknown} s */
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
+/** @param {number} v */
 const count = (v) => Math.round(v).toLocaleString('en-US')
+/** @param {number} at */
 const localDate = (at) => {
   const d = new Date(at)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
+/** @param {number} at */
 const dayName = (at) => new Date(at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+/** @param {number} at */
 const dayShort = (at) => `${new Date(at).toLocaleDateString('en-US', { weekday: 'short' })} ${new Date(at).getDate()}`
+/** @param {number} at */
 const clock = (at) => new Date(at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
 
-/** The week `back` weeks before the latest: `end` its last moment, `to` what has happened of it by `now`. */
+/**
+ * The week `back` weeks before the latest: `end` its last moment, `to` what has happened of it by `now`.
+ * @param {number | undefined} resetsAt
+ * @param {number} now
+ * @param {number} back
+ * @returns {Week}
+ */
 function weekOf(resetsAt, now, back) {
   const end = (resetsAt ?? now) - back * WEEK
   return { from: end - WEEK, end, to: Math.min(end, now), back }
 }
 
-/** How many weeks before the latest the week ending on local day `date` is. */
+/**
+ * How many weeks before the latest the week ending on local day `date` is.
+ * @param {number | undefined} resetsAt
+ * @param {number} now
+ * @param {string} date
+ */
 const backOf = (resetsAt, now, date) => Math.max(0, Math.round(((resetsAt ?? now) - new Date(`${date}T00:00`).getTime()) / WEEK))
 
-/** A worker's last moment the logs heard of. */
+/** A worker's last moment the logs heard of. @param {Card} card */
 const lastSeen = (card) => Math.max(card.startedAt, card.heardAt ?? 0, card.enteredAt ?? 0)
 
-/** The conversation a worker spoke last in. */
+/** The conversation a worker spoke last in. @param {Card} card @returns {Said | undefined} */
 const latestSaid = (card) =>
-  [...card.conversations].filter((c) => c.answer).sort((a, b) => b.startedAt - a.startedAt)[0]
+  /** @type {Said[]} */ ([...card.conversations].filter((c) => c.answer)).sort((a, b) => b.startedAt - a.startedAt)[0]
 
-/** Markdown to one plain line, for a caption. */
+/** Markdown to one plain line, for a caption. @param {string} md */
 const plain = (md) =>
   md.split('\n').map((l) => l.trim()).find((l) => l && !l.startsWith('```'))
     ?.replace(/^#+\s*|^[-*]\s+/, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]/g, '') ?? ''
 
+/** @param {string} text */
 const caption = (text) => {
   const sentence = /^(.{20,140}?[.!?])(\s|$)/.exec(text)?.[1]
   return sentence ?? (text.length > 120 ? `${text.slice(0, 118).trimEnd()}…` : text)
@@ -49,8 +77,13 @@ const caption = (text) => {
 /**
  * Every worker on duty within the week, one per floor and callsign: its sessions, their turns, worker-hours and spend
  * within the week (`/stats`'s share of each session), and its latest card.
+ * @param {Card[]} cards
+ * @param {Week} week
+ * @param {Stats['sessions']} shares
+ * @returns {Worker[]}
  */
 function workersOf(cards, { from, to }, shares) {
+  /** @type {Map<string, Worker>} */
   const byName = new Map()
   for (const card of cards) {
     if (card.startedAt >= to || lastSeen(card) < from) continue
@@ -69,24 +102,30 @@ function workersOf(cards, { from, to }, shares) {
   return [...byName.values()]
 }
 
-/** The card whose session's share holds the longest of `pick` in the week, with that length. */
+/**
+ * The card whose session's share holds the longest of `pick` in the week, with that length.
+ * @param {Stats['sessions']} shares
+ * @param {Card[]} cards
+ * @param {(share: SessionShare) => Lasted | undefined} pick
+ */
 function holderOf(shares, cards, pick) {
-  return Object.entries(shares)
+  return /** @type {{ card: Card, lasted: Lasted }[]} */ (Object.entries(shares)
     .map(([id, share]) => ({ card: cards.find((c) => c.id === id), lasted: pick(share) }))
-    .filter(({ card, lasted }) => card && lasted)
+    .filter(({ card, lasted }) => card && lasted))
     .sort((a, b) => b.lasted.seconds - a.lasted.seconds)[0]
 }
 
-/** What a worker did, in one line: its latest answer's first sentence, else what it was asked. */
+/** What a worker did, in one line: its latest answer's first sentence, else what it was asked. @param {Worker} worker */
 function didLine(worker) {
   const said = latestSaid(worker.latest)
   if (said) return caption(plain(said.answer))
   const asked = [...worker.latest.conversations].sort((a, b) => b.startedAt - a.startedAt).find((c) => c.prompt)
-  return asked ? `Asked: ${caption(plain(asked.prompt))}` : ''
+  return asked ? `Asked: ${caption(plain(/** @type {string} */ (asked.prompt)))}` : ''
 }
 
-/** The hourly series as local days, each with its 24 hours' turns (`null` outside the week) and its totals. */
+/** The hourly series as local days, each with its 24 hours' turns (`null` outside the week) and its totals. @param {Stats} stats */
 function daysOf(stats) {
+  /** @type {Map<string, { date: string, at: number, hours: (number | null)[], spend: number, turns: number, commits: number, added: number, removed: number }>} */
   const days = new Map()
   stats.buckets.forEach((at, i) => {
     const date = localDate(at)
@@ -99,11 +138,19 @@ function daysOf(stats) {
   return [...days.values()]
 }
 
-/** How late into the night a local hour is: 06:00 the earliest, 05:00 the latest. */
+/** How late into the night a local hour is: 06:00 the earliest, 05:00 the latest. @param {number} hour */
 const lateness = (hour) => (hour + 18) % 24
 
+/**
+ * @param {Stats} stats
+ * @param {Floor[]} floors
+ * @param {Day[]} days
+ * @param {Worker[]} workers
+ * @param {Card[]} cards
+ */
 function superlatives(stats, floors, days, workers, cards) {
   const { summary, peak } = stats.all
+  /** @type {Superlative[]} */
   const said = []
   const landed = Object.entries(stats.projects).filter(([, p]) => p.summary.git.commits > 0)
     .sort(([, a], [, b]) => b.summary.git.commits - a.summary.git.commits)[0]
@@ -115,6 +162,7 @@ function superlatives(stats, floors, days, workers, cards) {
   }
   const busiest = days.filter((d) => d.turns > 0).sort((a, b) => b.spend - a.spend)[0]
   if (busiest) said.push({ title: 'Busiest day', who: dayName(busiest.at), value: usd(busiest.spend), more: `${count(busiest.turns)} turns, ${count(busiest.commits)} commits` })
+  /** @param {string} title @param {(share: SessionShare) => Lasted | undefined} pick @param {string} median */
   const longest = (title, pick, median) => {
     const held = holderOf(stats.sessions, cards, pick)
     if (!held) return
@@ -141,23 +189,29 @@ function superlatives(stats, floors, days, workers, cards) {
 /**
  * The quote of the week: the latest answer short enough to read (its first paragraph, 24 to 280 characters, and no
  * lead-in ending in a colon) from the floor that landed most commits, else from the next floor down.
+ * @param {Worker[]} workers
+ * @param {Stats} stats
  */
 function quoteOf(workers, stats) {
+  /** @param {string} project */
   const commits = (project) => stats.projects[project]?.summary.git.commits ?? 0
-  return workers
+  return /** @type {{ w: Worker, said: Said }[]} */ (workers
     .map((w) => ({ w, said: latestSaid(w.latest) }))
-    .filter(({ said }) => said)
+    .filter(({ said }) => said))
     .map(({ w, said }) => ({ w, at: said.startedAt, text: said.answer.trim().split(/\n\s*\n/)[0].trim() }))
     .filter(({ text }) => text.length >= 24 && text.length <= 280 && !text.startsWith('```') && !/:\W*$/.test(text))
     .sort((a, b) => commits(b.w.project) - commits(a.w.project) || b.at - a.at)[0]
 }
 
+/** @param {string} hex */
 const textOn = (hex) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.55 ? '#1d1a14' : '#fffaf0'
 }
+/** @param {string | undefined} color */
 const floorStyle = (color) => (color ? `--floor:${color};--on-floor:${textOn(color)}` : '')
 
+/** @param {Week} week @param {Stats} stats */
 function coverHtml(week, stats) {
   const { summary } = stats.all
   const git = summary.git
@@ -177,6 +231,7 @@ function coverHtml(week, stats) {
   </section>`
 }
 
+/** @param {Worker} worker @param {string | undefined} color */
 function tileHtml(worker, color) {
   const line = didLine(worker)
   return `<li class="tile" style="${floorStyle(color)}">
@@ -187,6 +242,7 @@ function tileHtml(worker, color) {
   </li>`
 }
 
+/** @param {Worker[]} workers @param {Floor[]} floors */
 function photoHtml(workers, floors) {
   const groups = floors
     .map((f) => ({ f, ws: workers.filter((w) => w.project === f.id).sort((a, b) => b.turns - a.turns || a.callsign.localeCompare(b.callsign)) }))
@@ -200,10 +256,12 @@ function photoHtml(workers, floors) {
     </div>`).join('')}</section>`
 }
 
+/** @param {Day[]} days */
 function rhythmHtml(days) {
   const most = Math.max(1, ...days.flatMap((d) => d.hours.map((t) => t ?? 0)))
   const spendMost = Math.max(0.01, ...days.map((d) => d.spend))
   const commitsMost = Math.max(1, ...days.map((d) => d.commits))
+  /** @param {Day} d @param {number} h @param {number | null} t */
   const cell = (d, h, t) => t === null
     ? '<span class="cell out"></span>'
     : `<span class="cell" style="--v:${(t / most).toFixed(3)}" title="${esc(`${dayName(d.at)} ${String(h).padStart(2, '0')}:00 · ${t} turns`)}"></span>`
@@ -222,6 +280,7 @@ function rhythmHtml(days) {
   </section>`
 }
 
+/** @param {Superlative[]} said */
 const superlativesHtml = (said) => said.length ? `<section><h2>Superlatives</h2><ul class="awards">${said.map((s) => `
   <li class="award" style="${floorStyle(s.color)}">
     <span class="eyebrow">${esc(s.title)}</span>
@@ -230,6 +289,7 @@ const superlativesHtml = (said) => said.length ? `<section><h2>Superlatives</h2>
     <span class="more">${esc(s.more)}</span>
   </li>`).join('')}</ul></section>` : ''
 
+/** @param {ReturnType<typeof quoteOf>} quote @param {Floor[]} floors */
 const quoteHtml = (quote, floors) => {
   if (!quote) return ''
   const floor = floors.find((f) => f.id === quote.w.project)
@@ -240,10 +300,15 @@ const quoteHtml = (quote, floors) => {
   </section>`
 }
 
-const state = { board: undefined, cards: [], reading: 0 }
-const book = document.getElementById('book')
+/** `board` is the latest the tower sent, from the first, which comes before anything draws. @type {{ board: Board, cards: Card[], reading: number }} */
+const state = { board: /** @type {any} */ (undefined), cards: [], reading: 0 }
+const book = /** @type {HTMLElement} */ (document.getElementById('book'))
+const range = /** @type {HTMLElement} */ (document.getElementById('range'))
+const earlier = /** @type {HTMLButtonElement} */ (document.getElementById('earlier'))
+const later = /** @type {HTMLButtonElement} */ (document.getElementById('later'))
 document.head.append(Object.assign(document.createElement('style'), { textContent: markdownCss }))
 
+/** @param {Board} board */
 const resetOf = (board) => {
   const { budget } = board.today
   return budget ? new Date(budget.resetsAt).getTime() : undefined
@@ -254,8 +319,8 @@ async function draw() {
   const resetsAt = resetOf(state.board)
   const date = location.hash.slice(1)
   const week = weekOf(resetsAt, now, /^\d{4}-\d{2}-\d{2}$/.test(date) ? backOf(resetsAt, now, date) : 0)
-  document.getElementById('range').textContent = `${dayName(week.from)} – ${dayName(week.end)}`
-  document.getElementById('later').disabled = week.back === 0
+  range.textContent = `${dayName(week.from)} – ${dayName(week.end)}`
+  later.disabled = week.back === 0
   document.title = `The Week · ${dayName(week.end)}`
   const reading = ++state.reading
   const stats = await tower.stats({ from: week.from, to: week.to, bucket: 'hour' })
@@ -274,19 +339,22 @@ async function draw() {
   ].join('')
 }
 
+/** @param {number} by */
 const step = (by) => {
   const resetsAt = resetOf(state.board)
   const date = location.hash.slice(1)
   const back = Math.max(0, (/^\d{4}-\d{2}-\d{2}$/.test(date) ? backOf(resetsAt, Date.now(), date) : 0) + by)
   location.hash = back === 0 ? '' : localDate(weekOf(resetsAt, Date.now(), back).end)
 }
-document.getElementById('earlier').addEventListener('click', () => step(1))
-document.getElementById('later').addEventListener('click', () => step(-1))
+earlier.addEventListener('click', () => step(1))
+later.addEventListener('click', () => step(-1))
 addEventListener('hashchange', () => draw().catch(failed))
 
+/** @param {Error} err */
 const failed = (err) => { book.innerHTML = `<p class="note broken">${esc(err.message)}</p>` }
 tower.onBoardError((err) => { if (!state.board) failed(err) })
 
+/** @type {Promise<Board>} */
 const first = new Promise((resolve) => tower.subscribe((board) => { state.board = board; resolve(board) }))
 const board = await first
 state.cards = (await Promise.all(board.floors.map((f) => tower.archive(f.id)))).flat()
