@@ -202,7 +202,8 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
     return result
   } finally {
     if (chrome.exitCode === null) await new Promise((resolve) => (chrome.once('exit', resolve), chrome.kill()))
-    rmSync(profile, { recursive: true, force: true })
+    // Chrome's helper processes can still be writing to the profile after the browser's own exit.
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
   }
 }
 
