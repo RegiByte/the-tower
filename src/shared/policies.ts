@@ -95,6 +95,7 @@ export const cronFields = (cron: string): Fields | string => {
   const fields = {} as Fields
   for (const [i, name] of FIELD_NAMES.entries()) {
     const field = fieldOf(name, words[i])
+    if (name === 'minute' && field?.t === 'any') return `"${cron}": every minute is too often for a policy: name the minutes, like */30 or 0,30`
     if (!field || !FORMS[name].includes(field.t)) return `"${cron}": the ${FIELD_WORDS[name]} "${words[i]}" is not ${FORM_WORDS[name]}`
     fields[name] = field
   }

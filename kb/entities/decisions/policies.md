@@ -65,7 +65,7 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   board, its problems at their paths. The hash is the file's bytes ([`hashOf`](ref:hub/src/bridge/policy-file.ts#hashOf)).
 - *Crons the tower can say.* Only a subset ([`cronFields`](ref:hub/src/shared/policies.ts#cronFields)), so every
   display reads [`ruleWords`](ref:hub/src/shared/policies.ts#ruleWords) ("weekdays at 09:30 and 15:00 (New York)")
-  and [`slotWords`](ref:hub/src/shared/policies.ts#slotWords); day of month and day of week never both. Slots over
+  and [`slotWords`](ref:hub/src/shared/policies.ts#slotWords); day of month and day of week never both, and never a bare `*` minute (every minute is too often for standing work). Slots over
   croner ([`slotsBetween`](ref:hub/src/shared/policies.ts#slotsBetween)), in `tz` or the machine's zone: a
   spring-forward time is skipped, a repeated one runs once. On time means within 5 minutes; a later slot is missed,
   and nothing records it.
