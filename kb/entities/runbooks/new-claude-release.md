@@ -57,9 +57,12 @@ taken on. It exits 0 when nothing does, 1 when there is something to read. About
 - **Changelog.** The release's section of `~/.claude/cache/changelog.md`, each entry naming a surface the tower
   reads (hooks, mods, compaction, trust, permissions, peers, usage) marked.
 
-What a throwaway recording of real Claude needs, all in the tool: a short root of its own (`--root`, deleted and
-made again by each run) and port; a git repo per scenario directory, named for the run, since Claude keeps folder
-trust per repo root and remembers a trusted path; the trust screen answered once its output goes quiet (down, then
+What a throwaway recording of real Claude needs, all in the tool: a short root of its own (`--root`, emptied by each
+run but for its `scenarios/`) and port; a git repo per scenario directory, seeded again on each run, since Claude
+keeps folder trust per repo root; each directory the same on every run (`<root>/scenarios/<scenario>`), since Claude
+remembers a trusted path, so it asks once and `~/.claude.json` stops gaining an entry per scenario per run, the
+replays leaving the trust screen out; the one scenario that needs the screen (`fresh`, `trust-dialog`) in a directory
+named for the run; the trust screen answered once its output goes quiet (down, then
 enter, as two writes); one writer of the config (two raced and dropped a `repos` entry), which `spawn` needs to list
 each directory; scenarios with the same Claude flags and environment run together, five at a time (at 21, `POST
 /keys` landed up to a minute late); and every step waiting on an event read from the session's log, never on a

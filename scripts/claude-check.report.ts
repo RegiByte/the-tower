@@ -45,7 +45,7 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
   const unbased = Object.keys(compared).filter((name) => !(name in baseline.recordings))
   const changes = shapeChanges(baseline.recordings, compared)
 
-  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings)))
+  const declared = new Map(SCENARIOS.flatMap((s) => Object.entries(s.recordings).map(([name, r]) => [name, { ...r, ignore: s.fresh ? (r.ignore ?? []) : ['trust' as const, ...(r.ignore ?? [])] }] as const)))
   const replays = Object.entries(recordings).flatMap(([name, log]) => {
     const { fixture: of, ignore = [] } = declared.get(name) ?? {}
     if (!of) return []

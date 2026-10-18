@@ -14,7 +14,7 @@
  *                                                              replace it; an `--only` run's touch only its recordings
  *
  *   --root <dir>   the throwaway system's root (default /tmp/tower-claude-check, under ~80 bytes: sockets cap it);
- *                  `run` deletes and makes it again, and refuses a directory it did not make
+ *                  `run` empties it but for `scenarios/`, and refuses a directory it did not make
  *   --port <n>     its tower's port (default 4396)
  *
  * `report` and `run` exit 0 when the release reads clean: no scenario failed, no shape changed, every recording
@@ -24,7 +24,9 @@
  * fixture and reading the changelog stay human.
  *
  * Each step of a scenario waits on what the session's log says, read from the file: never on a sleep or the board.
- * Scenario directories are named for the run (`<root>/<stamp>/<scenario>`), as Claude remembers trusting a path.
+ * Each scenario runs in `<root>/scenarios/<scenario>`, kept across runs and seeded again on each, so Claude's folder
+ * trust is granted once per directory and `~/.claude.json` doesn't grow with every run. A `fresh` scenario's directory
+ * is named for the run (`<root>/fresh/<stamp>/<scenario>`), as Claude remembers trusting a path.
  */
 import { execFileSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, rmSync, statSync, closeSync, writeFileSync } from 'node:fs'
@@ -37,6 +39,7 @@ import { initialConfig } from '../src/init.ts'
 import { bringAllDown, bringAllUp, daemons } from '../src/machine.ts'
 import { readUsage } from '../src/probes.ts'
 import { claudeRange, CLAUDE_TESTED } from '../src/shared/claude.ts'
+import type { BlockedKind } from '../src/bridge/blocked.ts'
 import type { Config, LogEvent, SessionHeader } from '../src/shared/model.ts'
 import { sessionLogPath, systemPaths } from '../src/shared/paths.ts'
 import { renderReport, type Run, type ScenarioRun } from './claude-check.report.ts'
@@ -57,6 +60,7 @@ const ROOT = path.resolve(values.root)
 const CONFIG = path.join(ROOT, 'config.json')
 const RUN = path.join(ROOT, 'run.json')
 const RECORDINGS = path.join(ROOT, 'recordings')
+const KEPT = 'scenarios'
 const PORT = Number(values.port)
 const TOWER = `http://127.0.0.1:${PORT}`
 const paths = systemPaths(CONFIG)
@@ -72,12 +76,15 @@ const writeJson = (file: string, value: unknown) => writeFileSync(file, `${JSON.
 
 const installedClaude = () => execFileSync('claude', ['--version'], { encoding: 'utf8' }).trim().split(/\s/)[0]
 
-/** A root the tool made carries its marker: any other directory is refused. A run that stopped short is stopped first. */
-async function freshRoot() {
+/**
+ * A root the tool made carries its marker: any other directory is refused. A run that stopped short is stopped first.
+ * Everything in it but the scenario directories goes.
+ */
+async function emptiedRoot() {
   if (existsSync(ROOT)) {
     if (!existsSync(path.join(ROOT, MARKER))) throw new Error(`${ROOT} exists and was not made by claude-check: pick another --root`)
     if (existsSync(CONFIG)) await bringAllDown(daemons(paths, readJson<Config>(CONFIG).port!))
-    rmSync(ROOT, { recursive: true })
+    for (const entry of readdirSync(ROOT)) if (entry !== KEPT) rmSync(path.join(ROOT, entry), { recursive: true })
   }
   mkdirSync(RECORDINGS, { recursive: true })
   writeFileSync(path.join(ROOT, MARKER), '')
@@ -86,6 +93,7 @@ async function freshRoot() {
 const git = (dir: string, ...args: string[]) => execFileSync('git', ['-C', dir, ...args], { stdio: 'ignore' })
 
 function seedDir(dir: string, seed: Record<string, string>) {
+  rmSync(dir, { recursive: true, force: true })
   for (const [file, text] of Object.entries(seed)) {
     mkdirSync(path.dirname(path.join(dir, file)), { recursive: true })
     writeFileSync(path.join(dir, file), text)
@@ -156,7 +164,7 @@ function readTail(tail: Tail) {
 const matches = (want: string | RegExp, value: unknown) => (typeof want === 'string' ? value === want : typeof value === 'string' && want.test(value))
 
 /** The index of the event `on` waits for, at or after `from`, if it has come. */
-const found = (tail: Tail, on: On, from: number): number | undefined => {
+const foundOne = (tail: Tail, on: On, from: number): number | undefined => {
   const count = on.count ?? 1
   if ('status' in on) return tail.entered.filter((e) => e.at >= from && e.status === on.status)[count - 1]?.at
   const hits = tail.events.flatMap((e, i) => {
@@ -168,20 +176,27 @@ const found = (tail: Tail, on: On, from: number): number | undefined => {
   return hits[count - 1]
 }
 
+/** The index of the first event any of `ons` waits for, at or after `from`. */
+const found = (tail: Tail, ons: On[], from: number): number | undefined =>
+  ons.map((on) => foundOne(tail, on, from)).filter((at) => at !== undefined).sort((a, b) => a - b)[0]
+
 const describe = (on: On) => ('status' in on ? `status ${on.status}` : `${on.event}${on.where ? ` ${JSON.stringify(Object.fromEntries(Object.entries(on.where).map(([k, v]) => [k, String(v).slice(0, 40)])))}` : ''}`) + (on.count ? ` ×${on.count}` : '')
 
-async function waitFor(tail: Tail, on: On, from: number): Promise<number> {
-  const deadline = Date.now() + (on.within ?? STEP_TIMEOUT_MS)
+async function waitForFirst(tail: Tail, ons: On[], from: number): Promise<number> {
+  const within = Math.max(...ons.map((on) => on.within ?? STEP_TIMEOUT_MS))
+  const deadline = Date.now() + within
   while (Date.now() < deadline) {
     readTail(tail)
-    const at = found(tail, on, from)
+    const at = found(tail, ons, from)
     if (at !== undefined) return at
     if (tail.events.some((e) => e[1] === 'x')) break
     await sleep(200)
   }
   const now = tail.facts?.state
-  throw new Error(`no ${describe(on)} within ${(on.within ?? STEP_TIMEOUT_MS) / 1000} s (status ${now?.status}${now?.blocked ? ` ${now.blocked}` : ''})`)
+  throw new Error(`no ${ons.map(describe).join(' or ')} within ${within / 1000} s (status ${now?.status}${now?.blocked ? ` ${now.blocked}` : ''})`)
 }
+
+const waitFor = (tail: Tail, on: On, from: number) => waitForFirst(tail, [on], from)
 
 /** A session a scenario started: its log, and where its next `on` starts reading. */
 type Live = { name: string; id: string; tail: Tail; cursor: number; exited: boolean }
@@ -215,11 +230,15 @@ async function quiet(tail: Tail, ms = 1000) {
   }
 }
 
-async function started(live: Live, blocked: string) {
-  const at = await waitFor(live.tail, { status: 'blocked' }, 0)
+/**
+ * A directory's first session, or one held by `blocked`'s screen: the trust screen is answered when Claude shows it,
+ * which it does only in a directory it has not trusted before.
+ */
+async function started(live: Live, blocked: BlockedKind | undefined) {
+  const at = await waitForFirst(live.tail, blocked ? [{ status: 'blocked' }] : [{ status: 'blocked' }, { event: 'SessionStart' }], 0)
   const screen = live.tail.entered.find((e) => e.at === at)?.blocked
-  if (screen !== blocked) throw new Error(`${live.name} showed the ${screen} screen, not the ${blocked} one`)
-  if (blocked === 'trust') {
+  if (blocked ? screen !== blocked : screen && screen !== 'trust') throw new Error(`${live.name} showed the ${screen} screen, not the ${blocked ?? 'trust'} one`)
+  if (screen === 'trust') {
     await quiet(live.tail)
     await post('keys', { id: live.id, data: '\x1b[B' })
     await sleep(500)
@@ -251,7 +270,7 @@ async function act(scenario: Scenario, dir: string, sessions: Map<string, Live>,
     const first = sessions.size === 0
     sessions.set(what.spawn, spawned)
     log(scenario.name, 'spawned', what.spawn, id)
-    if (what.blocked || first) return started(spawned, what.blocked ?? 'trust')
+    if (what.blocked || first) return started(spawned, what.blocked)
     return
   }
   if ('resume' in what) {
@@ -324,10 +343,10 @@ async function run() {
   const unknown = only?.filter((name) => !SCENARIOS.some((s) => s.name === name))
   if (unknown?.length) throw new Error(`no scenario ${unknown.join(', ')}: ${SCENARIOS.map((s) => s.name).join(', ')}`)
   const claude = installedClaude()
-  await freshRoot()
+  await emptiedRoot()
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)
   const hub = path.join(ROOT, 'hub')
-  const dirOf = (s: Scenario) => path.join(ROOT, stamp, s.name)
+  const dirOf = (s: Scenario) => (s.fresh ? path.join(ROOT, 'fresh', stamp, s.name) : path.join(ROOT, KEPT, s.name))
   seedDir(hub, { 'README.md': '# check\n' })
   for (const s of picked) seedDir(dirOf(s), s.seed)
   mkdirSync(path.join(ROOT, 'signed-out'))

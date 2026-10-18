@@ -3,8 +3,9 @@
  * real Claude in `test/fixtures` (and a few with none, for their shapes), each driven the way its fixture was so an
  * unchanged release replays to the same statuses.
  *
- * A scenario runs in its own directory, its own git repo (Claude keeps folder trust per repo root), seeded with
- * `seed` files. Its steps run in order: each waits on what the session's log says (`on`), then `pause`s, then does
+ * A scenario runs in its own directory, its own git repo (Claude keeps folder trust per repo root), seeded again with
+ * `seed` files on each run. The directory is the same on every run, so Claude asks to trust it only on the first; a
+ * `fresh` scenario, which needs the trust screen, gets a directory Claude has never seen. Its steps run in order: each waits on what the session's log says (`on`), then `pause`s, then does
  * one thing (`do`). An `on` reads the log after the previous step: after its action when it acted, else after the
  * event it waited on. Every session it spawned is killed after its last step, and each log is a recording, named
  * after its session.
@@ -14,8 +15,9 @@ import type { BlockedKind } from '../src/bridge/blocked.ts'
 
 /**
  * What a status replay leaves out to compare a recording with its fixture (`comparedForm`): `trust`, the trust screen's
- * leading `blocked`, for a fixture recorded in a directory already trusted; `watching` and `repeats`, for subagents
- * that race the main loop to the end of its turn and report in as many turns as the race leaves.
+ * leading `blocked`, left out of every scenario but a `fresh` one, since a fixture and a run may differ in whether the
+ * directory was trusted; `watching` and `repeats`, for subagents that race the main loop to the end of its turn and
+ * report in as many turns as the race leaves.
  */
 export type Ignore = 'trust' | 'watching' | 'repeats'
 
@@ -51,9 +53,13 @@ export type Step = { in?: string; on?: On; pause?: number; do?: Act }
  */
 export type Launch = { name: string; tools: string[]; argv?: string[]; env?: Record<string, string> }
 
-/** `recordings`: each session it records, by name, with the fixture its timeline replays against and what that leaves out. */
+/**
+ * `recordings`: each session it records, by name, with the fixture its timeline replays against and what that leaves
+ * out. `fresh`: it runs in a directory Claude has never trusted.
+ */
 export type Scenario = {
   name: string
+  fresh?: true
   launch: Launch
   seed: Record<string, string>
   recordings: Record<string, { fixture?: string; ignore?: Ignore[] }>
@@ -110,8 +116,9 @@ const DONE: On = { status: 'done' }
 const TURN: On = { event: 'turn.complete' }
 
 /** A scenario of one session, named and recorded as its fixture. */
-const one = (name: string, s: { launch?: Launch; seed?: Record<string, string>; fixture?: false; ignore?: Ignore[]; prompt?: string; model?: string; blocked?: BlockedKind; steps: Step[] }): Scenario => ({
+const one = (name: string, s: { fresh?: true; launch?: Launch; seed?: Record<string, string>; fixture?: false; ignore?: Ignore[]; prompt?: string; model?: string; blocked?: BlockedKind; steps: Step[] }): Scenario => ({
   name,
+  ...(s.fresh && { fresh: s.fresh }),
   launch: s.launch ?? LAUNCHES.plain,
   seed: s.seed ?? FILES,
   recordings: { [name]: { ...(s.fixture !== false && { fixture: name }), ...(s.ignore && { ignore: s.ignore }) } },
@@ -121,7 +128,7 @@ const one = (name: string, s: { launch?: Launch; seed?: Record<string, string>; 
 const PERMISSION: On = { event: 'PermissionRequest' }
 
 export const SCENARIOS: Scenario[] = [
-  one('api-error', { prompt: 'say hi', model: 'claude-nonexistent-9', ignore: ['trust'], steps: [{ on: { status: 'failed' } }] }),
+  one('api-error', { prompt: 'say hi', model: 'claude-nonexistent-9', steps: [{ on: { status: 'failed' } }] }),
   one('background-shell', {
     prompt: 'Run this Bash command in the background with run_in_background true: sleep 15 && echo finished. Then end your turn right away without waiting. When it finishes, tell me its output in one line.',
     steps: [{ on: DONE }],
@@ -132,12 +139,10 @@ export const SCENARIOS: Scenario[] = [
   }),
   one('interrupt-says', {
     prompt: 'First write one short sentence saying you will read facts.txt. Then read facts.txt with the Read tool. Then write an 800-word story inspired by it. Do not use any other tools.',
-    ignore: ['trust'],
     steps: [{ on: { event: 'tower.tool.result' }, pause: 2500, do: { keys: ESC } }, { on: TURN }],
   }),
   one('interrupts', {
     prompt: 'Write a 900-word story about a lighthouse keeper. Do not use any tools.',
-    ignore: ['trust'],
     steps: [
       { on: { event: 'turn.start' }, pause: 3000, do: { keys: ESC } },
       { on: TURN, do: { submit: 'Use the Write tool to create the file deny-probe.txt containing the word hi.' } },
@@ -156,23 +161,19 @@ export const SCENARIOS: Scenario[] = [
   }),
   one('step-answers', {
     prompt: 'Read package.json, then tsconfig.json, one at a time. Before each read, tell me in one short sentence what you are about to do. Then answer in one line: which TypeScript target does the project use?',
-    ignore: ['trust'],
     steps: [{ on: DONE }],
   }),
   one('tool-turn', {
     prompt: 'List the files in src/bridge with ls, then tell me in one sentence what status.ts does.',
-    ignore: ['trust'],
     steps: [{ on: DONE, do: { submit: 'List the files in src/bridge with ls, then tell me in one sentence what status.ts does.' } }, { on: DONE }],
   }),
-  one('tool-error', { prompt: 'Use the Read tool to read the file missing-notes.txt in this folder, then tell me in one sentence what happened.', ignore: ['trust'], steps: [{ on: DONE }] }),
+  one('tool-error', { prompt: 'Use the Read tool to read the file missing-notes.txt in this folder, then tell me in one sentence what happened.', steps: [{ on: DONE }] }),
   one('monitor', {
     prompt: 'Use the Monitor tool to watch this command: for i in 1 2; do sleep 6; echo tick $i; done. Then end your turn right away. When it reports, tell me what it said in one line.',
-    ignore: ['trust'],
     steps: [{ on: DONE }],
   }),
   one('subagent-background', {
     prompt: 'Use the Agent tool to start one general-purpose subagent with this task: read facts.txt, then more.txt, then last.txt with the Read tool, one file per message, waiting for each before the next, then report all three. When it returns, tell me in one sentence what it found.',
-    ignore: ['trust'],
     steps: [{ on: DONE }],
   }),
   one('subagent-fork', {
@@ -182,7 +183,6 @@ export const SCENARIOS: Scenario[] = [
   }),
   one('subagent-stopped', {
     prompt: 'Start one general-purpose subagent with the Agent tool, in the background, whose task is to run the Bash command "ping -c 90 127.0.0.1 > /dev/null" in the foreground (not in the background) and then report done. Then run the Bash command "ping -c 8 127.0.0.1 > /dev/null" yourself, then stop that subagent with the TaskStop tool, and tell me in one sentence that you stopped it.',
-    ignore: ['trust'],
     steps: [{ on: DONE }],
   }),
   one('subagent-resume', {
@@ -194,17 +194,14 @@ export const SCENARIOS: Scenario[] = [
   }),
   one('task-stopped', {
     prompt: 'Run this Bash command in the background with run_in_background true: sleep 600 && echo finished. Then end your turn right away without waiting.',
-    ignore: ['trust'],
     steps: [{ on: { status: 'watching' }, do: { submit: '/tasks' } }, { on: { event: 'command.run' }, pause: 2500, do: { keys: 'x' } }, { pause: 2000, do: { keys: ESC } }, { pause: 8000 }],
   }),
   one('loop-cron', {
     prompt: '/loop 1m say the word tick, nothing else',
-    ignore: ['trust'],
     steps: [{ on: { ...TURN, count: 3, within: 300_000 }, do: { submit: 'Stop the loop: delete the cron job.' } }, { on: DONE }],
   }),
   one('loop-wakeup', {
     prompt: '/loop check whether the file flag exists in this folder; if it does, say found and stop the loop; if not, say waiting and check again in about a minute',
-    ignore: ['trust'],
     steps: [{ on: { ...TURN, count: 2, within: 300_000 }, do: { write: 'flag', text: 'x\n' } }, { on: { ...TURN, where: { answer: /found/i }, within: 300_000 } }],
   }),
   one('skill-command', {
@@ -217,13 +214,13 @@ export const SCENARIOS: Scenario[] = [
     fixture: false,
     steps: [{ on: DONE, do: { submit: LONG_SUBMIT } }, { on: { event: 'prompt.submit', where: { text: LONG_SUBMIT } } }, { on: DONE }],
   }),
-  one('trust-dialog', { steps: [{ on: { event: 'SessionStart' }, pause: 3000 }] }),
+  one('trust-dialog', { fresh: true, steps: [{ on: { event: 'SessionStart' }, pause: 3000 }] }),
   one('login-screen', { launch: LAUNCHES.signedOut, prompt: 'say hi', blocked: 'login', steps: [{ pause: 3000 }] }),
   {
     name: 'peers',
     launch: LAUNCHES.plain,
     seed: FILES,
-    recordings: { 'peer-receiver': { fixture: 'peer-receiver' }, 'peer-sender': { fixture: 'peer-sender', ignore: ['trust'] } },
+    recordings: { 'peer-receiver': { fixture: 'peer-receiver' }, 'peer-sender': { fixture: 'peer-sender' } },
     steps: [
       {
         do: {
@@ -254,7 +251,6 @@ export const SCENARIOS: Scenario[] = [
     launch: LAUNCHES.compaction,
     seed: DOCS,
     prompt: 'Without using any tools, reply with the single word: hello',
-    ignore: ['trust'],
     steps: [{ on: DONE, do: { submit: '/compact' } }, { on: { event: 'SessionStart', where: { source: 'compact' } }, pause: 3000 }],
   }),
   one('compact-auto', {
@@ -273,7 +269,6 @@ export const SCENARIOS: Scenario[] = [
     launch: LAUNCHES.compaction,
     seed: DOCS,
     prompt: 'Use the Agent tool once to start one general-purpose subagent with this task, word for word: "Read docs/part1.txt, then docs/part2.txt, and so on through docs/part8.txt, one Read call per message, never two in one message. Then read them all again in the same order, one per message. Then answer with the single word done." Do not read any file yourself. When the subagent finishes, answer with the single word finished.',
-    ignore: ['trust'],
     steps: [{ on: { event: 'agent.spawn' }, pause: 5000, do: { submit: '/compact' } }, { on: { ...DONE, within: 600_000 } }],
   }),
 ]
