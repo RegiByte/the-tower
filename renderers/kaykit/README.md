@@ -115,12 +115,13 @@ Every command is `npm run tool:kaykit -- <command>`. The script's header lists t
 | Tool | Command | Answers |
 |---|---|---|
 | Find | `find [words…] [--pack] [--category] [--mount] [--parts] [--min w,h,d] [--max w,h,d] [--json]` | ids with size and bounds as placed, mount, parts, colours |
-| Inspect | `shot <id> [--view iso\|front\|high\|back\|left\|right\|top] [--camera json] [--ref person,desk] [--parts json] [--theme json] [--night] [--size WxH]` | a PNG of one model on a 1 m grid |
+| Inspect | `shot <id> [--view iso\|front\|high\|back\|left\|right\|top] [--camera json] [--ref person,desk] [--parts json] [--theme json] [--night] [--size WxH] [--out file.png]` | a PNG of one model on a 1 m grid |
 | Compose | write a scene JSON (items, prefabs, theme) | the document is the composition |
 | Check | `check <scene.json>` | unknown ids and parts, models sunk below the floor, two models in one spot, wall corners with no pillar, props at room scale, in the shared scene and each state; ids and slot names named twice, states naming nothing, series with gaps; exits 1 on an error |
+| Schema | `schema` | the scene document's JSON Schema |
 | Render | `render <scene.json\|gallery> [--states a,b] [--camera name\|view\|json]… [--theme json] [--night] [--size WxH] [--out dir]` | a PNG per camera, in the states given |
-| Look | `serve`, then open `?scene=<path>` | the same scene, live |
-| Place | `npm run tool:editor -- shot <scene.json> [--states a] [--select src]` | the scene as the editor draws it, slots as workers |
+| Look | `serve [--port 4398]`, then open `?scene=scenes/<file>.json` | the same scene, live |
+| Place | `npm run tool:editor -- shot <scene.json> [--states a,b] [--select src] [--camera view\|json] [--size WxH] [--out file.png]` | the scene as the editor draws it, slots as workers |
 
 Rendering drives the page itself in headless Chrome through `window.kaykit` (`show`, `dress`, `look`, `shot`,
 `state`). An agent's picture and a human's view are one drawing.

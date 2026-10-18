@@ -13,7 +13,7 @@
  *                                                     corners, props at room scale, in the shared scene and in each
  *                                                     of its states; ids, slot names and what states name; exits 1
  *                                                     on an error
- *   npm run tool:kaykit -- shot <id> [--view iso|front|back|left|right|top] [--camera <json>] [--ref person,desk]
+ *   npm run tool:kaykit -- shot <id> [--view iso|front|high|back|left|right|top] [--camera <json>] [--ref person,desk]
  *                                    [--parts <json>] [--theme <json>] [--night] [--size 1200x900] [--out file.png]
  *                                                     one model on a 1 m grid, beside a 1.75 m person or a desk
  *   npm run tool:kaykit -- render <scene.json|gallery> [--states a,b] [--camera <name|view|json>]… [--theme <json>]
