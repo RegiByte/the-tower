@@ -5,12 +5,14 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-10-17",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/tsconfig.page.json", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
-drives the system through `/tower.js`; it holds no machinery. The skyline home shows projects as buildings and
-sessions as lit windows, one row of buildings narrowing to fit any number of floors.
+drives the system through `/tower.js`; it holds no machinery. It is `index.html` and the module beside it,
+`page.js`, served as written and checked by `npm run typecheck` through JSDoc
+([`tsconfig.page.json`](ref:hub/tsconfig.page.json)). The skyline home shows projects as buildings and sessions as lit
+windows, one row of buildings narrowing to fit any number of floors.
 
 The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) and time in state, and a worker's running subagents as
