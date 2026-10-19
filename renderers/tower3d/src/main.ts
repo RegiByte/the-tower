@@ -3,14 +3,14 @@ import { DRAFTS, discard as discardDraft, discardItem, keepUnsent, restore as re
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
-import { changesFailed, changesOf, compare, markViewed, scopeOf, onReviews, readChanges, rereadThread, threadFailed, threadOf, threadRead, type ChangesRead } from './reviews.ts'
+import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
 import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
@@ -432,6 +432,7 @@ tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins
 
 function renderPanel() {
   const { board, panel } = s
+  followChanges(board && panel?.kind === 'desk' && (s.deskTab === 'changes' || s.deskTab === 'reviews') ? findCard(board, panel.id) : undefined)
   if (!board || !panel) return
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
@@ -858,7 +859,7 @@ function focusDesk(id: string) {
   const tab = s.pendingTab?.id === id ? s.pendingTab.tab : undefined
   s.pendingTab = undefined
   if (tab === 'brief') openBrief(id)
-  if (tab === 'reviews') openReviews(id)
+  if (tab === 'reviews') openReviews()
   const pending = s.pendingShown?.id === id ? c.shown.find((sh) => sh.target === s.pendingShown!.target) : undefined
   s.pendingShown = undefined
   if (pending) openShown(id, pending)
@@ -1225,7 +1226,7 @@ function toPane(pane: (typeof PANE_OF)[string]) {
   typingInto?.blur()
   if (pane === 'brief') openBrief(c.id)
   else if (pane === 'changes') openChanges(c.id, undefined)
-  else openReviews(c.id)
+  else openReviews()
   return true
 }
 
@@ -2009,7 +2010,7 @@ $('desk-tabs').addEventListener('click', (e) => {
   const sh = c.shown.find((sh) => shownTab(sh) === tab)
   if (sh) return openShown(c.id, sh)
   if (tab === 'brief') openBrief(s.panel.id)
-  else if (tab === 'reviews') openReviews(s.panel.id)
+  else if (tab === 'reviews') openReviews()
   else if (tab === 'changes') openChanges(s.panel.id, undefined)
   else openScreen()
 })
@@ -2028,6 +2029,7 @@ onAppearance(() => {
 })
 
 function hideReviewing() {
+  followChanges(undefined)
   show('desk-reviews', false)
   show('desk-changes', false)
 }
@@ -2096,9 +2098,9 @@ function toggleFold(key: string) {
   keepingFileTop($('desk-changes'), key, renderPanel)
 }
 
-function toggleViewed(read: ChangesRead, key: string) {
+function toggleViewed(id: string, read: ChangesRead, key: string) {
   const [repo, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
-  markViewed(read, repo, marksToggled(read.viewed, repo, f))
+  markViewed(id, repo, marksToggled(read.viewed, repo, f))
   s.folds.delete(key)
   keepingFileTop($('desk-changes'), key, renderPanel)
 }
@@ -2106,13 +2108,11 @@ function toggleViewed(read: ChangesRead, key: string) {
 const dropPick = () => ((s.pick = undefined), (s.pickText = ''))
 
 /** The Reviews tab lies over the terminal like the brief; its anchors are looked for in the desk's worker's Changes. */
-function openReviews(id: string) {
-  const c = findCard(s.board!, id)!
+function openReviews() {
   s.deskTab = 'reviews'
   show('desk-brief', false)
   show('desk-changes', false)
   closeShown()
-  readChanges(c.id, wallNow())
   show('desk-reviews', true)
   renderPanel()
 }
@@ -2124,8 +2124,7 @@ function openChanges(id: string, jump: Anchor | undefined) {
   show('desk-brief', false)
   show('desk-reviews', false)
   closeShown()
-  if (jump && scopeOf(id) !== 'all') compare(id, 'all', wallNow())
-  else readChanges(id, wallNow())
+  if (jump && scopeOf(id) !== 'all') compare(id, 'all')
   show('desk-changes', true)
   renderPanel()
 }
@@ -2149,9 +2148,8 @@ function openThread(project: string, checkout: string) {
 async function sendNotes(at: ThreadPlace, to: Card | undefined) {
   const { checkout } = at
   if (!to) return toast(`Pick a worker to send the notes on ${checkout} to`)
-  const thread = await threadRead(s.board!, at).catch((err: Error) => (toast(err.message), undefined))
-  if (!thread) return
-  const text = sendText(THE_USER, checkout, unseenBy(thread, to.callsign).map((m) => m.n), to.hiredBy?.callsign)
+  const thread = threadOf(s.board!, at)
+  const text = sendText(THE_USER, checkout, thread ? unseenBy(thread, to.callsign).map((m) => m.n) : [], to.hiredBy?.callsign)
   if (await offered(to.calls.submit!, { text })) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
@@ -2196,7 +2194,7 @@ function onThreadClick(e: MouseEvent) {
   const { project, checkout } = at
   if (el.closest('[data-send]')) return sendNotes(at, sendTarget(floorOf(project), checkout, pickedFor(at)))
   if (el.closest('[data-note-add]')) return addNote(at)
-  if (el.closest('[data-thread-read]')) return (rereadThread(at), renderPanel())
+  if (el.closest('[data-thread-read]')) return (rereadThread(s.board!, at), renderPanel())
   if (el.closest('[data-reply-clear]')) return ((s.noteRe = undefined), renderPanel())
   const copy = el.closest<HTMLElement>('[data-copy]')?.dataset.copy
   if (copy) return copied(copy)
@@ -2234,7 +2232,7 @@ $('desk-changes').addEventListener('change', (e) => {
   const el = e.target as HTMLSelectElement
   if (s.panel?.kind !== 'desk' || !el.matches('[data-changes-scope]')) return
   s.pick = undefined
-  compare(s.panel.id, el.value, wallNow())
+  compare(s.panel.id, el.value)
   renderPanel()
 })
 $('desk-changes').addEventListener('click', (e) => {
@@ -2242,12 +2240,12 @@ $('desk-changes').addEventListener('click', (e) => {
   const el = e.target as HTMLElement
   const c = findCard(s.board!, s.panel.id)!
   const read = changesOf(c.id)
-  if (el.closest('[data-changes-read]')) return (readChanges(c.id, wallNow()), renderPanel())
+  if (el.closest('[data-changes-read]')) return (rereadChanges(c.id), renderPanel())
   const layout = el.closest<HTMLElement>('[data-changes-layout]')?.dataset.changesLayout as DiffLayout | undefined
   if (layout) return ((s.diffLayout = layout), FIXTURE === undefined && tower.store.set(DIFF_LAYOUT_KEY, layout), renderPanel())
   if (!read) return
   const viewed = el.closest<HTMLElement>('[data-viewed]')?.dataset.viewed
-  if (viewed) return toggleViewed(read, viewed)
+  if (viewed) return toggleViewed(c.id, read, viewed)
   const fold = el.closest<HTMLElement>('[data-fold]')?.dataset.fold
   if (fold) return toggleFold(fold)
   const line = el.closest<HTMLElement>('[data-pick]')?.dataset.pick
@@ -2280,13 +2278,7 @@ setInterval(() => {
   if (s.panel?.kind === 'stats') showSince($('doc-body'))
 }, 1000)
 
-const CHANGES_POLL_MS = 30_000
-/** While a desk's Changes or Reviews tab is open, what changed is read again every `CHANGES_POLL_MS`. */
-setInterval(() => {
-  if (s.panel?.kind !== 'desk' || (s.deskTab !== 'changes' && s.deskTab !== 'reviews')) return
-  if (findCard(s.board!, s.panel.id)) readChanges(s.panel.id, wallNow())
-}, CHANGES_POLL_MS)
-onReviews(renderPanel, (err) => toast(err.message))
+onReviews(renderPanel, toast)
 
 /**
  * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the

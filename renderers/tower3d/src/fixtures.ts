@@ -670,9 +670,9 @@ export const FIXTURES: Record<string, (now: number) => Board[]> = {
 /** The fixture named by `?board=`, if the page was opened with one. */
 export const FIXTURE = new URLSearchParams(location.search).get('board') ?? undefined
 
-/** The fixture board's review threads, by `<project>/<checkout>`: what their files read. */
+/** The fixture board's review threads, by `<project>/<id>` (`threadSlot`): what their files read. */
 export const FIXTURE_THREADS: Record<string, string> =
-  FIXTURE === 'review' ? Object.fromEntries(Object.entries(reviewThreads()).map(([checkout, text]) => [`lab/${checkout}`, text])) : {}
+  FIXTURE === 'review' ? Object.fromEntries(Object.entries(reviewThreads()).map(([checkout, text]) => [`lab/${threadId(checkout)}`, text])) : {}
 
 /** The fixture board's drafts' texts, by `<project>/<id>`: what its notes read. */
 export const FIXTURE_DRAFTS: Record<string, string> = Object.fromEntries(
