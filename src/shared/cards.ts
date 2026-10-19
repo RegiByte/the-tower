@@ -93,8 +93,15 @@ export const can = <A extends { verb: string }>(thing: { actions: readonly A[] }
 export const callOf = <A extends { verb: string }, V extends Extract<A, { call: unknown }>['verb']>(thing: { actions: readonly A[] }, verb: V): Extract<A, { verb: V; call: unknown }>['call'] | undefined =>
   thing.actions.find((a): a is Extract<A, { verb: V; call: unknown }> => a.verb === verb)?.call
 
-/** `f` on a verb's call (`callOf`) while the board still offers it: a press can land after the board moved on. */
-export const whileOffered = <C, R>(call: C | undefined, f: (call: C) => R) => call && f(call)
+/** What a press tells when it lands after the board stopped offering its verb on `name`'s thing. */
+export const noLongerOffered = (name: string, verb: string) => `${name} no longer offers ${verb}`
+
+/** The call of a verb `thing`, called `name`, offers right now; throws `noLongerOffered` once it doesn't. */
+export const offeredCall = <A extends { verb: string }, V extends Extract<A, { call: unknown }>['verb']>(thing: { actions: readonly A[] }, verb: V, name: string) => {
+  const call = callOf(thing, verb)
+  if (!call) throw new Error(noLongerOffered(name, verb))
+  return call
+}
 
 export const cardsOf = (board: Board) => board.floors.flatMap((f) => f.cards)
 export const findCard = (board: Board, id: string) => cardsOf(board).find((c) => c.id === id)
@@ -272,7 +279,7 @@ export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) 
   for (const c of stranded) {
     const call = resumeCallOf(c)
     if (call) await run(call).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
-    else failed.push(`${c.callsign}: can't be resumed now`)
+    else failed.push(noLongerOffered(c.callsign, 'resume'))
   }
   return failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`
 }
@@ -1068,14 +1075,12 @@ export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
 /** The form's values from its fields' entries (`new FormData(form)`), the defaults under them. */
 export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValue]>): SpawnForm => ({ ...spawnDefaults(f), ...Object.fromEntries(entries) })
 
-/** The request a form sends: a cut, or a start in the directory picked. Throws once the floor no longer offers it. */
+/** The request a form sends: a cut, or a start in the directory picked. Throws once the floor no longer offers it (`offeredCall`). */
 export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs['spawn']>] => {
   const given = (o: Record<string, string>) => Object.fromEntries(Object.entries(o).filter(([, x]) => x.trim()).map(([k, x]) => [k, x.trim()]))
   const launch = given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt })
-  const verb = v.where === 'new' ? 'cut' : 'spawn'
-  const call = callOf(f, verb)
-  if (!call) throw new Error(`${f.name} offers no ${verb} now`)
-  return [call, v.where === 'new' ? { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) } : { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
+  if (v.where === 'new') return [offeredCall(f, 'cut', f.name), { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) }]
+  return [offeredCall(f, 'spawn', f.name), { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
 
 /** The branch a cut gets when its field is left empty; `name`: the cut's (`cutNameOf`). */

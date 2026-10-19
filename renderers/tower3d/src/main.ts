@@ -14,7 +14,7 @@ import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, ch
 import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, callOf, whileOffered, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
@@ -131,7 +131,9 @@ const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Paramet
   tower.call(verb, body).catch((err: Error) => (toast(err.message), undefined))
 
 /** A call the board offers, with the fields the user supplied. */
-const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => tower.run(c, fields).catch((err: Error) => (toast(err.message), undefined))
+/** `request` with its failure told in a toast, a throw before anything is sent too: answers undefined then. */
+const tried = <R>(request: () => R | Promise<R>) => Promise.resolve().then(request).catch((err: Error) => (toast(err.message), undefined))
+const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => tried(() => tower.run(c, fields))
 
 /**
  * Destructive buttons ask on their own label, the question in their tip, and act on a second click within `ARM_MS`:
@@ -1008,7 +1010,7 @@ function goLevel(index: number) {
 /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
 async function sendHome(c: Card) {
   const calls = callOf(c, 'send-home')
-  if (!calls) return
+  if (!calls) return toast(noLongerOffered(c.callsign, 'send-home'))
   const crew = sentHome(floorOf(c.project).cards, c)
   for (const call of calls) if (!(await offered(call))) return
   toast(`Sent ${crew.map((h) => h.callsign).join(', ')} home`, crew.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
@@ -1016,7 +1018,7 @@ async function sendHome(c: Card) {
 
 /** A stranded worker off duty, its conversation left in the floor's archive to resume. */
 async function letWorkerGo(c: Card) {
-  if (await whileOffered(callOf(c, 'let-go'), offered)) toast(letGoneLine(c))
+  if (await tried(() => tower.run(offeredCall(c, 'let-go', c.callsign)))) toast(letGoneLine(c))
 }
 
 /** Every stranded worker of a floor resumed, one after another. */
@@ -1034,13 +1036,13 @@ async function resumeSentHome(c: Card) {
 function runOnWorker(a: ActOf<'desk' | 'tile' | 'guest'>, verb: Verb) {
   const c = findCard(s.board!, a.id)
   if (!c) return
-  if (verb === 'resume') return whileOffered(callOf(c, 'resume'), resume)
+  if (verb === 'resume') return tried(() => resume(offeredCall(c, 'resume', c.callsign)))
   if (verb === 'goto') return goDesk(current(c)!.resumedBy!.id)
   if (verb === 'kill') return sendHome(c)
   if (verb === 'let-go') return letWorkerGo(c)
-  if (verb === 'review') return whileOffered(callOf(c, 'review'), offered)
-  if (verb === 'reap') return whileOffered(callOf(c, 'reap'), offered)
-  if (verb === 'hand') return whileOffered(callOf(c, 'submit'), handOver)
+  if (verb === 'review') return tried(() => tower.run(offeredCall(c, 'review', c.callsign)))
+  if (verb === 'reap') return tried(() => tower.run(offeredCall(c, 'reap', c.callsign)))
+  if (verb === 'hand') return tried(() => handOver(offeredCall(c, 'submit', c.callsign)))
   if (verb !== 'brief' && verb !== 'thread') return
   if (a.kind === 'guest') return openLogbook(c)
   s.pendingTab = { id: c.id, tab: verb === 'brief' ? 'brief' : 'reviews' }
@@ -1082,7 +1084,7 @@ const RUN: ByKind<unknown, [Verb]> = {
     return verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)
   },
   guest: (a, verb) => verb !== 'use' && runOnWorker(a, verb),
-  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, tray: undefined }) : whileOffered(callOf(floorOf(a.project), 'tidy'), tidy)),
+  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, tray: undefined }) : tried(() => tidy(offeredCall(floorOf(a.project), 'tidy', floorOf(a.project).name)))),
   landed(a, verb) {
     if (verb === 'use') return openSide({ kind: 'floor', id: a.project, tray: undefined })
     if (verb === 'goto') return goDesk(a.id)
@@ -1092,7 +1094,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   leftover(a, verb) {
     if (verb === 'goto') return goDesk(a.id)
     const r = findCard(s.board!, a.id)?.resources.find((r) => r.pid === a.pid)
-    return r && whileOffered(callOf(r, 'reap'), offered)
+    return r && tried(() => tower.run(offeredCall(r, 'reap', `process ${r.pid}`)))
   },
   shell: (a, verb) => (verb === 'use' ? goShell(a.id) : killShell(s.board!.shells.find((sh) => sh.id === a.id)!)),
   floor(a, verb) {
@@ -1100,7 +1102,7 @@ const RUN: ByKind<unknown, [Verb]> = {
     const f = s.board!.floors.find((f) => f.id === a.id)!
     if (verb === 'spawn') return openSpawn(f.id)
     if (verb === 'shell') return openShellPick(f.id)
-    return whileOffered(callOf(f, 'editor'), (call) => offered(call, { dir: f.hub }))
+    return tried(() => tower.run(offeredCall(f, 'editor', f.name), { dir: f.hub }))
   },
   shelf: (a) => openShelf(a.project, a.n),
   book: (a) => openShelf(a.project, a.n, a.file),
@@ -2173,13 +2175,13 @@ async function sendNotes(at: ThreadPlace, to: Card | undefined) {
   if (!to) return toast(`Pick a worker to send the notes on ${checkout} to`)
   const thread = threadOf(s.board!, at)
   const text = sendText(THE_USER, checkout, thread ? unseenBy(thread, to.callsign).map((m) => m.n) : [], to.hiredBy?.callsign)
-  if (await whileOffered(callOf(to, 'submit'), (call) => offered(call, { text }))) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
+  if (await tried(() => tower.run(offeredCall(to, 'submit', to.callsign), { text }))) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
 async function addNote(at: ThreadPlace) {
   const { project, checkout } = at
   const key = `${project}/${checkout}`
-  const reply = await whileOffered(callOf(at.offers, 'note'), (call) => offered(call, { author: s.board!.user.name, re: s.noteRe, anchors: [], body: s.noteTexts.get(key) ?? '' }))
+  const reply = await tried(() => tower.run(offeredCall(at.offers, 'note', `the thread of ${checkout}`), { author: s.board!.user.name, re: s.noteRe, anchors: [], body: s.noteTexts.get(key) ?? '' }))
   if (!reply) return
   toast(`n${reply.n} is on the thread of ${checkout}`)
   s.noteTexts.delete(key)
@@ -2191,7 +2193,7 @@ async function addNote(at: ThreadPlace) {
 async function addPicked(c: Card) {
   const checkout = threadCheckoutOf(c)
   const anchors = [pickAnchor(changesOf(c.id)!.repos, s.pick!)]
-  const reply = await whileOffered(callOf(c, 'note'), (call) => offered(call, { author: s.board!.user.name, anchors, body: s.pickText }))
+  const reply = await tried(() => tower.run(offeredCall(c, 'note', c.callsign), { author: s.board!.user.name, anchors, body: s.pickText }))
   if (!reply) return
   toast(`n${reply.n} is on the thread of ${checkout}`)
   dropPick()
@@ -2360,10 +2362,10 @@ $('desk-head').addEventListener('click', (e) => {
   if (panel.kind !== 'desk') return
   const c = findCard(board, panel.id)!
   if (what === 'tower') return tower.ui('select', { id: c.id })
-  if (what === 'resume') return whileOffered(callOf(c, 'resume'), resume)
+  if (what === 'resume') return tried(() => resume(offeredCall(c, 'resume', c.callsign)))
   if (what === 'kill') return confirmed(`kill ${c.id}`) && pressing(button!, () => sendHome(c))
   if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
-  if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, async () => whileOffered(callOf(c, 'reap'), offered))
+  if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
 })
 
 $('doc-head').addEventListener('click', (e) => {
@@ -2420,12 +2422,15 @@ $('side').addEventListener('click', async (e) => {
   if (d.shell) return goShell(d.shell)
   if (d.go) return goLevel(Number(d.go))
   if (d.spawn) return openSpawn(d.spawn)
-  if (d.open && s.panel?.kind === 'floor') return whileOffered(callOf(floorOf(s.panel.id), 'editor'), (call) => offered(call, { dir: d.open }))
+  if (d.open && s.panel?.kind === 'floor') {
+    const f = floorOf(s.panel.id)
+    return tried(() => tower.run(offeredCall(f, 'editor', f.name), { dir: d.open }))
+  }
   if (d.shelf && s.panel?.kind === 'floor') return tower.ui('shelf', { project: s.panel.id, n: Number(d.shelf) })
   if (d.resume) return resume(JSON.parse(d.resume))
   if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
   if (d.reapPid) return pressing(el, () => reapProcess(d.reapPid!))
-  if (d.shellDir) return pressing(el, async () => whileOffered(callOf(floorOf(d.shellProject!), 'shell'), (call) => spawnShell(call, d.shellDir!)))
+  if (d.shellDir) return pressing(el, () => tried(() => spawnShell(offeredCall(floorOf(d.shellProject!), 'shell', floorOf(d.shellProject!).name), d.shellDir!)))
   if (d.wtCall) {
     const verb = d.wtVerb as keyof typeof WORKTREE_DONE
     if (WORKTREE_ASK[verb] && !confirmed(`wt ${d.wtCall}`)) return
@@ -2433,13 +2438,14 @@ $('side').addEventListener('click', async (e) => {
   }
   if (d.discard) {
     const call = s.board.floors.flatMap((f) => f.worktrees).map((w) => callOf(w, 'discard')).find((call) => JSON.stringify(call) === d.discard)
-    return call && confirmed(`wt ${d.discard}`) && pressing(el, () => discardWorktree(call))
+    if (!call) return toast(noLongerOffered('this worktree', 'discard'))
+    return confirmed(`wt ${d.discard}`) && pressing(el, () => discardWorktree(call))
   }
   if (d.landing) return pressing(el, () => showLanding(JSON.parse(d.landing!)))
   if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
   if (d.tidy !== undefined && s.panel?.kind === 'floor') {
     const f = floorOf(s.panel.id)
-    return confirmed(`tidy ${f.id}`) && pressing(el, async () => whileOffered(callOf(f, 'tidy'), tidy))
+    return confirmed(`tidy ${f.id}`) && pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
   }
   if (d.tray && s.panel?.kind === 'floor') return ((s.panel.tray = s.panel.tray === d.tray ? undefined : d.tray), renderPanel())
   if (d.kept && s.panel?.kind === 'floor') return openKept(keptOf(d.kept))
@@ -2491,7 +2497,7 @@ async function tidy(c: Call<'tidy'>) {
 async function reapProcess(which: string) {
   const [id, pid] = which.split(' ')
   const r = findCard(s.board!, id)?.resources.find((r) => r.pid === Number(pid))
-  if (r) await whileOffered(callOf(r, 'reap'), offered)
+  if (r) await tried(() => tower.run(offeredCall(r, 'reap', `process ${r.pid}`)))
 }
 
 async function killShell(sh: Board['shells'][number]) {
@@ -2510,7 +2516,7 @@ $('shell-pick').addEventListener('click', async (e) => {
   if (!el) return
   if (el.dataset.act === 'close') return (closeSide(), lock())
   const { shellProject, shellDir } = el.dataset
-  if (shellDir && (await pressing(el, async () => whileOffered(callOf(floorOf(shellProject!), 'shell'), (call) => spawnShell(call, shellDir))))) (closeSide(), lock())
+  if (shellDir && (await pressing(el, () => tried(() => spawnShell(offeredCall(floorOf(shellProject!), 'shell', floorOf(shellProject!).name), shellDir))))) (closeSide(), lock())
 })
 /** Up and down move between the picker's places. */
 $('shell-pick').addEventListener('keydown', (e) => {
