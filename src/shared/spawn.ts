@@ -49,10 +49,12 @@ export type SpawnEffect<D> =
 
 export const spawnClosed = <D>(): Spawning<D> => ({ t: 'closed' })
 
-/** The dialog's steps. A start that fails after a second Esc closed the dialog opens it again, on its error. */
+/** The dialog's steps. A dialog a second Esc closed while Start waits opens again as it was: when asked to open, or on the error of a start that failed. */
 export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEffect<D>, unknown> => ({
-  open: (s, { project, on, text }) =>
-    s.t === 'closed' ? [{ type: 'state', state: { t: 'editing', project, on, error: '' } }, { type: 'show', project, text, draft: on === undefined ? undefined : titleOf(text) }] : [],
+  open: (s, { project, on, text }) => {
+    if (s.t === 'starting' && !s.shown) return [{ type: 'state', state: { ...s, shown: true } }, { type: 'reshow' }]
+    return s.t === 'closed' ? [{ type: 'state', state: { t: 'editing', project, on, error: '' } }, { type: 'show', project, text, draft: on === undefined ? undefined : titleOf(text) }] : []
+  },
   start: (s, { form }) =>
     s.t === 'editing' ? [{ type: 'state', state: { t: 'starting', project: s.project, on: s.on, shown: true } }, { type: 'draw' }, { type: 'run', project: s.project, form }] : [],
   cancel: (s) => (s.t === 'editing' ? [{ type: 'close' }] : []),
@@ -73,6 +75,7 @@ export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEf
 /**
  * What the dialog needs of its renderer. `sign`: the floor's sign as the renderer draws it; `held`: the draft the form
  * was opened on as the renderer holds it now, for keeping a prompt in it; `kept`: a draft a prompt was kept in;
+ * `shown`: the dialog has just opened, before its prompt takes focus;
  * `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes.
  */
 export type SpawnIo<D> = {
@@ -82,6 +85,7 @@ export type SpawnIo<D> = {
   draftIo: DraftIo
   held(on: D): Promise<Draft | undefined>
   kept(d: Draft): void
+  shown(): void
   started(id: string, on: D | undefined): void
   toast(text: string): void
 }
@@ -132,9 +136,10 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
         prompt().value = text
         sync()
         dialog.showModal()
+        io.shown()
         prompt().focus()
       },
-      reshow: () => dialog.showModal(),
+      reshow: () => (dialog.showModal(), io.shown()),
       draw: () => {
         const s = machine.state()
         if (s.t === 'starting') startButton().setAttribute('aria-busy', 'true')

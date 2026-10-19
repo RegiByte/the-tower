@@ -26,11 +26,13 @@ test('spawn: closing an unstarted form keeps its prompt; a started one closes wi
   assert.deepEqual(started, { state: { t: 'closed' }, effects: ['show', 'draw', 'run', 'draw', 'close', 'started'] })
 })
 
-test('spawn: while Start waits nothing closes it but the browser, and a failure comes back on its error', () => {
+test('spawn: while Start waits nothing closes it but the browser, and it comes back as it was when asked to open or on a failure', () => {
   const starting = run([open, { type: 'start', form }, { type: 'cancel' }, { type: 'start', form }])
   assert.deepEqual(starting.effects, ['show', 'draw', 'run'])
   const failed = run([{ type: 'failed', message: 'refused' }], starting.state)
   assert.deepEqual(failed, { state: { t: 'editing', project: 'p', on: 'draft', error: 'refused' }, effects: ['draw'] })
   const forced = run([{ type: 'closed', text: 'go' }, { type: 'failed', message: 'refused' }], starting.state)
   assert.deepEqual(forced, { state: { t: 'editing', project: 'p', on: 'draft', error: 'refused' }, effects: ['reshow', 'draw'] })
+  const reopened = run([{ type: 'closed', text: 'go' }, { ...open, project: 'q' }], starting.state)
+  assert.deepEqual(reopened, { state: { t: 'starting', project: 'p', on: 'draft', shown: true }, effects: ['reshow'] })
 })
