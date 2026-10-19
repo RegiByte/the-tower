@@ -1329,6 +1329,7 @@ async function rereadViewer() {
   viewer = await readViewer(tower.store.get)
   heed = { ...heed, dismissed: new Set(viewer.dismissed) }
   if (viewer.statsRange !== was.statsRange) rangeStats()
+  if (viewer.briefMarkdown !== was.briefMarkdown && briefShown) drawBrief()
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */

@@ -1167,6 +1167,7 @@ function rereadViewer() {
     s.viewer = viewer
     s.heed = { ...s.heed, dismissed: new Set(viewer.dismissed) }
     if (viewer.statsRange !== was.statsRange) rangeStats()
+    if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
     renderHud()
   })
 }
@@ -1950,9 +1951,14 @@ function drawDeskBrief(same: boolean) {
   $('desk-brief').innerHTML = logbookHtml(c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
 }
 
+/** The logbook again, if the desk shows it, in your `viewer.briefMarkdown`. */
+function redrawDeskBrief() {
+  if (deskBrief && s.panel?.kind === 'desk' && s.panel.id === deskBrief.id && s.deskTab === 'brief') drawDeskBrief(true)
+}
+
 function chooseBriefMarkdown(markdown: BriefMarkdown) {
   keepViewer('briefMarkdown', markdown)
-  if (deskBrief && s.panel?.kind === 'desk' && s.panel.id === deskBrief.id && s.deskTab === 'brief') drawDeskBrief(true)
+  redrawDeskBrief()
   renderPanel()
   drawSettings()
 }
