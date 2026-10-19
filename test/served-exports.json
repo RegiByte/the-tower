@@ -620,6 +620,10 @@
       "standingOf",
       "standingWords",
       "zoneCity"
+    ],
+    "/loop.js": [
+      "loop",
+      "timers"
     ]
   }
 }
