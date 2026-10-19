@@ -19,6 +19,7 @@
     "hub/src/shared/reads.ts#stepped",
     "hub/src/shared/reads.ts#heldHandlers",
     "hub/src/shared/reads.ts#reading",
+    "hub/src/shared/attend.ts#attendHandlers",
     "hub/test/reads.test.ts"
   ],
   "links": [
@@ -48,6 +49,10 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
 - *Handlers wire steps to events.* One handler per event type ([`Handlers`](ref:hub/src/shared/loop.ts#Handlers):
   a missing one is a type error), each `(state, event, ctx) → effects`. The next state is an effect, `state`, put
   first so executors that read the loop's state see the new one.
+- *Context is a read of the world.* A handler's `ctx` holds what it needs to read from the renderer as the event is
+  handled, such as the worker the viewer is watching ([`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers)
+  reads it as its reminder fires). Only handlers call it, steps take the values as arguments, and it never writes or
+  does I/O: what acts on the world is an effect.
 - *Time is data.* A timer is an effect carrying the event it fires
   ([`TimerEffect`](ref:hub/src/shared/loop.ts#TimerEffect), run by [`timers`](ref:hub/src/shared/loop.ts#timers)):
   starting one under an id replaces the one running there, and leaving a view cancels it in the handler that

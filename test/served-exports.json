@@ -664,6 +664,15 @@
       "spawnClosed",
       "spawnHandlers",
       "wireSpawn"
+    ],
+    "/attend.js": [
+      "attendHandlers",
+      "attending",
+      "chooseRing",
+      "dismiss",
+      "remind",
+      "seeBoard",
+      "stored"
     ]
   }
 }

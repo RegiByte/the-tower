@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.65'
+export const API_VERSION = '1.66'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')

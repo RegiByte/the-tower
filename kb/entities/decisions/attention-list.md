@@ -21,6 +21,9 @@
     "hub/src/shared/cards.ts#attentionOrder",
     "hub/src/shared/cards.ts#offerTransitions",
     "hub/src/shared/cards.ts#ringingSound",
+    "hub/src/shared/attend.ts#attendHandlers",
+    "hub/src/shared/attend.ts#seeBoard",
+    "hub/src/shared/attend.ts#remind",
     "hub/renderers/tower3d/src/compass.ts#pointers",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js"
   ]
@@ -60,6 +63,13 @@ only by typing, one chime covered a question and an answer alike, and every wait
   [`SOUNDS`](ref:hub/src/shared/cards.ts#SOUNDS), a score each for a question, an answer and an offer, picked by
   [`ringingSound`](ref:hub/src/shared/cards.ts#ringingSound). Dismissals and the setting live in `tower.store`: per
   viewer, shared by their renderers ([[viewer-prefs]]).
+- In `/attend.js`, one machine composes them for every renderer ([`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers),
+  [[machines]]): on each board ([`seeBoard`](ref:hub/src/shared/attend.ts#seeBoard)) what began and isn't dismissed is
+  said, and but for the watched worker's waits notified and rung, waits before offers; what ended is unnotified. With
+  `remind`, a timer rings what is heeded again `REMIND_MS` after the last ring
+  ([`remind`](ref:hub/src/shared/attend.ts#remind)), never while the tower is lost (its board is how it stood). A
+  dismissal is stored and closes its notification. A renderer drops the effects it has no executor for: Tower 3D
+  leaves notifications and the live region to the page.
 - One ringer per viewer: a framed renderer rings nothing and leaves it to the page framing it (Tower 3D checks
   `tower.framed`); Tower 3D adds edge arrows toward waiting workers out of view
   ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
