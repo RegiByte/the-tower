@@ -14,8 +14,10 @@ import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, ch
 import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
-import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
+import { boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { attendHandlers, attending, type AttendEvent } from '../../../src/shared/attend.ts'
+import { loop, timers } from '../../../src/shared/loop.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
@@ -330,12 +332,11 @@ function onBoardError(err: Error & { code: string }) {
   show('board-error', true)
   if (loading.shown()) loading.fail(`${boardErrorTitle(err.code)}: ${err.message}`)
   s.lost = err.code === 'disconnected'
+  attention.dispatch({ type: 'lost', lost: s.lost })
   renderPanel()
 }
 
 function onBoard(next: Board, at: ShelfSelf | undefined) {
-  show('board-error', false)
-  s.lost = false
   const sheet = keymapSheetHtml(sheetKeys(next.keys))
   if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
   const { began } = transitions(s.board, next)
@@ -345,7 +346,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
-  ringFor(began)
+  attention.dispatch({ type: 'board', board: next })
   rereadViewer()
   const key = structureKey(s.plan, next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
@@ -419,7 +420,7 @@ function toggleMusic() {
 
 let hudKey = ''
 function renderHud() {
-  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, s.heed) })
+  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, heed()) })
   if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
   drawSettings()
   const notes = claudeUntestedHtml(s.board!) ?? ''
@@ -448,7 +449,7 @@ function renderPanel() {
     if (s.deskTab === 'changes') drawChanges(c)
     $('desk-activity').innerHTML = activityHtml(c)
     $('desk-activity').dataset.tip = gistLine(c)
-    $('desk-moves').innerHTML = movesHtml(board, c, s.heed)
+    $('desk-moves').innerHTML = movesHtml(board, c, heed())
     $('desk-details').innerHTML = detailsHtml(board, c)
     $('desk-ask').innerHTML = askHtml(c)
     show('desk-ask', c.status === 'needs_input' || c.status === 'blocked')
@@ -1141,29 +1142,34 @@ const watched = () => (s.panel?.kind === 'desk' ? s.panel.id : undefined)
  */
 function goMove(m: Move) {
   if (m !== 'waiting') {
-    const to = neighbours(s.board!, watched(), s.heed)[m]
+    const to = neighbours(s.board!, watched(), heed())[m]
     return to && goDesk(to.id)
   }
-  const step = nextWait(heededWaits(s.board!, s.heed), s.heed.visited, watched())
-  s.heed = { ...s.heed, visited: step.visited }
+  const step = nextWait(heededWaits(s.board!, heed()), s.visited, watched())
+  s.visited = step.visited
   if (step.to) goDesk(step.to.id)
 }
 
-/**
- * Rings for the first of `waits` you haven't dismissed and don't sit at, unless rings are off. The door rings nothing,
- * nor does a framed page: the page framing it rings for the same waits.
- */
-function ringFor(waits: Wait[]) {
-  const wait = s.viewer.ring === 'off' || s.doorMode || tower.framed ? undefined : ringing(waits.filter((w) => !s.heed.dismissed.has(w.key)), watched())
-  if (!wait) return
-  s.rungAt = s.simNow
-  ring(soundOf(wait))
-}
+/** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
+const heed = (): Heed => ({ dismissed: attention.state().dismissed, visited: s.visited })
 
-/** With `remind`, the waits you haven't dismissed ring again while nobody looks at them. */
-function tickRing() {
-  if (s.viewer.ring === 'remind' && s.simNow - s.rungAt >= REMIND_MS) ringFor(heededWaits(s.board!, s.heed))
-}
+/**
+ * What asks for you, said and rung as every renderer does (`/attend.js`). Notifications are the tower page's; the
+ * door rings nothing, nor does a framed page: the page framing it rings for the same waits.
+ */
+const attention = loop({
+  state: attending(),
+  handlers: attendHandlers,
+  ctx: { watched },
+  execute: {
+    ...timers<AttendEvent>(),
+    announce: () => {},
+    notify: () => {},
+    unnotify: () => {},
+    sound: ({ sound }) => void (s.doorMode || tower.framed || ring(sound)),
+    keep: ({ field, value }) => keepViewer(field, value),
+  },
+})
 
 /** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
 function rereadViewer() {
@@ -1171,7 +1177,7 @@ function rereadViewer() {
   readViewer(tower.store.get).then((viewer) => {
     const was = s.viewer
     s.viewer = viewer
-    s.heed = { ...s.heed, dismissed: new Set(viewer.dismissed) }
+    attention.dispatch({ type: 'stored', viewer })
     if (viewer.statsRange !== was.statsRange) rangeStats()
     if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
     renderHud()
@@ -1184,15 +1190,13 @@ function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
 }
 
 function dismissWait(key: string) {
-  const dismissed = dismissing(s.board!, s.heed.dismissed, key)
-  keepViewer('dismissed', dismissed)
-  s.heed = { ...s.heed, dismissed: new Set(dismissed) }
+  attention.dispatch({ type: 'dismiss', key })
   renderHud()
   renderPanel()
 }
 
 function chooseRing(ring: Ring) {
-  keepViewer('ring', ring)
+  attention.dispatch({ type: 'ring', ring })
   drawSettings()
 }
 
@@ -1205,7 +1209,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(s.viewer.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), lightingSection(s.lighting)])
+  const html = settingsHtml([soundSection(attention.state().ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), lightingSection(s.lighting)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1440,6 +1444,9 @@ let drawing = FIXTURE !== undefined
 let starting = false
 let latest: Parameters<typeof onBoard> | undefined
 function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
+  show('board-error', false)
+  s.lost = false
+  attention.dispatch({ type: 'lost', lost: false })
   if (starting) return void (latest = [next, at])
   if (!s.first) return onBoard(next, at)
   starting = true
@@ -1677,7 +1684,7 @@ const petHeight = (cat: Cat, waiter: Desk | undefined) =>
 
 function tickCats(dt: number, t: number) {
   const places = new Map(CATS.map((name) => [name, catAt(name, opened + t, s.plan)]))
-  const waiter = heededWaits(s.board!, s.heed).map((w) => s.desks.get(w.id)).find(Boolean)
+  const waiter = heededWaits(s.board!, heed()).map((w) => s.desks.get(w.id)).find(Boolean)
   const level = waiter && levelOfCard(s.plan, waiter.card.id)!.index
   const watcher = waiter && watcherOf(s.cats.values(), places, waiter.card.id, level!)
   const follower = s.ride ? undefined : followerOf(places, s.me.level)
@@ -1722,7 +1729,7 @@ const head = new THREE.Vector3()
 /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
 function tickCompass() {
   const walking = s.view === 'walk' && !s.ride
-  const waits = walking ? heededWaits(s.board!, s.heed).filter((w) => levelOfCard(s.plan, w.id)?.index === s.me.level && s.desks.has(w.id)) : []
+  const waits = walking ? heededWaits(s.board!, heed()).filter((w) => levelOfCard(s.plan, w.id)?.index === s.me.level && s.desks.has(w.id)) : []
   const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(s.me.level) + HEAD_Y) }))
   const card = (id: string) => findCard(s.board!, id)!
   camera.updateMatrixWorld()
@@ -1739,7 +1746,7 @@ const PULSE_S = Math.PI / 4
  */
 function tickLamps({ t }: Frame) {
   const board = s.board!
-  const heeded = heededWaits(board, s.heed).map((w) => findCard(board, w.id)!)
+  const heeded = heededWaits(board, heed()).map((w) => findCard(board, w.id)!)
   const still = reducedMotion()
   const pulse = still && t - s.waitedAt / 1000 > PULSE_S ? 1 : 0.55 + Math.abs(Math.sin(t * 4)) * 0.45
   const glow = (cards: Card[]) => (loudest(cards) === 'needs' ? pulse : 1)
@@ -1792,7 +1799,7 @@ function tickFilings({ dt }: Frame) {
   }
 }
 
-const TICKS: ((f: Frame) => void)[] = [tickCut, tickRide, tickPet, tickWalker, tickDoors, tickCamera, tickAim, tickHold, tickPeople, tickFilings, tickGallery, tickFilms, tickParty, tickLamps, tickRing, tickCompass, tickTraffic]
+const TICKS: ((f: Frame) => void)[] = [tickCut, tickRide, tickPet, tickWalker, tickDoors, tickCamera, tickAim, tickHold, tickPeople, tickFilings, tickGallery, tickFilms, tickParty, tickLamps, tickCompass, tickTraffic]
 
 function update(dt: number) {
   s.simNow += dt * 1000

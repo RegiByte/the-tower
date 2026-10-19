@@ -1,6 +1,5 @@
 import type * as THREE from 'three'
 import type { ChairKit, Chairs } from './chairs.ts'
-import type { Heed } from '../../../src/shared/cards.ts'
 import type { Draft } from '../../../src/shared/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
@@ -123,16 +122,12 @@ export type State = {
   cats: Map<CatName, Cat>
   /** What the renderer's settings name the cats. */
   catNames: CatNames
-  /**
-   * What you did about the waits (`Heed`: dismissed, as `viewer.dismissed` keeps them, and visited by N this round),
-   * and when one last rang, in simulated ms.
-   */
-  heed: Heed
+  /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are the attention machine's (`/attend.js`). */
+  visited: ReadonlySet<string>
   /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range. */
   viewer: Viewer
   /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws `LIT`, what it started with. */
   lighting: boolean
-  rungAt: number
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
   waitedAt: number
   /** Each card's status at the last board: working to done or idle is a finished turn. */
@@ -236,7 +231,7 @@ export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
-  heed: { dismissed: new Set(), visited: new Set() }, viewer: VIEWER_DEFAULT, lighting: LIT, rungAt: 0, waitedAt: 0, lastStatus: new Map(),
+  visited: new Set(), viewer: VIEWER_DEFAULT, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), panel: undefined, deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),
   carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
