@@ -784,8 +784,13 @@ const sendLeaversHome = () => {
   for (const id of departing) if (!cards.some((c) => c.id === id && c.leaving)) departing.delete(id)
   for (const c of cards.filter((c) => c.leaving && !departing.has(c.id) && leavesNow(system.session(c.id)!.facts))) {
     departing.add(c.id)
+    const calls = callOf(c, 'send-home')
+    if (!calls) {
+      console.error(`${c.callsign} asked to go home, and its card offers no send-home`)
+      continue
+    }
     void (async () => {
-      for (const [verb, body] of callOf(c, 'send-home') ?? []) {
+      for (const [verb, body] of calls) {
         const answer = await HANDLERS[verb](ROUTES[verb].input.parse({ ...body, by: c.id }))
         if (answer.t === 'error') console.error(`${c.callsign} asked to go home, and killing ${body.id} failed: ${(answer as ApiError).message}`)
       }
