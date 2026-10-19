@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": [
     "hub/src/cli.ts",
     "hub/src/bridge/facts.ts#PROMPTED_BY",
@@ -22,7 +22,7 @@
     "hub/src/tower/server.ts#inBurst",
     "hub/src/tower/server.ts#keyedBy",
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/directory.ts",
+    "hub/src/directory.ts#withBy", "hub/src/directory.ts#postToHost",
     "hub/test/stats.test.ts"
   ],
   "links": [

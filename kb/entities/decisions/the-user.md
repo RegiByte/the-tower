@@ -17,7 +17,7 @@
     "hub/src/shared/reviews.ts#sendText",
     "hub/src/shared/panels.ts#ThreadView",
     "hub/src/shared/panels.ts#ChangesView",
-    "hub/src/directory.ts",
+    "hub/src/directory.ts#agent",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/src/mod/skills/review/SKILL.md",
     "hub/src/mod/skills/guide/SKILL.md"

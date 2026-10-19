@@ -21,7 +21,7 @@
     "hub/src/shared/cards.ts#crewFold",
     "hub/src/shared/cards.ts#workerNamed",
     "hub/src/shared/cards.ts#dutyOrder",
-    "hub/src/directory.ts",
+    "hub/src/directory.ts#crewRows", "hub/src/directory.ts#floorLines",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/acts.ts#sentHome",
