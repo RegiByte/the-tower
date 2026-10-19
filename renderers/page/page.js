@@ -1,10 +1,12 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, can, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
-import { THE_USER, REVIEWS, landedThreads, parseThread, sendText, threadId, unseenBy } from '/reviews.js'
+import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
-import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, liveScope, viewedKey, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
+import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
+import { loop, timers } from '/loop.js'
+import { heldHandlers, noReads, reading } from '/reads.js'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -30,7 +32,9 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
- * @import { ChangesRead, ChangesScope, DiffLayout, LinePick, StatsRange, StatsView } from '../../src/shared/panels.ts'
+ * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange, StatsView } from '../../src/shared/panels.ts'
+ * @import { Loop } from '../../src/shared/loop.ts'
+ * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
  * @import { Deleted, Draft } from '../../src/shared/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
@@ -752,9 +756,7 @@ function renderPane(c) {
   $('main').classList.toggle('on-brief', brief)
   $('main').classList.toggle('on-changes', pane === 'changes')
   $('main').classList.toggle('on-reviews', pane === 'reviews')
-  const reviewing = pane === 'changes' || pane === 'reviews'
-  followChanges(reviewing ? c : undefined)
-  if (reviewing && keepsThreads(c)) followThread(c)
+  if (reviewing(pane) && keepsThreads(c)) followThread(c)
   if (pane === 'changes') drawChanges()
   if (pane === 'reviews') drawReviews(c)
   const key = brief && `${c.id} ${c.status === 'working'} ${JSON.stringify(c.conversations)}`
@@ -787,82 +789,65 @@ function renderShown(c, s) {
 }
 
 /**
- * The changes of the selected session, read when its Changes pane opens, every `CHANGES_POLL_MS` while it stays open,
- * and when a turn ends. Claude edits through scripts as often as through its edit tools, so git is read on a timer.
+ * The workers' Changes as last read, each under the scope the viewer compares it in, with each repo's viewed marks
+ * (a file's path → the hash of the diff it was viewed at), which every renderer in this browser shares through
+ * `tower.store`. The selected worker's are read while its Changes or Reviews are open (`changesHandlers`).
+ * @type {Loop<ChangesReads, ChangesEvent>}
  */
-const CHANGES_POLL_MS = 30_000
-/** The last read: `viewed` holds each repo's marks, a file's path → the hash of the diff it was viewed at. @type {ChangesRead & { id: string, scope: ChangesScope } | undefined} */
-let changes
-/** @type {{ id: string, status: Card['status'], timer: ReturnType<typeof setInterval> } | undefined} */
-let changesPoll
+const changeReads = loop({
+  state: noChanges(),
+  handlers: changesHandlers,
+  ctx: undefined,
+  execute: {
+    ...timers(),
+    read: reading(readChanges({
+      repos: (id, scope) => tower.get(/** @type {'changes/<id>'} */ (changesPath(id, scope))),
+      viewed: (key) => /** @type {Promise<Record<string, string> | undefined>} */ (tower.store.get(key)),
+      now: Date.now,
+    })),
+    draw: () => render(),
+    toast: ({ message }) => void (lostAt || toast(message)),
+    keep: ({ key, marks }) => tower.store.set(key, marks),
+  },
+})
 /** Files the viewer folded or unfolded against what their viewed mark says, by `fileKey`; this page only. @type {Set<string>} */
 const folds = new Set()
 
-/** What the selected worker's Changes compare (`ChangesScope`), all since the base until the viewer picks another; a new worker starts on all. */
-/** @type {{ id: string | undefined, scope: ChangesScope }} */
-let changesScope = { id: undefined, scope: 'all' }
-/** @param {string} id @returns {ChangesScope} */
-const scopeOf = (id) => (changesScope.id === id ? changesScope.scope : 'all')
+/** @param {Pane} pane */
+const reviewing = (pane) => pane === 'changes' || pane === 'reviews'
+/** Changes are read for the selected worker while its Changes or Reviews are open. @param {Card | undefined} c */
+const followChanges = (c) => changeReads.dispatch({ type: 'follow', card: c && reviewing(paneOf(c)) ? c : undefined })
 
-/** @param {string} id @param {ChangesScope} scope @returns {Promise<void>} */
+/** @param {string} id */
+const scopeIn = (id) => scopeOf(changeReads.state(), id)
+/** @param {string} id */
+const changesIn = (id) => changesOf(changeReads.state(), id)
+
+/** @param {string} id @param {ChangesScope} scope */
 function compare(id, scope) {
-  changesScope = { id, scope }
   pick = undefined
+  changeReads.dispatch({ type: 'compare', id, scope })
   render()
-  return readChanges(id)
 }
 
 /** A file of the Changes read, by `fileKey`: one drawn from that read. @param {string} key */
 const fileAt = (key) => /** @type {readonly [RepoChanges, DiffFile]} */ (changedFiles(read().repos).find(([repo, f]) => fileKey(repo, f) === key))
 
-/** The Changes read, while the pane draws one. */
-const read = () => /** @type {NonNullable<typeof changes>} */ (changes)
-
-/** @param {Card | undefined} c */
-function followChanges(c) {
-  if (changesPoll && changesPoll.id !== c?.id) changesPoll = (clearInterval(changesPoll.timer), undefined)
-  if (!c) return
-  if (!changesPoll) {
-    changesPoll = { id: c.id, status: c.status, timer: setInterval(() => readChanges(c.id), CHANGES_POLL_MS) }
-    return readChanges(c.id)
-  }
-  const turnEnded = changesPoll.status === 'working' && c.status !== 'working'
-  changesPoll.status = c.status
-  if (turnEnded) readChanges(c.id)
-}
-
-/** Why the last read of a worker's Changes failed, by its id, while none is held. @type {{ id: string, message: string } | undefined} */
-let changesFailed
-
-/** @param {string} id */
-async function readChanges(id) {
-  const scope = scopeOf(id)
-  const repos = await tower.get(/** @type {'changes/<id>'} */ (changesPath(id, scope))).catch((err) => {
-    if (changes?.id === id) return void (lostAt || toast(err.message))
-    changesFailed = { id, message: err.message }
-    render()
-  })
-  if (!repos || changesPoll?.id !== id || scopeOf(id) !== scope) return
-  changesFailed = undefined
-  if (liveScope(repos, scope) !== scope) return compare(id, 'all')
-  /** The marks of a repo are shared by every renderer in this browser, through `tower.store`. */
-  const marks = /** @type {(Record<string, string> | undefined)[]} */ (await Promise.all(repos.map((repo) => tower.store.get(viewedKey(repo)))))
-  changes = { id, scope, repos, at: Date.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
-  render()
-}
+/** The selected worker's Changes read, while the pane draws one. */
+const read = () => /** @type {ChangesRead} */ (changesIn(/** @type {string} */ (selected)))
 
 /** Files viewed of files changed, once read. @param {Card} c */
 const changesTally = (c) => {
-  if (changes?.id !== c.id) return ''
-  const { viewed, files } = viewedCount(changes)
+  const shown = changesIn(c.id)
+  if (!shown) return ''
+  const { viewed, files } = viewedCount(shown)
   return files ? `<small>${viewed}/${files}</small>` : ''
 }
 
 /** @param {string} key */
 function toggleViewed(key) {
   const [repo, f] = fileAt(key)
-  read().viewed[repo.dir] = marksToggled(read().viewed, repo, f)
-  tower.store.set(viewedKey(repo), read().viewed[repo.dir])
+  changeReads.dispatch({ type: 'mark', id: /** @type {string} */ (selected), repo, marks: marksToggled(read().viewed, repo, f) })
   folds.delete(key)
   keepingFileTop($('changes'), key, render)
 }
@@ -888,13 +873,12 @@ let diffLayout = /** @type {DiffLayout} */ ((await tower.store.get(DIFF_LAYOUT_K
 
 function drawChanges() {
   const c = /** @type {Card} */ (findCard(selected))
-  const scope = scopeOf(c.id)
-  const shown = changes?.id === c.id && changes.scope === scope ? changes : undefined
+  const shown = changesIn(c.id)
   const live = shown && livePick(shown, pick)
   if (shown && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (shown) pick = live
-  const failed = shown || changesFailed?.id !== c.id ? undefined : changesFailed.message
-  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout, scope }), { 'pick-text': pickText })
+  const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
+  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout, scope: scopeIn(c.id) }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && shown) jumpToAnchor()
@@ -916,32 +900,27 @@ watchPickDrag($('changes'), {
 const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
 /** @param {Card} c */
 const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
-/** The thread the worker's Reviews show: the one Tidy filed once its work landed, else its checkout's. @param {Card} c */
-const threadItem = (c) => reviewsOf(floorOf(c.project))?.items.find((i) => i.id === cardThread(c).id)
 
 /**
- * The thread of the selected worker's checkout as last read: read again whenever its file's version moves on the board.
- * @type {{ key: string, project: string, checkout: string, item: string | undefined, thread: ReviewThread | undefined, failed?: string } | undefined}
+ * The workers' threads as last read, the one Tidy filed once a worker's work landed, else its checkout's: each read
+ * again whenever its file's version moves on the board, held until then.
+ * @type {Loop<Reads<ReviewThread>, ReadEvent<ReviewThread>>}
  */
-let review
+const threadReads = loop({
+  state: noReads(),
+  handlers: heldHandlers(),
+  ctx: undefined,
+  execute: { read: reading(readThread((path) => tower.text(path))), draw: () => render(), toast: ({ message }) => void toast(message) },
+})
 
 /** @param {Card} c */
 function followThread(c) {
-  const checkout = threadCheckoutOf(c)
-  const item = threadItem(c)
-  const key = `${c.project}/${item?.id ?? checkout}@${item?.modifiedAt ?? 'none'}`
-  if (review?.key === key) return
-  const same = review?.project === c.project && review.checkout === checkout && review.item === item?.id
-  review = { key, project: c.project, checkout, item: item?.id, thread: !item ? { checkout, messages: [] } : same ? /** @type {NonNullable<typeof review>} */ (review).thread : undefined }
-  if (!item) return
-  tower.text(`collection/${c.project}/${REVIEWS}/${encodeURIComponent(item.id)}`).then(
-    (text) => review?.key === key && ((review.thread = parseThread(text)), (review.failed = undefined), render()),
-    (err) => review?.key === key && (review.thread ? toast(err.message) : ((review.failed = err.message), render())),
-  )
+  const want = threadWant(board.floors, cardThread(c))
+  if (want) threadReads.dispatch(want)
 }
 
 /** @param {Card} c */
-const threadOf = (c) => (review?.project === c.project && review.checkout === threadCheckoutOf(c) && review.item === threadItem(c)?.id ? review.thread : undefined)
+const threadOf = (c) => heldThread(threadReads.state(), board.floors, cardThread(c))
 
 /** What the worker hasn't seen of its checkout's thread, else how many notes it holds. @param {Card} c */
 const reviewsTally = (c) => {
@@ -994,7 +973,7 @@ function sendNotes(button, c) {
 
 /** @param {Card} c */
 const threadView = (c) => threadViewOf(board, cardThread(c), {
-  thread: threadOf(c), failed: threadOf(c) ? undefined : review?.failed, changes: changes?.id === c.id && changes.scope === 'all' ? changes.repos : undefined, picked: pickedFor(c), re: noteRe,
+  thread: threadOf(c), failed: threadOf(c) ? undefined : threadFailure(threadReads.state(), cardThread(c)), changes: scopeIn(c.id) === 'all' ? changesIn(c.id)?.repos : undefined, picked: pickedFor(c), re: noteRe,
 })
 
 /** @param {Card} c */
@@ -1015,7 +994,7 @@ function showAnchor(value) {
   const id = /** @type {string} */ (selected)
   jump = anchorOf(/** @type {ReviewThread} */ (threadOf(/** @type {Card} */ (findCard(id)))), value)
   showPane('changes')
-  if (scopeOf(id) !== 'all') compare(id, 'all')
+  if (scopeIn(id) !== 'all') compare(id, 'all')
 }
 
 function jumpToAnchor() {
@@ -1213,6 +1192,7 @@ function render() {
   repaint($('rail'), railHtml(waiting))
   $('side-foot').innerHTML = board.config ? `<span>config</span><code data-tip="${esc(board.config)}"><bdi>${esc(board.config)}</bdi></code>${fileButtonsHtml(board.config)}` : ''
   const c = selected && findCard(selected)
+  followChanges(c || undefined)
   if (c) barHtml(c)
   if (draftOpen) draftHeadHtml()
   if (itemOpen) drawItem()
@@ -1592,7 +1572,6 @@ function select(id) {
 
 function goHome() {
   closeDrawer()
-  followChanges(undefined)
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -1760,7 +1739,6 @@ function openArchive(project) {
   closeDrawer()
   const f = floorOf(project)
   if (!f) return goHome()
-  followChanges(undefined)
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -1827,7 +1805,6 @@ function openPolicies(project) {
   closeDrawer()
   const f = floorOf(project)
   if (!f) return goHome()
-  followChanges(undefined)
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -1856,7 +1833,6 @@ let collectionOpen
 function openCollection(project, collection) {
   closeDrawer()
   if (!floorOf(project)?.collections.some((c) => c.id === collection)) return goHome()
-  followChanges(undefined)
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -2105,7 +2081,6 @@ const itemOf = ({ project, collection, id }) => {
 function openItem(project, collection, id) {
   closeDrawer()
   if (!itemOf({ project, collection, id }).item) return toast('That item is gone')
-  followChanges(undefined)
   leaveItem()
   leaveShelf()
   leaveDraft()
@@ -2561,7 +2536,7 @@ document.addEventListener('click', (e) => {
   if (fold) return toggleFold(fold)
   const layout = /** @type {DiffLayout | undefined} */ (target.closest('[data-changes-layout]')?.dataset.changesLayout)
   if (layout) return ((diffLayout = layout), tower.store.set(DIFF_LAYOUT_KEY, layout), drawChanges())
-  if (target.closest('[data-changes-read]')) return ((changesFailed = undefined), render(), readChanges(/** @type {string} */ (selected)))
+  if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected) }), render())
   const open = target.closest('[data-open]')
   if (open) return told(pressing(open, () => tower.run(/** @type {Call<'open'>} */ (/** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))).calls.editor), { dir: open.dataset.open })))
   const shelved = target.closest('[data-shelf]')
@@ -2569,7 +2544,8 @@ document.addEventListener('click', (e) => {
   const doc = target.closest('[data-doc]')
   if (doc) return showDoc(/** @type {string} */ (doc.dataset.doc))
   if (target.closest('[data-archive-read]')) return (readArchive(/** @type {NonNullable<typeof archiveOpen>} */ (archiveOpen).project), render())
-  if (target.closest('[data-thread-read]')) return ((review = undefined), render())
+  const reread = target.closest('[data-thread-read]') && threadWant(board.floors, cardThread(/** @type {Card} */ (findCard(selected))))
+  if (reread) return (threadReads.dispatch({ ...reread, type: 'refresh' }), render())
   if (target.closest('[data-shelf-retry]')) {
     const { project, n } = /** @type {NonNullable<typeof shelfOpen>} */ (shelfOpen)
     return openShelf(project, n)

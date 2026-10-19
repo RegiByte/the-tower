@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Changes: a worker's diff read from git, and viewed marks per file version",
-  "summary": "The tower reads what a worker changed in its repos from git on request (since its branch's base in a worktree, since its upstream on a branch that has one, since HEAD elsewhere), the page re-reads it every 30 s while the view is open and when a turn ends, and a file marked viewed stays viewed only until its diff changes; the marks live in the viewer's browser, shared by every renderer through tower.store.",
+  "summary": "The tower reads what a worker changed in its repos from git on request (since its branch's base in a worktree, since its upstream on a branch that has one, since HEAD elsewhere), every renderer re-reads it every 30 s while the view is open and when a turn ends, through one shared machine, and a file marked viewed stays viewed only until its diff changes; the marks live in the viewer's browser, shared by every renderer through tower.store.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-19",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -36,8 +36,11 @@ files you have read while the agent keeps working.
   carries in from above is a comment, or a string or fence that closes within it
   ([`readsWhole`](ref:hub/src/shared/panels.ts#readsWhole)): highlight.js misreads some code (Markdown's stray `*`, a
   regex in a template's `${}`) and never closes what it opened, which carried through every hunk below.
-- **When.** Only while a worker's Changes are open: on open, on a poll, and when the worker's status leaves
-  `working`. Claude edits through scripts as often as through its edit tools, so no tool event is a reliable trigger.
+- **When.** Only while a worker's Changes or Reviews are open: on open, on a poll (`CHANGES_POLL_MS`), and when the
+  worker's status leaves `working`. Claude edits through scripts as often as through its edit tools, so no tool event
+  is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
+  a machine on `/loop.js` that a renderer tells, on each draw, whose Changes are open: the poll is a timer effect it
+  starts and cancels, and a read overtaken by a later one lands on nothing (held reads, [[renderer-shared-modules]]).
 - **Viewed.** Each file carries a hash of its diff. A mark is `(path → hash)` per repo dir, kept with `tower.store`
   ([[renderer-api]]), so every renderer in a browser sees the same marks: when the worker touches the file again its
   hash moves and the file reopens. A viewed file folds; the viewer can unfold it, or fold any other, for this view
