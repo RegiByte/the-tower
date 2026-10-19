@@ -25,18 +25,24 @@ import {
   cardOffers,
   conversationOffers,
   floorOffers,
-  noteOffers,
+  noteActions,
+  offered,
   probeOffers,
   resourceOffers,
-  sendHomeOffer,
+  sendHomeActions,
+  type CardAction,
   type CardCalls,
+  type ProbeAction,
   type ProbeCalls,
   type ProbeVerb,
   type CardVerb,
+  type ConversationAction,
   type ConversationCalls,
   type ConversationVerb,
+  type FloorAction,
   type FloorCalls,
   type FloorVerb,
+  type ResourceAction,
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
@@ -50,10 +56,10 @@ const EXCERPT_CHARS = 280
 const excerpt = (text: string | undefined) => (text && text.length > EXCERPT_CHARS ? `${text.slice(0, EXCERPT_CHARS)}…` : text)
 
 /** `promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's. */
-export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; verbs: ConversationVerb[]; calls: ConversationCalls }
+export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; verbs: ConversationVerb[]; calls: ConversationCalls; actions: ConversationAction[] }
 
 /** A process a session left running: `orphan` when re-parented to launchd. */
-export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; verbs: ResourceVerb[]; calls: ResourceCalls }
+export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; verbs: ResourceVerb[]; calls: ResourceCalls; actions: ResourceAction[] }
 
 export type CardShown = Omit<Shown, 'at'> & { at: number; session: string }
 
@@ -197,6 +203,8 @@ export type Card = {
   seat?: Seat
   verbs: CardVerb[]
   calls: CardCalls
+  /** What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart. */
+  actions: CardAction[]
 }
 
 /** A session of a worker's lineage, and when it started (epoch ms). */
@@ -253,6 +261,7 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   tidy: TidyPlan
   verbs: FloorVerb[]
   calls: FloorCalls
+  actions: FloorAction[]
 }
 
 /**
@@ -302,7 +311,7 @@ export type Board = {
   /** Whose reading the rate limits are: a session's turn, or a probe's read. */
   rateLimitsFrom?: LimitsFrom
   /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`), and `run`, a read now. */
-  probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls })[]
+  probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
   /** The account's extra usage, as the probes' newest answer that had it said. */
   extraUsage?: ExtraUsage
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
@@ -522,8 +531,8 @@ export const withReports = (cards: Card[]): Card[] => {
 const withCrews = (cards: Card[]): Card[] => {
   const reporting = withReports(cards)
   return reporting.map((c) => {
-    const { verbs, calls } = sendHomeOffer([c, ...crewOf(reporting, c)])
-    return verbs.length ? { ...c, verbs: [...c.verbs, ...verbs], calls: { ...c.calls, ...calls } } : c
+    const home = sendHomeActions([c, ...crewOf(reporting, c)])
+    return home.length ? { ...c, ...offered([...c.actions, ...home]) } : c
   })
 }
 
@@ -607,16 +616,14 @@ const withCheckouts = (
     const threadCheckout = threadCheckoutOf(c)
     const threadState = stateOf(threadCheckout)
     const threadLive = threadState.is === 'live'
-    const note = noteOffers(c.project, threadCheckout, keepsThreads(config, c.project) && threadLive)
-    const { review, ...calls } = c.calls
+    const note = noteActions(c.project, threadCheckout, keepsThreads(config, c.project) && threadLive)
     const reviewable = ownState.is === 'live'
     return {
       ...c,
       checkoutState: ownState,
       threadState,
       unseen: threadLive ? c.unseen : undefined,
-      verbs: [...c.verbs.filter((v) => reviewable || v !== 'review'), ...note.verbs],
-      calls: { ...calls, ...(reviewable && review && { review }), ...note.calls },
+      ...offered<CardVerb, CardCalls>([...c.actions.filter((a) => reviewable || a.verb !== 'review'), ...note]),
     }
   })
 }

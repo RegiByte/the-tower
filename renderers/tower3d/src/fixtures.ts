@@ -9,7 +9,7 @@ import { DRAFTS } from '../../../src/shared/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
-import { cardOffers, conversationOffers, floorOffers, noteOffers, probeOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
+import { cardOffers, conversationOffers, floorOffers, noteActions, offered, probeOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
@@ -52,7 +52,7 @@ type Facts = {
   hostStopped?: boolean
   /** Stranded mid-turn. */
   cutOff?: boolean
-  leftovers?: Omit<Card['resources'][number], 'verbs' | 'calls'>[]
+  leftovers?: Omit<Card['resources'][number], 'verbs' | 'calls' | 'actions'>[]
   /** What it showed you, `ago` minutes since. */
   shown?: (Omit<Card['shown'][number], 'at' | 'session'> & { ago: number })[]
   /** The worktree it works in, by name; the main checkout without one. */
@@ -166,16 +166,15 @@ const reviewsCollection = (project: string, threads: Record<string, string>, now
  */
 function withThreads(f: FloorFacts, cards: Card[]): Pick<Floor, 'threads' | 'cards'> {
   const parsed = Object.entries(f.threads ?? {}).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
-  const notes = (checkout: string) => noteOffers(f.id, checkout, f.threads !== undefined)
+  const notes = (checkout: string) => noteActions(f.id, checkout, f.threads !== undefined)
   return {
     threads: parsed.map(({ checkout, thread }) => ({
-      checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const }, ...notes(checkout),
+      checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const }, ...offered(notes(checkout)),
       last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
     })),
     cards: cards.map((c) => {
       const thread = parsed.find((t) => t.checkout === threadCheckoutOf(c))?.thread
-      const note = notes(threadCheckoutOf(c))
-      return { ...c, verbs: [...c.verbs, ...note.verbs], calls: { ...c.calls, ...note.calls }, ...(thread && { unseen: unseenBy(thread, c.callsign).length }) }
+      return { ...c, ...offered([...c.actions, ...notes(threadCheckoutOf(c))]), ...(thread && { unseen: unseenBy(thread, c.callsign).length }) }
     }),
   }
 }

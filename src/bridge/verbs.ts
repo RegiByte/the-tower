@@ -108,24 +108,42 @@ export type FloorCalls = { spawn?: Call<'spawn'>; cut?: Call<'spawn'>; shell?: C
 export type WorktreeCalls = { recut?: Call<'worktree/recut'>; prune?: Call<'worktree/prune'>; remove?: Call<'worktree/remove'>; discard?: Call<'worktree/discard'> }
 export type BranchCalls = { recut?: Call<'branch/recut'>; delete?: Call<'branch/delete'> }
 
-type Offers<V extends string, C> = { verbs: V[]; calls: C }
+/** A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none. */
+type Action<V extends string, C> = { [K in V]: K extends keyof C ? { verb: K; call: Exclude<C[K], undefined> } : { verb: K } }[V]
+export type CardAction = Action<CardVerb, CardCalls>
+export type NoteAction = Action<NoteVerb, NoteCalls>
+export type ConversationAction = Action<ConversationVerb, ConversationCalls>
+export type ResourceAction = Action<ResourceVerb, ResourceCalls>
+export type FloorAction = Action<FloorVerb, FloorCalls>
+export type WorktreeAction = Action<WorktreeVerb, WorktreeCalls>
+export type BranchAction = Action<BranchVerb, BranchCalls>
 
-/** The calls of the offered verbs that have one. */
-const callsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): C =>
-  Object.fromEntries(verbs.flatMap((v) => (requests[v] ? [[v, requests[v]()]] : []))) as C
+/** What a thing offers: its `actions`, and the same as `verbs` and `calls` for the renderers that read those. */
+type Offers<V extends string, C> = { verbs: V[]; calls: C; actions: Action<V, C>[] }
+
+export const offered = <V extends string, C>(actions: Action<V, C>[]): Offers<V, C> => ({
+  verbs: actions.map((a) => a.verb as V),
+  calls: Object.fromEntries(actions.flatMap((a) => ('call' in a ? [[a.verb, a.call]] : []))) as C,
+  actions,
+})
+
+/** Each verb with its call, built by `requests` for the verbs that have one. */
+const actionsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): Offers<V, C> =>
+  offered(verbs.map((verb) => (requests[verb] ? { verb, call: requests[verb]() } : { verb }) as Action<V, C>))
 
 /** A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor. */
 export type ProbeVerb = 'run'
 export type ProbeCalls = { run?: Call<'probe/run'> }
+export type ProbeAction = Action<ProbeVerb, ProbeCalls>
 
 export const probeOffers = (name: string, off: boolean): Offers<ProbeVerb, ProbeCalls> => {
   const verbs: ProbeVerb[] = off ? [] : ['run']
-  return { verbs, calls: callsOf(verbs, { run: (): Call<'probe/run'> => ['probe/run', { name }] }) }
+  return actionsOf(verbs, { run: (): Call<'probe/run'> => ['probe/run', { name }] })
 }
 
 export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
   const verbs = conversationVerbs(live, resumable, resumedBy)
-  return { verbs, calls: callsOf(verbs, { resume: (): Call<'resume'> => ['resume', { id: session, conversation }] }) }
+  return actionsOf(verbs, { resume: (): Call<'resume'> => ['resume', { id: session, conversation }] })
 }
 
 export const cardOffers = (
@@ -139,39 +157,32 @@ export const cardOffers = (
   cutOff: boolean,
 ): Offers<CardVerb, CardCalls> => {
   const verbs = cardVerbs(status, resumable, conversations, leftovers, review, awaitsResume, cutOff)
-  return {
-    verbs,
-    calls: callsOf(verbs, {
-      submit: (): Call<'submit'> => ['submit', { id }],
-      resume: (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id }],
-      'carry-on': (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id, prompt: CARRY_ON }],
-      review: (): Call<'spawn'> => ['spawn', { project: review!.project, cut: { from: review!.checkout }, prompt: reviewPrompt(review!.callsign, false) }],
-      reap: (): Call<'reap'> => ['reap', { id }],
-      kill: (): Call<'kill'> => ['kill', { id }],
-      'let-go': (): Call<'let-go'> => ['let-go', { id }],
-    }),
-  }
+  return actionsOf(verbs, {
+    submit: (): Call<'submit'> => ['submit', { id }],
+    resume: (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id }],
+    'carry-on': (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id, prompt: CARRY_ON }],
+    review: (): Call<'spawn'> => ['spawn', { project: review!.project, cut: { from: review!.checkout }, prompt: reviewPrompt(review!.callsign, false) }],
+    reap: (): Call<'reap'> => ['reap', { id }],
+    kill: (): Call<'kill'> => ['kill', { id }],
+    'let-go': (): Call<'let-go'> => ['let-go', { id }],
+  })
 }
 
 /**
  * `send-home` on every worker: `crew` is the worker and everyone under it, each under its hirer or author, so the
  * reverse ends the deepest first. Offered while any of them runs; a worker with nobody under it ends alone.
  */
-export const sendHomeOffer = (crew: { id: string; status: Status }[]): Offers<'send-home', Pick<CardCalls, 'send-home'>> => {
+export const sendHomeActions = (crew: { id: string; status: Status }[]): CardAction[] => {
   const running = crew.filter((c) => isLive(c.status)).reverse()
-  return running.length
-    ? { verbs: ['send-home'], calls: { 'send-home': running.map(({ id }): Call<'kill'> => ['kill', { id }]) } }
-    : { verbs: [], calls: {} }
+  return running.length ? [{ verb: 'send-home', call: running.map(({ id }): Call<'kill'> => ['kill', { id }]) }] : []
 }
 
 /** `live`: the checkout's work goes on, on a floor that keeps review threads. */
-export const noteOffers = (project: string, checkout: string, live: boolean): Offers<NoteVerb, NoteCalls> =>
-  live ? { verbs: ['note'], calls: { note: ['review/append', { project, checkout }] } } : { verbs: [], calls: {} }
+export const noteActions = (project: string, checkout: string, live: boolean): NoteAction[] =>
+  live ? [{ verb: 'note', call: ['review/append', { project, checkout }] }] : []
 
-export const resourceOffers = (session: string, pid: number): Offers<ResourceVerb, ResourceCalls> => ({
-  verbs: ['reap'],
-  calls: { reap: ['reap/process', { id: session, pid }] },
-})
+export const resourceOffers = (session: string, pid: number): Offers<ResourceVerb, ResourceCalls> =>
+  offered([{ verb: 'reap', call: ['reap/process', { id: session, pid }] }])
 
 export const isTidy = ({ worktrees, branches, threads, prune, logs, streams }: TidyPlan) =>
   !worktrees.length && !branches.length && !threads.length && !prune.length && !logs.length && !streams.length
@@ -179,39 +190,30 @@ export const isTidy = ({ worktrees, branches, threads, prune, logs, streams }: T
 /** Tidy's call carries the plan it applies: the tower refuses it once the floor's plan moved on. */
 export const floorOffers = (project: string, hostUp: boolean, termsUp: boolean, canCut: boolean, tidy: TidyPlan): Offers<FloorVerb, FloorCalls> => {
   const verbs = floorVerbs(hostUp, termsUp, canCut, !isTidy(tidy))
-  return {
-    verbs,
-    calls: callsOf(verbs, {
-      spawn: (): Call<'spawn'> => ['spawn', { project }],
-      cut: (): Call<'spawn'> => ['spawn', { project, cut: {} }],
-      shell: (): Call<'shell/spawn'> => ['shell/spawn', { project }],
-      editor: (): Call<'open'> => ['open', {}],
-      tidy: (): Call<'tidy'> => ['tidy', { project, plan: tidy }],
-    }),
-  }
+  return actionsOf(verbs, {
+    spawn: (): Call<'spawn'> => ['spawn', { project }],
+    cut: (): Call<'spawn'> => ['spawn', { project, cut: {} }],
+    shell: (): Call<'shell/spawn'> => ['shell/spawn', { project }],
+    editor: (): Call<'open'> => ['open', {}],
+    tidy: (): Call<'tidy'> => ['tidy', { project, plan: tidy }],
+  })
 }
 
 export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], keepsThreads: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
   const verbs = worktreeVerbs(state, keepsThreads)
-  return {
-    verbs,
-    calls: callsOf(verbs, {
-      recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
-      prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],
-      remove: (): Call<'worktree/remove'> => ['worktree/remove', { project, name }],
-      discard: (): Call<'worktree/discard'> => ['worktree/discard', { project, name, held: repos.map(({ dir, head, dirty }) => ({ dir, head: head!, dirty })) }],
-    }),
-  }
+  return actionsOf(verbs, {
+    recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
+    prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],
+    remove: (): Call<'worktree/remove'> => ['worktree/remove', { project, name }],
+    discard: (): Call<'worktree/discard'> => ['worktree/discard', { project, name, held: repos.map(({ dir, head, dirty }) => ({ dir, head: head!, dirty })) }],
+  })
 }
 
 /** `landed`: absorbed or carried in every repo that has it. */
 export const branchOffers = (project: string, name: string, landed: boolean): Offers<BranchVerb, BranchCalls> => {
   const verbs: BranchVerb[] = landed ? ['recut', 'delete'] : ['recut']
-  return {
-    verbs,
-    calls: callsOf(verbs, {
-      recut: (): Call<'branch/recut'> => ['branch/recut', { project, name }],
-      delete: (): Call<'branch/delete'> => ['branch/delete', { project, name }],
-    }),
-  }
+  return actionsOf(verbs, {
+    recut: (): Call<'branch/recut'> => ['branch/recut', { project, name }],
+    delete: (): Call<'branch/delete'> => ['branch/delete', { project, name }],
+  })
 }

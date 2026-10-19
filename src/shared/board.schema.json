@@ -118,6 +118,12 @@
               "calls": {
                 "$ref": "#/definitions/ProbeCalls"
               },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ProbeAction"
+                }
+              },
               "name": {
                 "type": "string"
               },
@@ -160,6 +166,7 @@
               }
             },
             "required": [
+              "actions",
               "calls",
               "every",
               "failsInRow",
@@ -373,6 +380,12 @@
         "calls": {
           "$ref": "#/definitions/FloorCalls"
         },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorAction"
+          }
+        },
         "name": {
           "type": "string"
         },
@@ -404,6 +417,7 @@
         }
       },
       "required": [
+        "actions",
         "archived",
         "bases",
         "branchPrefix",
@@ -712,6 +726,13 @@
         },
         "calls": {
           "$ref": "#/definitions/CardCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CardAction"
+          },
+          "description": "What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart."
         }
       },
       "required": [
@@ -748,7 +769,8 @@
         "conversations",
         "onDuty",
         "verbs",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false
     },
@@ -1013,6 +1035,12 @@
         },
         "calls": {
           "$ref": "#/definitions/ResourceCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ResourceAction"
+          }
         }
       },
       "required": [
@@ -1021,7 +1049,8 @@
         "ports",
         "orphan",
         "verbs",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false,
       "description": "A process a session left running: `orphan` when re-parented to launchd."
@@ -1054,6 +1083,36 @@
         "reap"
       ],
       "additionalProperties": false
+    },
+    "ResourceAction": {
+      "type": "object",
+      "properties": {
+        "verb": {
+          "type": "string",
+          "const": "reap"
+        },
+        "call": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "reap/process"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "verb",
+        "call"
+      ],
+      "additionalProperties": false,
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "CardShown": {
       "type": "object",
@@ -1158,6 +1217,12 @@
         "calls": {
           "$ref": "#/definitions/ConversationCalls"
         },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConversationAction"
+          }
+        },
         "id": {
           "type": "string"
         },
@@ -1176,6 +1241,7 @@
         }
       },
       "required": [
+        "actions",
         "calls",
         "id",
         "startedAt",
@@ -1210,6 +1276,53 @@
         }
       },
       "additionalProperties": false
+    },
+    "ConversationAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "resume"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "resume"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "goto"
+            }
+          },
+          "required": [
+            "verb"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "SessionLink": {
       "type": "object",
@@ -1571,6 +1684,314 @@
       "additionalProperties": false,
       "description": "`note` takes the author and what the note says."
     },
+    "CardAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "drive"
+            }
+          },
+          "required": [
+            "verb"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "submit"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "submit"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "resume"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "resume"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "carry-on"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "resume"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "goto"
+            }
+          },
+          "required": [
+            "verb"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "brief"
+            }
+          },
+          "required": [
+            "verb"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "review"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "spawn"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "reap"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "reap"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "kill"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "kill"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "let-go"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "let-go"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "send-home"
+            },
+            "call": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "items": [
+                  {
+                    "type": "string",
+                    "const": "kill"
+                  },
+                  {
+                    "type": "object",
+                    "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                  }
+                ],
+                "maxItems": 2
+              }
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "note"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "review/append"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
+    },
     "FloorCollection": {
       "type": "object",
       "properties": {
@@ -1680,6 +2101,12 @@
         },
         "calls": {
           "$ref": "#/definitions/WorktreeCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/WorktreeAction"
+          }
         }
       },
       "required": [
@@ -1688,7 +2115,8 @@
         "sessions",
         "state",
         "verbs",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false
     },
@@ -1862,6 +2290,127 @@
       "additionalProperties": false,
       "description": "`discard` carries what each repo held as shown, refused once it moved; it takes the author of its note."
     },
+    "WorktreeAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "recut"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "worktree/recut"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "prune"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "worktree/prune"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "remove"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "worktree/remove"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "discard"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "worktree/discard"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
+    },
     "FloorBranch": {
       "type": "object",
       "properties": {
@@ -1934,6 +2483,12 @@
         },
         "calls": {
           "$ref": "#/definitions/BranchCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BranchAction"
+          }
         }
       },
       "required": [
@@ -1942,7 +2497,8 @@
         "absorbed",
         "carried",
         "verbs",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false
     },
@@ -1989,6 +2545,69 @@
         }
       },
       "additionalProperties": false
+    },
+    "BranchAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "recut"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "branch/recut"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "delete"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "branch/delete"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "FloorThread": {
       "type": "object",
@@ -2040,6 +2659,12 @@
         },
         "calls": {
           "$ref": "#/definitions/NoteCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NoteAction"
+          }
         }
       },
       "required": [
@@ -2050,7 +2675,8 @@
         "landed",
         "state",
         "verbs",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false,
       "description": "A checkout's thread: `messages` it holds and the `last` one. `landed`: the checkout's work has landed, so Tidy files it (`landedThreadId`). A worktree's has when no worktree of that name is in use or holds work, and every branch cut under the name is absorbed into its base; `main`'s when no worker runs there and every main checkout is clean and level with its upstream."
@@ -2080,6 +2706,36 @@
         }
       },
       "additionalProperties": false
+    },
+    "NoteAction": {
+      "type": "object",
+      "properties": {
+        "verb": {
+          "type": "string",
+          "const": "note"
+        },
+        "call": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "review/append"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "verb",
+        "call"
+      ],
+      "additionalProperties": false,
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "PolicyView": {
       "anyOf": [
@@ -2877,6 +3533,156 @@
       "additionalProperties": false,
       "description": "`spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none."
     },
+    "FloorAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "spawn"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "spawn"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "cut"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "spawn"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "shell"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "shell/spawn"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "editor"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "open"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "tidy"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "tidy"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
+    },
     "ShelfEntry": {
       "anyOf": [
         {
@@ -3139,6 +3945,36 @@
         }
       },
       "additionalProperties": false
+    },
+    "ProbeAction": {
+      "type": "object",
+      "properties": {
+        "verb": {
+          "type": "string",
+          "const": "run"
+        },
+        "call": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "probe/run"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "verb",
+        "call"
+      ],
+      "additionalProperties": false,
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "Reader": {
       "type": "string",

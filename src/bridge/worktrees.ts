@@ -4,7 +4,7 @@
  * is stored. The commands that produce the input are in `src/worktrees.ts`.
  */
 import { WORKTREE_NAME, WORKTREES_DIR } from '../shared/model.ts'
-import { branchOffers, worktreeOffers, type BranchCalls, type BranchVerb, type WorktreeCalls, type WorktreeVerb } from './verbs.ts'
+import { branchOffers, worktreeOffers, type BranchAction, type BranchCalls, type BranchVerb, type WorktreeAction, type WorktreeCalls, type WorktreeVerb } from './verbs.ts'
 
 /** One entry of `git worktree list --porcelain`. `head` and `branch` are missing on a bare entry, `branch` on a detached HEAD. */
 export type GitWorktree = { path: string; head?: string; branch?: string; prunable: boolean; locked: boolean }
@@ -152,6 +152,7 @@ export type FloorWorktree = {
   state: WorktreeState
   verbs: WorktreeVerb[]
   calls: WorktreeCalls
+  actions: WorktreeAction[]
 }
 
 export type FloorBranch = {
@@ -163,6 +164,7 @@ export type FloorBranch = {
   carried: boolean
   verbs: BranchVerb[]
   calls: BranchCalls
+  actions: BranchAction[]
 }
 
 /** A worker on duty or a shell, by the directory it runs in. */

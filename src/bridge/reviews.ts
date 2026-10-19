@@ -5,7 +5,7 @@
 import { MAIN_CHECKOUT } from '../shared/model.ts'
 import { checkoutOfId, landedOfId, verdictOf, type Message, type ReviewThread, type Verdict } from '../shared/reviews.ts'
 import { tagOf } from '../shared/tags.ts'
-import { noteOffers, type NoteCalls, type NoteVerb } from './verbs.ts'
+import { noteActions, offered, type NoteAction, type NoteCalls, type NoteVerb } from './verbs.ts'
 import type { FloorBranch, FloorWorktree, RepoRead } from './worktrees.ts'
 
 /**
@@ -20,6 +20,7 @@ export type FloorThread = {
   state: CheckoutState
   verbs: NoteVerb[]
   calls: NoteCalls
+  actions: NoteAction[]
 }
 
 /** A thread Tidy filed: its item's id and tag, and when it was filed, as a message heading writes a time. */
@@ -110,7 +111,7 @@ export const floorThreads = (
         last: last && { author: last.author, at: last.at, n: last.n },
         landed: landed(checkout, reads, worktrees, branches, mainInUse),
         state,
-        ...noteOffers(project, checkout, state.is === 'live'),
+        ...offered(noteActions(project, checkout, state.is === 'live')),
       },
     ]
   })

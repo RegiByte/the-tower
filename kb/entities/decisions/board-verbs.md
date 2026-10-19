@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-19",
-  "refs": ["hub/src/bridge/verbs.ts#noteOffers", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
+  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) was decided inside each renderer:
@@ -29,7 +29,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   cut it off mid-turn ([[carry-on]]); `review` while its checkout's work goes on and it isn't a reviewer ([[reviewer]]);
   `reap` while it has [[leftover]]s; `send-home` while any of its crew runs ([[crews]]); `let-go` while stranded on
   duty ([[let-go]]); `note` while its floor keeps review threads and its checkout's work goes on
-  ([`noteOffers`](ref:hub/src/bridge/verbs.ts#noteOffers), [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState),
+  ([`noteActions`](ref:hub/src/bridge/verbs.ts#noteActions), [`checkoutState`](ref:hub/src/bridge/reviews.ts#checkoutState),
   [[review-threads]]). A floor's `threads` offer `note` the same way.
 - A conversation ([`conversationVerbs`](ref:hub/src/bridge/verbs.ts#conversationVerbs)): `goto` once another session
   resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
@@ -43,10 +43,11 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   [[discard]], [[absorbed]], [[carried]]); a card's leftover processes
   ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)) `reap` always; each probe
   ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)) `run` unless it is off ([[probes]]).
-- Each verb that is a request of the renderer API comes with its call
+- Each verb that is a request of the renderer API comes with its call, the pair one of the thing's `actions`
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings, [`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)),
-  built from the same list, so a renderer adds only what the user supplies (`tower.run(floor.calls.spawn, { cwd })`)
-  ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within the renderer and have no call.
+  so a renderer adds only what the user supplies ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within
+  the renderer and have no call. `verbs` and `calls` say the same apart, derived from `actions`
+  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)).
 - Renderers ask whether a verb is offered (`can(thing, verb)` in both) and draw it: an absent verb is not drawn,
   except a verb whose daemon is down, drawn disabled with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence
   (below). Monitors and screens read `live`, a fact, not a verb.

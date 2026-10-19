@@ -31,11 +31,11 @@ went wrong, and know which changes can break it.
   [`ERROR_STATUS`](ref:hub/src/shared/api.ts#ERROR_STATUS). The board stream sends `{v, error: {code, message}}`
   while the tower can't build the board ([[board-errors]]); over the postMessage tunnel an answer's error carries the
   same `{code, message}`, and `tower.js` rejects with an `Error` holding `code`.
-- **Verbs come with their requests.** Beside `verbs`, each card, conversation and floor carries `calls`: for each verb
-  that is a request, `[verb, body]` with every field the board knows. Both are computed in one function of `verbs.ts`
-  ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers)), so they can't disagree; the renderer adds only what the
-  user supplies (a prompt's text, a floor's directory). `drive`, `brief` and `goto` are moves within the renderer,
-  not requests, and have no call.
+- **Verbs come with their requests.** Each card, conversation and floor carries `actions`: each verb offered now,
+  with its `call` when it is a request, `[verb, body]` with every field the board knows. The renderer adds only what
+  the user supplies (a prompt's text, a floor's directory). `drive`, `brief` and `goto` are moves within the
+  renderer, not requests, and have no call. `verbs` and `calls`, the same split in two, are derived from `actions`
+  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)) and kept for renderers that read them.
 - **The contract is served.** `GET /schema` answers the verbs' input and reply schemas and the error as JSON Schema
   ([`apiSchema`](ref:hub/src/tower/server.ts#apiSchema)), and its `streams`: the board's message as the JSON Schema of
   the TypeScript type `BoardMsg`, JSDoc as descriptions. `npm run schema:board`
@@ -78,6 +78,6 @@ went wrong, and know which changes can break it.
 - A plugin API (hooks into the tower page's code): a second contract over one renderer's internals, while the config,
   the logs and the collections hold the whole state and the API does every act.
 
-**Impact.** A renderer in any language can read `/schema`, build requests from the board's `calls`, and act on `code`.
+**Impact.** A renderer in any language can read `/schema`, build requests from the board's `actions`, and act on `code`.
 Old pages break once on a major, by design, and never on a minor; `npm test` stops a removal of a served name that
 doesn't move the major.

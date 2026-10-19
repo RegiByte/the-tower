@@ -460,6 +460,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.deepEqual(tower.threads, [{
     checkout: 'main', id: 'main.md', tag: tagOf('main.md'), messages: 4, last: { author: 'user', at: '2026-10-06 15:00', n: 4 }, landed: true,
     state: { is: 'live' }, verbs: ['note'], calls: { note: ['review/append', { project: 'tower', checkout: 'main' }] },
+    actions: [{ verb: 'note', call: ['review/append', { project: 'tower', checkout: 'main' }] }],
   }])
   assert.deepEqual(lab.threads.map((t) => [t.checkout, t.landed, t.state, t.verbs]), [['odin-42', true, { is: 'landed' }, []]])
   assert.deepEqual(floors(0, false)[1].threads.map((t) => [t.state, t.verbs]), [[{ is: 'live' }, ['note']]])

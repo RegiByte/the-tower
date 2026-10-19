@@ -158,7 +158,7 @@ test("GET /probe/<name> reads the latest reads, newest first, each at its moment
   const { readings } = readingsOf(text('probe-quota.jsonl'))
   const view = probeView({ ...probeStatus(QUOTA, probeFacts(readings), NO_LIMITS), ...probeOffers(QUOTA.name, QUOTA.off) }, readings, 2)
   assert.deepEqual(view.status.calls, { run: ['probe/run', { name: 'quota' }] })
-  assert.deepEqual(probeOffers('quota', true), { verbs: [], calls: {} }, 'an off probe offers no read')
+  assert.deepEqual(probeOffers('quota', true), { verbs: [], calls: {}, actions: [] }, 'an off probe offers no read')
   assert.deepEqual(view.reads.map((r) => [r.at, r.ok]), [[readings[4][0], false], [readings[3][0], false]])
 })
 

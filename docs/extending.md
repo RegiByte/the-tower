@@ -81,8 +81,9 @@ the board, `/stats` and the archives, with no build. Read it for a page that ste
 the Stats numbers its own way.
 
 The board is the whole system as one value, sent again whenever it changes: its type is `Board` in
-`src/bridge/board.ts`, described as JSON Schema by `tower api board` (each event is `{v, board}`, not the board itself). Each card, conversation and floor carries `verbs`, what can be done to it now, and `calls`,
-those verbs as ready requests: `tower.run(card.calls.resume)`. `/tower.js` documents its every member in its header
+`src/bridge/board.ts`, described as JSON Schema by `tower api board` (each event is `{v, board}`, not the board itself). Each card, conversation and floor carries `actions`, what can be done to it now, each a `verb`
+with its `call` when it is a request of the API: `tower.run(card.actions.find((a) => a.verb === 'resume').call)`.
+`verbs` and `calls` beside it say the same, apart. `/tower.js` documents its every member in its header
 (`curl http://127.0.0.1:4317/tower.js | head -60`).
 
 **Pin the version you wrote against.** `/tower.js?v=1.3` refuses to load into a tower of another major or an older

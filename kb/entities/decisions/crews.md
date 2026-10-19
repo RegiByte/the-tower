@@ -12,7 +12,7 @@
     "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
-    "hub/src/bridge/verbs.ts#sendHomeOffer",
+    "hub/src/bridge/verbs.ts#sendHomeActions",
     "hub/src/shared/cards.ts#hiresOf",
     "hub/src/shared/cards.ts#crewOf",
     "hub/src/shared/cards.ts#crewTree",
@@ -61,7 +61,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   walks the same tree. `goneHome` (off duty, nobody on duty under it) and `crewFold` (a worker's hires split into those
   drawn and those gone home, with how many the fold holds) say what a renderer may fold.
 - *Sent home together.* Every worker offers `send-home` while it or anyone under it runs
-  ([`sendHomeOffer`](ref:hub/src/bridge/verbs.ts#sendHomeOffer)). Its call is a list of `kill` calls, the deepest
+  ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions)). Its call is a list of `kill` calls, the deepest
   first, so the API gains no verb and every kill can be resumed. A worker with nobody running under it ends alone: its
   call is its own `kill`.
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
