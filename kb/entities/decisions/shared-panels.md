@@ -78,7 +78,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   [`keepShownTabs`](ref:hub/src/shared/panels.ts#keepShownTabs).
 - *A read that failed says so.* Each view takes `failed`, drawn while nothing is read:
   [`failedHtml`](ref:hub/src/shared/panels.ts#failedHtml) names what couldn't be read and why, with Read again. A
-  failure over a read already held leaves it drawn and toasts.
+  failure over a read already held leaves it drawn and toasts (`Held`, `/reads.js`).
 - *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
   Reviews are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (the tower is
   local-first: nothing comes from a CDN). [`rowCode`](ref:hub/src/shared/panels.ts#rowCode)
@@ -88,8 +88,10 @@ are the same view in every renderer; only where they sit, their state and a few 
   edited line ([[changes-view]]) are laid over the highlighted html by
   [`markRanges`](ref:hub/src/shared/words.ts#markRanges), inside the syntax spans, from a tokenizer of code over
   jsdiff's `diffArrays`. The colours are the design's tokens ([[design-system]]).
-- *What stays per renderer is wiring, not html.* Copying, scrolling to a note, toasts and when to re-read are each
-  renderer's handlers on the same attributes. A Stats bar's readout (`data-tip`) shows through the renderer's one
+- *What stays per renderer is wiring, not html.* Copying, scrolling to a note and toasts are each renderer's handlers
+  on the same attributes. Reading is shared: a renderer runs [`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers)
+  and the held thread reads on `/loop.js` with its own executors, and tells them, as it draws, whose Changes are open
+  and which thread it shows ([[changes-view]]). A Stats bar's readout (`data-tip`) shows through the renderer's one
   tooltip ([[viewer-prefs]]). Picking lines for a note stays a pointer gesture; a file's fold and Viewed are
   real buttons.
 
