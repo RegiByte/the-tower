@@ -93,6 +93,9 @@ export const can = <A extends { verb: string }>(thing: { actions: readonly A[] }
 export const callOf = <A extends { verb: string }, V extends Extract<A, { call: unknown }>['verb']>(thing: { actions: readonly A[] }, verb: V): Extract<A, { verb: V; call: unknown }>['call'] | undefined =>
   thing.actions.find((a): a is Extract<A, { verb: V; call: unknown }> => a.verb === verb)?.call
 
+/** `f` on a verb's call (`callOf`) while the board still offers it: a press can land after the board moved on. */
+export const whileOffered = <C, R>(call: C | undefined, f: (call: C) => R) => call && f(call)
+
 export const cardsOf = (board: Board) => board.floors.flatMap((f) => f.cards)
 export const findCard = (board: Board, id: string) => cardsOf(board).find((c) => c.id === id)
 /** What a floor's workers left running, each process with its worker: the oldest worker first, then by pid. */
