@@ -20,7 +20,7 @@
     "hub/src/collections.ts#restoreItem",
     "hub/src/shared/cards.ts#spawnFormHtml",
     "hub/renderers/page/page.js#resumeSentHome",
-    "hub/renderers/page/page.js#startSpawn",
+    "hub/src/shared/spawn.ts#spawnHandlers",
     "hub/renderers/tower3d/src/main.ts#confirmed",
     "hub/renderers/tower3d/src/ui.ts#askingButton",
     "hub/src/shared/cards.ts#sendHomeAsk"
@@ -43,7 +43,9 @@ them.
   since it would mark every button of its tag.
 - The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/cards.ts#spawnFormHtml)) stays open while Start is busy,
   closes on a new worker and shows a refusal in its own alert line with the prompt still in place, so a prompt a
-  worker already has is never kept as a draft.
+  worker already has is never kept as a draft. Starting is a state of its machine
+  ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), and Start's `aria-busy` is drawn from it; a start
+  that fails after the browser closed the form anyway (a second Esc) opens it again on its error.
 - [`designCss`](ref:hub/src/shared/design.ts#designCss) draws every button's states whatever the renderer's look:
   pressed, held (`disabled` or `aria-disabled`, which stays focusable) and busy, still under reduced motion.
 - [`toaster(element)`](ref:hub/src/shared/toasts.ts#toaster) makes an element a polite live region of stacked toasts

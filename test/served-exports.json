@@ -291,6 +291,7 @@
       "crewOf",
       "crewTree",
       "current",
+      "cutLine",
       "cutNameOf",
       "defaultWhere",
       "detailsOf",
@@ -658,6 +659,11 @@
       "VIEWER_DEFAULT",
       "VIEWER_KEYS",
       "readViewer"
+    ],
+    "/spawn.js": [
+      "spawnClosed",
+      "spawnHandlers",
+      "wireSpawn"
     ]
   }
 }

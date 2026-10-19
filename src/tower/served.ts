@@ -35,6 +35,7 @@ export const MODULES: Record<string, string> = {
   '/loop.js': path.join(SHARED, 'loop.ts'),
   '/reads.js': path.join(SHARED, 'reads.ts'),
   '/viewer.js': path.join(SHARED, 'viewer.ts'),
+  '/spawn.js': path.join(SHARED, 'spawn.ts'),
 }
 
 /** A shared module as the tower serves it: one ES module, with the names it exports. */

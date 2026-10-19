@@ -1083,6 +1083,9 @@ export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs
   return [offeredCall(f, 'spawn', f.name), { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
 
+/** A cut's worktree in words, as a spawn's reply tells it. */
+export const cutLine = (cut: NonNullable<Replies['spawn']['cut']>) => `worktree ${cut.name} on ${cut.branch}, from ${[...new Set(cut.bases.map((b) => b.base))].join(', ')}`
+
 /** The branch a cut gets when its field is left empty; `name`: the cut's (`cutNameOf`). */
 export const branchPlaceholder = (f: Floor, name: string) => `${f.branchPrefix}${name.trim() || '<callsign>'}`
 
