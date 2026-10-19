@@ -12,6 +12,50 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.48.0
+
+The second wave of the consolidation pass: the logic the tower page and Tower 3D each wrote by hand, now run from shared
+machines, which fixed the places where the two had drifted. No host restart, no config change, the renderer API moved
+1.61 → 1.66 with additions only, which ask nothing. Restart the tower (`tower down tower && tower up tower`) and reload
+the page. A checkout that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- Tower 3D now rings for a policy's offer that opens, as the tower page always did, and stops reminding you of waits
+  while the tower is lost, as the page did. It counts the tower as answering again only when a live board lands, not
+  when its plan re-runs the board it held. The attention machine (`/attend.js`) says what a viewer is told about waits
+  and offers once for both: what begins is said, notified and rung but for the watched worker's, a reminder is a timer
+  that never rings while the tower is lost, and a dismissal is kept in the viewer's record and its notification closed.
+  On the page, a wait you looked away from is reminded on the next 30 s beat.
+- The new-worker dialog: a second Esc while Start waits no longer closes it and leaves your prompt kept as a draft
+  beside the worker started on it. A start that fails opens the dialog again on its error, as it was asked to open. The
+  dialog is one machine (`/spawn.js`: closed, editing, starting; `wireSpawn` runs it), where each renderer kept its
+  floor, its draft and "starting" in a data attribute, a variable and a styling attribute. Tower 3D unlocks the pointer
+  as it shows, also when a failed start opens it again.
+- A press the board stopped offering now says so. Resume pressed after the worker was resumed elsewhere did nothing; it
+  now toasts that the worker no longer offers it, the same sentence for send home, a discard whose worktree moved, a
+  resume of the stranded and a spawn. Behind it, a card, conversation, resource, floor, worktree, branch, thread and
+  probe carry `actions`, each offered verb paired with its call (API 1.64); `verbs` and `calls` stay on the board,
+  derived from it so the two can no longer disagree. Both renderers, the CLI and the server take a call through
+  `callOf`, and `offeredCall` fails with the sentence the toast shows. The server logs a leaver
+  whose card offers no send-home. Removing `verbs` and `calls` is a later major.
+- The viewer's settings are one record (`/viewer.js`, API 1.63): dismissals, the ring, the brief rendered or raw, the
+  diff layout, unfolded crews and the Stats range, read whole on every board and when a framed page writes to the
+  store. The keys are unchanged, so what you set reads back. A rendered-or-raw choice or diff layout made in one
+  renderer now reaches the other on its next board, a shown brief redrawing as it changes, instead of after a reload.
+  Tower 3D now keeps the Stats range as the page does, and the two follow each other.
+- Changes and review threads are read by the same held reads in both renderers (`/reads.js`, run by `/panels.js`): the
+  last read stays drawn until the next lands, a read overtaken by a later one lands on nothing, and a failure shows only
+  while nothing is held. Fixed: the tower page's Changes poll kept reading after leaving for a shelf page or a draft,
+  until another worker was selected; a review thread whose new version failed to read was fetched and toasted on every
+  draw, and now only when asked (Read again, the poll, a new version); a Changes read that failed under another scope
+  showed "loading", and now shows Read again. In Tower 3D a desk's Changes are read again when its worker's turn ends,
+  and its poll stops as the desk closes or leaves Changes and Reviews. The page keeps the compared scope for each
+  worker, as Tower 3D did.
+- The `machines` convention (decision, and a line in AGENTS.md): state with more than two states, anything timed or
+  anything two renderers need is a machine of pure steps, one handler per event, run by the shared loop (`/loop.js`,
+  API 1.62), where a timer is an effect carrying the event it fires and a renderer's executors do the I/O. A machine
+  any renderer needs lives in `src/shared`, served. The five served modules this release adds (`/loop.js`, `/reads.js`,
+  `/viewer.js`, `/spawn.js`, `/attend.js`) are additions, and `ringing` stays exported from `/cards.js`.
+
 ## v1.47.0
 
 The first wave of a consolidation pass (the bridge's types made honest), hiring across floors, and Tower 3D's larger
