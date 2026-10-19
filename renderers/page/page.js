@@ -1,16 +1,17 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, CREWS_UNFOLDED_KEY, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, DISMISSED_KEY, REMIND_MS, RING_KEY, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, can, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, can, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
-import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
+import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
-import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
+import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
+import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/settings.js'
 import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
@@ -32,6 +33,7 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
+ * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange, StatsView } from '../../src/shared/panels.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
  * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
@@ -94,6 +96,14 @@ let board = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user'
 let origins = {}
 /** @type {string | undefined} */
 let selected
+/** What this viewer keeps in `tower.store` for every renderer of theirs, read again on every board. @type {Viewer} */
+let viewer = await readViewer(tower.store.get)
+
+/** @template {keyof Viewer} K @param {K} field @param {Viewer[K]} value */
+function keepViewer(field, value) {
+  viewer = { ...viewer, [field]: value }
+  tower.store.set(VIEWER_KEYS[field], value)
+}
 /** The sections a viewer unfolded under a floor's workers, by `<section>:<project>`, kept in `tower.store`. @type {Set<string>} */
 const unfolded = new Set(/** @type {string[] | undefined} */ (await tower.store.get('floors.unfolded')) ?? [])
 
@@ -202,7 +212,7 @@ const awayHtml = (h) => {
  */
 const crewHtml = (cards, c, over) => {
   const { drawn, home, folded } = crewFold(cards, c)
-  const open = crewsUnfolded.has(c.id)
+  const open = viewer.crewsUnfolded.includes(c.id)
   const fold = home.length
     ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h, c)).join('') : ''}`
     : ''
@@ -212,16 +222,11 @@ const crewHtml = (cards, c, over) => {
   return sessionHtml(c, over) + (under ? `<div class="crew">${under}</div>` : '')
 }
 
-/** The hirers whose gone-home crew this viewer unfolded, by card id, as `tower.store` keeps them. @type {Set<string>} */
-let crewsUnfolded = new Set()
-async function readCrewFolds() {
-  crewsUnfolded = new Set(/** @type {string[] | undefined} */ (await tower.store.get(CREWS_UNFOLDED_KEY)) ?? [])
-}
 /** @param {string} id */
 function toggleCrewFold(id) {
-  if (!crewsUnfolded.delete(id)) crewsUnfolded.add(id)
-  crewsUnfolded = new Set([...crewsUnfolded].filter((h) => findCard(h)))
-  tower.store.set(CREWS_UNFOLDED_KEY, [...crewsUnfolded])
+  const unfolded = new Set(viewer.crewsUnfolded)
+  if (!unfolded.delete(id)) unfolded.add(id)
+  keepViewer('crewsUnfolded', [...unfolded].filter((h) => findCard(h)))
   render()
 }
 
@@ -868,8 +873,6 @@ let picking = false
 let pickText = ''
 let pickFresh = false
 const dropPick = () => ((pick = undefined), (pickText = ''))
-/** How the Changes pane draws a diff, unified or split, kept in `tower.store` for every renderer. */
-let diffLayout = /** @type {DiffLayout} */ ((await tower.store.get(DIFF_LAYOUT_KEY)) ?? 'unified')
 
 function drawChanges() {
   const c = /** @type {Card} */ (findCard(selected))
@@ -878,7 +881,7 @@ function drawChanges() {
   if (shown && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (shown) pick = live
   const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
-  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: diffLayout, scope: scopeIn(c.id) }), { 'pick-text': pickText })
+  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer.diffLayout, scope: scopeIn(c.id) }), { 'pick-text': pickText })
   if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
   pickFresh = false
   if (jump && shown) jumpToAnchor()
@@ -1033,8 +1036,6 @@ const DOC_CSS = `article { max-width: 980px; margin: 0; padding: var(--sp-xl) va
 
 /** The brief drawn last, the worker's and its conversations as read: what a copy reads its text from. @type {{ id: string, threads: Brief[] } | undefined} */
 let briefShown
-/** Whether the brief draws prompts and answers rendered or raw: this viewer's, kept in `tower.store`. */
-let briefMarkdown = /** @type {BriefMarkdown} */ ((await tower.store.get(BRIEF_MARKDOWN_KEY)) ?? 'rendered')
 
 /**
  * The worker's earlier sessions folded, then its session's conversations, each turn's prompt and answer, the latest at
@@ -1060,13 +1061,12 @@ function drawBrief(same = true) {
   const promptBy = (id) => c?.conversations.find((conv) => conv.id === id)?.promptBy
   const open = same ? openFolds(el) : new Set()
   const expanded = same ? expandedSaid(el) : new Set()
-  drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: briefMarkdown, working: c?.status === 'working' }), {})
+  drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: viewer.briefMarkdown, working: c?.status === 'working' }), {})
 }
 
 /** @param {BriefMarkdown} markdown */
 function chooseBriefMarkdown(markdown) {
-  briefMarkdown = markdown
-  tower.store.set(BRIEF_MARKDOWN_KEY, markdown)
+  keepViewer('briefMarkdown', markdown)
   if (briefShown) drawBrief()
   drawSettings()
 }
@@ -1081,8 +1081,8 @@ const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => 
  */
 /** @typedef {'floors' | 'stats'} SideView */
 let sideView = /** @type {SideView} */ ((await tower.store.get('side.view')) ?? 'floors')
-/** @type {Pick<StatsView, 'stats' | 'failed' | 'at' | 'range'> & { all: boolean, reading: number }} */
-const statsView = { stats: undefined, failed: undefined, at: undefined, range: /** @type {StatsRange} */ ((await tower.store.get('stats.range')) ?? 'week'), all: false, reading: 0 }
+/** @type {Pick<StatsView, 'stats' | 'failed' | 'at'> & { all: boolean, reading: number }} */
+const statsView = { stats: undefined, failed: undefined, at: undefined, all: false, reading: 0 }
 const STATS_POLL_MS = 60_000
 /** @type {ReturnType<typeof setInterval> | undefined} */
 let statsPoll
@@ -1098,12 +1098,12 @@ function drawSideView() {
   const floor = board.floors.find((f) => f.id === floorInView())
   const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
   const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
-  drawPanel($('stats'), statsHtml({ ...statsView, projects, tabs, scope: statsView.all || !floor ? STATS_ALL : floor.id }), {})
+  drawPanel($('stats'), statsHtml({ ...statsView, range: viewer.statsRange, projects, tabs, scope: statsView.all || !floor ? STATS_ALL : floor.id }), {})
 }
 
 async function readStats() {
   const reading = ++statsView.reading
-  const stats = await tower.stats(statsQuery(statsView.range, Date.now())).catch((err) => {
+  const stats = await tower.stats(statsQuery(viewer.statsRange, Date.now())).catch((err) => {
     if (reading !== statsView.reading) return
     if (statsView.stats) return void (lostAt || toast(err.message))
     statsView.failed = err.message
@@ -1112,6 +1112,14 @@ async function readStats() {
   if (!stats || reading !== statsView.reading) return
   Object.assign(statsView, { stats, failed: undefined, at: Date.now() })
   drawSideView()
+}
+
+/** The Stats panel over the viewer's range: a read over another, held or in flight, is dropped. */
+function rangeStats() {
+  statsView.stats = undefined
+  statsView.reading++
+  drawSideView()
+  if (sideView === 'stats') readStats()
 }
 
 /** @param {SideView} view */
@@ -1242,17 +1250,15 @@ function tick() {
   if (!selected && !shelfOpen) paintSky()
   paintLimits()
   for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
-  if (!lostAt && ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(attentionOrder(board, heed))
+  if (!lostAt && viewer.ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(attentionOrder(board, heed))
 }
 
 /**
- * What this viewer did about the waits (`Heed` in cards.ts): dismissed, kept in `tower.store` for every renderer of
- * theirs, and visited by N this round. `ring`: how often a wait rings, kept there too; `rungAt`: when one last rang.
+ * What this viewer did about the waits (`Heed` in cards.ts): dismissed, as `viewer.dismissed` keeps them, and visited
+ * by N this round. `rungAt`: when a wait last rang.
  * @type {Heed}
  */
-let heed = { dismissed: new Set(), visited: new Set() }
-/** @type {Ring} */
-let ring = 'once'
+let heed = { dismissed: new Set(viewer.dismissed), visited: new Set() }
 let rungAt = Date.now()
 /** The board the last transitions were read against: none until the first, which is silent. @type {Board | undefined} */
 let attended
@@ -1287,7 +1293,7 @@ function attend(next) {
 
 /** Rings for the first of `attended` (waits, then offers) not of the worker being watched, unless rings are off. @param {Attended[]} attended */
 function ringFor(attended) {
-  const sound = ring === 'off' ? undefined : ringingSound(attended, document.hasFocus() ? selected : undefined)
+  const sound = viewer.ring === 'off' ? undefined : ringingSound(attended, document.hasFocus() ? selected : undefined)
   if (!sound) return
   rungAt = Date.now()
   playSound(SOUNDS[sound])
@@ -1313,26 +1319,26 @@ function playSound({ notes, wave, step }) {
   })
 }
 
-/** The viewer's dismissals and ring setting as `tower.store` keeps them: another renderer of theirs may have changed them. */
-async function readHeed() {
-  const [dismissed, stored] = await Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY)])
-  heed = { ...heed, dismissed: new Set(/** @type {string[] | undefined} */ (dismissed) ?? []) }
-  ring = /** @type {Ring | undefined} */ (stored) ?? 'once'
+/** The viewer's record as `tower.store` keeps it now: another renderer of theirs may have changed it. */
+async function rereadViewer() {
+  const was = viewer
+  viewer = await readViewer(tower.store.get)
+  heed = { ...heed, dismissed: new Set(viewer.dismissed) }
+  if (viewer.statsRange !== was.statsRange) rangeStats()
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */
 function dismissWait(key) {
   const dismissed = dismissing(board, heed.dismissed, key)
+  keepViewer('dismissed', dismissed)
   heed = { ...heed, dismissed: new Set(dismissed) }
-  tower.store.set(DISMISSED_KEY, dismissed)
   alerts.get(key)?.close()
   render()
 }
 
 /** @param {Ring} next */
 function chooseRing(next) {
-  ring = next
-  tower.store.set(RING_KEY, ring)
+  keepViewer('ring', next)
   drawSettings()
 }
 
@@ -1379,7 +1385,7 @@ function showAlert(c, w) {
 let settingsDrawn
 const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([alertsSection(Notification.permission), soundSection(ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(briefMarkdown)])
+  const html = settingsHtml([alertsSection(Notification.permission), soundSection(viewer.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer.briefMarkdown)])
   if (html === settingsDrawn) return
   const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-pref]')
   const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
@@ -1647,7 +1653,7 @@ function openShelf(project, n, file) {
 function showPage(url) {
   const { project, n } = /** @type {NonNullable<typeof shelfOpen>} */ (shelfOpen)
   $('shelf-body').innerHTML = `<iframe id="shelf-page" class="page" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock" allow="clipboard-write"></iframe>`
-  pageRelay = tower.relay($('shelf-page'), url, { self: { project, n }, ui: towerVerbs, stored: () => Promise.all([readHeed(), readCrewFolds()]).then(render) })
+  pageRelay = tower.relay($('shelf-page'), url, { self: { project, n }, ui: towerVerbs, stored: () => rereadViewer().then(render) })
 }
 
 function leaveShelf() {
@@ -2509,7 +2515,7 @@ document.addEventListener('click', (e) => {
   const scope = target.closest('[data-stats-scope]')?.dataset.statsScope
   if (scope) return ((statsView.all = scope === STATS_ALL), drawSideView())
   const range = /** @type {StatsRange | undefined} */ (target.closest('[data-stats-range]')?.dataset.statsRange)
-  if (range) return (Object.assign(statsView, { range, stats: undefined }), tower.store.set('stats.range', range), drawSideView(), readStats())
+  if (range) return (keepViewer('statsRange', range), rangeStats())
   if (target.closest('[data-stats-read]')) return ((statsView.failed = undefined), drawSideView(), readStats())
   if (target.closest('[data-keys]')) return showKeys()
   const dismissed = target.closest('[data-dismiss]')?.dataset.dismiss
@@ -2535,7 +2541,7 @@ document.addEventListener('click', (e) => {
   const fold = target.closest('[data-fold]')?.dataset.fold
   if (fold) return toggleFold(fold)
   const layout = /** @type {DiffLayout | undefined} */ (target.closest('[data-changes-layout]')?.dataset.changesLayout)
-  if (layout) return ((diffLayout = layout), tower.store.set(DIFF_LAYOUT_KEY, layout), drawChanges())
+  if (layout) return (keepViewer('diffLayout', layout), drawChanges())
   if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected) }), render())
   const open = target.closest('[data-open]')
   if (open) return told(pressing(open, () => tower.run(/** @type {Call<'open'>} */ (/** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))).calls.editor), { dir: open.dataset.open })))
@@ -2770,7 +2776,7 @@ tower.onBoardError((err) => {
 })
 
 tower.subscribe(async (next) => {
-  await Promise.all([readHeed(), readCrewFolds()])
+  await rereadViewer()
   board = next
   boardError = undefined
   markLost(false)
