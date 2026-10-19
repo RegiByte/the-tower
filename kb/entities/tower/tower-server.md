@@ -53,7 +53,7 @@ one ([`home`](ref:hub/src/tower/server.ts#home)), and `GET /renderers` lists eve
 isn't built, or a config that can't be read, shows as an HTML page saying so: a reader of `/` is in a browser tab.
 
 The routes are the renderer API ([[renderer-api]]); the tower page (`renderers/page/`) is one renderer over them, and reaches them only
-through [`/tower.js`](ref:hub/src/tower/tower.js) like any other: the board, commands (the board's `calls` where it
+through [`/tower.js`](ref:hub/src/tower/tower.js) like any other: the board, commands (the calls of the board's `actions` where it
 offers them), reads and streams. It relays a framed shelf page's requests to the same `tower.js`.
 
 Every command goes through [`command`](ref:hub/src/tower/server.ts#command): the body, read up to 8 MiB

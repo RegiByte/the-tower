@@ -51,7 +51,7 @@ them.
   runs. A toast told again while it shows ([`sameToast`](ref:hub/src/shared/toasts.ts#sameToast)) moves to the end
   and counts the times. Tower 3D draws its toasts through it too.
 - Send home still asks, saying what it costs ([`sendHomeAsk`](ref:hub/src/shared/cards.ts#sendHomeAsk)): a turn in
-  flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `calls.resume`, read when
+  flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `resume` call, read when
   pressed from the board or its floor's archive ([[board-archive]]), so no renderer builds a call.
 - Deleting a draft is done at once, and its toast offers Undo. `discard` answers the id and text it deleted, and
   [`restore`](ref:hub/src/shared/drafts.ts#restore) puts the file back under its own id through `collection/restore`

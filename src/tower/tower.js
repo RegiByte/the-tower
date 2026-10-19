@@ -32,7 +32,7 @@
  *                                                   a failure rejects with an Error whose `code` is invalid, not_found, refused or unavailable
  *   await tower.call('reveal', { path })            a path the system names (a project's, the system root's, a shown file) in Finder,
  *   await tower.call('edit', { path, line })        or in the user's editor, a file at `line` if given
- *   await tower.run(card.calls.resume)              a call the board offers, with the fields the user supplies: run(floor.calls.spawn, { cwd })
+ *   await tower.run(callOf(card, 'resume'))         a call the board offers (`callOf`, /cards.js), with the fields the user supplies: run(callOf(floor, 'spawn'), { cwd })
  *   tower.keys(id, data) / tower.shellKeys(id, data)  keystrokes, delivered in order
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed

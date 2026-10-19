@@ -59,7 +59,7 @@ import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
 import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, awayHiresOf, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, awayHiresOf, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -827,9 +827,10 @@ switch (verb) {
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const author = await cardNamed(board, flag)
-    if (!author.calls.review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
+    const review = callOf(author, 'review')
+    if (!review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
     const tell = rest[0] === 'tell'
-    const [verbName, body] = author.calls.review
+    const [verbName, body] = review
     const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me, hire: true })
     console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
     break
@@ -841,7 +842,7 @@ switch (verb) {
     const board = await readBoard()
     const own = ownFloor(board, me)
     const floor = hireFloor(board, own, hire.floor)
-    if (!floor.calls.spawn) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
+    if (!can(floor, 'spawn')) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
     const named = hire.item ? itemNamed(own, hire.item) : undefined
     const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
@@ -864,7 +865,7 @@ switch (verb) {
       console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
       break
     }
-    const calls = card.calls['send-home']
+    const calls = callOf(card, 'send-home')
     if (!calls) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker whose session runs can be sent home. \`tower agents --all\` shows who is on duty.`)
     for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })
     const sent = [card, ...crewOf(board.floors.flatMap((f) => f.cards), card)].filter((c) => calls.some(([, { id }]) => id === c.id))
@@ -874,7 +875,7 @@ switch (verb) {
   case 'let-go': {
     if (!flag) throw new CliError('Usage: tower let-go <CALLSIGN>')
     const card = await cardNamed(await readBoard(), flag)
-    const call = card.calls['let-go']
+    const call = callOf(card, 'let-go')
     if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker the host stopped or lost, on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
@@ -885,7 +886,7 @@ switch (verb) {
     const board = await readBoard()
     const sender = ownCard(board, me)
     const target = await cardNamed(board, flag)
-    if (!target.calls.submit) throw new CliError(`${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
+    if (!can(target, 'submit')) throw new CliError(`${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
     const text = await readThread(board.floors.find((f) => f.id === target.project)!, target.checkout)
     if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
     const notes = unseenBy(parseThread(text), target.callsign).map((m) => m.n)

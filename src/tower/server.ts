@@ -106,7 +106,7 @@ import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_I
 import { z } from 'zod'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { designCss, fonts } from '../shared/design.ts'
-import { esc, hireRefusal, shelfKind, shelfPage } from '../shared/cards.ts'
+import { callOf, can, esc, hireRefusal, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -741,7 +741,7 @@ const letGo = (id: string) =>
   withSession(id, () => {
     const refused = factRefused('let a worker go')
     if (refused) return refused
-    return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && c.verbs.includes('let-go')))
+    return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && can(c, 'let-go')))
       ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
       : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
   })
@@ -785,7 +785,7 @@ const sendLeaversHome = () => {
   for (const c of cards.filter((c) => c.leaving && !departing.has(c.id) && leavesNow(system.session(c.id)!.facts))) {
     departing.add(c.id)
     void (async () => {
-      for (const [verb, body] of c.calls['send-home']!) {
+      for (const [verb, body] of callOf(c, 'send-home') ?? []) {
         const answer = await HANDLERS[verb](ROUTES[verb].input.parse({ ...body, by: c.id }))
         if (answer.t === 'error') console.error(`${c.callsign} asked to go home, and killing ${body.id} failed: ${(answer as ApiError).message}`)
       }
