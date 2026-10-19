@@ -2331,6 +2331,7 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
   draftIo,
   held: async (d) => d,
   kept: (d) => void (draftOpen === d && ($('draft-text').value = d.text)),
+  shown: () => {},
   started: async (id, d) => {
     if (d) await deleteSent(d)
     selectArriving(id)

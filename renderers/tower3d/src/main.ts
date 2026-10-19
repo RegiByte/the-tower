@@ -2629,6 +2629,7 @@ const spawning = wireSpawn<Held>(spawn, {
     return item && openDraft(draftIo, note.project, item).catch((err: Error) => (toast(err.message), undefined))
   },
   kept: () => {},
+  shown: unlock,
   started: (id, note) => {
     s.pendingDesk = id
     if (note) void sent(note)
@@ -2638,7 +2639,6 @@ const spawning = wireSpawn<Held>(spawn, {
 spawn.addEventListener('close', showPaused)
 
 function openSpawn(project: string, draft?: { note: Held; text: string }) {
-  unlock()
   spawning.dispatch({ type: 'open', project, on: draft?.note, text: draft?.text ?? '' })
 }
 
