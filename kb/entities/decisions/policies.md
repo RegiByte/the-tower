@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": [
     "hub/src/shared/policies.ts#cronFields",
     "hub/src/shared/policies.ts#ruleWords",
@@ -88,7 +88,8 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   open until the policy's next slot or its run, carrying its check's output onto the run that accepts it; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
   the run fact naming the first session of a worker's lineage. `GET /runs/<project>?policy&limit`
   ([`runsRead`](ref:hub/src/bridge/policies.ts#runsRead)) reads a policy's runs, each worker as it is now.
-- *The runner.* [`standing`](ref:hub/src/shared/policies.ts#standing) says where a policy stands, and
+- *The runner.* [`standing`](ref:hub/src/shared/policies.ts#standing) says where a policy stands (a view is valid, with its header, or invalid, with its problems; a run is by hand
+  with no slot or at one; a check exited or errored: unions, so each reader narrows), and
   [`decide`](ref:hub/src/shared/policies.ts#decide) what a runner does with a due slot, from the board alone: held
   while live is full; the check first; run when `auto` and approved; else offered. The tower's
   [`runPolicies`](ref:hub/src/policies.ts#runPolicies) calls it every 30 s per floor, runs the checks
