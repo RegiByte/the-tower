@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-19",
   "refs": [
     "hub/renderers/tower3d/index.html",
     "hub/renderers/tower3d/src/loading.ts",
@@ -14,21 +14,21 @@
     "hub/renderers/tower3d/src/files.ts#prefetch",
     "hub/renderers/tower3d/src/main.ts#onLiveBoard",
     "hub/renderers/tower3d/src/main.ts#startOn",
-    "hub/renderers/tower3d/src/main.ts#frameScene"
+    "hub/renderers/tower3d/src/main.ts#frameScene",
+    "hub/renderers/tower3d/src/main.ts#failStart"
   ]
 }
 ---
-**Problem.** Tower 3D froze for 1–3 s on reload. Measured (2026-10-11): the page waits 350–1000 ms for its first
-board with only the city drawn (a half-loaded look), then one task builds the building (~0.3 s, most of it the
-zones' batches) and the first full draw compiles every shader program on the main thread: ~0.15 s with the GPU's
-program cache warm, ~1.7 s cold.
+**Problem.** On reload Tower 3D froze: the page waited for its first board with only the city drawn (a half-loaded
+look), then one task built the building, and the first full draw compiled every shader program on the main thread,
+for seconds with the GPU's program cache cold.
 
 **How.**
 - *The screen is static html.* `#loading` in [index.html](ref:hub/renderers/tower3d/index.html) shows at once, in
   the design tokens of either scheme; its motion is transform and opacity, so it keeps moving while the main thread
   blocks, and stops for reduced motion. [`loading.ts`](ref:hub/renderers/tower3d/src/loading.ts) lights a stage,
-  says why a start failed (a `start:` error, a board error) and leaves; [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts)
-  drops it on a fixture page.
+  says why a start failed and leaves; [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts) drops it on a fixture
+  page.
 - *The files arrive while the settings are read.* [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts) starts
   fetching every model and the kit ([`prefetch`](ref:hub/renderers/tower3d/src/files.ts#prefetch)) before it reads
   the lighting setting; the models stage parses what has arrived ([[bundled-renderer]]). Every floor needs all of
@@ -39,16 +39,16 @@ program cache warm, ~1.7 s cold.
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.
 - *Nothing is drawn before.* Frames update but don't draw until `startOn` is done, so the city never shows alone.
+- *A failed start says why.* [`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart) toasts the error,
+  writes it on the loading screen and rejects the door's `ready()` with it ([[tower3d-door]]).
 
 **Alternatives considered.**
-- *Drawing the city while waiting*: it is the half-loaded look, and its own first draw compiles 12 programs on the
+- *Drawing the city while waiting*: it is the half-loaded look, and its own first draw compiles programs on the
   main thread.
 - *Yielding between levels while building*: no less work, and the screen already shows "building the floors".
 - *The floors in view first, the rest of the models after*: every floor draws desks, workers and the kit, so
   holding some back is the half-loaded look again.
 
-**Impact.** Warm, headless (Apple M1 Max, sandbox board, 6 runs each, lighting on and off alike): the first draw
-blocks ~65 ms instead of ~145, the city's ~75 ms draw before the board is gone, and the first full frame lands
-about when it did (+~50 ms for the screen's paints). Cold, the ~1.7 s compile becomes a wait the screen animates
-through (not reproducible headless). The longest task left is `onBoard`'s ~250 ms, the zones' batches: batching
-only what a level places is the follow-up. Fixture frames are byte for byte the same.
+**Impact.** The shader compile no longer blocks the first draw; cold, it becomes a wait the screen animates through.
+The longest task left is `onBoard`'s building of the zones' batches. Fixture pages skip the screen and draw from
+their first frame, so their frames are unchanged.

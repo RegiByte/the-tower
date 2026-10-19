@@ -6,53 +6,48 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-17",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "reviewed": "2026-10-19",
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
-**Problem.** Agents build Tower 3D entirely, and tested it by brute force: stubbing pointer lock, dispatching
-synthetic mouse moves, priming dropped keys, seeding localStorage to place the walker, wrapping fetch, and
-timing screenshots of animations.
+**Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
+mouse moves, priming dropped keys, seeding localStorage to place the walker, wrapping fetch, and timing screenshots
+of animations.
 
-**Why.** The project is built by agents; what they cannot check, they build slowly. Asset work (models,
-materials, layouts) needs repeatable views more than anything, and a refactor such as the cut of `main.ts` into
-registries ([[tower3d-registries]]) needs a before/after it can be checked against.
+**Why.** The project is built by agents; what they cannot check, they build slowly. Asset work (models, materials,
+layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] needs a before and after to compare.
 
 **How.**
 - Input is intents: a move held and a turn taken per frame (`input.ts`). Keyboard and mouse produce them, and the
-  door injects the same. `capture()` stands in for pointer lock and follows every lock and unlock as the lock
-  would. Building keys go through one `onKey`, which the door's `key()` calls.
-- The frame is `update(dt)` then `render()` over a simulated clock that holds, flights, the fade between floors
-  and every animation read. `step(n)` stops it and runs n frames; `?stepped` starts it stopped. One seeded
-  `random` (`?seed=`) replaces `Math.random` wherever chance reaches a frame (music keeps its own). `?at=<ISO
-  time>` pins the wall clock (`clock.ts`): the sky's hour, today's guests, fixture times and the panels' "ago"
-  labels read it, so repeats hold on any day, not only within the same minute.
-- `window.tower3d` is typed and always present: `ready`, `capture`/`release`, `teleport`, `acts` (every thing of a kind that is drawn on its level, as it is aimed at), `locate` (where a thing
-  stands, to teleport within its reach), `aimAt` (turns to the
-  thing and answers what the crosshair now picks), all three over the world as the next frame draws it (its levels
-  shown or hidden, every object where it stands), so `locate`, `teleport`, `aimAt` holds with no frame between them (guests and cats are placed by a frame's ticks, so on a stepped clock both refuse one until a step follows the latest board), `press(verb, {hold})` (refuses verbs not offered, and a held
-  verb without a hold), `key`, `drive`, `step`/`play`, `advance` (a fixture's next board), `pictured` (every picture being read is painted, a later board's too), `state` (frame times, what the last frame drew, counters for boards and rebuilds) and
-  `shot`. The door plays no music and never stores the walker's spot.
-- `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES), a list of boards delivered one by one
-  through `advance`, so what happens between boards can be recorded. Scenarios state facts; callsign,
-  attention, liveness, verbs and on-duty come from the bridge's own functions, so a contract change breaks the
-  build. A fixture's monitors open no streams: there is no host behind it, and replies landing between steps
-  made frames differ.
-- `npm run drive` is a headless Chrome driver (fresh profile, free port, page errors printed and collected, steps in order);
-  `npm run sandbox -- up | down` a throwaway system with a tower on port 4399. Model names the renderer reads
-  are data (`contract.ts`), checked against every `.glb` by `npm test`; `lab.html` shows one model with its draw
-  calls and names. `npm run tool:frames` (`record <label>`, `compare <a> <b>`) walks a fixed scenario through the
-  door on every fixture board and compares each stage's state and PNG byte for byte; it refuses a scenario that
-  does not repeat, and stays a manual check. CI runs one boot instead (`npm run test:tower3d-boot`): the built
-  bundle served by a tower alone over a throwaway root, `?board=busy` opened through `ready()`, and a board, desks,
-  stations, walls and draw calls asserted with no page error, unhandled rejection, console error or failed load.
+  door injects the same. `capture()` stands in for pointer lock. Building keys go through one `onKey`, which the
+  door's `key()` calls.
+- A frame is `update(dt)` then `render()` over a simulated clock that every hold, flight, fade and animation reads.
+  `step(n)` stops it and runs n frames; `?stepped` starts it stopped. One seeded `random` (`?seed=`) replaces
+  `Math.random` wherever chance reaches a frame. `?at=<ISO time>` pins the wall clock (`clock.ts`), so repeats hold
+  on any day.
+- `window.tower3d` is typed and always present; its verbs and their contracts are the comment and `Door` type in
+  [`door.ts`](ref:hub/renderers/tower3d/src/door.ts). `locate`, `teleport` and `aimAt` work over the world as the
+  next frame draws it, so they hold with no frame between them. A verb used wrongly throws with what to do instead
+  (a verb not offered, a held verb pressed, a thing placed only by a frame not yet run). `ready()` resolves once the
+  first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart),
+  [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music and never
+  stores the walker's spot.
+- `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES),
+  a list of boards delivered one by one through `advance`, so what happens between boards can be recorded. Scenarios
+  state facts; callsign, attention, liveness, verbs and on-duty come from the bridge's own functions, so a contract
+  change breaks the build. A fixture's screens open no streams: there is no host behind it, and replies landing
+  between steps would make frames differ.
+- The tools around it: `npm run drive` (headless Chrome, page errors collected), `npm run sandbox` (a throwaway
+  system), model names as data (`contract.ts`) checked against every `.glb` by `npm test`, `lab.html` for one
+  model, `npm run tool:frames` (a fixed walk on every fixture board, each stage's state and PNG compared byte for
+  byte; it refuses a walk that does not repeat), and in CI `npm run test:tower3d-boot` (the built bundle on
+  `?board=busy`, booted through `ready()` with no page error, rejection, console error or failed load).
 
 **Alternatives considered.**
 - Keep driving real input over CDP: fragile and slow.
-- A debug grab-bag on `window`, as agent-office has: unstructured, and it exposes internals rather than verbs.
+- A debug grab-bag on `window`: unstructured, and it exposes internals rather than verbs.
 - Boards recorded from the real system: real shapes, but client prompts and paths would land in git and a
   scrubber would have to follow every new text field.
 
 **Impact.** `main.ts` takes intents and steps a clock, and its state can be read from outside. Two loads with one
-seed, clock and steps give identical pixels, which is how the registries cut ([[tower3d-registries]]) was checked
-frame for frame.
+seed, clock and steps give identical pixels.
