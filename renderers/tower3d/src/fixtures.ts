@@ -1,6 +1,7 @@
-import { archiveAtOf, attentionOf, galleryOf, onBoard, waitingOrder } from '../../../src/bridge/board.ts'
+import { archiveAtOf, galleryOf, onBoard, waitingOrder, withReports } from '../../../src/bridge/board.ts'
+import { awaitsResume, lifeOf } from '../../../src/bridge/life.ts'
 import { bucketStart } from '../../../src/bridge/stats.ts'
-import { prunable } from '../../../src/bridge/prunable.ts'
+import { prunable, STUCK_MS } from '../../../src/bridge/prunable.ts'
 import { CALLSIGNS, callsigns } from '../../../src/shared/callsign.ts'
 import { tagOf } from '../../../src/shared/tags.ts'
 import { threadCheckoutOf } from '../../../src/shared/cards.ts'
@@ -8,7 +9,7 @@ import { DRAFTS } from '../../../src/shared/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
-import { cardOffers, conversationOffers, floorOffers, isLive, noteOffers, probeOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
+import { cardOffers, conversationOffers, floorOffers, noteOffers, probeOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
@@ -19,7 +20,7 @@ import { wallNow } from './clock.ts'
 /**
  * Fabricated boards for `?board=<name>`: the states a renderer draws, with no host behind them and none of the real
  * system's text. A scenario states facts (status, waiting, what was said); what the bridge derives from them
- * (callsign, attention, liveness, verbs, on duty) comes from the bridge's own functions.
+ * (callsign, the worker's lifecycle and crew, verbs) comes from the bridge's own functions.
  */
 
 const MIN = 60_000
@@ -31,6 +32,7 @@ const callsign = callsigns(CALLSIGNS)
 type Facts = {
   status: Status
   blocked?: Card['blocked']
+  /** Holds an outcome nobody has typed to since: a screen or a question always waits. */
   waiting?: boolean
   ago?: number
   prompt?: string
@@ -57,8 +59,8 @@ type Facts = {
   worktree?: string
   /** The worker, by its place on the floor, whose work it reviews in a fork of its checkout. */
   reviews?: number
-  /** The hirer, by its place on the floor, whose prompt its unread answer answers: it waits on that, not on you. */
-  waitsOn?: number
+  /** Its latest prompt is the one its hirer hired it on: an unread answer to it waits on the hirer while that runs, not on you. */
+  hirersPrompt?: boolean
   /** Working with no word from Claude for long. */
   stuck?: boolean
   /** The worker, by its place on the floor, that hired this one. */
@@ -97,32 +99,32 @@ const runsOf = (id: string, startedAt: number, f: Facts): Card['subagentRuns'] =
 function card(project: string, n: number, f: Facts, now: number, floor: Facts[]): Card {
   const id = idOf(project, n)
   const author = f.reviews === undefined ? undefined : floor[f.reviews]
-  const live = isLive(f.status)
-  const waiting = f.waiting ?? false
   const startedAt = now - (f.ago ?? 30) * MIN
+  const enteredAt = f.left === undefined ? startedAt + MIN : now - f.left * MIN
+  const hiredBy = f.hiredBy === undefined ? undefined : { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)), project }
   const linkOf = (to: string) => ({ id: to, callsign: callsign(to), startedAt })
   const resumedBy = f.resumedBy === undefined ? undefined : linkOf(f.resumedBy)
+  const life = lifeOf({
+    state: f.status === 'blocked' ? { status: 'blocked', since: enteredAt, blocked: f.blocked! } : { status: f.status, since: enteredAt, compaction: f.compacting ? { trigger: 'auto' } : undefined },
+    endedFrom: f.cutOff ? 'working' : f.status, hostStopped: f.hostStopped ?? false, broken: false,
+    typedAt: f.waiting ? undefined : now, heardAt: f.stuck ? now - STUCK_MS : undefined, leaveAsked: false,
+    unresumableHere: f.unresumable, conversations: f.prompt === undefined ? [] : [{ resumedBy }],
+  }, now)
   const conversations = f.prompt === undefined ? [] : [{
-    id: `${id}-conversation`, startedAt, prompt: f.prompt, answer: f.answer, resumes: f.resumes === undefined ? undefined : linkOf(f.resumes), resumedBy,
-    ...conversationOffers(id, `${id}-conversation`, live, !f.unresumable, resumedBy),
+    id: `${id}-conversation`, startedAt, prompt: f.prompt, answer: f.answer, promptBy: f.hirersPrompt ? hiredBy?.callsign : undefined,
+    resumes: f.resumes === undefined ? undefined : linkOf(f.resumes), resumedBy,
+    ...conversationOffers(id, `${id}-conversation`, life.live, !life.unresumable, resumedBy),
   }]
-  const stranded = f.status === 'lost' || f.hostStopped === true
-  const cutOff = stranded && f.cutOff === true
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
-  const awaitsResume = stranded && !f.unresumable && conversations.length > 0 && !f.resumedBy
   return {
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
     checkoutState: { is: 'live' }, threadState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
-    status: f.status, blocked: f.blocked, live, waiting, leaving: false,
-    ...(f.waitsOn !== undefined && { reportsTo: idOf(project, f.waitsOn), waitsOn: { id: idOf(project, f.waitsOn), callsign: callsign(idOf(project, f.waitsOn)) } }),
-    ...(f.hiredBy !== undefined && { reportsTo: idOf(project, f.hiredBy), hiredBy: { session: idOf(project, f.hiredBy), callsign: callsign(idOf(project, f.hiredBy)), project } }),
-    attention: attentionOf(f.status, waiting || f.waitsOn !== undefined), enteredAt: f.left === undefined ? startedAt + MIN : now - f.left * MIN, stuck: f.stuck ?? false, startedAt, cols: 120, rows: 40,
-    context: f.context, costUsd: f.costUsd, tool: f.tool, compacting: f.compacting ?? false, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
-    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], stranded, cutOff, unresumable: f.unresumable, conversations,
-    onDuty: live || awaitsResume,
-    ...cardOffers(id, f.status, !f.unresumable, conversations, resources.length, undefined, awaitsResume, cutOff),
+    ...life, hiredBy, enteredAt, startedAt, cols: 120, rows: 40,
+    context: f.context, costUsd: f.costUsd, tool: f.tool, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
+    resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], conversations,
+    ...cardOffers(id, life.status, !life.unresumable, conversations, resources.length, undefined, awaitsResume(life), life.cutOff),
   }
 }
 
@@ -191,8 +193,11 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
 const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
 function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'probes' | 'extraUsage' | 'shells' | 'today'>> = {}): Board {
-  const built = floors.map((f) => {
-    const { threads, cards } = withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers)))
+  const threaded = floors.map((f) => withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers))))
+  const reporting = withReports(threaded.flatMap((t) => t.cards))
+  const built = floors.map((f, i) => {
+    const { threads } = threaded[i]
+    const cards = reporting.filter((c) => c.project === f.id)
     const worktrees = worktreesOf(f)
     const tidy = tidyOf(cards, worktrees)
     return {
@@ -493,7 +498,7 @@ const attention = (now: number) => boardOf([{
   id: 'ops', name: 'ops', color: '#f07178',
   workers: [
     { status: 'working', prompt: 'Split the deploy into stages', tool: 'Edit', turns: 5, ago: 30 },
-    { status: 'done', waitsOn: 0, prompt: 'Find every env var the deploy reads', answer: 'Three: DEPLOY_ENV, REGION and the token path.', turns: 3, ago: 20 },
+    { status: 'done', hiredBy: 0, hirersPrompt: true, waiting: true, prompt: 'Find every env var the deploy reads', answer: 'Three: DEPLOY_ENV, REGION and the token path.', turns: 3, ago: 20 },
     { status: 'done', waiting: true, prompt: 'Bump the base image', answer: 'Bumped to the October image; the build is green.', turns: 4, ago: 25 },
     { status: 'needs_input', waiting: true, prompt: 'Roll back the canary', tool: 'Bash', ago: 6 },
     { status: 'blocked', blocked: 'trust', waiting: true, ago: 2 },
@@ -521,7 +526,7 @@ const tidyFloor = (now: number) => boardOf([{
     { status: 'working', stuck: true, prompt: 'Run the full soak test', tool: 'Bash', turns: 1, ago: 50 },
     { status: 'working', prompt: 'Split the deploy into stages', tool: 'Edit', turns: 5, ago: 30,
       leftovers: [{ pid: 5301, command: 'vite --port 5173', ports: [5173], orphan: false }] },
-    { status: 'done', hiredBy: 5, waitsOn: 5, worktree: 'stage-docs', landed: true, prompt: 'Document the stages', answer: 'Documented; merged as #88.', turns: 3, ago: 25 },
+    { status: 'done', hiredBy: 5, hirersPrompt: true, waiting: true, worktree: 'stage-docs', landed: true, prompt: 'Document the stages', answer: 'Documented; merged as #88.', turns: 3, ago: 25 },
     { status: 'idle', hiredBy: 5, worktree: 'stage-bench', landed: false, prompt: 'Benchmark each stage', answer: 'Numbers committed, not merged yet.', turns: 2, ago: 20 },
   ],
 }], now)
@@ -612,7 +617,7 @@ function growing(now: number): Board[] {
 
 /** A crew's hire whose answer waits on its hirer, at `by`, since `left` minutes ago. */
 const waitingHire = (by: number, ago: number, left: number, prompt: string, answer: string): Facts =>
-  hire(by, ago, prompt, { status: 'done', waitsOn: by, left, answer, tool: undefined })
+  hire(by, ago, prompt, { status: 'done', hirersPrompt: true, waiting: true, left, answer, tool: undefined })
 
 /**
  * The break room. On `arcade`, a crew of six in Meeting · 8: three hires whose answers wait on their lead step out of it
@@ -642,7 +647,7 @@ const breakroom = (now: number) => boardOf([
       { status: 'working', prompt: 'Plan the release', tool: 'Read', ago: 40 },
       waitingHire(0, 30, 20, 'List the open issues', 'Seven, two of them blockers.'),
       { status: 'working', prompt: 'Rework the release script', tool: 'Edit', worktree: 'release-script', ago: 35 },
-      hire(2, 25, reviewPrompt(who('quiet', 2), false), { status: 'done', waitsOn: 2, left: 15, answer: 'Two notes left on the thread.', tool: undefined, worktree: 'release-script-review', reviews: 2 }),
+      hire(2, 25, reviewPrompt(who('quiet', 2), false), { status: 'done', hirersPrompt: true, waiting: true, left: 15, answer: 'Two notes left on the thread.', tool: undefined, worktree: 'release-script-review', reviews: 2 }),
     ],
   },
 ], now)

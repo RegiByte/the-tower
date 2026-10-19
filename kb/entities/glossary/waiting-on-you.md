@@ -5,7 +5,7 @@
   "summary": "A session held by a screen (blocked) or a question (needs_input), or holding an answer or failure that nobody has typed into the session since it arrived, unless the answer is a hire's to its running hirer's prompt; on the board, one wait per such session, in the order to go to them.",
   "in": "tower",
   "reviewed": "2026-10-19",
-  "refs": ["hub/src/bridge/status.ts#waitsOnSomeone", "hub/src/bridge/board.ts#attentionOf", "hub/src/bridge/board.ts#waitingOrder", "hub/src/shared/cards.ts#transitions", "hub/src/shared/cards.ts#nextWait", "hub/src/shared/cards.ts#heededWaits"]
+  "refs": ["hub/src/bridge/status.ts#waitsOnSomeone", "hub/src/bridge/life.ts#attentionOf", "hub/src/bridge/board.ts#waitingOrder", "hub/src/shared/cards.ts#transitions", "hub/src/shared/cards.ts#nextWait", "hub/src/shared/cards.ts#heededWaits"]
 }
 ---
 [`waitsOnSomeone`](ref:hub/src/bridge/status.ts#waitsOnSomeone) decides from the log that a session waits; typing into
@@ -15,7 +15,7 @@ hirer's prompt (`promptBy` on its latest conversation) waits on its hirer while 
 `waiting: false` and `waitsOn` (the hirer's current card and callsign), its status word says "waiting on
 <CALLSIGN>", and it leaves `board.waiting`, the rings, N and the counts. A screen, a question or a failure of a hire still
 waits on you (only someone at its terminal answers those), as does its answer once its hirer stops running, or to a
-prompt you typed it. Either way the card's attention ([`attentionOf`](ref:hub/src/bridge/board.ts#attentionOf)) is
+prompt you typed it. Either way the card's attention ([`attentionOf`](ref:hub/src/bridge/life.ts#attentionOf)) is
 `needs` for a screen or a question, `broken` for a failure, `ready` for an answer (decision [[attention-list]]). `board.waiting` lists one **wait** per waiting card
 ([`waitingOrder`](ref:hub/src/bridge/board.ts#waitingOrder)): `reason` (`blocked`, `asks`, `failed`, `done`, ranked
 in that order, then by the longest wait), `since` (the card's `enteredAt`), `detail` (the screen's kind, or the tool it

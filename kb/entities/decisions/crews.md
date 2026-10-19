@@ -6,9 +6,10 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
+    "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeOffer",
@@ -49,7 +50,7 @@ prompt ([[reviewer]]). The tree is computable, so it is computed. Nothing here i
 coordinator handing out work, or a conversation that just says hi. The model is who works for whom.
 
 **How.**
-- *One edge, on the board.* [`withCrews`](ref:hub/src/bridge/board.ts#withCrews) gives each worker's current card (no
+- *One edge, on the board.* [`withReports`](ref:hub/src/bridge/board.ts#withReports) gives each worker's current card (no
   `continuedBy`) `reportsTo`: the card of its author when it reviews (`workerNamed` on the floor, the one on duty first),
   else of its hirer, carried on through resumes ([`carriedOn`](ref:hub/src/bridge/board.ts#carriedOn): `hiredBy.session`
   is where the hire was made, and the hirer may have been resumed since). A reviewer the user started has no hirer and

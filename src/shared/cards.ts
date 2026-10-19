@@ -1,4 +1,5 @@
-import type { Attention, Board, Card, CardSubagent, Floor, HiredBy, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
+import type { Board, Card, CardSubagent, Floor, HiredBy, TidyPlan, Unresumable, Wait, WaitReason } from '../bridge/board.ts'
+import type { Attention } from '../bridge/life.ts'
 import type { BlockedKind } from '../bridge/blocked.ts'
 import type { Status } from '../bridge/status.ts'
 import type { Exposure, FloorWorktree, LandingRead, WorktreeState } from '../bridge/worktrees.ts'
@@ -28,7 +29,7 @@ export const STATUS_NAME: Record<Status, string> = {
 /** A worker's attention in a word, as a count of workers or a legend names it. */
 export const ATTENTION_NAME: Record<Attention, string> = { needs: 'needs you', ready: 'done', working: 'working', quiet: 'quiet', broken: 'failed' }
 
-/** What puts a worker in each attention (`attentionOf`, src/bridge/board.ts), for a count's tooltip and a legend. */
+/** What puts a worker in each attention (`attentionOf`, src/bridge/life.ts), for a count's tooltip and a legend. */
 export const ATTENTION_MEANS: Record<Attention, string> = {
   needs: "held by one of Claude's screens (workspace trust, sign-in) or asking permission for a tool: it goes on only once you answer",
   ready: 'its turn ended with an answer nobody has read: nothing it started can wake it, and nobody has typed to it since. Typing to it reads it. An answer for the worker that hired it reads done too, and waits on that worker',

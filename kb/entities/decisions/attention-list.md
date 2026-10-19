@@ -12,7 +12,7 @@
     "hub/src/bridge/status.ts#nextState",
     "hub/src/tail.ts#factEvents",
     "hub/src/bridge/board.ts#waitingOrder",
-    "hub/src/bridge/board.ts#attentionOf",
+    "hub/src/bridge/life.ts#attentionOf",
     "hub/src/shared/cards.ts#loudest",
     "hub/src/shared/cards.ts#transitions",
     "hub/src/shared/cards.ts#nextWait",
@@ -44,7 +44,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
 - `board.waiting` lists one wait per card waiting on you, in the order to go to them; its shape, its rank and whom a
   wait is on (a hire's answer waits on its running hirer, a leaving worker's outcome on nobody) are in
   [[waiting-on-you]].
-- Attention ([`attentionOf`](ref:hub/src/bridge/board.ts#attentionOf)): `needs` a screen or a question, `ready` an
+- Attention ([`attentionOf`](ref:hub/src/bridge/life.ts#attentionOf)): `needs` a screen or a question, `ready` an
   unread answer, `broken` a failure. The colour says what the worker holds, `waiting` whether it is yours; a count or a
   lamp takes its loudest card's ([`loudest`](ref:hub/src/shared/cards.ts#loudest)), so red marks only what needs you
   ([[design-system]]).

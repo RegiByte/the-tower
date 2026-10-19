@@ -15,16 +15,16 @@ import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type Lim
 import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
-import { isMidTurn, isOutcome, waitsOnSomeone, withLiveness, type Status } from './status.ts'
+import { withLiveness, type Status } from './status.ts'
+import { awaitsResume, lifeOf, type Attention } from './life.ts'
 import type { BlockedKind } from './blocked.ts'
-import { isStuck, prunable, type Prune } from './prunable.ts'
+import { prunable, type Prune } from './prunable.ts'
 import { oldLogs, oldStreams, type LogFile, type OldLog, type OldStream, type StreamMonth } from './retention.ts'
 import { withSeats, type Seat } from './seats.ts'
 import {
   cardOffers,
   conversationOffers,
   floorOffers,
-  isLive,
   noteOffers,
   probeOffers,
   resourceOffers,
@@ -48,18 +48,6 @@ import { commonBases, floorBranches, floorWorktrees, projectReads, treeAt, type 
 const EXCERPT_CHARS = 280
 
 const excerpt = (text: string | undefined) => (text && text.length > EXCERPT_CHARS ? `${text.slice(0, EXCERPT_CHARS)}…` : text)
-
-/** How loudly a worker asks for you, the one thing every renderer colours: the status word keeps the fact. */
-export type Attention = 'needs' | 'ready' | 'working' | 'quiet' | 'broken'
-
-/** `unread`: it holds what someone has to answer or read (`waitsOnSomeone`). A screen or a question needs a hand; an unread answer is ready. */
-export const attentionOf = (status: Status, unread: boolean): Attention => {
-  if (status === 'blocked' || status === 'needs_input') return 'needs'
-  if (status === 'failed' || status === 'lost') return 'broken'
-  if (unread) return 'ready'
-  if (status === 'working' || status === 'booting') return 'working'
-  return 'quiet'
-}
 
 /** `promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's. */
 export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; verbs: ConversationVerb[]; calls: ConversationCalls }
@@ -400,13 +388,25 @@ const card = (
   const checkout = worktree?.name ?? MAIN_CHECKOUT
   const thread = threadOf(threadCheckoutOf({ reviews, worktree, checkout }))
   const state = withLiveness(facts.state, header.id, liveIds)
-  const stranded = state.status === 'lost' || facts.hostStopped === true
-  const cutOff = stranded && !facts.broken && isMidTurn(facts.exitedFrom ?? facts.state.status)
-  const live = isLive(state.status)
-  const leaving = live && facts.leaveAt !== undefined
-  const waiting = !facts.broken && waitsOnSomeone(state, facts.typedAt) && !(leaving && isOutcome(state.status))
   const held = threads(session, sessions, nameOf)
-  const unresumable = !live && held.some((t) => !t.resumedBy) ? unresumableHere : undefined
+  const typedAt = facts.typedAt === undefined ? undefined : header.startedAt + facts.typedAt * 1000
+  const heardAt = facts.heardAt === undefined ? undefined : header.startedAt + facts.heardAt * 1000
+  const enteredAt = header.startedAt + state.since * 1000
+  const life = lifeOf(
+    {
+      state: { ...state, since: enteredAt },
+      endedFrom: facts.exitedFrom ?? facts.state.status,
+      hostStopped: facts.hostStopped === true,
+      broken: facts.broken !== undefined,
+      typedAt,
+      heardAt,
+      leaveAsked: facts.leaveAt !== undefined,
+      letGoAt: facts.letGoAt === undefined ? undefined : header.startedAt + facts.letGoAt * 1000,
+      unresumableHere,
+      conversations: held,
+    },
+    now,
+  )
   const conversations = held.map(({ id, at, prompt, answer, resumes, resumedBy }) => ({
     id,
     startedAt: header.startedAt + at * 1000,
@@ -415,12 +415,9 @@ const card = (
     answer: excerpt(answer),
     resumes,
     resumedBy,
-    ...conversationOffers(header.id, id, live, !unresumable, resumedBy),
+    ...conversationOffers(header.id, id, life.live, !life.unresumable, resumedBy),
   }))
-  const letGoAt = facts.letGoAt === undefined ? undefined : header.startedAt + facts.letGoAt * 1000
-  const awaitsResume = stranded && letGoAt === undefined && !unresumable && conversations.length > 0 && !conversations.at(-1)!.resumedBy
   const shown = shownBy(worker)
-  const heardAt = facts.heardAt === undefined ? undefined : header.startedAt + facts.heardAt * 1000
   const continuedBy = [...continued].find(([, before]) => before === session)?.[0].header.id
   const resources = running
     .filter((r) => r.session === header.id)
@@ -436,16 +433,10 @@ const card = (
     hiredBy,
     checkout,
     unseen: thread && unseenBy(thread, callsign).length,
-    status: state.status,
-    blocked: state.blocked,
-    live,
-    waiting,
-    leaving,
-    attention: facts.broken ? 'broken' : attentionOf(state.status, waiting),
-    enteredAt: header.startedAt + state.since * 1000,
-    typedAt: facts.typedAt === undefined ? undefined : header.startedAt + facts.typedAt * 1000,
+    ...life,
+    enteredAt,
+    typedAt,
     heardAt,
-    stuck: !facts.broken && isStuck(state.status, heardAt, now),
     broken: facts.broken && { ...facts.broken, at: header.startedAt + facts.broken.at * 1000 },
     startedAt: header.startedAt,
     cols: facts.cols,
@@ -453,10 +444,9 @@ const card = (
     context: facts.context,
     costUsd: facts.costUsd,
     tool: facts.tool,
-    compacting: state.status === 'working' && state.compaction !== undefined,
     says: facts.says,
     subagents: facts.subagentRuns.length,
-    subagentRuns: facts.subagentRuns.filter((run): run is SubagentRun & { id: string } => run.id !== undefined).map((run) => ({ ...run, running: live && run.endedAt === undefined })),
+    subagentRuns: facts.subagentRuns.filter((run): run is SubagentRun & { id: string } => run.id !== undefined).map((run) => ({ ...run, running: life.live && run.endedAt === undefined })),
     turns: worker.reduce((sum, s) => sum + s.facts.turns, 0),
     lineage: worker.map((s) => ({ id: s.header.id, startedAt: s.header.startedAt })),
     model: facts.model,
@@ -470,15 +460,10 @@ const card = (
       .filter(([, path], i, all) => all.findIndex(([, p]) => p === path) === i)
       .map(([at, path]) => ({ path, at, shown: shown.some((s) => s.target === path) })),
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
-    stranded,
-    cutOff,
-    letGoAt,
-    unresumable,
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    onDuty: live || awaitsResume,
     run: runOf(worker[0].header.id, header.project),
-    ...cardOffers(header.id, state.status, !unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume, cutOff),
+    ...cardOffers(header.id, life.status, !life.unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume(life), life.cutOff),
   }
 }
 
@@ -522,15 +507,20 @@ export const carriedOn = (byId: Map<string, Card>, id: string): Card | undefined
 const answerWait = (c: Card, hirer: Card | undefined): Pick<Card, 'waiting' | 'waitsOn'> | undefined =>
   c.waiting && c.status === 'done' && current(c)?.promptBy && hirer?.live ? { waiting: false, waitsOn: { id: hirer.id, callsign: hirer.callsign } } : undefined
 
-/** Each worker's current card with whom it reports to and whom its answer waits on, and the floor's `send-home` on it. */
-const withCrews = (cards: Card[]): Card[] => {
+/** Each worker's current card with whom it reports to and whom its answer waits on. */
+export const withReports = (cards: Card[]): Card[] => {
   const byId = new Map(cards.map((c) => [c.id, c]))
-  const reporting = cards.map((c) => {
+  return cards.map((c) => {
     if (c.continuedBy) return c
     const hirer = c.hiredBy && carriedOn(byId, c.hiredBy.session)
     const to = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : hirer
     return { ...c, ...(to && { reportsTo: to.id }), ...answerWait(c, hirer) }
   })
+}
+
+/** Each worker's current card with whom it reports to and whom its answer waits on, and the floor's `send-home` on it. */
+const withCrews = (cards: Card[]): Card[] => {
+  const reporting = withReports(cards)
   return reporting.map((c) => {
     const { verbs, calls } = sendHomeOffer([c, ...crewOf(reporting, c)])
     return verbs.length ? { ...c, verbs: [...c.verbs, ...verbs], calls: { ...c.calls, ...calls } } : c

@@ -17,7 +17,8 @@ import { toaster, toastsCss } from '/toasts.js'
 import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
- * @import { Attention, Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Unresumable, Wait } from '../../src/bridge/board.ts'
+ * @import { Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Unresumable, Wait } from '../../src/bridge/board.ts'
+ * @import { Attention } from '../../src/bridge/life.ts'
  * @import { Brief } from '../../src/bridge/turns.ts'
  * @import { CardRun, Offer } from '../../src/bridge/policies.ts'
  * @import { DiffFile } from '../../src/bridge/diff.ts'

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-19",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
@@ -34,8 +34,9 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   stores the walker's spot.
 - `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES),
   a list of boards delivered one by one through `advance`, so what happens between boards can be recorded. Scenarios
-  state facts; callsign, attention, liveness, verbs and on-duty come from the bridge's own functions, so a contract
-  change breaks the build. A fixture's screens open no streams: there is no host behind it, and replies landing
+  state facts; callsign, the worker's lifecycle ([`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf)), its crew
+  ([`withReports`](ref:hub/src/bridge/board.ts#withReports)) and verbs come from the bridge's own functions, so a
+  contract change breaks the build and a fixture draws what the board would. A fixture's screens open no streams: there is no host behind it, and replies landing
   between steps would make frames differ.
 - The tools around it: `npm run drive` (headless Chrome, page errors collected), `npm run sandbox` (a throwaway
   system), model names as data (`contract.ts`) checked against every `.glb` by `npm test`, `lab.html` for one
