@@ -63,7 +63,7 @@ import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteAction } from '../bridge/verbs.ts'
 import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../bridge/policies.ts'
 import type { Call, Replies } from './api.ts'
-import { DISMISS_OFFER_TITLE, can, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
+import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
 import { heldWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
@@ -193,7 +193,7 @@ export const threadFiles = (floor: ThreadFloor, checkout: string): ThreadFiles =
  * on whose view is open: an author and its reviewer each read the other's notes since their own last one as new.
  */
 export type ThreadPlace = {
-  project: string; checkout: string; id: string; state: CheckoutState; offers: { actions: readonly (NoteAction | { verb: string })[] }; reader: Card | undefined
+  project: string; checkout: string; id: string; state: CheckoutState; offers: { verbs: readonly string[]; actions: readonly (NoteAction | { verb: string })[] }; reader: Card | undefined
 }
 
 /** The thread a worker's view (its card, tab or desk) shows, read as that worker: its work's, or the one Tidy filed once it landed. */
@@ -349,7 +349,7 @@ export function threadViewOf(board: Board, at: ThreadPlace, viewer: ThreadViewer
   return {
     checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
     reader: at.reader, changes: viewer.changes, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
-    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: can(at.offers, 'note'),
+    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.offers.verbs.includes('note'),
   }
 }
 

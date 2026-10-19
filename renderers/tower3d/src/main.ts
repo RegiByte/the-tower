@@ -2071,7 +2071,7 @@ function shownThread(): ThreadPlace | undefined {
   return t && floorThread(floorOf(panel.project), t)
 }
 
-const noting = (t: ThreadPlace) => can(t.offers, 'note')
+const noting = (t: ThreadPlace) => t.offers.verbs.includes('note')
 
 /** The worker the viewer picked to send a thread's notes to. */
 const pickedFor = (at: ThreadPlace) => s.sendPicks.get(`${at.project}/${at.checkout}`)

@@ -87,7 +87,7 @@ export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.stat
 export const current = (c: Card) => c.conversations.at(-1)
 
 /** Whether a card, conversation or floor offers a verb right now: the board decides, renderers only draw. */
-export const can = <A extends { verb: string }>(thing: { actions: readonly A[] }, verb: A['verb']) => thing.actions.some((a) => a.verb === verb)
+export const can = <V extends string>(thing: { verbs: V[] }, verb: V) => thing.verbs.includes(verb)
 
 /** The call of a verb a card, conversation or floor offers right now, none while it isn't offered. */
 export const callOf = <A extends { verb: string }, V extends Extract<A, { call: unknown }>['verb']>(thing: { actions: readonly A[] }, verb: V): Extract<A, { verb: V; call: unknown }>['call'] | undefined =>
