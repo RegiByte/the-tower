@@ -4,7 +4,7 @@
   "name": "CLI",
   "summary": "The tower command: brings the daemons up and drives sessions from a terminal, reading the logs directly; the same command holds the workers' verbs.",
   "in": "tower",
-  "reviewed": "2026-10-16"
+  "reviewed": "2026-10-19"
 }
 ---
 The [[tower-cli]] is a renderer too, and the one to script against.

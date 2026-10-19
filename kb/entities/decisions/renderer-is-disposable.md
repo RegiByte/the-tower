@@ -6,20 +6,17 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-02",
-  "reviewed": "2026-10-17",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/shared/cards.ts", "hub/src/shared/icons.ts", "hub/src/collections.ts", "hub/AGENTS.md"]
+  "reviewed": "2026-10-19",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts#neighbours", "hub/src/collections.ts", "hub/AGENTS.md"]
 }
 ---
-**Problem.** The long-term renderer (a spatial office) did not exist; the web
-tower was a stepping stone, and logic written into it would have to be rewritten for every next one. Later,
-living in the tower produced a new want every day, and Tower 3D grew past a thousand lines. A review on
-2026-10-06 read "disposable" as "cheap to delete" and scored that growth as a breach. That reading was the
-wrong one, and nothing written down said which one was meant.
+**Problem.** Every renderer is a stepping stone toward the next, and living in the tower produces a new want every
+day. Logic written into one renderer has to be rewritten, or is lost, with the next. "Disposable" can also be read
+as "cheap to delete", which would score a large renderer as a breach; this decision says which reading is meant.
 
 **Why.** The project is a system, not an app (AGENTS.md, Principles): Unix-style composition over data, an
 Emacs-style surface where what the user can do the system and its agents can do too, and open models over
-specific features. A capability shaped by one renderer's use case serves one presentation and has to be
-rebuilt, or lost, with the next.
+specific features. A capability shaped by one renderer's use case serves one presentation.
 
 **How.**
 - *Disposable means no capability is lost.* A renderer is disposable when a sibling written from scratch
@@ -30,8 +27,7 @@ rebuilt, or lost, with the next.
   how it is played. Size is not the measure; a capability only one renderer can reach is.
 - *Capabilities are non-prescriptive primitives.* A want that needs the core enters as the general model of
   its class, composed by renderers. [[collections]] is the model: the core lists, reads, writes and deletes
-  files, and what a draft means is a renderer's, where a drafts store in the core would have been the
-  prescriptive version of the same want.
+  files, and what a draft means is a renderer's.
 - *Where a capability lands, in this order:* derived in the bridge ([[log-reductions]], the
   [`board`](ref:hub/src/bridge/board.ts#board)); a generic verb or read on the [[renderer-api]]; a host
   change only as a new general fact in the log, since a host change kills sessions ([[host-owns-ptys]]).
@@ -40,22 +36,19 @@ rebuilt, or lost, with the next.
 - *View state is a renderer's, through a shared facility.* A renderer keeps what only a viewer cares about
   (marks, a remembered tab) through `tower.store`, so the next renderer reads the same marks
   ([[changes-view]]).
-- Rules a next renderer would need in words live in [`src/shared/cards.ts`](ref:hub/src/shared/cards.ts),
-  served as `/cards.js`: two copies of it had drifted (the next-waiting order, status words). The order a
-  renderer steps through workers in (`dutyOrder`, `neighbours`) lives there too, and the keys that step are
-  commands of the shared keymap (`/keymap.js`, [[keymap]]), so the tower page and Tower 3D move alike; the icons both draw are `/icons.js`
-  ([`src/shared/icons.ts`](ref:hub/src/shared/icons.ts)), and the panels, the brief and the terminal keys are
-  shared the same way ([[renderer-shared-modules]]).
+- *Rules a next renderer would need in words are shared modules.* What renderers draw alike (status words, the
+  order workers are stepped through, the panels, the icons) is served from `src/shared`
+  ([`MODULES`](ref:hub/src/tower/served.ts#MODULES), [[renderer-shared-modules]]), so two renderers cannot drift;
+  the keys that step are commands of the shared [[keymap]].
 
 The tower *page* is one renderer; the tower *server* is the API and is not disposable.
 
 **Alternatives considered.**
-- *Growing the tower as the product.* Rejected: it couples capabilities to one presentation.
+- *Growing one renderer as the product.* Rejected: it couples capabilities to one presentation.
 - *Disposable as cheap to delete* (a size budget per renderer). Rejected: it measures presentation, and it
   would push renderers to stay plain instead of pushing capabilities out of them.
-- *Features shaped by the renderer that asked for them* (a drafts store, a meeting engine in the core).
-  Rejected: the core would grow one feature per want; a general model serves the want and its whole class.
+- *Features shaped by the renderer that asked for them* (a drafts store in the core). Rejected: the core would
+  grow one feature per want; a general model serves the want and its whole class.
 
 **Impact.** Review rule for any change: could a sibling renderer, or an agent, reach this without the
-renderer's code? If not, the capability belongs in the bridge, `system.ts`, `shared` or the API. Renderers
-are free to get weird; the core stays the fold and the routes.
+renderer's code? If not, the capability belongs in the bridge, `system.ts`, `shared` or the API.

@@ -3,7 +3,7 @@
   "type": "project",
   "name": "tower",
   "summary": "A local-first surface for managing many Claude Code sessions, where sessions are data and the presentation is swappable.",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-19",
   "refs": ["hub/AGENTS.md", "hub/package.json", "hub/src/shared/model.ts"]
 }
 ---
@@ -26,10 +26,11 @@ capability is a primitive in the core, open to every renderer and every worker (
 - [[bridge]]: pure reductions over the logs and the live store a renderer subscribes to. This is the
   contract a new renderer plugs into.
 - [[tower-core]]: the tower server (the renderer API), the modules renderers share, git for worktrees, and the
-  disposable renderers it serves: the tower page ([[web-tower]]), [[tower3d]] and The Week ([[renderers-in-config]]). [[cli]]: the `tower` command, a terminal renderer and control surface.
+  disposable renderers it serves: the tower page ([[web-tower]]), [[tower3d]] and The Week ([[renderers-in-config]]).
+- [[cli]]: the `tower` command, a terminal renderer and control surface.
 
-**Data.** [[system-root]] holds the only stored state: the config (intent), the session logs (facts) and the
-collections (files kept for later). Everything else is computed from them ([[logs-are-facts]]); what is kept to skip
+**Data.** [[system-root]] holds the only stored state: the config (intent), the logs (facts: the host's session logs
+and the tower's streams) and the collections (files kept for later). Everything else is computed from them ([[logs-are-facts]]); what is kept to skip
 computing it again lives in a cache that is never authoritative ([[fold-checkpoints]]).
 
 **Where to start.** `AGENTS.md` for the rules, then [[session-lifecycle]] for one session end to end, then
