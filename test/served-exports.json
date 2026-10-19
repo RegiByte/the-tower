@@ -639,6 +639,7 @@
     ],
     "/reads.js": [
       "failRead",
+      "failureAt",
       "failureOf",
       "heldHandlers",
       "landRead",

@@ -8,11 +8,17 @@ import type { Handlers, StateEffect } from './loop.ts'
  * held reads on `/loop.js`. The tower serves this module as `/reads.js`.
  */
 
-/** What a slot read last (`last`, at its own key, while reading anew), or why its read failed. */
+/** A value a slot held, at the key it was read at. */
+export type Last<V> = { key: string; value: V } | undefined
+
+/**
+ * A slot read at `key`: being read, read, or failed to be read. While reading anew, and once that read failed, it holds
+ * `last`, what it read before, at its own key.
+ */
 export type Held<V> =
-  | { t: 'reading'; key: string; n: number; last: { key: string; value: V } | undefined }
+  | { t: 'reading'; key: string; n: number; last: Last<V> }
   | { t: 'read'; key: string; n: number; value: V }
-  | { t: 'failed'; key: string; n: number; message: string }
+  | { t: 'failed'; key: string; n: number; message: string; last: Last<V> }
 
 /** Every slot's read, by slot, and the number the last read started took. */
 export type Reads<V> = { n: number; held: Readonly<Record<string, Held<V>>> }
@@ -32,16 +38,23 @@ export type ReadEffect = { type: 'read'; slot: string; key: string; n: number } 
 export type ReadStep<V> = [Reads<V>, ReadEffect[]]
 
 /** The value a slot holds, read at any key. */
-export const valueOf = <V>(h: Held<V> | undefined): V | undefined => (h?.t === 'read' ? h.value : h?.t === 'reading' ? h.last?.value : undefined)
+export const valueOf = <V>(h: Held<V> | undefined): V | undefined => held(h)?.value
 
 /** The value a slot holds as read at `key`. */
-export const valueAt = <V>(h: Held<V> | undefined, key: string): V | undefined =>
-  h?.t === 'read' ? (h.key === key ? h.value : undefined) : h?.t === 'reading' && h.last?.key === key ? h.last.value : undefined
+export const valueAt = <V>(h: Held<V> | undefined, key: string): V | undefined => {
+  const last = held(h)
+  return last?.key === key ? last.value : undefined
+}
 
-export const failureOf = <V>(h: Held<V> | undefined) => (h?.t === 'failed' ? h.message : undefined)
+/** Why a slot's read failed, while it holds nothing. */
+export const failureOf = <V>(h: Held<V> | undefined) => (h?.t === 'failed' && !h.last ? h.message : undefined)
 
-const held = <V>(h: Held<V> | undefined) =>
-  h?.t === 'read' ? { key: h.key, value: h.value } : h?.t === 'reading' ? h.last : undefined
+/** Why a slot's read failed, while it holds nothing read at `key`. */
+export const failureAt = <V>(h: Held<V> | undefined, key: string) => (h?.t === 'failed' && h.last?.key !== key ? h.message : undefined)
+
+function held<V>(h: Held<V> | undefined): Last<V> {
+  return h?.t === 'read' ? { key: h.key, value: h.value } : h?.last
+}
 
 const put = <V>(r: Reads<V>, slot: string, h: Held<V>): Reads<V> => ({ n: Math.max(r.n, h.n), held: { ...r.held, [slot]: h } })
 
@@ -51,7 +64,7 @@ export function refreshRead<V>(r: Reads<V>, slot: string, key: string): ReadStep
   return [put(r, slot, { t: 'reading', key, n, last: held(r.held[slot]) }), [{ type: 'read', slot, key, n }]]
 }
 
-/** Reads `slot` at `key` unless it holds that key's read already, or is reading it, or failed to. */
+/** Reads `slot` at `key` unless it holds that key's read already, or is reading it, or failed to: a failed read is read again only when asked (`refreshRead`). */
 export const wantRead = <V>(r: Reads<V>, slot: string, key: string): ReadStep<V> =>
   r.held[slot]?.key === key ? [r, []] : refreshRead(r, slot, key)
 
@@ -65,8 +78,7 @@ export function failRead<V>(r: Reads<V>, slot: string, n: number, message: strin
   const h = r.held[slot]
   if (h?.n !== n) return [r, []]
   const last = held(h)
-  if (last) return [put(r, slot, { t: 'read', key: last.key, n, value: last.value }), [{ type: 'toast', message }]]
-  return [put(r, slot, { t: 'failed', key: h.key, n, message }), [{ type: 'draw' }]]
+  return [put(r, slot, { t: 'failed', key: h.key, n, message, last }), [last ? { type: 'toast', message } : { type: 'draw' }]]
 }
 
 /** A step's effects with the state it left, for a handler to return; a step that calls for nothing changed nothing. */

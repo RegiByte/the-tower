@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { failRead, failureOf, landRead, noReads, refreshRead, valueAt, valueOf, wantRead } from '../src/shared/reads.ts'
+import { failRead, failureAt, failureOf, landRead, noReads, refreshRead, valueAt, valueOf, wantRead } from '../src/shared/reads.ts'
 
 test('held read: the last read is held while the next is read, and an overtaken read lands on nothing', () => {
   const [first, asked] = wantRead(noReads<string>(), 'a', 'v1')
@@ -25,4 +25,13 @@ test('held read: a failure shows only while nothing is held, else it is a toast 
   assert.deepEqual(toasted, [{ type: 'toast', message: 'gone' }])
   assert.equal(failureOf(kept.held.a), undefined)
   assert.equal(valueAt(kept.held.a, 'v1'), 'one')
+})
+
+test('held read: a failed re-read over a held value is not read again at the same key', () => {
+  const [held] = landRead(wantRead(noReads<string>(), 'a', 'v1')[0], 'a', 1, 'one')
+  const [failed] = failRead(wantRead(held, 'a', 'v2')[0], 'a', 2, 'gone')
+  assert.deepEqual(wantRead(failed, 'a', 'v2')[1], [], 'the next draw asks for v2 again and reads it again')
+  assert.equal(valueOf(failed.held.a), 'one')
+  assert.equal(failureAt(failed.held.a, 'v2'), 'gone')
+  assert.equal(failureAt(failed.held.a, 'v1'), undefined)
 })

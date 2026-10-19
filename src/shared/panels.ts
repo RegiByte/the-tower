@@ -72,7 +72,7 @@ import { markdownHtml } from './markdown.ts'
 import { markRanges, wordRanges } from './words.ts'
 import { anchorState, langOf, parseThread, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
-import { failRead, failureOf, landRead, noReads, refreshRead, stepped, valueAt, valueOf, type Held, type ReadEffect, type ReadEvent, type Reads } from './reads.ts'
+import { failRead, failureAt, failureOf, landRead, noReads, refreshRead, stepped, valueAt, valueOf, type Held, type ReadEffect, type ReadEvent, type Reads } from './reads.ts'
 import { identityOf } from './press.ts'
 
 export { markRanges, wordRanges, WORDS_ALIKE, WORDS_EDITS, WORDS_LONGEST, type CharRange } from './words.ts'
@@ -269,8 +269,8 @@ export type ChangesEffect = StateEffect<ChangesReads> | ReadEffect | TimerEffect
 export const scopeOf = (s: ChangesReads, id: string): ChangesScope => s.scopes[id] ?? 'all'
 /** A worker's Changes as last read under the scope it compares now. */
 export const changesOf = (s: ChangesReads, id: string) => valueAt(s.reads.held[id], scopeOf(s, id))
-/** Why a worker's Changes couldn't be read, while none is held. */
-export const changesFailure = (s: ChangesReads, id: string) => failureOf(s.reads.held[id])
+/** Why a worker's Changes couldn't be read, while none is held under the scope it compares. */
+export const changesFailure = (s: ChangesReads, id: string) => failureAt(s.reads.held[id], scopeOf(s, id))
 
 const POLL: ChangesEffect = { type: 'timer/start', id: 'changes', ms: CHANGES_POLL_MS, fire: { type: 'poll' } }
 
@@ -284,7 +284,7 @@ function comparing(s: ChangesReads, id: string, scope: ChangesScope) {
 const marked = (h: Held<ChangesRead>, dir: string, marks: Record<string, string>): Held<ChangesRead> => {
   const mark = (read: ChangesRead) => ({ ...read, viewed: { ...read.viewed, [dir]: marks } })
   if (h.t === 'read') return { ...h, value: mark(h.value) }
-  return h.t === 'reading' && h.last ? { ...h, last: { ...h.last, value: mark(h.last.value) } } : h
+  return h.last ? { ...h, last: { ...h.last, value: mark(h.last.value) } } : h
 }
 
 /** The machine of a viewer's Changes, on `/loop.js`: a renderer runs it with its executors and `timers()`. */
@@ -313,7 +313,12 @@ export const changesHandlers: Handlers<ChangesReads, ChangesEvent, ChangesEffect
     if (liveScope(value.repos, h.key) !== h.key) return comparing(s, slot, 'all')
     return stepped(landRead(s.reads, slot, n, value), into(s))
   },
-  failed: (s, { slot, n, message }) => stepped(failRead(s.reads, slot, n, message), into(s)),
+  failed: (s, { slot, n, message }) => {
+    const [reads, effects] = failRead(s.reads, slot, n, message)
+    const h = reads.held[slot]
+    const shown = h && valueAt(h, h.key) !== undefined
+    return stepped([reads, effects.length && !shown ? [{ type: 'draw' }] : effects], into(s))
+  },
 }
 
 /**
