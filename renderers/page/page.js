@@ -1,5 +1,5 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
@@ -7,6 +7,7 @@ import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changes
 import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
+import { wireSpawn } from '/spawn.js'
 import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -17,7 +18,7 @@ import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '/terminal.
 import { placeOnOpen, watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toaster, toastsCss } from '/toasts.js'
-import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepUnsent, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
  * @import { Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Unresumable, Wait } from '../../src/bridge/board.ts'
@@ -37,6 +38,7 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange, StatsView } from '../../src/shared/panels.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
  * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
+ * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Deleted, Draft } from '../../src/shared/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
@@ -2314,79 +2316,30 @@ $('grip').addEventListener('keydown', (e) => {
   resizeShells($('shell-pane').offsetHeight + step)
 })
 
-/** The draft the spawn dialog was opened with, deleted once its session starts. @type {Draft | undefined} */
-let spawnDraft
-
-/** The spawn form's own fields, by name. @param {string} name */
-const spawnField = (name) => /** @type {HTMLInputElement | HTMLTextAreaElement} */ ($('spawn').querySelector(`[name=${name}]`))
-/** The spawn form's other parts, by selector. @param {string} selector */
-const spawnPart = (selector) => /** @type {HTMLElement} */ ($('spawn').querySelector(selector))
-
-/** @param {string} projectId @param {{ d: Draft, text: string }} [sent] */
-function openSpawn(projectId, sent) {
-  const f = /** @type {Floor} */ (floorOf(projectId))
-  const top = floorsTopDown()
-  spawnDraft = sent?.d
-  $('spawn').dataset.project = projectId
-  $('spawn').innerHTML = spawnFormHtml(f, { sign: signHtml(top.length - top.indexOf(f), f.name), draft: sent && titleOf(sent.text) })
-  spawnField('prompt').value = sent?.text ?? ''
-  syncSpawn()
-  $('spawn').returnValue = ''
-  $('spawn').showModal()
-  spawnField('prompt').focus()
-}
-
-/** The form's values as they stand, its branch placeholder, callsign's refusal and summary redrawn from them. */
-function syncSpawn() {
-  const f = /** @type {Floor} */ (floorOf(/** @type {string} */ ($('spawn').dataset.project)))
-  const form = /** @type {HTMLFormElement} */ ($('spawn').querySelector('form'))
-  const v = spawnForm(f, /** @type {Iterable<[string, FormDataEntryValue]>} */ (new FormData(form)))
-  const refused = callsignRefusal(board, v)
-  spawnField('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
-  spawnField('callsign').setCustomValidity(refused)
-  spawnPart('[data-callsign-why]').textContent = refused
-  spawnPart('[data-summary]').innerHTML = spawnSummaryHtml(f, v)
-  return v
-}
-$('spawn').addEventListener('input', syncSpawn)
-$('spawn').addEventListener('click', (e) => {
-  const close = /** @type {Element} */ (e.target).closest('[data-close]')
-  if (!close || spawnStarting()) return
-  if (close.dataset.close === 'cancel') return $('spawn').close('cancel')
-  if (/** @type {HTMLFormElement} */ ($('spawn').querySelector('form')).reportValidity()) startSpawn(close)
-})
-/** While Start waits on its reply the form stays: closing it would keep as a draft a prompt the worker may already have. */
-$('spawn').addEventListener('cancel', (e) => spawnStarting() && e.preventDefault())
-const spawnStarting = () => $('spawn').querySelector('[data-close=start]')?.getAttribute('aria-busy') === 'true'
-
-/** Start stays busy until the tower answers: the form closes on a new worker and says why when there is none. */
-/** @param {HTMLElement} button */
-async function startSpawn(button) {
-  const f = /** @type {Floor} */ (floorOf(/** @type {string} */ ($('spawn').dataset.project)))
-  const error = spawnPart('[data-spawn-error]')
-  error.textContent = ''
-  const reply = await pressing(button, () => tower.run(...spawnCall(f, syncSpawn()))).catch((err) => ((error.textContent = err.message), undefined))
-  if (!reply) return
-  $('spawn').close('start')
-  if (reply.cut) toast(`worktree ${reply.cut.name} on ${reply.cut.branch}, from ${[...new Set(reply.cut.bases.map((b) => b.base))].join(', ')}`)
-  if (spawnDraft) await deleteSent(spawnDraft)
-  selectArriving(reply.id)
-}
-$('spawn').addEventListener('keydown', (e) => {
-  if (commandOf(board.keys, e, 'field') === 'submit') spawnPart('[data-close=start]').click()
+/**
+ * The new-worker dialog (`wireSpawn`), opened on a floor, or on the draft open in the editor: a prompt it closes on is
+ * kept in that draft, which is deleted once a worker starts on it.
+ * @type {Loop<Spawning<Draft>, SpawnEvent<Draft>>}
+ */
+const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
+  board: () => board,
+  run: (call, body) => tower.run(call, body),
+  sign: (f) => {
+    const top = floorsTopDown()
+    return signHtml(top.length - top.indexOf(f), f.name)
+  },
+  draftIo,
+  held: async (d) => d,
+  kept: (d) => void (draftOpen === d && ($('draft-text').value = d.text)),
+  started: async (id, d) => {
+    if (d) await deleteSent(d)
+    selectArriving(id)
+  },
+  toast,
 })
 
-$('spawn').addEventListener('close', () => $('spawn').returnValue !== 'start' && keepSpawnPrompt())
-
-/** A prompt typed into a form closed without starting is kept in the floor's drafts, or in the draft it was opened on. */
-async function keepSpawnPrompt() {
-  const f = floorOf(/** @type {string} */ ($('spawn').dataset.project))
-  const text = spawnField('prompt').value
-  if (!f || !draftsOf(f)) return
-  const kept = await keepUnsent(draftIo, f.id, spawnDraft, text)
-  if (kept && draftOpen === kept) $('draft-text').value = kept.text
-  if (kept) toast(`${spawnDraft ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(/** @type {string} */ (kept.id))})`)
-}
+/** @param {string} project @param {{ d: Draft, text: string }} [sent] */
+const openSpawn = (project, sent) => spawning.dispatch({ type: 'open', project, on: sent?.d, text: sent?.text ?? '' })
 
 /** @param {HTMLElement} button @param {Call<'resume'>} call */
 async function resume(button, call) {
