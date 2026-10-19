@@ -568,7 +568,8 @@ export type ForkRequest = { name: string; branch: string; from: string }
 /**
  * A worktree named `name` on a new branch in every dir of the project, each started from a snapshot of checkout `from`
  * as it is now, uncommitted work included, and counted from the base `from`'s work is counted from: its Changes start
- * as `from`'s did at the snapshot. Nothing is fetched; everything it needs is in the repo.
+ * as `from`'s did at the snapshot. Origin is fetched first, so that base, and which of the snapshot's commits are on
+ * no remote, are read as origin has them now.
  */
 export const fork = async (project: Project, links: Record<string, string>, { name, branch, from }: ForkRequest): Promise<CutResult> => {
   refuseMain(name)
@@ -580,6 +581,7 @@ export const fork = async (project: Project, links: Record<string, string>, { na
     plan.push({ ...(await preflight(dir, name, branch, links)), source: sources[i] })
   }
 
+  await Promise.all(plan.map(({ dir }) => fetchOrigin(dir, false)))
   const started: (Planned & { start: Start })[] = []
   for (const { source, ...planned } of plan) {
     const against = await againstFor(source)

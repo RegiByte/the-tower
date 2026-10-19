@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -53,7 +53,7 @@ and how its findings reach the author.
   untracked file on top, committed from a copy of its index (`GIT_INDEX_FILE`), so the author's index, files and
   refs are never touched. Each branch records the base the source's work counts from (`againstFor`), so the fork's
   Changes start as the author's did at the snapshot, plus `towerFork` (the snapshot) and `towerFrom` (the checkout).
-  Nothing is fetched or pushed. The fork is a general primitive: trying an alternative from another worker's state
+  Origin is fetched first, as for a cut (else `offline`); nothing is pushed. The fork is a general primitive: trying an alternative from another worker's state
   takes the same call.
 - *Tidy knows a fork.* A fork's snapshot is the source's work, so only commits made on top of it count as unpushed;
   a fork with none is [[absorbed]], `removable` once its reviewer stops, and Tidy deletes its branch. A reviewer that

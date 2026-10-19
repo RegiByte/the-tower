@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
 }
 ---
@@ -52,9 +52,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   ([`writingConfig`](ref:hub/src/worktrees.ts#writingConfig)), since git locks the file. A failure while making, or a
   failed spawn, rolls back what this request made. The default name is a callsign whose name is free on the floor,
   and the worker is started with that session id.
-- **A fork** ([`fork`](ref:hub/src/worktrees.ts#fork), offered through `spawn {cut: {from}}`): the same preflight and
-  making, each repo started from a [`snapshot`](ref:hub/src/worktrees.ts#snapshot) of a checkout (uncommitted work
-  committed from a copy of its index, the source untouched) with no fetch, and recording the source's base plus
+- **A fork** ([`fork`](ref:hub/src/worktrees.ts#fork), offered through `spawn {cut: {from}}`): the same preflight,
+  fetch and making, each repo started from a [`snapshot`](ref:hub/src/worktrees.ts#snapshot) of a checkout (uncommitted work
+  committed from a copy of its index, the source untouched), and recording the source's base plus
   `towerFork` and `towerFrom`. Only commits beyond the snapshot count as its own, so a fork with none is absorbed and
   Tidy removes it once nobody works there ([[reviewer]]).
 - **Links share state, never dependencies.** A link is one folder every worker writes back to the main checkout

@@ -14,7 +14,7 @@ deleted, why removal never forces, how links are checked) are [[tower-cuts-workt
 
 Every verb fetches first ([`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin)) and re-checks what it was offered
 on, since the board it was offered from is a few seconds old and its remote refs as old as the last fetch. A fork
-fetches nothing: everything it needs is in the repo.
+fetches too, so the base it records and the commits it counts as unpushed are origin's as it is now.
 
 - **Cut and fork.** [`cut`](ref:hub/src/worktrees.ts#cut) makes one [[worktree]] per repo at `.worktrees/<name>`,
   on one new branch from a base on origin; [`fork`](ref:hub/src/worktrees.ts#fork) starts it from a
