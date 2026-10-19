@@ -1,5 +1,5 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
@@ -8,6 +8,7 @@ import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
 import { wireSpawn } from '/spawn.js'
+import { attendHandlers, attending } from '/attend.js'
 import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -30,7 +31,7 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { SessionLink } from '../../src/bridge/chains.ts'
  * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
- * @import { Attended, DaemonVerb, EditedRow, Heed, Move, PastCrew, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
+ * @import { DaemonVerb, EditedRow, Heed, Move, PastCrew, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
@@ -158,7 +159,7 @@ async function lookUp(id) {
   return findCard(id)
 }
 /** The workers waiting on you that you heed, in the order to go to them. */
-const waitsOnYou = () => heededWaits(board, heed).map((w) => /** @type {Card} */ (findCard(w.id)))
+const waitsOnYou = () => heededWaits(board, heed()).map((w) => /** @type {Card} */ (findCard(w.id)))
 /** Top floor first, like an elevator panel. */
 const floorsTopDown = () => [...board.floors].reverse()
 /** @param {{ startedAt: number }} a @param {{ startedAt: number }} b */
@@ -400,7 +401,7 @@ function policiesTrayHtml(f) {
 
 /** The floor's offers this viewer heeds, in the attention order: Accept starts the run, ✕ dismisses it for this viewer. @param {Floor} f */
 const offersHtml = (f) => {
-  const offers = heededOffers(board, heed).filter((o) => o.project === f.id)
+  const offers = heededOffers(board, heed()).filter((o) => o.project === f.id)
   return offers.length ? `<div class="offers">${offers.map((o) => `<div class="offer-row" data-hold="offer:${esc(o.key)}"><button class="what" data-policies="${f.id}" data-tip="${esc(`${o.title ?? o.tag}: ${offerWords(board, o, Date.now())}`)}"><b>${esc(o.title ?? o.tag)}</b> <span>offered · ${esc(slotWords(o.slot, policyZone(board, o.project, o.policy), Date.now()))}</span></button>
     <button class="primary" data-policy-call="${esc(JSON.stringify(o.calls.accept))}" data-tip="start the run this slot offers">Accept</button>
     <button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button></div>`).join('')}</div>` : ''
@@ -453,9 +454,9 @@ let floorsOpen = /** @type {Record<string, boolean>} */ ((await tower.store.get(
 let foldedOver
 
 /** The waits and offers on a floor that this viewer heeds. @param {Floor} f */
-const floorWaits = (f) => heededWaits(board, heed).filter((w) => f.cards.some((c) => c.id === w.id))
+const floorWaits = (f) => heededWaits(board, heed()).filter((w) => f.cards.some((c) => c.id === w.id))
 /** @param {Floor} f */
-const floorOffers = (f) => heededOffers(board, heed).filter((o) => o.project === f.id)
+const floorOffers = (f) => heededOffers(board, heed()).filter((o) => o.project === f.id)
 
 /** @param {Floor} f */
 const holdsSelected = (f) => selected !== undefined && selected !== foldedOver && findCard(selected)?.project === f.id
@@ -608,7 +609,7 @@ function paintSky() {
 }
 
 function skylineHtml() {
-  const waiting = heededWaits(board, heed).length
+  const waiting = heededWaits(board, heed()).length
   const working = cards().filter((c) => c.status === 'working').length
   const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
   return `<div class="stars"></div><div class="orb" id="orb"></div>
@@ -685,7 +686,7 @@ const withKeys = (what, id) => (keysLabel(board.keys, id) ? `${what} (${keysLabe
 
 /** Dismiss, beside the status of `c` while it waits on you and you heed it. @param {Card} c */
 function dismissHtml(c) {
-  const wait = heededWaits(board, heed).find((w) => w.id === c.id)
+  const wait = heededWaits(board, heed()).find((w) => w.id === c.id)
   return wait ? `<button class="dismiss" data-dismiss="${esc(wait.key)}" data-tip="${DISMISS_TITLE}">dismiss</button>` : ''
 }
 
@@ -1186,8 +1187,8 @@ function render() {
   const duty = all.filter(onDuty)
   /** @param {Attention} a */
   const count = (a) => duty.filter((c) => c.attention === a).length
-  const waiting = heededWaits(board, heed).length
-  const offered = heededOffers(board, heed).length
+  const waiting = heededWaits(board, heed()).length
+  const offered = heededOffers(board, heed()).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
   paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
     (offered ? `<span class="chip offered some" tabindex="0" data-tip="policies' slots offered and not yet started, that you haven't dismissed: N goes to them after the workers waiting on you"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
@@ -1256,54 +1257,37 @@ function tick() {
   if (!selected && !shelfOpen) paintSky()
   paintLimits()
   for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
-  if (!lostAt && viewer.ring === 'remind' && Date.now() - rungAt >= REMIND_MS) ringFor(attentionOrder(board, heed))
 }
 
-/**
- * What this viewer did about the waits (`Heed` in cards.ts): dismissed, as `viewer.dismissed` keeps them, and visited
- * by N this round. `rungAt`: when a wait last rang.
- * @type {Heed}
- */
-let heed = { dismissed: new Set(viewer.dismissed), visited: new Set() }
-let rungAt = Date.now()
-/** The board the last transitions were read against: none until the first, which is silent. @type {Board | undefined} */
-let attended
+/** The waits and offers visited by N this round (`Heed` in cards.ts); what the viewer dismissed is the attention machine's. @type {ReadonlySet<string>} */
+let visited = new Set()
+/** @returns {Heed} */
+const heed = () => ({ dismissed: attention.state().dismissed, visited })
 
-/** The worker you are looking at: its waits notify and ring for nobody. @param {string} id */
-const watching = (id) => document.hasFocus() && selected === id
+/** The worker you are looking at: its waits notify and ring for nobody. */
+const watched = () => (document.hasFocus() ? selected : undefined)
 
 /**
- * One notification per wait that begins, none for the waits already on the board when the page opened, for those
- * dismissed or for the worker being watched; each closes once its wait is over. The first of them rings.
+ * One notification per wait or offer that begins (`/attend.js`), closed once it is over or dismissed.
  * @type {Map<string, Notification>}
  */
 const alerts = new Map()
-/** @param {Board} next */
-function attend(next) {
-  const { began, ended } = transitions(attended, next)
-  const offers = offerTransitions(attended, next)
-  attended = next
-  for (const a of [...ended, ...offers.ended]) (alerts.get(a.key)?.close(), alerts.delete(a.key))
-  /** @param {Attended} a */
-  const heeded = (a) => !heed.dismissed.has(a.key)
-  const said = [waitsBeganLine(began.filter(heeded), callsign), offersBeganLine(offers.began.filter(heeded))].filter(Boolean).join(' ')
-  if (said) announce(said)
-  const fresh = began.filter((w) => heeded(w) && !watching(w.id))
-  const opened = offers.began.filter(heeded)
-  if (Notification.permission === 'granted') {
-    for (const w of fresh) alerts.set(w.key, showAlert(/** @type {Card} */ (findCard(w.id)), w))
-    for (const o of opened) alerts.set(o.key, showOfferAlert(o))
-  }
-  ringFor([...fresh, ...opened])
-}
-
-/** Rings for the first of `attended` (waits, then offers) not of the worker being watched, unless rings are off. @param {Attended[]} attended */
-function ringFor(attended) {
-  const sound = viewer.ring === 'off' ? undefined : ringingSound(attended, document.hasFocus() ? selected : undefined)
-  if (!sound) return
-  rungAt = Date.now()
-  playSound(SOUNDS[sound])
-}
+const attention = loop({
+  state: attending(),
+  handlers: attendHandlers,
+  ctx: { watched },
+  execute: {
+    ...timers(),
+    announce: ({ text }) => announce(text),
+    notify: ({ attended: a }) => {
+      if (Notification.permission === 'granted') alerts.set(a.key, isOffer(a) ? showOfferAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
+    },
+    unnotify: ({ key }) => (alerts.get(key)?.close(), alerts.delete(key)),
+    sound: ({ sound }) => playSound(SOUNDS[sound]),
+    keep: ({ field, value }) => keepViewer(field, value),
+  },
+})
+attention.dispatch({ type: 'stored', viewer })
 
 /** @type {AudioContext | undefined} */
 let audio
@@ -1329,23 +1313,20 @@ function playSound({ notes, wave, step }) {
 async function rereadViewer() {
   const was = viewer
   viewer = await readViewer(tower.store.get)
-  heed = { ...heed, dismissed: new Set(viewer.dismissed) }
+  attention.dispatch({ type: 'stored', viewer })
   if (viewer.statsRange !== was.statsRange) rangeStats()
   if (viewer.briefMarkdown !== was.briefMarkdown && briefShown) drawBrief()
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */
 function dismissWait(key) {
-  const dismissed = dismissing(board, heed.dismissed, key)
-  keepViewer('dismissed', dismissed)
-  heed = { ...heed, dismissed: new Set(dismissed) }
-  alerts.get(key)?.close()
+  attention.dispatch({ type: 'dismiss', key })
   render()
 }
 
 /** @param {Ring} next */
 function chooseRing(next) {
-  keepViewer('ring', next)
+  attention.dispatch({ type: 'ring', ring: next })
   drawSettings()
 }
 
@@ -1392,7 +1373,7 @@ function showAlert(c, w) {
 let settingsDrawn
 const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([alertsSection(Notification.permission), soundSection(viewer.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer.briefMarkdown)])
+  const html = settingsHtml([alertsSection(Notification.permission), soundSection(attention.state().ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer.briefMarkdown)])
   if (html === settingsDrawn) return
   const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-pref]')
   const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
@@ -1422,12 +1403,12 @@ function moveTo(id) {
 /** To the worker a move key names, in the order every renderer moves in (src/shared/cards.ts). @param {Move | 'waiting'} move */
 function go(move) {
   if (move !== 'waiting') {
-    const to = neighbours(board, selected, heed)[move]
+    const to = neighbours(board, selected, heed())[move]
     return to ? moveTo(to.id) : toast('Nobody is on duty')
   }
-  const attended = attentionOrder(board, heed)
-  const step = nextAttended(attended, heed.visited, { id: selected, policies: policiesOpen?.project })
-  heed = { ...heed, visited: step.visited }
+  const attended = attentionOrder(board, heed())
+  const step = nextAttended(attended, visited, { id: selected, policies: policiesOpen?.project })
+  visited = step.visited
   if (step.to) return isOffer(step.to) ? openPolicies(step.to.project) : moveTo(step.to.id)
   toast(attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you')
 }
@@ -1882,7 +1863,7 @@ function drawPolicies() {
   const f = floorOf(/** @type {NonNullable<typeof policiesOpen>} */ (policiesOpen).project)
   if (!f) return goHome()
   repaint($('policies-head'), `<span class="label">Policies</span><span class="dim">${esc(f.name)}</span><span class="actions">${CLOSE_HOME}</span>`)
-  drawPanel($('policies-body'), policiesHtml({ board, floor: f, now: Date.now(), dismissed: heed.dismissed }), {})
+  drawPanel($('policies-body'), policiesHtml({ board, floor: f, now: Date.now(), dismissed: attention.state().dismissed }), {})
 }
 
 /**
@@ -2734,6 +2715,7 @@ function markLost(lost) {
   if (lost === (lostAt !== undefined)) return
   lostAt = lost ? Date.now() : undefined
   document.body.classList.toggle('lost', lost)
+  attention.dispatch({ type: 'lost', lost })
 }
 
 tower.onBoardError((err) => {
@@ -2749,7 +2731,7 @@ tower.subscribe(async (next) => {
   boardError = undefined
   markLost(false)
   showBoardError()
-  attend(next)
+  attention.dispatch({ type: 'board', board: next })
   noticeShown(cards())
   freshArchives()
   pruneDraftTitles(board.floors)
