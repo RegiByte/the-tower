@@ -1,5 +1,5 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, can, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, REMIND_MS, SOUNDS, attentionOrder, dismissing, heededOffers, heededWaits, isOffer, nextAttended, offerTransitions, offersBeganLine, ringingSound, transitions, GIST_MARK, waitsBeganLine, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, branchPlaceholder, callsignRefusal, cutNameOf, callOf, can, whileOffered, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, spawnCall, spawnForm, spawnFormHtml, sendTarget, spawnSummaryHtml, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
@@ -170,7 +170,7 @@ const sessionHtml = (c, over) => {
     ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.project, c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${satellitesHtml(c)}
-    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
   </div>`
 }
 
@@ -243,7 +243,7 @@ const heldHtml = (verb, label, inner, cls = '') =>
 
 /** @param {Card} c @param {CardConversation} conv */
 const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`
+  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(conv, 'resume')))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`
   : can(conv, 'goto') ? `<span class="when">→ ${/** @type {SessionLink} */ (conv.resumedBy).callsign}</span>` : ''
 
 /** @param {Card} c @param {CardConversation} conv */
@@ -270,12 +270,12 @@ const dirHtml = (f, dir, hub) =>
 
 /**
  * A verb on a worktree or kept branch, its call on the button.
- * @param {FloorWorktree | FloorBranch} thing
- * @param {(FloorWorktree | FloorBranch)['verbs'][number]} verb
+ * @param {string} name
+ * @param {(FloorWorktree | FloorBranch)['actions'][number]} action
  */
-const wtVerbHtml = (thing, verb) => verb === 'discard'
-  ? `<button class="danger" data-discard="${esc(JSON.stringify(/** @type {FloorWorktree} */ (thing).calls.discard))}" data-wt-name="${esc(thing.name)}" data-tip="throw its work away: each tip is noted on its review thread first">${WORKTREE_VERB_NAME[verb]}</button>`
-  : `<button data-wt-call="${esc(JSON.stringify(/** @type {Record<string, Call>} */ (thing.calls)[verb]))}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}">${WORKTREE_VERB_NAME[verb]}</button>`
+const wtVerbHtml = (name, { verb, call }) => verb === 'discard'
+  ? `<button class="danger" data-discard="${esc(JSON.stringify(call))}" data-wt-name="${esc(name)}" data-tip="throw its work away: each tip is noted on its review thread first">${WORKTREE_VERB_NAME[verb]}</button>`
+  : `<button data-wt-call="${esc(JSON.stringify(call))}" data-wt-verb="${verb}" data-wt-name="${esc(name)}">${WORKTREE_VERB_NAME[verb]}</button>`
 
 /** A button that opens what landing changed on a carried branch. @param {{ project: string, branch: string }} landing */
 const landingButtonHtml = (landing) =>
@@ -287,12 +287,12 @@ const worktreeHtml = (f, w) => {
   const where = w.repos[0].path
   const title = [`${w.repos.map((r) => r.path).join('\n')}`, ...risk, ...goneBases(w.repos), w.state === 'carried' ? carriedLine(w.repos) : '', w.sessions.length ? `in use by ${w.sessions.join(', ')}` : ''].filter(Boolean).join('\n')
   const workers = workersIn(f, w.name)
-  const resumable = workers.find((c) => c.calls.resume)
+  const resumable = workers.find((c) => can(c, 'resume'))
   return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
     <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>
     ${w.state === 'carried' ? landingButtonHtml({ project: f.id, branch: worktreeBranch(w) }) : ''}
-    ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(resumable.calls.resume))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
-    ${w.verbs.map((v) => wtVerbHtml(w, v)).join('')}
+    ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(resumable, 'resume')))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
+    ${w.actions.map((a) => wtVerbHtml(w.name, a)).join('')}
     ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
     ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${workers.length ? `<span class="who-line">${workers.map((c) => `<a class="who" href="#${c.id}" data-tip="${esc(`${c.callsign} · ${statusName(c)}`)}">${c.callsign}</a> <span>${esc(statusName(c))}</span>`).join(' · ')}</span>` : ''}
@@ -302,7 +302,7 @@ const worktreeHtml = (f, w) => {
 /** @param {Floor} f @param {FloorBranch} b */
 const keptBranchHtml = (f, b) =>
   `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}">
-    <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${b.carried ? landingButtonHtml({ project: f.id, branch: b.name }) : ''}${b.verbs.map((v) => wtVerbHtml(b, v)).join('')}</div>`
+    <span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${b.carried ? landingButtonHtml({ project: f.id, branch: b.name }) : ''}${b.actions.map((a) => wtVerbHtml(b.name, a)).join('')}</div>`
 
 /** The floor's worktrees and the branches the tower kept. @param {Floor} f */
 const worktreesHtml = (f) => `<div class="worktrees">
@@ -524,7 +524,7 @@ const limitHtml = (r, now) => {
 /** Each probe under the limits: its line, its state's colour on the lamp, and in full on hover. @param {number} now */
 const probesHtml = (now) =>
   board.probes.map((p) => `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}${
-    p.calls.run ? `<button class="probe-run" data-probe-run="${esc(p.name)}" data-tip="read it now: at most once a minute">read now</button>` : ''}</small>`).join('')
+    can(p, 'run') ? `<button class="probe-run" data-probe-run="${esc(p.name)}" data-tip="read it now: at most once a minute">read now</button>` : ''}</small>`).join('')
 
 /** Extra usage while it is on, as the probe last read it. @param {number} now */
 const extraHtml = (now) => {
@@ -630,7 +630,7 @@ function barHtml(c) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
   repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
-    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(c.calls.resume))}">${ICON.resume} Resume</button>`}
+    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} Resume</button>`}
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
@@ -654,7 +654,7 @@ function leftHtml(c) {
   if (!c.resources.length) return `<h3>${callsign(c.id)} left nothing running</h3>`
   /** @param {CardResource} r */
   const row = (r) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
-    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(r.calls.reap))}" data-tip="end process ${r.pid}">End</button></div>`
+    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(callOf(r, 'reap')))}" data-tip="end process ${r.pid}">End</button></div>`
   return `<h3>Left running by ${callsign(c.id)}</h3>${c.resources.map(row).join('')}
     <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
 }
@@ -935,7 +935,7 @@ const reviewsTally = (c) => {
 
 /** A note is added only on a worker that offers `note`. @param {HTMLElement} button @param {Card} c @param {Partial<Verbs['review/append']>} fields */
 async function addNote(button, c, fields) {
-  const reply = await told(pressing(button, () => tower.run(/** @type {Call<'review/append'>} */ (c.calls.note), { author: board.user.name, ...fields })))
+  const reply = await whileOffered(callOf(c, 'note'), (call) => told(pressing(button, () => tower.run(call, { author: board.user.name, ...fields }))))
   if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
   return reply
 }
@@ -973,7 +973,7 @@ function sendNotes(button, c) {
   const target = /** @type {Card} */ (sendTarget(/** @type {Floor} */ (floorOf(c.project)), threadCheckoutOf(c), pickedFor(c)))
   const thread = threadOf(c)
   const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
-  told(pressing(button, () => tower.run(/** @type {Call<'submit'>} */ (target.calls.submit), { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
+  whileOffered(callOf(target, 'submit'), (call) => told(pressing(button, () => tower.run(call, { text }))))?.then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
 }
 
 /** @param {Card} c */
@@ -1430,10 +1430,10 @@ function go(move) {
   toast(attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you')
 }
 
-/** Those `send-home` ends: the worker and everyone under it that runs, each a card. A worker offering `send-home` has its calls. @param {Card} c */
+/** Those `send-home` ends: the worker and everyone under it that runs, each a card; none once it no longer offers `send-home`. @param {Card} c */
 const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => sendHomeCalls(c).some(([, { id }]) => id === h.id))
 /** @param {Card} c */
-const sendHomeCalls = (c) => /** @type {Call<'kill'>[]} */ (c.calls['send-home'])
+const sendHomeCalls = (c) => callOf(c, 'send-home') ?? []
 
 /** @param {Card} c */
 const sendHomeTitle = (c) => sentHome(c).length === 1 ? `end ${callsign(c.id)}; it can be resumed` : `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
@@ -2057,7 +2057,8 @@ $('transfer').addEventListener('close', async () => {
   if (!id || !draftOpen) return
   const sent = await savedDraft()
   if (!sent) return
-  const reply = await told(tower.run(/** @type {Call<'submit'>} */ (/** @type {Card} */ (findCard(id)).calls.submit), { text: sent.text }))
+  const card = findCard(id)
+  const reply = await whileOffered(card && callOf(card, 'submit'), (call) => told(tower.run(call, { text: sent.text })))
   if (!reply) return
   await deleteSent(sent.d)
   select(id)
@@ -2270,7 +2271,7 @@ function closeShell() {
 
 /** A shell starts on a floor that offers `shell`. @param {HTMLElement} button @param {string} project @param {string} cwd */
 async function spawnShell(button, project, cwd) {
-  const reply = await told(pressing(button, () => tower.run(/** @type {Call<'shell/spawn'>} */ (/** @type {Floor} */ (floorOf(project)).calls.shell), { cwd })))
+  const reply = await whileOffered(callOf(/** @type {Floor} */ (floorOf(project)), 'shell'), (call) => told(pressing(button, () => tower.run(call, { cwd }))))
   if (reply) openShell(reply.id)
 }
 
@@ -2400,18 +2401,19 @@ async function resumeAll(button, f) {
   if (line) toast(line)
 }
 
-/** A worker offering `let-go` has its call. @param {HTMLElement} button @param {Card} c */
+/** @param {HTMLElement} button @param {Card} c */
 async function letGo(button, c) {
   if (!confirm(letGoAsk(c))) return
-  if (await told(pressing(button, () => tower.run(/** @type {Call<'let-go'>} */ (c.calls['let-go']))))) toast(letGoneLine(c))
+  if (await whileOffered(callOf(c, 'let-go'), (call) => told(pressing(button, () => tower.run(call))))) toast(letGoneLine(c))
 }
 
 /** Killing asks first; once killed, the toast offers the worker's resume, read from the board or its floor's archive. */
 /** @param {Card} c */
 async function resumeSentHome(c) {
   const dead = cards().find((d) => d.id === c.id) ?? (await told(tower.archive(c.project)))?.find((d) => d.id === c.id)
-  if (!dead?.calls.resume) return toast(`${callsign(c.id)} can't be resumed now`)
-  const reply = await told(tower.run(dead.calls.resume))
+  const call = dead && callOf(dead, 'resume')
+  if (!call) return toast(`${callsign(c.id)} can't be resumed now`)
+  const reply = await told(tower.run(call))
   if (reply?.t === 'spawned') selectArriving(reply.id)
 }
 
@@ -2466,9 +2468,10 @@ document.addEventListener('click', (e) => {
   if (landing) return told(pressing(landing, () => tower.landing(JSON.parse(/** @type {string} */ (landing.dataset.landing))))).then((l) => l && showLanding(l))
   const discarding = target.closest('[data-discard]')
   if (discarding) {
-    const w = board.floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(w.calls.discard) === discarding.dataset.discard)
-    if (!w || !confirm(discardAsk(w))) return
-    return told(pressing(discarding, () => tower.run(/** @type {Call<'worktree/discard'>} */ (w.calls.discard), { author: board.user.name }))).then((r) => r && toast(discardedLine(r)))
+    const w = board.floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(callOf(w, 'discard')) === discarding.dataset.discard)
+    const call = w && callOf(w, 'discard')
+    if (!w || !call || !confirm(discardAsk(w))) return
+    return told(pressing(discarding, () => tower.run(call, { author: board.user.name }))).then((r) => r && toast(discardedLine(r)))
   }
   const wtCall = target.closest('[data-wt-call]')
   if (wtCall) {
@@ -2481,14 +2484,14 @@ document.addEventListener('click', (e) => {
   const probeRun = target.closest('[data-probe-run]')
   if (probeRun) {
     const probe = /** @type {Board['probes'][number]} */ (board.probes.find((p) => p.name === probeRun.dataset.probeRun))
-    return told(pressing(probeRun, () => tower.run(/** @type {Call<'probe/run'>} */ (probe.calls.run)))).then((r) => r && toast(probedLine(probe.name, r)))
+    return whileOffered(callOf(probe, 'run'), (call) => told(pressing(probeRun, () => tower.run(call))))?.then((r) => r && toast(probedLine(probe.name, r)))
   }
   const tidyCall = target.closest('[data-tidy-call]')
   if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
   if (tidy) {
     const f = /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy)))
-    return confirm(tidyAllAsk(f, Date.now())) && told(pressing(tidy, () => tower.run(/** @type {Call<'tidy'>} */ (f.calls.tidy)))).then((r) => r && toast(tidiedLine(r)))
+    return confirm(tidyAllAsk(f, Date.now())) && whileOffered(callOf(f, 'tidy'), (call) => told(pressing(tidy, () => tower.run(call))))?.then((r) => r && toast(tidiedLine(r)))
   }
   const picked = target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)
@@ -2549,7 +2552,7 @@ document.addEventListener('click', (e) => {
   if (layout) return (keepViewer('diffLayout', layout), drawChanges())
   if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected) }), render())
   const open = target.closest('[data-open]')
-  if (open) return told(pressing(open, () => tower.run(/** @type {Call<'open'>} */ (/** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))).calls.editor), { dir: open.dataset.open })))
+  if (open) return whileOffered(callOf(/** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), 'editor'), (call) => told(pressing(open, () => tower.run(call, { dir: open.dataset.open }))))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
   const doc = target.closest('[data-doc]')
@@ -2584,7 +2587,7 @@ document.addEventListener('click', (e) => {
   const reapable = target.closest('[data-reap]')
   if (reapable) {
     const c = /** @type {Card} */ (findCard(reapable.dataset.reap))
-    if (confirm(reapAsk(c))) told(pressing(reapable, () => tower.run(/** @type {Call<'reap'>} */ (c.calls.reap))))
+    if (confirm(reapAsk(c))) whileOffered(callOf(c, 'reap'), (call) => told(pressing(reapable, () => tower.run(call))))
     return
   }
   const actor = target.closest('[data-act]')
@@ -2592,7 +2595,7 @@ document.addEventListener('click', (e) => {
   if (act === 'send-home') return sendHome(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected)))
   if (act === 'review') {
     const author = /** @type {Card} */ (findCard(selected))
-    return told(pressing(/** @type {HTMLElement} */ (actor), () => tower.run(/** @type {Call<'spawn'>} */ (author.calls.review)))).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${/** @type {NonNullable<Replies['spawn']['cut']>} */ (r.cut).name}, a fork of ${author.checkout}`))
+    return whileOffered(callOf(author, 'review'), (call) => told(pressing(/** @type {HTMLElement} */ (actor), () => tower.run(call))))?.then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${/** @type {NonNullable<Replies['spawn']['cut']>} */ (r.cut).name}, a fork of ${author.checkout}`))
   }
   if (act === 'home') return goHome()
   if (act === 'drive') {
