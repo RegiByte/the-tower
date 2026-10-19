@@ -70,7 +70,9 @@ import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines, highlightOpen } from './highlight.ts'
 import { markdownHtml } from './markdown.ts'
 import { markRanges, wordRanges } from './words.ts'
-import { anchorState, langOf, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { anchorState, langOf, parseThread, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
+import { failRead, failureOf, landRead, noReads, refreshRead, stepped, valueAt, valueOf, type Held, type ReadEffect, type ReadEvent, type Reads } from './reads.ts'
 import { identityOf } from './press.ts'
 
 export { markRanges, wordRanges, WORDS_ALIKE, WORDS_EDITS, WORDS_LONGEST, type CharRange } from './words.ts'
@@ -205,6 +207,127 @@ export const floorThread = (f: Floor, t: FloorThread): ThreadPlace => {
   const worker = workerIn(f, t.checkout)
   return { project: f.id, checkout: t.checkout, id: t.id, state: t.state, offers: t, reader: worker?.onDuty ? worker : undefined }
 }
+
+/** Where a thread is: its project and its item's id in the floor's `reviews`. */
+export type ThreadAt = Pick<ThreadPlace, 'project' | 'checkout' | 'id'>
+
+/** A thread's slot among the viewer's thread reads (`heldHandlers`), read at the `modifiedAt` of its file. */
+export const threadSlot = (at: ThreadAt) => `${at.project}/${at.id}`
+const threadFile = (floors: Floor[], at: ThreadAt) =>
+  floors.find((f) => f.id === at.project)?.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)
+
+/** The read a thread wants at the version of its file the board names; none while it has no file. */
+export const threadWant = (floors: Floor[], at: ThreadAt): Extract<ReadEvent<ReviewThread>, { type: 'want' }> | undefined => {
+  const item = threadFile(floors, at)
+  return item && { type: 'want', slot: threadSlot(at), key: String(item.modifiedAt) }
+}
+
+/** A thread as held: empty while it has no file, `undefined` until its file is first read. */
+export const heldThread = (reads: Reads<ReviewThread>, floors: Floor[], at: ThreadAt): ReviewThread | undefined =>
+  threadFile(floors, at) ? valueOf(reads.held[threadSlot(at)]) : { checkout: at.checkout, messages: [] }
+
+/** Why a thread couldn't be read, while none is held. */
+export const threadFailure = (reads: Reads<ReviewThread>, at: ThreadAt) => failureOf(reads.held[threadSlot(at)])
+
+/** Reads the thread a slot names, its file's text through `text` (`tower.text`). */
+export const readThread = (text: (path: string) => Promise<string>) => (slot: string) => {
+  const at = slot.indexOf('/')
+  return text(`collection/${slot.slice(0, at)}/${REVIEWS}/${encodeURIComponent(slot.slice(at + 1))}`).then(parseThread)
+}
+
+/** A worker's Changes are read again every `CHANGES_POLL_MS` while followed: Claude edits through scripts as often as through its edit tools. */
+export const CHANGES_POLL_MS = 30_000
+
+/**
+ * A viewer's Changes: each worker's read under the scope it compares (`scopes`, all until the viewer picks another),
+ * held by the worker's id, and the worker whose Changes or Reviews are open (`following`), read when they open, when
+ * its turn ends and on a poll.
+ */
+export type ChangesReads = {
+  reads: Reads<ChangesRead>
+  scopes: Readonly<Record<string, ChangesScope>>
+  following: { id: string; status: Card['status'] } | undefined
+}
+
+export const noChanges = (): ChangesReads => ({ reads: noReads(), scopes: {}, following: undefined })
+
+/**
+ * `follow` names the worker whose Changes or Reviews are open, or none, on every draw. `mark` keeps a repo's viewed
+ * marks on the read the viewer marked them on.
+ */
+export type ChangesEvent =
+  | { type: 'follow'; card: Pick<Card, 'id' | 'status'> | undefined }
+  | { type: 'poll' }
+  | { type: 'compare'; id: string; scope: ChangesScope }
+  | { type: 'retry'; id: string }
+  | { type: 'mark'; id: string; repo: Pick<RepoChanges, 'dir' | 'shows'>; marks: Record<string, string> }
+  | Extract<ReadEvent<ChangesRead>, { type: 'got' | 'failed' }>
+
+/** `keep` keeps a repo's viewed marks under `key` in `tower.store`, for every renderer in this browser. */
+export type ChangesEffect = StateEffect<ChangesReads> | ReadEffect | TimerEffect<ChangesEvent> | { type: 'keep'; key: string; marks: Record<string, string> }
+
+export const scopeOf = (s: ChangesReads, id: string): ChangesScope => s.scopes[id] ?? 'all'
+/** A worker's Changes as last read under the scope it compares now. */
+export const changesOf = (s: ChangesReads, id: string) => valueAt(s.reads.held[id], scopeOf(s, id))
+/** Why a worker's Changes couldn't be read, while none is held. */
+export const changesFailure = (s: ChangesReads, id: string) => failureOf(s.reads.held[id])
+
+const POLL: ChangesEffect = { type: 'timer/start', id: 'changes', ms: CHANGES_POLL_MS, fire: { type: 'poll' } }
+
+const into = (s: ChangesReads) => (reads: Reads<ChangesRead>) => ({ ...s, reads })
+const refreshing = (s: ChangesReads, id: string) => stepped(refreshRead(s.reads, id, scopeOf(s, id)), into(s))
+function comparing(s: ChangesReads, id: string, scope: ChangesScope) {
+  const next = { ...s, scopes: { ...s.scopes, [id]: scope } }
+  return refreshing(next, id)
+}
+
+const marked = (h: Held<ChangesRead>, dir: string, marks: Record<string, string>): Held<ChangesRead> => {
+  const mark = (read: ChangesRead) => ({ ...read, viewed: { ...read.viewed, [dir]: marks } })
+  if (h.t === 'read') return { ...h, value: mark(h.value) }
+  return h.t === 'reading' && h.last ? { ...h, last: { ...h.last, value: mark(h.last.value) } } : h
+}
+
+/** The machine of a viewer's Changes, on `/loop.js`: a renderer runs it with its executors and `timers()`. */
+export const changesHandlers: Handlers<ChangesReads, ChangesEvent, ChangesEffect, unknown> = {
+  follow: (s, { card }) => {
+    const was = s.following
+    if (!card) return was ? [{ type: 'state', state: { ...s, following: undefined } }, { type: 'timer/cancel', id: 'changes' }] : []
+    const following = { id: card.id, status: card.status }
+    if (was?.id !== card.id) return [...refreshing({ ...s, following }, card.id), POLL]
+    const turnEnded = was.status === 'working' && card.status !== 'working'
+    if (turnEnded) return refreshing({ ...s, following }, card.id)
+    return was.status === card.status ? [] : [{ type: 'state', state: { ...s, following } }]
+  },
+  poll: (s) => (s.following ? [...refreshing(s, s.following.id), POLL] : []),
+  compare: (s, { id, scope }) => comparing(s, id, scope),
+  retry: (s, { id }) => refreshing(s, id),
+  mark: (s, { id, repo, marks }) => {
+    const h = s.reads.held[id]
+    if (!h) return []
+    const reads = { ...s.reads, held: { ...s.reads.held, [id]: marked(h, repo.dir, marks) } }
+    return [{ type: 'state', state: { ...s, reads } }, { type: 'keep', key: viewedKey(repo), marks }]
+  },
+  got: (s, { slot, n, value }) => {
+    const h = s.reads.held[slot]
+    if (h?.n !== n) return []
+    if (liveScope(value.repos, h.key) !== h.key) return comparing(s, slot, 'all')
+    return stepped(landRead(s.reads, slot, n, value), into(s))
+  },
+  failed: (s, { slot, n, message }) => stepped(failRead(s.reads, slot, n, message), into(s)),
+}
+
+/**
+ * Reads a worker's Changes under a scope, with the viewer's marks on each repo: what the executor of the Changes'
+ * `read` (`reading`) reads. `repos` reads them at `changesPath`, `viewed` the marks kept under a key (`tower.store`),
+ * `now` stamps the read.
+ */
+export const readChanges =
+  (io: { repos(id: string, scope: ChangesScope): Promise<RepoChanges[]>; viewed(key: string): Promise<Record<string, string> | undefined>; now(): number }) =>
+  async (id: string, scope: ChangesScope): Promise<ChangesRead> => {
+    const repos = await io.repos(id, scope)
+    const marks = await Promise.all(repos.map((repo) => io.viewed(viewedKey(repo))))
+    return { repos, at: io.now(), viewed: Object.fromEntries(repos.map((repo, i) => [repo.dir, marks[i] ?? {}])) }
+  }
 
 /**
  * What the viewer holds of a thread: the thread as last read (`failed`, why that read failed), the reader's Changes,

@@ -443,6 +443,7 @@
       "verdictOf"
     ],
     "/panels.js": [
+      "CHANGES_POLL_MS",
       "DIFF_LAYOUTS",
       "DIFF_LAYOUT_KEY",
       "DIFF_LAYOUT_LABEL",
@@ -456,7 +457,10 @@
       "anchorWhere",
       "cardThread",
       "changedFiles",
+      "changesFailure",
+      "changesHandlers",
       "changesHtml",
+      "changesOf",
       "changesPath",
       "drawPanel",
       "duration",
@@ -467,6 +471,7 @@
       "fileRows",
       "fileSpansHtml",
       "floorThread",
+      "heldThread",
       "hours",
       "isCommitScope",
       "isFolded",
@@ -478,6 +483,7 @@
       "liveScope",
       "markRanges",
       "marksToggled",
+      "noChanges",
       "notedLines",
       "offerWords",
       "panelsCss",
@@ -487,15 +493,21 @@
       "policiesHtml",
       "policyDoneLine",
       "policyZone",
+      "readChanges",
+      "readThread",
       "reviewsHtml",
+      "scopeOf",
       "spanned",
       "splitRows",
       "spotSelector",
       "statsHtml",
       "statsQuery",
+      "threadFailure",
       "threadFiles",
       "threadItemFiles",
+      "threadSlot",
       "threadViewOf",
+      "threadWant",
       "usd",
       "viewedCount",
       "viewedKey",
@@ -624,6 +636,19 @@
     "/loop.js": [
       "loop",
       "timers"
+    ],
+    "/reads.js": [
+      "failRead",
+      "failureOf",
+      "heldHandlers",
+      "landRead",
+      "noReads",
+      "reading",
+      "refreshRead",
+      "stepped",
+      "valueAt",
+      "valueOf",
+      "wantRead"
     ]
   }
 }

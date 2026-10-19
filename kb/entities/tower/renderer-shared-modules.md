@@ -5,11 +5,11 @@
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
   "reviewed": "2026-10-19",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts"]
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread"]
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
 on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
@@ -48,11 +48,20 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   key handler, each natural key a command of the keymap the config can rebind
   ([`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) stays for renderers on the default keys).
 - `policies.ts`: a policy's rule and slots in words, and where it stands ([[policies]]).
+- `loop.ts`: a machine as data ([`loop`](ref:hub/src/shared/loop.ts#loop)): a handler per event type returns effects,
+  the next state among them, and the renderer's executors run the rest (a fetch, a draw, `tower.store`); a timer is an
+  effect carrying the event it fires, so a poll's life is in what the handlers return.
+- `reads.ts`: reads a viewer holds ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)): the last read held
+  until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held. `panels.ts`
+  runs them for review threads ([`heldThread`](ref:hub/src/shared/panels.ts#heldThread), read once per version of the
+  file the board names) and a worker's Changes ([`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
+  [[changes-view]]), so every renderer reads both the same way.
 - `keymap.ts`: every command a renderer runs from the keyboard, as data ([`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS)),
   matched against `board.keys` (the config's `keys` over the defaults), with the words for chords, the `?` sheet and
   `aria-keyshortcuts` ([[keymap]]).
 
-A module here holds no renderer's state: each renderer keeps its own and hands it in. `panels.ts` keeps only a cache
+A module here holds no renderer's state: each renderer keeps its own and hands it in (a machine's state lives in the
+renderer's `loop`). `panels.ts` keeps only a cache
 of highlighted files, by their diff's hash.
 
 Their exports are part of the renderer API's contract ([[renderer-api-contract]]): a renderer kept apart from the
