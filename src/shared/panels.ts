@@ -74,6 +74,7 @@ import { anchorState, langOf, parseThread, repoName, REVIEWS, threadId, unseenBy
 import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
 import { failRead, failureAt, failureOf, landRead, noReads, refreshRead, stepped, valueAt, valueOf, type Held, type ReadEffect, type ReadEvent, type Reads } from './reads.ts'
 import { identityOf } from './press.ts'
+import { VIEWER_KEYS } from './viewer.ts'
 
 export { markRanges, wordRanges, WORDS_ALIKE, WORDS_EDITS, WORDS_LONGEST, type CharRange } from './words.ts'
 
@@ -149,7 +150,7 @@ export type ChangesView = {
 export type DiffLayout = 'unified' | 'split'
 export const DIFF_LAYOUTS: DiffLayout[] = ['unified', 'split']
 /** Where a viewer's layout is kept in `tower.store`; `unified` while none is. */
-export const DIFF_LAYOUT_KEY = 'changes.layout'
+export const DIFF_LAYOUT_KEY = VIEWER_KEYS.diffLayout
 export const DIFF_LAYOUT_LABEL: Record<DiffLayout, string> = { unified: 'Unified', split: 'Split' }
 export const DIFF_LAYOUT_MEANS: Record<DiffLayout, string> = {
   unified: 'each diff as one column: removed lines above the lines added in their place',

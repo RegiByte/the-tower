@@ -650,6 +650,11 @@
       "valueAt",
       "valueOf",
       "wantRead"
+    ],
+    "/viewer.js": [
+      "VIEWER_DEFAULT",
+      "VIEWER_KEYS",
+      "readViewer"
     ]
   }
 }

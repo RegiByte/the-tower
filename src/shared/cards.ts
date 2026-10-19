@@ -8,6 +8,7 @@ import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
+import { VIEWER_KEYS } from './viewer.ts'
 
 export { tagOf } from './tags.ts'
 
@@ -336,7 +337,7 @@ export const crewFold = (cards: Card[], c: Card) => {
 export const goneHomeLine = (folded: number) => `${folded} gone home`
 
 /** The hirers whose gone-home crew a viewer unfolded, by card id, kept in `tower.store` for every renderer of theirs. */
-export const CREWS_UNFOLDED_KEY = 'crews.unfolded'
+export const CREWS_UNFOLDED_KEY = VIEWER_KEYS.crewsUnfolded
 
 const reportsUpToDuty = (cards: Card[], c: Card): boolean => {
   const up = c.reportsTo === undefined ? undefined : cards.find((h) => h.id === c.reportsTo)
@@ -402,7 +403,7 @@ export const moveOfKey = (e: { code: string; altKey: boolean; metaKey: boolean; 
  */
 export type Heed = { dismissed: ReadonlySet<string>; visited: ReadonlySet<string> }
 
-export const DISMISSED_KEY = 'waits.dismissed'
+export const DISMISSED_KEY = VIEWER_KEYS.dismissed
 
 /** The waits a viewer hasn't dismissed, in the board's order. */
 export const heededWaits = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.waiting.filter((w) => !heed.dismissed.has(w.key))
@@ -465,7 +466,7 @@ const nextIn = <T extends { key: string }>(waits: T[], visited: ReadonlySet<stri
 /** How often a viewer wants a wait rung: once as it begins, again every `REMIND_MS` while it waits unwatched, or never. */
 export type Ring = 'once' | 'remind' | 'off'
 export const RINGS: Ring[] = ['once', 'remind', 'off']
-export const RING_KEY = 'waits.ring'
+export const RING_KEY = VIEWER_KEYS.ring
 export const REMIND_MS = 30_000
 /** @deprecated The settings popover names each ring: `RING_LABEL` and `RING_MEANS` of /settings.js. */
 export const RING_NAME: Record<Ring, string> = { once: 'ring once', remind: 'remind every 30s', off: 'silent' }

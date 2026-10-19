@@ -5,11 +5,11 @@
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
   "reviewed": "2026-10-19",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread"]
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/viewer.ts#readViewer"]
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js`, `/viewer.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
 on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
@@ -56,6 +56,10 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   runs them for review threads ([`heldThread`](ref:hub/src/shared/panels.ts#heldThread), read once per version of the
   file the board names) and a worker's Changes ([`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
   [[changes-view]]), so every renderer reads both the same way.
+- `viewer.ts`: what a viewer keeps in `tower.store` that every renderer reads alike, one record (`Viewer`: dismissals,
+  the ring, the brief rendered or raw, the diff layout, unfolded crews, the Stats range) under the keys it has always
+  had, read whole by [`readViewer`](ref:hub/src/shared/viewer.ts#readViewer) on every board and when a framed page
+  writes to the store, since `tower.store` has no change event ([[viewer-prefs]]).
 - `keymap.ts`: every command a renderer runs from the keyboard, as data ([`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS)),
   matched against `board.keys` (the config's `keys` over the defaults), with the words for chords, the `?` sheet and
   `aria-keyshortcuts` ([[keymap]]).
