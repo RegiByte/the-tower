@@ -10,7 +10,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, sentHome, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -80,7 +80,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   const probes = board.probes.map((p) => {
     const said = PROBE_ATTENTION[p.state] === 'quiet' ? p.name : `${p.name} ${PROBE_STATE_NAME[p.state]}`
     const inner = `<span class="lamp"></span><small>${esc(said)}</small>`
-    return p.calls.run
+    return can(p, 'run')
       ? `<button class="hud-probe ${PROBE_ATTENTION[p.state]}" data-probe-run="${esc(p.name)}" data-tip="${esc(`${probeTitle(p, now)}\n\nclick to read it now: at most once a minute`)}">${inner}</button>`
       : `<span class="hud-probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}">${inner}</span>`
   })
@@ -502,17 +502,19 @@ export function shellPickHtml(p: Plan, board: Board, first: string, held: HeldWh
   return `<div class="side-title"><h2>New shell</h2>${closeButton}</div>${floors.join('') || '<div class="past">no floor starts shells now</div>'}`
 }
 
+type TreeAction = Floor['worktrees'][number]['actions'][number] | Floor['branches'][number]['actions'][number]
+
 /** A verb on a worktree or kept branch, its call on the button. */
-const wtVerb = (thing: { name: string; calls: Record<string, unknown> }, verb: Exclude<keyof typeof WORKTREE_VERB_NAME, 'discard'>, armed: (key: string) => boolean) => {
-  const call = JSON.stringify(thing.calls[verb])
-  const attrs = `data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(thing.name)}"`
+const wtVerb = (name: string, { verb, call: c }: Exclude<TreeAction, { verb: 'discard' }>, armed: (key: string) => boolean) => {
+  const call = JSON.stringify(c)
+  const attrs = `data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(name)}"`
   const ask = WORKTREE_ASK[verb]
-  return ask ? askingButton(armed(`wt ${call}`), attrs, WORKTREE_VERB_NAME[verb], `${WORKTREE_VERB_NAME[verb]} ${thing.name}`, ask(thing.name)) : `<button ${attrs}>${WORKTREE_VERB_NAME[verb]}</button>`
+  return ask ? askingButton(armed(`wt ${call}`), attrs, WORKTREE_VERB_NAME[verb], `${WORKTREE_VERB_NAME[verb]} ${name}`, ask(name)) : `<button ${attrs}>${WORKTREE_VERB_NAME[verb]}</button>`
 }
 
 /** Throwing away an at-risk worktree's work, asked first with what it loses (`discardAsk`). */
-const discardButton = (w: Floor['worktrees'][number], armed: (key: string) => boolean) => {
-  const call = JSON.stringify(w.calls.discard)
+const discardButton = (w: Floor['worktrees'][number], discard: Extract<TreeAction, { verb: 'discard' }>['call'], armed: (key: string) => boolean) => {
+  const call = JSON.stringify(discard)
   return askingButton(armed(`wt ${call}`), `class="danger" data-discard="${esc(call)}"`, WORKTREE_VERB_NAME.discard, 'throw its work away: each tip is noted on its review thread first', discardAsk(w))
 }
 
@@ -535,12 +537,12 @@ const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy, armed: (ke
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos), ...(w.state === 'carried' ? [carriedLine(w.repos)] : [])].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
-      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.state === 'carried' ? landingButton({ project: f.id, branch: worktreeBranch(w) }) : ''}${w.verbs.map((v) => (v === 'discard' ? discardButton(w, armed) : wtVerb(w, v, armed))).join('')}
+      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.state === 'carried' ? landingButton({ project: f.id, branch: worktreeBranch(w) }) : ''}${w.actions.map((a) => (a.verb === 'discard' ? discardButton(w, a.call, armed) : wtVerb(w.name, a, armed))).join('')}
       ${w.state === 'lost' ? '' : shellButton(places.find((pl) => pl.worktree === w.name), `new shell in ${w.name}`, held)}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
   ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${
-    b.carried ? landingButton({ project: f.id, branch: b.name }) : ''}${b.verbs.map((v) => wtVerb(b, v, armed)).join('')}</div>`),
+    b.carried ? landingButton({ project: f.id, branch: b.name }) : ''}${b.actions.map((a) => wtVerb(b.name, a, armed)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
@@ -552,7 +554,7 @@ const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
       can(conv, 'goto') ? `<button data-desk="${esc(conv.resumedBy!.id)}">→ ${esc(conv.resumedBy!.callsign)}</button>`
         : !can(conv, 'resume') ? ''
         : held('resume') ? heldButton(held('resume')!, 'icon-btn', 'resume this conversation', ICON.resume)
-        : `<button class="icon-btn" data-resume="${esc(JSON.stringify(conv.calls.resume))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
+        : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(conv, 'resume')))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
 
 /** Resumes every worker the host stopped or lost on a floor, asked first with their names. */
 const resumeAllButton = (f: Floor, armed: (key: string) => boolean, held: HeldWhy) => {
