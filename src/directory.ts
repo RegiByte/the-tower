@@ -57,7 +57,7 @@ import type { Shown } from './bridge/facts.ts'
 import type { Replies } from './shared/api.ts'
 import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
-import { heldWords, slotWords, standingWords } from './shared/policies.ts'
+import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { BoardMsg } from './shared/shelf-page.ts'
 import { ago, awayHiresOf, base, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
@@ -203,7 +203,7 @@ const runLines = (floor: Floor, run: NonNullable<Card['run']>): string[] => {
   return [
     `You are run ${run.n} of policy "${run.title ?? run.tag}" (${run.tag}), ${slot}, started ${run.start === 'auto' ? 'on its own' : run.start === 'hand' ? 'by hand' : 'from an offer'}.`,
     `\`tower runs\` lists its earlier runs and what each left; \`tower read ${run.tag}\` is the policy. When the policy says nobody watches, end with \`tower home <your callsign>\`.`,
-    ...(run.check?.out ? [`Its check found: ${run.check.out}`] : []),
+    ...(checkFound(run.check) ? [`Its check found: ${checkFound(run.check)}`] : []),
   ]
 }
 
@@ -593,7 +593,7 @@ const runReadLines = (run: RunRead, tz: string | undefined, now: number): string
     ...(run.current ? [] : [`older version ${shortHash(run.hash)}`]),
   ].join('  '),
   ...run.worker.shown.map((s) => `        showed ${s}`),
-  ...(run.check?.out ? [`        its check found: ${run.check.out.split('\n').join(' ')}`] : []),
+  ...(checkFound(run.check) ? [`        its check found: ${checkFound(run.check)!.split('\n').join(' ')}`] : []),
   ...(run.worker.answer ? answerLines(run.worker.answer) : []),
 ]
 
@@ -702,9 +702,10 @@ switch (verb) {
     const policy = policyNamed(floor, rest[0])
     const name = `"${policy.title ?? policy.tag}" (${policy.tag})`
     if (flag === 'approve') {
-      if (!policy.calls.approve) throw new CliError(policy.header ? `${name} is approved as it is now (${shortHash(policy.hash)})` : `${name} is invalid: ${standingWords(policy, board, now)}`)
+      if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
+      if (!policy.calls.approve) throw new CliError(`${name} is approved as it is now (${shortHash(policy.hash)})`)
       await command(...withBy(policy.calls.approve))
-      const words = policy.header!.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
+      const words = policy.header.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
       console.log(`Approved ${name} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}`)
       break
     }
@@ -712,7 +713,7 @@ switch (verb) {
     const call = offer?.calls.accept ?? policy.calls.run
     if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.header && policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
     const ran = await command<Replies['policy/run']>(...withBy(call))
-    console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header!.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
+    console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header?.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
     break
   }
   case 'runs': {
@@ -726,7 +727,7 @@ switch (verb) {
     const res = await towerGet(`/runs/${floor.id}?policy=${encodeURIComponent(id)}&limit=${args.limit}`)
     if (!res.ok) throw new CliError(`The tower answered ${res.status} for the runs of ${id}: ${await res.text()}`)
     const runs: RunRead[] = await res.json()
-    const title = `${policy?.title ?? own?.title ?? id} (${policy?.tag ?? own!.tag})${policy?.rule ? ` · ${policy.rule}` : ''}`
+    const title = `${policy?.title ?? own?.title ?? id} (${policy?.tag ?? own!.tag})${policy?.header ? ` · ${policy.rule}` : ''}`
     if (!runs.length) {
       console.log(`${title} · no runs yet`)
       break

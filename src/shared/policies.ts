@@ -6,7 +6,7 @@
  */
 import { Cron } from 'croner'
 import type { Board } from '../bridge/board.ts'
-import type { CheckResult, Outcome, PolicyView } from '../bridge/policies.ts'
+import type { CheckResult, Outcome, PolicyView, ValidPolicyView } from '../bridge/policies.ts'
 
 export const POLICIES = 'policies'
 
@@ -304,20 +304,18 @@ export type Standing =
   | { t: 'offered'; slot: number; until: number }
   | { t: 'waits'; next?: number; step: Step }
 
-type Valid = PolicyView & { header: PolicyHeader }
-
-const stepOf = (policy: Valid): Step =>
+const stepOf = (policy: ValidPolicyView): Step =>
   policy.live.length >= policy.header.live ? 'held' : policy.header.check ? 'check' : policy.header.start === 'auto' && policy.approved ? 'run' : 'offer'
 
-export const standing = (policy: PolicyView, now: number): Standing => {
-  if (!policy.header) return { t: 'invalid' }
-  const valid = policy as Valid
-  if (valid.header.runner !== undefined) return { t: 'elsewhere', runner: valid.header.runner }
-  const slot = onTimeSlot(valid.header.when, now)
-  if (slot !== undefined && !(policy.seen !== undefined && policy.seen >= slot)) return { t: 'due', slot, step: stepOf(valid) }
+export const standingOf = (policy: ValidPolicyView, now: number): Exclude<Standing, { t: 'invalid' }> => {
+  if (policy.header.runner !== undefined) return { t: 'elsewhere', runner: policy.header.runner }
+  const slot = onTimeSlot(policy.header.when, now)
+  if (slot !== undefined && !(policy.seen !== undefined && policy.seen >= slot)) return { t: 'due', slot, step: stepOf(policy) }
   if (policy.offer && now < policy.offer.until) return { t: 'offered', slot: policy.offer.slot, until: policy.offer.until }
-  return { t: 'waits', next: nextSlot(valid.header.when, now), step: stepOf(valid) }
+  return { t: 'waits', next: nextSlot(policy.header.when, now), step: stepOf(policy) }
 }
+
+export const standing = (policy: PolicyView, now: number): Standing => (policy.header ? standingOf(policy, now) : { t: 'invalid' })
 
 /** A check's result keyed by the policy and slot it ran for. */
 export const checkKey = (policy: string, slot: number) => `${policy}@${slot}`
@@ -335,23 +333,27 @@ export type Action =
  */
 export const decide = (floor: { policies: PolicyView[] }, checked: Map<string, CheckResult>, now: number): Action[] =>
   floor.policies.flatMap((policy): Action[] => {
-    const stands = standing(policy, now)
+    if (!policy.header) return []
+    const stands = standingOf(policy, now)
     if (stands.t !== 'due') return []
     const { slot, step } = stands
-    const auto = policy.header!.start === 'auto' && policy.approved !== undefined
+    const auto = policy.header.start === 'auto' && policy.approved !== undefined
     if (step === 'held') return [{ t: 'pass', policy: policy.id, slot, outcome: 'held' }]
     if (step === 'run') return [{ t: 'run', policy: policy.id, slot }]
     if (step === 'offer') return [{ t: 'pass', policy: policy.id, slot, outcome: 'offered' }]
     const check = checked.get(checkKey(policy.id, slot))
-    if (!check) return [{ t: 'check', policy: policy.id, slot, line: policy.header!.check! }]
-    if (check.exit === 1) return [{ t: 'pass', policy: policy.id, slot, outcome: 'no-work', check }]
-    if (check.exit !== 0) return [{ t: 'pass', policy: policy.id, slot, outcome: 'check-failed', check }]
+    if (!check) return [{ t: 'check', policy: policy.id, slot, line: policy.header.check! }]
+    if ('exit' in check && check.exit === 1) return [{ t: 'pass', policy: policy.id, slot, outcome: 'no-work', check }]
+    if (!('exit' in check) || check.exit !== 0) return [{ t: 'pass', policy: policy.id, slot, outcome: 'check-failed', check }]
     return auto ? [{ t: 'run', policy: policy.id, slot, check }] : [{ t: 'pass', policy: policy.id, slot, outcome: 'offered', check }]
   })
 
+/** What a check found, when it ran and there was work: its stdout. */
+export const checkFound = (check: CheckResult | undefined) => (check && 'exit' in check ? check.out : undefined)
+
 /** Why a check failed, in a line: `exit 127: sh: gh: command not found`, `timed out after 60s`. */
 export const checkWhy = (check: CheckResult) => {
-  const why = check.error ?? `exit ${check.exit}`
+  const why = 'error' in check ? check.error : `exit ${check.exit}`
   const said = check.stderr?.trim().split('\n').at(-1)
   return said ? `${why}: ${said}` : why
 }
@@ -372,25 +374,26 @@ const holders = (policy: PolicyView, board: Board) => {
 }
 
 /** What the runner will do with a slot: a slot due waits for its next tick, a next slot for its moment. */
-const stepWords = (step: Step, policy: Valid, board: Board) => {
+const stepWords = (step: Step, policy: ValidPolicyView, board: Board) => {
   const after = policy.header.start === 'auto' && policy.approved ? 'start on its own' : 'be offered'
   return step === 'held' ? `will be held: ${holders(policy, board)}` : step === 'check' ? `will check for work, then ${after}` : `will ${after}`
 }
+
+const problemsWords = (problems: Problem[]) => problems.map((p) => `${p.path}: ${p.message}`).join(' · ')
 
 /**
  * Where a policy stands, in words: the same reason the runner acts on. The latest slot that passed leads while it is
  * the policy's latest fact.
  */
 export const standingWords = (policy: PolicyView, board: Board, now: number): string => {
-  const stands = standing(policy, now)
-  if (stands.t === 'invalid') return `invalid · ${policy.problems!.map((p) => `${p.path}: ${p.message}`).join(' · ')}`
+  if (!policy.header) return `invalid · ${problemsWords(policy.problems)}`
+  const stands = standingOf(policy, now)
   if (stands.t === 'elsewhere') return `left to the runner "${stands.runner}"`
-  const valid = policy as Valid
-  const tz = valid.header.when.tz
-  if (stands.t === 'due') return `${slotWords(stands.slot, tz, now)} is due: ${stepWords(stands.step, valid, board)}`
+  const tz = policy.header.when.tz
+  if (stands.t === 'due') return `${slotWords(stands.slot, tz, now)} is due: ${stepWords(stands.step, policy, board)}`
   if (stands.t === 'offered') return `${slotWords(stands.slot, tz, now)} is offered, until ${slotWords(stands.until, tz, now)}`
   const passed = policy.passed && (!policy.last || policy.passed.at > policy.last.at) ? `${slotWords(policy.passed.slot, tz, now)} passed, ${OUTCOME_WORDS[policy.passed.outcome](policy.passed.check)}` : undefined
-  const next = stands.next === undefined ? 'no slot ahead' : `${slotWords(stands.next, tz, now)} ${stepWords(stands.step, valid, board)}`
+  const next = stands.next === undefined ? 'no slot ahead' : `${slotWords(stands.next, tz, now)} ${stepWords(stands.step, policy, board)}`
   return [passed, next].filter(Boolean).join(' · ')
 }
 
@@ -402,4 +405,4 @@ export const heldWords = (policy: PolicyView, held: Extract<NonNullable<PolicyVi
 
 /** A policy in a line, as a tray lists it: its rule in words, or why it is invalid. */
 export const policyLine = (policy: PolicyView): string =>
-  policy.header ? ruleWords(policy.header.when) : `invalid · ${policy.problems!.map((p) => `${p.path}: ${p.message}`).join(' · ')}`
+  policy.header ? ruleWords(policy.header.when) : `invalid · ${problemsWords(policy.problems)}`

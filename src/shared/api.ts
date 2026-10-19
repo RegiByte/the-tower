@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.60'
+export const API_VERSION = '1.61'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -89,13 +89,22 @@ export const SPAWN_FIELDS = z.strictObject({
 const policy = z.string().regex(ITEM_ID).describe("The policy: its item's id in the project's `policies` collection.")
 
 /** What a policy's check did at a slot (decision `policies`). */
-const checkResult = z.strictObject({
-  exit: z.int().optional().describe('Its exit code: 0, there is work; 1, none; absent when it timed out or never started.'),
-  ms: z.int().nonnegative(),
-  out: z.string().max(2048).optional().describe('Its stdout when it found work, at most 2,048 characters.'),
-  stderr: z.string().max(500).optional().describe('The end of its stderr when it failed, at most 500 characters.'),
-  error: z.string().optional().describe('Why it has no exit code: it timed out, or could not start.'),
-}) satisfies z.ZodType<CheckResult>
+const checkMs = z.int().nonnegative()
+const checkStderr = z.string().max(500).optional().describe('The end of its stderr when it failed, at most 500 characters.')
+
+const checkResult = z.union([
+  z.strictObject({
+    exit: z.int().describe('Its exit code: 0, there is work; 1, none.'),
+    ms: checkMs,
+    out: z.string().max(2048).optional().describe('Its stdout when it found work, at most 2,048 characters.'),
+    stderr: checkStderr,
+  }),
+  z.strictObject({
+    error: z.string().describe('Why it has no exit code: it timed out, or could not start.'),
+    ms: checkMs,
+    stderr: checkStderr,
+  }),
+]) satisfies z.ZodType<CheckResult>
 
 const OUTCOMES = ['offered', 'no-work', 'held', 'check-failed'] as const satisfies Outcome[]
 const RUN_STARTS = ['auto', 'offer', 'hand'] as const satisfies RunStart[]

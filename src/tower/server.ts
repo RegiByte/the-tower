@@ -1263,7 +1263,7 @@ const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['poli
       const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, undefined, launch) : await spawnIn(project, header.hire.cwd, undefined, launch)
       if (answer.t !== 'spawned') return answer
       const { id } = answer as Replies['spawn']
-      const fact: RunFact = { policy, hash: file.hash, slot: slot === undefined ? null : slotName(slot), id, start, ...(by && { by }), ...(check && { check }) }
+      const fact: RunFact = { policy, hash: file.hash, id, ...(by && { by }), ...(check && { check }), ...(start === 'hand' ? { start, slot: null } : { start, slot: slotName(slot!) }) }
       try {
         await appendPolicyFact(project, RUNS_STREAM, 'r', fact, (facts) => facts.runs.some(([, r]) => r.id === id))
       } catch (err) {

@@ -603,6 +603,7 @@
     "/policies.js": [
       "ON_TIME_MS",
       "POLICIES",
+      "checkFound",
       "checkKey",
       "checkWhy",
       "cronFields",
@@ -616,6 +617,7 @@
       "slotWords",
       "slotsBetween",
       "standing",
+      "standingOf",
       "standingWords",
       "zoneCity"
     ]

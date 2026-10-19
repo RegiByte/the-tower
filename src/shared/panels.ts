@@ -61,10 +61,10 @@ import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import type { Board, Card, Floor } from '../bridge/board.ts'
 import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteCalls } from '../bridge/verbs.ts'
-import { shortHash, type Offer, type PolicyView } from '../bridge/policies.ts'
+import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../bridge/policies.ts'
 import type { Call, Replies } from './api.ts'
 import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
-import { heldWords, POLICIES, slotWords, standingWords } from './policies.ts'
+import { heldWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightCss, highlightLines, highlightOpen } from './highlight.ts'
@@ -908,7 +908,7 @@ export const offerWords = (board: Board, offer: Offer, now: number) => {
 }
 
 /** Whether the policy may start on its own, and whose approval lets it. */
-const approvalHtml = (board: Board, p: PolicyView & { header: NonNullable<PolicyView['header']> }) => {
+const approvalHtml = (board: Board, p: ValidPolicyView) => {
   if (p.header.start === 'ask') return `<span data-tip="every slot is offered: start: &quot;ask&quot;">asks at each slot</span>`
   if (p.approved) return `<span>auto · approved ${esc(shortHash(p.hash))} by ${p.approved.by ? workerHtml(board, p.approved.by) : esc(board.user.name)}</span>`
   if (p.needs?.kind === 'reapprove') return `<span class="unapproved">auto · not approved: edited since ${esc(shortHash(p.needs.approved))}</span>`
@@ -920,7 +920,7 @@ const lastHtml = (board: Board, p: PolicyView, now: number) =>
   p.last ? `<span>last: run ${p.last.n}, ${p.last.slot === null ? `by hand ${esc(slotWords(p.last.at, undefined, now))}` : esc(slotWords(p.last.slot, tzOf(p), now))}, ${workerHtml(board, p.last.id)}</span>` : '<span>never run</span>'
 
 /** Why Run now is off: what the bridge read when it left the call out. */
-const runHeld = (p: PolicyView & { header: NonNullable<PolicyView['header']> }) =>
+const runHeld = (p: ValidPolicyView) =>
   p.header.runner !== undefined ? `left to the runner "${p.header.runner}"` : p.live.length >= p.header.live ? `live is full: ${p.live.length} of ${p.header.live} run` : 'the host is down'
 
 const callHtml = (call: Call<'policy/run' | 'policy/approve'>, label: string, tip: string, cls = '') =>
@@ -929,8 +929,8 @@ const callHtml = (call: Call<'policy/run' | 'policy/approve'>, label: string, ti
 const approveHtml = (p: PolicyView) =>
   p.calls.approve ? callHtml(p.calls.approve, 'Approve', `approve these words (${shortHash(p.hash)}): ${p.header?.start === 'auto' ? 'its slots then start on their own, until it is edited' : 'they start on their own once start is "auto"'}`) : ''
 
-const problemsHtml = (p: PolicyView) =>
-  `<ul class="problems">${p.problems!.map((x) => `<li><code>${esc(x.path)}</code> ${esc(x.message)}</li>`).join('')}</ul>`
+const problemsHtml = (problems: Problem[]) =>
+  `<ul class="problems">${problems.map((x) => `<li><code>${esc(x.path)}</code> ${esc(x.message)}</li>`).join('')}</ul>`
 
 const policyHeadHtml = (v: PoliciesView, p: PolicyView, acts: string) => {
   const dir = v.floor.collections.find((c) => c.id === POLICIES)!.dir
@@ -939,24 +939,23 @@ const policyHeadHtml = (v: PoliciesView, p: PolicyView, acts: string) => {
 }
 
 function policyHtml(v: PoliciesView, p: PolicyView) {
-  if (!p.header) return `<article class="policy invalid">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p)}</article>`
-  const valid = p as PolicyView & { header: NonNullable<PolicyView['header']> }
-  const run = p.calls.run ? callHtml(p.calls.run, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(valid))}">Run now</button>`
+  if (!p.header) return `<article class="policy invalid">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p.problems)}</article>`
+  const run = p.calls.run ? callHtml(p.calls.run, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(p))}">Run now</button>`
   const next = p.next === undefined ? 'no slot ahead' : `next ${slotWords(p.next, tzOf(p), v.now)}`
-  const live = `<span>live ${p.live.length}/${valid.header.live}${p.live.length ? `: ${p.live.map((id) => workerHtml(v.board, id)).join(', ')}` : ''}</span>`
+  const live = `<span>live ${p.live.length}/${p.header.live}${p.live.length ? `: ${p.live.map((id) => workerHtml(v.board, id)).join(', ')}` : ''}</span>`
   return `<article class="policy">${policyHeadHtml(v, p, approveHtml(p) + run)}
-    <p class="rule">${esc(p.rule!)} · ${esc(next)}</p>
+    <p class="rule">${esc(p.rule)} · ${esc(next)}</p>
     <p class="now">${esc(standingWords(p, v.board, v.now))}</p>
-    <p class="facts">${approvalHtml(v.board, valid)}${live}${lastHtml(v.board, p, v.now)}</p></article>`
+    <p class="facts">${approvalHtml(v.board, p)}${live}${lastHtml(v.board, p, v.now)}</p></article>`
 }
 
 /** A policy that needs you: Approve for an auto policy edited since its approval, its problems for an invalid file, the holding runs for a slot held while live is full. Nothing rings for it. */
 const needsHtml = (v: PoliciesView, p: PolicyView) =>
-  p.needs!.kind === 'held'
+  !p.header
+    ? `<div class="need">${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p.problems)}</div>`
+    : p.needs!.kind === 'held'
     ? `<div class="need">${policyHeadHtml(v, p, '')}<p>${esc(heldWords(p, p.needs!, v.now))}${p.next === undefined ? '' : `: end a run for ${esc(slotWords(p.next, tzOf(p), v.now))} to start`}</p></div>`
-    : p.needs!.kind === 'reapprove'
-    ? `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
-    : `<div class="need">${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p)}</div>`
+    : `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
 
 const offerRowHtml = (v: PoliciesView, o: Offer) => {
   const dismissed = v.dismissed.has(o.key)

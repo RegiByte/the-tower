@@ -17,7 +17,7 @@ export const APPROVALS_STREAM = 'approvals'
  * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
  * when it failed (at most 500).
  */
-export type CheckResult = { exit?: number; ms: number; out?: string; stderr?: string; error?: string }
+export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
 
 /** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
 export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
@@ -30,7 +30,7 @@ export type RunStart = 'auto' | 'offer' | 'hand'
  * instant, `null` by hand; `id` the worker's session; `by` the session that accepted or started it (absent: the user,
  * or the runner for `auto`); `check` the check that let it run.
  */
-export type RunFact = { policy: string; hash: string; slot: string | null; id: string; start: RunStart; by?: string; check?: CheckResult }
+export type RunFact = { policy: string; hash: string; id: string; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: string })
 
 /** `s` in `runs/`: a slot the runner saw and didn't start, and why. */
 export type PassFact = { policy: string; hash: string; slot: string; outcome: Outcome; check?: CheckResult }
@@ -66,28 +66,31 @@ export const shortHash = (hash: string) => hash.replace(/^sha256:/, '').slice(0,
 export type HeldBy = { n: number; id: string; callsign?: string; since: number }
 
 /**
- * A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot
+ * A policy on its floor: valid, with its `header`, `rule` and `next`, or invalid, with its `problems`. `rule`: its crons in words; `next`: its next slot
  * (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its
  * latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names;
  * `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval,
  * or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash.
  */
-export type PolicyView = {
+export type PolicyView = PolicyBase & (ValidPolicy | InvalidPolicy)
+
+export type ValidPolicy = { header: PolicyHeader; rule: string; next?: number; needs?: { kind: 'reapprove'; approved: string } | { kind: 'held'; slot: number; by: HeldBy[] } }
+
+export type InvalidPolicy = { header?: undefined; problems: Problem[]; needs?: { kind: 'invalid' } }
+
+export type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
+
+type PolicyBase = {
   id: string
   tag: string
   title?: string
   hash: string
-  header?: PolicyHeader
-  problems?: Problem[]
-  rule?: string
-  next?: number
   approved?: { at: number; by?: string }
   live: string[]
   last?: { n: number; at: number; slot: number | null; id: string; callsign?: string }
   passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
   seen?: number
   offer?: { slot: number; since: number; until: number; check?: CheckResult }
-  needs?: { kind: 'reapprove'; approved: string } | { kind: 'invalid' } | { kind: 'held'; slot: number; by: HeldBy[] }
   calls: { run?: Call<'policy/run'>; approve?: Call<'policy/approve'> }
 }
 
@@ -98,7 +101,7 @@ export type PolicyView = {
 export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult; calls: { accept: Call<'policy/run'> } }
 
 /** The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check. */
-export type CardRun = { policy: string; tag: string; title?: string; n: number; slot: number | null; start: RunStart; by?: string; check?: CheckResult }
+export type CardRun = { policy: string; tag: string; title?: string; n: number; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: number })
 
 const slotOf = (slot: string) => Date.parse(slot)
 
@@ -151,6 +154,9 @@ const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [numb
   return by.length >= header.live ? { kind: 'held', slot, by } : undefined
 }
 
+const validNeeds = (header: PolicyHeader, approval: [number, ApprovalFact] | undefined, approvals: [number, ApprovalFact][], runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, live: string[], now: number): ValidPolicy['needs'] =>
+  header.start === 'auto' && !approval && approvals.length ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash } : heldSlot(header, runs, passes, byId, live, now)
+
 /**
  * The views of a floor's policies. `cards`: every card, archived ones too, which a run's worker is looked up among.
  * `canSpawn`: the host runs, so a run can start.
@@ -167,26 +173,23 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
     const approval = approvals.findLast(([, a]) => a.hash === hash)
     const slots = [...runs.flatMap(([, r]) => (r.slot ? [slotOf(r.slot)] : [])), ...passes.map(([, p]) => slotOf(p.slot))]
     const header = parsed.ok ? parsed.header : undefined
-    const needs: PolicyView['needs'] =
-      header && header.start === 'auto' && !approval && approvals.length
-        ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash }
-        : !header && approvals.length
-          ? { kind: 'invalid' }
-          : header && heldSlot(header, runs, passes, byId, live, now)
+    const needs = parsed.ok ? validNeeds(parsed.header, approval, approvals, runs, passes, byId, live, now) : undefined
+    const body: ValidPolicy | InvalidPolicy = parsed.ok
+      ? { header: parsed.header, rule: ruleWords(parsed.header.when), next: nextSlot(parsed.header.when, now), ...(needs && { needs }) }
+      : { problems: parsed.problems, ...(approvals.length && { needs: { kind: 'invalid' as const } }) }
     const runnable = header !== undefined && header.runner === undefined && canSpawn && live.length < header.live
     return {
       id,
       tag: tagOf(id),
       title: parsed.title,
       hash,
-      ...(parsed.ok ? { header: parsed.header, rule: ruleWords(parsed.header.when), next: nextSlot(parsed.header.when, now) } : { problems: parsed.problems }),
+      ...body,
       ...(approval && { approved: { at: approval[0], ...(approval[1].by && { by: approval[1].by }) } }),
       live,
       ...(last && { last: { n: runs.length, at: last[0], slot: runSlot(last[1].slot), id: last[1].id, callsign: byId.get(last[1].id)?.callsign } }),
       ...(passed && { passed: { at: passed[0], slot: slotOf(passed[1].slot), outcome: passed[1].outcome, ...(passed[1].check && { check: passed[1].check }) } }),
       ...(slots.length > 0 && { seen: Math.max(...slots) }),
       ...(header && { offer: openOffer(header, runs.map(([, r]) => r), passes, now) }),
-      ...(needs && { needs }),
       calls: {
         ...(runnable && { run: ['policy/run', { project, policy: id, start: 'hand' }] }),
         ...(header && !approval && { approve: ['policy/approve', { project, policy: id, hash }] }),
@@ -217,10 +220,9 @@ export const cardRun = (first: string, files: PolicyFile[], facts: PolicyFacts):
     tag: tagOf(run.policy),
     ...(title && { title }),
     n,
-    slot: runSlot(run.slot),
-    start: run.start,
     ...(run.by && { by: run.by }),
     ...(run.check && { check: run.check }),
+    ...(run.start === 'hand' ? { start: run.start, slot: null } : { start: run.start, slot: slotOf(run.slot) }),
   }
 }
 

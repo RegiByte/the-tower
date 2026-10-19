@@ -160,7 +160,7 @@ const sessionHtml = (c, over) => {
 }
 
 /** What started a policy's run, on hover: a run not started by hand has a slot. @param {string} project @param {CardRun} run */
-const runTitle = (project, run) => `run ${run.n} of the policy ${run.title ?? run.tag} (${run.tag}): ${run.start === 'hand' ? 'started by hand' : `${slotWords(/** @type {number} */ (run.slot), policyZone(board, project, run.policy), pageNow())} slot, ${run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`
+const runTitle = (project, run) => `run ${run.n} of the policy ${run.title ?? run.tag} (${run.tag}): ${run.start === 'hand' ? 'started by hand' : `${slotWords(run.slot, policyZone(board, project, run.policy), pageNow())} slot, ${run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`
 
 /**
  * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an
@@ -381,7 +381,7 @@ function policiesTrayHtml(f) {
   if (!f.policies.length) return ''
   const offered = board.offers.filter((o) => o.project === f.id).length
   const needs = f.policies.filter((p) => p.needs).length
-  const invalid = f.policies.filter((p) => p.problems && !p.needs).length
+  const invalid = f.policies.filter((p) => !p.header && !p.needs).length
   const on = policiesOpen?.project === f.id
   return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${f.policies.length}</b> ${f.policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
 }

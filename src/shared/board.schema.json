@@ -1250,78 +1250,133 @@
       "description": "A session by id, with the callsign of the worker it ran as."
     },
     "CardRun": {
-      "type": "object",
-      "properties": {
-        "policy": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "n": {
-          "type": "number"
-        },
-        "slot": {
-          "type": [
-            "number",
-            "null"
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": {
+              "type": "string",
+              "const": "hand"
+            },
+            "slot": {
+              "type": "null"
+            },
+            "policy": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "n": {
+              "type": "number"
+            },
+            "by": {
+              "type": "string"
+            },
+            "check": {
+              "$ref": "#/definitions/CheckResult"
+            }
+          },
+          "required": [
+            "n",
+            "policy",
+            "slot",
+            "start",
+            "tag"
           ]
         },
-        "start": {
-          "$ref": "#/definitions/RunStart"
-        },
-        "by": {
-          "type": "string"
-        },
-        "check": {
-          "$ref": "#/definitions/CheckResult"
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "start": {
+              "type": "string",
+              "enum": [
+                "auto",
+                "offer"
+              ]
+            },
+            "slot": {
+              "type": "number"
+            },
+            "policy": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "n": {
+              "type": "number"
+            },
+            "by": {
+              "type": "string"
+            },
+            "check": {
+              "$ref": "#/definitions/CheckResult"
+            }
+          },
+          "required": [
+            "n",
+            "policy",
+            "slot",
+            "start",
+            "tag"
+          ]
         }
-      },
-      "required": [
-        "policy",
-        "tag",
-        "n",
-        "slot",
-        "start"
       ],
-      "additionalProperties": false,
       "description": "The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check."
     },
-    "RunStart": {
-      "type": "string",
-      "enum": [
-        "auto",
-        "offer",
-        "hand"
-      ],
-      "description": "How a run started: on its own at its slot, an offer accepted, or by hand with no slot."
-    },
     "CheckResult": {
-      "type": "object",
-      "properties": {
-        "exit": {
-          "type": "number"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "exit": {
+              "type": "number"
+            },
+            "ms": {
+              "type": "number"
+            },
+            "out": {
+              "type": "string"
+            },
+            "stderr": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "exit",
+            "ms"
+          ],
+          "additionalProperties": false
         },
-        "ms": {
-          "type": "number"
-        },
-        "out": {
-          "type": "string"
-        },
-        "stderr": {
-          "type": "string"
-        },
-        "error": {
-          "type": "string"
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string"
+            },
+            "ms": {
+              "type": "number"
+            },
+            "stderr": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error",
+            "ms"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "ms"
       ],
-      "additionalProperties": false,
       "description": "A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error` saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr when it failed (at most 500)."
     },
     "Seat": {
@@ -2027,155 +2082,238 @@
       "additionalProperties": false
     },
     "PolicyView": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "hash": {
-          "type": "string"
-        },
-        "header": {
-          "$ref": "#/definitions/PolicyHeader"
-        },
-        "problems": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Problem"
-          }
-        },
-        "rule": {
-          "type": "string"
-        },
-        "next": {
-          "type": "number"
-        },
-        "approved": {
+      "anyOf": [
+        {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "at": {
-              "type": "number"
+            "header": {
+              "$ref": "#/definitions/PolicyHeader"
             },
-            "by": {
+            "rule": {
               "type": "string"
-            }
-          },
-          "required": [
-            "at"
-          ],
-          "additionalProperties": false
-        },
-        "live": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "last": {
-          "type": "object",
-          "properties": {
-            "n": {
+            },
+            "next": {
               "type": "number"
             },
-            "at": {
-              "type": "number"
-            },
-            "slot": {
-              "type": [
-                "number",
-                "null"
+            "needs": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "reapprove"
+                    },
+                    "approved": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "approved"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "held"
+                    },
+                    "slot": {
+                      "type": "number"
+                    },
+                    "by": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/HeldBy"
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "slot",
+                    "by"
+                  ],
+                  "additionalProperties": false
+                }
               ]
             },
             "id": {
               "type": "string"
             },
-            "callsign": {
+            "tag": {
               "type": "string"
-            }
-          },
-          "required": [
-            "n",
-            "at",
-            "slot",
-            "id"
-          ],
-          "additionalProperties": false
-        },
-        "passed": {
-          "type": "object",
-          "properties": {
-            "at": {
-              "type": "number"
             },
-            "slot": {
-              "type": "number"
+            "title": {
+              "type": "string"
             },
-            "outcome": {
-              "$ref": "#/definitions/Outcome"
+            "hash": {
+              "type": "string"
             },
-            "check": {
-              "$ref": "#/definitions/CheckResult"
-            }
-          },
-          "required": [
-            "at",
-            "slot",
-            "outcome"
-          ],
-          "additionalProperties": false
-        },
-        "seen": {
-          "type": "number"
-        },
-        "offer": {
-          "type": "object",
-          "properties": {
-            "slot": {
-              "type": "number"
-            },
-            "since": {
-              "type": "number"
-            },
-            "until": {
-              "type": "number"
-            },
-            "check": {
-              "$ref": "#/definitions/CheckResult"
-            }
-          },
-          "required": [
-            "slot",
-            "since",
-            "until"
-          ],
-          "additionalProperties": false
-        },
-        "needs": {
-          "anyOf": [
-            {
+            "approved": {
               "type": "object",
               "properties": {
-                "kind": {
-                  "type": "string",
-                  "const": "reapprove"
+                "at": {
+                  "type": "number"
                 },
-                "approved": {
+                "by": {
                   "type": "string"
                 }
               },
               "required": [
-                "kind",
-                "approved"
+                "at"
               ],
               "additionalProperties": false
             },
-            {
+            "live": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "last": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "number"
+                },
+                "at": {
+                  "type": "number"
+                },
+                "slot": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "callsign": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "n",
+                "at",
+                "slot",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "passed": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "number"
+                },
+                "slot": {
+                  "type": "number"
+                },
+                "outcome": {
+                  "$ref": "#/definitions/Outcome"
+                },
+                "check": {
+                  "$ref": "#/definitions/CheckResult"
+                }
+              },
+              "required": [
+                "at",
+                "slot",
+                "outcome"
+              ],
+              "additionalProperties": false
+            },
+            "seen": {
+              "type": "number"
+            },
+            "offer": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "type": "number"
+                },
+                "since": {
+                  "type": "number"
+                },
+                "until": {
+                  "type": "number"
+                },
+                "check": {
+                  "$ref": "#/definitions/CheckResult"
+                }
+              },
+              "required": [
+                "slot",
+                "since",
+                "until"
+              ],
+              "additionalProperties": false
+            },
+            "calls": {
+              "type": "object",
+              "properties": {
+                "run": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": [
+                    {
+                      "type": "string",
+                      "const": "policy/run"
+                    },
+                    {
+                      "type": "object",
+                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                    }
+                  ],
+                  "maxItems": 2
+                },
+                "approve": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": [
+                    {
+                      "type": "string",
+                      "const": "policy/approve"
+                    },
+                    {
+                      "type": "object",
+                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                    }
+                  ],
+                  "maxItems": 2
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "calls",
+            "hash",
+            "header",
+            "id",
+            "live",
+            "rule",
+            "tag"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "header": {
+              "not": {}
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Problem"
+              }
+            },
+            "needs": {
               "type": "object",
               "properties": {
                 "kind": {
@@ -2188,78 +2326,166 @@
               ],
               "additionalProperties": false
             },
-            {
+            "id": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "hash": {
+              "type": "string"
+            },
+            "approved": {
               "type": "object",
               "properties": {
-                "kind": {
-                  "type": "string",
-                  "const": "held"
+                "at": {
+                  "type": "number"
+                },
+                "by": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "at"
+              ],
+              "additionalProperties": false
+            },
+            "live": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "last": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "number"
+                },
+                "at": {
+                  "type": "number"
+                },
+                "slot": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "callsign": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "n",
+                "at",
+                "slot",
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "passed": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "number"
                 },
                 "slot": {
                   "type": "number"
                 },
-                "by": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/HeldBy"
-                  }
+                "outcome": {
+                  "$ref": "#/definitions/Outcome"
+                },
+                "check": {
+                  "$ref": "#/definitions/CheckResult"
                 }
               },
               "required": [
-                "kind",
+                "at",
                 "slot",
-                "by"
+                "outcome"
               ],
               "additionalProperties": false
-            }
-          ]
-        },
-        "calls": {
-          "type": "object",
-          "properties": {
-            "run": {
-              "type": "array",
-              "minItems": 2,
-              "items": [
-                {
-                  "type": "string",
-                  "const": "policy/run"
-                },
-                {
-                  "type": "object",
-                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                }
-              ],
-              "maxItems": 2
             },
-            "approve": {
-              "type": "array",
-              "minItems": 2,
-              "items": [
-                {
-                  "type": "string",
-                  "const": "policy/approve"
+            "seen": {
+              "type": "number"
+            },
+            "offer": {
+              "type": "object",
+              "properties": {
+                "slot": {
+                  "type": "number"
                 },
-                {
-                  "type": "object",
-                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                "since": {
+                  "type": "number"
+                },
+                "until": {
+                  "type": "number"
+                },
+                "check": {
+                  "$ref": "#/definitions/CheckResult"
                 }
+              },
+              "required": [
+                "slot",
+                "since",
+                "until"
               ],
-              "maxItems": 2
+              "additionalProperties": false
+            },
+            "calls": {
+              "type": "object",
+              "properties": {
+                "run": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": [
+                    {
+                      "type": "string",
+                      "const": "policy/run"
+                    },
+                    {
+                      "type": "object",
+                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                    }
+                  ],
+                  "maxItems": 2
+                },
+                "approve": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": [
+                    {
+                      "type": "string",
+                      "const": "policy/approve"
+                    },
+                    {
+                      "type": "object",
+                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                    }
+                  ],
+                  "maxItems": 2
+                }
+              },
+              "additionalProperties": false
             }
           },
-          "additionalProperties": false
+          "required": [
+            "calls",
+            "hash",
+            "id",
+            "live",
+            "problems",
+            "tag"
+          ]
         }
-      },
-      "required": [
-        "id",
-        "tag",
-        "hash",
-        "live",
-        "calls"
       ],
-      "additionalProperties": false,
-      "description": "A policy on its floor. Exactly one of `header` and `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
+      "description": "A policy on its floor: valid, with its `header`, `rule` and `next`, or invalid, with its `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
     },
     "PolicyHeader": {
       "type": "object",
@@ -2358,33 +2584,6 @@
       "additionalProperties": false,
       "description": "Where a run's worker starts and on what model: the spawn verb's own fields (`SPAWN_FIELDS`), which its schema picks."
     },
-    "Problem": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "message": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "path",
-        "message"
-      ],
-      "additionalProperties": false,
-      "description": "What makes a file no policy, at its path as `tower config check` prints one: `when.cron[1]`, `header`, `prose`."
-    },
-    "Outcome": {
-      "type": "string",
-      "enum": [
-        "offered",
-        "no-work",
-        "held",
-        "check-failed"
-      ],
-      "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
-    },
     "HeldBy": {
       "type": "object",
       "properties": {
@@ -2408,6 +2607,33 @@
       ],
       "additionalProperties": false,
       "description": "A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms)."
+    },
+    "Outcome": {
+      "type": "string",
+      "enum": [
+        "offered",
+        "no-work",
+        "held",
+        "check-failed"
+      ],
+      "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
+    },
+    "Problem": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "additionalProperties": false,
+      "description": "What makes a file no policy, at its path as `tower config check` prints one: `when.cron[1]`, `header`, `prose`."
     },
     "GalleryShowing": {
       "type": "object",
