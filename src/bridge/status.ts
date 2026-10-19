@@ -9,19 +9,27 @@ import { blockedBy, type BlockedKind } from './blocked.ts'
  */
 export type Status = 'booting' | 'blocked' | 'idle' | 'working' | 'needs_input' | 'watching' | 'done' | 'failed' | 'exited' | 'lost'
 
+type Unblocked = Exclude<Status, 'blocked'>
+
 /**
- * `since` is when the session entered `status`, in seconds since its start. `compaction` is the trigger (`auto` or
- * `manual`) of the compaction in progress, which decides what the `SessionStart` that ends it means; `resumes` is
- * `watching` while a manual one runs that started while the session was watching, which it goes back to. `blocked`:
- * the screen a `blocked` session shows.
+ * The compaction in progress: its trigger decides what the `SessionStart` that ends it means. A manual one that started
+ * while the session was watching `resumes` watching when it ends.
  */
-export type SessionState = { status: Status; since: number; compaction?: string; resumes?: 'watching'; blocked?: BlockedKind }
+type Compaction = { trigger: 'auto' } | { trigger: 'manual'; resumes?: 'watching' }
+
+/**
+ * `since` is when the session entered `status`, in seconds since its start. `blocked`: the screen a `blocked` session
+ * shows, which has started nothing to compact.
+ */
+export type SessionState =
+  | { status: 'blocked'; since: number; blocked: BlockedKind; compaction?: undefined }
+  | { status: Unblocked; since: number; compaction?: Compaction; blocked?: undefined }
 
 /**
  * Classic hooks (posted by curl) decide these; the mod's `turn.complete` and `tower.tool.abandoned` decide
  * interrupts and failures. Claude awaits each post in turn, so both reach the log in the order Claude raised them.
  */
-const HOOK_STATUS: Record<string, Status> = {
+const HOOK_STATUS: Record<string, Unblocked> = {
   SessionStart: 'idle',
   UserPromptSubmit: 'working',
   PreToolUse: 'working',
@@ -34,13 +42,13 @@ const HOOK_STATUS: Record<string, Status> = {
  * Claude's `Stop` lists the background tasks (subagents, shells, monitors) still running and the session's crons
  * (`/loop`, `ScheduleWakeup`, `CronCreate`): each can wake the main loop into a new turn, which ends in its own `Stop`.
  */
-const stopStatus = (hook: ClaudeHookInput | ModEvent): Status => {
+const stopStatus = (hook: ClaudeHookInput | ModEvent): 'watching' | 'done' => {
   const tasks = hook.background_tasks as { status: string }[]
   const crons = hook.session_crons as unknown[]
   return tasks.some((task) => task.status === 'running') || crons.length ? 'watching' : 'done'
 }
 
-const NOTIFICATION_STATUS: Record<string, Status> = {
+const NOTIFICATION_STATUS: Record<string, Unblocked> = {
   permission_prompt: 'needs_input',
 }
 
@@ -64,6 +72,9 @@ const isFailure = (hook: ClaudeHookInput | ModEvent): boolean =>
 const isCompactionStart = (hook: ClaudeHookInput | ModEvent): boolean =>
   hook.hook_event_name === 'PreCompact' || hook.hook_event_name === 'session.compact'
 
+/** A trigger other than `manual` keeps the status, as an automatic one does. */
+const triggerOf = (hook: ClaudeHookInput | ModEvent): Compaction['trigger'] => (hook.trigger === 'manual' ? 'manual' : 'auto')
+
 /**
  * Claude raises `SessionStart` with `source: compact` when a compaction is done. A manual `/compact` works between
  * turns and leaves the session idle, or watching when it was watching: what can wake the main loop still runs. Any other leaves the status as it was: an automatic one runs inside a turn,
@@ -76,56 +87,60 @@ const isCompactionEnd = (hook: ClaudeHookInput | ModEvent): boolean =>
 /** Only a session that hasn't started reads its output: a blocking screen shows before Claude raises any hook. */
 export const readsOutput = ({ status }: SessionState) => status === 'booting' || status === 'blocked'
 
-const blockedAfter = (state: SessionState, event: LogEvent): BlockedKind | undefined =>
-  event[1] === 'o' && readsOutput(state) ? (blockedBy(event[2]) ?? state.blocked) : undefined
+const screenAfter = (state: SessionState, event: LogEvent): BlockedKind | undefined =>
+  event[1] === 'o' && readsOutput(state) ? (blockedBy(event[2]) ?? state.blocked) : state.blocked
 
-const statusAfter = ({ status, compaction, resumes }: SessionState, event: LogEvent, screen: BlockedKind | undefined): Status => {
+/** The status a session moves to as if no screen held it: a blocked session is one that hasn't started. */
+const statusAfter = (status: Unblocked, compaction: Compaction | undefined, event: LogEvent): Unblocked => {
   if (event[1] === 'x') return 'exited'
-  if (event[1] === 'o') return screen ? 'blocked' : status
   if (event[1] !== 'h') return status
   const hook = event[2]
   if (hook.agent_id !== undefined) return status
   if (isInterrupt(hook)) return 'idle'
   if (isFailure(hook)) return 'failed'
-  if (isCompactionStart(hook)) return hook.trigger === 'manual' ? 'working' : status
-  if (isCompactionEnd(hook)) return compaction === 'manual' ? (resumes ?? 'idle') : status
+  if (isCompactionStart(hook)) return triggerOf(hook) === 'manual' ? 'working' : status
+  if (isCompactionEnd(hook)) return compaction?.trigger === 'manual' ? (compaction.resumes ?? 'idle') : status
   if (hook.hook_event_name === 'Stop') return stopStatus(hook)
   if (hook.hook_event_name === 'Notification') return NOTIFICATION_STATUS[String(hook.notification_type)] ?? status
   return HOOK_STATUS[hook.hook_event_name] ?? status
 }
 
+const AUTO: Compaction = { trigger: 'auto' }
+const MANUAL: Compaction = { trigger: 'manual' }
+const MANUAL_FROM_WATCHING: Compaction = { trigger: 'manual', resumes: 'watching' }
+
 /**
  * A compaction ends with its `SessionStart`, or, when it gives up, with the main loop's next step of the turn. A
  * subagent's compaction raises the same `PreCompact` and `SessionStart` as the main loop's, with no `agent_id`: an
- * automatic start during a manual `/compact` can only be a subagent's, and keeps the manual trigger.
+ * automatic start during a manual `/compact` can only be a subagent's, and keeps the manual compaction.
  */
-const compactionAfter = (compaction: string | undefined, event: LogEvent): string | undefined => {
+const compactionAfter = ({ status, compaction }: SessionState, event: LogEvent): Compaction | undefined => {
   if (event[1] === 'x') return undefined
   if (event[1] !== 'h') return compaction
   const hook = event[2]
-  if (isCompactionStart(hook)) return compaction === 'manual' ? compaction : String(hook.trigger)
+  if (isCompactionStart(hook)) {
+    if (compaction?.trigger === 'manual') return compaction
+    if (triggerOf(hook) === 'auto') return AUTO
+    return status === 'watching' ? MANUAL_FROM_WATCHING : MANUAL
+  }
   const turnMoves = hook.agentId === undefined && (hook.hook_event_name === 'turn.step' || hook.hook_event_name === 'turn.complete')
   return isCompactionEnd(hook) || turnMoves ? undefined : compaction
-}
-
-/** A manual compaction that starts while the session watches resumes watching; the mark lasts as long as the compaction. */
-const resumesAfter = (state: SessionState, compaction: string | undefined): 'watching' | undefined => {
-  if (compaction !== 'manual') return undefined
-  if (state.compaction === 'manual') return state.resumes
-  return state.status === 'watching' ? 'watching' : undefined
 }
 
 export const BOOTING: SessionState = { status: 'booting', since: 0 }
 
 /** A screen that blocks holds the session until the hook that starts it, or its exit. */
 export const nextState = (state: SessionState, event: LogEvent): SessionState => {
-  const screen = blockedAfter(state, event)
-  const status = statusAfter(state, event, screen)
-  const blocked = status === 'blocked' ? (screen ?? state.blocked) : undefined
-  const compaction = compactionAfter(state.compaction, event)
-  const resumes = resumesAfter(state, compaction)
-  if (status === state.status && compaction === state.compaction && resumes === state.resumes && blocked === state.blocked) return state
-  return { status, since: status === state.status ? state.since : event[0], compaction, ...(resumes && { resumes }), ...(blocked && { blocked }) }
+  const held = state.status === 'blocked' ? 'booting' : state.status
+  const status = statusAfter(held, state.compaction, event)
+  const screen = status === held ? screenAfter(state, event) : undefined
+  if (screen) {
+    if (screen === state.blocked) return state
+    return { status: 'blocked', since: state.status === 'blocked' ? state.since : event[0], blocked: screen }
+  }
+  const compaction = compactionAfter(state, event)
+  if (status === state.status && compaction === state.compaction) return state
+  return { status, since: status === state.status ? state.since : event[0], ...(compaction && { compaction }) }
 }
 
 /** The main loop's turn ended, answered or failed: an outcome for someone to read. */

@@ -4,7 +4,7 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, policies and probes, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-19",
   "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
@@ -18,9 +18,11 @@
   `done` ([[watching-status]]); the mod's `turn.complete` and `tower.tool.abandoned` decide interrupts and failures,
   and a turn the autocompact breaker ends is `failed` (`reason: error`). A compaction runs from its `PreCompact` to its
   `SessionStart` with `source: compact` ([[claude-code]]): a manual `/compact` is `working` between the two, then
-  `idle`, or `watching` again when it started while the session watched (the state's `resumes`); an automatic one leaves the status as it was (it runs inside a turn that carries on, or summarizes a waiting
-  session, which keeps waiting). The state keeps the compaction's `trigger`, and the card says `compacting` while one
-  runs inside a turn or by `/compact`. A subagent's compaction raises the same hooks, so its start can show a working
+  `idle`, or `watching` again when it started while the session watched (the manual compaction's `resumes`); an
+  automatic one, or one of any other trigger, leaves the status as it was (it runs inside a turn that carries on, or
+  summarizes a waiting session, which keeps waiting). The state is a union: a `blocked` one carries its screen and
+  nothing else, any other the compaction in progress with its `trigger`, and the card says `compacting` while one runs
+  inside a turn or by `/compact`. A subagent's compaction raises the same hooks, so its start can show a working
   main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps). A session
   without an `x` event that the host no longer runs is `lost`
   ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
