@@ -104,13 +104,14 @@ function keepViewer(field, value) {
   viewer = { ...viewer, [field]: value }
   tower.store.set(VIEWER_KEYS[field], value)
 }
+const UNFOLDED_KEY = 'floors.unfolded'
 /** The sections a viewer unfolded under a floor's workers, by `<section>:<project>`, kept in `tower.store`. @type {Set<string>} */
-const unfolded = new Set(/** @type {string[] | undefined} */ (await tower.store.get('floors.unfolded')) ?? [])
+const unfolded = new Set(/** @type {string[] | undefined} */ (await tower.store.get(UNFOLDED_KEY)) ?? [])
 
 /** @param {string} key */
 function toggleSection(key) {
   if (!unfolded.delete(key)) unfolded.add(key)
-  tower.store.set('floors.unfolded', [...unfolded])
+  tower.store.set(UNFOLDED_KEY, [...unfolded])
   render()
 }
 
@@ -737,15 +738,16 @@ const shownKey = (s) => `${s.session}|${s.target}|${s.at}`
 /** @param {CardShown} s */
 const shownHref = (s) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
 
+const UNSHOWN_KEY = 'shown.closed'
 /** The showings this viewer closed, by `session|target|at`, kept in `tower.store`. */
-const unshown = new Set(/** @type {string[] | undefined} */ (await tower.store.get('shown.closed')) ?? [])
+const unshown = new Set(/** @type {string[] | undefined} */ (await tower.store.get(UNSHOWN_KEY)) ?? [])
 /** @param {Card} c */
 const visibleShown = (c) => c.shown.filter((s) => !unshown.has(shownKey(s)))
 
 /** @param {string} key */
 function unshow(key) {
   unshown.add(key)
-  tower.store.set('shown.closed', [...unshown].slice(-200))
+  tower.store.set(UNSHOWN_KEY, [...unshown].slice(-200))
   render()
 }
 
@@ -1080,7 +1082,8 @@ const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => 
  * every minute while shown.
  */
 /** @typedef {'floors' | 'stats'} SideView */
-let sideView = /** @type {SideView} */ ((await tower.store.get('side.view')) ?? 'floors')
+const SIDE_VIEW_KEY = 'side.view'
+let sideView = /** @type {SideView} */ ((await tower.store.get(SIDE_VIEW_KEY)) ?? 'floors')
 /** @type {Pick<StatsView, 'stats' | 'failed' | 'at'> & { all: boolean, reading: number }} */
 const statsView = { stats: undefined, failed: undefined, at: undefined, all: false, reading: 0 }
 const STATS_POLL_MS = 60_000
@@ -1125,7 +1128,7 @@ function rangeStats() {
 /** @param {SideView} view */
 function showSideView(view) {
   sideView = view
-  tower.store.set('side.view', view)
+  tower.store.set(SIDE_VIEW_KEY, view)
   clearInterval(statsPoll)
   if (view === 'stats') (readStats(), (statsPoll = setInterval(readStats, STATS_POLL_MS)))
   drawSideView()
@@ -1239,12 +1242,13 @@ function closeDrawer() {
   document.body.classList.remove('drawer')
 }
 
+const COLLAPSED_KEY = 'side.collapsed'
 function toggleSide() {
   if (narrow.matches) return document.body.classList.toggle('drawer')
   document.body.classList.toggle('collapsed')
-  tower.store.set('side.collapsed', document.body.classList.contains('collapsed'))
+  tower.store.set(COLLAPSED_KEY, document.body.classList.contains('collapsed'))
 }
-document.body.classList.toggle('collapsed', (await tower.store.get('side.collapsed')) === true)
+document.body.classList.toggle('collapsed', (await tower.store.get(COLLAPSED_KEY)) === true)
 
 function tick() {
   if (!selected && !shelfOpen) paintSky()
