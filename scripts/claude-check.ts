@@ -255,7 +255,7 @@ async function started(live: Live, blocked: BlockedKind | undefined) {
     await sleep(500)
     await post('keys', { id: live.id, data: '\r' })
   }
-  live.cursor = live.tail.events.length
+  live.cursor = at + 1
 }
 
 async function kill(live: Live, result: ScenarioRun) {
