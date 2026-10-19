@@ -12,6 +12,38 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.47.0
+
+The first wave of a consolidation pass (the bridge's types made honest), hiring across floors, and Tower 3D's larger
+meeting rooms. No host restart, no config change, the renderer API moved 1.60 → 1.61 with additions only, which ask
+nothing. Restart the tower (`tower down tower && tower up tower`) and reload the page. A checkout that serves Tower 3D
+rebuilds it (`npm run tower3d`).
+
+- `tower hire … floor <id>` starts a worker on another floor, refused with the floors listed when none has that id. The
+  new floor's defaults cut the worker, and its hiring limits decide, counting the hirer's depth and live hires on every
+  floor. A hire on another floor heads its crew on its own floor with "hired by X (floor)", and is linked under its
+  hirer in `tower agents`, in `tower agent`, in `tower home` and in the tower page's crew, where clicking the row opens
+  the hire's card on its floor. A card's `hiredBy` names the hirer's floor (API 1.60).
+- Consolidation, first wave: the bridge's types say what the data is. A session's state is a union (a blocked one
+  carries its screen and nothing else, a compaction's trigger is read once), and a worker's lifecycle (live, stranded,
+  cut off, waiting, stuck, on duty, leaving) is derived in one place, `lifeOf`, read by the board and by Tower 3D's
+  fixture boards. The fixtures had drifted from the board: a reviewer the user started now reports to its author, a hire
+  names its hirer, and one board no longer keeps a worker blocked after it turned to working. The board's fields are
+  unchanged, and the frames are identical.
+- A policy's view is valid or invalid, a run is by hand or at a slot, a check exited or errored: unions in place of
+  optional fields and casts, the JSON on the wire the same and the board's schema now saying it as `anyOf`. The API
+  adds `standingOf`, `checkFound` and `ValidPolicyView` to the served modules (1.61).
+- The Week waits for its first board: its steps start disabled and attach once the board and the archives land, a link
+  to a week read by the first draw.
+- Tower 3D's meeting rooms are deeper and Meeting · 4 wider, their tables centred with room to walk round and a fourth
+  laptop seat on the counter. `tower3d.ready()` rejects when the start fails, a file that would not load among the
+  causes and named in the error, so the CI boot check fails in seconds instead of at its timeout.
+- Claude Code 2.1.303 is tested, and `tool:claude-check` sees a turn that starts in the same read as the session
+  (a prompt given at spawn) instead of waiting out interrupts.
+- `fork` fetches origin first, as every worktree verb does, so a review's base and the unpushed commits it snapshots are
+  read as origin has them now.
+- The kb is re-reviewed across most entities, and says other local accounts are the machine's to guard.
+
 ## v1.46.0
 
 Hardening: one way to start a worker, a stricter API, the client JavaScript and the tower page's script under the
