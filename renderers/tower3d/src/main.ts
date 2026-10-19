@@ -4,16 +4,17 @@ import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/
 import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { BRIEF_MARKDOWN_KEY, briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
+import { briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, DIFF_LAYOUT_KEY, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { DISMISSED_KEY, REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, RING_KEY, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { REMIND_MS, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, branchPlaceholder, callsignRefusal, cutNameOf, cardsOf, dismissing, heededWaits, loudest, nextWait, ringing, soundOf, transitions, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, spawnForm, spawnFormHtml, spawnSummaryHtml, statusColor, onStatusColor, threadCheckoutOf, workerIn, can, landedRow, tagOf, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
@@ -342,7 +343,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
   ringFor(began)
-  readHeed()
+  rereadViewer()
   const key = structureKey(s.plan, next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
   if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, s.plan, next.rateLimits, next.today))
@@ -507,7 +508,8 @@ function renderPanel() {
     $('doc-head').innerHTML = statsHeadHtml()
     const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
     const tabs = [{ id: STATS_ALL, label: 'Overview' }, ...projects.map(({ id, label }) => ({ id, label }))]
-    const { read: stats, failed, at, range, scope } = s.stats
+    const { read: stats, failed, at, scope } = s.stats
+    const range = s.viewer.statsRange
     drawPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
     showSince($('doc-body'))
   }
@@ -669,9 +671,17 @@ function openStats() {
   statsPoll = setInterval(readStats, STATS_POLL_MS)
 }
 
+/** The Stats panel over your range: a read over another, held or in flight, is dropped. */
+function rangeStats() {
+  s.stats = { ...s.stats, read: undefined, reading: s.stats.reading + 1 }
+  if (s.panel?.kind !== 'stats') return
+  renderPanel()
+  readStats()
+}
+
 async function readStats() {
   const reading = ++s.stats.reading
-  const read = await tower.stats(statsQuery(s.stats.range, wallNow())).catch((err: Error) => {
+  const read = await tower.stats(statsQuery(s.viewer.statsRange, wallNow())).catch((err: Error) => {
     if (reading !== s.stats.reading) return
     if (s.stats.read) return void toast(err.message)
     s.stats = { ...s.stats, failed: err.message }
@@ -765,7 +775,7 @@ function relayDoc(url: string, self: ShelfSelf) {
   docRelay = tower.relay($('doc-body').querySelector('iframe')!, url, {
     self,
     ui: { select: ({ id }) => goDesk(id), home: () => closePanels(), shelf: ({ project, n }) => openShelf(project, n) },
-    stored: () => {},
+    stored: () => rereadViewer(),
   })
 }
 
@@ -1138,7 +1148,7 @@ function goMove(m: Move) {
  * nor does a framed page: the page framing it rings for the same waits.
  */
 function ringFor(waits: Wait[]) {
-  const wait = s.ring === 'off' || s.doorMode || tower.framed ? undefined : ringing(waits.filter((w) => !s.heed.dismissed.has(w.key)), watched())
+  const wait = s.viewer.ring === 'off' || s.doorMode || tower.framed ? undefined : ringing(waits.filter((w) => !s.heed.dismissed.has(w.key)), watched())
   if (!wait) return
   s.rungAt = s.simNow
   ring(soundOf(wait))
@@ -1146,32 +1156,36 @@ function ringFor(waits: Wait[]) {
 
 /** With `remind`, the waits you haven't dismissed ring again while nobody looks at them. */
 function tickRing() {
-  if (s.ring === 'remind' && s.simNow - s.rungAt >= REMIND_MS) ringFor(heededWaits(s.board!, s.heed))
+  if (s.viewer.ring === 'remind' && s.simNow - s.rungAt >= REMIND_MS) ringFor(heededWaits(s.board!, s.heed))
 }
 
-/** Your dismissals and ring setting, as all your renderers keep them in `tower.store`: another may have changed them. */
-function readHeed() {
+/** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
+function rereadViewer() {
   if (FIXTURE !== undefined) return
-  Promise.all([tower.store.get(DISMISSED_KEY), tower.store.get(RING_KEY), tower.store.get(BRIEF_MARKDOWN_KEY), tower.store.get(DIFF_LAYOUT_KEY)]).then(([dismissed, ring, markdown, layout]) => {
-    s.heed = { ...s.heed, dismissed: new Set((dismissed as string[] | null) ?? []) }
-    s.ring = (ring as Ring | null) ?? 'once'
-    s.briefMarkdown = (markdown as BriefMarkdown | null) ?? 'rendered'
-    s.diffLayout = (layout as DiffLayout | null) ?? 'unified'
+  readViewer(tower.store.get).then((viewer) => {
+    const was = s.viewer
+    s.viewer = viewer
+    s.heed = { ...s.heed, dismissed: new Set(viewer.dismissed) }
+    if (viewer.statsRange !== was.statsRange) rangeStats()
     renderHud()
   })
 }
 
+function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
+  s.viewer = { ...s.viewer, [field]: value }
+  if (FIXTURE === undefined) tower.store.set(VIEWER_KEYS[field], value)
+}
+
 function dismissWait(key: string) {
   const dismissed = dismissing(s.board!, s.heed.dismissed, key)
+  keepViewer('dismissed', dismissed)
   s.heed = { ...s.heed, dismissed: new Set(dismissed) }
-  if (FIXTURE === undefined) tower.store.set(DISMISSED_KEY, dismissed)
   renderHud()
   renderPanel()
 }
 
 function chooseRing(ring: Ring) {
-  s.ring = ring
-  if (FIXTURE === undefined) tower.store.set(RING_KEY, s.ring)
+  keepViewer('ring', ring)
   drawSettings()
 }
 
@@ -1184,7 +1198,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(s.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.briefMarkdown), lightingSection(s.lighting)])
+  const html = settingsHtml([soundSection(s.viewer.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), lightingSection(s.lighting)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1928,17 +1942,16 @@ async function openBrief(id: string) {
 let deskBrief: { id: string; threads: Threads } | undefined
 
 /** What the viewer opened in a drawn logbook, and how they read its words. */
-const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), markdown: s.briefMarkdown })
+const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), markdown: s.viewer.briefMarkdown })
 
 function drawDeskBrief(same: boolean) {
   const c = findCard(s.board!, deskBrief!.id)!
-  const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), markdown: s.briefMarkdown }
+  const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), markdown: s.viewer.briefMarkdown }
   $('desk-brief').innerHTML = logbookHtml(c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
 }
 
 function chooseBriefMarkdown(markdown: BriefMarkdown) {
-  s.briefMarkdown = markdown
-  if (FIXTURE === undefined) tower.store.set(BRIEF_MARKDOWN_KEY, markdown)
+  keepViewer('briefMarkdown', markdown)
   if (deskBrief && s.panel?.kind === 'desk' && s.panel.id === deskBrief.id && s.deskTab === 'brief') drawDeskBrief(true)
   renderPanel()
   drawSettings()
@@ -2071,7 +2084,7 @@ function drawChanges(c: Card) {
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, cardThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.diffLayout, scope: scopeOf(c.id) }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, cardThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.viewer.diffLayout, scope: scopeOf(c.id) }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -2242,7 +2255,7 @@ $('desk-changes').addEventListener('click', (e) => {
   const read = changesOf(c.id)
   if (el.closest('[data-changes-read]')) return (rereadChanges(c.id), renderPanel())
   const layout = el.closest<HTMLElement>('[data-changes-layout]')?.dataset.changesLayout as DiffLayout | undefined
-  if (layout) return ((s.diffLayout = layout), FIXTURE === undefined && tower.store.set(DIFF_LAYOUT_KEY, layout), renderPanel())
+  if (layout) return (keepViewer('diffLayout', layout), renderPanel())
   if (!read) return
   const viewed = el.closest<HTMLElement>('[data-viewed]')?.dataset.viewed
   if (viewed) return toggleViewed(c.id, read, viewed)
@@ -2383,7 +2396,7 @@ function onStatsClick(el: HTMLElement) {
   const scope = el.closest<HTMLElement>('[data-stats-scope]')?.dataset.statsScope
   if (scope) return ((s.stats = { ...s.stats, scope }), renderPanel())
   const range = el.closest<HTMLElement>('[data-stats-range]')?.dataset.statsRange as StatsRange | undefined
-  if (range) return ((s.stats = { ...s.stats, range, read: undefined }), renderPanel(), readStats())
+  if (range) return (keepViewer('statsRange', range), rangeStats())
   if (el.closest('[data-stats-read]')) ((s.stats = { ...s.stats, failed: undefined }), renderPanel(), readStats())
 }
 

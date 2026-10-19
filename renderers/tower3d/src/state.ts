@@ -1,9 +1,7 @@
-import type { BriefMarkdown } from '../../../src/shared/brief.ts'
 import type * as THREE from 'three'
 import type { ChairKit, Chairs } from './chairs.ts'
-import type { Heed, Ring } from '../../../src/shared/cards.ts'
+import type { Heed } from '../../../src/shared/cards.ts'
 import type { Draft } from '../../../src/shared/drafts.ts'
-import type { DiffLayout } from '../../../src/shared/panels.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Note } from './cork.ts'
@@ -22,10 +20,11 @@ import type { VideoWall } from './room.ts'
 import type { Running } from './running.ts'
 import type { Pigeonhole } from './pigeonhole.ts'
 import type { Filing } from './filing.ts'
-import type { LinePick, StatsRange } from '../../../src/shared/panels.ts'
+import type { LinePick } from '../../../src/shared/panels.ts'
 import type { Anchor } from '../../../src/shared/reviews.ts'
 import type { DeskTab, LogbookTab } from './ui.ts'
 import { STATS_ALL } from '../../../src/shared/panels.ts'
+import { VIEWER_DEFAULT, type Viewer } from '../../../src/shared/viewer.ts'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
 import { LIT } from './light/setting.ts'
 import type { Walker } from './walker.ts'
@@ -125,15 +124,12 @@ export type State = {
   /** What the renderer's settings name the cats. */
   catNames: CatNames
   /**
-   * What you did about the waits (`Heed`: dismissed, shared with your other renderers through `tower.store`, and
-   * visited by N this round), how often a wait rings, and when one last rang, in simulated ms.
+   * What you did about the waits (`Heed`: dismissed, as `viewer.dismissed` keeps them, and visited by N this round),
+   * and when one last rang, in simulated ms.
    */
   heed: Heed
-  ring: Ring
-  /** How the logbook draws prompts and answers, kept in `tower.store` under `BRIEF_MARKDOWN_KEY`. */
-  briefMarkdown: BriefMarkdown
-  /** How the desk's Changes draws a diff, kept in `tower.store` under `DIFF_LAYOUT_KEY`. */
-  diffLayout: DiffLayout
+  /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range. */
+  viewer: Viewer
   /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws `LIT`, what it started with. */
   lighting: boolean
   rungAt: number
@@ -225,8 +221,8 @@ export type State = {
   fpsShown: boolean
   /** The web page of each project directory's origin remote. */
   origins: Record<string, string>
-  /** The Stats panel: the last read over `range` and when, the scope shown, and the read in flight's number. */
-  stats: { read: Stats | undefined; failed: string | undefined; at: number | undefined; range: StatsRange; scope: string; reading: number }
+  /** The Stats panel: the last read over `viewer.statsRange` and when, the scope shown, and the read in flight's number. */
+  stats: { read: Stats | undefined; failed: string | undefined; at: number | undefined; scope: string; reading: number }
   /** A past session of a worker at a desk replayed on its monitor, and in its desk panel: its last screen, until back to live. */
   replay: { id: string; session: string } | undefined
 }
@@ -240,7 +236,7 @@ export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
-  heed: { dismissed: new Set(), visited: new Set() }, ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', lighting: LIT, rungAt: 0, waitedAt: 0, lastStatus: new Map(),
+  heed: { dismissed: new Set(), visited: new Set() }, viewer: VIEWER_DEFAULT, lighting: LIT, rungAt: 0, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), panel: undefined, deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),
   carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
@@ -249,6 +245,6 @@ export const s: State = {
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   saved: undefined, muted: false, fpsShown: false, origins: {},
-  stats: { read: undefined, failed: undefined, at: undefined, range: 'week', scope: STATS_ALL, reading: 0 },
+  stats: { read: undefined, failed: undefined, at: undefined, scope: STATS_ALL, reading: 0 },
   replay: undefined,
 }
