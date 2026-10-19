@@ -87,7 +87,11 @@ export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.stat
 export const current = (c: Card) => c.conversations.at(-1)
 
 /** Whether a card, conversation or floor offers a verb right now: the board decides, renderers only draw. */
-export const can = <V extends string>(thing: { verbs: V[] }, verb: V) => thing.verbs.includes(verb)
+export const can = <A extends { verb: string }>(thing: { actions: readonly A[] }, verb: A['verb']) => thing.actions.some((a) => a.verb === verb)
+
+/** The call of a verb a card, conversation or floor offers right now, none while it isn't offered. */
+export const callOf = <A extends { verb: string }, V extends Extract<A, { call: unknown }>['verb']>(thing: { actions: readonly A[] }, verb: V): Extract<A, { verb: V; call: unknown }>['call'] | undefined =>
+  thing.actions.find((a): a is Extract<A, { verb: V; call: unknown }> => a.verb === verb)?.call
 
 export const cardsOf = (board: Board) => board.floors.flatMap((f) => f.cards)
 export const findCard = (board: Board, id: string) => cardsOf(board).find((c) => c.id === id)
@@ -239,7 +243,7 @@ export const pastMatching = (crews: PastCrew[], words: string[]): PastCrew[] =>
 export const pastSize = (crews: PastCrew[]): number => crews.reduce((n, { crew }) => n + 1 + pastSize(crew), 0)
 
 /** A floor's workers stranded by the host, waiting to be resumed or let go, the first started first. */
-export const strandedOf = (f: Floor) => f.cards.filter((c) => c.calls['let-go'] && c.calls.resume).sort((a, b) => a.startedAt - b.startedAt)
+export const strandedOf = (f: Floor) => f.cards.filter((c) => can(c, 'let-go') && can(c, 'resume')).sort((a, b) => a.startedAt - b.startedAt)
 
 /** What letting a stranded worker go means, said before it is done. */
 export const LET_GO_MEANS = "off duty, its desk freed: it moves to the floor's archive, where its conversation can still be resumed"
@@ -252,17 +256,21 @@ export const letGoneLine = (c: Card) => `Let ${c.callsign} go: it is in the arch
 export const CARRY_ON_MEANS = 'resume it on a prompt that tells it the host cut it off mid-turn, and to carry on where it left off'
 
 /** How a stranded worker is resumed with the rest of its floor: carried on when cut off mid-turn, else plainly. */
-const resumeCallOf = (c: Card) => c.calls['carry-on'] ?? c.calls.resume!
+const resumeCallOf = (c: Card) => callOf(c, 'carry-on') ?? callOf(c, 'resume')
 
 /** What a renderer asks before resuming every stranded worker of a floor (`strandedOf`), naming each and how it resumes. */
 export const resumeAllAsk = (f: Floor, stranded: Card[]) =>
-  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)} · ${c.calls['carry-on'] ? 'carry on' : 'resume'}`).join('\n')}${
-    stranded.some((c) => c.calls['carry-on']) ? `\n\nCarry on: ${CARRY_ON_MEANS}.` : ''}`
+  `Resume ${stranded.length} stranded ${noun(stranded.length, 'worker')} on ${f.name}?\n\n${stranded.map((c) => `${c.callsign} · ${statusName(c)} · ${can(c, 'carry-on') ? 'carry on' : 'resume'}`).join('\n')}${
+    stranded.some((c) => can(c, 'carry-on')) ? `\n\nCarry on: ${CARRY_ON_MEANS}.` : ''}`
 
 /** Resumes each of `stranded` in turn through `run`, past any that fails, carrying on the cut-off; answers what to tell the user. */
 export async function resumeStranded(stranded: Card[], run: (c: Call<'resume'>) => Promise<unknown>) {
   const failed: string[] = []
-  for (const c of stranded) await run(resumeCallOf(c)).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
+  for (const c of stranded) {
+    const call = resumeCallOf(c)
+    if (call) await run(call).catch((err: Error) => failed.push(`${c.callsign}: ${err.message}`))
+    else failed.push(`${c.callsign}: can't be resumed now`)
+  }
   return failed.length ? `Resumed ${stranded.length - failed.length} of ${stranded.length}; ${failed.join('; ')}` : `Resumed ${stranded.map((c) => c.callsign).join(', ')}`
 }
 
@@ -959,24 +967,26 @@ const editedDoes = (repos: Pick<Exposure, 'absorbed' | 'carried'>[]) => {
 }
 
 export const editedRows = (f: Floor): EditedRow[] => [
-  ...f.worktrees
-    .filter((w) => w.state === 'carried')
-    .map((w) => ({
+  ...f.worktrees.flatMap((w) => {
+    const call = w.state === 'carried' && callOf(w, 'remove')
+    return call ? [{
       what: `⎇ ${w.name}`,
       does: editedDoes(w.repos),
       title: `${carriedLine(w.repos)}: what landing changed is lost from the branch once the worktree is removed`,
       landing: { project: f.id, branch: worktreeBranch(w) },
-      call: w.calls.remove!,
-    })),
-  ...f.branches
-    .filter((b) => b.carried)
-    .map((b) => ({
+      call,
+    }] : []
+  }),
+  ...f.branches.flatMap((b) => {
+    const call = b.carried && callOf(b, 'delete')
+    return call ? [{
       what: `⎇ ${b.name}`,
       does: editedDoes(b.repos),
       title: `a kept branch, ${carriedLine(b.repos)}: what landing changed is lost once it is deleted`,
       landing: { project: f.id, branch: b.name },
-      call: b.calls.delete!,
-    })),
+      call,
+    }] : []
+  }),
 ]
 
 /** What landing changed, as html: per repo, each commit landed edited with its copy, and `git range-diff` between them. */
@@ -1055,12 +1065,14 @@ export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
 /** The form's values from its fields' entries (`new FormData(form)`), the defaults under them. */
 export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValue]>): SpawnForm => ({ ...spawnDefaults(f), ...Object.fromEntries(entries) })
 
-/** The request a form sends: a cut, or a start in the directory picked. */
+/** The request a form sends: a cut, or a start in the directory picked. Throws once the floor no longer offers it. */
 export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs['spawn']>] => {
   const given = (o: Record<string, string>) => Object.fromEntries(Object.entries(o).filter(([, x]) => x.trim()).map(([k, x]) => [k, x.trim()]))
   const launch = given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt })
-  if (v.where === 'new') return [f.calls.cut!, { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) }]
-  return [f.calls.spawn!, { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
+  const verb = v.where === 'new' ? 'cut' : 'spawn'
+  const call = callOf(f, verb)
+  if (!call) throw new Error(`${f.name} offers no ${verb} now`)
+  return [call, v.where === 'new' ? { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) } : { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
 
 /** The branch a cut gets when its field is left empty; `name`: the cut's (`cutNameOf`). */
