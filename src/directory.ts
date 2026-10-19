@@ -200,10 +200,11 @@ const startWords = (start: RunRead['start'], by: string | undefined) => (start =
 const runLines = (floor: Floor, run: NonNullable<Card['run']>): string[] => {
   const tz = floor.policies.find((p) => p.id === run.policy)?.header?.when.tz
   const slot = run.slot === null ? 'with no slot' : `for its slot ${slotWords(run.slot, tz, Date.now())}`
+  const found = checkFound(run.check)
   return [
     `You are run ${run.n} of policy "${run.title ?? run.tag}" (${run.tag}), ${slot}, started ${run.start === 'auto' ? 'on its own' : run.start === 'hand' ? 'by hand' : 'from an offer'}.`,
     `\`tower runs\` lists its earlier runs and what each left; \`tower read ${run.tag}\` is the policy. When the policy says nobody watches, end with \`tower home <your callsign>\`.`,
-    ...(checkFound(run.check) ? [`Its check found: ${checkFound(run.check)}`] : []),
+    ...(found ? [`Its check found: ${found}`] : []),
   ]
 }
 
@@ -593,7 +594,7 @@ const runReadLines = (run: RunRead, tz: string | undefined, now: number): string
     ...(run.current ? [] : [`older version ${shortHash(run.hash)}`]),
   ].join('  '),
   ...run.worker.shown.map((s) => `        showed ${s}`),
-  ...(checkFound(run.check) ? [`        its check found: ${checkFound(run.check)!.split('\n').join(' ')}`] : []),
+  ...[checkFound(run.check)].flatMap((found) => (found ? [`        its check found: ${found.split('\n').join(' ')}`] : [])),
   ...(run.worker.answer ? answerLines(run.worker.answer) : []),
 ]
 
@@ -709,11 +710,12 @@ switch (verb) {
       console.log(`Approved ${name} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}`)
       break
     }
+    if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
     const offer = board.offers.find((o) => o.project === floor.id && o.policy === policy.id)
     const call = offer?.calls.accept ?? policy.calls.run
-    if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.header && policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
+    if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
     const ran = await command<Replies['policy/run']>(...withBy(call))
-    console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header?.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
+    console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
     break
   }
   case 'runs': {
