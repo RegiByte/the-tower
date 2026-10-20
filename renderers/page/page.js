@@ -1,5 +1,5 @@
-import { skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, neighbours, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { terminalTheme } from '/design.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, neighbours, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, itemKind, itemsCss, keptKey, keptOf, readsText } from '/items.js'
@@ -9,6 +9,7 @@ import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { skyline } from './skyline.js'
 import { shelf } from './shelf.js'
 import { worker } from './worker.js'
 import { review } from './review.js'
@@ -22,10 +23,10 @@ import { keptViews } from './kept.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
-import { onDuty, lineOf, $, byStart, signHtml, fillOf, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
+import { onDuty, lineOf, $, signHtml, fillOf, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keyshortcuts } from '/keymap.js'
+import { DEFAULT_KEYS, commandOf, keymapSheetHtml, keyshortcuts } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -57,10 +58,6 @@ import { DRAFTS, draftsOf } from '/drafts.js'
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
 watchTips(document)
-
-/** Windows a building shows: its most recent sessions, oldest at the bottom. */
-const BUILDING_WINDOWS = 40
-const BUILDING_MIN_WINDOWS = 16
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], rateLimits: [], probes: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
@@ -459,46 +456,6 @@ function paintLimits() {
 }
 placeOnOpen($('limits'), () => $('limits-open'))
 
-/** @param {Card} c */
-const windowHtml = (c) => {
-  const title = `${callsign(c.id)} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`
-  return `<a class="w ${onDuty(c) ? 'lit' : 'past'} ${c.attention}" href="#${c.id}" aria-label="${esc(title)}" data-tip="${esc(title)}"></a>`
-}
-
-/** @param {Floor} f @param {number} i */
-const buildingHtml = (f, i) => {
-  const shown = [...f.cards].sort(byStart).slice(-BUILDING_WINDOWS)
-  const dark = '<div class="w"></div>'.repeat(Math.max(0, BUILDING_MIN_WINDOWS - shown.length) + (4 - (Math.max(shown.length, BUILDING_MIN_WINDOWS) % 4)) % 4)
-  return `<div class="building" style="${paint(f.id)}">${signHtml(i + 1, f.name)}<div class="mast ${loudest(f.cards.filter((c) => c.waiting)) ?? ''} ${f.cards.some((c) => c.waiting) ? 'alarm' : ''}"></div>
-    <div class="body">${shown.map(windowHtml).join('')}${dark}</div></div>`
-}
-
-/** The skyline's sky follows the viewer's clock, as Tower 3D's does: the sun crosses by day, the moon hangs at night. */
-function paintSky() {
-  const now = new Date()
-  const hours = now.getHours() + now.getMinutes() / 60
-  const sky = skyAt(hours)
-  const day = Math.min(1, Math.max(0, (hours - 6) / 13))
-  for (const [name, value] of Object.entries({ top: sky.top, mid: sky.mid, horizon: sky.horizon })) $('sky').style.setProperty(`--sky-${name}`, value)
-  $('sky').style.setProperty('--stars', String(sky.stars))
-  $('sky').style.setProperty('--orb-x', sky.stars > 0.5 ? '86%' : `${36 + day * 56}%`)
-  $('sky').style.setProperty('--orb-y', sky.stars > 0.5 ? '14%' : `${46 - Math.sin(day * Math.PI) * 34}%`)
-  $('orb')?.classList.toggle('moon', sky.stars > 0.5)
-  $('orb')?.classList.toggle('sun', sky.stars <= 0.5)
-  const clock = $('clock')
-  if (clock) clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-function skylineHtml() {
-  const waiting = heededWaits(board(), heed()).length
-  const working = cards().filter((c) => c.status === 'working').length
-  const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
-  return `<div class="stars"></div><div class="orb" id="orb"></div>
-    <div class="hello"><div class="big">${big}</div><div class="sub">${waiting && board().keys['next-waiting'].length ? `press ${board().keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board().hostUp ? `click a window to read it · ${esc(whyNot(board(), 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
-      <div class="clock" id="clock"></div></div>
-    <div class="city">${board().floors.map(buildingHtml).join('')}</div><div class="street"></div>`
-}
-
 /** The keymap's command for each move (src/shared/keymap.ts). */
 const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
@@ -744,6 +701,8 @@ const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggl
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving })
 
 const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view })
+
+const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
