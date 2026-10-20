@@ -1,4 +1,4 @@
-import { esc, gistOf } from '/cards.js'
+import { esc, gistOf, when } from '/cards.js'
 import { GIST_ICON, ICON } from '/icons.js'
 import { keepingFocus } from '/panels.js'
 import { toaster } from '/toasts.js'
@@ -36,9 +36,6 @@ const toolHtml = (tool) => {
   const [name, ...target] = tool.split(' ')
   return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
 }
-
-/** @param {number} ms */
-const when = (ms) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 /**
  * @template {string} K

@@ -587,6 +587,9 @@ export const ago = (ms: number) => {
   return `${Math.floor(s / 86400)}d`
 }
 
+/** A moment in the viewer's locale: `Oct 6, 21:40`. */
+export const when = (ms: number) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+
 /** A count of tokens: `33.6 k`. */
 export const tokenCount = (v: number) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)} B` : v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : v >= 1e3 ? `${(v / 1e3).toFixed(1)} k` : String(v))
 
