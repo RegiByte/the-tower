@@ -26,6 +26,9 @@ export type Command = { id: string; scope: Scope; group: string; does: string; c
 /** Each command id with its chords, as written in a canonical form (`chordOf`). */
 export type Keys = Record<string, string[]>
 
+/** The command each move between workers runs (`neighbours`' `prev`, `next` and `waiting`). */
+export const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' } as const
+
 export const COMMANDS: Command[] = [
   { id: 'prev-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowUp'], does: "previous worker on duty, in the sidebar's order: the top floor first, each floor's crews in order" },
   { id: 'next-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowDown'], does: "next worker on duty, in the sidebar's order" },

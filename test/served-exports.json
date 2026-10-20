@@ -547,6 +547,7 @@
     "/keymap.js": [
       "COMMANDS",
       "DEFAULT_KEYS",
+      "MOVE_COMMAND",
       "chordLabel",
       "commandOf",
       "keymapOf",

@@ -26,7 +26,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { DEFAULT_KEYS, commandOf } from '/keymap.js'
+import { DEFAULT_KEYS, MOVE_COMMAND, commandOf } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -81,9 +81,6 @@ const viewer = () => page.state().viewer
 
 /** @template {keyof Viewer} K @param {K} field @param {Viewer[K]} value */
 const keepViewer = (field, value) => page.dispatch(/** @type {PageEvent} */ ({ type: 'keep', field, value }))
-
-/** The keymap's command for each move (src/shared/keymap.ts). */
-const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
 function render() {
   const all = cards()
