@@ -10,6 +10,7 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
 import { briefPane } from './brief-pane.js'
 import { keptViews } from './kept.js'
@@ -22,7 +23,7 @@ import { documentHtml, fenceText, markdownCss, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
-import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/settings.js'
+import { settingsCss } from '/settings.js'
 import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { pressing } from '/press.js'
@@ -37,7 +38,7 @@ import { DRAFTS, draftsOf } from '/drafts.js'
  * @import { FloorBranch, FloorWorktree, LandingRead } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
- * @import { Attended, EditedRow, Heed, Move, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
+ * @import { Attended, EditedRow, Heed, Move, TidyRow } from '../../src/shared/cards.ts'
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
@@ -1203,6 +1204,8 @@ const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ fi
 
 const { alerts, playSound, showShownAlert, showOfferAlert, showAlert } = alerting({ callsign, select, showPane, floorOf, board, openPolicies })
 
+const { drawSettings } = settingsPane({ page, viewer, playSound })
+
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
 
@@ -1254,12 +1257,6 @@ function dismissWait(key) {
   render()
 }
 
-/** @param {Ring} next */
-function chooseRing(next) {
-  page.dispatch({ type: 'ring', ring: next })
-  drawSettings()
-}
-
 /** Every showing the page has seen: a new one opens its tab on the selected session, and alerts when you aren't looking at it. @type {Set<string>} */
 const seenShown = new Set()
 let shownPrimed = false
@@ -1277,30 +1274,8 @@ function noticeShown(all) {
   shownPrimed = true
 }
 
-/** The settings popover, drawn again whenever what it shows may have changed: only while open. @type {string | undefined} */
-let settingsDrawn
-const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
-function paintSettings() {
-  const html = settingsHtml([alertsSection(Notification.permission), soundSection(page.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer().briefMarkdown)])
-  if (html === settingsDrawn) return
-  const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-pref]')
-  const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
-  $('settings').innerHTML = settingsDrawn = html
-  if (again) $('settings').querySelector(again)?.focus()
-}
-$('settings-open').innerHTML = ICON.settings
 $('keys-open').innerHTML = ICON.help
 $('side-hide').innerHTML = ICON.sidebar
-placeOnOpen($('settings'), () => $('settings-open'))
-$('settings').addEventListener('beforetoggle', (e) => e.newState === 'open' && paintSettings())
-$('settings').addEventListener('click', async (e) => {
-  const el = /** @type {Element} */ (e.target).closest('[data-alerts-ask], [data-ring-choice], [data-sound-play]')
-  if (!el) return
-  if (el.matches('[data-alerts-ask]')) return (await Notification.requestPermission(), drawSettings())
-  if (el.dataset.ringChoice) return chooseRing(/** @type {Ring} */ (el.dataset.ringChoice))
-  playSound(SOUNDS[/** @type {Sound} */ (el.dataset.soundPlay)])
-})
-wirePrefs($('settings'), tower.prefs.set)
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. @param {string} id */
 function moveTo(id) {
