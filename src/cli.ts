@@ -218,7 +218,7 @@ const main = async (): Promise<void> => {
         const own = running.filter((r) => r.session === header.id)
         const word = facts.broken ? 'broken' : status
         const why = facts.broken && `its log breaks at ${facts.broken.at}s: ${facts.broken.message}`
-        console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${span(Date.now() - entered)}`.padEnd(10), summary(own), why].filter(Boolean).join('  ').trimEnd())
+        console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${span(Date.now() - entered)}`.padEnd(11), summary(own), why].filter(Boolean).join('  ').trimEnd())
       }
       break
     }
