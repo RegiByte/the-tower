@@ -115,7 +115,7 @@ const lit = (m: THREE.Material) => m instanceof THREE.MeshToonMaterial || m inst
 /** Things wider than this (m) are the city, the ground and the roads: they take the sun's shadows but cast none. */
 const CITY = 80
 
-/** Every new mesh: lit and opaque, it takes shadows and casts them unless it is the city; its material lights inside. */
+/** Every new mesh: lit and opaque, it takes shadows and casts them unless it is the city or a material of it is `shadowless`; its material lights inside. */
 function enlist(scene: THREE.Object3D) {
   scene.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o.userData.rigged) return
@@ -127,7 +127,7 @@ function enlist(scene: THREE.Object3D) {
     if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere()
     const across = 2 * o.geometry.boundingSphere!.radius * o.getWorldScale(new THREE.Vector3()).x
     o.receiveShadow = opaque
-    o.castShadow = opaque && across < CITY
+    o.castShadow = opaque && across < CITY && !mats.some((m) => m.userData.shadowless)
   })
 }
 

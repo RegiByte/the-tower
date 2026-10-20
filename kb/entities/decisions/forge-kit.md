@@ -22,6 +22,7 @@
     "hub/renderers/kaykit/src/atlas.ts#glowTexture",
     "hub/renderers/tower3d/src/kit.ts#lookMaterial",
     "hub/renderers/tower3d/src/kit.ts#keyOf",
+    "hub/renderers/tower3d/src/toon.ts#shadowless",
     "hub/renderers/kaykit/src/draw.ts#material",
     "hub/renderers/kaykit/src/rules.ts#categorize",
     "hub/renderers/kaykit/scenes/prefabs/desk_dress.json",
@@ -69,7 +70,9 @@ nothing pays for it until a placed prop shows a decal.
   KayKit's untextured glass still one batch for every KayKit pack. [`lookMaterial`](ref:hub/renderers/tower3d/src/kit.ts#lookMaterial)
   makes each one through Tower 3D's own toon path (the lit rig's patch, bloom on `userData.glow`), so the forge looks
   native: the atlas toon-mapped with the emissive map lit by the clock ([`glowKit`](ref:hub/renderers/tower3d/src/kit.ts#glowKit)),
-  glass the atlas at 0.3 opacity, two-sided, writing no depth, and decals the sheet alpha-cut at 0.5. The playground's
+  glass the atlas at 0.3 opacity, two-sided, writing no depth, and decals the sheet alpha-cut at 0.5, marked
+  [`shadowless`](ref:hub/renderers/tower3d/src/toon.ts#shadowless) so the lit rig casts no shadow from them though they
+  are opaque (they are lifted 0.5 mm off their part). The playground's
   [`material`](ref:hub/renderers/kaykit/src/draw.ts#material) does the same with its own ramp.
 - First used on the desks ([[desk-dressing]]): the dressing's mugs and cup, plate, bowl, pizza slice, pen cup and
   cactus became the forge's coffee mug, plate, bowl, pizza slice, pen cup and desk plant, at scale 1 where KayKit's
@@ -91,5 +94,5 @@ nothing pays for it until a placed prop shows a decal.
 **Impact.** On the busy fixture's desks, lit: +3 draw calls (a forge batch per level's desk layer), +9k triangles,
 the same frame time; two more 1024² textures (+10.7 MB of GPU memory); `kit.kaykit` 3102 KB to 3159 KB, with no decal
 sheet. Scale is not settled: the forge is real size (a 1.70 m body standard) beside workers about 1.5 m tall,
-which the user judges from pictures. Decals cast shadows in Tower 3D, because the lit rig casts from every opaque
-mesh; nothing placed shows a decal yet.
+which the user judges from pictures. Nothing placed shows a decal yet: placing the forge's pizza box once packed the
+sheet (+934 KB in the kit) and drew its lid's decal cut and lit.

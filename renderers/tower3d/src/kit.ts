@@ -4,7 +4,7 @@ import { FORGE, FORGE_BINDING, type Model, type Pack } from '../../kaykit/src/ca
 import { itemMatrix, nodeMatrices } from '../../kaykit/src/draw.ts'
 import { meshesFrom, type ModelMesh, type Surface } from '../../kaykit/src/meshes.ts'
 import { layTheme, type ModelItem, type Theme } from '../../kaykit/src/scene.ts'
-import { glows, toonMapped, toonOwn } from './toon.ts'
+import { glows, shadowless, toonMapped, toonOwn } from './toon.ts'
 import { bytesOf, KIT_FILE } from './files.ts'
 import { kitLayout, type KitFile } from './kitfile.ts'
 import type { Level } from './layout.ts'
@@ -71,7 +71,7 @@ const keyOf = (pack: Pack, theme: Theme | undefined, surface: Surface) =>
   surface === 'glass' && pack !== FORGE ? GLASS : JSON.stringify([pack, theme?.atlas?.[pack] ?? 'base', theme?.swaps?.[pack] ?? [], surface] satisfies Look)
 
 function lookMaterial(kit: Kit, [pack, atlas, swaps, surface]: Look) {
-  if (surface === 'decals') return Object.assign(toonMapped(mapTexture(kit.atlases, pack, 'decals', THREE.SRGBColorSpace)), { alphaTest: FORGE_BINDING.decalCut })
+  if (surface === 'decals') return shadowless(Object.assign(toonMapped(mapTexture(kit.atlases, pack, 'decals', THREE.SRGBColorSpace)), { alphaTest: FORGE_BINDING.decalCut }))
   const map = atlasTexture(kit.atlases, pack, { atlas: { [pack]: atlas }, swaps: { [pack]: swaps } })
   if (surface === 'glass') return Object.assign(toonMapped(map), { transparent: true, opacity: FORGE_BINDING.glassOpacity, depthWrite: false, side: THREE.DoubleSide })
   const toon = toonMapped(map)

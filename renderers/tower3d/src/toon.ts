@@ -39,6 +39,12 @@ export function glows<M extends THREE.Material>(m: M) {
   return m
 }
 
+/** Marks a material as casting no shadow though it is opaque (a decal lifted off its part): the lit rig leaves it out. */
+export function shadowless<M extends THREE.Material>(m: M) {
+  m.userData.shadowless = true
+  return m
+}
+
 /** Lit by nothing: screens, lamps, neon. */
 export const glowing = (color: THREE.ColorRepresentation) => glows(new THREE.MeshBasicMaterial({ color, toneMapped: false }))
 
