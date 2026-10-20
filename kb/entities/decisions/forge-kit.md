@@ -60,8 +60,8 @@ nothing pays for it until a placed prop shows a decal.
   catalog by what a thing is, so [`FORGE_CATEGORIES`](ref:hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES) maps
   each room to the category most of its props are (kitchen to kitchenware, office to decor, living_room to seating,
   arcade to tech), and [`forgeCategory`](ref:hub/renderers/kaykit/src/rules.ts#forgeCategory) fails naming a room
-  the table lacks. A finer split, when one is needed, reads the sidecar's `tags`. The forge's `moves` are not read
-  yet.
+  the table lacks. The table stands in until the forge declares each prop's kind on its sidecar, which it plans
+  to; the tower reads that then and the table goes. The forge's `moves` are not read yet.
 - Measured on the playground's path: [`readGltf`](ref:hub/renderers/kaykit/src/measure.ts#readGltf) reads a `.glb`'s
   chunks or a `.gltf`'s files, and every primitive is bound to a
   [`Surface`](ref:hub/renderers/kaykit/src/meshes.ts#Surface): a KayKit material is `atlas` when it has a texture and
