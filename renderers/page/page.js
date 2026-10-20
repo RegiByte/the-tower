@@ -10,6 +10,7 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { alerting } from './alerts.js'
 import { briefPane } from './brief-pane.js'
 import { keptViews } from './kept.js'
 import { draft } from './draft.js'
@@ -29,9 +30,9 @@ import { toastsCss } from '/toasts.js'
 import { DRAFTS, draftsOf } from '/drafts.js'
 
 /**
- * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection, Wait } from '../../src/bridge/board.ts'
+ * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { CardRun, Offer } from '../../src/bridge/policies.ts'
+ * @import { CardRun } from '../../src/bridge/policies.ts'
  * @import { DiffFile } from '../../src/bridge/diff.ts'
  * @import { FloorBranch, FloorWorktree, LandingRead } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
@@ -1119,11 +1120,6 @@ const pageHandlers = {
   },
 }
 
-/**
- * One notification per wait or offer that begins (`/attend.js`), closed once it is over or dismissed.
- * @type {Map<string, Notification>}
- */
-const alerts = new Map()
 /** @type {Loop<PageState, PageEvent>} */
 const page = loop({
   state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, eye: { focused: document.hasFocus(), visible: document.visibilityState === 'visible' }, attending: attending(), visited: new Set() },
@@ -1205,6 +1201,8 @@ const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, dr
 
 const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings() })
 
+const { alerts, playSound, showShownAlert, showOfferAlert, showAlert } = alerting({ callsign, select, showPane, floorOf, board, openPolicies })
+
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
 
@@ -1242,26 +1240,6 @@ addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
-/** @type {AudioContext | undefined} */
-let audio
-/** @param {(typeof SOUNDS)[Sound]} sound */
-function playSound({ notes, wave, step }) {
-  const ctx = (audio ??= new AudioContext())
-  const now = ctx.currentTime
-  notes.forEach((freq, i) => {
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.type = wave
-    osc.frequency.value = freq
-    gain.gain.setValueAtTime(0, now + i * step)
-    gain.gain.linearRampToValueAtTime(0.12, now + i * step + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * step + 0.9)
-    osc.connect(gain).connect(ctx.destination)
-    osc.start(now + i * step)
-    osc.stop(now + i * step + 1)
-  })
-}
-
 /** The viewer's record as `tower.store` keeps it now: another renderer of theirs may have changed it. */
 async function rereadViewer() {
   const was = viewer()
@@ -1297,28 +1275,6 @@ function noticeShown(all) {
     if (watchedOf(page.state()) !== c.id && Notification.permission === 'granted') showShownAlert(c, s)
   }
   shownPrimed = true
-}
-
-/** @param {Card} c @param {CardShown} s */
-function showShownAlert(c, s) {
-  const n = new Notification(`${callsign(c.id)} ${s.kind === 'link' ? 'asks you to open' : 'shows you'} ${shownTitle(s)}`, { body: `${c.project}: ${s.target}`, tag: shownKey(s) })
-  n.onclick = () => (window.focus(), select(c.id), showPane(shownPane(s)), n.close())
-}
-
-/** @param {Offer} o */
-function showOfferAlert(o) {
-  const n = new Notification(`${o.title ?? o.tag} · offered`, { body: `${/** @type {Floor} */ (floorOf(o.project)).name}: ${offerWords(board(), o, Date.now())}`, tag: o.key })
-  n.onclick = () => (window.focus(), openPolicies(o.project), n.close())
-  return n
-}
-
-/** @param {Card} c @param {Wait} w */
-function showAlert(c, w) {
-  const n = new Notification(`${callsign(c.id)} · ${statusName(c)}`, {
-    body: `${c.project}: ${gistLine(c)}`, tag: c.id, requireInteraction: w.reason === 'blocked' || w.reason === 'asks',
-  })
-  n.onclick = () => (window.focus(), select(c.id), n.close())
-  return n
 }
 
 /** The settings popover, drawn again whenever what it shows may have changed: only while open. @type {string | undefined} */
