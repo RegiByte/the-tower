@@ -10,7 +10,7 @@ const form: SpawnForm = { where: 'main', worktree: '', checkout: '/hub', callsig
 function run(events: SpawnEvent<string>[], state: Spawning<string> = spawnClosed()) {
   const effects: SpawnEffect<string>['type'][] = []
   for (const e of events) {
-    for (const f of (h[e.type] as (s: Spawning<string>, e: SpawnEvent<string>, ctx: unknown) => SpawnEffect<string>[])(state, e, undefined)) {
+    for (const f of (h[e.type] as (s: Spawning<string>, e: SpawnEvent<string>) => SpawnEffect<string>[])(state, e)) {
       if (f.type === 'state') state = f.state
       else effects.push(f.type)
     }

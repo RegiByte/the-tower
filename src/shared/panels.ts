@@ -289,7 +289,7 @@ const marked = (h: Held<ChangesRead>, dir: string, marks: Record<string, string>
 }
 
 /** The machine of a viewer's Changes, on `/loop.js`: a renderer runs it with its executors and `timers()`. */
-export const changesHandlers: Handlers<ChangesReads, ChangesEvent, ChangesEffect, unknown> = {
+export const changesHandlers: Handlers<ChangesReads, ChangesEvent, ChangesEffect> = {
   follow: (s, { card }) => {
     const was = s.following
     if (!card) return was ? [{ type: 'state', state: { ...s, following: undefined } }, { type: 'timer/cancel', id: 'changes' }] : []

@@ -819,7 +819,6 @@ function renderShown(c, s) {
 const changeReads = loop({
   state: noChanges(),
   handlers: changesHandlers,
-  ctx: undefined,
   execute: {
     ...timers(),
     read: reading(readChanges({
@@ -929,7 +928,6 @@ const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
 const threadReads = loop({
   state: noReads(),
   handlers: heldHandlers(),
-  ctx: undefined,
   execute: { read: reading(readThread((path) => tower.text(path))), draw: () => render(), toast: ({ message }) => void toast(message) },
 })
 
@@ -1302,7 +1300,7 @@ const see = (s, e) => [into({ ...s, eye: eyeStep(s.eye, e) })]
 /** Leaves the view open for `view` and enters it, its hash in the address bar. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
 const moved = (s, view) => [into({ ...s, view }), { type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }]
 
-/** @type {Handlers<PageState, PageEvent, PageEffect, undefined>} */
+/** @type {Handlers<PageState, PageEvent, PageEffect>} */
 const pageHandlers = {
   board: attend,
   lost: attend,
@@ -1365,7 +1363,6 @@ const alerts = new Map()
 const page = loop({
   state: { view: HOME, eye: { focused: document.hasFocus(), visible: document.visibilityState === 'visible' }, attending: attending() },
   handlers: pageHandlers,
-  ctx: undefined,
   execute: {
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
     announce: ({ text }) => announce(text),

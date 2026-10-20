@@ -1196,7 +1196,7 @@ const attend = (v: Seeing, e: AttendEvent): SeeingEffect[] => {
 }
 const eyed = (v: Seeing, e: EyeEvent): SeeingEffect[] => [{ type: 'state', state: { ...v, eye: eyeStep(v.eye, e) } }]
 
-const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect, undefined> = {
+const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect> = {
   board: attend,
   lost: attend,
   stored: attend,
@@ -1212,7 +1212,6 @@ const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect, undefined> = {
 const seeing = loop({
   state: { panel: undefined, eye: { focused: document.hasFocus(), visible: document.visibilityState === 'visible' }, attending: attending() } as Seeing,
   handlers: seeingHandlers,
-  ctx: undefined,
   execute: {
     ...(timers<SeeingEvent>() as Executors<TimerEffect<SeeingEvent>, SeeingEvent>),
     announce: () => {},

@@ -50,7 +50,7 @@ export type SpawnEffect<D> =
 export const spawnClosed = <D>(): Spawning<D> => ({ t: 'closed' })
 
 /** The dialog's steps. A dialog a second Esc closed while Start waits opens again as it was: when asked to open, or on the error of a start that failed. */
-export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEffect<D>, unknown> => ({
+export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEffect<D>> => ({
   open: (s, { project, on, text }) => {
     if (s.t === 'starting' && !s.shown) return [{ type: 'state', state: { ...s, shown: true } }, { type: 'reshow' }]
     return s.t === 'closed' ? [{ type: 'state', state: { t: 'editing', project, on, error: '' } }, { type: 'show', project, text, draft: on === undefined ? undefined : titleOf(text) }] : []
@@ -128,7 +128,6 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
   const machine = loop({
     state: spawnClosed<D>(),
     handlers: spawnHandlers<D>(),
-    ctx: undefined,
     execute: {
       show: ({ project, text, draft }) => {
         const f = floorOf(project)!

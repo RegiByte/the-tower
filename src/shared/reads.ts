@@ -86,7 +86,7 @@ export const stepped = <S, V>([r, effects]: ReadStep<V>, into: (r: Reads<V>) => 
   effects.length ? [{ type: 'state', state: into(r) }, ...effects] : []
 
 /** The machine of plain held reads: a renderer's loop runs it with an executor for each `ReadEffect`. */
-export const heldHandlers = <V>(): Handlers<Reads<V>, ReadEvent<V>, StateEffect<Reads<V>> | ReadEffect, unknown> => {
+export const heldHandlers = <V>(): Handlers<Reads<V>, ReadEvent<V>, StateEffect<Reads<V>> | ReadEffect> => {
   const same = (r: Reads<V>) => r
   return {
     want: (r, e) => stepped(wantRead(r, e.slot, e.key), same),

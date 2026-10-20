@@ -51,7 +51,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   handlers. A step that changes the state calls for at least one effect ([`stepped`](ref:hub/src/shared/reads.ts#stepped)
   reads no effects as no change).
 - *Handlers wire steps to events.* One handler per event type ([`Handlers`](ref:hub/src/shared/loop.ts#Handlers):
-  a missing one is a type error), each `(state, event, ctx) → effects`. The next state is an effect, `state`, put
+  a missing one is a type error), each `(state, event) → effects`. The next state is an effect, `state`, put
   first so executors that read the loop's state see the new one.
 - *The world enters a machine only as events.* What a step needs to know about the renderer is in the machine's
   state, put there by the events that changed it, never read from the renderer as an event is handled. The worker a

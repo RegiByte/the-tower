@@ -24,7 +24,6 @@ export const onReviews = (then: () => void, fail: (message: string) => void) => 
 const threads = loop({
   state: noReads<ReviewThread>(),
   handlers: heldHandlers<ReviewThread>(),
-  ctx: undefined,
   execute: {
     read: reading(FIXTURE === undefined ? readThread((path) => tower.text(path)) : (slot) => Promise.resolve(parseThread(FIXTURE_THREADS[slot] ?? ''))),
     draw: () => arrived(),
@@ -59,7 +58,6 @@ const readRepos = (id: string, scope: ChangesScope): Promise<RepoChanges[]> =>
 const changes = loop({
   state: noChanges(),
   handlers: changesHandlers,
-  ctx: undefined,
   execute: {
     ...timers<ChangesEvent>(),
     read: reading(readChanges({

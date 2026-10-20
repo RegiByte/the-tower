@@ -1,5 +1,5 @@
 /**
- * A machine as data. Each event type has a handler, `(state, event, ctx) -> effects`, pure: what it calls for is
+ * A machine as data. Each event type has a handler, `(state, event) -> effects`, pure: what it calls for is
  * returned as tagged effects, the next state among them (`state`). The loop applies `state` itself and hands every
  * other effect to the renderer's executor of its type, which does the I/O (a fetch, the DOM, `tower.store`) and
  * dispatches what comes of it. A timer is an effect that carries the event it fires, so a poll's whole life is in the
@@ -15,8 +15,8 @@ export type StateEffect<S> = { type: 'state'; state: S }
 export type TimerEffect<E> = { type: 'timer/start'; id: string; ms: number; fire: E } | { type: 'timer/cancel'; id: string }
 
 /** One handler per event type: a missing one is a type error. */
-export type Handlers<S, E extends Tagged, F extends Tagged, C> = {
-  [K in E['type']]: (state: S, event: Extract<E, { type: K }>, ctx: C) => F[]
+export type Handlers<S, E extends Tagged, F extends Tagged> = {
+  [K in E['type']]: (state: S, event: Extract<E, { type: K }>) => F[]
 }
 
 /** One executor per effect type but `state`, which the loop applies. */
@@ -30,13 +30,13 @@ export type Loop<S, E> = { dispatch(event: E): void; state(): S }
  * Runs a machine from `state`. An event dispatched while another is handled (an executor drawing, and the draw asking
  * for a read) waits until that one's effects have all run, so each handler sees the state the one before it left.
  */
-export function loop<S, E extends Tagged, F extends Tagged, C>(m: { state: S; handlers: Handlers<S, E, F, C>; ctx: C; execute: Executors<F, E> }): Loop<S, E> {
+export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handlers: Handlers<S, E, F>; execute: Executors<F, E> }): Loop<S, E> {
   let state = m.state
   const queue: E[] = []
   let handling = false
   const step = (event: E) => {
-    const handler = m.handlers[event.type as E['type']] as (state: S, event: E, ctx: C) => F[]
-    for (const effect of handler(state, event, m.ctx)) {
+    const handler = m.handlers[event.type as E['type']] as (state: S, event: E) => F[]
+    for (const effect of handler(state, event)) {
       if (effect.type === 'state') state = (effect as Tagged as StateEffect<S>).state
       else (m.execute[effect.type as Exclude<F['type'], 'state'>] as (effect: F, dispatch: (event: E) => void) => void)(effect, dispatch)
     }
