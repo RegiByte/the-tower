@@ -211,9 +211,9 @@ export function wirePrefs(el: HTMLElement, set: (patch: Partial<Prefs>) => void)
 /** The popover's content: the sections a renderer offers, in order. */
 export const settingsHtml = (sections: string[]) => `<div class="settings"><h2>Settings</h2>${sections.join('')}</div>`
 
-/** The popover's look, under `.settings-pop` (the popover element) and `.settings` (its content). */
+/** The popover's look, under `.settings-pop` (the popover element) and `.settings` (its content). `height: auto` over the UA's `fit-content`, which WebKit stretches to the `max-height`. */
 export const settingsCss = `
-.settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(18.75rem, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto;
+.settings-pop { position: fixed; inset: auto; margin: 0; padding: 0; white-space: normal; text-align: left; width: min(18.75rem, calc(100vw - 16px)); height: auto; max-height: calc(100vh - 16px); overflow: auto;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink); box-shadow: var(--shadow-pop); }
 .settings { font: var(--fs-m)/1.45 var(--ui); }
 .settings h2 { margin: 0; padding: var(--sp-l) var(--sp-xl) var(--sp-m); font: 800 var(--fs-m)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
