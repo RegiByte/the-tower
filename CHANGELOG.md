@@ -12,6 +12,45 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.49.0
+
+The third wave of the consolidation pass: the tower page split into a module per pane, and what each renderer has open
+held as machine state, fed only by events. No host restart, no config change. The renderer API moved 1.66 → 1.70,
+additions only but for two removals made as minors by exception (below). Restart the tower
+(`tower down tower && tower up tower`) and reload the page. A checkout that serves Tower 3D rebuilds it
+(`npm run tower3d`).
+
+- Escape now leaves every view of the page's main pane: policies, a collection and an item included. The stats open on
+  the floor in view from every view, and the ask banner no longer shows over a collection or an item. Behind it, what
+  the main pane shows is one value (`MainView`, `renderers/page/view.js`), named by the URL hash and read back from it,
+  and every way into a view goes through one `go`.
+- Reloading on a worker keeps the pane you picked: the hash names it (`#<id>/changes`, `#<id>/reviews`, a shown page),
+  and a plain `#<id>` still opens the default. A pane the worker no longer has falls back to the default.
+- The watched worker, whose waits stay quiet, is the one on screen while the window is focused and visible, on the page
+  and in Tower 3D alike (`watching`, `/attend.js`). Focus moving into a page framed in the tower keeps it watched.
+  Tower 3D's open desk is now its machine's state, so a desk's waits ring while Tower 3D's window is in the background,
+  as on the page.
+- Tower 3D opened or reloaded behind another tab rings for waits: before, every board reached its attention only once
+  the tab was shown, and the first one it saw was the silent first board. A browser may still mute sound in a
+  background tab; the notification shows.
+- The tower page is `page.js` composing a module per pane (sidebar, worker, review, screen, shells, stats, settings,
+  shelf, archive, draft, kept, dialogs and others), 2,777 lines down to 709. The board, its error, the viewer's record,
+  N's round and a draft's autosave are the page's machine's state, each changed by its own event; the sidebar's stats
+  are a machine of their own over held reads.
+- **Removed, as minors by exception:** `/attend.js`'s `attendHandlers` and `AttendCtx` (released in 1.66), and the
+  `ctx` argument of `/loop.js`'s handlers and `loop` (released in 1.61). Both shipped in v1.48.0 the same day and no
+  renderer outside this repository used them. Run attention's steps with `attendStep(a, event, watched)` in your own
+  machine, with `watching` and `eyeStep`; handlers take `(state, event)`. The world enters a machine only as events
+  (decision `machines`).
+- New shared exports (API 1.68, 1.70): `attendStep`, `watching`, `eyeStep`; `when`, `shownKey`, `shownHref` and
+  `sentHome` in `/cards.js`; `AUTOSAVE_MS` and `DRAFT_STATE`; `MOVE_COMMAND`; the settings popover's `section` and
+  `choice`. The page and Tower 3D read each from shared where each kept a copy. Tower 3D's send-home now says it as the
+  page does: the worker first, then its crew.
+- `policy/run` takes `start` and `slot` paired (API 1.67): a run by hand takes no slot, any other start requires one. A
+  call that was already invalid is refused at the input, in the schema's words.
+- `esc` is one function escaping all five characters, used by The Week and Tower 3D's tools. `tower ls` says a
+  worker's time as every renderer does (`1h 12m`), and `tower kept` says sizes in decimal units, as the page does.
+
 ## v1.48.0
 
 The second wave of the consolidation pass: the logic the tower page and Tower 3D each wrote by hand, now run from shared
