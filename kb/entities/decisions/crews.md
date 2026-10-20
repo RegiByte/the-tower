@@ -24,7 +24,7 @@
     "hub/src/directory.ts#crewRows", "hub/src/directory.ts#floorLines",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/renderers/tower3d/src/acts.ts#sentHome",
+    "hub/src/shared/cards.ts#sentHome",
     "hub/src/shared/cards.ts#sendHomeAsk",
     "hub/src/shared/cards.ts#pastCrews",
     "hub/src/shared/cards.ts#pastMatching",
@@ -63,7 +63,8 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Sent home together.* Every worker offers `send-home` while it or anyone under it runs
   ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions)). Its call is a list of `kill` calls, the deepest
   first, so the API gains no verb and every kill can be resumed. A worker with nobody running under it ends alone: its
-  call is its own `kill`.
+  call is its own `kill`. `sentHome` (shared, `/cards.js`) names the cards those calls end, the worker first, then its
+  crew; both renderers read it over every floor's cards.
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
 - *Drawn.* The tower page nests each crew in the sidebar under a rail; members gone home fold into one line under
