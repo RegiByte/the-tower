@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.client.json",
-  "include": ["src/tower/client.d.ts", "renderers/page/globals.d.ts", "renderers/page/page.js"]
+  "include": ["src/tower/client.d.ts", "renderers/page/globals.d.ts", "renderers/page/*.js"]
 }
