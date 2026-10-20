@@ -17,6 +17,7 @@
     "hub/renderers/kaykit/src/measure.ts#measureKit",
     "hub/renderers/kaykit/src/meshes.ts#Surface",
     "hub/renderers/kaykit/src/catalog.ts#FORGE_BINDING",
+    "hub/renderers/kaykit/src/catalog.ts#NORMS",
     "hub/renderers/kaykit/src/catalog.ts#PackInfo",
     "hub/renderers/kaykit/src/atlas.ts#mapTexture",
     "hub/renderers/kaykit/src/atlas.ts#glowTexture",
@@ -49,8 +50,12 @@ nothing pays for it until a placed prop shows a decal.
   the catalog's `materials` name others than the kit binds, or its glass opacity or decal cut differ from
   [`FORGE_BINDING`](ref:hub/renderers/kaykit/src/catalog.ts#FORGE_BINDING). Ask the forge before changing either:
   `dist/` is a cross-repo API.
-- A pack: `forge` joins KayKit's packs in `PACKS`, with ids `forge/<forge id>` (`forge/kitchen/coffee_mug_01`). No norm
-  matches it, so it is drawn at ×1, in the forge's metres (+Y up, facing +Z). A prop's category is read from its
+- A pack: `forge` joins KayKit's packs in `PACKS`, with ids `forge/<forge id>` (`forge/kitchen/coffee_mug_01`), in
+  the forge's metres (+Y up, facing +Z). One norm scales it, and it is temporary
+  ([`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS), the user's call on 2026-10-20): ×1.25, because the workers
+  and the room packs are drawn chunkier than real, and at ×1 a mug is a speck in a worker's hand. It goes back to ×1
+  as more of the office comes from the forge (the desks, then the workers), the scale converging as scenes migrate;
+  the forge's sources stay real size. A prop's category is read from its
   vendored sidecar's `category`, so a new forge prop needs no tower code: the forge files props by room and the
   catalog by what a thing is, so [`FORGE_CATEGORIES`](ref:hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES) maps
   each room to the category most of its props are (kitchen to kitchenware, office to decor, living_room to seating,
@@ -81,7 +86,7 @@ nothing pays for it until a placed prop shows a decal.
   [`material`](ref:hub/renderers/kaykit/src/draw.ts#material) does the same with its own ramp.
 - First used on the desks ([[desk-dressing]]): the dressing's mugs and cup, plate, bowl, pizza slice, pen cup and
   cactus became the forge's coffee mug, plate, bowl, pizza slice, pen cup and desk plant, at scale 1 where KayKit's
-  items carried 0.45 to 0.875, and the slice now sits centred on the plate. The pizza boxes stay KayKit's (the forge's
+  items carried 0.45 to 0.875 (the norm sizes them), and the slice now sits centred in the plate's well, 1.25 cm up. The pizza boxes stay KayKit's (the forge's
   shows a decal).
 
 **Alternatives considered.**
@@ -100,6 +105,5 @@ nothing pays for it until a placed prop shows a decal.
 
 **Impact.** On the busy fixture's desks, lit: +3 draw calls (a forge batch per level's desk layer), +9k triangles,
 the same frame time; two more 1024² textures (+10.7 MB of GPU memory); `kit.kaykit` 3102 KB to 3159 KB, with no decal
-sheet. Scale is not settled: the forge is real size (a 1.70 m body standard) beside workers about 1.5 m tall,
-which the user judges from pictures. Nothing placed shows a decal yet: placing the forge's pizza box once packed the
+sheet (measured at ×1; the norm changes no count). Nothing placed shows a decal yet: placing the forge's pizza box once packed the
 sheet (+934 KB in the kit) and drew its lid's decal cut and lit.

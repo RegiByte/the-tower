@@ -100,7 +100,7 @@
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.42, 0.75, 0.3], "turn": 150 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.72, 0.75, 0.38], "turn": 0 },
      { "model": "forge/kitchen/plate_01", "at": [1.6, 0.75, -0.02], "turn": 0 },
-     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.775, -0.02], "turn": 40 }
+     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.763, -0.02], "turn": 40 }
     ]
    }
   },
@@ -110,7 +110,7 @@
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.42, 0.75, 0.3], "turn": 150 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.72, 0.75, 0.38], "turn": 0 },
      { "model": "forge/kitchen/plate_01", "at": [1.6, 0.75, -0.02], "turn": 0 },
-     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.775, -0.02], "turn": 40 },
+     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.763, -0.02], "turn": 40 },
      { "model": "furniture/book_set", "at": [1.738, 0.853, -0.591], "turn": 103.9, "scale": 0.55 }
     ]
    }
@@ -121,7 +121,7 @@
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.42, 0.75, 0.3], "turn": 150 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.72, 0.75, 0.38], "turn": 0 },
      { "model": "forge/kitchen/plate_01", "at": [1.6, 0.75, -0.02], "turn": 0 },
-     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.775, -0.02], "turn": 40 },
+     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.763, -0.02], "turn": 40 },
      { "model": "furniture/book_set", "at": [1.735, 0.853, -0.57], "turn": 110.4, "scale": 0.55 },
      { "model": "forge/kitchen/bowl_01", "at": [1.529, 0.75, -0.807], "turn": 0 }
     ]
@@ -133,7 +133,7 @@
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.42, 0.75, 0.3], "turn": 150 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.72, 0.75, 0.38], "turn": 0 },
      { "model": "forge/kitchen/plate_01", "at": [1.6, 0.75, -0.02], "turn": 0 },
-     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.775, -0.02], "turn": 40 },
+     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.763, -0.02], "turn": 40 },
      { "model": "furniture/book_set", "at": [1.662, 0.853, -0.402], "turn": 40.2, "scale": 0.55 },
      { "model": "forge/kitchen/bowl_01", "at": [1.556, 0.75, -0.777], "turn": 0 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.78, 0.75, -0.78], "turn": 250 }
@@ -146,7 +146,7 @@
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.42, 0.75, 0.3], "turn": 150 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.72, 0.75, 0.38], "turn": 0 },
      { "model": "forge/kitchen/plate_01", "at": [1.6, 0.75, -0.02], "turn": 0 },
-     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.775, -0.02], "turn": 40 },
+     { "model": "forge/kitchen/pizza_slice_01", "at": [1.6, 0.763, -0.02], "turn": 40 },
      { "model": "furniture/book_set", "at": [1.737, 0.853, -0.531], "turn": 127.3, "scale": 0.55 },
      { "model": "forge/kitchen/bowl_01", "at": [1.532, 0.75, -0.799], "turn": 0 },
      { "model": "forge/kitchen/coffee_mug_01", "at": [1.78, 0.75, -0.78], "turn": 154.9 },

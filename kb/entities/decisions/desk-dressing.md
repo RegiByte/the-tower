@@ -75,7 +75,7 @@ loudest thing on the floor.
 - The dressing goes through the office's KayKit path ([[office-kaykit]]): what `dress` places in code becomes the
   playground's scene item in the desk's frame, its base resting at its height, its scale from
   [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms, as the document's items carry theirs (room packs ×0.75,
-  Restaurant and Halloween food and kitchenware ×0.4 more; the forge's props ×1, at scale 1). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
+  Restaurant and Halloween food and kitchenware ×0.4 more; the forge's props ×1.25 for now, at scale 1). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
   refills one layer for every workstation on each board: a BatchedMesh per pack, theme and surface, 5 draw calls for
   the building. The return is drawn in the Furniture pack's grey alt_C, the theme its item in `desk_dress.json` carries, so the
   prefab editor paints it as the office does.

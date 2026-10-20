@@ -12,7 +12,7 @@ export type Vec3 = [number, number, number]
 export const KAYKIT_PACKS = ['furniture', 'restaurant', 'prototype', 'halloween', 'city', 'space'] as const
 export type KayKitPack = (typeof KAYKIT_PACKS)[number]
 
-/** The forge's props (`renderers/tower3d/forge`): modelled at real size, so no norm scales them. */
+/** The forge's props (`renderers/tower3d/forge`): modelled at real size. */
 export const FORGE = 'forge'
 export const PACKS = [...KAYKIT_PACKS, FORGE] as const
 
@@ -59,7 +59,7 @@ export const ROOM_PACKS: Pack[] = ['furniture', 'restaurant', 'prototype', 'hall
 /**
  * A rule over the catalog: every rule a model matches applies, scales multiply. The diorama packs (city, space) match
  * none and keep the vendor's scale (a 2 m tile, a 1.65 m three-storey building): a scene scales them per use. The
- * forge matches none: its props are real size.
+ * forge's props are real size, drawn larger for now beside the office's chunkier pieces.
  */
 export type Norm = { why: string; pack?: Pack[]; category?: Category[]; maxHeight?: number; scale?: number; surface?: true }
 
@@ -74,6 +74,11 @@ export const NORMS: Norm[] = [
     pack: ['restaurant', 'halloween'],
     category: ['food', 'kitchenware'],
     scale: 0.4,
+  },
+  {
+    why: 'Temporary: the forge models at real size, but the workers and the room packs are drawn chunkier than real, so a real mug is a speck in a worker\'s hand. ×1.25 until more of the office (desks, then workers) comes from the forge, then back to ×1.',
+    pack: [FORGE],
+    scale: 1.25,
   },
   {
     why: 'Floor tiles put their walking surface at y = 0: Restaurant tiles ship with their top on the origin, Prototype tiles with their bottom.',
