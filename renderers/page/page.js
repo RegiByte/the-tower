@@ -3,13 +3,14 @@ import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME,
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, itemKind, itemsCss, keptKey, keptOf, readsText } from '/items.js'
-import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policyZone } from '/panels.js'
+import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
-import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshRead, stepped, valueOf } from '/reads.js'
+import { heldHandlers, noReads, reading } from '/reads.js'
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
-import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
 import { briefPane } from './brief-pane.js'
@@ -31,6 +32,7 @@ import { toastsCss } from '/toasts.js'
 import { DRAFTS, draftsOf } from '/drafts.js'
 
 /**
+ * @import { SideView } from './stats.js'
  * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { CardRun } from '../../src/bridge/policies.ts'
@@ -47,8 +49,7 @@ import { DRAFTS, draftsOf } from '/drafts.js'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
  * @import { AttendEffect, AttendEvent, Attending, Eye, EyeEvent } from '../../src/shared/attend.ts'
  * @import { MainView, Pane } from './view.js'
- * @import { ReadEffect, ReadEvent, Reads } from '../../src/shared/reads.ts'
- * @import { Stats } from '../../src/bridge/stats.ts'
+ * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../src/shared/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
@@ -907,61 +908,6 @@ function showPane(pane) {
   go({ t: 'worker', id: /** @type {string} */ (selected()), pane })
 }
 
-/**
- * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
- * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
- * every minute while shown, over the viewer's range, held until the next read lands (`/reads.js`). A range changed
- * drops what was read over the one before, and any read of it in flight.
- * @typedef {'floors' | 'stats'} SideView
- * @typedef {{ stats: Stats, at: number }} StatsRead
- * @typedef {{ side: SideView, range: StatsRange, all: boolean, reads: Reads<StatsRead> }} SideState
- * @typedef {{ type: 'side', side: SideView } | { type: 'range', range: StatsRange } | { type: 'scope', all: boolean } | { type: 'retry' } | { type: 'poll' }
- *   | Extract<ReadEvent<StatsRead>, { type: 'got' | 'failed' }>} SideEvent
- * @typedef {StateEffect<SideState> | ReadEffect | TimerEffect<SideEvent> | { type: 'keep', side: SideView }} SideEffect
- */
-const SIDE_VIEW_KEY = 'side.view'
-const STATS_POLL_MS = 60_000
-const STATS_SLOT = 'stats'
-/** @type {TimerEffect<SideEvent>} */
-const STATS_POLL = { type: 'timer/start', id: 'poll', ms: STATS_POLL_MS, fire: { type: 'poll' } }
-
-/** @param {SideState} s @returns {(r: Reads<StatsRead>) => SideState} */
-const withReads = (s) => (reads) => ({ ...s, reads })
-/** The stats read now, over the side's range. @param {SideState} s @returns {SideEffect[]} */
-const readNow = (s) => stepped(refreshRead(s.reads, STATS_SLOT, s.range), withReads(s))
-
-/** @type {Handlers<SideState, SideEvent, SideEffect>} */
-const sideHandlers = {
-  side: (s, { side }) => {
-    const next = { ...s, side }
-    return [{ type: 'state', state: next }, { type: 'keep', side }, { type: 'timer/cancel', id: 'poll' }, ...(side === 'stats' ? [...readNow(next), STATS_POLL] : []), { type: 'draw' }]
-  },
-  poll: (s) => [...readNow(s), STATS_POLL],
-  range: (s, { range }) => {
-    const next = { ...s, range, reads: { n: s.reads.n, held: {} } }
-    return [{ type: 'state', state: next }, { type: 'draw' }, ...(next.side === 'stats' ? readNow(next) : [])]
-  },
-  scope: (s, { all }) => [{ type: 'state', state: { ...s, all } }, { type: 'draw' }],
-  retry: (s) => [...readNow(s), { type: 'draw' }],
-  got: (s, e) => stepped(landRead(s.reads, e.slot, e.n, e.value), withReads(s)),
-  failed: (s, e) => stepped(failRead(s.reads, e.slot, e.n, e.message), withReads(s)),
-}
-
-const floorInView = () => floorOfView(view(), (id) => findCard(id)?.project) ?? floorsTopDown()[0]?.id
-
-function drawSideView() {
-  const { side: on, all, reads } = sideView.state()
-  const side = /** @type {HTMLElement} */ (document.querySelector('.side'))
-  side.classList.toggle('on-stats', on === 'stats')
-  for (const b of document.querySelectorAll('[data-side-view]')) (b.classList.toggle('on', b.dataset.sideView === on), b.setAttribute('aria-pressed', String(b.dataset.sideView === on)))
-  if (on !== 'stats') return
-  const floor = board().floors.find((f) => f.id === floorInView())
-  const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
-  const projects = board().floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
-  const held = valueOf(reads.held[STATS_SLOT])
-  drawPanel($('stats'), statsHtml({ stats: held?.stats, at: held?.at, failed: failureOf(reads.held[STATS_SLOT]), range: viewer().statsRange, projects, tabs, scope: all || !floor ? STATS_ALL : floor.id }), {})
-}
-
 function render() {
   const all = cards()
   const duty = all.filter(onDuty)
@@ -1179,19 +1125,6 @@ const scheme = tower.scheme
 
 page.dispatch({ type: 'stored', viewer: viewer() })
 
-/** @type {Loop<SideState, SideEvent>} */
-const sideView = loop({
-  state: { side: /** @type {SideView} */ ((await tower.store.get(SIDE_VIEW_KEY)) ?? 'floors'), range: viewer().statsRange, all: false, reads: noReads() },
-  handlers: sideHandlers,
-  execute: {
-    .../** @type {Executors<TimerEffect<SideEvent>, SideEvent>} */ (timers()),
-    read: reading((_, range) => tower.stats(statsQuery(/** @type {StatsRange} */ (range), Date.now())).then((stats) => ({ stats, at: Date.now() }))),
-    keep: ({ side }) => tower.store.set(SIDE_VIEW_KEY, side),
-    draw: () => drawSideView(),
-    toast: ({ message }) => void (lostAt() || toast(message)),
-  },
-})
-
 const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumableHtml, heldWhy, heldHtml, withKeys, floorOf } = boardKit({ findCard: (id) => findCard(id), board, heed, lostAt })
 
 const { findCard, readArchive, freshArchives, lookUp, openArchive, enterArchive, drawArchive } = archive({ cards, board, floorOf, render, heldWhy, heldHtml, selected, callsign, unresumableHtml, go, paint, viewing })
@@ -1205,6 +1138,8 @@ const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ fi
 const { alerts, playSound, showShownAlert, showOfferAlert, showAlert } = alerting({ callsign, select, showPane, floorOf, board, openPolicies })
 
 const { drawSettings } = settingsPane({ page, viewer, playSound })
+
+const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
