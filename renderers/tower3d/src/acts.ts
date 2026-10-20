@@ -3,7 +3,7 @@ import { draftItem } from '../../../src/shared/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { HOST_MEANS, base, callOf, can, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
+import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
@@ -145,11 +145,8 @@ const threadOffer = (board: Board, c: Card): Offer[] => {
   return [{ verb: 'thread', label: c.unseen ? `read ${notes(c.unseen)} new to it` : 'review thread' }]
 }
 
-/** Those X sends home: the worker and everyone under it that runs (`send-home`). */
-export const sentHome = (cards: Card[], c: Card): Card[] => (callOf(c, 'send-home') ?? []).map(([, { id }]) => cards.find((h) => h.id === id)!)
-
 const homeLabel = (board: Board, c: Card) => {
-  const others = sentHome(floorOf(board, c.project)!.cards, c).filter((h) => h.id !== c.id)
+  const others = sentHome(cardsOf(board), c).filter((h) => h.id !== c.id)
   return others.length ? `send home${c.live ? ' with' : ''} ${others.map((h) => h.callsign).join(', ')}` : 'send home'
 }
 

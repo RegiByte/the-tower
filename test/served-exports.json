@@ -370,6 +370,7 @@
       "sendHomeAsk",
       "sendTarget",
       "sendTargets",
+      "sentHome",
       "shelfKind",
       "shelfPage",
       "shelfPaths",

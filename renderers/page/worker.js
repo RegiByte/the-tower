@@ -1,5 +1,5 @@
 import { documentCss } from '/design.js'
-import { crewOf, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
+import { sentHome, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
 import { keepShownTabs, fileSpansHtml } from '/panels.js'
 import { toolHtml, when, $, fillOf, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
@@ -257,18 +257,16 @@ export async function worker(deps) {
     shownPrimed = true
   }
 
-  /** Those `send-home` ends: the worker and everyone under it that runs, each a card; none once it no longer offers `send-home`. @param {Card} c */
-  const sentHome = (c) => [c, ...crewOf(cards(), c)].filter((h) => sendHomeCalls(c).some(([, { id }]) => id === h.id))
   /** @param {Card} c */
   const sendHomeCalls = (c) => callOf(c, 'send-home') ?? []
 
   /** @param {Card} c */
-  const sendHomeTitle = (c) => sentHome(c).length === 1 ? `end ${callsign(c.id)}; it can be resumed` : `end ${sentHome(c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
+  const sendHomeTitle = (c) => sentHome(cards(), c).length === 1 ? `end ${callsign(c.id)}; it can be resumed` : `end ${sentHome(cards(), c).map((h) => h.callsign).join(', ')}: ${callsign(c.id)} and everyone under it that runs; each can be resumed`
 
   /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. @param {HTMLElement} button @param {Card} c */
   async function sendHome(button, c) {
     if (!can(c, 'send-home')) return toast(noLongerOffered(c.callsign, 'send-home'))
-    const sent = sentHome(c)
+    const sent = sentHome(cards(), c)
     if (!confirm(sendHomeAsk(c, sent))) return
     const ended = await pressing(button, async () => {
       for (const call of sendHomeCalls(c)) if (!(await told(tower.run(call)))) return false
