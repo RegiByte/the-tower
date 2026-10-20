@@ -33,7 +33,7 @@ import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
-import { DRAFTS } from '/drafts.js'
+import { AUTOSAVE_MS, DRAFTS } from '/drafts.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -172,9 +172,6 @@ const chain = (s, steps) => {
 
 /** The tower lost or back: attention hears of it only as it changes. @param {PageState} s @param {boolean} lost @param {number} at @returns {PageEffect[]} */
 const marked = (s, lost, at) => lost === (s.lostAt !== undefined) ? [into(s)] : attend({ ...s, lostAt: lost ? at : undefined }, { type: 'lost', lost })
-
-/** The draft open is saved this long after its last keystroke. */
-const AUTOSAVE_MS = 800
 
 /** @param {PageState} s @param {EyeEvent} e @returns {PageEffect[]} */
 const see = (s, e) => [into({ ...s, eye: eyeStep(s.eye, e) })]

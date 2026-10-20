@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { DRAFTS, discard as discardDraft, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
+import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../src/shared/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import { HELD, byKind, heldWhy, keepsThreads, sentHome, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
@@ -2751,7 +2751,6 @@ async function openSpawnOnNote(project: string, note: Held) {
 }
 
 /** The draft editor beside the world: saved as you type, on leaving, and before it is carried or sent. */
-const AUTOSAVE_MS = 800
 let saveTimer: ReturnType<typeof setTimeout>
 const draftText = $('draft-text') as HTMLTextAreaElement
 

@@ -183,7 +183,9 @@
       "type"
     ],
     "/drafts.js": [
+      "AUTOSAVE_MS",
       "DRAFTS",
+      "DRAFT_STATE",
       "discard",
       "discardItem",
       "draftItem",

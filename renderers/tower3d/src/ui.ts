@@ -1,5 +1,5 @@
 import { documentCss } from '../../../src/shared/design.ts'
-import { DRAFTS, draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
+import { DRAFTS, DRAFT_STATE, draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml } from '../../../src/shared/items.ts'
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { keptTitle } from './kept.ts'
@@ -659,7 +659,6 @@ export function directoryHtml(p: Plan, held: HeldWhy) {
 
 type ShelfEntry = NonNullable<Floor['shelf']>[number]
 
-const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it has words', editing: 'editing', saved: 'saved' }
 
 const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${keptBy.callsign}` : '')
 

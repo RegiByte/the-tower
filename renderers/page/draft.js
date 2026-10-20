@@ -4,7 +4,7 @@ import { fileButtonsHtml } from '/panels.js'
 import { HOME } from './view.js'
 import { lineOf, $, byStart, CLOSE_HOME, toast, told } from './kit.js'
 import { commandOf } from '/keymap.js'
-import { discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
  * @import { Board, Card, Floor, FloorCollection } from '../../src/bridge/board.ts'
@@ -63,8 +63,6 @@ export function draft(deps) {
   const drafting = () => draftOpen
 
   const targets = () => cards().filter((c) => can(c, 'submit'))
-
-  const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it has words', editing: 'editing', saved: 'saved' }
 
   /** The head of the draft open: an item is listed in its floor's drafts. */
   function draftHeadHtml() {

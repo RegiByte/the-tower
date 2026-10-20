@@ -73,6 +73,11 @@ export async function openDraft(io: DraftIo, project: string, item: Item): Promi
 
 export const isEdited = (d: Draft) => d.text !== d.saved
 
+/** A draft open is saved this long after its last keystroke. */
+export const AUTOSAVE_MS = 800
+
+export const DRAFT_STATE: Record<ReturnType<typeof draftState>, string> = { conflict: 'changed on disk', new: 'new · saved once it has words', editing: 'editing', saved: 'saved' }
+
 export const draftState = (d: Draft) => (d.conflict !== undefined ? 'conflict' : !d.id ? 'new' : isEdited(d) ? 'editing' : 'saved')
 
 export const edit = (d: Draft, text: string) => void (d.text = text)
