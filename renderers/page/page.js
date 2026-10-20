@@ -389,7 +389,7 @@ const moreHtml = (f, c) => /** @param {number} rest */ (rest) =>
 /** @param {Floor} f */
 const draftsHtml = (f) => {
   const drafts = /** @type {FloorCollection} */ (draftsOf(f))
-  return collectionPeekHtml(f.id, drafts, (item) => draftTitle(f.id, item), draftOpen?.project === f.id ? draftOpen.id : undefined, Date.now(), moreHtml(f, drafts), newDraftHtml(f))
+  return collectionPeekHtml(f.id, drafts, (item) => draftTitle(f.id, item), drafting()?.project === f.id ? drafting()?.id : undefined, Date.now(), moreHtml(f, drafts), newDraftHtml(f))
 }
 
 /** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
@@ -477,6 +477,9 @@ const holdsSelected = (f) => selected() !== undefined && selected() !== foldedOv
 const needsYou = (f) => floorWaits(f).some((w) => /** @type {Card} */ (findCard(w.id)).attention === 'needs')
 /** @param {Floor} f */
 const isOpen = (f) => holdsSelected(f) || (floorsOpen[f.id] ?? needsYou(f))
+
+/** The selected worker's floor is open again, whatever its sign folded. */
+const forgetFold = () => (foldedOver = undefined)
 
 /** @param {string} id */
 function toggleFloor(id) {
@@ -682,7 +685,7 @@ function detailsHtml(c) {
     ...detailsOf(c),
     resumesRow(c, when),
     ['started', when(c.startedAt)],
-    ['terminal', term && selected() === c.id ? `${term.cols}×${term.rows} · ${isOwner() ? 'sized to this view, you type' : 'watching'}` : ''],
+    ['terminal', terminal() && selected() === c.id ? `${openTerm().cols}×${openTerm().rows} · ${isOwner() ? 'sized to this view, you type' : 'watching'}` : ''],
   ].filter(([, value]) => value)
   return `<h3>${callsign(c.id)}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
 }
@@ -790,6 +793,9 @@ function renderPane(c) {
 /** The showing the shown pane last drew: a new showing of the same target draws it again. @type {string | undefined} */
 let shownDrawn
 
+/** The shown pane is drawn again on the next render. */
+const forgetShown = () => (shownDrawn = undefined)
+
 /** @param {Card} c @param {CardShown | undefined} s */
 function renderShown(c, s) {
   $('main').classList.toggle('on-shown', Boolean(s))
@@ -846,7 +852,7 @@ const changesIn = (id) => changesOf(changeReads.state(), id)
 
 /** @param {string} id @param {ChangesScope} scope */
 function compare(id, scope) {
-  pick = undefined
+  desk.pick = undefined
   changeReads.dispatch({ type: 'compare', id, scope })
   render()
 }
@@ -880,39 +886,39 @@ function toggleFold(key) {
 }
 
 /**
- * Lines picked in the Changes pane (`picking` while they are dragged across), and the note being written under them;
- * `pickFresh` until the box first takes focus.
- * @type {LinePick | undefined}
+ * The review desk of the worker open: the lines picked in the Changes pane (`picking` while they are dragged across)
+ * and the note being written under them (`fresh` until its box first takes focus), the note the Reviews pane's
+ * composer answers, and an anchor's lines to scroll to once Changes draws them, its file unfolded.
+ * @type {{ pick: LinePick | undefined, picking: boolean, text: string, fresh: boolean, re: number | undefined, jump: Anchor | undefined }}
  */
-let pick
-let picking = false
-let pickText = ''
-let pickFresh = false
-const dropPick = () => ((pick = undefined), (pickText = ''))
+const desk = { pick: undefined, picking: false, text: '', fresh: false, re: undefined, jump: undefined }
+const dropPick = () => ((desk.pick = undefined), (desk.text = ''))
+/** A worker opened afresh starts with nothing picked and no note answered. */
+const resetDesk = () => (dropPick(), (desk.re = undefined))
 
 function drawChanges() {
   const c = /** @type {Card} */ (findCard(selected()))
   const shown = changesIn(c.id)
-  const live = shown && livePick(shown, pick)
-  if (shown && pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
-  if (shown) pick = live
+  const live = shown && livePick(shown, desk.pick)
+  if (shown && desk.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
+  if (shown) desk.pick = live
   const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
-  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick, picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id) }), { 'pick-text': pickText })
-  if (pickFresh) $('changes').querySelector('[data-pick-text]')?.focus()
-  pickFresh = false
-  if (jump && shown) jumpToAnchor()
+  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id) }), { 'pick-text': desk.text })
+  if (desk.fresh) $('changes').querySelector('[data-pick-text]')?.focus()
+  desk.fresh = false
+  if (desk.jump && shown) jumpToAnchor()
 }
 
 /** @param {string} value @param {boolean} extend */
 function pickLine(value, extend) {
-  pick = picked(read(), pick, value, extend)
-  pickFresh = true
+  desk.pick = picked(read(), desk.pick, value, extend)
+  desk.fresh = true
   drawChanges()
 }
 
 watchPickDrag($('changes'), {
-  drag: (from, to) => ((pick = spanned(read(), from, to)), (picking = true), drawChanges()),
-  drop: () => ((picking = false), (pickFresh = true), drawChanges()),
+  drag: (from, to) => ((desk.pick = spanned(read(), from, to)), (desk.picking = true), drawChanges()),
+  drop: () => ((desk.picking = false), (desk.fresh = true), drawChanges()),
 })
 
 /** @param {Floor | undefined} f */
@@ -955,7 +961,7 @@ async function addNote(button, c, fields) {
 
 /** @param {HTMLElement} button */
 async function addPicked(button) {
-  if (!(await addNote(button, /** @type {Card} */ (findCard(selected())), { anchors: [pickAnchor(read().repos, /** @type {LinePick} */ (pick))], body: pickText }))) return
+  if (!(await addNote(button, /** @type {Card} */ (findCard(selected())), { anchors: [pickAnchor(read().repos, /** @type {LinePick} */ (desk.pick))], body: desk.text }))) return
   dropPick()
   drawChanges()
 }
@@ -964,15 +970,13 @@ async function addPicked(button) {
 const noteDrafts = new Map()
 /** @param {Card} c */
 const draftKey = (c) => `${c.project}/${threadCheckoutOf(c)}`
-/** @type {number | undefined} */
-let noteRe
 
 /** @param {HTMLElement} button */
 async function addWritten(button) {
   const c = /** @type {Card} */ (findCard(selected()))
-  if (!(await addNote(button, c, { re: noteRe, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
+  if (!(await addNote(button, c, { re: desk.re, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
   noteDrafts.delete(draftKey(c))
-  noteRe = undefined
+  desk.re = undefined
   render()
 }
 
@@ -991,7 +995,7 @@ function sendNotes(button, c) {
 
 /** @param {Card} c */
 const threadView = (c) => threadViewOf(board(), cardThread(c), {
-  thread: threadOf(c), failed: threadOf(c) ? undefined : threadFailure(threadReads.state(), cardThread(c)), changes: scopeIn(c.id) === 'all' ? changesIn(c.id)?.repos : undefined, picked: pickedFor(c), re: noteRe,
+  thread: threadOf(c), failed: threadOf(c) ? undefined : threadFailure(threadReads.state(), cardThread(c)), changes: scopeIn(c.id) === 'all' ? changesIn(c.id)?.repos : undefined, picked: pickedFor(c), re: desk.re,
 })
 
 /** @param {Card} c */
@@ -999,25 +1003,28 @@ const drawReviews = (c) => drawPanel($('reviews'), reviewsHtml(threadView(c)), {
 
 /** @param {number} n */
 function replyTo(n) {
-  noteRe = n
+  desk.re = n
   render()
   $('reviews').querySelector('[data-note-text]')?.focus()
 }
 
-/** An anchor's lines in the Changes pane: its file unfolded, scrolled to once drawn. @type {Anchor | undefined} */
-let jump
 
 /** An anchor is drawn on the thread of the selected worker. @param {string} value */
 function showAnchor(value) {
   const id = /** @type {string} */ (selected())
-  jump = anchorOf(/** @type {ReviewThread} */ (threadOf(/** @type {Card} */ (findCard(id)))), value)
+  desk.jump = anchorOf(/** @type {ReviewThread} */ (threadOf(/** @type {Card} */ (findCard(id)))), value)
   showPane('changes')
   if (scopeIn(id) !== 'all') compare(id, 'all')
 }
 
+function clearReply() {
+  desk.re = undefined
+  render()
+}
+
 function jumpToAnchor() {
-  const a = /** @type {Anchor} */ (jump)
-  jump = undefined
+  const a = /** @type {Anchor} */ (desk.jump)
+  desk.jump = undefined
   const spot = anchorSpot(read().repos, a)
   if (!spot) return toast(`${a.repo}:${a.path} has no changes now`)
   if (isFolded(read(), folds, spot.repo, spot.file)) toggleFold(spot.key)
@@ -1042,7 +1049,7 @@ function showLink(c, s) {
 
 /** @param {Pane} pane */
 function showPane(pane) {
-  if (pane === 'brief') term?.blur()
+  if (pane === 'brief') terminal()?.blur()
   go({ t: 'worker', id: /** @type {string} */ (selected()), pane })
 }
 
@@ -1077,6 +1084,12 @@ function drawBrief(same = true) {
   const expanded = same ? expandedSaid(el) : new Set()
   drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: viewer().briefMarkdown, working: c?.status === 'working' }), {})
 }
+
+/** Draws the brief again, while one is shown. */
+const redrawBrief = () => briefShown && drawBrief()
+
+/** The prompt or the answer `said` names in the brief shown, copied. @param {string} said */
+const copySaid = (said) => copyText(/** @type {string} */ (saidText(/** @type {NonNullable<typeof briefShown>} */ (briefShown).threads, said)), said.endsWith(':prompt') ? 'the prompt' : 'the answer')
 
 /** @param {BriefMarkdown} markdown */
 function chooseBriefMarkdown(markdown) {
@@ -1214,7 +1227,7 @@ function render() {
   const c = selected() && findCard(selected())
   followChanges(c || undefined)
   if (c) barHtml(c)
-  if (draftOpen) draftHeadHtml()
+  if (drafting()) draftHeadHtml()
   if (viewing('item')) drawItem()
   if (viewing('archive')) drawArchive()
   if (viewing('policies')) drawPolicies()
@@ -1354,7 +1367,7 @@ const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'arch
 const ENTER = {
   home: () => {},
   arriving: () => {},
-  worker: (v) => enterWorker(v.id),
+  worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
   shelf: enterShelf,
   archive: (v) => enterArchive(v.project),
   policies: () => {},
@@ -1376,10 +1389,7 @@ const LEAVE = {
   policies: () => {},
   collection: () => {},
   draft: leaveDraft,
-  item: () => {
-    itemDrawn = undefined
-    $('item-body').innerHTML = ''
-  },
+  item: leaveItem,
 }
 
 /**
@@ -1469,7 +1479,7 @@ async function rereadViewer() {
   const was = viewer()
   page.dispatch({ type: 'stored', viewer: await readViewer(tower.store.get) })
   if (viewer().statsRange !== was.statsRange) sideView.dispatch({ type: 'range', range: viewer().statsRange })
-  if (viewer().briefMarkdown !== was.briefMarkdown && briefShown) drawBrief()
+  if (viewer().briefMarkdown !== was.briefMarkdown) redrawBrief()
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */
@@ -1631,6 +1641,8 @@ function showMode(text = isOwner() ? `in control · ${openTerm().cols}×${openTe
 
 /** The terminal open on the selected worker, and its fit, while one is. */
 const openTerm = () => /** @type {Xterm.Terminal} */ (term)
+/** The terminal open on the selected worker, if one is. */
+const terminal = () => term
 
 function claim() {
   openTerm().options.fontSize = termFont().size
@@ -1694,9 +1706,6 @@ const goHome = () => go(HOME)
 
 /** A worker's terminal streams while the main pane is on it; when its session ends, the worker is opened again. @param {string} id */
 function enterWorker(id) {
-  foldedOver = undefined
-  dropPick()
-  noteRe = undefined
   stopScreen = tower.watch(`terminal/${id}`, (streamed) => {
     const msg = /** @type {TerminalMsg} */ (streamed)
     if (msg.t === 'snapshot') openTerminal(msg)
@@ -1922,6 +1931,8 @@ async function policyCall(button, call) {
 
 /** The draft open in the main pane (src/shared/drafts.ts), its textarea holding `text`. @type {Draft | undefined} */
 let draftOpen
+/** The draft open, if one is. */
+const drafting = () => draftOpen
 
 const targets = () => cards().filter((c) => can(c, 'submit'))
 const DRAFT_STATE = { conflict: 'changed on disk', new: 'new · saved once it has words', editing: 'editing', saved: 'saved' }
@@ -2084,6 +2095,14 @@ const undoDelete = (gone) => told(restoreDraft(draftIo, gone)).then((r) => r && 
 /** The version of the kept item open that its body was drawn from. @type {number | undefined} */
 let itemDrawn
 
+function leaveItem() {
+  itemDrawn = undefined
+  $('item-body').innerHTML = ''
+}
+
+/** The item open is drawn again from its file on the next render. */
+const forgetItem = () => (itemDrawn = undefined)
+
 /** @typedef {{ project: string, collection: string, id: string }} ItemRef */
 /** @param {ItemRef} ref */
 const itemOf = ({ project, collection, id }) => {
@@ -2232,6 +2251,19 @@ function fitShell() {
   told(tower.call('shell/resize', { id: shell.id, cols, rows }))
 }
 
+/** The open shell takes a new face and size. @param {ReturnType<typeof terminalFont>} font */
+function refontShell(font) {
+  if (!shell?.term) return
+  Object.assign(shell.term.options, { fontFamily: font.family, fontSize: font.size })
+  fitShell()
+}
+
+/** The open shell's terminal, once mounted. */
+const shellTerm = () => shell?.term
+
+/** A shell's tab opens its view, or closes it when it is the one open. @param {string} id */
+const toggleShell = (id) => (id === shell?.id ? closeShell() : openShell(id))
+
 /** Closes the view only: the shell keeps running until it is killed. */
 function closeShell() {
   shell?.stop()
@@ -2300,7 +2332,7 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
   },
   draftIo,
   held: async (d) => d,
-  kept: (d) => void (draftOpen === d && ($('draft-text').value = d.text)),
+  kept: (d) => void (drafting() === d && ($('draft-text').value = d.text)),
   shown: () => {},
   started: async (id, d) => {
     if (d) await deleteSent(d)
@@ -2374,11 +2406,11 @@ document.addEventListener('click', (e) => {
     return collection === DRAFTS ? openDraft(project, id) : openItem(project, collection, id)
   }
   if (target.closest('[data-item-act=delete]')) return deleteKept()
-  if (target.closest('[data-item-read]')) return ((itemDrawn = undefined), render())
+  if (target.closest('[data-item-read]')) return (forgetItem(), render())
   const copy = target.closest('[data-copy]')?.dataset.copy
   if (copy) return copyText(copy, copy)
   const said = target.closest('[data-copy-said]')?.dataset.copySaid
-  if (said) return copyText(/** @type {string} */ (saidText(/** @type {NonNullable<typeof briefShown>} */ (briefShown).threads, said)), said.endsWith(':prompt') ? 'the prompt' : 'the answer')
+  if (said) return copySaid(said)
   const code = target.closest('[data-copy-code]')
   if (code) return copyText(fenceText(code), 'the code')
   const markdown = /** @type {BriefMarkdown | undefined} */ (target.closest('[data-brief-markdown]')?.dataset.briefMarkdown)
@@ -2429,7 +2461,7 @@ document.addEventListener('click', (e) => {
   if (noteAdd) return addWritten(noteAdd)
   const reply = target.closest('[data-reply]')?.dataset.reply
   if (reply) return replyTo(Number(reply))
-  if (target.closest('[data-reply-clear]')) return ((noteRe = undefined), render())
+  if (target.closest('[data-reply-clear]')) return clearReply()
   const toNote = target.closest('[data-to-note]')?.dataset.toNote
   if (toNote) return $('reviews').querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
   const anchored = target.closest('[data-anchor]')?.dataset.anchor
@@ -2505,7 +2537,7 @@ document.addEventListener('click', (e) => {
     return confirm(killShellAsk(shellFloor(sh), sh)) && told(pressing(/** @type {HTMLElement} */ (target.closest('[data-kill-shell]')), () => tower.call('shell/kill', { id: killShell })))
   }
   const tab = target.closest('[data-shell]')?.dataset.shell
-  if (tab) return tab === shell?.id ? closeShell() : openShell(tab)
+  if (tab) return toggleShell(tab)
   const archive = target.closest('[data-archive]')?.dataset.archive
   if (archive) return viewing('archive')?.project === archive ? goHome() : openArchive(archive)
   const section = target.closest('[data-section]')?.dataset.section
@@ -2530,7 +2562,7 @@ document.addEventListener('click', (e) => {
   if (act === 'home') return goHome()
   if (act === 'drive') {
     showPane('screen')
-    return term?.focus()
+    return terminal()?.focus()
   }
   const crewFolded = target.closest('[data-crew-fold]')?.dataset.crewFold
   if (crewFolded) return toggleCrewFold(crewFolded)
@@ -2555,7 +2587,7 @@ document.addEventListener('change', (e) => {
 $('screen').addEventListener('input', (e) => {
   const box = /** @type {HTMLTextAreaElement} */ (e.target)
   if (box.matches('[data-note-text]')) noteDrafts.set(draftKey(/** @type {Card} */ (findCard(selected()))), box.value)
-  if (box.matches('[data-pick-text]')) pickText = box.value
+  if (box.matches('[data-pick-text]')) desk.text = box.value
 })
 
 /** The pane tabs move as the ARIA tabs pattern has it: ← → Home End go along the row and show the pane they reach. */
@@ -2586,16 +2618,16 @@ $('screen').addEventListener('keydown', (e) => {
 const scheme = tower.scheme
 
 function redrawDocs() {
-  shownDrawn = undefined
+  forgetShown()
   const file = viewing('shelf')?.file
   if (file) showDoc(file)
   const item = viewing('item')
-  if (item && readsText(itemKind(item.id))) itemDrawn = undefined
+  if (item && readsText(itemKind(item.id))) forgetItem()
   render()
 }
 
 function applyScheme() {
-  for (const t of [term, shell?.term]) if (t) t.options.theme = terminalTheme(scheme())
+  for (const t of [terminal(), shellTerm()]) if (t) t.options.theme = terminalTheme(scheme())
   redrawDocs()
 }
 
@@ -2615,10 +2647,7 @@ async function applyTermFont() {
     if (isOwner()) claim()
     else term.options.fontSize = fitFont(term.cols, term.rows)
   }
-  if (shell?.term) {
-    Object.assign(shell.term.options, { fontFamily: font.family, fontSize: font.size })
-    fitShell()
-  }
+  refontShell(font)
 }
 
 tower.onScheme(applyScheme)
@@ -2661,7 +2690,7 @@ function leaveTerminal() {
 function toPane(pane) {
   if (!selected() || !$('bar-line').querySelector(`[data-pane=${pane}]`)) return false
   showPane(pane)
-  if (pane === 'screen') term?.focus()
+  if (pane === 'screen') terminal()?.focus()
   else /** @type {HTMLElement} */ ($('bar-line').querySelector(`[data-pane=${pane}]`)).focus()
   return true
 }
