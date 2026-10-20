@@ -5,13 +5,21 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-10-19",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/worker.js#worker", "hub/renderers/page/review.js#review", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
-drives the system through `/tower.js`; it holds no machinery. It is `index.html` and the module beside it,
-`page.js`, served as written and checked by `npm run typecheck` through JSDoc
-([`tsconfig.page.json`](ref:hub/tsconfig.page.json)). The skyline home shows projects as buildings and sessions as lit
+drives the system through `/tower.js`; it holds no machinery. It is `index.html` and the modules beside it, served as
+written and checked by `npm run typecheck` through JSDoc ([`tsconfig.page.json`](ref:hub/tsconfig.page.json)).
+`page.js` composes them: its machine ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)) with the
+executors, the draw, and the clicks, keys and board wired to them. Each pane is a module exporting a factory that
+takes what it reads and calls as plain functions and returns what the page composes, its own state closed inside it:
+the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), the skyline, the selected
+[`worker`](ref:hub/renderers/page/worker.js#worker) (its header, pane tabs and showings), its terminal (`screen.js`),
+brief (`brief-pane.js`) and Changes and Reviews ([`review`](ref:hub/renderers/page/review.js#review)), the
+[`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the shelf, the archive, a draft, what a
+floor keeps and the dialogs. What they draw with alike is `kit.js`, what they read off the board alike
+[`boardKit`](ref:hub/renderers/page/board.js#boardKit). The skyline home shows projects as buildings and sessions as lit
 windows, one row of buildings narrowing to fit any number of floors.
 
 The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
@@ -41,8 +49,8 @@ file, a floor's archive, policies or collection, a draft or a kept item. Its has
 [`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
 [`viewOf`](ref:hub/renderers/page/view.js#viewOf); every way into a view goes through
 [`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, relay, draft) unless the next is
-the same place, and enters the next. The page's machine holds that view beside the window's focus and visibility and
-the attention state ([[machines]]), so the worker whose waits ring for nobody is the one on screen while the window
+the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record, the window's focus and
+visibility and the attention state ([[machines]]), each changed by its own event, so the worker whose waits ring for nobody is the one on screen while the window
 has the viewer's eye.
 
 The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is a link to

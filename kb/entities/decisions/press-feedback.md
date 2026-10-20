@@ -19,7 +19,7 @@
     "hub/src/shared/drafts.ts#restore",
     "hub/src/collections.ts#restoreItem",
     "hub/src/shared/cards.ts#spawnFormHtml",
-    "hub/renderers/page/page.js#resumeSentHome",
+    "hub/renderers/page/worker.js#resumeSentHome",
     "hub/src/shared/spawn.ts#spawnHandlers",
     "hub/renderers/tower3d/src/main.ts#confirmed",
     "hub/renderers/tower3d/src/ui.ts#askingButton",
