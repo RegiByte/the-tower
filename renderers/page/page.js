@@ -6,7 +6,7 @@ import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, 
 import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
-import { heldHandlers, noReads, reading } from '/reads.js'
+import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshRead, stepped, valueOf } from '/reads.js'
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
@@ -37,11 +37,12 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange, StatsView } from '../../src/shared/panels.ts'
+ * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange } from '../../src/shared/panels.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
  * @import { AttendEffect, AttendEvent, Attending, Eye, EyeEvent } from '../../src/shared/attend.ts'
  * @import { MainView, Pane } from './view.js'
- * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
+ * @import { ReadEffect, ReadEvent, Reads } from '../../src/shared/reads.ts'
+ * @import { Stats } from '../../src/bridge/stats.ts'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Deleted, Draft } from '../../src/shared/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
@@ -1090,58 +1091,56 @@ const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => 
 /**
  * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
  * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
- * every minute while shown.
+ * every minute while shown, over the viewer's range, held until the next read lands (`/reads.js`). A range changed
+ * drops what was read over the one before, and any read of it in flight.
+ * @typedef {'floors' | 'stats'} SideView
+ * @typedef {{ stats: Stats, at: number }} StatsRead
+ * @typedef {{ side: SideView, range: StatsRange, all: boolean, reads: Reads<StatsRead> }} SideState
+ * @typedef {{ type: 'side', side: SideView } | { type: 'range', range: StatsRange } | { type: 'scope', all: boolean } | { type: 'retry' } | { type: 'poll' }
+ *   | Extract<ReadEvent<StatsRead>, { type: 'got' | 'failed' }>} SideEvent
+ * @typedef {StateEffect<SideState> | ReadEffect | TimerEffect<SideEvent> | { type: 'keep', side: SideView }} SideEffect
  */
-/** @typedef {'floors' | 'stats'} SideView */
 const SIDE_VIEW_KEY = 'side.view'
-let sideView = /** @type {SideView} */ ((await tower.store.get(SIDE_VIEW_KEY)) ?? 'floors')
-/** @type {Pick<StatsView, 'stats' | 'failed' | 'at'> & { all: boolean, reading: number }} */
-const statsView = { stats: undefined, failed: undefined, at: undefined, all: false, reading: 0 }
 const STATS_POLL_MS = 60_000
-/** @type {ReturnType<typeof setInterval> | undefined} */
-let statsPoll
+const STATS_SLOT = 'stats'
+/** @type {TimerEffect<SideEvent>} */
+const STATS_POLL = { type: 'timer/start', id: 'poll', ms: STATS_POLL_MS, fire: { type: 'poll' } }
+
+/** @param {SideState} s @returns {(r: Reads<StatsRead>) => SideState} */
+const withReads = (s) => (reads) => ({ ...s, reads })
+/** The stats read now, over the side's range. @param {SideState} s @returns {SideEffect[]} */
+const readNow = (s) => stepped(refreshRead(s.reads, STATS_SLOT, s.range), withReads(s))
+
+/** @type {Handlers<SideState, SideEvent, SideEffect>} */
+const sideHandlers = {
+  side: (s, { side }) => {
+    const next = { ...s, side }
+    return [{ type: 'state', state: next }, { type: 'keep', side }, { type: 'timer/cancel', id: 'poll' }, ...(side === 'stats' ? [...readNow(next), STATS_POLL] : []), { type: 'draw' }]
+  },
+  poll: (s) => [...readNow(s), STATS_POLL],
+  range: (s, { range }) => {
+    const next = { ...s, range, reads: { n: s.reads.n, held: {} } }
+    return [{ type: 'state', state: next }, { type: 'draw' }, ...(next.side === 'stats' ? readNow(next) : [])]
+  },
+  scope: (s, { all }) => [{ type: 'state', state: { ...s, all } }, { type: 'draw' }],
+  retry: (s) => [...readNow(s), { type: 'draw' }],
+  got: (s, e) => stepped(landRead(s.reads, e.slot, e.n, e.value), withReads(s)),
+  failed: (s, e) => stepped(failRead(s.reads, e.slot, e.n, e.message), withReads(s)),
+}
 
 const floorInView = () => floorOfView(view(), (id) => findCard(id)?.project) ?? floorsTopDown()[0]?.id
 
 function drawSideView() {
+  const { side: on, all, reads } = sideView.state()
   const side = /** @type {HTMLElement} */ (document.querySelector('.side'))
-  side.classList.toggle('on-stats', sideView === 'stats')
-  for (const b of document.querySelectorAll('[data-side-view]')) (b.classList.toggle('on', b.dataset.sideView === sideView), b.setAttribute('aria-pressed', String(b.dataset.sideView === sideView)))
-  if (sideView !== 'stats') return
+  side.classList.toggle('on-stats', on === 'stats')
+  for (const b of document.querySelectorAll('[data-side-view]')) (b.classList.toggle('on', b.dataset.sideView === on), b.setAttribute('aria-pressed', String(b.dataset.sideView === on)))
+  if (on !== 'stats') return
   const floor = board().floors.find((f) => f.id === floorInView())
   const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
   const projects = board().floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
-  drawPanel($('stats'), statsHtml({ ...statsView, range: viewer().statsRange, projects, tabs, scope: statsView.all || !floor ? STATS_ALL : floor.id }), {})
-}
-
-async function readStats() {
-  const reading = ++statsView.reading
-  const stats = await tower.stats(statsQuery(viewer().statsRange, Date.now())).catch((err) => {
-    if (reading !== statsView.reading) return
-    if (statsView.stats) return void (lostAt() || toast(err.message))
-    statsView.failed = err.message
-    drawSideView()
-  })
-  if (!stats || reading !== statsView.reading) return
-  Object.assign(statsView, { stats, failed: undefined, at: Date.now() })
-  drawSideView()
-}
-
-/** The Stats panel over the viewer's range: a read over another, held or in flight, is dropped. */
-function rangeStats() {
-  statsView.stats = undefined
-  statsView.reading++
-  drawSideView()
-  if (sideView === 'stats') readStats()
-}
-
-/** @param {SideView} view */
-function showSideView(view) {
-  sideView = view
-  tower.store.set(SIDE_VIEW_KEY, view)
-  clearInterval(statsPoll)
-  if (view === 'stats') (readStats(), (statsPoll = setInterval(readStats, STATS_POLL_MS)))
-  drawSideView()
+  const held = valueOf(reads.held[STATS_SLOT])
+  drawPanel($('stats'), statsHtml({ stats: held?.stats, at: held?.at, failed: failureOf(reads.held[STATS_SLOT]), range: viewer().statsRange, projects, tabs, scope: all || !floor ? STATS_ALL : floor.id }), {})
 }
 
 /** The nearest element from `el` up that scrolls its content: the list itself, or in the short layout the sidebar around it. @param {HTMLElement | null} el */
@@ -1426,6 +1425,20 @@ const go = (view) => page.dispatch({ type: 'go', view })
 /** The main pane opens `view` afresh, even where it already is. @param {MainView} view */
 const reopen = (view) => page.dispatch({ type: 'reopen', view })
 page.dispatch({ type: 'stored', viewer: viewer() })
+
+/** @type {Loop<SideState, SideEvent>} */
+const sideView = loop({
+  state: { side: /** @type {SideView} */ ((await tower.store.get(SIDE_VIEW_KEY)) ?? 'floors'), range: viewer().statsRange, all: false, reads: noReads() },
+  handlers: sideHandlers,
+  execute: {
+    .../** @type {Executors<TimerEffect<SideEvent>, SideEvent>} */ (timers()),
+    read: reading((_, range) => tower.stats(statsQuery(/** @type {StatsRange} */ (range), Date.now())).then((stats) => ({ stats, at: Date.now() }))),
+    keep: ({ side }) => tower.store.set(SIDE_VIEW_KEY, side),
+    draw: () => drawSideView(),
+    toast: ({ message }) => void (lostAt() || toast(message)),
+  },
+})
+
 addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
@@ -1455,7 +1468,7 @@ function playSound({ notes, wave, step }) {
 async function rereadViewer() {
   const was = viewer()
   page.dispatch({ type: 'stored', viewer: await readViewer(tower.store.get) })
-  if (viewer().statsRange !== was.statsRange) rangeStats()
+  if (viewer().statsRange !== was.statsRange) sideView.dispatch({ type: 'range', range: viewer().statsRange })
   if (viewer().briefMarkdown !== was.briefMarkdown && briefShown) drawBrief()
 }
 
@@ -2433,12 +2446,12 @@ document.addEventListener('click', (e) => {
   if (resumeButton) return resume(resumeButton, JSON.parse(/** @type {string} */ (resumeButton.dataset.resume)))
   if (target.closest('[data-side]')) return toggleSide()
   const sideTo = /** @type {SideView | undefined} */ (target.closest('[data-side-view]')?.dataset.sideView)
-  if (sideTo) return showSideView(sideTo)
+  if (sideTo) return sideView.dispatch({ type: 'side', side: sideTo })
   const scope = target.closest('[data-stats-scope]')?.dataset.statsScope
-  if (scope) return ((statsView.all = scope === STATS_ALL), drawSideView())
+  if (scope) return sideView.dispatch({ type: 'scope', all: scope === STATS_ALL })
   const range = /** @type {StatsRange | undefined} */ (target.closest('[data-stats-range]')?.dataset.statsRange)
-  if (range) return (keepViewer('statsRange', range), rangeStats())
-  if (target.closest('[data-stats-read]')) return ((statsView.failed = undefined), drawSideView(), readStats())
+  if (range) return (keepViewer('statsRange', range), sideView.dispatch({ type: 'range', range }))
+  if (target.closest('[data-stats-read]')) return sideView.dispatch({ type: 'retry' })
   if (target.closest('[data-keys]')) return showKeys()
   const dismissed = target.closest('[data-dismiss]')?.dataset.dismiss
   if (dismissed) return dismissWait(dismissed)
@@ -2723,4 +2736,4 @@ async function route(wanted) {
 /** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */
 addEventListener('hashchange', () => opened() && location.hash !== hashOf(view()) && route(location.hash.slice(1)))
 setInterval(tick, 1000)
-showSideView(sideView)
+sideView.dispatch({ type: 'side', side: sideView.state().side })
