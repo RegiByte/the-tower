@@ -10,13 +10,14 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { briefPane } from './brief-pane.js'
 import { keptViews } from './kept.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
 import { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, CLOSE_HOME, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
-import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
-import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
+import { briefCss, shownFrom } from '/brief.js'
+import { documentHtml, fenceText, markdownCss, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
 import { DEFAULT_KEYS, chordLabel, commandOf, keymapSheetHtml, keysLabel, keyshortcuts } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
@@ -30,7 +31,6 @@ import { DRAFTS, draftsOf } from '/drafts.js'
 /**
  * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection, Wait } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { Brief } from '../../src/bridge/turns.ts'
  * @import { CardRun, Offer } from '../../src/bridge/policies.ts'
  * @import { DiffFile } from '../../src/bridge/diff.ts'
  * @import { FloorBranch, FloorWorktree, LandingRead } from '../../src/bridge/worktrees.ts'
@@ -905,49 +905,6 @@ function showPane(pane) {
   go({ t: 'worker', id: /** @type {string} */ (selected()), pane })
 }
 
-/** The brief drawn last, the worker's and its conversations as read: what a copy reads its text from. @type {{ id: string, threads: Brief[] } | undefined} */
-let briefShown
-
-/**
- * The worker's earlier sessions folded, then its session's conversations, each turn's prompt and answer, the latest at
- * the bottom. Opening a worker's brief scrolls to its end, and a redraw stays at the end when the viewer was there.
- * @param {Card} c
- * @param {Brief[]} threads
- */
-function showBrief(c, threads) {
-  const el = $('brief')
-  const same = briefShown?.id === c.id
-  const atEnd = !same || el.scrollHeight - el.scrollTop - el.clientHeight < 48
-  briefShown = { id: c.id, threads }
-  drawBrief(same)
-  if (atEnd) el.scrollTop = el.scrollHeight
-}
-
-/** Draws the brief shown. */
-function drawBrief(same = true) {
-  const el = $('brief')
-  const shown = /** @type {NonNullable<typeof briefShown>} */ (briefShown)
-  const c = findCard(shown.id)
-  /** @param {string} id */
-  const promptBy = (id) => c?.conversations.find((conv) => conv.id === id)?.promptBy
-  const open = same ? openFolds(el) : new Set()
-  const expanded = same ? expandedSaid(el) : new Set()
-  drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: viewer().briefMarkdown, working: c?.status === 'working' }), {})
-}
-
-/** Draws the brief again, while one is shown. */
-const redrawBrief = () => briefShown && drawBrief()
-
-/** The prompt or the answer `said` names in the brief shown, copied. @param {string} said */
-const copySaid = (said) => copyText(/** @type {string} */ (saidText(/** @type {NonNullable<typeof briefShown>} */ (briefShown).threads, said)), said.endsWith(':prompt') ? 'the prompt' : 'the answer')
-
-/** @param {BriefMarkdown} markdown */
-function chooseBriefMarkdown(markdown) {
-  keepViewer('briefMarkdown', markdown)
-  if (briefShown) drawBrief()
-  drawSettings()
-}
-
 /**
  * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
  * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
@@ -1245,6 +1202,8 @@ const { findCard, readArchive, freshArchives, lookUp, openArchive, enterArchive,
 const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, drafting, draftHeadHtml, openDraft, enterDraft, leaveDraft, saveNow, followDraft, settleConflict, deleteSent, sendDraft, openTransfer, deleteDraft } = draft({ render, cards, floorOf, board, heldWhy, heldHtml, go, goHome, page, openSpawn: (project, sent) => openSpawn(project, sent), floorsTopDown, paint, callsign, findCard, select })
 
 const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view })
+
+const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings() })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
