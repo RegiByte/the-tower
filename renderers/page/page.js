@@ -1,5 +1,5 @@
 import { terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, landingHtml, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
 import { POLICIES } from '/policies.js'
@@ -7,6 +7,7 @@ import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { skyline } from './skyline.js'
 import { shelf } from './shelf.js'
@@ -25,7 +26,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { DEFAULT_KEYS, commandOf, keymapSheetHtml } from '/keymap.js'
+import { DEFAULT_KEYS, commandOf } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -38,7 +39,6 @@ import { DRAFTS } from '/drafts.js'
  * @import { SideView } from './stats.js'
  * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { LandingRead } from '../../src/bridge/worktrees.ts'
  * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
  * @import { BoardError } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
@@ -298,6 +298,8 @@ const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewi
 const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards })
 
 const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys })
+
+const { showLanding, showKeys } = dialogs({ board })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
@@ -628,21 +630,6 @@ tower.onScheme(applyScheme)
 tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendScheme(), drawSettings()))
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open
-
-/** @param {LandingRead} l */
-function showLanding(l) {
-  $('landing-title').textContent = `What landing changed on ${l.branch}`
-  $('landing-body').innerHTML = landingHtml(l)
-  $('landing').showModal()
-  $('landing').scrollTop = 0
-}
-
-function showKeys() {
-  $('keys-list').innerHTML = keymapSheetHtml(board().keys)
-  $('keys-legend').innerHTML = statusLegendHtml()
-  $('keys').showModal()
-  $('keys').scrollTop = 0
-}
 
 /** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
 /** @param {Pane} pane */
