@@ -1,4 +1,4 @@
-import { esc } from '../../../../src/shared/cards.ts'
+import { choice, section } from '../../../../src/shared/settings.ts'
 import { tower } from '../api.ts'
 import { FIXTURE } from '../fixtures.ts'
 
@@ -26,11 +26,9 @@ const CHOICES = [
 
 /** The settings popover's section: on or off, and a reload while the page draws other than chosen. */
 export const lightingSection = (chosen: boolean) =>
-  `<section><h3 class="eyebrow">Lighting<small>sun, shadows and night glow</small></h3>` +
-  `<div class="seg" role="group" aria-label="lighting">${CHOICES.map(({ on, label, means }) =>
-    `<button class="${on === chosen ? 'on' : ''}" data-lighting="${on}" aria-pressed="${on === chosen}" data-tip="${esc(means)}">${label}</button>`).join('')}</div>` +
-  (chosen === LIT ? '' : '<div class="row"><button data-lighting-reload data-tip="the lighting is set as the page loads">Reload to apply</button></div>') +
-  '</section>'
+  section('Lighting', 'sun, shadows and night glow',
+    `<div class="seg" role="group" aria-label="lighting">${CHOICES.map(({ on, label, means }) => choice('data-lighting', String(on), label, means, on === chosen)).join('')}</div>` +
+    (chosen === LIT ? '' : '<div class="row"><button data-lighting-reload data-tip="the lighting is set as the page loads">Reload to apply</button></div>'))
 
 export function chooseLighting(on: boolean) {
   if (FIXTURE === undefined) tower.store.set(LIGHTING_KEY, on)

@@ -56,11 +56,12 @@ export const SCHEME_MEANS: Record<SchemeChoice, string> = {
 }
 const SCHEME_ICON: Record<SchemeChoice, string> = { '': ICON.system, light: ICON.light, dark: ICON.dark }
 
-const section = (title: string, aside: string, body: string) =>
+/** One section of the settings popover: a title, what it is about, and its body. */
+export const section = (title: string, aside: string, body: string) =>
   `<section><h3 class="eyebrow">${title}<small>${aside}</small></h3>${body}</section>`
 
 /** One choice of a segmented control: `attr` its data attribute, its value `value`. */
-const choice = (attr: string, value: string | number, label: string, tip: string, on: boolean) =>
+export const choice = (attr: string, value: string | number, label: string, tip: string, on: boolean) =>
   `<button class="${on ? 'on' : ''}" ${attr}="${esc(String(value))}" aria-pressed="${on}" data-tip="${esc(tip)}">${label}</button>`
 
 /** Browser notifications: the state in words, and the button that asks while the browser hasn't. */
