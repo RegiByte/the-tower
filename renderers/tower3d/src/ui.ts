@@ -554,13 +554,13 @@ const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
         : held('resume') ? heldButton(held('resume')!, 'icon-btn', 'resume this conversation', ICON.resume)
         : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(conv, 'resume')))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
 
-/** Resumes every worker the host stopped or lost on a floor, asked first with their names. */
+/** Resumes every stranded worker on a floor, asked first with their names. */
 const resumeAllButton = (f: Floor, armed: (key: string) => boolean, held: HeldWhy) => {
   const stranded = strandedOf(f)
   if (!stranded.length) return ''
   const label = `${ICON.resume} resume all <b>${stranded.length}</b> stranded`
   return held('resume') ? heldButton(held('resume')!, 'wide', `resume all ${stranded.length} stranded`, label)
-    : askingButton(armed(`resume-all ${f.id}`), `class="wide" data-resume-all="${esc(f.id)}"`, label, 'resume every worker the host stopped or lost', resumeAllAsk(f, stranded))
+    : askingButton(armed(`resume-all ${f.id}`), `class="wide" data-resume-all="${esc(f.id)}"`, label, 'resume every worker stopped, killed or lost before it was sent home', resumeAllAsk(f, stranded))
 }
 
 /** A floor's + new session, held back with why while it can't run. */

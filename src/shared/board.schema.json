@@ -681,11 +681,11 @@
         },
         "stranded": {
           "type": "boolean",
-          "description": "Ended by the host stopping or dying, while nobody meant it to end."
+          "description": "Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it."
         },
         "cutOff": {
           "type": "boolean",
-          "description": "Stranded mid-turn: the host stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold doesn't know where the turn stood. Its `carry-on` resumes it on a prompt telling Claude so (`CARRY_ON`)."
+          "description": "Stranded mid-turn: it stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold doesn't know where the turn stood. Its `carry-on` resumes it on a prompt telling Claude so (`CARRY_ON`)."
         },
         "letGoAt": {
           "type": "number",

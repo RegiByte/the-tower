@@ -743,7 +743,7 @@ const letGo = (id: string) =>
     if (refused) return refused
     return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && can(c, 'let-go')))
       ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
-      : apiError('refused', `Session "${id}" is not stranded on duty: only a worker the host stopped or lost, waiting to be resumed, is let go`)
+      : apiError('refused', `Session "${id}" is not stranded on duty: only a stranded worker (stopped, killed or lost), waiting to be resumed, is let go`)
   })
 
 /** A worker's act on a session is named in the session's log before it lands: the user's acts are the rest. */

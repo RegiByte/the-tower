@@ -2,13 +2,15 @@
 {
   "type": "decision",
   "name": "A worker cut off mid-turn carries on through a resume on a prompt",
-  "summary": "A worker the host stopped or lost while its turn ran is derived as cutOff (the status its log folds to just before the exit), and offers carry-on: a resume whose call passes a fixed prompt as Claude's first, so it takes up the turn without the user typing; the floor's resume-all carries on every cut-off worker.",
+  "summary": "A worker stranded (the host stopped or lost it, or a signal from outside the tower killed it) while its turn ran is derived as cutOff (the status its log folds to just before the exit), and offers carry-on: a resume whose call passes a fixed prompt as Claude's first, so it takes up the turn without the user typing; the floor's resume-all carries on every cut-off worker.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "refs": [
     "hub/src/bridge/facts.ts#stepAfter",
+    "hub/src/bridge/facts.ts#killedOutside",
+    "hub/src/bridge/life.ts#lifeOf",
     "hub/src/bridge/status.ts#isMidTurn",
     "hub/src/bridge/board.ts#Card",
     "hub/src/bridge/verbs.ts#cardOffers",
@@ -29,13 +31,20 @@
 ---
 **Problem.** When the host stops (a restart through `tower down`/`up`, or a crash), every running session ends with
 `x` `hostStopped`. A worker that was mid-turn was cut off: resumed, it sits idle until the user types something like
-"carry on", worker by worker.
+"carry on", worker by worker. A worker killed by a signal from outside the tower (another worker's `pkill -f`
+matching its command line) was worse: it read as ended, off duty, in no list of workers to bring back.
 
 **Why.** Which workers were cut off is already in their logs, and the act is a resume plus a prompt: nothing new needs
 storing, and the capability belongs in the core, where every renderer and worker reaches it ([[let-go]],
 [[board-verbs]]).
 
 **How.**
+- **Stranded, three ways** ([`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf)): lost (no `x`, its host gone), stopped
+  with the host (`hostStopped`), or killed from outside
+  ([`killedOutside`](ref:hub/src/bridge/facts.ts#killedOutside)): Claude exits 128 plus the number of a signal it
+  catches (143 for SIGTERM, raising `SessionEnd` with reason `other`, which moves no status), and the host's own kill
+  is SIGHUP, 129, so any other code above 128 is a signal nobody in the tower sent. node-pty reports a signal the
+  process didn't catch (SIGKILL) as code 0 with a signal the host doesn't log: such a kill reads as an end.
 - **Derived.** The fold keeps `exitedFrom`, the status a session was in when its `x` arrived
   ([`stepAfter`](ref:hub/src/bridge/facts.ts#stepAfter)); no hook lands between the host's kill and the `x`, as
   real logs show. A lost session (no `x`) keeps its last status in its facts. The card's `cutOff` is stranded, not
@@ -48,8 +57,9 @@ storing, and the capability belongs in the core, where every renderer and worker
 - **A card verb with its call.** `carry-on` is offered beside `resume` while the card awaits a resume and is
   `cutOff`; its call is `['resume', {id, conversation, prompt: CARRY_ON}]`
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers)), the prompt one constant
-  ([`CARRY_ON`](ref:hub/src/shared/launch.ts#CARRY_ON)): "You were cut off mid-turn when the tower's host stopped.
-  Carry on where you left off." It says "stopped": a crash or a `down` without an `up` cuts off too.
+  ([`CARRY_ON`](ref:hub/src/shared/launch.ts#CARRY_ON)): "You were cut off mid-turn: your session stopped before your
+  turn ended. Carry on where you left off." It names no cause: a host stop, a crash, a `down` without an `up` and a
+  kill from outside all cut off.
 - **Everywhere resume is.** The status reads "stopped mid-turn" or "lost mid-turn"
   ([`statusName`](ref:hub/src/shared/cards.ts#statusName)); a sidebar card, short of room, says "stranded"
   ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. No renderer draws carry on on a card: a stranded card offers resume and let go, and the
@@ -71,6 +81,10 @@ storing, and the capability belongs in the core, where every renderer and worker
 - A separate "carry on all" beside "resume all". Two floor buttons for one moment after a restart; the ask lists who
   carries on.
 - Storing that a session was cut off. It is computed from the log.
+- *The host logs the signal beside the exit code.* It would catch SIGKILL too, but a host change ends every running
+  session; Claude's own exit code already tells SIGTERM, the default of `kill` and `pkill`, from the host's SIGHUP.
+- *Any exit the tower didn't ask for strands the worker.* Claude's ordinary exits (a crash, `/exit`) aren't told
+  apart yet; signals only, until they are.
 
 **Impact.** A board field (`cutOff`), a card verb (`carry-on`) and `resume`'s `prompt`: API minor. No host change, no
 config change. The sandbox's sessions submit the prompt a resume passes.

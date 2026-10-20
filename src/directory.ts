@@ -34,7 +34,7 @@
  *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed, the deepest first (its
  *                                   card's `send-home`);
  *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
- *   tower let-go <CALLSIGN>        take a stranded worker (stopped or lost with the host) off duty, still resumable (its card's `let-go`)
+ *   tower let-go <CALLSIGN>        take a stranded worker (stopped, killed or lost) off duty, still resumable (its card's `let-go`)
  *   tower hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]   start a
  *                                   worker on this floor, or the floor named, placed as a quick hire in a renderer
  *                                   places it there, on a prompt: the text of an item of this floor's collections, or
@@ -874,7 +874,7 @@ switch (verb) {
     if (!flag) throw new CliError('Usage: tower let-go <CALLSIGN>')
     const card = await cardNamed(await readBoard(), flag)
     const call = callOf(card, 'let-go')
-    if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker the host stopped or lost, on duty until it is resumed, is let go`)
+    if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a stranded worker (stopped, killed or lost), on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
     break

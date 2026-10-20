@@ -76,7 +76,7 @@ const launchArgs = ({ model, effort, prompt }: Launch, user: string | undefined,
 export const launchPrompt = (argv: string[]): string | undefined => (argv.at(-2) === '--' ? argv.at(-1) : undefined)
 
 /** What a worker the host cut off mid-turn is told as it resumes (a card's `carry-on`). */
-export const CARRY_ON = "You were cut off mid-turn when the tower's host stopped. Carry on where you left off."
+export const CARRY_ON = 'You were cut off mid-turn: your session stopped before your turn ended. Carry on where you left off.'
 
 /** `conversation` is Claude's session id. Claude files conversations by directory: resume in the same cwd. */
 const resumeArgs = (conversation: string, prompt: string | undefined, user: string | undefined, worktree: WorktreeBrief | undefined): string[] => [

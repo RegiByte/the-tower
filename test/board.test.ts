@@ -222,6 +222,15 @@ test('carry on: a worker the host stopped mid-turn is cut off, and offers a resu
   assert.deepEqual([letGo.cutOff, letGo.verbs], [true, ['resume', 'brief']])
 })
 
+test('a worker killed by a signal from outside the tower is stranded like one the host stopped; one the tower killed has ended', () => {
+  const midTurn = homed(fixture('host-stopped-mid-turn'))
+  const exitingWith = (exitCode: number) => ({ ...midTurn, events: midTurn.events.map((e) => (e[1] === 'x' ? ([e[0], 'x', { exitCode }] as SessionLog['events'][number]) : e)) })
+  const [killed, sentHome] = cardsOf([exitingWith(143), exitingWith(129)])
+  assert.deepEqual([killed.stranded, killed.cutOff, killed.onDuty, statusName(killed)], [true, true, true, 'stopped mid-turn, resumable'])
+  assert.deepEqual(killed.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  assert.deepEqual([sentHome.stranded, sentHome.onDuty], [false, false])
+})
+
 test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs", () => {
   const tree = { name: 'odin-42', path: '/lab/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
   const repos = (present: boolean) => new Map<string, RepoRead>([['/lab', { dir: '/lab', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present }], kept: [] }]])

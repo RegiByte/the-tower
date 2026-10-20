@@ -4,7 +4,7 @@
   "name": "Session lifecycle",
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/server.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/server.ts#spawnCut"]
 }
@@ -60,8 +60,10 @@ sequenceDiagram
 - **The screen is replayed, not stored.** Opening a session rebuilds its screen from the `o` and `r`
   events ([`snapshot`](ref:hub/src/bridge/screen.ts#snapshot)), then streams appended output. The log is read for
   those alone ([`screenEvents`](ref:hub/src/tail.ts#screenEvents)): no other line is parsed.
-- **End.** The PTY exits by itself, by `kill`, or because the host stopped (`hostStopped`). A session with
-  no `x` whose host is gone shows as `lost`. Either way it can be resumed: a resume is a new session
+- **End.** The PTY exits by itself, by `kill`, because the host stopped (`hostStopped`), or by a signal from
+  outside the tower (`exitCode` above 128, other than the host's SIGHUP 129). A session with no `x` whose host is
+  gone shows as `lost`. Lost, stopped with the host or killed from outside, it is stranded: on duty until resumed or
+  let go ([[carry-on]], [[let-go]]). Any way it ended, it can be resumed: a resume is a new session
   continuing the same Claude conversation.
 - **Renderers restart freely.** The tower or `tower` can die mid-session; the host keeps the PTY and the log,
   and the next renderer folds the log again ([[host-owns-ptys]]), from the checkpoint the last fold left

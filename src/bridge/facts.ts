@@ -82,6 +82,8 @@ export type Facts = {
   /** When Claude last raised a hook or a mod event, its subagents' included. */
   heardAt?: number
   hostStopped?: boolean
+  /** The code the session's process exited with. */
+  exitCode?: number
   /** The status the session was in when it exited: a turn the exit cut short reads `working` or `needs_input`. */
   exitedFrom?: Status
   /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
@@ -174,6 +176,15 @@ export const KEYED_BY = 'tower.keys'
 
 /** The fact the tower appends before a worker's kill reaches a session (`kill` with `by`). */
 export const KILLED_BY = 'tower.kill'
+
+/** The signal the host ends a session with, node-pty's default for a kill. */
+const SIGHUP = 1
+
+/**
+ * Whether a session was killed by a signal the host didn't send (`pkill`, `kill <pid>`): Claude exits 128 plus the
+ * number of a signal it catches, 143 for SIGTERM, and the host's own kill reads 129.
+ */
+export const killedOutside = (exitCode: number | undefined) => exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP
 
 /** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
 export const HIRED = 'tower.hire'
@@ -364,7 +375,7 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
     conversations: conversationsAfter(facts.conversations, event),
   }
   if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0] } : next
-  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitedFrom: facts.state.status }
+  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, exitedFrom: facts.state.status }
   if (event[1] === 'r') {
     const [cols, rows] = event[2].split('x').map(Number)
     return { ...next, cols, rows }

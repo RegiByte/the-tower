@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Letting a stranded worker go is a fact the host appends",
-  "summary": "A worker stranded by the host (stopped with it, or lost) leaves duty when the user lets it go: the tower asks the host, the single writer of every log, to append a tower.letGo hook event to the session's log through a control message that takes any tower.* fact, for a running session or one an earlier host ran; the board folds it as card.letGoAt, the card goes to the archive with its conversation still resumable, and a floor's stranded workers can be resumed at once.",
+  "summary": "A stranded worker (stopped with the host, lost, or killed from outside the tower: carry-on) leaves duty when the user lets it go: the tower asks the host, the single writer of every log, to append a tower.letGo hook event to the session's log through a control message that takes any tower.* fact, for a running session or one an earlier host ran; the board folds it as card.letGoAt, the card goes to the archive with its conversation still resumable, and a floor's stranded workers can be resumed at once.",
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",

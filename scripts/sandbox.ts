@@ -54,7 +54,8 @@ process.env.PATH = `${path.join(REPO, 'src', 'mod', 'bin')}${path.delimiter}${pr
 
 /**
  * A session that prints a line, reports the newest tested Claude release and one saved conversation with a prompt and an answer as Claude's hooks and mod
- * would (or continues the one `--resume` names, on the prompt after `--` when one is given), and waits to be killed: Claude's flags land in `$@`.
+ * would (or continues the one `--resume` names, on the prompt after `--` when one is given), and waits to be killed,
+ * exiting 143 on SIGTERM as Claude does: Claude's flags land in `$@`.
  */
 const SESSION = String.raw`post() { curl -sS -m 2 --unix-socket "$TOWER_HOOKS_SOCKET" -H 'content-type: application/json' --data-binary "$1" "http://host/hooks/$TOWER_SESSION_ID" >/dev/null; }
 conv=$(uuidgen | tr A-Z a-z); source=startup; prompt='Say hello from the sandbox.'
@@ -66,7 +67,8 @@ post '{"hook_event_name":"SessionStart","source":"'$source'","session_id":"'$con
 post '{"hook_event_name":"UserPromptSubmit","session_id":"'$conv'","prompt":'"$prompt"'}'
 post '{"hook_event_name":"prompt.submit","origin":{"kind":"composer"},"text":'"$prompt"'}'
 post '{"hook_event_name":"turn.complete","answer":"Hello from the sandbox, session '$$'.\n\n- a list\n- of things"}'
-while :; do sleep 3600; done`
+trap 'exit 143' TERM
+while :; do sleep 3600 & wait; done`
 
 const git = (dir: string, ...args: string[]) => execFileSync('git', ['-C', dir, ...args], { stdio: 'ignore' })
 

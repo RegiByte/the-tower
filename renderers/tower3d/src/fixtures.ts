@@ -106,7 +106,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const resumedBy = f.resumedBy === undefined ? undefined : linkOf(f.resumedBy)
   const life = lifeOf({
     state: f.status === 'blocked' ? { status: 'blocked', since: enteredAt, blocked: f.blocked! } : { status: f.status, since: enteredAt, compaction: f.compacting ? { trigger: 'auto' } : undefined },
-    endedFrom: f.cutOff ? 'working' : f.status, hostStopped: f.hostStopped ?? false, broken: false,
+    endedFrom: f.cutOff ? 'working' : f.status, hostStopped: f.hostStopped ?? false, killedOutside: false, broken: false,
     typedAt: f.waiting ? undefined : now, heardAt: f.stuck ? now - STUCK_MS : undefined, leaveAsked: false,
     unresumableHere: f.unresumable, conversations: f.prompt === undefined ? [] : [{ resumedBy }],
   }, now)

@@ -71,8 +71,8 @@ export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
 }
 
 /**
- * A stranded worker is `lost` (broken: it never logged an exit) or `stopped` with the host (quiet), as its colour says,
- * until the user lets it go, `mid-turn` when the host cut it off (`cutOff`). A leaving worker is `going home` too.
+ * A stranded worker is `lost` (broken: it never logged an exit) or `stopped` (quiet: with the host, or killed from
+ * outside the tower), as its colour says, until the user lets it go, `mid-turn` when it was cut off (`cutOff`). A leaving worker is `going home` too.
  */
 export const statusName = (c: Card) =>
   c.broken ? 'broken' : c.stranded ? `${c.letGoAt !== undefined ? 'let go' : c.status === 'lost' ? 'lost' : 'stopped'}${c.cutOff ? ' mid-turn' : ''}, ${c.unresumable ? UNRESUMABLE_NAME[c.unresumable] : 'resumable'}` : c.waitsOn ? `waiting on ${c.waitsOn.callsign}` : `${c.stuck ? 'stuck' : STATUS_NAME[c.status]}${c.leaving ? ', going home' : ''}`
@@ -252,7 +252,7 @@ export const pastMatching = (crews: PastCrew[], words: string[]): PastCrew[] =>
 /** How many workers crews hold, every depth counted. */
 export const pastSize = (crews: PastCrew[]): number => crews.reduce((n, { crew }) => n + 1 + pastSize(crew), 0)
 
-/** A floor's workers stranded by the host, waiting to be resumed or let go, the first started first. */
+/** A floor's stranded workers, waiting to be resumed or let go, the first started first. */
 export const strandedOf = (f: Floor) => f.cards.filter((c) => can(c, 'let-go') && can(c, 'resume')).sort((a, b) => a.startedAt - b.startedAt)
 
 /** What letting a stranded worker go means, said before it is done. */
@@ -263,7 +263,7 @@ export const letGoAsk = (c: Card) => `Let ${c.callsign} go?\n\nIt goes ${LET_GO_
 export const letGoneLine = (c: Card) => `Let ${c.callsign} go: it is in the archive`
 
 /** What carrying on does, said where a renderer resumes a cut-off worker through its `carry-on`. */
-export const CARRY_ON_MEANS = 'resume it on a prompt that tells it the host cut it off mid-turn, and to carry on where it left off'
+export const CARRY_ON_MEANS = 'resume it on a prompt that tells it it was cut off mid-turn, and to carry on where it left off'
 
 /** How a stranded worker is resumed with the rest of its floor: carried on when cut off mid-turn, else plainly. */
 const resumeCallOf = (c: Card) => callOf(c, 'carry-on') ?? callOf(c, 'resume')

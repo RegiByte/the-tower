@@ -26,6 +26,7 @@ export type LifeFacts = {
   state: SessionState
   endedFrom: Status
   hostStopped: boolean
+  killedOutside: boolean
   broken: boolean
   typedAt?: number
   heardAt?: number
@@ -36,9 +37,9 @@ export type LifeFacts = {
 }
 
 /**
- * A worker's lifecycle as its card spells it: running, stranded by the host (cut off mid-turn or not, let go or not) or
- * ended, and whether it waits on the user. Whom a waiting answer waits on instead, and whom it reports to, are its
- * crew's (`withReports`).
+ * A worker's lifecycle as its card spells it: running, stranded (stopped or lost with the host, or killed from outside
+ * the tower; cut off mid-turn or not, let go or not) or ended, and whether it waits on the user. Whom a waiting answer
+ * waits on instead, and whom it reports to, are its crew's (`withReports`).
  */
 export type WorkerLife = Pick<
   Card,
@@ -48,7 +49,7 @@ export type WorkerLife = Pick<
 /** A stranded worker is on duty while its latest conversation waits to be resumed and can be, unless let go. */
 export const lifeOf = (f: LifeFacts, now: number): WorkerLife => {
   const { status } = f.state
-  const stranded = status === 'lost' || f.hostStopped
+  const stranded = status === 'lost' || f.hostStopped || f.killedOutside
   const live = isLive(status)
   const leaving = live && f.leaveAsked
   const waiting = !f.broken && waitsOnSomeone(f.state, f.typedAt) && !(leaving && isOutcome(status))

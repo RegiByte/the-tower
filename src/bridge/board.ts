@@ -12,7 +12,7 @@ import { continuations, lineage, namer, threads, type SessionRef, type Thread } 
 import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from './policies.ts'
 import { POLICIES } from '../shared/policies.ts'
 import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ExtraUsage, type ProbeFacts, type ProbeStatus } from './probes.ts'
-import { type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
+import { killedOutside, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { withLiveness, type Status } from './status.ts'
@@ -179,10 +179,10 @@ export type Card = {
   pages: CardPage[]
   /** The messages it sent other Claude sessions across the sessions it ran as, oldest first. */
   sent: CardSent[]
-  /** Ended by the host stopping or dying, while nobody meant it to end. */
+  /** Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it. */
   stranded: boolean
   /**
-   * Stranded mid-turn: the host stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold
+   * Stranded mid-turn: it stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold
    * doesn't know where the turn stood. Its `carry-on`
    * resumes it on a prompt telling Claude so (`CARRY_ON`).
    */
@@ -406,6 +406,7 @@ const card = (
       state: { ...state, since: enteredAt },
       endedFrom: facts.exitedFrom ?? facts.state.status,
       hostStopped: facts.hostStopped === true,
+      killedOutside: killedOutside(facts.exitCode),
       broken: facts.broken !== undefined,
       typedAt,
       heardAt,

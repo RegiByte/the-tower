@@ -4,7 +4,7 @@
   "name": "Third-party notices",
   "summary": "THIRD_PARTY.md lists every work the tower ships that is not its own, in the repo or bundled and served from node_modules, with its licence; vendoring a pack or adding a served dependency re-checks it.",
   "in": "tower",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "refs": ["hub/renderers/tower3d/kaykit/", "hub/package.json", "hub/src/tower/served.ts#MODULES", "hub/src/tower/server.ts#STATIC"]
 }
 ---

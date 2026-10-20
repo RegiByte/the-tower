@@ -4,7 +4,7 @@
   "name": "Resume",
   "summary": "A new session continues one of the conversations an earlier session saved; which session resumes which is derived from Claude's session_id, never stored.",
   "in": "tower",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#resumeOnce", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/cards.ts#UNRESUMABLE_NAME"]
 }
@@ -60,6 +60,6 @@ sequenceDiagram
   showings ([[agent-show]]), and the source's card names it `continuedBy` (`{id, callsign}`). A resume of an earlier conversation
   (one before a `/clear`) forks a new worker. The resume runs Claude under the name that follows
   ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), so its peer name stays the callsign.
-- **A prompt rides along.** `resume` takes an optional `prompt`, passed after `--` as a spawn's is; a worker the host
+- **A prompt rides along.** `resume` takes an optional `prompt`, passed after `--` as a spawn's is; a stranded worker
   cut off mid-turn offers `carry-on` ([[carry-on]]), and without a prompt it resumes idle. `tower resume <id>
   [--carry-on]` resumes the latest saved conversation.
