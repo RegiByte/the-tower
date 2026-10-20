@@ -61,7 +61,9 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   [`attendStep`](ref:hub/src/shared/attend.ts#attendStep), [`watching`](ref:hub/src/shared/attend.ts#watching)); Tower
   3D's holds its open panel the same way, the desk you sit at among them
   ([`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers)). The view and the rings read one
-  selection, so a wiring missed shows on screen, and a machine replays the same from its events.
+  selection, so a wiring missed shows on screen, and a machine replays the same from its events. An event enters as
+  it happens, apart from drawing: Tower 3D hands a board to its machine as it arrives, before its models are in or
+  its first frame is drawn, which a hidden tab holds back.
 - *Time is data.* A timer is an effect carrying the event it fires
   ([`TimerEffect`](ref:hub/src/shared/loop.ts#TimerEffect), run by [`timers`](ref:hub/src/shared/loop.ts#timers)):
   starting one under an id replaces the one running there, and leaving a view cancels it in the handler that

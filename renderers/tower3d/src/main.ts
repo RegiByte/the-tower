@@ -346,7 +346,6 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
-  seeing.dispatch({ type: 'board', board: next })
   rereadViewer()
   const key = structureKey(s.plan, next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
@@ -1495,15 +1494,35 @@ function frame(now: number) {
 /** Whether frames draw: a live page draws nothing until its first board is built and its shaders compiled (`startOn`). */
 let drawing = FIXTURE !== undefined
 
-/** Boards that arrive while the first is built supersede one another: the latest is drawn once the page has started. */
+/**
+ * Boards that arrive while the models load or the first is built supersede one another: the latest is drawn once the
+ * page has started. Each is seen by the attention machine as it arrives: the loads and the start wait on a shown tab
+ * (an image's decode, a frame), and a hidden one still rings.
+ */
+let loaded = false
 let starting = false
 let latest: Parameters<typeof onBoard> | undefined
 function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   show('board-error', false)
   s.lost = false
   seeing.dispatch({ type: 'lost', lost: false })
-  if (starting) return void (latest = [next, at])
+  seeing.dispatch({ type: 'board', board: next })
+  if (!loaded || starting) return void (latest = [next, at])
   if (!s.first) return onBoard(next, at)
+  start(next, at)
+}
+
+/** The models are in: the board that waited for them, if one did, starts the page. */
+function onLoaded() {
+  loaded = true
+  loading.stage('board')
+  if (!latest) return
+  const [next, at] = latest
+  latest = undefined
+  start(next, at)
+}
+
+function start(next: Board, at: ShelfSelf | undefined) {
   starting = true
   startOn(next, at).then(() => {
     starting = false
@@ -2839,9 +2858,11 @@ Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.rendere
   s.seenShown = new Set((kept as Kept | null)?.seen)
   primeSeen = (kept as Kept | null)?.seen === undefined
   if ((kept as Kept | null)?.fps) toggleFps()
-  if (fixture) onBoard(fixture[0], undefined)
-  else (loading.stage('board'), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError))
+  if (fixture) onFixtureBoard(fixture[0])
+  else (onLoaded(), tower.onBoardError(onBoardError))
 }, failStart)
+/** How waits ring and what you dismissed are known before the first board, which may come long before the models. */
+if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (seeing.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard)))
 Promise.all([tower.get('renderers'), tower.renderer()]).then(([{ renderers }, here]) =>
   ($('renderers').innerHTML = renderersHtml(renderers, here?.name, tower.framed)), (err: Error) => toast(`renderers: ${err.message}`))
 
@@ -2853,6 +2874,11 @@ function advance() {
   const next = fixture[fixtureAt + 1]
   if (!next) throw new Error(`the ${FIXTURE} fixture has ${fixture.length} board${fixture.length === 1 ? '' : 's'}, all delivered`)
   fixtureAt++
+  onFixtureBoard(next)
+}
+
+function onFixtureBoard(next: Board) {
+  seeing.dispatch({ type: 'board', board: next })
   onBoard(next, undefined)
 }
 

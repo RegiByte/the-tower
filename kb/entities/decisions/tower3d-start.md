@@ -13,6 +13,7 @@
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/files.ts#prefetch",
     "hub/renderers/tower3d/src/main.ts#onLiveBoard",
+    "hub/renderers/tower3d/src/main.ts#onLoaded",
     "hub/renderers/tower3d/src/main.ts#startOn",
     "hub/renderers/tower3d/src/main.ts#frameScene",
     "hub/renderers/tower3d/src/main.ts#failStart"
@@ -38,6 +39,11 @@ for seconds with the GPU's program cache cold.
   sets it ([`frameScene`](ref:hub/renderers/tower3d/src/main.ts#frameScene): the rig's lights and shadows are part
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.
+- *The board is seen before it is drawn.* The page reads the viewer's record and subscribes to the board as it boots,
+  beside the models, and hands every board to its attention machine as it arrives ([[machines]]). Drawing waits for
+  the models ([`onLoaded`](ref:hub/renderers/tower3d/src/main.ts#onLoaded)) and the start waits on a shown tab
+  (Chrome decodes an image and runs a frame only for one), so a page opened or reloaded behind another tab still
+  rings when a worker starts waiting on you.
 - *Nothing is drawn before.* Frames update but don't draw until `startOn` is done, so the city never shows alone.
 - *A failed start says why.* [`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart) toasts the error,
   writes it on the loading screen and rejects the door's `ready()` with it ([[tower3d-door]]).
