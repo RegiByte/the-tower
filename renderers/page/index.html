@@ -270,7 +270,7 @@ dialog#landing { width: min(960px, 94vw); }
 .pane-tab { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }
 .ask { display: none; align-items: center; gap: var(--sp-l); flex: none; padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius); font-size: var(--fs-l);
   background: color-mix(in oklab, var(--needs) 11%, var(--panel)); border: 1px solid var(--needs); }
-.main.asking:not(.home):not(.shelf):not(.drafting):not(.archived):not(.policing) .ask { display: flex; }
+.main.asking.worker-view .ask { display: flex; }
 .ask .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ask .what b { color: var(--needs-text); }
 .ask .call { font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }

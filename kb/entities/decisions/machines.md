@@ -19,7 +19,10 @@
     "hub/src/shared/reads.ts#stepped",
     "hub/src/shared/reads.ts#heldHandlers",
     "hub/src/shared/reads.ts#reading",
-    "hub/src/shared/attend.ts#attendHandlers",
+    "hub/src/shared/attend.ts#attendStep",
+    "hub/src/shared/attend.ts#watching",
+    "hub/renderers/page/view.js",
+    "hub/renderers/page/page.js#pageHandlers",
     "hub/test/reads.test.ts"
   ],
   "links": [
@@ -49,10 +52,14 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
 - *Handlers wire steps to events.* One handler per event type ([`Handlers`](ref:hub/src/shared/loop.ts#Handlers):
   a missing one is a type error), each `(state, event, ctx) → effects`. The next state is an effect, `state`, put
   first so executors that read the loop's state see the new one.
-- *Context is a read of the world.* A handler's `ctx` holds what it needs to read from the renderer as the event is
-  handled, such as the worker the viewer is watching ([`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers)
-  reads it as its reminder fires). Only handlers call it, steps take the values as arguments, and it never writes or
-  does I/O: what acts on the world is an effect.
+- *The world enters a machine only as events.* What a step needs to know about the renderer is in the machine's
+  state, put there by the events that changed it, never read from the renderer as an event is handled. The worker a
+  viewer watches is the tower page's selection while the window has their eye: the page's machine holds its main view
+  ([`view.js`](ref:hub/renderers/page/view.js)) and the window's focus and visibility, each changed by its own event,
+  and runs attention's steps beside them ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers),
+  [`attendStep`](ref:hub/src/shared/attend.ts#attendStep), [`watching`](ref:hub/src/shared/attend.ts#watching)). The
+  pane and the rings read one selection, so a wiring missed shows on screen, and a machine replays the same from its
+  events.
 - *Time is data.* A timer is an effect carrying the event it fires
   ([`TimerEffect`](ref:hub/src/shared/loop.ts#TimerEffect), run by [`timers`](ref:hub/src/shared/loop.ts#timers)):
   starting one under an id replaces the one running there, and leaving a view cancels it in the handler that
@@ -65,7 +72,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   handler sees the state the one before it left. It holds no subscriptions, interceptors or registries.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
   minor); its first is [`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers). A machine only one renderer
-  has (a page's main view, Tower 3D's movement) lives beside that renderer, in the same shape.
+  has (the tower page's main view, Tower 3D's movement) lives beside that renderer, in the same shape.
 - *Tests.* Steps are pure functions, so a machine's bug is pinned by a unit test of its steps
   ([`reads.test.ts`](ref:hub/test/reads.test.ts)) where the behaviour is worth locking down.
 
