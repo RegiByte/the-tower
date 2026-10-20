@@ -9,8 +9,8 @@ const SPAWN_SIZE = { cols: 120, rows: 40 }
 
 /**
  * Every session is told, in its system prompt, what every worker does on every turn: who it is, how to reach a peer,
- * showing what it made, keeping ideas for later. Workers follow these recipes whether or not they load the
- * tower:handbook skill, which holds the rest. `user`: the name the config gives the person running the tower, said
+ * showing what it made, stopping what it started, keeping ideas for later. Workers follow these recipes whether or not
+ * they load the tower:handbook skill, which holds the rest. `user`: the name the config gives the person running the tower, said
  * once so a worker knows them by it on review notes and when they name themselves.
  */
 const towerBrief = (user: string | undefined) =>
@@ -22,9 +22,14 @@ const towerBrief = (user: string | undefined) =>
     '- Reaching another worker: a callsign is not a SendMessage name. Run `tower agents` (`--all` for every floor) ' +
       'and send to the worker\'s **message as** name. The other worker has none of your context: sign with your ' +
       'callsign, and name the commits and paths involved.',
-    '- Showing what you made: the user watches you from the tower. Every file or page you write for the user to read ' +
-      '(a report, a plan, an html page) gets `tower show <file>`, which puts it beside you; show it again after you ' +
+    '- Showing what you made: the user watches you from the tower and sees only what you show. Every file or page you ' +
+      'make for the user (a report, a plan, a picture, an html page) gets `tower show <file>`, which puts it beside ' +
+      'you: naming its path in your answer does not. Keep it where it lasts (the project, or a notes folder the ' +
+      "user's instructions name), not a temporary folder, unless it is truly throwaway. Show it again after you " +
       'change it. Make pages as local html files; publish a claude.ai artifact only when the user asks for one.',
+    "- Stopping what you started: other workers' command lines carry their briefs and paths, so `pkill -f` or " +
+      '`killall` with a pattern can end them. Save the PID of anything you start (`… & echo $! > server.pid`) and ' +
+      'stop it with `kill <pid>`.',
     "- Keeping for later: an idea off the current goal, or a prompt the user wants for a later session, goes in the " +
       "floor's drafts with `tower keep drafts` (markdown on stdin, its first line a title, written to stand on its " +
       'own). Name it to the user by the tag and title it prints, and carry on. To change a kept item, edit its file ' +
