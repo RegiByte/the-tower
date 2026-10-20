@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-20",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#pileState",
@@ -36,7 +36,8 @@ loudest thing on the floor.
 
 **How.**
 - The workstation's dressing is a scene document, [`desk_dress.json`](ref:hub/renderers/kaykit/scenes/prefabs/desk_dress.json),
-  placed by hand. Shared: the return and the desk's own cactus and mug (once modelled into `desk.glb`). Its states
+  placed by hand, its mugs, plate, bowl, pizza slice, pen cup and plant the forge's real-size props ([[forge-kit]]),
+  the rest KayKit's. Shared: the return and the desk's own plant and mug (once modelled into `desk.glb`). Its states
   fall in three `groups`, and a desk is drawn in one state of each (decided by the user on 2026-10-17):
   `status`, what it puts on the desk's right end (cactus idle; lamp and pencils working; lamp and a mug watching,
   [[watching-status]]; headphones lamp asking; a plated pizza done), picked by
@@ -74,12 +75,12 @@ loudest thing on the floor.
 - The dressing goes through the office's KayKit path ([[office-kaykit]]): what `dress` places in code becomes the
   playground's scene item in the desk's frame, its base resting at its height, its scale from
   [`PROPS`](ref:hub/renderers/tower3d/src/dress.ts#PROPS) on top of the catalog's norms, as the document's items carry theirs (room packs ×0.75,
-  Restaurant and Halloween food and kitchenware ×0.4 more). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
-  refills one layer for every workstation on each board: a BatchedMesh per pack and theme, 4 draw calls for the
-  building. The return is drawn in the Furniture pack's grey alt_C, the theme its item in `desk_dress.json` carries, so the
+  Restaurant and Halloween food and kitchenware ×0.4 more; the forge's props ×1, at scale 1). [`fillLayer`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer)
+  refills one layer for every workstation on each board: a BatchedMesh per pack, theme and surface, 5 draw calls for
+  the building. The return is drawn in the Furniture pack's grey alt_C, the theme its item in `desk_dress.json` carries, so the
   prefab editor paints it as the office does.
-- `npm run tower3d` first measures the models it uses, vendored from the KayKit bundle in `renderers/tower3d/kaykit/`,
-  into one git-ignored file the renderer's bundle embeds ([`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts)).
+- `npm run tower3d` first measures the models it uses, vendored from the KayKit bundle in `renderers/tower3d/kaykit/`
+  and from the forge in `renderers/tower3d/forge/`, into one git-ignored file the renderer's bundle embeds ([`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts)).
   The first version fetched glTFs from beside the page, which drew nothing framed in the tower (an opaque origin).
 
 **Alternatives considered.**
