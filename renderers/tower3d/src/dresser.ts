@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { transformControls } from './gizmo.ts'
+import { esc } from '../../../src/shared/cards.ts'
 import { CHARACTERS, CLIPS, SLOTS, bodyOf, type ClipName, type Slot } from './contract.ts'
 import { avatar, fitted, place, seatedAt, type Avatar } from './avatar.ts'
 import { CHAIR } from './chair.ts'
@@ -465,7 +466,6 @@ function applyMix(text: string) {
   checked()
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 const options = (xs: readonly string[], on: string | undefined, bare?: string) =>
   (bare === undefined ? '' : `<option value="">${bare}</option>`) + xs.map((x) => `<option ${x === on ? 'selected' : ''}>${esc(x)}</option>`).join('')
 const DIE = `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5.3" cy="5.3" r="1.3"/><circle cx="10.7" cy="5.3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="5.3" cy="10.7" r="1.3"/><circle cx="10.7" cy="10.7" r="1.3"/></svg>`

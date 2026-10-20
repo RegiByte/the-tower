@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CONTRACT, MODEL_NAMES, missing, type ModelName } from './contract.ts'
 import { loadModels, instance, type Models } from './models.ts'
 import { block, toon } from './toon.ts'
+import { esc } from '../../../src/shared/cards.ts'
 
 /**
  * The model lab (lab.html): one Blender model on a stand, drawn as the renderer draws it, with what it costs (draw
@@ -69,8 +70,6 @@ function frame(model: THREE.Object3D) {
   orbit.target.copy(center)
   orbit.update()
 }
-
-const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!)
 
 function renderPanel() {
   const s = state()

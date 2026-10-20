@@ -4,6 +4,7 @@
  * it ends on. Everything drawn is read from the board, `/stats` over the week by hour, and each floor's archive.
  */
 import { usd, hours, duration } from '/panels.js'
+import { esc } from '/cards.js'
 import { markdownHtml, markdownCss } from '/markdown.js'
 
 /**
@@ -20,8 +21,6 @@ const DAY = 86400_000
 const WEEK = 7 * DAY
 const PHOTO_ROWS = 24
 
-/** @param {unknown} s */
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 /** @param {number} v */
 const count = (v) => Math.round(v).toLocaleString('en-US')
 /** @param {number} at */

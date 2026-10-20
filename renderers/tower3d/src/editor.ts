@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { transformControls } from './gizmo.ts'
+import { esc } from '../../../src/shared/cards.ts'
 import { loadAtlases } from '../../kaykit/src/atlas.ts'
 import { fit, type Catalog, type Vec3 } from '../../kaykit/src/catalog.ts'
 import { build, cameraFor, type Assets, type Built } from '../../kaykit/src/draw.ts'
@@ -754,7 +755,6 @@ function render() {
   if (built) renderer.render(built.scene, camera)
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 const num = (v: number) => String(round(v, 3))
 
 function describe(e: Element) {

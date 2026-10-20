@@ -577,7 +577,7 @@ export const plain = (text: string) => text.replace(/\*\*|`/g, '')
 /** `claude-haiku-4-5-20251001` → `haiku 4.5` */
 export const modelName = (m?: string) => m?.replace(/^claude-([a-z]+)-(\d+)-(\d+).*$/, '$1 $2.$3') ?? ''
 export const base = (p: string) => p.split('/').filter(Boolean).pop() ?? p
-export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 export const ago = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000))
