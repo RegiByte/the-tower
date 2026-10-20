@@ -45,12 +45,27 @@ export type AttendEffect =
 /** What a handler reads from the renderer as an event is handled: the worker the viewer is looking at, whose waits ring for nobody. */
 export type AttendCtx = { watched: () => string | undefined }
 
-export type AttendStep = [Attending, AttendEffect[]]
+/** Whether the viewer's window has their eye: focused, and shown on screen. */
+export type Eye = { focused: boolean; visible: boolean }
+
+/** What a window's focus and visibility listeners tell a renderer's machine, one event each. */
+export type EyeEvent = { type: 'focus'; focused: boolean } | { type: 'visible'; visible: boolean }
+
+/** The eye after `e`. */
+export const eyeStep = (eye: Eye, e: EyeEvent): Eye => (e.type === 'focus' ? { ...eye, focused: e.focused } : { ...eye, visible: e.visible })
+
+/** The worker the viewer watches: the one their view is on (`at`, if any), while the window has their eye. Its waits ring for nobody. */
+export const watching = (eye: Eye, at: string | undefined): string | undefined => (eye.focused && eye.visible ? at : undefined)
+
+/** What a step calls for beside the next state, which the step returns apart. */
+export type AttendOut = Exclude<AttendEffect, StateEffect<Attending>>
+
+export type AttendStep = [Attending, AttendOut[]]
 
 const REMIND: TimerEffect<AttendEvent> = { type: 'timer/start', id: 'remind', ms: REMIND_MS, fire: { type: 'remind' } }
 
 /** Rings `sound` unless rings are off, the next reminder `REMIND_MS` after it. */
-const rung = (a: Attending, sound: Sound | undefined): AttendEffect[] =>
+const rung = (a: Attending, sound: Sound | undefined): AttendOut[] =>
   !sound || a.ring === 'off' ? [] : [{ type: 'sound', sound }, ...(a.ring === 'remind' ? [REMIND] : [])]
 
 const heeds = (a: Attending) => (x: Attended) => !a.dismissed.has(x.key)
@@ -64,9 +79,9 @@ export function seeBoard(a: Attending, board: Board, watched: string | undefined
   const text = [waitsBeganLine(waits.began.filter(heeded), (id) => findCard(board, id)!.callsign), offersBeganLine(offers.began.filter(heeded))].filter(Boolean).join(' ')
   const began = [...waits.began.filter((w) => heeded(w) && w.id !== watched), ...offers.began.filter(heeded)]
   return [next, [
-    ...[...waits.ended, ...offers.ended].map((x): AttendEffect => ({ type: 'unnotify', key: x.key })),
+    ...[...waits.ended, ...offers.ended].map((x): AttendOut => ({ type: 'unnotify', key: x.key })),
     ...(text ? [{ type: 'announce' as const, text }] : []),
-    ...began.map((attended): AttendEffect => ({ type: 'notify', attended })),
+    ...began.map((attended): AttendOut => ({ type: 'notify', attended })),
     ...rung(next, ringingSound(began, watched)),
   ]]
 }
@@ -96,16 +111,37 @@ export function stored(a: Attending, { dismissed, ring }: Pick<Viewer, 'dismisse
 }
 
 /** The reminder runs while the ring is `remind`, and only then. */
-const retime = (ring: Ring): AttendEffect => (ring === 'remind' ? REMIND : { type: 'timer/cancel', id: 'remind' })
+const retime = (ring: Ring): AttendOut => (ring === 'remind' ? REMIND : { type: 'timer/cancel', id: 'remind' })
 
 const into = ([a, effects]: AttendStep): AttendEffect[] => [{ type: 'state', state: a }, ...effects]
 
+/**
+ * The attention machine's step for any of its events, `watched` the worker the viewer watches as it is handled
+ * (`watching`): a renderer's own machine holds `Attending` beside what the viewer looks at, and runs each event through it.
+ */
+export function attendStep(a: Attending, e: AttendEvent, watched: string | undefined): AttendStep {
+  switch (e.type) {
+    case 'board':
+      return seeBoard(a, e.board, watched)
+    case 'lost':
+      return [{ ...a, lost: e.lost }, []]
+    case 'stored':
+      return stored(a, e.viewer)
+    case 'dismiss':
+      return dismiss(a, e.key)
+    case 'ring':
+      return chooseRing(a, e.ring)
+    case 'remind':
+      return remind(a, watched)
+  }
+}
+
 /** The attention machine: a renderer's loop runs it from `attending()`, with an executor for each effect but `state`. */
 export const attendHandlers: Handlers<Attending, AttendEvent, AttendEffect, AttendCtx> = {
-  board: (a, e, ctx) => into(seeBoard(a, e.board, ctx.watched())),
-  lost: (a, e) => (a.lost === e.lost ? [] : into([{ ...a, lost: e.lost }, []])),
-  stored: (a, e) => into(stored(a, e.viewer)),
-  dismiss: (a, e) => into(dismiss(a, e.key)),
-  ring: (a, e) => into(chooseRing(a, e.ring)),
-  remind: (a, _, ctx) => remind(a, ctx.watched())[1],
+  board: (a, e, ctx) => into(attendStep(a, e, ctx.watched())),
+  lost: (a, e) => (a.lost === e.lost ? [] : into(attendStep(a, e, undefined))),
+  stored: (a, e) => into(attendStep(a, e, undefined)),
+  dismiss: (a, e) => into(attendStep(a, e, undefined)),
+  ring: (a, e) => into(attendStep(a, e, undefined)),
+  remind: (a, e, ctx) => attendStep(a, e, ctx.watched())[1],
 }

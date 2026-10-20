@@ -2,13 +2,13 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board, Wait } from '../src/bridge/board.ts'
 import type { Offer } from '../src/bridge/policies.ts'
-import { attending, chooseRing, dismiss, remind, seeBoard, stored, type AttendEffect } from '../src/shared/attend.ts'
+import { attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendOut } from '../src/shared/attend.ts'
 
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })
 const offer = { key: 'nightly:1', project: 'p', policy: 'nightly', tag: 'quiet-owl', slot: 0, since: 0, until: 1 } as Offer
 const boardOf = (waiting: Wait[], offers: Offer[] = []) =>
   ({ waiting, offers, floors: [{ cards: ['A', 'B'].map((id) => ({ id, callsign: `${id}-01` })) }] }) as unknown as Board
-const kinds = (effects: AttendEffect[]) => effects.map((e) => (e.type === 'sound' ? `sound:${e.sound}` : e.type))
+const kinds = (effects: (AttendEffect | AttendOut)[]) => effects.map((e) => (e.type === 'sound' ? `sound:${e.sound}` : e.type))
 
 test('attend: the first board is silent, a wait that begins is said, notified and rung, and one that ends closes', () => {
   const [opened, first] = seeBoard(attending(), boardOf([wait('A')]), undefined)
@@ -44,4 +44,23 @@ test('attend: with remind, what is heeded rings again unless the tower is lost, 
   assert.deepEqual(kinds(remind(dismiss(reminding, 'A:1')[0], undefined)[1]), ['timer/start'])
   assert.deepEqual(kinds(chooseRing(reminding, 'once')[1]), ['keep', 'timer/cancel'])
   assert.deepEqual(remind(opened, undefined)[1], [])
+})
+
+test('attend: the worker in view is watched only while the window is focused and visible, as its events say', () => {
+  const eye = { focused: true, visible: true }
+  assert.equal(watching(eye, 'A'), 'A')
+  assert.equal(watching(eyeStep(eye, { type: 'focus', focused: false }), 'A'), undefined)
+  assert.equal(watching(eyeStep(eye, { type: 'visible', visible: false }), 'A'), undefined)
+  assert.equal(watching(eyeStep(eyeStep(eye, { type: 'focus', focused: false }), { type: 'focus', focused: true }), 'A'), 'A')
+  assert.equal(watching(eye, undefined), undefined)
+})
+
+test('attend: attendStep runs each event through its step with the watched worker it is given', () => {
+  const [opened] = attendStep(attending(), { type: 'board', board: boardOf([]) }, undefined)
+  assert.deepEqual(kinds(attendStep(opened, { type: 'board', board: boardOf([wait('A')]) }, 'A')[1]), ['announce'])
+  assert.deepEqual(kinds(attendStep(opened, { type: 'board', board: boardOf([wait('A')]) }, undefined)[1]), ['announce', 'notify', 'sound:question'])
+  const [reminding] = attendStep(attendStep(opened, { type: 'board', board: boardOf([wait('A')]) }, undefined)[0], { type: 'ring', ring: 'remind' }, undefined)
+  assert.deepEqual(kinds(attendStep(reminding, { type: 'remind' }, 'A')[1]), ['timer/start'])
+  assert.deepEqual(kinds(attendStep(reminding, { type: 'remind' }, undefined)[1]), ['sound:question', 'timer/start'])
+  assert.equal(attendStep(opened, { type: 'lost', lost: true }, undefined)[0].lost, true)
 })

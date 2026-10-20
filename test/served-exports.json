@@ -667,12 +667,15 @@
     ],
     "/attend.js": [
       "attendHandlers",
+      "attendStep",
       "attending",
       "chooseRing",
       "dismiss",
+      "eyeStep",
       "remind",
       "seeBoard",
-      "stored"
+      "stored",
+      "watching"
     ]
   }
 }
