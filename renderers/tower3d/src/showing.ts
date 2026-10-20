@@ -14,7 +14,6 @@ import { FIXTURE, readBlob } from './fixtures.ts'
 
 export type Shown = Card['shown'][number]
 
-export { shownHref, shownKey }
 export const isMarkdown = (s: Shown) => s.kind === 'file' && s.target.endsWith('.md')
 
 const IMAGE = /\.(png|jpe?g|gif|webp|svg)$/i

@@ -343,7 +343,6 @@ export const crewOf = (cards: Card[], c: Card): Card[] => hiresOf(cards, c).flat
 export const sentHome = (cards: Card[], c: Card): Card[] =>
   [c, ...crewOf(cards, c)].filter((h) => (callOf(c, 'send-home') ?? []).some(([, { id }]) => id === h.id))
 
-
 /** A worker gone home from a crew: off duty, and nobody under it on duty, so drawing it holds no one up. */
 export const goneHome = (cards: Card[], c: Card) => !c.onDuty && !crewOf(cards, c).some((h) => h.onDuty)
 

@@ -10,7 +10,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -18,7 +18,7 @@ import type { Level, Plan } from './layout.ts'
 import { noteTitle } from './notes.ts'
 import { gameTitle } from './arcade.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
-import { isImage, isMarkdown, isVideo, shownHref, type Shown } from './showing.ts'
+import { isImage, isMarkdown, isVideo, type Shown } from './showing.ts'
 import { LOBBY_BAND } from './sign.ts'
 
 /** The panels' contents as HTML, from the board and where you are. main.ts puts them on the page and wires them. */
@@ -657,7 +657,6 @@ export function directoryHtml(p: Plan, held: HeldWhy) {
 }
 
 type ShelfEntry = NonNullable<Floor['shelf']>[number]
-
 
 const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${keptBy.callsign}` : '')
 
