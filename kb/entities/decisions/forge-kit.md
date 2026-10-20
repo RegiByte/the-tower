@@ -24,7 +24,8 @@
     "hub/renderers/tower3d/src/kit.ts#keyOf",
     "hub/renderers/tower3d/src/toon.ts#shadowless",
     "hub/renderers/kaykit/src/draw.ts#material",
-    "hub/renderers/kaykit/src/rules.ts#categorize",
+    "hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES",
+    "hub/renderers/kaykit/src/rules.ts#forgeCategory",
     "hub/renderers/kaykit/scenes/prefabs/desk_dress.json",
     "hub/renderers/tower3d/forge/README.md"
   ]
@@ -49,9 +50,13 @@ nothing pays for it until a placed prop shows a decal.
   [`FORGE_BINDING`](ref:hub/renderers/kaykit/src/catalog.ts#FORGE_BINDING). Ask the forge before changing either:
   `dist/` is a cross-repo API.
 - A pack: `forge` joins KayKit's packs in `PACKS`, with ids `forge/<forge id>` (`forge/kitchen/coffee_mug_01`). No norm
-  matches it, so it is drawn at ×1, in the forge's metres (+Y up, facing +Z). Its categories come from the same name
-  rules as KayKit's ([`categorize`](ref:hub/renderers/kaykit/src/rules.ts#categorize)). The forge's `moves` are not
-  read yet.
+  matches it, so it is drawn at ×1, in the forge's metres (+Y up, facing +Z). A prop's category is read from its
+  vendored sidecar's `category`, so a new forge prop needs no tower code: the forge files props by room and the
+  catalog by what a thing is, so [`FORGE_CATEGORIES`](ref:hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES) maps
+  each room to the category most of its props are (kitchen to kitchenware, office to decor, living_room to seating,
+  arcade to tech), and [`forgeCategory`](ref:hub/renderers/kaykit/src/rules.ts#forgeCategory) fails naming a room
+  the table lacks. A finer split, when one is needed, reads the sidecar's `tags`. The forge's `moves` are not read
+  yet.
 - Measured on the playground's path: [`readGltf`](ref:hub/renderers/kaykit/src/measure.ts#readGltf) reads a `.glb`'s
   chunks or a `.gltf`'s files, and every primitive is bound to a
   [`Surface`](ref:hub/renderers/kaykit/src/meshes.ts#Surface): a KayKit material is `atlas` when it has a texture and
@@ -88,6 +93,8 @@ nothing pays for it until a placed prop shows a decal.
   drawn as the opaque atlas.
 - *Vendoring only the props the office places*, as KayKit's are: the snapshot is 1.4 MB, and whole it lets the editor
   place any forge prop. Measuring stays limited to what the office places.
+- *KayKit's name rules for forge props* (the first version): every new forge prop needed a rule in the tower, and
+  a forge name can match a KayKit rule by accident (a `desk_plant` is not a desk).
 - *Gating the decal sheet on the vendored props*: the pizza box and the pinball always show decals, so the sheet would
   be in every kit.
 

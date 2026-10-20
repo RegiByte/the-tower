@@ -8,7 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { FORGE, KAYKIT_PACKS, round, type Catalog, type KayKitPack, type Model, type Mount, type PackInfo, type Pivot, type Vec3 } from './catalog.ts'
-import { categorize, variantOf } from './rules.ts'
+import { categorize, forgeCategory, variantOf } from './rules.ts'
 import type { MeshIndex, MeshNode, Surface } from './meshes.ts'
 
 const DIRS: Record<KayKitPack, string> = {
@@ -274,7 +274,7 @@ function measureKayKit(source: string, atlases: string, ids: string[] | undefine
 /** The forge's `catalog.json`, as much of it as the kit reads: how each material binds its textures, and every prop's sidecar. */
 export type ForgeCatalog = {
   materials: Record<string, { map: string; emissiveMap?: string }>
-  props: { id: string; name: string; glb: string; decals: string[] }[]
+  props: { id: string; name: string; category: string; glb: string; decals: string[] }[]
 }
 
 export const readForge = (source: string) => JSON.parse(fs.readFileSync(path.join(source, 'catalog.json'), 'utf8')) as ForgeCatalog
@@ -303,7 +303,7 @@ function measureForge(source: string, atlases: string, ids: string[] | undefined
   for (const p of props.toSorted((a, b) => a.id.localeCompare(b.id))) {
     const id = forgeId(p.id)
     const { facts, nodes } = measure(path.join(source, p.glb), forgeSurface, atlas, packed)
-    part.models.push({ id, pack: FORGE, name: p.name, category: categorize(id, p.name), variant: { ...variantOf(p.name), siblings: [] }, ...facts, source: p.glb })
+    part.models.push({ id, pack: FORGE, name: p.name, category: forgeCategory(id, p.category), variant: { ...variantOf(p.name), siblings: [] }, ...facts, source: p.glb })
     part.meshes[id] = nodes
   }
   part.packs[FORGE] = { dir: path.basename(source), count: props.length, atlases: ['base'], maps: Object.keys(textures).filter((n) => n !== 'base') } satisfies PackInfo
