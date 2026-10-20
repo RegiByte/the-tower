@@ -23,6 +23,7 @@
     "hub/src/shared/attend.ts#watching",
     "hub/renderers/page/view.js",
     "hub/renderers/page/page.js#pageHandlers",
+    "hub/renderers/tower3d/src/main.ts#seeingHandlers",
     "hub/test/reads.test.ts"
   ],
   "links": [
@@ -57,9 +58,10 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   viewer watches is the tower page's selection while the window has their eye: the page's machine holds its main view
   ([`view.js`](ref:hub/renderers/page/view.js)) and the window's focus and visibility, each changed by its own event,
   and runs attention's steps beside them ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers),
-  [`attendStep`](ref:hub/src/shared/attend.ts#attendStep), [`watching`](ref:hub/src/shared/attend.ts#watching)). The
-  pane and the rings read one selection, so a wiring missed shows on screen, and a machine replays the same from its
-  events.
+  [`attendStep`](ref:hub/src/shared/attend.ts#attendStep), [`watching`](ref:hub/src/shared/attend.ts#watching)); Tower
+  3D's holds its open panel the same way, the desk you sit at among them
+  ([`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers)). The view and the rings read one
+  selection, so a wiring missed shows on screen, and a machine replays the same from its events.
 - *Time is data.* A timer is an effect carrying the event it fires
   ([`TimerEffect`](ref:hub/src/shared/loop.ts#TimerEffect), run by [`timers`](ref:hub/src/shared/loop.ts#timers)):
   starting one under an id replaces the one running there, and leaving a view cancels it in the handler that

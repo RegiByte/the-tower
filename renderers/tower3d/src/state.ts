@@ -143,7 +143,6 @@ export type State = {
   cut: Cut | undefined
   /** How open each level's landing doors are, 0 to 1, by level index. */
   doorOpen: Map<number, number>
-  panel: Panel | undefined
   deskTab: DeskTab
   /** Where to go once the board shows it: a desk or shell just spawned or resumed, a desk to open on its brief or its review thread. */
   pendingDesk: string | undefined
@@ -233,7 +232,7 @@ export const s: State = {
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   visited: new Set(), viewer: VIEWER_DEFAULT, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
-  doorOpen: new Map(), panel: undefined, deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),
+  doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),
   carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, armed: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,

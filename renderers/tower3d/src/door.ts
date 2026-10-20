@@ -6,7 +6,7 @@ import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
 import { camera, canvas, scene } from './stage.ts'
-import { s, type Standing, type View } from './state.ts'
+import { s, type Panel, type Standing, type View } from './state.ts'
 import type { CatName } from './life.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
@@ -102,6 +102,8 @@ export type Engine = {
   showPrompt(a: Act | undefined): void
   startHold(a: Act, o: Offer, by: string): void
   floorY(): number
+  /** The panel open beside the world. */
+  panel(): Panel | undefined
   pickables(): THREE.Object3D[]
   /** Delivers a fixture's next board. */
   advance(): void
@@ -170,10 +172,11 @@ export function installDoor(e: Engine) {
   }
 
   const panelOf = (): DoorState['panel'] => {
-    if (s.panel?.kind === 'logbook') return { kind: s.panel.kind, id: s.panel.card.id, tab: s.panel.tab, on: s.panel.on, read: s.panel.threads !== undefined }
-    if (s.panel?.kind === 'draft') return { kind: s.panel.kind, project: s.draft?.project, id: s.draft?.id }
-    if (s.panel?.kind === 'desk') return { ...s.panel, tab: s.deskTab, ...(s.replay?.id === s.panel.id && { replay: s.replay.session }) }
-    return s.panel
+    const panel = e.panel()
+    if (panel?.kind === 'logbook') return { kind: panel.kind, id: panel.card.id, tab: panel.tab, on: panel.on, read: panel.threads !== undefined }
+    if (panel?.kind === 'draft') return { kind: panel.kind, project: s.draft?.project, id: s.draft?.id }
+    if (panel?.kind === 'desk') return { ...panel, tab: s.deskTab, ...(s.replay && s.replay.id === panel.id && { replay: s.replay.session }) }
+    return panel
   }
 
   const state = (): DoorState => ({
@@ -191,7 +194,7 @@ export function installDoor(e: Engine) {
     pictured,
     capture() {
       s.doorMode = true
-      s.doorHeld = s.view === 'walk' && !s.panel
+      s.doorHeld = s.view === 'walk' && !e.panel()
       e.captureChanged()
     },
     release() {
