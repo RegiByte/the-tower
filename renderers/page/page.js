@@ -1,5 +1,5 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
@@ -10,6 +10,7 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { boardKit } from './board.js'
 import { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, CLOSE_HOME, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
@@ -24,7 +25,7 @@ import { toastsCss } from '/toasts.js'
 import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
- * @import { Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Unresumable, Wait } from '../../src/bridge/board.ts'
+ * @import { Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Wait } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { Brief } from '../../src/bridge/turns.ts'
  * @import { CardRun, Offer } from '../../src/bridge/policies.ts'
@@ -33,7 +34,7 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { SessionLink } from '../../src/bridge/chains.ts'
  * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
- * @import { Attended, DaemonVerb, EditedRow, Heed, Move, PastCrew, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
+ * @import { Attended, EditedRow, Heed, Move, PastCrew, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
@@ -59,8 +60,6 @@ watchTips(document)
 /** Windows a building shows: its most recent sessions, oldest at the bottom. */
 const BUILDING_WINDOWS = 40
 const BUILDING_MIN_WINDOWS = 16
-/** @param {string} id */
-const callsign = (id) => /** @type {Card} */ (findCard(id)).callsign
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], rateLimits: [], probes: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
@@ -101,12 +100,6 @@ function toggleSection(key) {
   render()
 }
 
-const cards = () => board().floors.flatMap((f) => f.cards)
-/** The project's color as `--p`, for an element's styles to use. @param {string | undefined} projectId */
-const paint = (projectId) => {
-  const color = board().floors.find((f) => f.id === projectId)?.color
-  return color ? `--p:${esc(color)}` : ''
-}
 /** A card by id: on the board, else in an archive this page has read. @param {string | undefined} id */
 const findCard = (id) => cards().find((c) => c.id === id) ?? [...archives.values()].flatMap((a) => a.cards ?? []).find((c) => c.id === id)
 
@@ -141,10 +134,6 @@ async function lookUp(id) {
   if (!findCard(id)) await Promise.all(board().floors.filter((f) => f.archived && !archives.get(f.id)?.cards).map((f) => readArchive(f.id)))
   return findCard(id)
 }
-/** The workers waiting on you that you heed, in the order to go to them. */
-const waitsOnYou = () => heededWaits(board(), heed()).map((w) => /** @type {Card} */ (findCard(w.id)))
-/** Top floor first, like an elevator panel. */
-const floorsTopDown = () => [...board().floors].reverse()
 
 /** @param {Card} c @param {Card} [over] */
 const sessionHtml = (c, over) => {
@@ -173,9 +162,6 @@ const satellitesHtml = (c) => {
   return `<div class="subs" style="--fade:${SUBAGENT_FADE_MS}ms">${drawn.map(({ run, left }) => `<div class="sub${run.type === 'fork' ? ' fork' : ''}${left === undefined ? '' : ` ended${run.ended === 'aborted' ? ' stopped' : ''}`}"${left === undefined ? '' : ` style="animation-delay:-${left}ms"`} data-tip="${esc(subagentTitle(run))}">
     <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
 }
-
-/** Let a stranded worker go, asked first. @param {Card} c @param {string} label */
-const letGoHtml = (c, label) => !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go="${c.id}" data-tip="${esc(`let ${callsign(c.id)} go: ${LET_GO_MEANS}`)}">${label}</button>`
 
 /** A worker and everyone under it. @param {Card[]} cards @param {Card} c @param {Card} [over] @returns {string} */
 const wholeCrewHtml = (cards, c, over) => {
@@ -213,16 +199,6 @@ function toggleCrewFold(id) {
   keepViewer('crewsUnfolded', [...unfolded].filter((h) => findCard(h)))
   render()
 }
-
-/** Why a past worker can't be resumed, quietly: it is history, not an alarm. @param {Unresumable} why */
-const unresumableHtml = (why) => `<span class="unresumable" data-tip="${esc(UNRESUMABLE_TITLE[why])}">${UNRESUMABLE_NAME[why]}</span>`
-
-/** Why a daemon verb can't run now: the tower lost (its board is stale), or a daemon it needs down (`whyNot`). @param {DaemonVerb} verb */
-const heldWhy = (verb) => (lostAt() ? HOST_MEANS.unknown : whyNot(board(), verb))
-
-/** A verb `heldWhy` holds back: drawn, inert, its tip saying why. @param {DaemonVerb} verb @param {string} label @param {string} inner */
-const heldHtml = (verb, label, inner, cls = '') =>
-  `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb))}">${inner}</button>`
 
 /** @param {Card} c @param {CardConversation} conv */
 const resumeHtml = (c, conv) => can(conv, 'resume')
@@ -650,9 +626,6 @@ function detailsHtml(c) {
 
 /** The keymap's command for each move (src/shared/keymap.ts). */
 const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
-
-/** @param {string} what @param {string} id */
-const withKeys = (what, id) => (keysLabel(board().keys, id) ? `${what} (${keysLabel(board().keys, id)})` : what)
 
 /** Dismiss, beside the status of `c` while it waits on you and you heed it. @param {Card} c */
 function dismissHtml(c) {
@@ -1333,6 +1306,8 @@ const sideView = loop({
   },
 })
 
+const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumableHtml, heldWhy, heldHtml, withKeys, floorOf } = boardKit({ findCard: (id) => findCard(id), board, heed, lostAt })
+
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
 
@@ -1508,9 +1483,6 @@ async function sendHome(button, c) {
   })
   if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
 }
-
-/** @param {string} project */
-const floorOf = (project) => board().floors.find((f) => f.id === project)
 
 /** @type {Xterm.Terminal | undefined} */
 let term
