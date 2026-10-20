@@ -1,5 +1,5 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, gistOf, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
@@ -10,6 +10,7 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, CLOSE_HOME, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
 import { documentHtml, fenceText, markdownCss, markdownHtml, safeHref } from '/markdown.js'
 import { terminalKeymap } from '/termkeys.js'
@@ -19,7 +20,7 @@ import { alertsSection, faceInstalled, markdownSection, prefSections, settingsCs
 import { fitSize, loadTerminalFont, reportWheel, terminalFont } from '/terminal.js'
 import { placeOnOpen, watchTips } from '/tips.js'
 import { pressing } from '/press.js'
-import { toaster, toastsCss } from '/toasts.js'
+import { toastsCss } from '/toasts.js'
 import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
@@ -51,46 +52,15 @@ import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftSt
  * @import * as Fit from '@xterm/addon-fit'
  * @import * as Xterm from '@xterm/xterm'
  */
-/**
- * The elements `$` finds whose type is not a plain `HTMLElement`, or that exist only while their view is drawn.
- * @typedef {{
- *   spawn: HTMLDialogElement, transfer: HTMLDialogElement, landing: HTMLDialogElement, keys: HTMLDialogElement,
- *   'draft-text': HTMLTextAreaElement, 'archive-filter': HTMLInputElement,
- *   'shelf-page': HTMLIFrameElement, 'shelf-doc': HTMLIFrameElement, 'item-doc': HTMLIFrameElement, 'shelf-url': HTMLIFrameElement | null,
- *   orb: HTMLElement | null, clock: HTMLElement | null,
- * }} PageElements
- */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
 watchTips(document)
 
-/** @param {Card} c */
-const onDuty = (c) => c.onDuty
-/** The card's gist as HTML: a tool's name in bold, said words after their mark. @param {Card} c */
-const lineOf = (c) => {
-  const gist = gistOf(c)
-  if (!gist) return '<i>no prompt yet</i>'
-  if (gist.kind === 'asks' || gist.kind === 'runs') return toolHtml(gist.text)
-  return `<span class="said">${GIST_ICON[gist.kind]}</span> ${esc(gist.text)}`
-}
-/** `Bash npm test` → the tool's name in bold, then what it acts on. @param {string} tool */
-const toolHtml = (tool) => {
-  const [name, ...target] = tool.split(' ')
-  return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
-}
 /** Windows a building shows: its most recent sessions, oldest at the bottom. */
 const BUILDING_WINDOWS = 40
 const BUILDING_MIN_WINDOWS = 16
 /** @param {string} id */
 const callsign = (id) => /** @type {Card} */ (findCard(id)).callsign
-/** @param {number} ms */
-const when = (ms) => new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-/**
- * @template {string} K
- * @param {K} id
- * @returns {K extends keyof PageElements ? PageElements[K] : HTMLElement}
- */
-const $ = (id) => /** @type {any} */ (document.getElementById(id))
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], rateLimits: [], probes: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
@@ -175,8 +145,6 @@ async function lookUp(id) {
 const waitsOnYou = () => heededWaits(board(), heed()).map((w) => /** @type {Card} */ (findCard(w.id)))
 /** Top floor first, like an elevator panel. */
 const floorsTopDown = () => [...board().floors].reverse()
-/** @param {{ startedAt: number }} a @param {{ startedAt: number }} b */
-const byStart = (a, b) => a.startedAt - b.startedAt
 
 /** @param {Card} c @param {Card} [over] */
 const sessionHtml = (c, over) => {
@@ -208,7 +176,6 @@ const satellitesHtml = (c) => {
 
 /** Let a stranded worker go, asked first. @param {Card} c @param {string} label */
 const letGoHtml = (c, label) => !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go="${c.id}" data-tip="${esc(`let ${callsign(c.id)} go: ${LET_GO_MEANS}`)}">${label}</button>`
-
 
 /** A worker and everyone under it. @param {Card[]} cards @param {Card} c @param {Card} [over] @returns {string} */
 const wholeCrewHtml = (cards, c, over) => {
@@ -282,7 +249,6 @@ const dirHtml = (f, dir, hub) =>
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
-
 
 /**
  * A verb on a worktree or kept branch, its call on the button.
@@ -359,7 +325,6 @@ const editedRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span c
 /** One thing Tidy would do, with a button that does only it. @param {TidyRow} r */
 const tidyRowHtml = (r) => `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>
     <button class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" data-tidy-ask="${esc(tidyRowAsk(r))}" aria-label="${esc(`${r.does}: ${r.what}`)}" data-tip="${esc(`only this: ${r.does}`)}">${ICON.tidy}</button></div>`
-
 
 /** @param {Floor} f @param {ShelfEntry} entry @param {number} n */
 const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
@@ -453,10 +418,6 @@ function traysHtml(f) {
     ${drafts?.items.length && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${kept.filter((c) => unfolded.has(`kept-${c.id}:${f.id}`)).map((c) => keptHtml(f, c)).join('')}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${(threads || landed) && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
 }
 
-/** A floor's sign: its number on the project's band, its name in caps, cut to the sign's width and whole in the tooltip. @param {number} n @param {string} name */
-const signHtml = (n, name, extra = '') =>
-  `<div class="sign"><span class="num">${String(n).padStart(2, '0')}</span><span class="name" role="heading" aria-level="2" data-tip="${esc(name)}">${esc(name)}</span>${extra}</div>`
-
 /**
  * Whether each floor is open, as this viewer chose by its sign, kept in `tower.store` by project. A floor never chosen
  * is open while a worker on it needs you (a question, a permission or a screen), and folded otherwise.
@@ -526,9 +487,6 @@ const floorBodyHtml = (f, heads) => `
     ${offersHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
     ${traysHtml(f)}`
-
-/** A meter's fill: ink, broken past `hot`. @param {number} pct @param {number} hot */
-const fillOf = (pct, hot) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
 
 /** A limit's meter, with a tick where an even pace through the week would be. @param {RateLimit} r @param {number} now */
 const limitHtml = (r, now) => {
@@ -693,10 +651,6 @@ function detailsHtml(c) {
 /** The keymap's command for each move (src/shared/keymap.ts). */
 const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' }
 
-/** What a control does with the chords of the command it shares, when it has any: `hide the sidebar (⌘B)`. */
-/** The close of a view in the main pane: back to the skyline. */
-const CLOSE_HOME = `<button class="icon-btn" data-act="home" aria-label="back to the skyline" data-tip="back to the skyline">${ICON.close}</button>`
-
 /** @param {string} what @param {string} id */
 const withKeys = (what, id) => (keysLabel(board().keys, id) ? `${what} (${keysLabel(board().keys, id)})` : what)
 
@@ -747,14 +701,8 @@ const shownTabHtml = (c, s, on) => {
   `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
 }
 
-/** @param {CardShown} s @returns {Pane} */
-const shownPane = (s) => `shown:${s.target}`
 /** @param {Card} c @param {Pane} pane */
 const shownOn = (c, pane) => visibleShown(c).find((s) => shownPane(s) === pane)
-/** Each showing has its own key: closing one leaves the next showing of the same target open. @param {CardShown} s */
-const shownKey = (s) => `${s.session}|${s.target}|${s.at}`
-/** @param {CardShown} s */
-const shownHref = (s) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
 
 const UNSHOWN_KEY = 'shown.closed'
 /** The showings this viewer closed, by `session|target|at`, kept in `tower.store`. */
@@ -1008,7 +956,6 @@ function replyTo(n) {
   $('reviews').querySelector('[data-note-text]')?.focus()
 }
 
-
 /** An anchor is drawn on the thread of the selected worker. @param {string} value */
 function showAnchor(value) {
   const id = /** @type {string} */ (selected())
@@ -1053,8 +1000,6 @@ function showPane(pane) {
   go({ t: 'worker', id: /** @type {string} */ (selected()), pane })
 }
 
-const DOC_CSS = `article { max-width: 980px; margin: 0; padding: var(--sp-xl) var(--sp-3xl) 48px; }`
-
 /** The brief drawn last, the worker's and its conversations as read: what a copy reads its text from. @type {{ id: string, threads: Brief[] } | undefined} */
 let briefShown
 
@@ -1097,9 +1042,6 @@ function chooseBriefMarkdown(markdown) {
   if (briefShown) drawBrief()
   drawSettings()
 }
-
-/** @param {string} text @param {string} what */
-const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err) => toast(err.message))
 
 /**
  * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
@@ -1155,51 +1097,6 @@ function drawSideView() {
   const held = valueOf(reads.held[STATS_SLOT])
   drawPanel($('stats'), statsHtml({ stats: held?.stats, at: held?.at, failed: failureOf(reads.held[STATS_SLOT]), range: viewer().statsRange, projects, tabs, scope: all || !floor ? STATS_ALL : floor.id }), {})
 }
-
-/** The nearest element from `el` up that scrolls its content: the list itself, or in the short layout the sidebar around it. @param {HTMLElement | null} el */
-const scrollerOf = (el) => {
-  for (let e = el; e; e = e.parentElement) if (/auto|scroll/.test(getComputedStyle(e).overflowY)) return e
-  return /** @type {Element} */ (document.scrollingElement)
-}
-
-/** The `[data-hold]` row at a scrolled list's top edge, the last to start at or above it, and its offset from the edge. @param {HTMLElement} list */
-const topAnchorOf = (list) => {
-  const top = scrollerOf(list).getBoundingClientRect().top
-  const row = [...list.querySelectorAll('[data-hold]')].findLast((el) => el.getBoundingClientRect().top <= top) ?? list.querySelector('[data-hold]')
-  return row && { key: /** @type {string} */ (row.dataset.hold), offset: row.getBoundingClientRect().top - top }
-}
-
-/** The `[data-hold="key"]` row and its offset from a scrolled list's top edge, while any of it is in sight. @param {HTMLElement} list @param {string | undefined} key */
-const sightAnchorOf = (list, key) => {
-  const row = key && list.querySelector(`[data-hold="${CSS.escape(key)}"]`)
-  if (!row) return undefined
-  const edges = scrollerOf(list).getBoundingClientRect()
-  const { top, bottom } = row.getBoundingClientRect()
-  return top < edges.bottom && bottom > edges.top ? { key, offset: top - edges.top } : undefined
-}
-
-/**
- * Replaces a scrolled list's content with the `anchor` row kept where it was: a browser's scroll anchoring holds a list
- * still while rows above change height, and loses its anchor when the rows are replaced.
- * @param {HTMLElement} list
- * @param {string} html
- * @param {{ key: string, offset: number } | null | undefined} anchor
- */
-function redrawHeld(list, html, anchor) {
-  list.innerHTML = html
-  const row = anchor && list.querySelector(`[data-hold="${CSS.escape(anchor.key)}"]`)
-  if (!row) return
-  const scroller = scrollerOf(list)
-  scroller.scrollTop += row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - anchor.offset
-}
-
-/** Writes `html` into `el` only when it changed, so a focused or hovered control in it survives a render. @type {WeakMap<HTMLElement, string>} */
-const painted = new WeakMap()
-/** @param {HTMLElement} el @param {string} html */
-const paintOnce = (el, html) => painted.get(el) === html || (painted.set(el, html), (el.innerHTML = html))
-/** `paintOnce`, the control that had focus in `el` keeping it. */
-/** @param {HTMLElement} el @param {string} html */
-const repaint = (el, html) => keepingFocus(el, () => paintOnce(el, html))
 
 function render() {
   const all = cards()
@@ -1611,20 +1508,6 @@ async function sendHome(button, c) {
   })
   if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
 }
-
-/** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. @param {string} msg */
-const announce = (msg) => $('announce').replaceChildren(Object.assign(document.createElement('p'), { textContent: msg }))
-
-/** Tells what just happened, with an action that follows it up when given (`/toasts.js`, a live region of its own). */
-const toast = toaster($('toasts'))
-
-/**
- * A request whose failure is told in a toast, answering `undefined`.
- * @template T
- * @param {Promise<T>} request
- * @returns {Promise<T | undefined>}
- */
-const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
 /** @param {string} project */
 const floorOf = (project) => board().floors.find((f) => f.id === project)
