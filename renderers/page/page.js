@@ -1,6 +1,6 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, GIST_MARK, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, archiveKey, pastCount, pastCrews, pastMatching, pastSize, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, wordsOf, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, plain, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
-import { GIST_ICON, ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, pastCount, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, resumesRow, tagOf, shellPlaces, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, shellWhere, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
 import { collectionPeekHtml, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptKey, keptOf, keptTitles, readsText } from '/items.js'
 import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, statsHtml, statsQuery, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policiesHtml, policyDoneLine, policyZone } from '/panels.js'
@@ -10,6 +10,7 @@ import { failRead, failureOf, heldHandlers, landRead, noReads, reading, refreshR
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, floorOfView, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { archive } from './archive.js'
 import { boardKit } from './board.js'
 import { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, CLOSE_HOME, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss, briefHtml, expandedSaid, openFolds, saidText, shownFrom } from '/brief.js'
@@ -25,16 +26,15 @@ import { toastsCss } from '/toasts.js'
 import { DRAFTS, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
- * @import { Board, Card, CardConversation, CardResource, CardShown, Floor, FloorCollection, FloorItem, Wait } from '../../src/bridge/board.ts'
+ * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection, FloorItem, Wait } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { Brief } from '../../src/bridge/turns.ts'
  * @import { CardRun, Offer } from '../../src/bridge/policies.ts'
  * @import { DiffFile } from '../../src/bridge/diff.ts'
  * @import { FloorBranch, FloorWorktree, LandingRead } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
- * @import { SessionLink } from '../../src/bridge/chains.ts'
  * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
- * @import { Attended, EditedRow, Heed, Move, PastCrew, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
+ * @import { Attended, EditedRow, Heed, Move, Ring, Sound, TidyRow } from '../../src/shared/cards.ts'
  * @import { BoardError, RelayedUi, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
@@ -98,41 +98,6 @@ function toggleSection(key) {
   if (!unfolded.delete(key)) unfolded.add(key)
   tower.store.set(UNFOLDED_KEY, [...unfolded])
   render()
-}
-
-/** A card by id: on the board, else in an archive this page has read. @param {string | undefined} id */
-const findCard = (id) => cards().find((c) => c.id === id) ?? [...archives.values()].flatMap((a) => a.cards ?? []).find((c) => c.id === id)
-
-/**
- * The floors' archives this page has read, by project: the `archiveKey` each was read at, its cards once read, and why
- * they couldn't be while none are.
- * @type {Map<string, { key: string, cards?: Card[], failed?: string }>}
- */
-const archives = new Map()
-
-/** Reads a floor's archive, keeping the cards read before until it lands; a read a later one overtook is dropped. @param {string} project */
-function readArchive(project) {
-  /** @type {{ key: string, cards?: Card[], failed?: string }} */
-  const reading = { key: archiveKey(board(), /** @type {Floor} */ (floorOf(project))), cards: archives.get(project)?.cards }
-  archives.set(project, reading)
-  return tower.archive(project).then(
-    (cards) => archives.get(project) === reading && ((reading.cards = cards), render()),
-    (err) => archives.get(project) === reading && (reading.cards ? toast(`The archive of ${project} can't be read: ${err.message}`) : ((reading.failed = err.message), render())),
-  )
-}
-
-/** Reads again every archive held whose floor's archive moved since. */
-const freshArchives = () => {
-  for (const [project, { key }] of archives) {
-    const f = floorOf(project)
-    if (f && key !== archiveKey(board(), f)) readArchive(project)
-  }
-}
-
-/** A card by id, reading every floor's archive on a miss: for an id the board may have left out. @param {string} id */
-async function lookUp(id) {
-  if (!findCard(id)) await Promise.all(board().floors.filter((f) => f.archived && !archives.get(f.id)?.cards).map((f) => readArchive(f.id)))
-  return findCard(id)
 }
 
 /** @param {Card} c @param {Card} [over] */
@@ -199,24 +164,6 @@ function toggleCrewFold(id) {
   keepViewer('crewsUnfolded', [...unfolded].filter((h) => findCard(h)))
   render()
 }
-
-/** @param {Card} c @param {CardConversation} conv */
-const resumeHtml = (c, conv) => can(conv, 'resume')
-  ? heldWhy('resume') ? heldHtml('resume', 'resume this conversation', ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(conv, 'resume')))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`
-  : can(conv, 'goto') ? `<span class="when">→ ${/** @type {SessionLink} */ (conv.resumedBy).callsign}</span>` : ''
-
-/** @param {Card} c @param {CardConversation} conv */
-const pastConversationHtml = (c, conv) =>
-  `<div class="conv" data-tip="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
-    <span class="what">${conv.answer ? `<span class="said">${GIST_ICON.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_ICON.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
-    ${resumeHtml(c, conv)}</div>`
-
-/** A past worker and the conversations it held, oldest first. @param {Card} c */
-const pastHtml = (c) =>
-  `<div class="past ${c.attention} ${c.id === selected() ? 'sel' : ''}" data-id="${c.id}">
-    <div class="head" data-tip="${statusName(c)}"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="when">${c.unresumable ? `${unresumableHtml(c.unresumable)} · ` : ''}${when(c.startedAt)}</span></div>
-    ${c.conversations.map((conv) => pastConversationHtml(c, conv)).join('') || '<div class="conv"><i class="what">no conversation</i></div>'}
-  </div>`
 
 /** @param {Floor} f @param {string} dir @param {boolean} hub */
 const dirHtml = (f, dir, hub) =>
@@ -1308,6 +1255,8 @@ const sideView = loop({
 
 const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumableHtml, heldWhy, heldHtml, withKeys, floorOf } = boardKit({ findCard: (id) => findCard(id), board, heed, lostAt })
 
+const { findCard, readArchive, freshArchives, lookUp, openArchive, enterArchive, drawArchive } = archive({ cards, board, floorOf, render, heldWhy, heldHtml, selected, callsign, unresumableHtml, go, paint, viewing })
+
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
 
@@ -1712,54 +1661,6 @@ function followLink(e) {
   if (shelfFiles.includes(file)) return showDoc(file)
   toast(`${file} is not in this collection`)
 }
-
-/** The words the archive open is filtered by. @type {string[]} */
-let archiveWords = []
-
-/** @param {string} project */
-const openArchive = (project) => go(floorOf(project) ? { t: 'archive', project } : HOME)
-
-/** @param {string} project */
-function enterArchive(project) {
-  const f = /** @type {Floor} */ (floorOf(project))
-  archiveWords = []
-  $('archive-view').style.cssText = paint(project)
-  $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
-    <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
-    <span class="actions"><small class="dim" id="archive-count"></small>${CLOSE_HOME}</span>`
-  $('archive-filter').focus()
-}
-
-let archiveDrawn = ''
-/** Past workers by crew (`pastCrews`), each worker with its crew under it. @param {PastCrew[]} crews @returns {string} */
-const pastCrewsHtml = (crews) =>
-  crews.map(({ card, crew }) => pastHtml(card) + (crew.length ? `<div class="crew">${pastCrewsHtml(crew)}</div>` : '')).join('')
-
-/** By crew, each worker with every conversation it held and the way to resume or reach it. */
-function drawArchive() {
-  const f = /** @type {Floor} */ (floorOf(/** @type {Extract<MainView, { t: 'archive' }>} */ (viewing('archive')).project))
-  if (!archives.has(f.id)) readArchive(f.id)
-  const { cards: archive, failed } = /** @type {{ cards?: Card[], failed?: string }} */ (archives.get(f.id))
-  if (!archive) {
-    $('archive-count').textContent = plural(pastCount(f), 'worker')
-    const html = failed ? failedHtml('the archive', failed, 'data-archive-read') : '<div class="empty">reading the archive…</div>'
-    if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
-    return
-  }
-  const past = pastCrews(f, archive)
-  const shown = pastMatching(past, archiveWords)
-  const [all, matching] = [pastSize(past), pastSize(shown)]
-  $('archive-count').textContent = matching === all ? plural(all, 'worker') : `${matching} of ${all}`
-  const html = pastCrewsHtml(shown) || '<div class="empty">no past worker matches</div>'
-  if (html !== archiveDrawn) $('archive-list').innerHTML = archiveDrawn = html
-}
-
-$('archive-view').addEventListener('input', (e) => {
-  const input = /** @type {HTMLInputElement} */ (e.target)
-  if (input.id !== 'archive-filter') return
-  archiveWords = wordsOf(input.value)
-  drawArchive()
-})
 
 /** A floor's policies in the main pane (`policiesHtml`, /panels.js). @param {string} project */
 const openPolicies = (project) => go(floorOf(project) ? { t: 'policies', project } : HOME)
