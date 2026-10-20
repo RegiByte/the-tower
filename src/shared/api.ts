@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.66'
+export const API_VERSION = '1.67'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -107,9 +107,16 @@ const checkResult = z.union([
 ]) satisfies z.ZodType<CheckResult>
 
 const OUTCOMES = ['offered', 'no-work', 'held', 'check-failed'] as const satisfies Outcome[]
-const RUN_STARTS = ['auto', 'offer', 'hand'] as const satisfies RunStart[]
+const SLOTTED_STARTS = ['auto', 'offer'] as const satisfies RunStart[]
 
 const slot = z.int().nonnegative().describe("One of the policy's slots, epoch ms, at or before now.")
+
+const policyRunBase = {
+  project: id,
+  policy,
+  by: actor('named on the run fact as the session that accepted or started it.'),
+  check: checkResult.optional().describe('The check that let it run.'),
+}
 
 export const VERBS = {
   spawn: {
@@ -312,15 +319,14 @@ export const VERBS = {
   },
   'policy/run': {
     input: z
-      .strictObject({
-        project: id,
-        policy,
-        start: z.enum(RUN_STARTS).describe('How it starts: `auto`, a runner at its slot; `offer`, an open offer accepted; `hand`, now, with no slot.'),
-        slot: slot.optional().describe("The slot it runs for, epoch ms: one of the policy's, at or before now. Left out by hand."),
-        by: actor('named on the run fact as the session that accepted or started it.'),
-        check: checkResult.optional().describe('The check that let it run.'),
-      })
-      .refine((r) => (r.start === 'hand') === (r.slot === undefined), { message: 'A run by hand takes no slot, and any other run takes one', path: ['slot'] })
+      .discriminatedUnion('start', [
+        z.strictObject({ ...policyRunBase, start: z.literal('hand').describe('Now, with no slot.') }),
+        z.strictObject({
+          ...policyRunBase,
+          start: z.enum(SLOTTED_STARTS).describe('`auto`, a runner at its slot; `offer`, an open offer accepted.'),
+          slot: slot.describe("The slot it runs for, epoch ms: one of the policy's, at or before now."),
+        }),
+      ])
       .describe(
         "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval (the caller consents), except `auto`, refused unless the file's words as read now are approved. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
       ),

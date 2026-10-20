@@ -1250,15 +1250,18 @@ const onPolicy = (project: string, policy: string, act: () => Promise<Answer>) =
  * A run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and the run fact appended. A
  * worker whose fact can't be appended is killed, so no run goes uncounted.
  */
-const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['policy/run']) =>
-  fromWorker(by, () =>
+const runPolicy = (input: RouteInput['policy/run']) => {
+  const { project, policy, by, check } = input
+  const [slot, startFact] =
+    input.start === 'hand' ? [undefined, { start: 'hand', slot: null } as const] : [input.slot, { start: input.start, slot: slotName(input.slot) } as const]
+  return fromWorker(by, () =>
     onPolicy(project, policy, async () => {
       const file = policyFile(project, policy)
       if ('t' in file) return file
       const refused = slotRefusal(policy, file.parsed, slot)
       if (refused) return refused
       const { header, prompt } = file.parsed as Extract<Parsed, { ok: true }>
-      if (start === 'auto' && !policyFactsOf(project).approvals.some(([, a]) => a.policy === policy && a.hash === file.hash)) return apiError('refused', `${tagOf(policy)} is not approved as it is now (${shortHash(file.hash)}): it starts on its own only on approved words`)
+      if (input.start === 'auto' && !policyFactsOf(project).approvals.some(([, a]) => a.policy === policy && a.hash === file.hash)) return apiError('refused', `${tagOf(policy)} is not approved as it is now (${shortHash(file.hash)}): it starts on its own only on approved words`)
       if (slot !== undefined && policyFactsOf(project).runs.some(([, r]) => r.policy === policy && r.slot === slotName(slot))) return apiError('refused', `${tagOf(policy)} already ran for ${slotName(slot)}`)
       if (!system.live()) return apiError('unavailable', 'No host runs, so no worker can start: the user starts it with `tower up`')
       await system.refreshLive()
@@ -1268,7 +1271,7 @@ const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['poli
       const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, undefined, launch) : await spawnIn(project, header.hire.cwd, undefined, launch)
       if (answer.t !== 'spawned') return answer
       const { id } = answer as Replies['spawn']
-      const fact: RunFact = { policy, hash: file.hash, id, ...(by && { by }), ...(check && { check }), ...(start === 'hand' ? { start, slot: null } : { start, slot: slotName(slot!) }) }
+      const fact: RunFact = { policy, hash: file.hash, id, ...(by && { by }), ...(check && { check }), ...startFact }
       try {
         await appendPolicyFact(project, RUNS_STREAM, 'r', fact, (facts) => facts.runs.some(([, r]) => r.id === id))
       } catch (err) {
@@ -1279,6 +1282,7 @@ const runPolicy = ({ project, policy, start, slot, by, check }: RouteInput['poli
       return { t: 'ran', id, n: policyFactsOf(project).runs.filter(([, r]) => r.policy === policy).length, hash: file.hash }
     }),
   )
+}
 
 /** A slot the runner saw and didn't start, and why: refused once the slot has a fact. */
 const passPolicy = ({ project, policy, slot, outcome, check }: RouteInput['policy/pass']) =>
