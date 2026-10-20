@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.50.0
+
+A small release. No host restart, no config change, the renderer API unchanged at 1.70. Restart the tower
+(`tower down tower && tower up tower`) and reload the page. A checkout that serves Tower 3D rebuilds it
+(`npm run tower3d`).
+
+- The settings and limits popovers, and the new-shell picker, are sized to their content in `tower app` and Safari.
+  WebKit stretched them to the window's height, spreading the limits' rows apart (#144, by @CarlosBonetti).
+- A worker killed by a signal from outside the tower (a stray `pkill`, say) is stranded, not ended: it stays on duty,
+  "resume all stranded" brings it back, and it carries on when it was mid-turn. A worker the tower killed or sent home
+  still ends.
+- The worker brief says a path named in an answer is not shown to you, and to stop a process by its PID, since a
+  pattern kill matches other workers' command lines. Workers spawned or resumed from now on get it.
+- Tower 3D's desks carry the forge's real-size props (mugs, plate, bowl, slice, pen cup and plant), vendored in
+  `renderers/tower3d/forge` and measured as one more pack of the kit (decision `forge-kit`), drawn at ×1.25 for now.
+
 ## v1.49.0
 
 The third wave of the consolidation pass: the tower page split into a module per pane, and what each renderer has open
