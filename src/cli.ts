@@ -53,6 +53,7 @@ import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
 import { callsignsOf, towerPort, towerUrl, type Config, type SessionLog } from './shared/model.ts'
 import { readConfig } from './system.ts'
+import { span } from './shared/cards.ts'
 import { CARRY_ON } from './shared/launch.ts'
 import { configPath, systemPaths } from './shared/paths.ts'
 import { everyEvent, logFileOf, logFilesIn, readLog } from './tail.ts'
@@ -97,13 +98,6 @@ const summary = (running: Resource[]): string => {
   const orphans = running.filter((r) => r.orphan).length
   const ports = running.flatMap((r) => r.ports.map((port) => `:${port}`))
   return [`${running.length} running`, orphans ? `(${orphans} orphaned)` : '', ...ports].filter(Boolean).join(' ')
-}
-
-const ago = (ms: number): string => {
-  const s = Math.floor(ms / 1000)
-  if (s < 60) return `${s}s`
-  if (s < 3600) return `${Math.floor(s / 60)}m`
-  return `${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60)}m`
 }
 
 const print = (reply: FromHost) => {
@@ -224,7 +218,7 @@ const main = async (): Promise<void> => {
         const own = running.filter((r) => r.session === header.id)
         const word = facts.broken ? 'broken' : status
         const why = facts.broken && `its log breaks at ${facts.broken.at}s: ${facts.broken.message}`
-        console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${ago(Date.now() - entered)}`.padEnd(10), summary(own), why].filter(Boolean).join('  ').trimEnd())
+        console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${span(Date.now() - entered)}`.padEnd(10), summary(own), why].filter(Boolean).join('  ').trimEnd())
       }
       break
     }
