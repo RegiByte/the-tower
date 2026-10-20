@@ -1,0 +1,21 @@
+{
+  "id": "kitchen/pizza_slice_01",
+  "name": "pizza_slice_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/pizza_slice",
+  "tags": [],
+  "glb": "props/kitchen/pizza_slice_01.glb",
+  "size": [
+    0.137766033411026,
+    0.019999999552965164,
+    0.17815598845481873
+  ],
+  "triangles": 158,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

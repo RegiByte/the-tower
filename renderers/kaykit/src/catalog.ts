@@ -9,7 +9,15 @@ import type { Category } from './rules.ts'
 
 export type Vec3 = [number, number, number]
 
-export const PACKS = ['furniture', 'restaurant', 'prototype', 'halloween', 'city', 'space'] as const
+export const KAYKIT_PACKS = ['furniture', 'restaurant', 'prototype', 'halloween', 'city', 'space'] as const
+export type KayKitPack = (typeof KAYKIT_PACKS)[number]
+
+/** The forge's props (`renderers/tower3d/forge`): modelled at real size, so no norm scales them. */
+export const FORGE = 'forge'
+export const PACKS = [...KAYKIT_PACKS, FORGE] as const
+
+/** How the forge's glass and decals are drawn, as its catalog's `materials` binds them: vendoring checks they still do. */
+export const FORGE_BINDING = { glassOpacity: 0.3, decalCut: 0.5 }
 export type Pack = (typeof PACKS)[number]
 
 /** Where a model's origin sits on each axis, as shipped: on a face, centred, or somewhere else. */
@@ -38,7 +46,11 @@ export type Model = {
   source: string
 }
 
-export type PackInfo = { dir: string; count: number; atlases: string[] }
+/**
+ * `atlases` are what a theme picks among (`base`, `alt_A`, …); `maps` the pack's other textures by name, sampled as
+ * they are (the forge's `emissive` and `decals`).
+ */
+export type PackInfo = { dir: string; count: number; atlases: string[]; maps: string[] }
 
 export type Catalog = { bundle: string; license: string; unit: string; packs: Record<Pack, PackInfo>; models: Model[] }
 
@@ -46,7 +58,8 @@ export const ROOM_PACKS: Pack[] = ['furniture', 'restaurant', 'prototype', 'hall
 
 /**
  * A rule over the catalog: every rule a model matches applies, scales multiply. The diorama packs (city, space) match
- * none and keep the vendor's scale (a 2 m tile, a 1.65 m three-storey building): a scene scales them per use.
+ * none and keep the vendor's scale (a 2 m tile, a 1.65 m three-storey building): a scene scales them per use. The
+ * forge matches none: its props are real size.
  */
 export type Norm = { why: string; pack?: Pack[]; category?: Category[]; maxHeight?: number; scale?: number; surface?: true }
 

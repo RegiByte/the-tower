@@ -3,22 +3,23 @@ import type { Vec3 } from './catalog.ts'
 
 /**
  * Every model's geometry, packed by the build into one buffer: floats (positions, normals, UVs) then indices. A node
- * keeps glTF's local TRS so a part can be posed by name; a primitive is a span of each array, `glass` when it samples
- * no atlas (the one transparent material in the bundle).
+ * keeps glTF's local TRS so a part can be posed by name; a primitive is a span of each array, with what it is drawn in:
+ * its pack's atlas, glass, or the decal sheet.
  */
 export type Span = [start: number, length: number]
+export type Surface = 'atlas' | 'glass' | 'decals'
 export type MeshNode = {
   name: string
   parent: number
   t: Vec3
   r: [number, number, number, number]
   s: Vec3
-  prims: { position: Span; normal: Span; uv: Span; index: Span; glass: boolean }[]
+  prims: { position: Span; normal: Span; uv: Span; index: Span; surface: Surface }[]
 }
 export type MeshIndex = Record<string, MeshNode[]>
 
 /** A model's nodes with their geometries made: what the drawing instances. */
-export type ModelMesh = { nodes: (Omit<MeshNode, 'prims'> & { prims: { geometry: THREE.BufferGeometry; glass: boolean }[] })[] }
+export type ModelMesh = { nodes: (Omit<MeshNode, 'prims'> & { prims: { geometry: THREE.BufferGeometry; surface: Surface }[] })[] }
 
 export async function loadMeshes(base: string): Promise<Map<string, ModelMesh>> {
   const [index, bin] = await Promise.all([
@@ -47,7 +48,7 @@ export function meshesFrom(index: MeshFile, bin: ArrayBuffer): Map<string, Model
           g.setAttribute('normal', new THREE.BufferAttribute(slice(floats, p.normal), 3))
           g.setAttribute('uv', new THREE.BufferAttribute(slice(floats, p.uv), 2))
           g.setIndex(new THREE.BufferAttribute(slice(ints, p.index), 1))
-          return { geometry: g, glass: p.glass }
+          return { geometry: g, surface: p.surface }
         }),
       })),
     })

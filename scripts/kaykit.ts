@@ -3,8 +3,9 @@
  * drives the playground page itself in headless Chrome, so an agent's picture is the one a human flies through.
  *
  *   npm run tool:kaykit -- build --source <dir>       measure the KayKit Bits Bundle 1 folder <dir>
- *                                                     (https://kaylousberg.itch.io/) into renderers/kaykit/out
- *                                                     (catalog, meshes, atlases)
+ *                                                     (https://kaylousberg.itch.io/) and the forge's props vendored in
+ *                                                     renderers/tower3d/forge into renderers/kaykit/out (catalog,
+ *                                                     meshes, atlases)
  *   npm run tool:kaykit -- bundle                     the page's script and scene list (render and serve do it too)
  *   npm run tool:kaykit -- find [words…] [--pack p,…] [--category c,…] [--mount m,…] [--parts] [--min w,h,d] [--max w,h,d] [--json]
  *                                                     catalog ids with their size, bounds and parts in Tower meters;
@@ -48,6 +49,7 @@ import { withPage } from './drive.ts'
 const REPO = path.resolve(import.meta.dirname, '..')
 const PAGE = path.join(REPO, 'renderers/kaykit')
 const OUT = path.join(PAGE, 'out')
+const FORGE = path.join(REPO, 'renderers/tower3d/forge')
 
 const catalog = () => {
   const file = path.join(OUT, 'catalog.json')
@@ -174,7 +176,7 @@ async function main() {
     const source = path.resolve(values.source)
     if (!fs.existsSync(source)) throw new Error(`no KayKit folder at ${source}`)
     fs.mkdirSync(OUT, { recursive: true })
-    const r = build(source, OUT)
+    const r = build({ kaykit: source, forge: FORGE }, OUT)
     return console.log(`${r.models} models, ${(r.bytes / 1e6).toFixed(1)} MB of meshes → ${path.relative(REPO, OUT)}`)
   }
   if (command === 'bundle') return bundle()

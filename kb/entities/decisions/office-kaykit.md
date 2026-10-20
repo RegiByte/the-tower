@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-18",
+  "reviewed": "2026-10-20",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/kaykit/src/scene.ts#layTheme",
@@ -60,8 +60,10 @@ them. The office then decides only where each scene stands. The taste rules hold
 stay the loudest thing on a floor, big planes muted, colour spent on small countable things, one hero per floor.
 
 **How.**
-- The playground (`renderers/kaykit`, a sibling renderer). Its build measures every glTF into `out/catalog.json`
-  and packs the meshes into one buffer; the source folder is read only and `out/` is derived. The catalog holds
+- The playground (`renderers/kaykit`, a sibling renderer). Its build measures every glTF of the bundle, and every GLB
+  of the forge's props vendored beside the office's ([[forge-kit]]), into `out/catalog.json` and packs the meshes into
+  one buffer, each primitive bound to the surface it is drawn in (its pack's atlas, glass, decals); the source folders
+  are read only and `out/` is derived. The catalog holds
   facts as shipped; [`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS) turns them into Tower meters and
   [`fit`](ref:hub/renderers/kaykit/src/catalog.ts#fit) derives the placed bounds, so a norm changes in one place.
 - A scene is one JSON shape ([`Scene`](ref:hub/renderers/kaykit/src/scene.ts#Scene)): items (a catalog model, or
@@ -74,7 +76,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   under its placing item's id. Scenes live in `renderers/kaykit/scenes/`, versioned with the code; the
   gallery is a scene derived from the catalog.
 - One drawing ([`build`](ref:hub/renderers/kaykit/src/draw.ts#build)): each pack's models in one `BatchedMesh`
-  per theme they are drawn in, with one toon material over the pack's atlas; a theme is a texture per pack.
+  per theme and surface they are drawn in, with one toon material over the pack's atlas (or the forge's decal sheet);
+  a theme is a texture per pack.
   [`scripts/kaykit.ts`](ref:hub/scripts/kaykit.ts) (`npm run tool:kaykit`) finds and checks in Node and renders by
   driving the page's `window.kaykit` in headless Chrome, so headless and interactive share every line of drawing.
 - The office on that path. [`tower3d-kit.ts`](ref:hub/scripts/tower3d-kit.ts) runs before the bundle: it measures
@@ -85,10 +88,11 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   `out/kaykit/kit.kaykit` ([`KitFile`](ref:hub/renderers/tower3d/src/kitfile.ts#KitFile)), which the build copies into
   `out/assets/` and the page fetches as it starts ([[bundled-renderer]]).
   [`kit.ts`](ref:hub/renderers/tower3d/src/kit.ts#fillLayer) places scene items with the playground's matrices and
-  draws each layer as one BatchedMesh per pack and theme. It measures from the subset of the bundle vendored in
+  draws each layer as one BatchedMesh per pack, theme and surface. It measures from the subset of the bundle vendored in
   `renderers/tower3d/kaykit` (`tower3d-kit.ts vendor`, which leaves the workers' `Characters/` alone,
-  [[kaykit-workers]]), so a fresh clone builds it; a model the office places that the folder lacks fails the build
-  before anything is cleared, naming it, the prefab placing it and that `vendor` command.
+  [[kaykit-workers]]) and the forge's snapshot in `renderers/tower3d/forge` (`vendor-forge`, [[forge-kit]]), so a
+  fresh clone builds it; a model the office places that either folder lacks fails the build before anything is
+  cleared, naming it, the prefab placing it and the command that vendors it.
 - Two layers per level ([[tower3d-levels]]): the desks' props and the lobby's city model are refilled on every
   board; the zones on every rebuild of the building (its structure key, which also holds the month).
 - Zones from the plan. A floor's are placed from its named anchors

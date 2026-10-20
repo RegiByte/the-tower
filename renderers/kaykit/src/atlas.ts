@@ -9,8 +9,8 @@ import type { Theme } from './scene.ts'
 
 export type Atlases = Map<string, HTMLImageElement>
 
-export async function loadAtlases(base: string, packs: Record<Pack, { atlases: string[] }>): Promise<Atlases> {
-  const entries = Object.entries(packs).flatMap(([pack, info]) => info.atlases.map((name) => `${pack}/${name}`))
+export async function loadAtlases(base: string, packs: Record<Pack, { atlases: string[]; maps: string[] }>): Promise<Atlases> {
+  const entries = Object.entries(packs).flatMap(([pack, info]) => [...info.atlases, ...info.maps].map((name) => `${pack}/${name}`))
   const images = await Promise.all(entries.map(async (key) => {
     const img = new Image()
     img.src = `${base}/atlas/${key}.png`
@@ -22,7 +22,7 @@ export async function loadAtlases(base: string, packs: Record<Pack, { atlases: s
 
 const textures = new Map<string, THREE.Texture>()
 
-const finish = (t: THREE.Texture) => Object.assign(t, { colorSpace: THREE.SRGBColorSpace, flipY: false, anisotropy: 4 })
+const finish = (t: THREE.Texture, colorSpace: THREE.ColorSpace = THREE.SRGBColorSpace) => Object.assign(t, { colorSpace, flipY: false, anisotropy: 4 })
 
 function canvasOf(img: HTMLImageElement) {
   const cv = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height })
@@ -78,13 +78,28 @@ export function atlasTexture(atlases: Atlases, pack: Pack, theme: Theme | undefi
   return t
 }
 
-/** What lights up at night: black but for the pack's glowing regions (`GLOW`), or nothing when it has none. */
-export function glowTexture(pack: Pack, atlas: HTMLImageElement): THREE.Texture | null {
+/** One of a pack's maps (`PackInfo.maps`), sampled as it is: shared by key, made once. */
+export function mapTexture(atlases: Atlases, pack: Pack, name: string, colorSpace: THREE.ColorSpace): THREE.Texture {
+  const key = `${pack}/${name}`
+  const hit = textures.get(key)
+  if (hit) return hit
+  const img = atlases.get(key)
+  if (!img) throw new Error(`${pack} has no map "${name}"`)
+  const t = finish(new THREE.Texture(img), colorSpace)
+  t.needsUpdate = true
+  textures.set(key, t)
+  return t
+}
+
+/** What lights up at night: the pack's own emissive map, else black but for its glowing regions (`GLOW`), or nothing when it has neither. */
+export function glowTexture(pack: Pack, atlases: Atlases): THREE.Texture | null {
+  if (atlases.has(`${pack}/emissive`)) return mapTexture(atlases, pack, 'emissive', THREE.LinearSRGBColorSpace)
   const regions = GLOW[pack]
   if (!regions) return null
   const key = `glow/${pack}`
   const hit = textures.get(key)
   if (hit) return hit
+  const atlas = atlases.get(`${pack}/base`)!
   const cv = Object.assign(document.createElement('canvas'), { width: atlas.width, height: atlas.height })
   const g = cv.getContext('2d')!
   g.fillStyle = '#000'

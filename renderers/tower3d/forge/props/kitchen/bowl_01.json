@@ -1,0 +1,21 @@
+{
+  "id": "kitchen/bowl_01",
+  "name": "bowl_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/bowl",
+  "tags": [],
+  "glb": "props/kitchen/bowl_01.glb",
+  "size": [
+    0.15000000596046448,
+    0.07000000029802322,
+    0.15000000596046448
+  ],
+  "triangles": 412,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

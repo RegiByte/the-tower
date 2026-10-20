@@ -1,0 +1,21 @@
+{
+  "id": "office/sticky_notes_01",
+  "name": "sticky_notes_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/sticky_notes",
+  "tags": [],
+  "glb": "props/office/sticky_notes_01.glb",
+  "size": [
+    0.07599999755620956,
+    0.0279999990016222,
+    0.07599999755620956
+  ],
+  "triangles": 77,
+  "tier": "xs",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

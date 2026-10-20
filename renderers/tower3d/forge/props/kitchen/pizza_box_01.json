@@ -1,0 +1,24 @@
+{
+  "id": "kitchen/pizza_box_01",
+  "name": "pizza_box_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/pizza_box",
+  "tags": [],
+  "glb": "props/kitchen/pizza_box_01.glb",
+  "size": [
+    0.4177502393722534,
+    0.05271173641085625,
+    0.4190026819705963
+  ],
+  "triangles": 98,
+  "tier": "s",
+  "materials": [
+    "forge_decals",
+    "forge_palette"
+  ],
+  "decals": [
+    "pizza_lid_classic"
+  ],
+  "moves": {}
+}

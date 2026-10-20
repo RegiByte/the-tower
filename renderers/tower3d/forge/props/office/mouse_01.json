@@ -1,0 +1,21 @@
+{
+  "id": "office/mouse_01",
+  "name": "mouse_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/mouse",
+  "tags": [],
+  "glb": "props/office/mouse_01.glb",
+  "size": [
+    0.06446963548660278,
+    0.03564002364873886,
+    0.10679307579994202
+  ],
+  "triangles": 376,
+  "tier": "xs",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

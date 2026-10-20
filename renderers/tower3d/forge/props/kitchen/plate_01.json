@@ -1,0 +1,21 @@
+{
+  "id": "kitchen/plate_01",
+  "name": "plate_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/plate",
+  "tags": [],
+  "glb": "props/kitchen/plate_01.glb",
+  "size": [
+    0.27000001072883606,
+    0.02500000037252903,
+    0.27000001072883606
+  ],
+  "triangles": 236,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

@@ -1,4 +1,4 @@
-/** Name → category and variant axes for the KayKit Bits models. The first matching rule wins; every model must match one. */
+/** Name → category and variant axes for the KayKit Bits models and the forge's props. The first matching rule wins; every model must match one. */
 
 export const CATEGORIES = [
   'vehicle', 'weapon', 'building', 'road', 'terrain', 'floor', 'wall', 'pillar', 'door', 'primitive', 'target', 'desk',
@@ -18,17 +18,17 @@ const RULES: [Category, RegExp][] = [
   ['door', /^door_/i],
   ['primitive', /^(primitive_cube|cube_prototype|dummy_base)/i],
   ['target', /^(target|wall_target)/i],
-  ['desk', /^(desk|workbench|table_|kitchentable|cuttingboard)/i],
+  ['desk', /^(desk(?!_plant)|workbench|table_|kitchentable|cuttingboard)/i],
   ['seating', /^(chair|armchair|couch|bench|stool)/i],
   ['bed', /^bed_/],
-  ['kitchen', /^(kitchencounter|kitchencabinet|fridge|oven|pizza_oven|stove|extractorhood|icecream_machine|dishrack|towelrail|shelf_papertowel|papertowel)/],
+  ['kitchen', /^(kitchencounter|kitchencabinet|fridge|oven|pizza_oven|stove|extractorhood|icecream_machine|dishrack|towelrail|shelf_papertowel|papertowel|toaster)/],
   ['storage', /^(shelf_|cabinet_|locker|box_|crate|cargo_|containers_|barrel|pallet|dumpster|trash_|haybale)/i],
   ['tech', /^(monitor|keyboard|mouse|gameconsole|solarpanel|lights$)/],
   ['light', /^(lamp_|streetlight|trafficlight|lantern|candle|post_lantern|skull_candle)/],
-  ['plant', /^(bush|tree_|cactus|pumpkin)/],
-  ['decor', /^(rug_|pictureframe|pillow|book_|plaque|sign_|gravemarker|gravestone|grave_|coffin|skull|ribcage|bone_|scarecrow|post_skull|menu$|candy_bucket|firehydrant|cup_pencils|mousepad)/],
-  ['food', /^(food_|icecream_(bowl_|cone_|softserve|container_icecream|cherry|cookiestick|waffle$)|candy_|candycorn|lollipop|pizzabox|stew_bowl|crate_)/],
-  ['kitchenware', /^(bowl|plate|pot_|pan_|lid_|jar_|knife|spoon|rollingpin|ketchup|mustard|mug_|cup$|stew_pot|icecream_(bowl|cone|container|scoop))/],
+  ['plant', /^(bush|tree_|cactus|pumpkin|desk_plant)/],
+  ['decor', /^(rug_|pictureframe|pillow|book_|plaque|sign_|gravemarker|gravestone|grave_|coffin|skull|ribcage|bone_|scarecrow|post_skull|menu$|candy_bucket|firehydrant|cup_pencils|mousepad|pen_cup|notebook|sticky_notes|stapler|pinball)/],
+  ['food', /^(food_|icecream_(bowl_|cone_|softserve|container_icecream|cherry|cookiestick|waffle$)|candy_|candycorn|lollipop|pizzabox|pizza_box|pizza_slice|stew_bowl|crate_)/],
+  ['kitchenware', /^(bowl|plate|pot_|pan_|lid_|jar_|knife|spoon|rollingpin|ketchup|mustard|mug_|coffee_mug|cutting_board|cup$|stew_pot|icecream_(bowl|cone|container|scoop))/],
   ['prop', /^(coin_|can_)/i],
 ]
 

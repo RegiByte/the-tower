@@ -1,0 +1,31 @@
+{
+  "id": "kitchen/toaster_01",
+  "name": "toaster_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/toaster",
+  "tags": [],
+  "glb": "props/kitchen/toaster_01.glb",
+  "size": [
+    0.30000001192092896,
+    0.18000000715255737,
+    0.17000000178813934
+  ],
+  "triangles": 212,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {
+    "lever": {
+      "motion": "slide",
+      "axis": [
+        0,
+        -1,
+        0
+      ],
+      "amount": 0.069633
+    }
+  }
+}

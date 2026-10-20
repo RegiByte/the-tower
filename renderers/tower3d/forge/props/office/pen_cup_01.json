@@ -1,0 +1,21 @@
+{
+  "id": "office/pen_cup_01",
+  "name": "pen_cup_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/pen_cup",
+  "tags": [],
+  "glb": "props/office/pen_cup_01.glb",
+  "size": [
+    0.07908271253108978,
+    0.14319103956222534,
+    0.07615457475185394
+  ],
+  "triangles": 380,
+  "tier": "xs",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

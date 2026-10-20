@@ -1,0 +1,21 @@
+{
+  "id": "kitchen/cutting_board_01",
+  "name": "cutting_board_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/cutting_board",
+  "tags": [],
+  "glb": "props/kitchen/cutting_board_01.glb",
+  "size": [
+    0.4000000059604645,
+    0.019999999552965164,
+    0.25
+  ],
+  "triangles": 152,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

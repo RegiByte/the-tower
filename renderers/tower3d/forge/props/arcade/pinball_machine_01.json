@@ -1,0 +1,54 @@
+{
+  "id": "arcade/pinball_machine_01",
+  "name": "pinball_machine_01",
+  "category": "arcade",
+  "mount": "floor",
+  "reference": "arcade/pinball_machine",
+  "tags": [],
+  "glb": "props/arcade/pinball_machine_01.glb",
+  "size": [
+    0.8288751244544983,
+    1.9306668043136597,
+    1.3963291645050049
+  ],
+  "triangles": 1806,
+  "tier": "l",
+  "materials": [
+    "forge_decals",
+    "forge_glass",
+    "forge_palette"
+  ],
+  "decals": [
+    "pinball_backglass",
+    "pinball_playfield"
+  ],
+  "moves": {
+    "flipper_l": {
+      "motion": "rotate",
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "amount": 0.698132
+    },
+    "flipper_r": {
+      "motion": "rotate",
+      "axis": [
+        0,
+        -1,
+        0
+      ],
+      "amount": 0.698132
+    },
+    "plunger": {
+      "motion": "slide",
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "amount": 0.05
+    }
+  }
+}

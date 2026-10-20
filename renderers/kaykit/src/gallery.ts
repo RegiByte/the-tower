@@ -1,4 +1,4 @@
-import { fit, PACKS, ROOM_PACKS, round, type Catalog, type Model, type Pack, type Vec3 } from './catalog.ts'
+import { FORGE, fit, PACKS, ROOM_PACKS, round, type Catalog, type Model, type Pack, type Vec3 } from './catalog.ts'
 import { CATEGORIES } from './rules.ts'
 import type { Box, Label, ModelItem, Scene } from './scene.ts'
 
@@ -10,7 +10,7 @@ import type { Box, Label, ModelItem, Scene } from './scene.ts'
  */
 
 export const PACK_COLORS: Record<Pack, string> = {
-  furniture: '#2b6f87', restaurant: '#b5523b', prototype: '#5a6378', halloween: '#d17a2e', city: '#4f9a5c', space: '#7d4fb5',
+  furniture: '#2b6f87', restaurant: '#b5523b', prototype: '#5a6378', halloween: '#d17a2e', city: '#4f9a5c', space: '#7d4fb5', forge: '#a8763e',
 }
 
 const GAP = 0.45
@@ -93,7 +93,7 @@ export function gallery(catalog: Catalog): Scene {
     const h = hall(models, x, width)
     items.push(...h.items)
     labels.push(...h.labels)
-    const scale = ROOM_PACKS.includes(pack) ? 'room pack, × 0.75' : 'diorama pack, × 1'
+    const scale = ROOM_PACKS.includes(pack) ? 'room pack, × 0.75' : pack === FORGE ? 'real size, × 1' : 'diorama pack, × 1'
     labels.push({ text: `${pack}\n${models.length} models · ${scale} · atlases: ${catalog.packs[pack].atlases.join(', ')}`, at: [round(x + width / 2), 0, 2.2], height: 0.7, tilt: 25, color: PACK_COLORS[pack] })
     boxes.push({ size: [round(width + 2), 0.04, round(h.depth + 4.5)], at: [round(x + width / 2), -0.05, round(-h.depth / 2 + 1.25)], color: tint(PACK_COLORS[pack]) })
     halls[pack] = { x, width, depth: h.depth }

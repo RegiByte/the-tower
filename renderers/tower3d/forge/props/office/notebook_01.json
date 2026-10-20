@@ -1,0 +1,21 @@
+{
+  "id": "office/notebook_01",
+  "name": "notebook_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/notebook",
+  "tags": [],
+  "glb": "props/office/notebook_01.glb",
+  "size": [
+    0.15000000596046448,
+    0.014000000432133675,
+    0.21199999749660492
+  ],
+  "triangles": 138,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

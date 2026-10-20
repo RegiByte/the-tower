@@ -1,0 +1,31 @@
+{
+  "id": "office/stapler_01",
+  "name": "stapler_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/stapler",
+  "tags": [],
+  "glb": "props/office/stapler_01.glb",
+  "size": [
+    0.04399999976158142,
+    0.05976960062980652,
+    0.1599999964237213
+  ],
+  "triangles": 320,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {
+    "arm": {
+      "motion": "rotate",
+      "axis": [
+        -1,
+        0,
+        0
+      ],
+      "amount": 0.5236
+    }
+  }
+}

@@ -1,0 +1,3 @@
+The forge's props, their textures and their sidecars are dedicated to the public domain under CC0 1.0 Universal
+(https://creativecommons.org/publicdomain/zero/1.0/): copy, modify and use them, commercially or not, without asking
+and without credit.

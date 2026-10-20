@@ -1,0 +1,21 @@
+{
+  "id": "office/keyboard_01",
+  "name": "keyboard_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/keyboard",
+  "tags": [],
+  "glb": "props/office/keyboard_01.glb",
+  "size": [
+    0.4399999976158142,
+    0.03035883978009224,
+    0.13552579283714294
+  ],
+  "triangles": 916,
+  "tier": "s",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

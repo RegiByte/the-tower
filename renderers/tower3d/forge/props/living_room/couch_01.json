@@ -1,0 +1,21 @@
+{
+  "id": "living_room/couch_01",
+  "name": "couch_01",
+  "category": "living_room",
+  "mount": "floor",
+  "reference": "living_room/couch",
+  "tags": [],
+  "glb": "props/living_room/couch_01.glb",
+  "size": [
+    2.0999999046325684,
+    0.8588994741439819,
+    0.9200000166893005
+  ],
+  "triangles": 1676,
+  "tier": "l",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

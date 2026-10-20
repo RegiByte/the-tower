@@ -1,0 +1,21 @@
+{
+  "id": "office/desk_plant_01",
+  "name": "desk_plant_01",
+  "category": "office",
+  "mount": "surface",
+  "reference": "office/desk_plant",
+  "tags": [],
+  "glb": "props/office/desk_plant_01.glb",
+  "size": [
+    0.1063268631696701,
+    0.10651204735040665,
+    0.10112286359071732
+  ],
+  "triangles": 512,
+  "tier": "xs",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

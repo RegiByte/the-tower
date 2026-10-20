@@ -1,0 +1,21 @@
+{
+  "id": "kitchen/coffee_mug_01",
+  "name": "coffee_mug_01",
+  "category": "kitchen",
+  "mount": "surface",
+  "reference": "kitchen/coffee_mug",
+  "tags": [],
+  "glb": "props/kitchen/coffee_mug_01.glb",
+  "size": [
+    0.11627117544412613,
+    0.09335881471633911,
+    0.07999999821186066
+  ],
+  "triangles": 268,
+  "tier": "xs",
+  "materials": [
+    "forge_palette"
+  ],
+  "decals": [],
+  "moves": {}
+}

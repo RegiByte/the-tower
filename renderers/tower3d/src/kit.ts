@@ -1,8 +1,8 @@
 import * as THREE from 'three'
-import { atlasTexture, glowTexture, type Atlases } from '../../kaykit/src/atlas.ts'
-import type { Model, Pack } from '../../kaykit/src/catalog.ts'
+import { atlasTexture, glowTexture, mapTexture, type Atlases } from '../../kaykit/src/atlas.ts'
+import { FORGE, FORGE_BINDING, type Model, type Pack } from '../../kaykit/src/catalog.ts'
 import { itemMatrix, nodeMatrices } from '../../kaykit/src/draw.ts'
-import { meshesFrom, type ModelMesh } from '../../kaykit/src/meshes.ts'
+import { meshesFrom, type ModelMesh, type Surface } from '../../kaykit/src/meshes.ts'
 import { layTheme, type ModelItem, type Theme } from '../../kaykit/src/scene.ts'
 import { glows, toonMapped, toonOwn } from './toon.ts'
 import { bytesOf, KIT_FILE } from './files.ts'
@@ -11,11 +11,12 @@ import type { Level } from './layout.ts'
 import type { Prefabs } from './zones.ts'
 
 /**
- * The KayKit models the office draws, on the playground's path: measured and packed by the playground's own build
- * (`scripts/tower3d-kit.ts` into `out/kaykit/kit.kaykit`, fetched as a file), placed as the playground's scene items (`at`, `turn`, `scale` on top
- * of the catalog's norms) and drawn as the playground draws them: every model of a pack in one BatchedMesh, toon-shaded
- * over the pack's atlas as a theme paints it (an alternate atlas, hue swaps), so a layer costs a draw call per pack and
- * theme however many models and placements it holds.
+ * The KayKit models and forge props the office draws, on the playground's path: measured and packed by the
+ * playground's own build (`scripts/tower3d-kit.ts` into `out/kaykit/kit.kaykit`, fetched as a file), placed as the
+ * playground's scene items (`at`, `turn`, `scale` on top of the catalog's norms) and drawn as the playground draws them:
+ * every model of a pack in one BatchedMesh per surface, toon-shaded over the pack's atlas as a theme paints it (an
+ * alternate atlas, hue swaps), so a layer costs a draw call per pack, theme and surface however many models and
+ * placements it holds.
  */
 
 export type Kit = { models: Map<string, Model>; meshes: Map<string, ModelMesh>; atlases: Atlases; prefabs: Prefabs }
@@ -35,15 +36,17 @@ export async function loadKit(): Promise<Kit> {
   const header = JSON.parse(new TextDecoder().decode(packed.subarray(4, 4 + length))) as KitFile
   const at = kitLayout(length, header)
   const meshes = meshesFrom(header.meshes, packed.slice(at.meshes.from, at.meshes.to).buffer)
-  const atlases = new Map(await Promise.all(at.atlases.map(async ({ key, from, to }) => [key, await atlasOf(packed.subarray(from, to))] as const)))
+  const atlases: Atlases = new Map(await Promise.all(at.atlases.map(async ({ key, from, to }) => [key, await atlasOf(packed.subarray(from, to))] as const)))
   return { models: new Map(header.catalog.models.map((m) => [m.id, m])), meshes, atlases, prefabs: header.prefabs }
 }
 
 /** A model placed in a frame (a desk, a level): the item as a scene document writes it, and the theme its pack draws in. */
 export type Placed = { item: ModelItem; frame: THREE.Matrix4; theme?: Theme }
 
-/** Glass: the one part in the kit sampling no atlas. */
+/** KayKit's glass, the one part in the kit sampling no atlas: one batch for every KayKit pack. */
 const GLASS = 'glass'
+
+type Look = [pack: Pack, atlas: string, swaps: NonNullable<Theme['swaps']>[Pack], surface: Surface]
 
 type Batch = { mesh: THREE.BatchedMesh; geometries: Map<THREE.BufferGeometry, number>; used: number }
 export type KitLayer = { group: THREE.Group; batches: Map<string, Batch> }
@@ -63,31 +66,34 @@ export function glowKit(windows: number) {
   for (const m of materials.values()) if (m instanceof THREE.MeshToonMaterial && m.emissiveMap) m.emissiveIntensity = glow * GLOW
 }
 
-/** What a pack draws with under a theme: its batch's key, the same for every theme that paints the pack alike. */
-const keyOf = (pack: Pack, theme: Theme | undefined) => JSON.stringify([pack, theme?.atlas?.[pack] ?? 'base', theme?.swaps?.[pack] ?? []])
+/** What a pack's surface draws with under a theme: its batch's key, the same for every theme that paints the pack alike. */
+const keyOf = (pack: Pack, theme: Theme | undefined, surface: Surface) =>
+  surface === 'glass' && pack !== FORGE ? GLASS : JSON.stringify([pack, theme?.atlas?.[pack] ?? 'base', theme?.swaps?.[pack] ?? [], surface] satisfies Look)
+
+function lookMaterial(kit: Kit, [pack, atlas, swaps, surface]: Look) {
+  if (surface === 'decals') return Object.assign(toonMapped(mapTexture(kit.atlases, pack, 'decals', THREE.SRGBColorSpace)), { alphaTest: FORGE_BINDING.decalCut })
+  const map = atlasTexture(kit.atlases, pack, { atlas: { [pack]: atlas }, swaps: { [pack]: swaps } })
+  if (surface === 'glass') return Object.assign(toonMapped(map), { transparent: true, opacity: FORGE_BINDING.glassOpacity, depthWrite: false, side: THREE.DoubleSide })
+  const toon = toonMapped(map)
+  const lit = glowTexture(pack, kit.atlases)
+  return lit ? glows(Object.assign(toon, { emissiveMap: lit, emissive: new THREE.Color('#ffffff'), emissiveIntensity: glow * GLOW })) : toon
+}
 
 function materialFor(kit: Kit, key: string) {
   let m = materials.get(key)
   if (!m) {
-    if (key === GLASS) m = Object.assign(toonOwn('#cfe3ee'), { transparent: true, opacity: 0.3, depthWrite: false })
-    else {
-      const [pack, atlas, swaps] = JSON.parse(key) as [Pack, string, NonNullable<Theme['swaps']>[Pack]]
-      const toon = toonMapped(atlasTexture(kit.atlases, pack, { atlas: { [pack]: atlas }, swaps: { [pack]: swaps } }))
-      const lit = glowTexture(pack, kit.atlases.get(`${pack}/base`)!)
-      if (lit) glows(Object.assign(toon, { emissiveMap: lit, emissive: new THREE.Color('#ffffff'), emissiveIntensity: glow * GLOW }))
-      m = toon
-    }
+    m = key === GLASS ? Object.assign(toonOwn('#cfe3ee'), { transparent: true, opacity: 0.3, depthWrite: false }) : lookMaterial(kit, JSON.parse(key) as Look)
     materials.set(key, m)
   }
   return m
 }
 
-/** Every geometry a batch may draw: all prims of the kit's models of its pack, or all glass. */
+/** Every geometry a batch may draw: all prims of its surface of the kit's models of its pack, or all KayKit glass. */
 function geometriesFor(kit: Kit, key: string) {
-  const pack = key === GLASS ? undefined : (JSON.parse(key) as [Pack])[0]
+  const look = key === GLASS ? undefined : (JSON.parse(key) as Look)
   return [...kit.models.values()]
-    .filter((m) => key === GLASS || m.pack === pack)
-    .flatMap((m) => kit.meshes.get(m.id)!.nodes.flatMap((n) => n.prims.filter((p) => p.glass === (key === GLASS)).map((p) => p.geometry)))
+    .filter((m) => (look ? m.pack === look[0] : m.pack !== FORGE))
+    .flatMap((m) => kit.meshes.get(m.id)!.nodes.flatMap((n) => n.prims.filter((p) => p.surface === (look ? look[3] : 'glass')).map((p) => p.geometry)))
 }
 
 function makeBatch(kit: Kit, key: string, instances: number): Batch {
@@ -103,12 +109,12 @@ function jobsOf(kit: Kit, placed: Placed[]) {
   const jobs = new Map<string, { geometry: THREE.BufferGeometry; matrix: THREE.Matrix4 }[]>()
   for (const { item, frame, theme } of placed) {
     const model = kit.models.get(item.model)
-    if (!model) throw new Error(`no KayKit model ${item.model} in the kit: list it in PROPS, CITY_MODELS or a PREFABS scene and run npm run tower3d`)
+    if (!model) throw new Error(`no model ${item.model} in the kit: list it in PROPS, CITY_MODELS or a PREFABS scene and run npm run tower3d`)
     const mesh = kit.meshes.get(item.model)!
     const base = frame.clone().multiply(itemMatrix(item, model))
     nodeMatrices(mesh, item.parts).forEach((m, k) => {
       for (const prim of mesh.nodes[k].prims) {
-        const key = prim.glass ? GLASS : keyOf(model.pack, theme)
+        const key = keyOf(model.pack, theme, prim.surface)
         if (!jobs.has(key)) jobs.set(key, [])
         jobs.get(key)!.push({ geometry: prim.geometry, matrix: base.clone().multiply(m) })
       }

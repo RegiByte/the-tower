@@ -1,0 +1,422 @@
+{
+  "materials": {
+    "forge_palette": {
+      "map": "textures/palette.png",
+      "emissiveMap": "textures/emissive.png"
+    },
+    "forge_glass": {
+      "map": "textures/palette.png",
+      "opacity": 0.3,
+      "doubleSided": true
+    },
+    "forge_decals": {
+      "map": "textures/decals.png",
+      "alphaTest": 0.5
+    }
+  },
+  "textures": {
+    "textures/palette.png": {
+      "colorSpace": "srgb"
+    },
+    "textures/emissive.png": {
+      "colorSpace": "linear"
+    },
+    "textures/decals.png": {
+      "colorSpace": "srgb"
+    }
+  },
+  "props": [
+    {
+      "id": "arcade/pinball_machine_01",
+      "name": "pinball_machine_01",
+      "category": "arcade",
+      "mount": "floor",
+      "reference": "arcade/pinball_machine",
+      "tags": [],
+      "glb": "props/arcade/pinball_machine_01.glb",
+      "size": [
+        0.8288751244544983,
+        1.9306668043136597,
+        1.3963291645050049
+      ],
+      "triangles": 1806,
+      "tier": "l",
+      "materials": [
+        "forge_decals",
+        "forge_glass",
+        "forge_palette"
+      ],
+      "decals": [
+        "pinball_backglass",
+        "pinball_playfield"
+      ],
+      "moves": {
+        "flipper_l": {
+          "motion": "rotate",
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "amount": 0.698132
+        },
+        "flipper_r": {
+          "motion": "rotate",
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "amount": 0.698132
+        },
+        "plunger": {
+          "motion": "slide",
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "amount": 0.05
+        }
+      }
+    },
+    {
+      "id": "kitchen/bowl_01",
+      "name": "bowl_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/bowl",
+      "tags": [],
+      "glb": "props/kitchen/bowl_01.glb",
+      "size": [
+        0.15000000596046448,
+        0.07000000029802322,
+        0.15000000596046448
+      ],
+      "triangles": 412,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/coffee_mug_01",
+      "name": "coffee_mug_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/coffee_mug",
+      "tags": [],
+      "glb": "props/kitchen/coffee_mug_01.glb",
+      "size": [
+        0.11627117544412613,
+        0.09335881471633911,
+        0.07999999821186066
+      ],
+      "triangles": 268,
+      "tier": "xs",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/cutting_board_01",
+      "name": "cutting_board_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/cutting_board",
+      "tags": [],
+      "glb": "props/kitchen/cutting_board_01.glb",
+      "size": [
+        0.4000000059604645,
+        0.019999999552965164,
+        0.25
+      ],
+      "triangles": 152,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/pizza_box_01",
+      "name": "pizza_box_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/pizza_box",
+      "tags": [],
+      "glb": "props/kitchen/pizza_box_01.glb",
+      "size": [
+        0.4177502393722534,
+        0.05271173641085625,
+        0.4190026819705963
+      ],
+      "triangles": 98,
+      "tier": "s",
+      "materials": [
+        "forge_decals",
+        "forge_palette"
+      ],
+      "decals": [
+        "pizza_lid_classic"
+      ],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/pizza_slice_01",
+      "name": "pizza_slice_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/pizza_slice",
+      "tags": [],
+      "glb": "props/kitchen/pizza_slice_01.glb",
+      "size": [
+        0.137766033411026,
+        0.019999999552965164,
+        0.17815598845481873
+      ],
+      "triangles": 158,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/plate_01",
+      "name": "plate_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/plate",
+      "tags": [],
+      "glb": "props/kitchen/plate_01.glb",
+      "size": [
+        0.27000001072883606,
+        0.02500000037252903,
+        0.27000001072883606
+      ],
+      "triangles": 236,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "kitchen/toaster_01",
+      "name": "toaster_01",
+      "category": "kitchen",
+      "mount": "surface",
+      "reference": "kitchen/toaster",
+      "tags": [],
+      "glb": "props/kitchen/toaster_01.glb",
+      "size": [
+        0.30000001192092896,
+        0.18000000715255737,
+        0.17000000178813934
+      ],
+      "triangles": 212,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {
+        "lever": {
+          "motion": "slide",
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "amount": 0.069633
+        }
+      }
+    },
+    {
+      "id": "living_room/couch_01",
+      "name": "couch_01",
+      "category": "living_room",
+      "mount": "floor",
+      "reference": "living_room/couch",
+      "tags": [],
+      "glb": "props/living_room/couch_01.glb",
+      "size": [
+        2.0999999046325684,
+        0.8588994741439819,
+        0.9200000166893005
+      ],
+      "triangles": 1676,
+      "tier": "l",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/desk_plant_01",
+      "name": "desk_plant_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/desk_plant",
+      "tags": [],
+      "glb": "props/office/desk_plant_01.glb",
+      "size": [
+        0.1063268631696701,
+        0.10651204735040665,
+        0.10112286359071732
+      ],
+      "triangles": 512,
+      "tier": "xs",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/keyboard_01",
+      "name": "keyboard_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/keyboard",
+      "tags": [],
+      "glb": "props/office/keyboard_01.glb",
+      "size": [
+        0.4399999976158142,
+        0.03035883978009224,
+        0.13552579283714294
+      ],
+      "triangles": 916,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/mouse_01",
+      "name": "mouse_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/mouse",
+      "tags": [],
+      "glb": "props/office/mouse_01.glb",
+      "size": [
+        0.06446963548660278,
+        0.03564002364873886,
+        0.10679307579994202
+      ],
+      "triangles": 376,
+      "tier": "xs",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/notebook_01",
+      "name": "notebook_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/notebook",
+      "tags": [],
+      "glb": "props/office/notebook_01.glb",
+      "size": [
+        0.15000000596046448,
+        0.014000000432133675,
+        0.21199999749660492
+      ],
+      "triangles": 138,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/pen_cup_01",
+      "name": "pen_cup_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/pen_cup",
+      "tags": [],
+      "glb": "props/office/pen_cup_01.glb",
+      "size": [
+        0.07908271253108978,
+        0.14319103956222534,
+        0.07615457475185394
+      ],
+      "triangles": 380,
+      "tier": "xs",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    },
+    {
+      "id": "office/stapler_01",
+      "name": "stapler_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/stapler",
+      "tags": [],
+      "glb": "props/office/stapler_01.glb",
+      "size": [
+        0.04399999976158142,
+        0.05976960062980652,
+        0.1599999964237213
+      ],
+      "triangles": 320,
+      "tier": "s",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {
+        "arm": {
+          "motion": "rotate",
+          "axis": [
+            -1,
+            0,
+            0
+          ],
+          "amount": 0.5236
+        }
+      }
+    },
+    {
+      "id": "office/sticky_notes_01",
+      "name": "sticky_notes_01",
+      "category": "office",
+      "mount": "surface",
+      "reference": "office/sticky_notes",
+      "tags": [],
+      "glb": "props/office/sticky_notes_01.glb",
+      "size": [
+        0.07599999755620956,
+        0.0279999990016222,
+        0.07599999755620956
+      ],
+      "triangles": 77,
+      "tier": "xs",
+      "materials": [
+        "forge_palette"
+      ],
+      "decals": [],
+      "moves": {}
+    }
+  ]
+}
