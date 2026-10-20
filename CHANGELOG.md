@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.50.1
+
+A patch release. No host restart, no config change, the renderer API unchanged at 1.70. Workers spawned from now on
+read Claude Code 2.1.304 as tested; restart the tower (`tower down tower && tower up tower`) to drop the "untested"
+flag from the board.
+
+- Claude Code 2.1.304 is tested. Its check read the same as 2.1.303's: a subagent's failed tool call carries
+  `agent_id` and `agent_type`, as earlier releases' do, now in the baseline (#147).
+
 ## v1.50.0
 
 A small release. No host restart, no config change, the renderer API unchanged at 1.70. Restart the tower
