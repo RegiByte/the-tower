@@ -1,15 +1,15 @@
 import { documentCss, skyAt, terminalTheme } from '/design.js'
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, pastCount, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, resetLine, shownTitle, span, sendTarget, statusName, statusWord, workerIn, weekElapsed, whereLine, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, resumesRow, tagOf, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, statusLegendHtml, awayHiresOf, crewOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, DISMISS_OFFER_TITLE, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, claudeFlagHtml, boardErrorTitle, whyNot, tidiedLine, tidyLine, tidyRows, editedRows, carriedLine, landingHtml, discardAsk, discardedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, probedLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, base, branchLine, callOf, can, noLongerOffered, offeredCall, detailsOf, dutyOrder, esc, pastCount, rendererUrl, renderersHtml, shelfKind, shelfPage, shelfPaths, shelfSource, onDisk, risky, gistLine, goneBases, keptBranchLines, modelName, neighbours, paceLine, pairLine, resetLine, shownTitle, span, statusName, statusWord, weekElapsed, whereLine, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, resumesRow, tagOf, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
-import { THE_USER, REVIEWS, landedThreads, sendText, threadId, unseenBy } from '/reviews.js'
+import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, itemKind, itemsCss, keptKey, keptOf, readsText } from '/items.js'
-import { keepShownTabs, anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, STATS_ALL, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, threadViewOf, offerWords, policyZone } from '/panels.js'
+import { keepShownTabs, threadWant, panelsCss, STATS_ALL, failedHtml, fileButtonsHtml, fileSpansHtml, fileCall, keepingFocus, cardThread, offerWords, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
 import { loop, timers } from '/loop.js'
-import { heldHandlers, noReads, reading } from '/reads.js'
 import { wireSpawn } from '/spawn.js'
 import { attendStep, attending, eyeStep, watching } from '/attend.js'
 import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { review } from './review.js'
 import { shells } from './shells.js'
 import { screen } from './screen.js'
 import { stats } from './stats.js'
@@ -37,24 +37,20 @@ import { DRAFTS, draftsOf } from '/drafts.js'
  * @import { Board, Card, CardResource, CardShown, Floor, FloorCollection } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { CardRun } from '../../src/bridge/policies.ts'
- * @import { DiffFile } from '../../src/bridge/diff.ts'
  * @import { FloorBranch, FloorWorktree, LandingRead } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
- * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
  * @import { Attended, EditedRow, Heed, Move, TidyRow } from '../../src/shared/cards.ts'
  * @import { BoardError, RelayedUi } from '../../src/shared/shelf-page.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
- * @import { Call, Replies, Verbs } from '../../src/shared/api.ts'
+ * @import { Call, Replies } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, DiffLayout, LinePick, StatsRange } from '../../src/shared/panels.ts'
+ * @import { DiffLayout, StatsRange } from '../../src/shared/panels.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
  * @import { AttendEffect, AttendEvent, Attending, Eye, EyeEvent } from '../../src/shared/attend.ts'
  * @import { MainView, Pane } from './view.js'
- * @import { ReadEvent, Reads } from '../../src/shared/reads.ts'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../src/shared/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
- * @import { RepoChanges } from '../../src/changes.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
@@ -670,228 +666,6 @@ function renderShown(c, s) {
   })
 }
 
-/**
- * The workers' Changes as last read, each under the scope the viewer compares it in, with each repo's viewed marks
- * (a file's path → the hash of the diff it was viewed at), which every renderer in this browser shares through
- * `tower.store`. The selected worker's are read while its Changes or Reviews are open (`changesHandlers`).
- * @type {Loop<ChangesReads, ChangesEvent>}
- */
-const changeReads = loop({
-  state: noChanges(),
-  handlers: changesHandlers,
-  execute: {
-    ...timers(),
-    read: reading(readChanges({
-      repos: (id, scope) => tower.get(/** @type {'changes/<id>'} */ (changesPath(id, scope))),
-      viewed: (key) => /** @type {Promise<Record<string, string> | undefined>} */ (tower.store.get(key)),
-      now: Date.now,
-    })),
-    draw: () => render(),
-    toast: ({ message }) => void (lostAt() || toast(message)),
-    keep: ({ key, marks }) => tower.store.set(key, marks),
-  },
-})
-/** Files the viewer folded or unfolded against what their viewed mark says, by `fileKey`; this page only. @type {Set<string>} */
-const folds = new Set()
-
-/** @param {Pane} pane */
-const reviewing = (pane) => pane === 'changes' || pane === 'reviews'
-/** Changes are read for the selected worker while its Changes or Reviews are open. @param {Card | undefined} c */
-const followChanges = (c) => changeReads.dispatch({ type: 'follow', card: c && reviewing(paneOf(c)) ? c : undefined })
-
-/** @param {string} id */
-const scopeIn = (id) => scopeOf(changeReads.state(), id)
-/** @param {string} id */
-const changesIn = (id) => changesOf(changeReads.state(), id)
-
-/** @param {string} id @param {ChangesScope} scope */
-function compare(id, scope) {
-  desk.pick = undefined
-  changeReads.dispatch({ type: 'compare', id, scope })
-  render()
-}
-
-/** A file of the Changes read, by `fileKey`: one drawn from that read. @param {string} key */
-const fileAt = (key) => /** @type {readonly [RepoChanges, DiffFile]} */ (changedFiles(read().repos).find(([repo, f]) => fileKey(repo, f) === key))
-
-/** The selected worker's Changes read, while the pane draws one. */
-const read = () => /** @type {ChangesRead} */ (changesIn(/** @type {string} */ (selected())))
-
-/** Files viewed of files changed, once read. @param {Card} c */
-const changesTally = (c) => {
-  const shown = changesIn(c.id)
-  if (!shown) return ''
-  const { viewed, files } = viewedCount(shown)
-  return files ? `<small>${viewed}/${files}</small>` : ''
-}
-
-/** @param {string} key */
-function toggleViewed(key) {
-  const [repo, f] = fileAt(key)
-  changeReads.dispatch({ type: 'mark', id: /** @type {string} */ (selected()), repo, marks: marksToggled(read().viewed, repo, f) })
-  folds.delete(key)
-  keepingFileTop($('changes'), key, render)
-}
-
-/** @param {string} key */
-function toggleFold(key) {
-  if (!folds.delete(key)) folds.add(key)
-  keepingFileTop($('changes'), key, drawChanges)
-}
-
-/**
- * The review desk of the worker open: the lines picked in the Changes pane (`picking` while they are dragged across)
- * and the note being written under them (`fresh` until its box first takes focus), the note the Reviews pane's
- * composer answers, and an anchor's lines to scroll to once Changes draws them, its file unfolded.
- * @type {{ pick: LinePick | undefined, picking: boolean, text: string, fresh: boolean, re: number | undefined, jump: Anchor | undefined }}
- */
-const desk = { pick: undefined, picking: false, text: '', fresh: false, re: undefined, jump: undefined }
-const dropPick = () => ((desk.pick = undefined), (desk.text = ''))
-/** A worker opened afresh starts with nothing picked and no note answered. */
-const resetDesk = () => (dropPick(), (desk.re = undefined))
-
-function drawChanges() {
-  const c = /** @type {Card} */ (findCard(selected()))
-  const shown = changesIn(c.id)
-  const live = shown && livePick(shown, desk.pick)
-  if (shown && desk.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
-  if (shown) desk.pick = live
-  const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
-  drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id) }), { 'pick-text': desk.text })
-  if (desk.fresh) $('changes').querySelector('[data-pick-text]')?.focus()
-  desk.fresh = false
-  if (desk.jump && shown) jumpToAnchor()
-}
-
-/** @param {string} value @param {boolean} extend */
-function pickLine(value, extend) {
-  desk.pick = picked(read(), desk.pick, value, extend)
-  desk.fresh = true
-  drawChanges()
-}
-
-watchPickDrag($('changes'), {
-  drag: (from, to) => ((desk.pick = spanned(read(), from, to)), (desk.picking = true), drawChanges()),
-  drop: () => ((desk.picking = false), (desk.fresh = true), drawChanges()),
-})
-
-/** @param {Floor | undefined} f */
-const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
-/** @param {Card} c */
-const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
-
-/**
- * The workers' threads as last read, the one Tidy filed once a worker's work landed, else its checkout's: each read
- * again whenever its file's version moves on the board, held until then.
- * @type {Loop<Reads<ReviewThread>, ReadEvent<ReviewThread>>}
- */
-const threadReads = loop({
-  state: noReads(),
-  handlers: heldHandlers(),
-  execute: { read: reading(readThread((path) => tower.text(path))), draw: () => render(), toast: ({ message }) => void toast(message) },
-})
-
-/** @param {Card} c */
-function followThread(c) {
-  const want = threadWant(board().floors, cardThread(c))
-  if (want) threadReads.dispatch(want)
-}
-
-/** @param {Card} c */
-const threadOf = (c) => heldThread(threadReads.state(), board().floors, cardThread(c))
-
-/** What the worker hasn't seen of its checkout's thread, else how many notes it holds. @param {Card} c */
-const reviewsTally = (c) => {
-  const notes = /** @type {Floor} */ (floorOf(c.project)).threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
-  return c.unseen ? `<small class="unseen" data-tip="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
-}
-
-/** A note is added only on a worker that offers `note`. @param {HTMLElement} button @param {Card} c @param {Partial<Verbs['review/append']>} fields */
-async function addNote(button, c, fields) {
-  const reply = await told(pressing(button, async () => tower.run(offeredCall(c, 'note', c.callsign), { author: board().user.name, ...fields })))
-  if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
-  return reply
-}
-
-/** @param {HTMLElement} button */
-async function addPicked(button) {
-  if (!(await addNote(button, /** @type {Card} */ (findCard(selected())), { anchors: [pickAnchor(read().repos, /** @type {LinePick} */ (desk.pick))], body: desk.text }))) return
-  dropPick()
-  drawChanges()
-}
-
-/** The reviews pane's composer: the note being written on each checkout, by `<project>/<checkout>`, and the note it answers. @type {Map<string, string>} */
-const noteDrafts = new Map()
-/** @param {Card} c */
-const draftKey = (c) => `${c.project}/${threadCheckoutOf(c)}`
-
-/** @param {HTMLElement} button */
-async function addWritten(button) {
-  const c = /** @type {Card} */ (findCard(selected()))
-  if (!(await addNote(button, c, { re: desk.re, body: noteDrafts.get(draftKey(c)) ?? '' }))) return
-  noteDrafts.delete(draftKey(c))
-  desk.re = undefined
-  render()
-}
-
-/** The worker the viewer picked to send each checkout's notes to, by `<project>/<checkout>`; this page only. @type {Map<string, string>} */
-const sendPicks = new Map()
-/** @param {Card} c */
-const pickedFor = (c) => sendPicks.get(`${c.project}/${threadCheckoutOf(c)}`)
-
-/** Send reaches a worker whenever it is drawn. @param {HTMLElement} button @param {Card} c */
-function sendNotes(button, c) {
-  const target = /** @type {Card} */ (sendTarget(/** @type {Floor} */ (floorOf(c.project)), threadCheckoutOf(c), pickedFor(c)))
-  const thread = threadOf(c)
-  const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
-  told(pressing(button, async () => tower.run(offeredCall(target, 'submit', target.callsign), { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
-}
-
-/** @param {Card} c */
-const threadView = (c) => threadViewOf(board(), cardThread(c), {
-  thread: threadOf(c), failed: threadOf(c) ? undefined : threadFailure(threadReads.state(), cardThread(c)), changes: scopeIn(c.id) === 'all' ? changesIn(c.id)?.repos : undefined, picked: pickedFor(c), re: desk.re,
-})
-
-/** @param {Card} c */
-const drawReviews = (c) => drawPanel($('reviews'), reviewsHtml(threadView(c)), { 'note-text': noteDrafts.get(draftKey(c)) ?? '' })
-
-/** @param {number} n */
-function replyTo(n) {
-  desk.re = n
-  render()
-  $('reviews').querySelector('[data-note-text]')?.focus()
-}
-
-/** An anchor is drawn on the thread of the selected worker. @param {string} value */
-function showAnchor(value) {
-  const id = /** @type {string} */ (selected())
-  desk.jump = anchorOf(/** @type {ReviewThread} */ (threadOf(/** @type {Card} */ (findCard(id)))), value)
-  showPane('changes')
-  if (scopeIn(id) !== 'all') compare(id, 'all')
-}
-
-function clearReply() {
-  desk.re = undefined
-  render()
-}
-
-function jumpToAnchor() {
-  const a = /** @type {Anchor} */ (desk.jump)
-  desk.jump = undefined
-  const spot = anchorSpot(read().repos, a)
-  if (!spot) return toast(`${a.repo}:${a.path} has no changes now`)
-  if (isFolded(read(), folds, spot.repo, spot.file)) toggleFold(spot.key)
-  $('changes').querySelector(spotSelector(spot))?.scrollIntoView({ block: spot.row === -1 ? 'start' : 'center' })
-}
-
-/** A thread opened from the sidebar, on the worker most recently in its checkout; read as a kept item when no worker has been there. @param {string} project @param {string} checkout */
-function openThread(project, checkout) {
-  const c = workerIn(/** @type {Floor} */ (floorOf(project)), checkout)
-  if (!c) return openItem(project, REVIEWS, threadId(checkout))
-  select(c.id)
-  showPane('reviews')
-}
-
 /** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. @param {Card} c @param {CardShown} s */
 function showLink(c, s) {
   const frame = /** @type {HTMLIFrameElement} */ ($('shown').firstChild)
@@ -1142,6 +916,8 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 const { REFIT_DEBOUNCE_MS, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal } = screen({ board, selected, scheme, run, reopen, refontShell: (font) => refontShell(font) })
 
 const { shellFloor, renderDock, refontShell, shellTerm, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, REFIT_DEBOUNCE_MS })
+
+const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
@@ -1622,23 +1398,6 @@ document.addEventListener('click', (e) => {
 })
 $('home').onclick = goHome
 
-document.addEventListener('change', (e) => {
-  const target = /** @type {Element} */ (e.target)
-  const scope = /** @type {HTMLSelectElement | null} */ (target.closest('[data-changes-scope]'))?.value
-  if (scope) return compare(/** @type {string} */ (selected()), scope)
-  const picker = /** @type {HTMLSelectElement | null} */ (target.closest('[data-send-pick]'))
-  if (!picker) return
-  const c = /** @type {Card} */ (findCard(selected()))
-  sendPicks.set(`${c.project}/${threadCheckoutOf(c)}`, picker.value)
-  render()
-})
-
-$('screen').addEventListener('input', (e) => {
-  const box = /** @type {HTMLTextAreaElement} */ (e.target)
-  if (box.matches('[data-note-text]')) noteDrafts.set(draftKey(/** @type {Card} */ (findCard(selected()))), box.value)
-  if (box.matches('[data-pick-text]')) desk.text = box.value
-})
-
 /** The pane tabs move as the ARIA tabs pattern has it: ← → Home End go along the row and show the pane they reach. */
 $('bar-line').addEventListener('keydown', (e) => {
   const tab = /** @type {Element} */ (e.target).closest('[role=tab]')
@@ -1650,14 +1409,6 @@ $('bar-line').addEventListener('keydown', (e) => {
   e.preventDefault()
   to.focus()
   showPane(/** @type {Pane} */ (to.dataset.pane))
-})
-
-$('screen').addEventListener('keydown', (e) => {
-  const target = /** @type {Element} */ (e.target)
-  const id = commandOf(board().keys, e, 'field')
-  if (target.matches('[data-note-text]') && id === 'submit') return (e.preventDefault(), addWritten(/** @type {HTMLElement} */ ($('screen').querySelector('[data-note-add]'))))
-  if (target.matches('[data-pick-text]') && id === 'submit') return (e.preventDefault(), addPicked(/** @type {HTMLElement} */ ($('screen').querySelector('[data-pick-add]'))))
-  if (target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
 })
 
 function redrawDocs() {
