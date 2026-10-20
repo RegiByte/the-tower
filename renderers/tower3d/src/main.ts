@@ -1515,7 +1515,7 @@ function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
 /** The models are in: the board that waited for them, if one did, starts the page. */
 function onLoaded() {
   loaded = true
-  loading.stage('board')
+  if (!loading.failed()) loading.stage('board')
   if (!latest) return
   const [next, at] = latest
   latest = undefined
@@ -2859,10 +2859,10 @@ Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.rendere
   primeSeen = (kept as Kept | null)?.seen === undefined
   if ((kept as Kept | null)?.fps) toggleFps()
   if (fixture) onFixtureBoard(fixture[0])
-  else (onLoaded(), tower.onBoardError(onBoardError))
+  else onLoaded()
 }, failStart)
 /** How waits ring and what you dismissed are known before the first board, which may come long before the models. */
-if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (seeing.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard)))
+if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (seeing.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError)))
 Promise.all([tower.get('renderers'), tower.renderer()]).then(([{ renderers }, here]) =>
   ($('renderers').innerHTML = renderersHtml(renderers, here?.name, tower.framed)), (err: Error) => toast(`renderers: ${err.message}`))
 

@@ -24,6 +24,8 @@ export function fail(why: string) {
   screen.querySelector('.why')!.textContent = why
 }
 
+export const failed = () => screen.dataset.failed !== undefined
+
 export const shown = () => screen.isConnected && !screen.classList.contains('leaving')
 
 export function leave() {
