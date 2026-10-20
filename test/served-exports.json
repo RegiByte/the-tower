@@ -376,6 +376,8 @@
       "shelfSource",
       "shellPlaces",
       "shellWhere",
+      "shownHref",
+      "shownKey",
       "shownTitle",
       "sizeOf",
       "soundOf",

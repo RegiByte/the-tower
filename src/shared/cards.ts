@@ -836,6 +836,12 @@ export const extraUsageLine = (e: NonNullable<Board['extraUsage']>) =>
 export const limitsFromTitle = (b: Pick<Board, 'rateLimitsFrom'>) =>
   b.rateLimitsFrom === 'probe' ? "read by the tower's quota probe, while no session's turn reads them" : "read during a session's turn; the quota probe reads them while none does"
 
+/** One showing of a target: showing it again is a new one, so closing one leaves the next of the same target open. */
+export const shownKey = (s: Card['shown'][number]) => `${s.session}|${s.target}|${s.at}`
+
+/** Where the showing is served: a file through the tower, by the session that showed it; a page at its own address. */
+export const shownHref = (s: Card['shown'][number]) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
+
 /** What a worker showed, named: its own title, else the file's name or the page's host. */
 export const shownTitle = (s: Card['shown'][number]) => s.title ?? (s.kind === 'file' ? base(s.target) : new URL(s.target).host)
 

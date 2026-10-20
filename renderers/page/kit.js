@@ -1,4 +1,4 @@
-import { esc, gistOf, when } from '/cards.js'
+import { esc, gistOf, shownHref, shownKey, when } from '/cards.js'
 import { GIST_ICON, ICON } from '/icons.js'
 import { keepingFocus } from '/panels.js'
 import { toaster } from '/toasts.js'
@@ -60,12 +60,6 @@ const CLOSE_HOME = `<button class="icon-btn" data-act="home" aria-label="back to
 
 /** @param {CardShown} s @returns {Pane} */
 const shownPane = (s) => `shown:${s.target}`
-
-/** Each showing has its own key: closing one leaves the next showing of the same target open. @param {CardShown} s */
-const shownKey = (s) => `${s.session}|${s.target}|${s.at}`
-
-/** @param {CardShown} s */
-const shownHref = (s) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
 
 const DOC_CSS = `article { max-width: 980px; margin: 0; padding: var(--sp-xl) var(--sp-3xl) 48px; }`
 

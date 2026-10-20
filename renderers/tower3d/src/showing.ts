@@ -3,7 +3,7 @@ import { marked, type Token } from 'marked'
 import { type } from '../../../src/shared/design.ts'
 import { imagePath } from '../../../src/shared/markdown.ts'
 import { tower, type Card } from './api.ts'
-import { WORLD, base, shownTitle } from './cards.ts'
+import { WORLD, base, shownHref, shownKey, shownTitle } from './cards.ts'
 import { FIXTURE, readBlob } from './fixtures.ts'
 
 /**
@@ -14,10 +14,7 @@ import { FIXTURE, readBlob } from './fixtures.ts'
 
 export type Shown = Card['shown'][number]
 
-/** One showing of a target: showing it again is a new one. */
-export const shownKey = (s: Shown) => `${s.session}|${s.target}|${s.at}`
-/** Where the showing is served: a file through the tower, by the session that showed it; a page at its own address. */
-export const shownHref = (s: Shown) => (s.kind === 'file' ? `/shown/${s.session}${s.target.split('/').map(encodeURIComponent).join('/')}` : s.target)
+export { shownHref, shownKey }
 export const isMarkdown = (s: Shown) => s.kind === 'file' && s.target.endsWith('.md')
 
 const IMAGE = /\.(png|jpe?g|gif|webp|svg)$/i
