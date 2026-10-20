@@ -21,7 +21,6 @@
     "hub/src/shared/cards.ts#attentionOrder",
     "hub/src/shared/cards.ts#offerTransitions",
     "hub/src/shared/cards.ts#ringingSound",
-    "hub/src/shared/attend.ts#attendHandlers",
     "hub/src/shared/attend.ts#attendStep",
     "hub/src/shared/attend.ts#watching",
     "hub/src/shared/attend.ts#seeBoard",
@@ -65,15 +64,15 @@ only by typing, one chime covered a question and an answer alike, and every wait
   [`SOUNDS`](ref:hub/src/shared/cards.ts#SOUNDS), a score each for a question, an answer and an offer, picked by
   [`ringingSound`](ref:hub/src/shared/cards.ts#ringingSound). Dismissals and the setting live in `tower.store`: per
   viewer, shared by their renderers ([[viewer-prefs]]).
-- In `/attend.js`, one machine composes them for every renderer ([`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers),
+- In `/attend.js`, one machine's steps compose them for every renderer ([`attendStep`](ref:hub/src/shared/attend.ts#attendStep),
   [[machines]]): on each board ([`seeBoard`](ref:hub/src/shared/attend.ts#seeBoard)) what began and isn't dismissed is
   said, and but for the watched worker's waits notified and rung, waits before offers; what ended is unnotified. With
   `remind`, a timer rings what is heeded again `REMIND_MS` after the last ring
   ([`remind`](ref:hub/src/shared/attend.ts#remind)), never while the tower is lost (its board is how it stood). A
   dismissal is stored and closes its notification. The watched worker is the one the viewer's view is on while the
-  window is focused and visible ([`watching`](ref:hub/src/shared/attend.ts#watching)); a renderer whose own machine
-  holds its view and the window's focus runs each attention event through
-  [`attendStep`](ref:hub/src/shared/attend.ts#attendStep) with it, as the tower page does. A renderer drops the effects
+  window is focused and visible ([`watching`](ref:hub/src/shared/attend.ts#watching)); each renderer's own machine
+  holds its view (the page's main view, Tower 3D's open panel) and the window's focus, and runs each attention event
+  through `attendStep` with it. A renderer drops the effects
   it has no executor for: Tower 3D leaves notifications and the live region to the page.
 - One ringer per viewer: a framed renderer rings nothing and leaves it to the page framing it (Tower 3D checks
   `tower.framed`); Tower 3D adds edge arrows toward waiting workers out of view

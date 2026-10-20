@@ -1,14 +1,15 @@
 import type { Board } from '../bridge/board.ts'
 import { REMIND_MS, attentionOrder, dismissing, findCard, offerTransitions, offersBeganLine, ringingSound, transitions, waitsBeganLine, type Attended, type Ring, type Sound } from './cards.ts'
-import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
+import type { StateEffect, TimerEffect } from './loop.ts'
 import type { Viewer } from './viewer.ts'
 
 /**
  * What a viewer is told about what asks for them (the board's waits and offers): a wait or an offer that begins is
  * said, notified and rung, unless the viewer dismissed it or watches its worker; with `remind`, what they heed rings
  * again every `REMIND_MS` while the tower answers. A dismissal is out of their way until the worker's next wait, and
- * closes its notification. The steps are pure; `attendHandlers` runs them on `/loop.js`, with the renderer's executors
- * of what is said, notified, rung and kept in the viewer's record (`/viewer.js`). The tower serves this module as `/attend.js`.
+ * closes its notification. The steps are pure; a renderer's own machine on `/loop.js` runs them through `attendStep`, beside
+ * what the viewer looks at, with its executors of what is said, notified, rung and kept in the viewer's record
+ * (`/viewer.js`). The tower serves this module as `/attend.js`.
  */
 
 /**
@@ -41,9 +42,6 @@ export type AttendEffect =
   | { type: 'keep'; field: 'dismissed'; value: string[] }
   | { type: 'keep'; field: 'ring'; value: Ring }
   | TimerEffect<AttendEvent>
-
-/** What a handler reads from the renderer as an event is handled: the worker the viewer is looking at, whose waits ring for nobody. */
-export type AttendCtx = { watched: () => string | undefined }
 
 /** Whether the viewer's window has their eye: focused, and shown on screen. */
 export type Eye = { focused: boolean; visible: boolean }
@@ -113,8 +111,6 @@ export function stored(a: Attending, { dismissed, ring }: Pick<Viewer, 'dismisse
 /** The reminder runs while the ring is `remind`, and only then. */
 const retime = (ring: Ring): AttendOut => (ring === 'remind' ? REMIND : { type: 'timer/cancel', id: 'remind' })
 
-const into = ([a, effects]: AttendStep): AttendEffect[] => [{ type: 'state', state: a }, ...effects]
-
 /**
  * The attention machine's step for any of its events, `watched` the worker the viewer watches as it is handled
  * (`watching`): a renderer's own machine holds `Attending` beside what the viewer looks at, and runs each event through it.
@@ -136,12 +132,3 @@ export function attendStep(a: Attending, e: AttendEvent, watched: string | undef
   }
 }
 
-/** The attention machine: a renderer's loop runs it from `attending()`, with an executor for each effect but `state`. */
-export const attendHandlers: Handlers<Attending, AttendEvent, AttendEffect, AttendCtx> = {
-  board: (a, e, ctx) => into(attendStep(a, e, ctx.watched())),
-  lost: (a, e) => (a.lost === e.lost ? [] : into(attendStep(a, e, undefined))),
-  stored: (a, e) => into(attendStep(a, e, undefined)),
-  dismiss: (a, e) => into(attendStep(a, e, undefined)),
-  ring: (a, e) => into(attendStep(a, e, undefined)),
-  remind: (a, e, ctx) => attendStep(a, e, ctx.watched())[1],
-}

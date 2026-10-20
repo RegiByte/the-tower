@@ -666,7 +666,6 @@
       "wireSpawn"
     ],
     "/attend.js": [
-      "attendHandlers",
       "attendStep",
       "attending",
       "chooseRing",
