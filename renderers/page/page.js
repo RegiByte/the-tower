@@ -700,7 +700,7 @@ tower.subscribe(async (next) => {
 async function route(wanted) {
   const named = viewOf(wanted, board())
   if (named.t !== 'lookup') return go(named)
-  go(await lookUp(named.id) ? { t: 'worker', id: named.id, pane: undefined } : HOME)
+  go(await lookUp(named.id) ? { t: 'worker', id: named.id, pane: named.pane } : HOME)
 }
 
 /** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */

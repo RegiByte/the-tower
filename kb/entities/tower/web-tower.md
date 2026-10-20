@@ -45,7 +45,7 @@ clipboard.
 
 What the main pane shows is one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js), beside the page):
 the skyline, a worker on one of its panes, a worker the page started until the board carries it, a shelf entry and its
-file, a floor's archive, policies or collection, a draft or a kept item. Its hash is
+file, a floor's archive, policies or collection, a draft or a kept item. Its hash (a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded) is
 [`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
 [`viewOf`](ref:hub/renderers/page/view.js#viewOf); every way into a view goes through
 [`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, relay, draft) unless the next is

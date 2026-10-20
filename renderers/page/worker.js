@@ -119,10 +119,13 @@ export async function worker(deps) {
     return wait ? `<button class="dismiss" data-dismiss="${esc(wait.key)}" data-tip="${DISMISS_TITLE}">dismiss</button>` : ''
   }
 
-  /** A running session opens on its terminal, a finished one on its brief; a shown thing closed since falls back. @param {Card} c @returns {Pane} */
+  /** Whether `c` has a tab for `pane`: the panes the viewer can pick are the ones its tabs draw. @param {Card} c @param {Pane} pane */
+  const hasPane = (c, pane) => (pane === 'brief' ? can(c, 'brief') : pane === 'reviews' ? keepsThreads(c) : pane.startsWith('shown:') ? !!shownOn(c, pane) : true)
+
+  /** A running session opens on its terminal, a finished one on its brief; a pane it lacks (a thing shown and closed since, a thread or a brief it has none of) falls back. @param {Card} c @returns {Pane} */
   const paneOf = (c) => {
     const chosen = viewing('worker')?.pane
-    return (chosen?.startsWith('shown:') && !shownOn(c, chosen) ? undefined : chosen) ?? (can(c, 'drive') || !can(c, 'brief') ? 'screen' : 'brief')
+    return (chosen && hasPane(c, chosen) ? chosen : undefined) ?? (can(c, 'drive') || !can(c, 'brief') ? 'screen' : 'brief')
   }
 
   const PANE_PANEL = { screen: 'c-screen', brief: 'brief', changes: 'changes', reviews: 'reviews' }

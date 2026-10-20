@@ -17,6 +17,11 @@ const board = {
 const views: MainView[] = [
   HOME,
   { t: 'worker', id: 'w1', pane: undefined },
+  { t: 'worker', id: 'w1', pane: 'brief' },
+  { t: 'worker', id: 'w1', pane: 'changes' },
+  { t: 'worker', id: 'w1', pane: 'reviews' },
+  { t: 'worker', id: 'w1', pane: 'shown:https://example.com/a b?x=1#y' },
+  { t: 'worker', id: 'w1', pane: 'shown:docs/a b.md' },
   { t: 'shelf', project: 'p', n: 0, file: undefined },
   { t: 'shelf', project: 'p', n: 0, file: 'docs/a b.md' },
   { t: 'archive', project: 'p' },
@@ -33,16 +38,19 @@ test('view: every view the board carries is named by its hash and read back from
 
 test('view: a hash naming nothing on the board is the skyline; an unknown id is looked up', () => {
   for (const hash of ['shelf/p/3', 'shelf/q/0', 'archive/q', 'policies/q', 'draft/q', 'kept/p/games', 'kept/p/notes/gone.md']) assert.deepEqual(viewOf(hash, board), HOME, hash)
-  assert.deepEqual(viewOf('w9', board), { t: 'lookup', id: 'w9' })
+  assert.deepEqual(viewOf('w9', board), { t: 'lookup', id: 'w9', pane: undefined })
+  assert.deepEqual(viewOf('w9/changes', board), { t: 'lookup', id: 'w9', pane: 'changes' })
+  assert.deepEqual(viewOf('w1/nonsense', board), { t: 'worker', id: 'w1', pane: undefined })
+  assert.equal(hashOf({ t: 'worker', id: 'w1', pane: undefined }), '#w1')
   assert.equal(hashOf({ t: 'arriving', id: 'w9' }), '')
 })
 
 test('view: another pane or shelf file is the same place; another worker or kind is not', () => {
   assert.ok(sameRoom({ t: 'worker', id: 'w1', pane: undefined }, { t: 'worker', id: 'w1', pane: 'changes' }))
-  assert.ok(sameRoom(views[2], views[3]))
+  assert.ok(sameRoom({ t: 'shelf', project: 'p', n: 0, file: undefined }, { t: 'shelf', project: 'p', n: 0, file: 'docs/a b.md' }))
   assert.ok(!sameRoom({ t: 'worker', id: 'w1', pane: undefined }, { t: 'worker', id: 'w2', pane: undefined }))
-  assert.ok(!sameRoom(views[7], views[8]))
-  assert.ok(!sameRoom(views[4], views[5]))
+  assert.ok(!sameRoom({ t: 'draft', project: 'p', id: undefined }, { t: 'draft', project: 'p', id: 'd 1.md' }))
+  assert.ok(!sameRoom({ t: 'archive', project: 'p' }, { t: 'policies', project: 'p' }))
 })
 
 test('view: the floor in view and the class of the main pane', () => {

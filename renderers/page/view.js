@@ -37,7 +37,7 @@ export function hashOf(v) {
     case 'arriving':
       return ''
     case 'worker':
-      return `#${v.id}`
+      return `#${v.id}${v.pane ? '/' + encoded(v.pane) : ''}`
     case 'shelf':
       return `#shelf/${v.project}/${v.n}${v.file ? '/' + encoded(v.file) : ''}`
     case 'archive':
@@ -53,10 +53,19 @@ export function hashOf(v) {
   }
 }
 
+const PANES = ['screen', 'brief', 'changes', 'reviews']
+
+/** The pane a hash names after a worker's id: `undefined` for none, or one that is no pane. @param {string | undefined} part @returns {Pane | undefined} */
+function paneOfHash(part) {
+  if (part === undefined) return undefined
+  const pane = decodeURIComponent(part)
+  return PANES.includes(pane) || pane.startsWith('shown:') ? /** @type {Pane} */ (pane) : undefined
+}
+
 /**
  * The view a hash (without its `#`) names on `board`, the skyline when it names nothing there; `lookup` for an id the
- * board has no card for, which may be a worker of an archive the page has yet to read.
- * @param {string} hash @param {Board} board @returns {MainView | { t: 'lookup', id: string }}
+ * board has no card for, which may be a worker of an archive the page has yet to read, with the pane the hash names.
+ * @param {string} hash @param {Board} board @returns {MainView | { t: 'lookup', id: string, pane: Pane | undefined }}
  */
 export function viewOf(hash, board) {
   if (!hash) return HOME
@@ -74,7 +83,8 @@ export function viewOf(hash, board) {
     const item = decodeURIComponent(id)
     return c.items.some((i) => i.id === item) ? { t: 'item', project, collection, id: item } : HOME
   }
-  return board.floors.some((f) => f.cards.some((c) => c.id === hash)) ? { t: 'worker', id: hash, pane: undefined } : { t: 'lookup', id: hash }
+  const pane = paneOfHash(project)
+  return board.floors.some((f) => f.cards.some((c) => c.id === kind)) ? { t: 'worker', id: kind, pane } : { t: 'lookup', id: kind, pane }
 }
 
 /**
