@@ -1360,38 +1360,6 @@ const pageHandlers = {
   },
 }
 
-/** Where each view draws, painted in its floor's colour as it opens. */
-const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
-
-/** What a view sets up as it opens, beside its class on the main pane and its colour. @type {{ [T in MainView['t']]: (v: Extract<MainView, { t: T }>) => void }} */
-const ENTER = {
-  home: () => {},
-  arriving: () => {},
-  worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
-  shelf: enterShelf,
-  archive: (v) => enterArchive(v.project),
-  policies: () => {},
-  collection: () => {},
-  draft: (v) => void enterDraft(v),
-  item: () => {},
-}
-
-/** What only the view open holds, let go as it closes. @type {{ [T in MainView['t']]: () => void }} */
-const LEAVE = {
-  home: () => {},
-  arriving: () => {},
-  worker: () => {
-    closeTerminal()
-    $('main').classList.remove('asking', 'on-brief', 'on-changes', 'on-reviews', 'on-shown')
-  },
-  shelf: leaveShelf,
-  archive: () => {},
-  policies: () => {},
-  collection: () => {},
-  draft: leaveDraft,
-  item: leaveItem,
-}
-
 /**
  * One notification per wait or offer that begins (`/attend.js`), closed once it is over or dismissed.
  * @type {Map<string, Notification>}
@@ -1434,6 +1402,25 @@ const page = loop({
 const go = (view) => page.dispatch({ type: 'go', view })
 /** The main pane opens `view` afresh, even where it already is. @param {MainView} view */
 const reopen = (view) => page.dispatch({ type: 'reopen', view })
+
+/** @param {string} id */
+const select = (id) => go({ t: 'worker', id, pane: undefined })
+
+const goHome = () => go(HOME)
+
+/**
+ * A session the page started, opened once the board carries it: the host answers before the tower has read the new
+ * log, and until then there is no card to draw and no screen to stream. Any other way the viewer goes cancels it.
+ * @param {string} id
+ */
+const selectArriving = (id) => go(findCard(id) ? { t: 'worker', id, pane: undefined } : { t: 'arriving', id })
+
+/**
+ * The viewer's appearance, kept by tower.js in this browser for every page of theirs, on the root that the stylesheet
+ * reads; terminals, the framed documents, the open shelf page and the settings follow it whenever it changes.
+ */
+const scheme = tower.scheme
+
 page.dispatch({ type: 'stored', viewer: viewer() })
 
 /** @type {Loop<SideState, SideEvent>} */
@@ -1448,6 +1435,38 @@ const sideView = loop({
     toast: ({ message }) => void (lostAt() || toast(message)),
   },
 })
+
+/** Where each view draws, painted in its floor's colour as it opens. */
+const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
+
+/** What a view sets up as it opens, beside its class on the main pane and its colour. @type {{ [T in MainView['t']]: (v: Extract<MainView, { t: T }>) => void }} */
+const ENTER = {
+  home: () => {},
+  arriving: () => {},
+  worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
+  shelf: enterShelf,
+  archive: (v) => enterArchive(v.project),
+  policies: () => {},
+  collection: () => {},
+  draft: (v) => void enterDraft(v),
+  item: () => {},
+}
+
+/** What only the view open holds, let go as it closes. @type {{ [T in MainView['t']]: () => void }} */
+const LEAVE = {
+  home: () => {},
+  arriving: () => {},
+  worker: () => {
+    closeTerminal()
+    $('main').classList.remove('asking', 'on-brief', 'on-changes', 'on-reviews', 'on-shown')
+  },
+  shelf: leaveShelf,
+  archive: () => {},
+  policies: () => {},
+  collection: () => {},
+  draft: leaveDraft,
+  item: leaveItem,
+}
 
 addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
@@ -1698,11 +1717,6 @@ function closeTerminal() {
   $('c-screen').innerHTML = ''
   $('c-mode').textContent = ''
 }
-
-/** @param {string} id */
-const select = (id) => go({ t: 'worker', id, pane: undefined })
-
-const goHome = () => go(HOME)
 
 /** A worker's terminal streams while the main pane is on it; when its session ends, the worker is opened again. @param {string} id */
 function enterWorker(id) {
@@ -2165,13 +2179,6 @@ async function deleteKept() {
 }
 
 /**
- * A session the page started, opened once the board carries it: the host answers before the tower has read the new
- * log, and until then there is no card to draw and no screen to stream. Any other way the viewer goes cancels it.
- * @param {string} id
- */
-const selectArriving = (id) => go(findCard(id) ? { t: 'worker', id, pane: undefined } : { t: 'arriving', id })
-
-/**
  * The shell open in the dock: its id and stream, and its terminal once the snapshot has arrived.
  * @typedef {{ id: string, stop: () => void }} ShellView
  * @typedef {ShellView & { term: Xterm.Terminal, fit: Fit.FitAddon, size: { cols: number, rows: number } }} MountedShell
@@ -2610,12 +2617,6 @@ $('screen').addEventListener('keydown', (e) => {
   if (target.matches('[data-pick-text]') && id === 'submit') return (e.preventDefault(), addPicked(/** @type {HTMLElement} */ ($('screen').querySelector('[data-pick-add]'))))
   if (target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
 })
-
-/**
- * The viewer's appearance, kept by tower.js in this browser for every page of theirs, on the root that the stylesheet
- * reads; terminals, the framed documents, the open shelf page and the settings follow it whenever it changes.
- */
-const scheme = tower.scheme
 
 function redrawDocs() {
   forgetShown()
