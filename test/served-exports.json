@@ -684,6 +684,14 @@
       "seeBoard",
       "stored",
       "watching"
+    ],
+    "/term-view.js": [
+      "SETTLE_MS",
+      "modeOf",
+      "modeText",
+      "mountTermView",
+      "termHandlers",
+      "termOpening"
     ]
   }
 }
