@@ -412,6 +412,8 @@ dialog.spawn { padding: 0; width: fit-content; max-width: none; max-height: none
 dialog h2 { margin: 0 0 var(--sp-l); font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
 dialog .actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--sp-m); margin-top: var(--sp-xl); color: var(--faint); font-size: var(--fs-s); }
 dialog .actions small { margin-right: auto; }
+dialog.sheet h2:first-child { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-m); }
+dialog.sheet h2:first-child .icon-btn { flex: none; font-size: var(--fs-m); }
 .board-error { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--broken);
   color: var(--ink); box-shadow: var(--shadow); padding: var(--sp-m) var(--sp-xl); border-radius: var(--radius); z-index: 20; max-width: min(720px, 90vw); }
 .board-error b { display: block; margin-bottom: var(--sp-2xs); }
@@ -464,14 +466,14 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
   </div>
 </main>
 <dialog id="spawn" class="spawn" aria-label="New worker"></dialog>
-<dialog id="transfer" aria-labelledby="transfer-title">
+<dialog id="transfer" class="sheet" aria-labelledby="transfer-title">
   <form method="dialog">
     <h2 id="transfer-title">SEND TO A WORKER</h2>
     <div class="targets" id="transfer-targets"></div>
     <div class="actions"><small>the draft is typed into the worker's prompt and submitted</small><button value="">Cancel</button></div>
   </form>
 </dialog>
-<dialog id="keys" aria-labelledby="keys-title">
+<dialog id="keys" class="sheet" aria-labelledby="keys-title">
   <form method="dialog">
     <h2 id="keys-title">Shortcuts</h2>
     <div class="keys" id="keys-list"></div>
@@ -480,7 +482,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
     <div class="actions"><small>hover a button for what it does</small><button value="">Close</button></div>
   </form>
 </dialog>
-<dialog id="landing" aria-labelledby="landing-title">
+<dialog id="landing" class="sheet" aria-labelledby="landing-title">
   <form method="dialog">
     <h2 id="landing-title">What landing changed</h2>
     <div class="landing" id="landing-body"></div>

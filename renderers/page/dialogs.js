@@ -1,4 +1,5 @@
 import { statusLegendHtml, landingHtml } from '/cards.js'
+import { ICON } from '/icons.js'
 import { $ } from './kit.js'
 import { keymapSheetHtml } from '/keymap.js'
 
@@ -52,7 +53,19 @@ export function dialogs(deps) {
     return new Promise((resolve) => $('confirm').addEventListener('close', () => resolve($('confirm').returnValue === 'yes'), { once: true }))
   }
 
-  $('confirm').addEventListener('click', (e) => e.target === $('confirm') && $('confirm').close())
+  /** @param {HTMLDialogElement} d @param {MouseEvent} e */
+  const outside = (d, e) => {
+    const r = d.getBoundingClientRect()
+    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
+  }
+
+  for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.confirm'))) {
+    d.addEventListener('click', (e) => e.target === d && outside(d, e) && d.close())
+  }
+
+  for (const title of document.querySelectorAll('dialog.sheet h2:first-child')) {
+    title.insertAdjacentHTML('beforeend', `<button class="icon-btn" value="" aria-label="Close" data-tip="Close">${ICON.close}</button>`)
+  }
 
   return { showLanding, showKeys, ask }
 }
