@@ -4,31 +4,30 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-17",
-  "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts"]
+  "reviewed": "2026-10-21",
+  "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts", "hub/src/shared/paths.ts#configPath"]
 }
 ---
-`~/.tower/` by default; `TOWER_CONFIG` points at another config, and its directory becomes the root
+`~/.tower/` by default; `TOWER_CONFIG` names another config, and its directory becomes the root
 ([`configPath`](ref:hub/src/shared/paths.ts#configPath)). Next to the config live:
 
-- `sessions/<id>.jsonl`: one log per session. A header line ([[session]]'s `SessionHeader`), then
-  `[t, code, data]` events, `t` in seconds since `startedAt`: `o` output, `i` input, `r` resize, `h` a hook
-  or mod event (named by `hook_event_name`), `x` exit (`hostStopped` when the host's own stop ended it).
-  `sessions/<id>.jsonl.gz`: a log Tidy archived, gzipped in place once its worker ended more than the config's
-  `retention.days` ago, read the same as the plain log ([[log-retention]]).
-- `streams/system/<stream>/YYYY-MM.jsonl`: logs of facts the tower observes that belong to no session, one writer
-  (the tower), one file per UTC month: a header `{stream, startedAt, version}`, then `[t, code, data]` events. The
-  quota probe's reads are `streams/system/probe.quota/` ([[probes]]). `streams/projects/<project>/<stream>/` are a
-  project's: `runs/` and `approvals/`, a floor's policies' facts ([[policies]]). Logs like the session logs, not a fourth kind of state ([[logs-are-facts]]).
-- `collections/<project>/<collection>/<item>`: the files of each project's [[collections]], any format, written
-  by the tower ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are the
-  store's staging files and are never items. The `reviews` collection's threads are written only by the
-  tower's `review/append` ([[review-threads]]).
+- `sessions/<id>.jsonl`: one log per session, written by the host. A header line ([[session]]'s `SessionHeader`),
+  then `[t, code, data]` events, `t` in seconds since `startedAt`: `o` output, `i` input, `r` resize, `h` a hook or
+  mod event (named by `hook_event_name`), `x` exit (`hostStopped` when the host's own stop ended it).
+  `<id>.jsonl.gz` is a log Tidy archived, read as the plain log ([[log-retention]]).
+- `streams/system/<stream>/YYYY-MM.jsonl` and `streams/projects/<project>/<stream>/YYYY-MM.jsonl`: facts the tower
+  observes that belong to no session, one file per UTC month, written only by the tower
+  ([`systemStreamsPath`](ref:hub/src/shared/paths.ts#systemStreamsPath)): the quota probe's reads
+  (`probe.quota`, [[probes]]), and a project's policies' `runs` and `approvals` ([[policies]]). Logs like the
+  session logs, not a fourth kind of state ([[logs-are-facts]]).
+- `collections/<project>/<collection>/<item>`: each project's [[collections]], any format, written by the tower
+  ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are staging files, never
+  items. A `reviews` thread is written only by the tower's `review/append` ([[review-threads]]).
+- `cache/`: computed and kept to skip computing it again, never authoritative, safe to delete:
+  `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]).
 - `control.sock`, `hooks.sock` ([[host-daemon]]) and `terms.sock` ([[terms-daemon]]).
-- `host.log`, `terms.log`, `tower.log`: what the daemons print when `tower up` starts them.
-- `cache/`: what is computed from the stored state and kept to skip computing it again, never authoritative and
-  safe to delete at any time: `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]). Deleting it
-  changes nothing but speed.
-- `host.pid`, `terms.pid`, `tower.pid`: the pids `tower up` started, so `tower down` can stop them; gone once stopped.
+- `host.log`, `terms.log`, `tower.log` and `host.pid`, `terms.pid`, `tower.pid`: what the daemons print and their
+  pids, written when `tower up` starts them; `tower down` removes the pids.
 
-The config is read fresh on every spawn and every tower request, so edits apply without restarts.
+The config is read fresh by the host on every spawn and by the tower on every read of it, so edits apply without
+restarts.
