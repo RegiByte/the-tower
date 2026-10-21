@@ -235,8 +235,11 @@ dialog h2.legend-head { margin-top: var(--sp-2xl); }
 dialog#keys { width: min(620px, 92vw); }
 dialog#landing { width: min(960px, 94vw); }
 dialog.confirm { width: min(520px, 92vw); }
-dialog.confirm h2 { font: 700 var(--fs-l)/1.35 var(--ui); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
-.confirm-body { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); max-height: 50vh; overflow: auto; }
+dialog.confirm[open] { display: flex; flex-direction: column; overflow: hidden; }
+dialog.confirm form { display: flex; flex-direction: column; min-height: 0; }
+dialog.confirm h2 { flex: none; max-height: 30vh; overflow: auto; font: 700 var(--fs-l)/1.35 var(--ui); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
+.confirm-body { flex: 0 1 auto; min-height: 3em; overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); }
+dialog.confirm .actions { flex: none; }
 .confirm-body:empty { display: none; }
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }

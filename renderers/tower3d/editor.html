@@ -48,7 +48,10 @@ kbd { font: 10px/1 var(--mono); padding: 1px 4px; border: 1px solid var(--line);
 dialog { width: min(440px, 92vw); padding: 20px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
 dialog::backdrop { background: var(--backdrop); }
 dialog form { display: flex; flex-direction: column; gap: 12px; }
-dialog h2 { margin: 0; font: 700 14px/1.35 var(--ui); overflow-wrap: anywhere; }
+dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+dialog form { min-height: 0; }
+dialog h2 { flex: 0 1 auto; min-height: 3em; overflow: auto; overscroll-behavior: contain; margin: 0; font: 700 14px/1.35 var(--ui); overflow-wrap: anywhere; }
+dialog input[type=text], dialog .actions { flex: none; }
 dialog input[type=text] { flex: none; font-size: 13px; padding: 6px 8px; }
 dialog .actions { display: flex; justify-content: flex-end; gap: 8px; }
 button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
