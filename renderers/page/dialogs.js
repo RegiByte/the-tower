@@ -14,8 +14,8 @@ import { keymapSheetHtml } from '/keymap.js'
  */
 
 /**
- * The sheets the page opens over everything: what landing changed on a branch, and the keymap with what the
- * statuses mean.
+ * The sheets the page opens over everything: what landing changed on a branch, the keymap with what the
+ * statuses mean, and a question asked before a verb that cannot be taken back.
  * @param {DialogsDeps} deps
  */
 export function dialogs(deps) {
@@ -35,5 +35,24 @@ export function dialogs(deps) {
     $('keys').scrollTop = 0
   }
 
-  return { showLanding, showKeys }
+  /**
+   * Asks `text` (a question, then what it means after a blank line, as the shared asks are written) with `verb` on
+   * the button that goes ahead; answers whether it was pressed. Cancel, Escape and the backdrop answer no.
+   * @param {string} text @param {string} verb
+   * @returns {Promise<boolean>}
+   */
+  function ask(text, verb) {
+    const [question, ...rest] = text.split('\n\n')
+    $('confirm-title').textContent = question
+    $('confirm-body').textContent = rest.join('\n\n')
+    $('confirm-yes').textContent = verb
+    $('confirm').returnValue = ''
+    $('confirm').showModal()
+    $('confirm-yes').focus()
+    return new Promise((resolve) => $('confirm').addEventListener('close', () => resolve($('confirm').returnValue === 'yes'), { once: true }))
+  }
+
+  $('confirm').addEventListener('click', (e) => e.target === $('confirm') && $('confirm').close())
+
+  return { showLanding, showKeys, ask }
 }

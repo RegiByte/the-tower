@@ -1,4 +1,4 @@
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
 import { POLICIES } from '/policies.js'
@@ -268,7 +268,8 @@ const { findCard, readArchive, freshArchives, lookUp, openArchive, enterArchive,
 
 const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, drafting, draftHeadHtml, openDraft, enterDraft, leaveDraft, saveNow, followDraft, settleConflict, deleteSent, sendDraft, openTransfer, deleteDraft } = draft({ render, cards, floorOf, board, heldWhy, heldHtml, go, goHome, page, openSpawn: (project, sent) => openSpawn(project, sent), floorsTopDown, paint, callsign, findCard, select })
 
-const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view })
+const { showLanding, showKeys, ask } = dialogs({ board })
+const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view, ask })
 
 const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings() })
 
@@ -284,7 +285,7 @@ const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnSh
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
-const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving })
+const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
 
 const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view })
 
@@ -292,7 +293,6 @@ const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards 
 
 const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys })
 
-const { showLanding, showKeys } = dialogs({ board })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
@@ -396,14 +396,14 @@ async function resume(button, call) {
 /** @param {HTMLElement} button @param {Floor} f */
 async function resumeAll(button, f) {
   const stranded = strandedOf(f)
-  if (!confirm(resumeAllAsk(f, stranded))) return
+  if (!(await ask(resumeAllAsk(f, stranded), 'Resume all'))) return
   const line = await pressing(button, () => resumeStranded(stranded, tower.run))
   if (line) toast(line)
 }
 
 /** @param {HTMLElement} button @param {Card} c */
 async function letGo(button, c) {
-  if (!confirm(letGoAsk(c))) return
+  if (!(await ask(letGoAsk(c), 'Let go'))) return
   if (await told(pressing(button, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) toast(letGoneLine(c))
 }
 
@@ -420,7 +420,7 @@ document.addEventListener(
 )
 
 /** A link goes where its href says: a worker's `#<id>` reaches `route` as the hash changes. */
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
   const target = /** @type {Element} */ (e.target)
   if (target.closest('a[href]')) return
   const spawn = target.closest('[data-spawn]')
@@ -463,7 +463,7 @@ document.addEventListener('click', (e) => {
     const w = board().floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(callOf(w, 'discard')) === discarding.dataset.discard)
     const call = w && callOf(w, 'discard')
     if (!w || !call) return toast(noLongerOffered(/** @type {string} */ (discarding.dataset.wtName), 'discard'))
-    if (!confirm(discardAsk(w))) return
+    if (!(await ask(discardAsk(w), 'Discard'))) return
     return told(pressing(discarding, () => tower.run(call, { author: board().user.name }))).then((r) => r && toast(discardedLine(r)))
   }
   const wtCall = target.closest('[data-wt-call]')
@@ -471,7 +471,7 @@ document.addEventListener('click', (e) => {
     const { wtVerb, wtName } = wtCall.dataset
     const verb = /** @type {keyof typeof WORKTREE_DONE} */ (wtVerb)
     const name = /** @type {string} */ (wtName)
-    if (WORKTREE_ASK[verb] && !confirm(WORKTREE_ASK[verb](name))) return
+    if (WORKTREE_ASK[verb] && !(await ask(WORKTREE_ASK[verb](name), WORKTREE_VERB_NAME[verb].replace(/^./, (l) => l.toUpperCase())))) return
     return told(pressing(wtCall, () => tower.run(JSON.parse(/** @type {string} */ (wtCall.dataset.wtCall))))).then((r) => r && toast(`${WORKTREE_DONE[verb]} ${name}${keptLine(r)}`))
   }
   const probeRun = target.closest('[data-probe-run]')
@@ -480,11 +480,11 @@ document.addEventListener('click', (e) => {
     return told(pressing(probeRun, async () => tower.run(offeredCall(probe, 'run', `probe ${probe.name}`)))).then((r) => r && toast(probedLine(probe.name, r)))
   }
   const tidyCall = target.closest('[data-tidy-call]')
-  if (tidyCall) return confirm(tidyCall.dataset.tidyAsk) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
+  if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
   if (tidy) {
     const f = /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy)))
-    return confirm(tidyAllAsk(f, Date.now())) && told(pressing(tidy, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
+    return (await ask(tidyAllAsk(f, Date.now()), 'Tidy all')) && told(pressing(tidy, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
   }
   const picked = target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)
@@ -573,7 +573,7 @@ document.addEventListener('click', (e) => {
   const killShell = target.closest('[data-kill-shell]')?.dataset.killShell
   if (killShell) {
     const sh = /** @type {Board['shells'][number]} */ (board().shells.find((sh) => sh.id === killShell))
-    return confirm(killShellAsk(shellFloor(sh), sh)) && told(pressing(/** @type {HTMLElement} */ (target.closest('[data-kill-shell]')), () => tower.call('shell/kill', { id: killShell })))
+    return (await ask(killShellAsk(shellFloor(sh), sh), 'Kill')) && told(pressing(/** @type {HTMLElement} */ (target.closest('[data-kill-shell]')), () => tower.call('shell/kill', { id: killShell })))
   }
   const tab = target.closest('[data-shell]')?.dataset.shell
   if (tab) return toggleShell(tab)
@@ -588,7 +588,7 @@ document.addEventListener('click', (e) => {
   const reapable = target.closest('[data-reap]')
   if (reapable) {
     const c = /** @type {Card} */ (findCard(reapable.dataset.reap))
-    if (confirm(reapAsk(c))) told(pressing(reapable, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
+    if (await ask(reapAsk(c), 'End them')) told(pressing(reapable, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
     return
   }
   const actor = target.closest('[data-act]')
@@ -630,7 +630,7 @@ function applyScheme() {
 tower.onScheme(applyScheme)
 tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendScheme(), drawSettings()))
 
-const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open
 
 /** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
 /** @param {Pane} pane */

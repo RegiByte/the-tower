@@ -234,6 +234,10 @@ dialog h2.legend-head { margin-top: var(--sp-2xl); }
 .keys.legend > .chip { justify-self: start; color: var(--ink); }
 dialog#keys { width: min(620px, 92vw); }
 dialog#landing { width: min(960px, 94vw); }
+dialog.confirm { width: min(520px, 92vw); }
+dialog.confirm h2 { font: 700 var(--fs-l)/1.35 var(--ui); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
+.confirm-body { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); max-height: 50vh; overflow: auto; }
+.confirm-body:empty { display: none; }
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
 .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -478,6 +482,13 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
     <h2 id="landing-title">What landing changed</h2>
     <div class="landing" id="landing-body"></div>
     <div class="actions"><small>git range-diff of each commit and the copy that landed</small><button value="">Close</button></div>
+  </form>
+</dialog>
+<dialog id="confirm" class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <div class="confirm-body" id="confirm-body"></div>
+    <div class="actions"><button value="">Cancel</button><button class="primary" id="confirm-yes" value="yes"></button></div>
   </form>
 </dialog>
 <div id="toasts"></div>

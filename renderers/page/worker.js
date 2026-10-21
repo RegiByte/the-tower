@@ -47,6 +47,7 @@ import { pressing } from '/press.js'
  *   showShownAlert: (c: Card, s: CardShown) => void,
  *   cards: () => Card[],
  *   selectArriving: (id: string) => void,
+ *   ask: (text: string, verb: string) => Promise<boolean>,
  * }} WorkerDeps
  */
 
@@ -56,7 +57,7 @@ import { pressing } from '/press.js'
  * @param {WorkerDeps} deps
  */
 export async function worker(deps) {
-  const { callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving } = deps
+  const { callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask } = deps
   /** The selected worker's header: who and where, a glance at its context, cost and leftovers, and its views. @param {Card} c */
   function barHtml(c) {
     const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
@@ -267,7 +268,7 @@ export async function worker(deps) {
   async function sendHome(button, c) {
     if (!can(c, 'send-home')) return toast(noLongerOffered(c.callsign, 'send-home'))
     const sent = sentHome(cards(), c)
-    if (!confirm(sendHomeAsk(c, sent))) return
+    if (!(await ask(sendHomeAsk(c, sent), 'Send home'))) return
     const ended = await pressing(button, async () => {
       for (const call of sendHomeCalls(c)) if (!(await told(tower.run(call)))) return false
       return true

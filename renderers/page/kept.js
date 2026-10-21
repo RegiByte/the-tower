@@ -31,6 +31,7 @@ import { DRAFTS } from '/drafts.js'
  *   page: Loop<PageState, PageEvent>,
  *   selectArriving: (id: string) => void,
  *   view: () => MainView,
+ *   ask: (text: string, verb: string) => Promise<boolean>,
  * }} KeptViewsDeps
  */
 
@@ -40,7 +41,7 @@ import { DRAFTS } from '/drafts.js'
  * @param {KeptViewsDeps} deps
  */
 export function keptViews(deps) {
-  const { render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view } = deps
+  const { render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view, ask } = deps
   /** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
   const { title: keptTitle, prune: pruneKeptTitles } = keptTitles((project, collection, id) => tower.text(itemPath(project, collection, id)), () => render())
 
@@ -151,7 +152,7 @@ export function keptViews(deps) {
     const open = /** @type {Extract<MainView, { t: 'item' }>} */ (viewing('item'))
     const { c, item } = /** @type {{ c: FloorCollection, item: FloorItem }} */ (itemOf(open))
     const { project, collection, id } = open
-    if (!confirm(deleteAsk(c, item, keptTitle(project, collection, item)))) return
+    if (!(await ask(deleteAsk(c, item, keptTitle(project, collection, item)), 'Delete'))) return
     goHome()
     if (await told(tower.call('collection/delete', { project, collection, id }))) toast(`Deleted ${item.tag} from ${c.label}`)
   }

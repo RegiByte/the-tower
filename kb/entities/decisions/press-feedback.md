@@ -9,6 +9,7 @@
   "reviewed": "2026-10-21",
   "refs": [
     "hub/src/shared/press.ts#pressing",
+    "hub/renderers/page/dialogs.js#dialogs",
     "hub/src/shared/press.ts#identityOf",
     "hub/src/shared/toasts.ts#toaster",
     "hub/src/shared/toasts.ts#sameToast",
@@ -59,6 +60,9 @@ them.
   [`restore`](ref:hub/src/shared/drafts.ts#restore) puts the file back under its own id through `collection/restore`
   ([`restoreItem`](ref:hub/src/collections.ts#restoreItem)), so its tag, its place and its name are what they were.
   The id is claimed with an exclusive create: a restore never overwrites, and an id taken again is refused.
+- The tower page asks in a dialog of its own, drawn from the design's tokens, never the browser's `confirm()`
+  ([`dialogs`](ref:hub/renderers/page/dialogs.js#dialogs)): the shared ask's first line is its question, the rest what
+  it means, and the button that goes ahead is named for the verb; Cancel, Escape and the backdrop answer no.
 - A framed page may not open `confirm()`, so Tower 3D's destructive buttons arm on a first press ("sure?", the
   shared ask as its tip) and run on a second soon after ([`confirmed`](ref:hub/renderers/tower3d/src/main.ts#confirmed),
   [`askingButton`](ref:hub/renderers/tower3d/src/ui.ts#askingButton)).
