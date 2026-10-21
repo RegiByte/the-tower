@@ -45,7 +45,7 @@ import { TABLE, meetingKit } from './meetings.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
 import { isMarkdown, isPosterTexture, isVideo, keepPosters, pictured, playFilms, type Shown } from './showing.ts'
-import { closeTerm, mountTerm, watchPanelSize } from './term.ts'
+import { closeTerm, mountTerm } from './term.ts'
 import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
@@ -2841,7 +2841,6 @@ $('draft-note').addEventListener('click', (e) => {
   renderPanel()
 })
 
-watchPanelSize($('desk-screen'))
 idle(tower.framed)
 Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.renderer()]).then(([m, kept, , kit, renderer]) => {
   checkWardrobe(m.catalogue)
