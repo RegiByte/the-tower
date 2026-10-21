@@ -4,7 +4,7 @@
   "name": "Bring-up",
   "summary": "tower up starts the host, the terms daemon and the tower detached, each only if this system's own does not already answer where it serves, and records their pids; tower down stops what it started. Either takes daemons by name.",
   "in": "tower",
-  "reviewed": "2026-10-17",
+  "reviewed": "2026-10-21",
   "involves": ["operator", "tower-cli", "host-daemon", "terms-daemon", "tower-server"],
   "refs": ["hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#bringDown", "hub/src/machine.ts#bringAllDown", "hub/src/machine.ts#daemons", "hub/src/machine.ts#daemonsNamed", "hub/src/machine.ts#startedPid", "hub/src/shared/socket.ts#claimSocket", "hub/src/shared/model.ts#towerPort"]
 }
@@ -34,23 +34,22 @@ sequenceDiagram
   M->>H: the same with host.pid
 ```
 
-- Each daemon names the place it serves at and who holds it
-  ([`daemons`](ref:hub/src/machine.ts#daemons)): a socket is held by this system's daemon when it answers, since the
-  socket lives in the system root; the tower's port (the config's `port`, 4317 unless set,
-  [`towerPort`](ref:hub/src/shared/model.ts#towerPort), [[port-in-config]]) is held by this system's tower when the process listening on it
-  runs the tower's server with this system's config, read from its environment (`ps -E`). Anything else on the port is
-  something else, and [`bringAllUp`](ref:hub/src/machine.ts#bringAllUp) refuses before starting anything. It also
-  refuses a daemon whose place is free while its pid file names this system's daemon still running
+- Each daemon names where it serves and who holds it ([`daemons`](ref:hub/src/machine.ts#daemons)). A socket lives
+  in the system root, so it is held by this system's daemon when it answers. The tower's port (the config's `port`,
+  [`towerPort`](ref:hub/src/shared/model.ts#towerPort), [[port-in-config]]) is held by this system's tower when the
+  process listening on it runs the tower's server with this system's config in its environment (`ps -E`); anything
+  else there is something else, and [`bringAllUp`](ref:hub/src/machine.ts#bringAllUp) refuses before starting
+  anything. It also refuses a daemon whose place is free while its pid file names this system's daemon still running
   ([`startedPid`](ref:hub/src/machine.ts#startedPid)): a tower started before the config's port changed, which
   `tower down` stops and `tower doctor` fails on.
-- A daemon claims its socket path on start: it removes a path left by a dead process and refuses one
-  that still answers ([`claimSocket`](ref:hub/src/shared/socket.ts#claimSocket)).
+- A daemon claims its socket path on start: it refuses one that answers or is too long for a socket, and removes one
+  left by a dead process ([`claimSocket`](ref:hub/src/shared/socket.ts#claimSocket)).
 - Names pick daemons ([`daemonsNamed`](ref:hub/src/machine.ts#daemonsNamed)); with none, all three. `tower down tower
-  && tower up tower` restarts the tower alone: a new server, the host and every session untouched.
+  && tower up tower` restarts the tower alone, the host and every session untouched.
 - `tower down` signals only the pid in this system's pid file, and only while that process still runs the daemon's
-  script with this system's config in its environment, since pids are reused and every system runs the same scripts
+  script with this system's config, since pids are reused and every system runs the same scripts
   ([`bringDown`](ref:hub/src/machine.ts#bringDown)). A daemon answering without a pid file was started by hand
-  (`npm run host`, `npm run tower`): `tower down` refuses it and stops the others
+  (`npm run host`, `npm run tower`): `tower down` refuses it, stops the others and exits 1
   ([`bringAllDown`](ref:hub/src/machine.ts#bringAllDown)). Stopping the host ends every session (`hostStopped`,
   resumable); stopping terms ends every shell.
-- `npm run setup` ends with the same bring-up ([[setup]]); the sandbox brings its own system up and down through it.
+- `npm run setup` ends with the same bring-up ([[setup]]), and the sandbox brings its own system up and down through it.

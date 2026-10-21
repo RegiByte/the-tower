@@ -4,8 +4,8 @@
   "name": "tower",
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
-  "reviewed": "2026-10-19",
-  "refs": ["hub/src/cli.ts", "hub/src/cli.ts#towerCommand", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
+  "reviewed": "2026-10-21",
+  "refs": ["hub/src/cli.ts", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
@@ -20,33 +20,33 @@
   ]
 }
 ---
-One command for the user and the workers: the verbs above are the user's, and any other verb is a worker's,
-handed to the tower's directory (`src/directory.ts`, [[agent-directory]]), which reads the running tower. The
-tower mod puts the command on every session's PATH; `npm link` puts it on the user's (`bin` in `package.json`).
+One command for the user and the workers: the verbs above are the user's; any other verb is a worker's, handed to
+the tower's directory (`src/directory.ts`, [[agent-directory]]). The tower mod puts the command on every session's
+PATH; `npm link` puts it on the user's (`bin` in `package.json`).
 
-Unlike the tower it does not use [[live-system]]: each command reads the logs it needs and exits. `ls` and `kill`
-fold every log from its checkpoint on, as the tower does ([[fold-checkpoints]]). `tower spawn` and `tower resume`
-start no session themselves: they ask the running tower (`POST /spawn`, `POST /resume`, with the tower's own origin),
-which composes the launch, holds callsigns and conversations, and queues resumes ([[resume]]); with no tower
-running they fail with the fix `tower up` ([`towerCommand`](ref:hub/src/cli.ts#towerCommand)). `resume` reads the
-source's log only for its latest saved conversation.
-`tower submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`; run by a worker (`TOWER_SESSION_ID` set), it first has the host append `tower.prompt` naming it ([[worker-prompts]]).
-`tower kill` takes a session id or a running worker's callsign (`runningNamed`) and speaks to the host, and when a worker runs it (`TOWER_SESSION_ID` set) on a running session, first has the host append `tower.kill` naming that worker ([[worker-prompts]]).
-`tower attach` puts the terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `tower down`
-stops the daemons `tower up` started ([[bring-up]]); both take daemons by name. `tower init` writes a first config
-and `tower doctor` checks what the tower needs, one fix for each failure ([[setup]]). `tower update` moves the
-checkout to the newest release and restarts the tower, never the host ([[releases]]). `tower app` builds the
-Mac app from this checkout when its source changed and opens it, a window over the tower ([[macos-app]]).
+It does not use [[live-system]]: each command reads the logs it needs and exits. `ls` and `kill` fold every log from
+its checkpoint on ([`readSessions`](ref:hub/src/cli.ts#readSessions), [[fold-checkpoints]]). `spawn` and `resume`
+start no session themselves: they ask the running tower (`POST /spawn`, `POST /resume`, with the tower's origin),
+which composes the launch, holds callsigns and conversations and queues resumes ([[resume]]); with no tower running
+they fail with the fix `tower up` ([`towerCommand`](ref:hub/src/cli.ts#towerCommand)). `resume` reads the source's
+log only for its latest saved conversation.
+
+`submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`. `kill` takes
+a session id or a running worker's callsign. Run by a worker (`TOWER_SESSION_ID` set), each first has the host append
+a fact naming that worker to the target's log (`tower.prompt`, `tower.kill`, [[worker-prompts]]). `attach` puts the
+terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `up` and `down` take daemons by name
+([[bring-up]]). `init` and `doctor`: [[setup]]. `update` moves the checkout to the newest release and restarts the
+tower, never the host ([[releases]]). `app` builds the Mac app from this checkout when its source changed and opens it
+([[macos-app]]).
 
 `tower config check` reads the config as the tower does
-([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, the shape of each
-project, each shelf entry, collection and worktrees setting, and the keys it doesn't know, each problem at its key path, exiting 1 on any `fail` (an
-unknown key is a `warn`, at any depth: a project's, a shelf entry's, a probe's, a renderer's, a collection's). The known
-keys (`CONFIG_KEYS`, `PROJECT_KEYS` and each nested object's, such as `HIRING_KEYS`, in `src/shared/model.ts`) are held
-to their types by the typecheck. `tower doctor` sums up the same check. Every key is documented in
-`docs/config.md`, whose path the check prints.
+([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, then the shape of each
+project, shelf entry, collection and worktrees setting, each problem at its key path. A value the tower can't take is a
+`fail` (exit 1); a key it doesn't know, at any depth, is a `warn`. The known keys (`CONFIG_KEYS`, `PROJECT_KEYS` and
+each nested object's, in `src/shared/model.ts`) are held to their types by the typecheck. `tower doctor` sums up the
+same check. Every key is documented in `docs/config.md`, whose path the check prints.
 
-Every verb, the workers' too, fails in one of two ways ([`reported`](ref:hub/src/cli-error.ts#reported)): an
-expected failure (a usage slip, a name nothing has, a refusal by the host or the tower, a config the tower can't
-take) is a `CliError` or a `ConfigError`, printed as one line `tower: <message>` with a `→ <fix>` line when there is
-one, exiting 1; anything else is a bug and keeps its stack.
+Every verb, the workers' too, fails one of two ways ([`reported`](ref:hub/src/cli-error.ts#reported)): an expected
+failure (a usage slip, a name nothing has, a refusal by the host or the tower, a config the tower can't take) is a
+`CliError` or `ConfigError`, printed as `tower: <message>` with a `→ <fix>` line when there is one, exiting 1;
+anything else is a bug and keeps its stack.
