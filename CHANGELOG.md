@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.52.0
+
+The Changes panel's file tree. No host restart, no config change, the renderer API 1.71 → 1.72 (additive). Restart
+the tower (`tower down tower && tower up tower`) and reload the page. A checkout that serves Tower 3D rebuilds it
+(`npm run tower3d`).
+
+- The Changes panel can show the changed files as a tree beside the diffs, off until you turn it on in Settings
+  (Changes: Tree) or with the Files button in the panel's head. Folders come first, a folder holding a lone folder is
+  joined to it (`src/app/routes/`), and each repo gets its own root while a worker spans more than one, with its name
+  on each file's header too. Folders and roots fold; a file in the tree scrolls to its diff and is checked once
+  viewed. The tree sticks below the panel's head, scrolls on its own and keeps its place as files are marked viewed.
+  The choice is the viewer's `changesTree`, so the tower page and Tower 3D's desk show it alike (#153, by
+  @fliptaboada).
+- The viewer's record reads a value kept in `tower.store` that is not of its field's kind as the field's default (#154).
+
 ## v1.51.0
 
 Wave D of the consolidation pass, its last. No host restart, no config change, the renderer API 1.70 → 1.71
