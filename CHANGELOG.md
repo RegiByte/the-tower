@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.52.1
+
+A patch release. No host restart, no config change, the renderer API unchanged at 1.72. Reload the page; a checkout
+that serves Tower 3D rebuilds it (`npm run tower3d`) for the prefab editor's dialog.
+
+- The tower page asks before its destructive verbs (Tidy and Tidy all, send home, let go, resume all, discard, the
+  worktree verbs, kill shell, reap, deleting a kept item) in a dialog of its own, drawn from the design's tokens: the
+  question, then what it means, and a button named for the verb. Cancel, Escape and the backdrop answer no, a long
+  ask scrolls inside the dialog, and no shortcut runs while it is open. The prefab editor asks and names new states
+  the same way; cancelling a name adds nothing (#156, by @CarlosBonetti).
+
 ## v1.52.0
 
 The Changes panel's file tree. No host restart, no config change, the renderer API 1.71 → 1.72 (additive). Restart
