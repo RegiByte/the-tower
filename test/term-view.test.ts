@@ -16,15 +16,17 @@ function run(from: TermView, ...events: TermEvent[]): [TermView, TermEffect[]] {
 }
 
 const snapshot = (others: boolean, exited = false): TermEvent => ({ type: 'snapshot', data: 'screen', cols: 80, rows: 24, exited, others })
-const owning: TermView = { t: 'owning', pty: { cols: 100, rows: 30 } }
+const owning: TermView = { t: 'owning', pty: { cols: 100, rows: 30 }, asked: [{ cols: 100, rows: 30 }] }
 
 test('term view: a terminal nobody else views takes the size, one beside another watches, an exited one is read-only', () => {
   const opened = { type: 'open', data: 'screen', cols: 80, rows: 24, exited: false }
   assert.deepEqual(run(termOpening(), snapshot(false)), [{ t: 'watching', pty: { cols: 80, rows: 24 } }, [opened, { type: 'fit', then: '' }]])
-  assert.deepEqual(run(termOpening(), snapshot(false), { type: 'fitted', cols: 100, rows: 30, then: '' }), [
+  const [taken, sized] = run(termOpening(), snapshot(false), { type: 'fitted', cols: 100, rows: 30, then: '' })
+  assert.deepEqual([taken, sized], [
     owning,
     [{ type: 'resize', cols: 100, rows: 30 }, { type: 'mode', mode: { t: 'owning', cols: 100, rows: 30 } }],
   ])
+  assert.deepEqual(run(taken, { type: 'resized', cols: 100, rows: 30 }), [{ ...owning, asked: [] }, []])
   assert.deepEqual(run(termOpening(), snapshot(true)), [{ t: 'watching', pty: { cols: 80, rows: 24 } }, [opened, { type: 'mode', mode: { t: 'watching' } }]])
   const [exited, effects] = run(termOpening(), snapshot(false, true))
   assert.equal(exited.t, 'exited')
@@ -33,7 +35,7 @@ test('term view: a terminal nobody else views takes the size, one beside another
 })
 
 test('term view: a resize from someone else hands control back, the view follows, and typing takes it again with the keys after the resize', () => {
-  assert.deepEqual(run(owning, { type: 'resized', cols: 100, rows: 30 }), [owning, []])
+  assert.deepEqual(run({ ...owning, asked: [] }, { type: 'resized', cols: 100, rows: 30 })[0].t, 'watching')
   const [watching, followed] = run(owning, { type: 'resized', cols: 90, rows: 20 })
   assert.deepEqual(watching, { t: 'watching', pty: { cols: 90, rows: 20 } })
   assert.deepEqual(followed, [{ type: 'follow', cols: 90, rows: 20 }, { type: 'mode', mode: { t: 'watching' } }])
@@ -59,6 +61,9 @@ test('term view: a pane settles before it redraws, and a pane or font change fit
 
 test('term view: the echo of its own earlier resize, arriving after a later fit, keeps this view in control', () => {
   const [refit] = run(owning, { type: 'settled' }, { type: 'fitted', cols: 90, rows: 25, then: '' })
-  assert.deepEqual(refit, { t: 'owning', pty: { cols: 90, rows: 25 } })
-  assert.equal(run(refit, { type: 'resized', cols: 100, rows: 30 })[0].t, 'owning')
+  assert.deepEqual(refit, { t: 'owning', pty: { cols: 90, rows: 25 }, asked: [{ cols: 100, rows: 30 }, { cols: 90, rows: 25 }] })
+  const [late] = run(refit, { type: 'resized', cols: 100, rows: 30 })
+  assert.deepEqual(late, { t: 'owning', pty: { cols: 90, rows: 25 }, asked: [{ cols: 90, rows: 25 }] })
+  assert.deepEqual(run(late, { type: 'resized', cols: 90, rows: 25 })[0], { ...late, asked: [] })
+  assert.equal(run({ ...late, asked: [] }, { type: 'resized', cols: 100, rows: 30 })[0].t, 'watching')
 })

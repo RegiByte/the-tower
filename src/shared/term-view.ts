@@ -20,12 +20,13 @@ export type Size = { cols: number; rows: number }
 
 /**
  * The view: waiting for its snapshot, following the PTY at a font that fits, holding the PTY at the size it set, or a
- * PTY that no longer runs, read-only.
+ * PTY that no longer runs, read-only. `asked`: the sizes an owning view sent the PTY whose echo has yet to come back,
+ * oldest first; an echo arrives behind the PTY's queued output, so one can land after a later size was asked.
  */
 export type TermView =
   | { t: 'opening' }
   | { t: 'watching'; pty: Size }
-  | { t: 'owning'; pty: Size }
+  | { t: 'owning'; pty: Size; asked: Size[] }
   | { t: 'exited'; pty: Size }
 
 /** How the view holds the PTY, for the renderer to say. */
@@ -88,7 +89,9 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
     return [state({ t: 'watching', pty: { cols, rows } }), opened, { type: 'fit', then: '' }]
   },
   resized: (s, { cols, rows }) => {
-    if (s.t === 'opening' || (s.t === 'owning' && sameSize(s.pty, { cols, rows }))) return []
+    if (s.t === 'opening') return []
+    const echo = s.t === 'owning' ? s.asked.findIndex((a) => sameSize(a, { cols, rows })) : -1
+    if (s.t === 'owning' && echo >= 0) return [state({ ...s, asked: s.asked.slice(echo + 1) })]
     const next: TermView = s.t === 'exited' ? { t: 'exited', pty: { cols, rows } } : { t: 'watching', pty: { cols, rows } }
     return [state(next), { type: 'follow', cols, rows }, { type: 'mode', mode: modeOf(next) }]
   },
@@ -98,7 +101,7 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
   font: redraw,
   fitted: (s, { cols, rows, then }) => {
     if (s.t === 'opening' || s.t === 'exited') return []
-    const next: TermView = { t: 'owning', pty: { cols, rows } }
+    const next: TermView = { t: 'owning', pty: { cols, rows }, asked: [...(s.t === 'owning' ? s.asked : []), { cols, rows }] }
     return [state(next), { type: 'resize', cols, rows }, ...(then ? [{ type: 'send' as const, data: then }] : []), { type: 'mode', mode: modeOf(next) }]
   },
 })
