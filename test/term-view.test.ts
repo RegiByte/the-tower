@@ -56,3 +56,9 @@ test('term view: a pane settles before it redraws, and a pane or font change fit
     assert.deepEqual(run(termOpening(), { type })[1], [])
   }
 })
+
+test('term view: the echo of its own earlier resize, arriving after a later fit, keeps this view in control', () => {
+  const [refit] = run(owning, { type: 'settled' }, { type: 'fitted', cols: 90, rows: 25, then: '' })
+  assert.deepEqual(refit, { t: 'owning', pty: { cols: 90, rows: 25 } })
+  assert.equal(run(refit, { type: 'resized', cols: 100, rows: 30 })[0].t, 'owning')
+})
