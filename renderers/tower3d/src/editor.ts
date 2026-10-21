@@ -604,10 +604,31 @@ async function showDocs() {
   renderPanel()
 }
 
+const asking = document.getElementById('ask') as HTMLDialogElement
+const askField = document.getElementById('ask-field') as HTMLInputElement
+
+/**
+ * Asks `question` in the page's own dialog, `verb` on the button that goes ahead: answers undefined when cancelled, else
+ * what was typed in the field when `value` is given (it starts the field), else ''.
+ */
+function ask(question: string, verb: string, value?: string): Promise<string | undefined> {
+  document.getElementById('ask-title')!.textContent = question
+  document.getElementById('ask-yes')!.textContent = verb
+  askField.hidden = value === undefined
+  askField.value = value ?? ''
+  asking.returnValue = ''
+  asking.showModal()
+  ;(value === undefined ? document.getElementById('ask-yes')! : askField).focus()
+  return new Promise((resolve) => asking.addEventListener('close', () => resolve(asking.returnValue === 'yes' ? askField.value : undefined), { once: true }))
+}
+
+askField.addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), asking.close('yes')))
+asking.addEventListener('click', (e) => e.target === asking && asking.close())
+
 /** Opens a scene from the list, once unsaved changes to the one open are given up. */
-function openPicked(path: string) {
+async function openPicked(path: string) {
   const unsaved = trail.length ? changes() : []
-  if (unsaved.length && !confirm(`Discard the unsaved changes to ${unsaved.map((c) => c.path).join(', ')}?`)) return
+  if (unsaved.length && (await ask(`Discard the unsaved changes to ${unsaved.map((c) => c.path).join(', ')}?`, 'Discard')) === undefined) return
   run(open(path))
 }
 
@@ -863,7 +884,7 @@ panel.addEventListener('click', (ev) => {
   if (d.act === 'drop') return run(drop())
   if (d.act === 'delete' && selected) return run(remove(selected))
   if (d.act === 'none') return run(select(undefined))
-  if (d.act === 'new-state') return run(addState(prompt('name of the new state') ?? '', d.group ?? ''))
+  if (d.act === 'new-state') return void ask('Name of the new state', 'Add', '').then((name) => name !== undefined && run(addState(name, d.group ?? '')))
   if (d.act === 'add-slot') {
     const base = (document.getElementById('slot-name') as HTMLInputElement).value.trim()
     const pose = (document.getElementById('slot-pose') as HTMLSelectElement).value as Slot['pose'] | ''
@@ -928,7 +949,7 @@ canvas.addEventListener('pointerup', (e) => {
 canvas.addEventListener('dblclick', () => selected && located(doc(), selected).element && 'scene' in located(doc(), selected).element && run(enter(selected)))
 
 addEventListener('keydown', (e) => {
-  if ((e.target as HTMLElement).closest('input, select, textarea')) return
+  if ((e.target as HTMLElement).closest('input, select, textarea') || asking.open) return
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') return (e.preventDefault(), run(travel(e.shiftKey ? 1 : -1)))
   if (e.metaKey || e.ctrlKey) return
   const k = e.key.toLowerCase()

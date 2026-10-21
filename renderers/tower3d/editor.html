@@ -45,12 +45,26 @@ button:disabled { opacity: .45; cursor: default; }
 kbd { font: 10px/1 var(--mono); padding: 1px 4px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
 .confirm { display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--ink); border-radius: var(--radius); }
 .confirm pre { margin: 0; max-height: 220px; overflow: auto; font: 10px/1.35 var(--mono); background: var(--sunk); padding: 6px; border-radius: var(--radius); white-space: pre; }
+dialog { width: min(440px, 92vw); padding: 20px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
+dialog::backdrop { background: var(--backdrop); }
+dialog form { display: flex; flex-direction: column; gap: 12px; }
+dialog h2 { margin: 0; font: 700 14px/1.35 var(--ui); overflow-wrap: anywhere; }
+dialog input[type=text] { flex: none; font-size: 13px; padding: 6px 8px; }
+dialog .actions { display: flex; justify-content: flex-end; gap: 8px; }
+button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 </style>
 </head>
 <body>
 <canvas id="scene"></canvas>
 <div id="panel"></div>
 <div id="bar"></div>
+<dialog id="ask" aria-labelledby="ask-title">
+  <form method="dialog">
+    <h2 id="ask-title"></h2>
+    <input type="text" id="ask-field" aria-labelledby="ask-title" autocomplete="off" spellcheck="false">
+    <div class="actions"><button value="">Cancel</button><button class="primary" id="ask-yes" value="yes"></button></div>
+  </form>
+</dialog>
 <script src="editor.js"></script>
 </body>
 </html>
