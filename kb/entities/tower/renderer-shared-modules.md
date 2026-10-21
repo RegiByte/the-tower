@@ -63,9 +63,10 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   file the board names) and a worker's Changes ([`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
   [[changes-view]]), so every renderer reads both the same way.
 - `viewer.ts`: what a viewer keeps in `tower.store` that every renderer reads alike, one record (`Viewer`: dismissals,
-  the ring, the brief rendered or raw, the diff layout, unfolded crews, the Stats range) under the keys it has always
-  had, read whole by [`readViewer`](ref:hub/src/shared/viewer.ts#readViewer) on every board and when a framed page
-  writes to the store, since `tower.store` has no change event ([[viewer-prefs]]).
+  the ring, the brief rendered or raw, the diff layout, the file tree shown, unfolded crews, the Stats range) under the
+  keys it has always had, read whole by [`readViewer`](ref:hub/src/shared/viewer.ts#readViewer) on every board and when
+  a framed page writes to the store, since `tower.store` has no change event ([[viewer-prefs]]). A framed page can write
+  any value there, so one not of its field's kind (the default's) reads as the default.
 - `attend.ts`: what a viewer is told about what asks for them
   ([[attention-list]]): a wait or an offer that begins
   said, notified and rung, a reminder while it waits, a dismissal kept and its notification closed; its steps run inside

@@ -13,3 +13,8 @@ test('a viewer reads back every setting under the key a browser already keeps it
 test('a setting never kept reads as its default', async () => {
   assert.deepEqual(await readViewer(storeOf({ 'waits.ring': 'off' })), { ...VIEWER_DEFAULT, ring: 'off' })
 })
+
+test('a setting kept as another kind of value reads as its default', async () => {
+  const kept = { 'changes.tree': '"><img src=x>', 'waits.dismissed': 'w1', 'crews.unfolded': [1], 'waits.ring': 3 }
+  assert.deepEqual(await readViewer(storeOf(kept)), VIEWER_DEFAULT)
+})

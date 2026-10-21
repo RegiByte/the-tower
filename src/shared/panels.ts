@@ -658,16 +658,14 @@ export function changesHtml(v: ChangesView) {
   const files = changedFiles(read.repos)
   if (settled && !files.length) return `<div class="changes-panel">${settled}</div>`
   const sum = (key: 'added' | 'removed') => files.reduce((n, [, f]) => n + f[key], 0)
-  // Read back from tower.store, which a framed page can write: only a true shows the tree, and nothing else is drawn.
-  const tree = v.tree === true
   const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button type="button" class="tree-toggle ${tree ? 'on' : ''}" data-changes-tree aria-pressed="${tree}" data-tip="${tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
+      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button type="button" class="tree-toggle ${v.tree ? 'on' : ''}" data-changes-tree aria-pressed="${v.tree}" data-tip="${v.tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
   const noting = v.noting && !isCommitScope(v.scope)
   const repos = isCommitScope(v.scope) ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
   const diffs = repos.map((repo) => repoHtml({ ...v, read, noting, manyRepos: repos.filter((r) => r.files.length).length > 1, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'
-  const drawn = tree && files.length ? treeHtml(read, repos, v.treeFolds) : ''
+  const drawn = v.tree && files.length ? treeHtml(read, repos, v.treeFolds) : ''
   return `<div class="changes-panel ${drawn ? 'with-tree' : ''}">${settled}${head}${drawn}<div class="changes-files">${diffs}</div></div>`
 }
 
