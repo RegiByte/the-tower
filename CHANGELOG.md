@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.51.0
+
+Wave D of the consolidation pass, its last. No host restart, no config change, the renderer API 1.70 → 1.71
+(additive). Restart the tower (`tower down tower && tower up tower`) and reload the page. A checkout that serves
+Tower 3D rebuilds it (`npm run tower3d`).
+
+- Every terminal holds the PTY's one size the same way, through one shared machine served as `/term-view.js`: the
+  page's worker terminal, the page's shell and Tower 3D's desk. A new terminal takes the size when no other views it,
+  typing takes it back, and a resize from another viewer hands it over while the view follows at a font that fits.
+  Shells follow this rule now: the page's shell took the size on every pane resize and never followed another
+  viewer, so two viewers fought over it. Its pane says how it holds the shell, as the worker's terminal does.
+  Tower 3D's desk no longer takes the size back when its panel resizes after another viewer took it. A view keeps
+  control when the echo of its own earlier resize arrives late (#150).
+- Ticking durations (the worker's pill, the sidebar's ages, the panels' "read … ago") are marked `translate="no"`:
+  a page translator rewrote `4m 23s` into words each second, flickering the pill. The pill keeps its width as its
+  digits tick (#149).
+
 ## v1.50.1
 
 A patch release. No host restart, no config change, the renderer API unchanged at 1.70. Workers spawned from now on
