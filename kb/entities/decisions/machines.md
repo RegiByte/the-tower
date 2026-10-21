@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-19",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-21",
   "refs": [
     "hub/src/shared/loop.ts",
     "hub/src/shared/loop.ts#loop",
@@ -25,7 +25,8 @@
     "hub/renderers/page/page.js#pageHandlers",
     "hub/renderers/page/stats.js#stats",
     "hub/renderers/tower3d/src/main.ts#seeingHandlers",
-    "hub/test/reads.test.ts"
+    "hub/test/reads.test.ts",
+    "hub/src/shared/term-view.ts#termHandlers"
   ],
   "links": [
     { "to": "renderer-is-disposable", "verb": "follows", "carries": "a machine a next renderer would need lives in shared" },
@@ -76,7 +77,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   in order, and queues an event dispatched while another is handled until that one's effects have run, so every
   handler sees the state the one before it left. It holds no subscriptions, interceptors or registries.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
-  minor); its first is [`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers). A machine only one renderer
+  minor); its first is [`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers); a terminal's hold on its PTY's one size is another ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)), run by every terminal the tower page and Tower 3D open. A machine only one renderer
   has (the tower page's main view and the [`stats`](ref:hub/renderers/page/stats.js#stats) its sidebar shows, Tower 3D's movement) lives beside that renderer, in the same shape.
 - *Tests.* Steps are pure functions, so a machine's bug is pinned by a unit test of its steps
   ([`reads.test.ts`](ref:hub/test/reads.test.ts)) where the behaviour is worth locking down.

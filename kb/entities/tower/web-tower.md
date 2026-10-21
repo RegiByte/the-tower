@@ -4,7 +4,7 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-10-20",
+  "reviewed": "2026-10-21",
   "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/worker.js#worker", "hub/renderers/page/review.js#review", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
@@ -15,7 +15,7 @@ written and checked by `npm run typecheck` through JSDoc ([`tsconfig.page.json`]
 executors, the draw, and the clicks, keys and board wired to them. Each pane is a module exporting a factory that
 takes what it reads and calls as plain functions and returns what the page composes, its own state closed inside it:
 the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), the skyline, the selected
-[`worker`](ref:hub/renderers/page/worker.js#worker) (its header, pane tabs and showings), its terminal (`screen.js`),
+[`worker`](ref:hub/renderers/page/worker.js#worker) (its header, pane tabs and showings), its terminal (`screen.js`, a view of `/term-view.js`, as each docked shell is),
 brief (`brief-pane.js`) and Changes and Reviews ([`review`](ref:hub/renderers/page/review.js#review)), the
 [`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the shelf, the archive, a draft, what a
 floor keeps and the dialogs. What they draw with alike is `kit.js`, what they read off the board alike

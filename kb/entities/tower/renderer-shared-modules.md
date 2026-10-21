@@ -4,12 +4,12 @@
   "name": "Renderer shared modules",
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
-  "reviewed": "2026-10-20",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn"]
+  "reviewed": "2026-10-21",
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView"]
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js`, `/attend.js`, `/viewer.js`, `/spawn.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js`, `/term-view.js`, `/attend.js`, `/viewer.js`, `/spawn.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
 on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
@@ -35,6 +35,12 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `prefs.ts`: the viewer's appearance record `tower.prefs` keeps, its defaults, and whether to move less (`reducedMotion`) ([[viewer-prefs]]).
 - `terminal.ts`: a browser terminal's face and size from the record, and the size a watched one fits at, from cells
   measured in its face ([[viewer-prefs]]).
+- `term-view.ts`: a terminal a viewer has open on a PTY, as a machine on `loop`
+  ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers): opening, watching, owning, exited): the PTY has
+  one size and whoever types holds it, a resize from anyone else hands it back, and a pane or font change fits the
+  PTY only while this viewer holds it. [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) runs it in
+  xterm.js, whose constructors the renderer passes in; every terminal of the tower page and Tower 3D is one
+  ([[machines]], [[tower3d-desk]]).
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
   ([[viewer-prefs]]).
 - `markdown.ts`: markdown as html, the only way a renderer draws it ([[markdown-safe]]).
