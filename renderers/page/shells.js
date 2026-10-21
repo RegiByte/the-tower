@@ -8,7 +8,7 @@ import { pressing } from '/press.js'
 /**
  * @import { Board, Floor } from '../../src/bridge/board.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
- * @import { TermViewHandle } from '../../src/shared/term-view.ts'
+ * @import { TermMode, TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { TermFont } from '../../src/shared/terminal.ts'
  * @import { Scheme } from '../../src/shared/design.ts'
  */
@@ -22,6 +22,7 @@ import { pressing } from '/press.js'
  *   termFont: () => TermFont,
  *   scheme: () => Scheme,
  *   run: (id: string, e: KeyboardEvent) => boolean,
+ *   showMode: (el: HTMLElement, mode: TermMode) => void,
  * }} ShellsDeps
  */
 
@@ -31,7 +32,7 @@ import { pressing } from '/press.js'
  * @param {ShellsDeps} deps
  */
 export function shells(deps) {
-  const { board, floorInView, paint, floorOf, termFont, scheme, run } = deps
+  const { board, floorInView, paint, floorOf, termFont, scheme, run, showMode } = deps
 
   /** The shell open in the dock: its id and terminal view. @type {{ id: string, view: TermViewHandle } | undefined} */
   let shell
@@ -75,7 +76,7 @@ export function shells(deps) {
       scheme,
       keymap: () => board().keys,
       run,
-      mode: () => {},
+      mode: (mode) => showMode($('s-mode'), mode),
       end: (msg) => (msg.t === 'error' && toast(msg.message), closeShell()),
       error: (err) => toast(err.message),
     })
@@ -96,6 +97,7 @@ export function shells(deps) {
   function closeShell() {
     shell?.view.close()
     shell = undefined
+    $('s-mode').textContent = ''
     $('main').classList.remove('shell-open')
     renderDock()
   }

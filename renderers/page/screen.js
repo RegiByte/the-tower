@@ -37,10 +37,10 @@ export function screen(deps) {
 
   const leaveHint = () => (keysLabel(board().keys, 'leave-terminal') ? ` · ${keysLabel(board().keys, 'leave-terminal')} leaves` : '')
 
-  /** Says how the open terminal holds the PTY. @param {TermMode} mode */
-  function showMode(mode) {
-    $('c-mode').className = mode.t === 'owning' ? 'owner' : ''
-    $('c-mode').textContent = modeText(mode) + (mode.t === 'owning' ? '' : leaveHint())
+  /** Says in `el` how a terminal holds its PTY. @param {HTMLElement} el @param {TermMode} mode */
+  function showMode(el, mode) {
+    el.className = mode.t === 'owning' ? 'owner' : ''
+    el.textContent = modeText(mode) + (mode.t === 'owning' ? '' : leaveHint())
   }
 
   /** The terminal open on the selected worker, while one is. */
@@ -68,7 +68,7 @@ export function screen(deps) {
       scheme,
       keymap: () => board().keys,
       run,
-      mode: showMode,
+      mode: (mode) => showMode($('c-mode'), mode),
       end: () => reopen({ t: 'worker', id, pane: undefined }),
       error: (err) => toast(err.message),
     })
@@ -98,5 +98,5 @@ export function screen(deps) {
     else /** @type {HTMLElement} */ (document.activeElement).blur()
   }
 
-  return { termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal }
+  return { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal }
 }
