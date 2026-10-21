@@ -655,9 +655,12 @@ function run(id, e) {
   return false
 }
 
-/** A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. */
+/**
+ * A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. No shortcut runs
+ * behind an ask: what it asks about was read as it opened.
+ */
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented) return
+  if (e.defaultPrevented || $('confirm').open) return
   const id = commandOf(board().keys, e, isTyping() ? 'field' : 'page')
   if (id && run(id, e)) e.preventDefault()
 })
