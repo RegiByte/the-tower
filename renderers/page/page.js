@@ -279,9 +279,9 @@ const { drawSettings } = settingsPane({ page, viewer, playSound })
 
 const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
-const { REFIT_DEBOUNCE_MS, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal } = screen({ board, selected, scheme, run, reopen, refontShell: (font) => refontShell(font) })
+const { termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
-const { shellFloor, renderDock, refontShell, shellTerm, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, REFIT_DEBOUNCE_MS })
+const { shellFloor, renderDock, refontShell, shellTerm, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
