@@ -63,7 +63,7 @@ export async function worker(deps) {
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
     repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}
     <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, /** @type {Floor} */ (floorOf(c.project)))))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}

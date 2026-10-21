@@ -75,7 +75,7 @@ export async function sidebar(deps) {
   /** @param {Card} c @param {Card} [over] */
   const sessionHtml = (c, over) => {
     return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" data-since="${c.enteredAt}"></span></div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c)].filter(Boolean).join(' · ')))}</div>` : ''}
     ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.project, c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
@@ -97,7 +97,7 @@ export async function sidebar(deps) {
     const drawn = satellitesOf(c, now)
     if (!drawn.length) return ''
     return `<div class="subs" style="--fade:${SUBAGENT_FADE_MS}ms">${drawn.map(({ run, left }) => `<div class="sub${run.type === 'fork' ? ' fork' : ''}${left === undefined ? '' : ` ended${run.ended === 'aborted' ? ' stopped' : ''}`}"${left === undefined ? '' : ` style="animation-delay:-${left}ms"`} data-tip="${esc(subagentTitle(run))}">
-    <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
+    <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" translate="no" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
   }
 
   /** A worker and everyone under it. @param {Card[]} cards @param {Card} c @param {Card} [over] @returns {string} */

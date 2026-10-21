@@ -12,7 +12,8 @@
  *   data-changes-scope         what to compare (a select, drawn while the repos have commits since their base): its value
  *                              is a scope, `all`, `uncommitted` or a commit's hash; read again at `changesPath`
  *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
- *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current
+ *   data-since="<ms>"          a time: the renderer writes how long ago it was, and keeps it current; the element carries
+ *                              translate="no", or a page translator fights the rewrite every second
  *   data-file="<key>"          a file's section, by `fileKey`
  *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
  *   data-viewed="<key>"        mark the file's version viewed, or not: `marksToggled` gives the repo's marks to keep
@@ -653,7 +654,7 @@ export function changesHtml(v: ChangesView) {
   const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
+      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
   const noting = v.noting && !isCommitScope(v.scope)
   const repos = isCommitScope(v.scope) ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
   return `<div class="changes-panel">${settled}${head}${repos.map((repo) => repoHtml({ ...v, read, noting, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
@@ -1010,7 +1011,7 @@ export function statsHtml(v: StatsView) {
         .join('')}</table>`
     : ''
   return `<div class="stats-panel">${head}<div class="tiles">${tiles}</div><div class="charts">${charts}</div><div class="tables">${spreads}${tokenRows}${extensionRows}</div>
-    <p class="as-of">read <span data-since="${v.at}"></span> ago · waits run from a turn's end to your next prompt</p></div>`
+    <p class="as-of">read <span translate="no" data-since="${v.at}"></span> ago · waits run from a turn's end to your next prompt</p></div>`
 }
 
 /** A floor's policies as the panel draws them, at `now`, and the offers this viewer dismissed (`DISMISSED_KEY`). */
