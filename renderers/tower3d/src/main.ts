@@ -6,7 +6,7 @@ import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/r
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
 import { briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
-import { faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
+import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
@@ -1263,7 +1263,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(seeing.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), lightingSection(s.lighting)])
+  const html = settingsHtml([soundSection(seeing.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -2058,6 +2058,8 @@ document.addEventListener('click', (e) => {
   if (code) return copiedAs(fenceText(code), 'the code')
   const markdown = el.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown
   if (markdown) return chooseBriefMarkdown(markdown as BriefMarkdown)
+  const files = el.closest<HTMLElement>('[data-changes-files]')?.dataset.changesFiles
+  if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
   const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
   const threads = el.closest('#desk-brief') ? deskBrief?.threads : panelAs('logbook')?.threads
   if (said && threads) copiedAs(saidText(threads, said)!, said.endsWith(':prompt') ? 'the prompt' : 'the answer')
@@ -2181,7 +2183,7 @@ function drawChanges(c: Card) {
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, cardThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.viewer.diffLayout, scope: scopeOf(c.id) }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, cardThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.viewer.diffLayout, scope: scopeOf(c.id), tree: s.viewer.changesTree, treeFolds: s.treeFolds }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -2356,6 +2358,11 @@ $('desk-changes').addEventListener('click', (e) => {
   if (el.closest('[data-changes-read]')) return (rereadChanges(c.id), renderPanel())
   const layout = el.closest<HTMLElement>('[data-changes-layout]')?.dataset.changesLayout as DiffLayout | undefined
   if (layout) return (keepViewer('diffLayout', layout), renderPanel())
+  if (el.closest('[data-changes-tree]')) return (keepViewer('changesTree', !s.viewer.changesTree), renderPanel())
+  const treeFold = el.closest<HTMLElement>('[data-tree-fold]')?.dataset.treeFold
+  if (treeFold) return (s.treeFolds.delete(treeFold) || s.treeFolds.add(treeFold), renderPanel())
+  const goto = el.closest<HTMLElement>('[data-goto-file]')?.dataset.gotoFile
+  if (goto) return $('desk-changes').querySelector(spotSelector({ key: goto, row: -1 }))?.scrollIntoView({ block: 'start' })
   if (!read) return
   const viewed = el.closest<HTMLElement>('[data-viewed]')?.dataset.viewed
   if (viewed) return toggleViewed(c.id, read, viewed)

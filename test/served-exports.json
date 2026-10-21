@@ -454,6 +454,7 @@
     ],
     "/panels.js": [
       "CHANGES_POLL_MS",
+      "CHANGES_TREE_KEY",
       "DIFF_LAYOUTS",
       "DIFF_LAYOUT_KEY",
       "DIFF_LAYOUT_LABEL",
@@ -586,6 +587,7 @@
       "SOUND_LABEL",
       "SOUND_MEANS",
       "alertsSection",
+      "changesSection",
       "choice",
       "faceInstalled",
       "markdownSection",

@@ -1,10 +1,11 @@
 /**
  * What a viewer keeps in `tower.store` that every renderer of theirs reads alike, as one record: the waits and offers
- * they dismissed, how often a wait rings, how the brief draws prompts and answers, how Changes draws a diff, the
- * gone-home crews they unfolded and the Stats panel's range. `readViewer(tower.store.get)` reads it whole, each field
- * under its key in `VIEWER_KEYS` and `VIEWER_DEFAULT`'s where nothing is kept; a renderer writes a field with
- * `tower.store.set(VIEWER_KEYS[field], value)`. `tower.store` has no change event: a renderer reads the record again on
- * every board, and when a page it frames writes to the store, to pick up what another renderer of theirs chose.
+ * they dismissed, how often a wait rings, how the brief draws prompts and answers, how Changes draws a diff and whether
+ * it shows its file tree, the gone-home crews they unfolded and the Stats panel's range. `readViewer(tower.store.get)`
+ * reads it whole, each field under its key in `VIEWER_KEYS` and `VIEWER_DEFAULT`'s where nothing is kept; a renderer
+ * writes a field with `tower.store.set(VIEWER_KEYS[field], value)`. `tower.store` has no change event: a renderer reads
+ * the record again on every board, and when a page it frames writes to the store, to pick up what another renderer of
+ * theirs chose.
  *
  * The tower serves this module as `/viewer.js`.
  */
@@ -18,6 +19,8 @@ export type Viewer = {
   ring: Ring
   briefMarkdown: BriefMarkdown
   diffLayout: DiffLayout
+  /** Whether Changes draws the changed files as a tree beside the diffs. */
+  changesTree: boolean
   /** The hirers whose gone-home crew is unfolded, by card id. */
   crewsUnfolded: string[]
   statsRange: StatsRange
@@ -28,11 +31,12 @@ export const VIEWER_KEYS = {
   ring: 'waits.ring',
   briefMarkdown: 'brief.markdown',
   diffLayout: 'changes.layout',
+  changesTree: 'changes.tree',
   crewsUnfolded: 'crews.unfolded',
   statsRange: 'stats.range',
 } as const satisfies { [K in keyof Viewer]: string }
 
-export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', crewsUnfolded: [], statsRange: 'week' }
+export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', changesTree: false, crewsUnfolded: [], statsRange: 'week' }
 
 /** The viewer's record as `get` (`tower.store.get`) answers each key: `null` or `undefined` for one never kept. */
 export async function readViewer(get: (key: string) => Promise<unknown>): Promise<Viewer> {

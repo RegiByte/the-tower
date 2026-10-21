@@ -68,6 +68,8 @@ export function review(deps) {
   })
   /** Files the viewer folded or unfolded against what their viewed mark says, by `fileKey`; this page only. @type {Set<string>} */
   const folds = new Set()
+  /** The file tree's folders folded, by `data-tree-fold`; this page only. @type {Set<string>} */
+  const treeFolds = new Set()
 
   /** @param {Pane} pane */
   const reviewing = (pane) => pane === 'changes' || pane === 'reviews'
@@ -114,6 +116,15 @@ export function review(deps) {
     keepingFileTop($('changes'), key, drawChanges)
   }
 
+  /** A folder of the file tree, or a repo's root, folded or unfolded. @param {string} key */
+  function toggleTreeFold(key) {
+    if (!treeFolds.delete(key)) treeFolds.add(key)
+    drawChanges()
+  }
+
+  /** A file of the tree: its section scrolled to. @param {string} key */
+  const gotoFile = (key) => $('changes').querySelector(spotSelector({ key, row: -1 }))?.scrollIntoView({ block: 'start' })
+
   /**
    * The review desk of the worker open: the lines picked in the Changes pane (`picking` while they are dragged across)
    * and the note being written under them (`fresh` until its box first takes focus), the note the Reviews pane's
@@ -132,7 +143,7 @@ export function review(deps) {
     if (shown && desk.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
     if (shown) desk.pick = live
     const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
-    drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id) }), { 'pick-text': desk.text })
+    drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id), tree: viewer().changesTree, treeFolds }), { 'pick-text': desk.text })
     if (desk.fresh) $('changes').querySelector('[data-pick-text]')?.focus()
     desk.fresh = false
     if (desk.jump && shown) jumpToAnchor()
@@ -292,5 +303,5 @@ export function review(deps) {
     if (target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
   })
 
-  return { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread }
+  return { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread }
 }

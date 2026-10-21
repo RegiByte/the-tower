@@ -1,7 +1,7 @@
 import { SOUNDS } from '/cards.js'
 import { ICON } from '/icons.js'
 import { $ } from './kit.js'
-import { alertsSection, faceInstalled, markdownSection, prefSections, settingsHtml, soundSection, wirePrefs } from '/settings.js'
+import { alertsSection, changesSection, faceInstalled, markdownSection, prefSections, settingsHtml, soundSection, wirePrefs } from '/settings.js'
 import { placeOnOpen } from '/tips.js'
 
 /**
@@ -38,9 +38,9 @@ export function settingsPane(deps) {
   const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 
   function paintSettings() {
-    const html = settingsHtml([alertsSection(Notification.permission), soundSection(page.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer().briefMarkdown)])
+    const html = settingsHtml([alertsSection(Notification.permission), soundSection(page.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer().briefMarkdown), changesSection(viewer().changesTree)])
     if (html === settingsDrawn) return
-    const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-pref]')
+    const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-changes-files], #settings [data-pref]')
     const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
     $('settings').innerHTML = settingsDrawn = html
     if (again) $('settings').querySelector(again)?.focus()

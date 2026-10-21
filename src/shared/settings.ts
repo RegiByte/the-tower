@@ -9,6 +9,7 @@
  *   data-ring-choice="<ring>"    how often a wait rings (`RINGS`), kept under `RING_KEY`
  *   data-sound-play="<sound>"    play a sound of `SOUNDS` the way the renderer rings
  *   data-brief-markdown="<m>"    prompts and answers rendered or raw (`BRIEF_MARKDOWNS`), kept under `BRIEF_MARKDOWN_KEY`
+ *   data-changes-files="<f>"     Changes' file tree shown or hidden beside the diffs, kept under `CHANGES_TREE_KEY` (`/panels.js`)
  *
  * The appearance is data: `PREF_SECTIONS` describes each setting of `tower.prefs`, `prefSections` draws them, and
  * `wirePrefs(popover, tower.prefs.set)` wires every one, so a setting added here reaches every renderer with no wiring
@@ -88,6 +89,13 @@ export const markdownSection = (markdown: BriefMarkdown) =>
   section('Brief', 'prompts and answers',
     `<div class="seg" role="group" aria-label="brief">${BRIEF_MARKDOWNS.map((m) =>
       choice('data-brief-markdown', m, BRIEF_MARKDOWN_LABEL[m], BRIEF_MARKDOWN_MEANS[m], m === markdown)).join('')}</div>`)
+
+/** Whether Changes draws its file tree beside the diffs, the same choice as the Files button in its head. */
+export const changesSection = (tree: boolean) =>
+  section('Changes', 'files beside the diffs',
+    `<div class="seg" role="group" aria-label="changes">${
+      choice('data-changes-files', 'shown', 'Tree', 'the changed files as a tree beside the diffs, each going to its file', tree) +
+      choice('data-changes-files', 'hidden', 'None', 'the diffs alone', !tree)}</div>`)
 
 /** One choice of a segmented setting: its value, the word on it, what it means, an icon before the word. */
 export type PrefChoice = { value: string | number; label: string; means: string; icon?: string }

@@ -282,7 +282,7 @@ const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWor
 
 const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 
-const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
+const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving })
 
@@ -447,6 +447,8 @@ document.addEventListener('click', (e) => {
   if (code) return copyText(fenceText(code), 'the code')
   const markdown = /** @type {BriefMarkdown | undefined} */ (target.closest('[data-brief-markdown]')?.dataset.briefMarkdown)
   if (markdown) return chooseBriefMarkdown(markdown)
+  const files = target.closest('[data-changes-files]')?.dataset.changesFiles
+  if (files) return (keepViewer('changesTree', files === 'shown'), render())
   const draftAct = target.closest('[data-draft-act]')?.dataset.draftAct
   if (draftAct === 'send') return sendDraft()
   if (draftAct === 'transfer') return openTransfer()
@@ -541,6 +543,11 @@ document.addEventListener('click', (e) => {
   if (fold) return toggleFold(fold)
   const layout = /** @type {DiffLayout | undefined} */ (target.closest('[data-changes-layout]')?.dataset.changesLayout)
   if (layout) return (keepViewer('diffLayout', layout), drawChanges())
+  if (target.closest('[data-changes-tree]')) return (keepViewer('changesTree', !viewer().changesTree), drawChanges())
+  const treeFold = target.closest('[data-tree-fold]')?.dataset.treeFold
+  if (treeFold) return toggleTreeFold(treeFold)
+  const goto = target.closest('[data-goto-file]')?.dataset.gotoFile
+  if (goto) return gotoFile(goto)
   if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected()) }), render())
   const open = target.closest('[data-open]')
   if (open) {

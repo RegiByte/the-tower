@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-21",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#readChanges"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/panels.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -56,6 +56,12 @@ files you have read while the agent keeps working.
   to All.
 - **Layouts.** Unified or split, the viewer's choice kept in `tower.store`; [`splitRows`](ref:hub/src/shared/panels.ts#splitRows)
   lays rows side by side as indexes into `fileRows`, so picking, the note box and anchors are the unified ones.
+- **Files.** A tree of the changed files can sit beside the diffs, folders first, a folder holding a lone folder
+  joined to it (`a/b/`), each repo under its own root while there are more than one (each file's header then names its
+  repo too); a file in it goes to its section, marked viewed as its header is. A folder or root folds for this view
+  only, as a file does. Shown or hidden is the viewer's choice, a field of the record every renderer of theirs reads
+  (`changesTree`), hidden until they choose it in Settings or with the Files button in the panel's head
+  ([`treeHtml`](ref:hub/src/shared/panels.ts#treeHtml)).
 - **Words.** An edited line has the words it changed marked: [`wordRanges`](ref:hub/src/shared/words.ts#wordRanges)
   diffs a removed line and the added line beside it by code token. A pair sharing under half its characters
   (`WORDS_ALIKE`) was rewritten and a very long line (`WORDS_LONGEST`) is data: neither is marked; the diff is bounded

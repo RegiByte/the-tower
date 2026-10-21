@@ -9,6 +9,9 @@
  *   Changes
  *   data-changes-read          read the worker's Changes again
  *   data-changes-layout="<l>"  draw diffs unified or split side by side (`DIFF_LAYOUTS`), the viewer's, kept under `DIFF_LAYOUT_KEY`
+ *   data-changes-tree          show or hide the changed files' tree beside the diffs, the viewer's, kept under `CHANGES_TREE_KEY`
+ *   data-goto-file="<key>"     a file in the tree: scroll to its section (`spotSelector` with row -1)
+ *   data-tree-fold="<key>"     a folder of the tree, or a repo's root: fold or unfold it, for this viewer only (`treeFolds`)
  *   data-changes-scope         what to compare (a select, drawn while the repos have commits since their base): its value
  *                              is a scope, `all`, `uncommitted` or a commit's hash; read again at `changesPath`
  *   data-landing-of="<branch>" show what landing changed on the branch, of the worker's project (`tower.landing`)
@@ -140,12 +143,16 @@ export type LinePick = { key: string; hash: string; from: number; to: number }
  * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop. `state`: where
  * the worker's own checkout stands (`card.checkoutState`); `noting`: the worker offers `note`, so lines can be picked.
  * `layout`: each file's diff as one column of lines, or its old side and new side by side. `scope`: what the read
- * compares, the picker's choice; on a commit no lines are picked or marked noted.
+ * compares, the picker's choice; on a commit no lines are picked or marked noted. `tree`: the changed files drawn as a
+ * tree beside the diffs, each going to its file; `treeFolds` its folders folded, by the `data-tree-fold` they were clicked on.
  */
 export type ChangesView = {
   read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string
-  state: CheckoutState; noting: boolean; layout: DiffLayout; scope: ChangesScope
+  state: CheckoutState; noting: boolean; layout: DiffLayout; scope: ChangesScope; tree: boolean; treeFolds: ReadonlySet<string>
 }
+
+/** Where a viewer's choice to show the file tree beside the diffs is kept in `tower.store`; hidden while none is. */
+export const CHANGES_TREE_KEY = VIEWER_KEYS.changesTree
 
 /** How the Changes panel draws a file's diff: one column of lines, or the old side and the new side by side. */
 export type DiffLayout = 'unified' | 'split'
@@ -654,10 +661,71 @@ export function changesHtml(v: ChangesView) {
   const layouts = `<div class="seg" role="group" aria-label="diff layout">${DIFF_LAYOUTS.map((l) =>
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
-      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button data-changes-read>${ICON.resume} Read again</button></div>`
+      <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button type="button" class="tree-toggle ${v.tree ? 'on' : ''}" data-changes-tree aria-pressed="${v.tree}" data-tip="${v.tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
   const noting = v.noting && !isCommitScope(v.scope)
   const repos = isCommitScope(v.scope) ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
-  return `<div class="changes-panel">${settled}${head}${repos.map((repo) => repoHtml({ ...v, read, noting, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'}</div>`
+  const diffs = repos.map((repo) => repoHtml({ ...v, read, noting, manyRepos: repos.filter((r) => r.files.length).length > 1, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'
+  const tree = v.tree && files.length ? treeHtml(read, repos, v.treeFolds) : ''
+  return `<div class="changes-panel ${tree ? 'with-tree' : ''}">${settled}${head}${tree}<div class="changes-files">${diffs}</div></div>`
+}
+
+/**
+ * A folder of a repo's changed files, `name` the path it adds to its parent's, `path` its own from the repo's root: one
+ * holding a lone folder and no files joins it, as `a/b`.
+ */
+type Folder = { name: string; path: string; folders: Folder[]; files: DiffFile[] }
+
+function folderOf(files: DiffFile[]): Folder {
+  const root: Folder = { name: '', path: '', folders: [], files: [] }
+  for (const f of files) {
+    let at = root
+    for (const name of f.path.split('/').slice(0, -1)) {
+      let next = at.folders.find((d) => d.name === name)
+      if (!next) at.folders.push((next = { name, path: `${at.path}${name}/`, folders: [], files: [] }))
+      at = next
+    }
+    at.files.push(f)
+  }
+  const joined = (d: Folder): Folder => {
+    const folders = d.folders.map(joined).sort((a, b) => a.name.localeCompare(b.name))
+    const files = d.files.toSorted((a, b) => a.path.localeCompare(b.path))
+    return d.name && folders.length === 1 && !files.length ? { ...folders[0], name: `${d.name}/${folders[0].name}` } : { ...d, folders, files }
+  }
+  return joined(root)
+}
+
+/** A folder of the tree as `treeFolds` holds it: its repo's dir and its path from the root, the root's empty. */
+const treeFoldKey = (repo: RepoChanges, path: string) => `${repo.dir}\n${path}`
+
+/**
+ * The changed files of each repo as a tree, folders first: a file goes to its section, marked viewed as its header is;
+ * a folder, and each repo's root while there are more than one, fold away what they hold.
+ */
+function treeHtml(read: ChangesRead, repos: RepoChanges[], folds: ReadonlySet<string>) {
+  const fileHtml = (repo: RepoChanges, f: DiffFile, depth: number) => {
+    const viewed = isViewed(read.viewed, repo, f)
+    return `<li><button class="tree-file ${viewed ? 'viewed' : ''}" style="--depth:${depth}" data-goto-file="${esc(fileKey(repo, f))}" data-tip="${esc(f.path)}${viewed ? ' · viewed' : ''}">` +
+      `<span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span><span class="name">${esc(f.path.split('/').pop()!)}</span>${viewed ? ICON.check : ''}</button></li>`
+  }
+  const inside = (repo: RepoChanges, d: Folder, depth: number): string =>
+    d.folders.map((sub) => folderHtml(repo, sub, depth)).join('') + d.files.map((f) => fileHtml(repo, f, depth)).join('')
+  const folderHtml = (repo: RepoChanges, d: Folder, depth: number) => {
+    const key = treeFoldKey(repo, d.path)
+    const open = !folds.has(key)
+    return `<li class="tree-folder ${open ? '' : 'folded'}"><button class="tree-dir" style="--depth:${depth}" data-tree-fold="${esc(key)}" aria-expanded="${open}" data-tip="${esc(d.path)}">` +
+      `${ICON.caret}<span class="name">${esc(d.name)}/</span></button>${open ? `<ul>${inside(repo, d, depth + 1)}</ul>` : ''}</li>`
+  }
+  const shown = repos.filter((r) => r.files.length)
+  const repoHtml = (repo: RepoChanges) => {
+    const key = treeFoldKey(repo, '')
+    const open = !folds.has(key)
+    const n = repo.files.length
+    return `<li class="tree-repo ${open ? '' : 'folded'}"><button class="tree-root" data-tree-fold="${esc(key)}" aria-expanded="${open}" data-tip="${esc(repo.dir)}">` +
+      `${ICON.caret}${ICON.repo}<span class="name">${esc(repoName(repo.dir))}</span><span class="n">${n}</span></button>${open ? `<ul>${inside(repo, folderOf(repo.files), 1)}</ul>` : ''}</li>`
+  }
+  return `<nav class="changes-tree" aria-label="changed files" data-keep-scroll="tree"><ul>${shown.length > 1
+    ? shown.map(repoHtml).join('')
+    : shown.map((repo) => inside(repo, folderOf(repo.files), 0)).join('')}</ul></nav>`
 }
 
 /**
@@ -676,7 +744,8 @@ function scopeHtml(repos: RepoChanges[], scope: ChangesScope) {
     option('all', 'All changes')}${option('uncommitted', 'Uncommitted')}${commits}</select>`
 }
 
-type ReadView = ChangesView & { read: ChangesRead }
+/** `manyRepos`: more than one repo has files, so each file's header names its repo. */
+type ReadView = ChangesView & { read: ChangesRead; manyRepos: boolean }
 
 /** What a repo's files are counted from, as its head says it. */
 function repoSince(repo: RepoChanges) {
@@ -698,7 +767,7 @@ function fileHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   const dir = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/') + 1) : ''
   return `<section class="file ${viewed ? 'viewed' : ''} ${folded ? 'folded' : ''}" data-file="${key}">
     <header data-fold="${key}"><button class="icon-btn caret" data-fold="${key}" aria-expanded="${!folded}" aria-label="${esc(f.path)}">${ICON.caret}</button><span class="mark ${f.change}">${CHANGE_MARK[f.change]}</span>
-      <span class="path">${f.from ? `<i>${esc(f.from)} → </i>` : ''}<i>${esc(dir)}</i>${esc(f.path.slice(dir.length))}</span>
+      ${v.manyRepos ? `<span class="repo-chip" data-tip="${esc(repo.dir)}">${ICON.repo}${esc(repoName(repo.dir))}</span>` : ''}<span class="path">${f.from ? `<i>${esc(f.from)} → </i>` : ''}<i>${esc(dir)}</i>${esc(f.path.slice(dir.length))}</span>
       ${f.change === 'deleted' ? '' : fileButtonsHtml(`${repo.dir}/${f.path}`)}
       <span class="n">${f.added + f.removed ? countsHtml(f.added, f.removed) : ''}</span>
       <button class="viewed-box" role="checkbox" aria-checked="${viewed}" data-viewed="${key}"><span class="box">${viewed ? ICON.check : ''}</span>Viewed</button></header>
@@ -1123,7 +1192,8 @@ const painted = new WeakMap<HTMLElement, { html: string; root: Element | null }>
 /**
  * Puts `html` in `el` when it differs from what `el` shows, then sets each text box to the renderer's text for it:
  * the box that had focus keeps it, and its caret, and a control that had focus keeps it (`keepingFocus`). A redraw that
- * changes nothing leaves every box as it is.
+ * changes nothing leaves every box as it is. An element that scrolls on its own (`data-keep-scroll="<name>"`, the Changes'
+ * file tree) keeps where it was scrolled to.
  */
 export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<TextBox, string>>) {
   const had = document.activeElement
@@ -1132,7 +1202,12 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
   keepingFocus(el, () => {
     const was = painted.get(el)
     if (was?.html !== html || was.root !== el.firstElementChild) {
+      const scrolled = [...el.querySelectorAll<HTMLElement>('[data-keep-scroll]')].map((s) => [s.dataset.keepScroll!, s.scrollTop] as const)
       el.innerHTML = html
+      for (const [name, top] of scrolled) {
+        const again = el.querySelector<HTMLElement>(`[data-keep-scroll="${CSS.escape(name)}"]`)
+        if (again) again.scrollTop = top
+      }
       painted.set(el, { html, root: el.firstElementChild })
     }
     for (const [b, text] of Object.entries(texts) as [TextBox, string][]) {
@@ -1263,6 +1338,36 @@ export const panelsCss = `
 .changes-head > button { margin-left: 0; }
 .changes-head select.scope { max-width: 280px; margin-left: auto; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 .changes-head select.scope + .seg { margin-left: 0; }
+/* The tree beside the diffs, stuck below the head and scrolling on its own: the renderer's element sizes it, as a size container.
+   Its right padding keeps an overlay scrollbar (macOS) off the checks and the separators; the gutter does for a classic one. */
+/* The renderer's bottom padding would cut the tree short of the element's edge: the diffs take it instead. */
+:has(> .changes-panel.with-tree) { container-type: size; padding-bottom: 0 !important; }
+.changes-panel.with-tree .changes-files { padding-bottom: var(--sp-xl); }
+.changes-panel.with-tree { display: grid; grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr); column-gap: var(--sp-xl); }
+.changes-panel.with-tree > :not(.changes-tree, .changes-files) { grid-column: 1 / -1; }
+.changes-tree { position: sticky; top: var(--changes-head-h); align-self: start; max-height: calc(100cqb - var(--changes-head-h)); overflow: auto; overscroll-behavior: contain;
+  padding: var(--sp-s) var(--sp-m) var(--sp-l) 0; box-sizing: border-box; font: var(--fs-s)/1.4 var(--mono); scrollbar-width: thin; scrollbar-gutter: stable; }
+.changes-tree ul { margin: 0; padding: 0; list-style: none; }
+.changes-tree .tree-dir, .changes-tree .tree-file, .changes-tree .tree-root { display: flex; align-items: center; gap: var(--sp-s); width: 100%; margin: 0; border: 0; border-radius: var(--radius); background: none;
+  font: inherit; text-align: left; cursor: pointer; padding: var(--sp-2xs) var(--sp-s) var(--sp-2xs) calc(var(--sp-s) + var(--depth, 0) * 1.1em); }
+.changes-tree :is(.tree-dir, .tree-file, .tree-root):hover { background: var(--panel-2); }
+.changes-tree :is(.tree-dir, .tree-root) > .icon { flex: none; width: .9em; height: .9em; color: var(--faint); }
+.changes-tree .folded > :is(.tree-dir, .tree-root) > .icon:first-child { rotate: -90deg; }
+.changes-tree .tree-dir { color: var(--muted); }
+.changes-tree .tree-dir .name { min-width: 0; overflow-wrap: anywhere; }
+.changes-tree .tree-repo + .tree-repo { margin-top: var(--sp-m); padding-top: var(--sp-m); border-top: 1px solid var(--line); }
+.changes-tree .tree-root { color: var(--ink); font: 700 var(--fs-m)/1.4 var(--ui); }
+.changes-tree .tree-root > .icon + .icon { color: var(--muted); }
+.changes-tree .tree-root .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.changes-tree .tree-root .n { color: var(--faint); font-weight: 400; font-variant-numeric: tabular-nums; }
+.changes-tree .tree-file { color: var(--ink); }
+.changes-tree .tree-file .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.changes-tree .tree-file.viewed { color: var(--muted); }
+.changes-tree .tree-file .icon { flex: none; width: .9em; height: .9em; }
+.changes-tree .mark { flex: none; font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs); border-radius: var(--radius-s); color: var(--panel); background: var(--muted); }
+.changes-tree .mark.added { background: var(--added); } .changes-tree .mark.deleted { background: var(--removed); }
+.changes-head .tree-toggle { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.changes-head .tree-toggle.on { color: var(--ink); border-color: var(--line-strong); background: var(--sunk); }
 .changes-panel .repo-head { display: flex; align-items: baseline; gap: var(--sp-m); margin: var(--sp-xl) 0 var(--sp-s); font: var(--fs-s)/1.4 var(--ui); color: var(--muted); }
 .changes-panel .repo-head b { color: var(--ink); }
 .changes-panel .repo-head .subject { min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
@@ -1273,6 +1378,9 @@ export const panelsCss = `
 .changes-panel .file.folded > header .caret .icon { rotate: -90deg; }
 .changes-panel .file > header .mark { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs); border-radius: var(--radius-s); color: var(--panel); background: var(--muted); }
 .changes-panel .file > header .mark.added { background: var(--added); } .changes-panel .file > header .mark.deleted { background: var(--removed); }
+.changes-panel .file > header .repo-chip { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2xs); padding: var(--sp-2xs) var(--sp-s); border: 1px solid var(--line); border-radius: var(--radius-s);
+  color: var(--muted); font: 700 var(--fs-xs)/1.2 var(--ui); }
+.changes-panel .file > header .repo-chip .icon { width: .9em; height: .9em; }
 .changes-panel .file > header .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-s); }
 .changes-panel .file > header .path i { color: var(--faint); font-style: normal; }
 .changes-panel .file > header .n { font: var(--fs-s) var(--mono); white-space: nowrap; }
