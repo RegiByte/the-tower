@@ -91,11 +91,14 @@ export const markdownSection = (markdown: BriefMarkdown) =>
       choice('data-brief-markdown', m, BRIEF_MARKDOWN_LABEL[m], BRIEF_MARKDOWN_MEANS[m], m === markdown)).join('')}</div>`)
 
 /** Whether Changes draws its file tree beside the diffs, the same choice as the Files button in its head. */
-export const changesSection = (tree: boolean) =>
-  section('Changes', 'files beside the diffs',
+export const changesSection = (kept: boolean) => {
+  // Read back from tower.store, which a framed page can write: only a true is drawn as the tree chosen.
+  const tree = kept === true
+  return section('Changes', 'files beside the diffs',
     `<div class="seg" role="group" aria-label="changes">${
       choice('data-changes-files', 'shown', 'Tree', 'the changed files as a tree beside the diffs, each going to its file', tree) +
       choice('data-changes-files', 'hidden', 'None', 'the diffs alone', !tree)}</div>`)
+}
 
 /** One choice of a segmented setting: its value, the word on it, what it means, an icon before the word. */
 export type PrefChoice = { value: string | number; label: string; means: string; icon?: string }
