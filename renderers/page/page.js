@@ -1,4 +1,3 @@
-import { terminalTheme } from '/design.js'
 import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
@@ -279,9 +278,9 @@ const { drawSettings } = settingsPane({ page, viewer, playSound })
 
 const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
-const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
+const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
-const { shellFloor, renderDock, refontShell, shellTerm, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
@@ -616,7 +615,8 @@ function redrawDocs() {
 }
 
 function applyScheme() {
-  for (const t of [terminal(), shellTerm()]) if (t) t.options.theme = terminalTheme(scheme())
+  rescheme()
+  reschemeShell()
   redrawDocs()
 }
 

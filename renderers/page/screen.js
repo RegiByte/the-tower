@@ -83,6 +83,8 @@ export function screen(deps) {
     refontShell()
   }
 
+  const rescheme = () => view?.rescheme()
+
   /** The control focus was on before it went into a terminal, where leaving the terminal brings it back. @type {HTMLElement | undefined} */
   let beforeTerminal
   document.addEventListener('focusin', (e) => {
@@ -98,5 +100,5 @@ export function screen(deps) {
     else /** @type {HTMLElement} */ (document.activeElement).blur()
   }
 
-  return { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal }
+  return { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme }
 }

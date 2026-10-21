@@ -87,8 +87,7 @@ export function shells(deps) {
   /** The open shell takes the viewer's new face and size. */
   const refontShell = () => void shell?.view.refont()
 
-  /** The open shell's terminal, once mounted. */
-  const shellTerm = () => shell?.view.term()
+  const reschemeShell = () => shell?.view.rescheme()
 
   /** A shell's tab opens its view, or closes it when it is the one open. @param {string} id */
   const toggleShell = (id) => (id === shell?.id ? closeShell() : openShell(id))
@@ -139,5 +138,5 @@ export function shells(deps) {
     resizeShells($('shell-pane').offsetHeight + step)
   })
 
-  return { shellFloor, renderDock, refontShell, shellTerm, toggleShell, spawnShell }
+  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell }
 }
