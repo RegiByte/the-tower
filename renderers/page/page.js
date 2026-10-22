@@ -735,12 +735,12 @@ function toPane(pane) {
   return true
 }
 
-/** From a shell in the selected worker's directory, hides the dock's view of it and returns to the worker's terminal; else to that shell, started when none runs there. */
+/** From any shell, hides the dock's view of it and returns to the worker's terminal; else to the worker's shell, started when none runs there. */
 function shellHere() {
   const c = selected() && findCard(selected())
   if (!c) return false
+  if (focusedShell()) return (closeShell(), toPane('screen'))
   const there = board().shells.filter((sh) => sh.cwd === c.cwd)
-  if (there.some((sh) => sh.id === focusedShell())) return (closeShell(), toPane('screen'))
   if (there.length) focusShell((there.find((sh) => sh.id === openShellId()) ?? there[0]).id)
   else void spawnShellAt(c.project, c.cwd)
   return true
