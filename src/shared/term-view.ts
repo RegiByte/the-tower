@@ -73,6 +73,13 @@ export const modeOf = (s: TermView): TermMode =>
 export const modeText = (m: TermMode) =>
   m.t === 'owning' ? `in control · ${m.cols}×${m.rows}` : m.t === 'watching' ? 'watching · type to take control' : 'past session · read-only'
 
+/**
+ * What xterm.js sends as its window gains or loses focus while the program asks for focus events (mode 1004): not
+ * typing, so a watching view sends them and keeps watching. A window that blurs keeps its terminal as
+ * `document.activeElement`, and its report arrives as a click lands on another viewer's terminal.
+ */
+const FOCUS_REPORTS = new Set(['\x1b[I', '\x1b[O'])
+
 const sameSize = (a: Size, b: Size) => a.cols === b.cols && a.rows === b.rows
 
 const state = (s: TermView): StateEffect<TermView> => ({ type: 'state', state: s })
@@ -95,7 +102,10 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
     const next: TermView = s.t === 'exited' ? { t: 'exited', pty: { cols, rows } } : { t: 'watching', pty: { cols, rows } }
     return [state(next), { type: 'follow', cols, rows }, { type: 'mode', mode: modeOf(next) }]
   },
-  typed: (s, { data }) => (s.t === 'owning' ? [{ type: 'send', data }] : s.t === 'watching' ? [{ type: 'fit', then: data }] : []),
+  typed: (s, { data }) => {
+    if (s.t === 'owning' || (s.t === 'watching' && FOCUS_REPORTS.has(data))) return [{ type: 'send', data }]
+    return s.t === 'watching' ? [{ type: 'fit', then: data }] : []
+  },
   pane: () => [{ type: 'timer/start', id: 'pane', ms: SETTLE_MS, fire: { type: 'settled' } }],
   settled: redraw,
   font: redraw,

@@ -4,7 +4,7 @@
   "name": "Renderer shared modules",
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-22",
   "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView"]
 }
 ---
@@ -37,7 +37,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   measured in its face ([[viewer-prefs]]).
 - `term-view.ts`: a terminal a viewer has open on a PTY, as a machine on `loop`
   ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers): opening, watching, owning, exited): the PTY has
-  one size and whoever types holds it, a resize from anyone else hands it back, and a pane or font change fits the
+  one size and whoever types holds it (a focus report, xterm's as its window gains or loses focus, is sent without
+  taking it), a resize from anyone else hands it back, and a pane or font change fits the
   PTY only while this viewer holds it. [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) runs it in
   xterm.js, whose constructors the renderer passes in; every terminal of the tower page and Tower 3D is one
   ([[machines]], [[tower3d-desk]]).

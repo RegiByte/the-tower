@@ -49,6 +49,12 @@ test('term view: a resize from someone else hands control back, the view follows
   assert.deepEqual(run(owning, { type: 'typed', data: 'b' }), [owning, [{ type: 'send', data: 'b' }]])
 })
 
+test('term view: a focus report from a watching view reaches the PTY and leaves it watching', () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
+  for (const data of ['\x1b[I', '\x1b[O']) assert.deepEqual(run(watching, { type: 'typed', data }), [watching, [{ type: 'send', data }]])
+  assert.deepEqual(run(watching, { type: 'typed', data: '\x1b[<35;10;5M' }), [watching, [{ type: 'fit', then: '\x1b[<35;10;5M' }]])
+})
+
 test('term view: a pane settles before it redraws, and a pane or font change fits the PTY only while this view holds it', () => {
   assert.deepEqual(run(owning, { type: 'pane' })[1], [{ type: 'timer/start', id: 'pane', ms: 120, fire: { type: 'settled' } }])
   const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
