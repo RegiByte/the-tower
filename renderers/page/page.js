@@ -283,7 +283,7 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 
 const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
-const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
@@ -658,7 +658,7 @@ function shellHere() {
   if (!c) return false
   const there = board().shells.filter((sh) => sh.cwd === c.cwd)
   if (there.some((sh) => sh.id === focusedShell())) return (closeShell(), toPane('screen'))
-  if (there.length) focusShell(there[0].id)
+  if (there.length) focusShell((there.find((sh) => sh.id === openShellId()) ?? there[0]).id)
   else void spawnShellAt(c.project, c.cwd)
   return true
 }

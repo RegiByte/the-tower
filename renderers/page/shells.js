@@ -95,6 +95,9 @@ export function shells(deps) {
   /** Focuses the shell `id`, opened in the dock unless it is the one open there. @param {string} id */
   const focusShell = (id) => (id === shell?.id ? shell.view.term()?.focus() : openShell(id))
 
+  /** The id of the shell open in the dock. */
+  const openShellId = () => shell?.id
+
   /** The id of the shell open in the dock while focus is in it. */
   const focusedShell = () => (shell && $('s-screen').contains(document.activeElement) ? shell.id : undefined)
 
@@ -151,5 +154,5 @@ export function shells(deps) {
     resizeShells($('shell-pane').offsetHeight + step)
   })
 
-  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, closeShell }
+  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell }
 }
