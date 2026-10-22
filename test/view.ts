@@ -1,0 +1,22 @@
+import { NO_POLICIES, type SystemView } from '../src/bridge/board.ts'
+import type { Config } from '../src/shared/model.ts'
+
+/** A system with nothing in it under `config`, with `over` set. */
+export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemView => ({
+  config,
+  sessions: [],
+  host: undefined,
+  processes: [],
+  peers: [],
+  shells: [],
+  items: [],
+  threads: [],
+  repos: new Map(),
+  logFiles: new Map(),
+  probes: new Map(),
+  streams: [],
+  policies: NO_POLICIES,
+  paths: { config: '/config.json', collections: '/c' },
+  now: 0,
+  ...over,
+})

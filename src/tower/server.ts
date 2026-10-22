@@ -99,7 +99,7 @@ import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
-import { allCards, archiveOf, board, occupantsOf, type Policies, type TidyPlan } from '../bridge/board.ts'
+import { allCards, archiveOf, board, occupantsOf, type Policies, type SystemView, type TidyPlan } from '../bridge/board.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import type { Resource } from '../bridge/resources.ts'
@@ -227,7 +227,25 @@ const currentBoard = (): string => {
 
 const policiesNow = (): Policies => ({ files: system.policies(), facts: system.policyFacts() })
 
-const boardOf = () => board(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.items(), system.threads(), system.repos(), system.logs(), system.probes(), system.streamMonths(), policiesNow(), paths, Date.now())
+const viewOf = (): SystemView => ({
+  config: readConfig(),
+  sessions: system.sessions(),
+  host: system.live(),
+  processes: system.running(),
+  peers: system.peers(),
+  shells: system.shells(),
+  items: system.items(),
+  threads: system.threads(),
+  repos: system.repos(),
+  logFiles: system.logs(),
+  probes: system.probes(),
+  streams: system.streamMonths(),
+  policies: policiesNow(),
+  paths,
+  now: Date.now(),
+})
+
+const boardOf = () => board(viewOf())
 
 /** Every session's card, the ones the board leaves out included. */
 const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), policiesNow(), now)

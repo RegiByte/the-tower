@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board, NO_POLICIES } from '../src/bridge/board.ts'
+import { board } from '../src/bridge/board.ts'
 import { STUCK_MS } from '../src/bridge/prunable.ts'
 import type { RepoRead } from '../src/bridge/worktrees.ts'
 import type { Resource } from '../src/bridge/resources.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { fixture } from './replay.ts'
+import { viewOf } from './view.ts'
 
-const PATHS = { config: '/config.json', collections: '/c' }
 const CONFIG: Config = { argv: ['claude'], env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } } }
 
 /** The log up to second `t`, the session still running. */
@@ -19,7 +19,7 @@ const at = (log: SessionLog, seconds: number) => log.header.startedAt + seconds 
 
 /** The floor of `log`'s project at `now`, its session running when `live`. */
 const floorAt = (log: SessionLog, now: number, live: boolean, running: Resource[] = []) =>
-  board(CONFIG, [{ header: log.header, facts: factsOf(log) }], { ids: new Set(live ? [log.header.id] : []), protocol: HOST_PROTOCOL }, running, [], [], [], [], new Map(), new Map(), new Map(), [], NO_POLICIES, PATHS, now).floors.find(
+  board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(log) }], host: { ids: new Set(live ? [log.header.id] : []), protocol: HOST_PROTOCOL }, processes: running, now })).floors.find(
     (f) => f.id === log.header.project,
   )!
 
@@ -61,10 +61,12 @@ const repos = (absorbed: boolean, dirty: number) =>
 /** The tower floor at `now` with `logs`, the last of them running, and every one when `allLive`. */
 const towerAt = (logs: SessionLog[], now: number, read: Map<string, RepoRead>, allLive = false) =>
   board(
-    CONFIG,
-    logs.map((log) => ({ header: log.header, facts: factsOf(log) })),
-    { ids: new Set((allLive ? logs : logs.slice(-1)).map((log) => log.header.id)), protocol: HOST_PROTOCOL },
-    [], [], [], [], [], read, new Map(), new Map(), [], NO_POLICIES, PATHS, now,
+    viewOf(CONFIG, {
+      sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })),
+      host: { ids: new Set((allLive ? logs : logs.slice(-1)).map((log) => log.header.id)), protocol: HOST_PROTOCOL },
+      repos: read,
+      now,
+    }),
   ).floors.find((f) => f.id === 'tower')!
 
 const DAY = 24 * 60 * 60 * 1000

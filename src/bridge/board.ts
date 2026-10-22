@@ -703,27 +703,30 @@ const extraUsageOf = (probes: ProbeFacts[]): { extraUsage?: ExtraUsage } => {
 }
 
 /**
- * `repos`: what git says in each project dir (`src/worktrees.ts`), by dir; a floor shows no worktrees until all its dirs
- * are read. `logs`: each session's log file, by session id. `paths`: where the system keeps its config and its
- * collections. `threads`: every review thread file, parsed. `now`: epoch ms, the day `today` covers and the board keeps.
+ * Everything the board is derived from, read once: a snapshot of the system. `repos`: what git says in each project dir
+ * (`src/worktrees.ts`), by dir; a floor shows no worktrees until all its dirs are read. `logFiles`: each session's log
+ * file, by session id. `paths`: where the system keeps its config and its collections. `threads`: every review thread
+ * file, parsed. `processes`: what sessions left running. `now`: epoch ms, the day `today` covers and the board keeps.
  */
-export const board = (
-  config: Config,
-  sessions: Session[],
-  host: HostLive | undefined,
-  running: Resource[],
-  peers: Peer[],
-  shells: Shell[] | undefined,
-  items: CollectionItem[],
-  threads: { project: string; id: string; thread: ReviewThread }[],
-  repos: Map<string, RepoRead>,
-  logs: Map<string, LogFile>,
-  probes: Map<string, ProbeFacts>,
-  streams: StreamMonth[],
-  policies: Policies,
-  paths: Pick<SystemPaths, 'config' | 'collections'>,
-  now: number,
-): Board => {
+export type SystemView = {
+  config: Config
+  sessions: Session[]
+  host: HostLive | undefined
+  processes: Resource[]
+  peers: Peer[]
+  shells: Shell[] | undefined
+  items: CollectionItem[]
+  threads: { project: string; id: string; thread: ReviewThread }[]
+  repos: Map<string, RepoRead>
+  logFiles: Map<string, LogFile>
+  probes: Map<string, ProbeFacts>
+  streams: StreamMonth[]
+  policies: Policies
+  paths: Pick<SystemPaths, 'config' | 'collections'>
+  now: number
+}
+
+export const board = ({ config, sessions, host, processes: running, peers, shells, items, threads, repos, logFiles: logs, probes, streams, policies, paths, now }: SystemView): Board => {
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(config, sessions, host, running, peers, shells, threads, repos, policies, now)
