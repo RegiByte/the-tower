@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One keymap: commands as data, defaults in the module, overrides in the config",
-  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does and its default chords. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃1–4 show a worker's panes, from inside the terminal too.",
+  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does and its default chords. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
