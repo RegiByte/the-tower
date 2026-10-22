@@ -185,6 +185,18 @@ screen, the elevator between floors, the shelf along the wall and the drafts on 
 its worker through a real terminal. Build it once with `npm run tower3d`, then open `/r/tower3d/`, or put it on a
 floor's shelf (`{ "label": "Tower 3D", "renderer": "tower3d" }`).
 
+## Tips and patterns
+
+The tower page shows one tip at a time in the free end of the shells strip, the next every few minutes. A tip is a
+capability, one line on what the tower lets you do, or a pattern, a short story of what users found doing with it
+that no feature is named for. A tip that names a key shows its chord, and clicking it runs that key. The × dismisses
+a tip for good, and settings turn tips off or bring the dismissed ones back.
+
+Capabilities are `CAPABILITIES` in `src/shared/capabilities.ts`. Patterns are markdown files in
+[patterns/](patterns/), one per story: a `# Title`, a one-paragraph summary, then the story, with invented first names
+and no real companies or numbers. A pull request adds one. Any renderer reads them, the capabilities from
+`/capabilities.js` and the patterns at `GET /patterns`.
+
 ## Your own renderer
 
 The tower page, Tower 3D and The Week (`/r/week/`, the budget week as a yearbook) are three renderers of the same board. Write your own, or copy one of them out of the

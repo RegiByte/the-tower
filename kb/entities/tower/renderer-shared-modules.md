@@ -5,11 +5,11 @@
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, drafts, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
   "reviewed": "2026-10-21",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView"]
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/src/shared/drafts.ts", "hub/src/shared/items.ts", "hub/src/shared/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/cards.ts#bubbleOf", "hub/src/shared/cards.ts#hireRefusal", "hub/src/shared/cards.ts#sendTargets", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#reviewsHtml", "hub/src/shared/drafts.ts#readDraft", "hub/src/shared/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/src/shared/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView"]
 }
 ---
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`, `/drafts.js`,
-`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js`, `/term-view.js`, `/attend.js`, `/viewer.js`, `/spawn.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
+`/reviews.js`, `/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/capabilities.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/policies.js`, `/loop.js`, `/reads.js`, `/term-view.js`, `/attend.js`, `/viewer.js`, `/spawn.js` and `/design.js`, [[design-system]]) to a file of `src/shared`; a GET bundles it
 on request, with CORS open so a shelf page framed at an opaque origin can import it. They hold what
 a renderer would otherwise write twice, so a sibling renderer written from scratch reaches the same behavior
 ([[renderer-is-disposable]]):
@@ -43,6 +43,12 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   ([[machines]], [[tower3d-desk]]).
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
   ([[viewer-prefs]]).
+- `capabilities.ts`: what the tower lets a user do, as data: [`CAPABILITIES`](ref:hub/src/shared/capabilities.ts#CAPABILITIES),
+  one line each, some naming a keymap command (typed by `CommandId`) or a floor verb that tries it, and patterns,
+  stories of what users found doing with the tower, kept as markdown in the checkout's `docs/patterns/`, parsed by
+  [`parsePattern`](ref:hub/src/shared/capabilities.ts#parsePattern) and read at `GET /patterns`. Both are laid out as
+  tips, the one showing picked from the clock and a seed by [`tipAt`](ref:hub/src/shared/capabilities.ts#tipAt), so a
+  renderer's own redraws move it on with no timer of its own; the tower page shows one in its shells strip.
 - `markdown.ts`: markdown as html, the only way a renderer draws it ([[markdown-safe]]).
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
@@ -63,7 +69,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   file the board names) and a worker's Changes ([`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
   [[changes-view]]), so every renderer reads both the same way.
 - `viewer.ts`: what a viewer keeps in `tower.store` that every renderer reads alike, one record (`Viewer`: dismissals,
-  the ring, the brief rendered or raw, the diff layout, the file tree shown, unfolded crews, the Stats range) under the
+  the ring, the brief rendered or raw, the diff layout, the file tree shown, unfolded crews, the Stats range, whether tips show and those dismissed) under the
   keys it has always had, read whole by [`readViewer`](ref:hub/src/shared/viewer.ts#readViewer) on every board and when
   a framed page writes to the store, since `tower.store` has no change event ([[viewer-prefs]]). A framed page can write
   any value there, so one not of its field's kind (the default's) reads as the default.

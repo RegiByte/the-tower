@@ -11,6 +11,8 @@ The user wants to learn the tower, not to get work done: you are a guide here. T
 ## Read first
 
 1. `docs/usage.md` in the tower's checkout: `realpath $(which tower)` is `<checkout>/src/mod/bin/tower`. It holds every capability with prompts that start it. Teach from it, and send the user there for the rest; `docs/config.md` has every config key.
+   - The same checkout keeps them short, as the tower page's tips show them: `CAPABILITIES` in `src/shared/capabilities.ts`, one line each, some naming the keymap command that tries it.
+   - `docs/patterns/` holds patterns, one markdown file each: what users found doing with the tower that no feature is named for. The tower serves them at `GET /patterns`. A pattern that fits the user's setup makes a good story for the tour.
 2. Their system, so the tour is about their tower, not an example one:
    - `tower whoami`: this floor, its hub and repos, its shelf, its collections, where the config is.
    - `tower agents --all`: every floor and who is on duty on each, by crew.

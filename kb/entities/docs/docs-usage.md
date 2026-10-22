@@ -2,7 +2,7 @@
 {
   "type": "doc",
   "name": "docs/usage.md",
-  "summary": "What the tower makes possible day to day, told through what the user asks workers: setting up floors (hub, repos, worktrees), showing, hiring, checking on workers, review threads, collections, the shelf, waits, the brief, resume and carry on, Tidy, policies, shells, Stats and The Week, probes, Tower 3D and renderers of their own.",
+  "summary": "What the tower makes possible day to day, told through what the user asks workers: setting up floors (hub, repos, worktrees), showing, hiring, checking on workers, review threads, collections, the shelf, waits, the brief, resume and carry on, Tidy, policies, shells, Stats and The Week, probes, Tower 3D, the tips and patterns the tower page shows, and renderers of their own.",
   "in": "tower",
   "reviewed": "2026-10-21",
   "refs": ["hub/src/directory.ts#USAGES", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/tags.ts#tagOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/keymap.ts", "hub/src/bridge/prunable.ts#prunable", "hub/src/shared/launch.ts#settingsArgs"]
