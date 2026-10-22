@@ -12,6 +12,29 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.53.0
+
+What the tower can do, shown where you look. No host restart, no config change, the renderer API 1.72 → 1.75
+(additive). Restart the tower (`tower down tower && tower up tower`) and reload the page. A checkout that serves
+Tower 3D rebuilds it (`npm run tower3d`).
+
+- Tips: the tower page shows one tip at a time at the right of the shells strip, hidden when the strip has no room.
+  A tip is a capability (a line on something the tower lets you do; one naming a command shows its chord and runs it
+  on a click) or a pattern (a short story of what users found doing with the tower, the story on hover). A × dismisses
+  a tip for good; Settings turn tips off or bring the dismissed back. Capabilities are data in `/capabilities.js`,
+  patterns are markdown files in `docs/patterns/`, read at `GET /patterns`: add yours by pull request (API 1.75).
+- `shell-here` (⌃\`): a shell in the selected worker's directory, the one already open there or a new one, and from
+  that shell back to the worker. Every button a command runs names its chords on hover, and a plain chord is named
+  with where it fires (`Esc outside a terminal or a text field`); `/keymap.js` exports `keysHint` (API 1.73).
+- Setup ends with what to do next and opens the tower in the browser (`--no-open` leaves it closed). Until a first
+  worker runs, the skyline welcomes you: what a floor and a worker are, a button to start one on each floor, and the
+  tour to ask it for.
+- The shortcuts, landing and send-to-a-worker sheets close from a × beside their title and from a click on the
+  backdrop; selecting text past a sheet's edge keeps it open.
+- Policies and their offers carry `actions` beside their `calls`, and the core reads offers only from `actions`:
+  `can()` checks them (API 1.74).
+- Claude Code 2.1.306 tested.
+
 ## v1.52.1
 
 A patch release. No host restart, no config change, the renderer API unchanged at 1.72. Reload the page; a checkout
