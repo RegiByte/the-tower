@@ -98,7 +98,7 @@ const MODIFIERS: Record<string, number> = { Alt: 1, Ctrl: 2, Meta: 4, Shift: 8 }
 const KEYS: Record<string, [string, number, string?]> = {
   Enter: ['Enter', 13, '\r'], Backspace: ['Backspace', 8], Delete: ['Delete', 46], Tab: ['Tab', 9], Escape: ['Escape', 27],
   ArrowLeft: ['ArrowLeft', 37], ArrowRight: ['ArrowRight', 39], ArrowUp: ['ArrowUp', 38], ArrowDown: ['ArrowDown', 40],
-  '?': ['Slash', 191, '?'], '/': ['Slash', 191, '/'],
+  '?': ['Slash', 191, '?'], '/': ['Slash', 191, '/'], '`': ['Backquote', 192, '`'],
   ...Object.fromEntries([...'0123456789'].map((d) => [d, [`Digit${d}`, 48 + Number(d), d] as [string, number, string]])),
 }
 
