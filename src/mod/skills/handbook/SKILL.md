@@ -33,7 +33,7 @@ A worker marked "not reachable" has no running Claude: tell the user, who can re
 Every checkout has one **review thread**: your worktree (by name, across every repo of the floor), or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed, often quoting lines. The user signs with the name your system prompt gives them, or `user`; workers sign with callsigns.
 
 - `tower thread [checkout]`: the thread of your checkout (a reviewer's: its author's), then the notes new to you (every note after your own last one) and the repo names its anchors take.
-- `tower note [on <checkout>] [re n<k>] [repo:path:lines …]`, body on stdin (`tower note re n3 <<'EOF' … EOF`): appends a note under your callsign. `re n<k>` answers note `n<k>`. Each `repo:path:31-34` anchors it to lines (the repo as the Changes pane names it, like `acme-api`), quoted from your checkout as they are now.
+- `tower note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]`, body on stdin (`tower note re n3 <<'EOF' … EOF`): appends a note under your callsign. `re n<k>` answers note `n<k>`. Each `repo:path:31-34` anchors it to lines (the repo as the Changes pane names it, like `acme-api`), quoted from your checkout as they are now.
 - `tower send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.
 - `tower review <CALLSIGN> [tell]`: hires a reviewer in a fork of that worker's checkout (uncommitted work included). It reviews once against the worker's goal and leaves notes on its thread; `tell` also sends them to the worker. When your task asks for a review, hire one on yourself: `tower review <your callsign> tell`.
 

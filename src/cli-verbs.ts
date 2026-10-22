@@ -98,7 +98,7 @@ export const CLI_VERBS = {
   },
   note: {
     of: 'worker',
-    usage: 'note [on <checkout>] [re n<k>] [repo:path:lines …]',
+    usage: 'note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]',
     help: "a message on the thread, the body on stdin, each anchor's lines quoted from the checkout's files as they are now (from your own, when it is a fork of that checkout: the version you read)",
   },
   send: { of: 'worker', usage: 'send <CALLSIGN>', help: "submit into a worker a pointer to the notes on its checkout's thread new to it" },
@@ -109,8 +109,8 @@ export const CLI_VERBS = {
   },
   hire: {
     of: 'worker',
-    usage: 'hire [<tag|id>] [floor <id>] […]',
-    help: "start a worker on this floor, or the floor named, on a prompt: the text of an item of this floor's collections, or stdin; refused past the hiring floor's `hiring` limits. Also takes [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]: `callsign` names the worker, `name` its new worktree",
+    usage: 'hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]',
+    help: "start a worker on this floor, or the floor named, on a prompt: the text of an item of this floor's collections, or stdin; refused past the hiring floor's `hiring` limits. `callsign` names the worker, `name` its new worktree",
   },
   home: {
     of: 'worker',

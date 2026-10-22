@@ -105,7 +105,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   [`floorThreads`](ref:hub/src/bridge/reviews.ts#floorThreads) gives each floor its `threads` (checkout, item, count,
   last message, `landed`, `state`).
 - *Workers:* `tower thread [checkout]` prints the thread, the notes new to the caller and the repos an anchor can
-  name; `tower note [on <checkout>] [re n<k>] [repo:path:lines …]` appends under the caller's callsign, quoting each
+  name; `tower note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]` appends under the caller's callsign, quoting each
   anchor from the checkout's copy (or the caller's own when it works in a fork of it, the version a reviewer read);
   `tower send <CALLSIGN>` is Send for workers.
 

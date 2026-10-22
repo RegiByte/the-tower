@@ -353,7 +353,7 @@ const itemNamed = (floor: Floor, name: string): { collection: FloorCollection; i
   return found[0]
 }
 
-const KEEP_USAGE = 'Usage: tower keep <collection> [file] [name <words>], or the markdown on stdin'
+const KEEP_USAGE = `${usageLine('keep')}, or the markdown on stdin`
 
 /** `[file] [name <words>]`: the file to keep, stdin without one, and the words its id is named by. */
 const keepArgs = (args: string[]): { file?: string; name?: string } => {
@@ -398,7 +398,7 @@ const readThread = async (floor: Floor, checkout: string): Promise<string | unde
   return res.text()
 }
 
-const NOTE_USAGE = 'Usage: tower note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …], the body on stdin'
+const NOTE_USAGE = `${usageLine('note')}, the body on stdin`
 const ANCHOR_ARG = /^([^:\s]+):(.+):(\d+)(?:-(\d+))?$/
 
 type NoteArgs = { on?: string; re?: number; anchors: Omit<Anchor, 'quote'>[] }
@@ -435,8 +435,7 @@ const quoted = (floor: Floor, checkout: string, anchor: Omit<Anchor, 'quote'>): 
   return { ...anchor, quote: { lang: langOf(anchor.path), lines: lines.slice(anchor.from - 1, anchor.to) } }
 }
 
-const HIRE_USAGE =
-  'Usage: tower hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>], the prompt on stdin when no item names it'
+const HIRE_USAGE = `${usageLine('hire')}, the prompt on stdin when no item names it`
 const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
 
 type HireArgs = { item?: string; floor?: string; fields: Partial<Pick<SpawnForm, (typeof HIRE_FIELDS)[number]>> }
