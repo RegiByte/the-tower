@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.55.0
+
+The palette after a first night of use, and keys macOS leaves alone. No host restart, no config change, the renderer
+API unchanged at 1.76. Restart the tower (`tower down tower && tower up tower`): the keymap's defaults ride the
+board. Then reload the page.
+
+- The panes' default chords are now ⌃⇧1–⌃⇧4 (terminal, Brief, Changes, Reviews). macOS takes ⌃1, ⌃2… for "Switch
+  to Desktop N", one per desktop, so they never reached the page. A config that sets `keys` for them keeps its own.
+- `shell-here` hides the shell dock from any shell, not only the selected worker's: open the worker's shell, open
+  another, and the same chord still takes you back to the worker.
+- The palette on an empty query lists everything it can reach, to scroll through before you know what to type: the
+  selected worker's actions, who waits on you and recent picks on top, then every worker (yours first), command,
+  floor action, floor, shelf entry and draft in groups, with the capabilities and the patterns last. Group headings
+  stick as the list scrolls. A worker's earlier conversations and leftover processes are a group of their own.
+  The footer's hint stays one line.
+- The tower page reserves its scrollbars' space (`scrollbar-gutter: stable`), so a scrollbar appearing doesn't shift
+  the sidebar, the panels, the sheets or the palette sideways.
+
 ## v1.54.0
 
 The command palette, and the foundations extensions will build on. No host restart, no config change, the renderer
