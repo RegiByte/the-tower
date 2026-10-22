@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.56.0
+
+Groundwork for extensions, and a reap that stays in its own root. No host restart, no config change, the renderer API
+at 1.77 (additive). Restart the tower (`tower down tower && tower up tower`), then reload the page.
+
+- `tower reap` with no id ends only what this system root's sessions left running. It took every process on the
+  machine carrying a session id, so run against a sandbox (`TOWER_CONFIG` elsewhere) it ended every real session on
+  every floor. `tower reap <id>` now refuses an id that isn't one of the root's sessions, as `screen` and `attach` do.
+- `GET /schema` lists every GET route under `reads`, derived from the server's own route table: each with its `path`
+  (named params, `/screen/{id}`), its `kind` (`json`, `stream`, `page` or `schema`) and its `query` as JSON Schema
+  when it takes one. A client that read `reads[name].query` for every entry should check for it: `query` is present
+  only when the read takes one. The streams are described on their routes too.
+- The `tower` command's verbs are one table both its dispatchers read: usage, help and dispatch derive from it, and
+  every verb behaves and prints as before.
+- The attention machine (`/attend.js`) runs on `loop`'s `Handlers` like the other shared machines: what the viewer's
+  window shows (`focus`, `visible`) and which worker their view is on (`watch`) are events, kept in its state.
+  `attendHandlers` and the new events are additions; the old step functions remain as wrappers.
+- Terminal: hovering a second tab's terminal and then clicking it no longer flickers. The first window's focus-out
+  report took the PTY back as if typed; focus reports now pass to the PTY without taking it.
+
 ## v1.55.1
 
 The palette in WebKit. No host restart, no config change, the renderer API unchanged at 1.76. Reload the page.
