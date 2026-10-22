@@ -27,7 +27,7 @@
  *   tower live                   ids of running sessions
  *   tower ls                     every session, with project, status and what it left running
  *   tower ps                     every process a session left running, with the ports it listens on
- *   tower reap [id]              end what <id> left running, or what every session no longer live left running
+ *   tower reap [id]              end what <id> left running, or what every session of this root no longer live left running
  *   tower screen <id> [seconds]  the session's screen, now or at a moment, rebuilt from its log
  *   tower attach <id>            sit at the session: its live screen, your keyboard. Ctrl-] detaches
  *   tower app                    open the tower as a Mac app, built from this checkout on first use or when its source
@@ -229,8 +229,11 @@ const main = async (): Promise<void> => {
       }
       break
     case 'reap': {
+      if (id !== undefined) sessionLogFile(id)
       const live = await liveIds(paths)
-      const doomed = (await resourcesOf()).filter((r) => (id === undefined ? !live.has(r.session) : r.session === id))
+      // The machine's processes carry the sessions of every system root on it: only this root's are its to end.
+      const ours = (r: Resource) => existsSync(logFileOf(paths, r.session))
+      const doomed = (await resourcesOf()).filter((r) => (id === undefined ? ours(r) && !live.has(r.session) : r.session === id))
       for (const r of reap(doomed)) console.log([r.session, String(r.pid).padStart(6), r.command].join('  '))
       break
     }
