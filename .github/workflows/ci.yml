@@ -1,7 +1,7 @@
-# Every pull request, and main, gets the checks a release gets (release.yml) and Tower 3D booted in headless Chrome, then
-# proves they left the tree as committed and the knowledge base consistent. A pull request runs on its merge commit,
-# whose first parent is the base it was merged onto: origin/<base> is set to it, so main moving during the run leaves kb
-# verify reading the same base.
+# Every pull request, and main, gets the checks a release gets (release.yml) and Tower 3D and the tower page booted in
+# headless Chrome, then proves they left the tree as committed and the knowledge base consistent. A pull request runs on
+# its merge commit, whose first parent is the base it was merged onto: origin/<base> is set to it, so main moving during
+# the run leaves kb verify reading the same base.
 name: ci
 on:
   pull_request:
@@ -24,6 +24,8 @@ jobs:
       - run: npm run tower3d
       - name: Tower 3D boots in headless Chrome
         run: npm run test:tower3d-boot
+      - name: The tower page boots in headless Chrome
+        run: npm run test:page-boot
       - name: Tower.app's Swift sources compile
         run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
       - name: Tests and builds added and rewrote no file
