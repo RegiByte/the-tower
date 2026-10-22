@@ -3,11 +3,11 @@ import { base, esc, rendererUrl, shelfKind, shelfPage, shelfPaths, shelfSource, 
 import { ICON } from '/icons.js'
 import { failedHtml, fileButtonsHtml } from '/panels.js'
 import { HOME, sameRoom } from './view.js'
-import { $, CLOSE_HOME, toast, told } from './kit.js'
+import { $, closeHomeHtml, toast, told } from './kit.js'
 import { documentHtml, safeHref } from '/markdown.js'
 
 /**
- * @import { Floor } from '../../src/bridge/board.ts'
+ * @import { Board, Floor } from '../../src/bridge/board.ts'
  * @import { RelayedUi } from '../../src/shared/shelf-page.ts'
  * @import { MainView } from './view.js'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
@@ -24,6 +24,7 @@ import { documentHtml, safeHref } from '/markdown.js'
  *   select: (id: string) => void,
  *   goHome: () => void,
  *   view: () => MainView,
+ *   board: () => Board,
  * }} ShelfDeps
  */
 
@@ -33,7 +34,7 @@ import { documentHtml, safeHref } from '/markdown.js'
  * @param {ShelfDeps} deps
  */
 export function shelf(deps) {
-  const { viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view } = deps
+  const { viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board } = deps
   /** The files of the `md` shelf entry open, once read. @type {string[]} */
   let shelfFiles = []
 
@@ -60,7 +61,7 @@ export function shelf(deps) {
     const tab = own ? `<a href="${esc(own)}" target="_blank" rel="noreferrer">${ICON.remote} new tab</a>` : ''
     const paths = shelfPaths(f, entry)
     $('shelf-head').innerHTML = `<span class="label">${esc(entry.label)}</span><span class="dim">${esc(f.name)} · ${esc(shelfSource(entry))}</span>
-    <span class="actions">${paths.file ? fileButtonsHtml(paths.file) : ''}${paths.folder ? fileButtonsHtml(paths.folder) : ''}${tab}${CLOSE_HOME}</span>`
+    <span class="actions">${paths.file ? fileButtonsHtml(paths.file) : ''}${paths.folder ? fileButtonsHtml(paths.folder) : ''}${tab}${closeHomeHtml(board().keys)}</span>`
     $('shelf-body').innerHTML = ''
     if (shelfKind(entry) === 'html') showPage(shelfUrl(project, n, shelfPage(entry)))
     if (shelfKind(entry) === 'renderer') showPage(rendererUrl(/** @type {string} */ (named.renderer)))

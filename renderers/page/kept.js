@@ -5,7 +5,7 @@ import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, 
 import { drawPanel, failedHtml, fileButtonsHtml, policiesHtml, policyDoneLine } from '/panels.js'
 import { POLICIES } from '/policies.js'
 import { HOME } from './view.js'
-import { $, CLOSE_HOME, repaint, toast, told } from './kit.js'
+import { $, closeHomeHtml, repaint, toast, told } from './kit.js'
 import { pressing } from '/press.js'
 import { DRAFTS } from '/drafts.js'
 
@@ -60,14 +60,14 @@ export function keptViews(deps) {
     const c = f?.collections.find((c) => c.id === open.collection)
     if (!f || !c) return goHome()
     const drafts = c.id === DRAFTS
-    repaint($('collection-head'), `<span class="label">${esc(c.label)}</span><span class="dim">${esc(f.name)}</span><span class="actions"><small class="dim">${plural(c.items.length, 'item')}</small>${CLOSE_HOME}</span>`)
+    repaint($('collection-head'), `<span class="label">${esc(c.label)}</span><span class="dim">${esc(f.name)}</span><span class="actions"><small class="dim">${plural(c.items.length, 'item')}</small>${closeHomeHtml(board().keys)}</span>`)
     repaint($('collection-list'), collectionTrayHtml(f.id, c, (item) => (drafts ? draftTitle(f.id, item) : keptTitle(f.id, c.id, item)), undefined, Date.now(), drafts ? newDraftHtml(f) : ''))
   }
 
   function drawPolicies() {
     const f = floorOf(/** @type {Extract<MainView, { t: 'policies' }>} */ (viewing('policies')).project)
     if (!f) return goHome()
-    repaint($('policies-head'), `<span class="label">Policies</span><span class="dim">${esc(f.name)}</span><span class="actions">${CLOSE_HOME}</span>`)
+    repaint($('policies-head'), `<span class="label">Policies</span><span class="dim">${esc(f.name)}</span><span class="actions">${closeHomeHtml(board().keys)}</span>`)
     drawPanel($('policies-body'), policiesHtml({ board: board(), floor: f, now: Date.now(), dismissed: page.state().attending.dismissed }), {})
   }
 
@@ -122,7 +122,7 @@ export function keptViews(deps) {
     <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
     <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">${ICON.remote} new tab</a>
       <button class="danger" data-item-act="delete">Delete</button>
-      ${CLOSE_HOME}</span>`)
+      ${closeHomeHtml(board().keys)}</span>`)
     if (itemDrawn !== item.modifiedAt) showItemBody(c, item)
   }
 

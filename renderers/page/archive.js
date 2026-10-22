@@ -2,7 +2,7 @@ import { GIST_MARK, callOf, can, esc, archiveKey, pastCount, pastCrews, pastMatc
 import { GIST_ICON, ICON } from '/icons.js'
 import { failedHtml } from '/panels.js'
 import { HOME } from './view.js'
-import { when, $, CLOSE_HOME, toast } from './kit.js'
+import { when, $, closeHomeHtml, toast } from './kit.js'
 
 /**
  * @import { Board, Card, CardConversation, Floor, Unresumable } from '../../src/bridge/board.ts'
@@ -101,7 +101,7 @@ export function archive(deps) {
     $('archive-view').style.cssText = paint(project)
     $('archive-head').innerHTML = `<span class="label">Archive</span><span class="dim">${esc(f.name)}</span>
     <input id="archive-filter" type="search" placeholder="filter by callsign, prompt or answer" autocomplete="off">
-    <span class="actions"><small class="dim" id="archive-count"></small>${CLOSE_HOME}</span>`
+    <span class="actions"><small class="dim" id="archive-count"></small>${closeHomeHtml(board().keys)}</span>`
     $('archive-filter').focus()
   }
 

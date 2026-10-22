@@ -2,7 +2,7 @@ import { can, offeredCall, esc, statusName } from '/cards.js'
 import { ICON } from '/icons.js'
 import { fileButtonsHtml } from '/panels.js'
 import { HOME } from './view.js'
-import { lineOf, $, byStart, CLOSE_HOME, toast, told } from './kit.js'
+import { lineOf, $, byStart, closeHomeHtml, toast, told } from './kit.js'
 import { commandOf } from '/keymap.js'
 import { DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
@@ -78,7 +78,7 @@ export function draft(deps) {
       ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" data-tip="start a new session on this prompt">Start session</button>' : ''}
       ${targets().length ? '<button data-draft-act="transfer" data-tip="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>
-      ${CLOSE_HOME}</span>`
+      ${closeHomeHtml(board().keys)}</span>`
     $('draft-note').innerHTML = d.conflict !== undefined
       ? `<span>Someone else changed this draft while you were editing it.</span>
       <button data-draft-act="reload">Take theirs</button><button data-draft-act="keep">Keep mine</button>`

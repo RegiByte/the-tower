@@ -2,10 +2,9 @@ import { documentCss } from '/design.js'
 import { sentHome, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
 import { keepShownTabs, fileSpansHtml } from '/panels.js'
-import { toolHtml, when, $, fillOf, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
+import { toolHtml, when, $, fillOf, keyedTip, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
 import { shownFrom } from '/brief.js'
 import { documentHtml } from '/markdown.js'
-import { keyshortcuts } from '/keymap.js'
 import { pressing } from '/press.js'
 
 /**
@@ -77,12 +76,12 @@ export async function worker(deps) {
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
     ${letGoHtml(c, 'Let go')}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
-    <button class="icon-btn" data-act="home" aria-label="back to the skyline" data-tip="back to the skyline (Esc outside the terminal)">${ICON.close}</button>`)
+    <button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(board().keys, 'back to the skyline', 'home')}>${ICON.close}</button>`)
     $('bar-details').innerHTML = detailsHtml(c)
     $('bar-left').innerHTML = leftHtml(c)
     $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
     $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
-    ${can(c, 'drive') ? '<button class="primary" data-act="drive">Open terminal</button>' : ''}`
+    ${can(c, 'drive') ? `<button class="primary" data-act="drive" ${keyedTip(board().keys, 'answer in its terminal', 'pane-terminal')}>Open terminal</button>` : ''}`
     repaint($('bar-line'), paneTabsHtml(c, paneOf(c)))
     keepShownTabs($('bar-line'), c.id)
     renderPane(c)
@@ -134,30 +133,30 @@ export async function worker(deps) {
   /** The keymap's command for each pane of the selected worker. @type {Partial<Record<string, Pane>>} */
   const PANE_COMMAND = { 'pane-terminal': 'screen', 'pane-brief': 'brief', 'pane-changes': 'changes', 'pane-reviews': 'reviews' }
 
-  /** A pane tab's chords as `aria-keyshortcuts`, for the panes the keymap names. @param {Pane} pane */
-  const paneKeys = (pane) => {
-    const id = Object.keys(PANE_COMMAND).find((c) => PANE_COMMAND[c] === pane)
-    return id && board().keys[id].length ? ` aria-keyshortcuts="${keyshortcuts(board().keys, id)}"` : ''
+  /**
+   * A pane's tab, as the ARIA tabs pattern has it: only the selected one is in the Tab order, arrows move along the row.
+   * Its tip is `what`, with the chords of the pane's command for the panes the keymap names.
+   * @param {Pane} id @param {boolean} on @param {string} what
+   */
+  const paneTabAttrs = (id, on, what) => {
+    const command = Object.keys(PANE_COMMAND).find((c) => PANE_COMMAND[c] === id)
+    return `role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${id.startsWith('shown:') ? 'shown' : PANE_PANEL[/** @type {keyof typeof PANE_PANEL} */ (id)]}" ${command ? keyedTip(board().keys, what, command) : `data-tip="${esc(what)}"`} data-pane="${esc(id)}"`
   }
-
-  /** A pane's tab, as the ARIA tabs pattern has it: only the selected one is in the Tab order, arrows move along the row. @param {Pane} id @param {boolean} on */
-  const paneTabAttrs = (id, on) =>
-    `role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${id.startsWith('shown:') ? 'shown' : PANE_PANEL[/** @type {keyof typeof PANE_PANEL} */ (id)]}"${paneKeys(id)} data-pane="${esc(id)}"`
 
   /** @param {Card} c @param {Pane} pane */
   const paneTabsHtml = (c, pane) => {
     const shown = visibleShown(c)
-    return `<span class="tab-set" role="tablist" aria-label="views of ${callsign(c.id)}"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" ${paneTabAttrs('screen', pane === 'screen')}>Terminal</button>` +
-      (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief')} data-tip="the last prompts and answers of each conversation, in full">Brief</button>` : '') +
-      `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes')} data-tip="what changed in the worker's repos, as git reads it">Changes${changesTally(c)}</button>` +
-      (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews')} data-tip="the review thread of checkout ${esc(threadCheckoutOf(c))}: notes from you, its workers and reviewers">Reviews${reviewsTally(c)}</button>` : '') +
+    return `<span class="tab-set" role="tablist" aria-label="views of ${callsign(c.id)}"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" ${paneTabAttrs('screen', pane === 'screen', 'the session in its terminal')}>Terminal</button>` +
+      (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief', 'the last prompts and answers of each conversation, in full')}>Brief</button>` : '') +
+      `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes', "what changed in the worker's repos, as git reads it")}>Changes${changesTally(c)}</button>` +
+      (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews', `the review thread of checkout ${threadCheckoutOf(c)}: notes from you, its workers and reviewers`)}>Reviews${reviewsTally(c)}</button>` : '') +
       (shown.length ? `<span class="shown-tabs">${shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('')}</span>` : '') + '</span>'
   }
 
   /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. @param {Card} c @param {CardShown} s @param {boolean} on */
   const shownTabHtml = (c, s, on) => {
     const from = shownFrom(c.lineage, s)
-    return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on)} data-tip="${esc(`${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+    return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" ${paneTabAttrs(shownPane(s), on, `${callsign(c.id)} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}>` +
     `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
     (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
     (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +

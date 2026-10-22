@@ -4,7 +4,7 @@ import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
 import { offerWords, policyZone } from '/panels.js'
 import { POLICIES, slotWords } from '/policies.js'
-import { onDuty, lineOf, $, fillOf, told } from './kit.js'
+import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
 import { DRAFTS, draftsOf } from '/drafts.js'
@@ -137,10 +137,18 @@ export async function sidebar(deps) {
     render()
   }
 
+  /** A new shell's button for `dir`; on the selected worker's directory it names the chords of `shell-here` too. @param {Floor} f @param {string} dir @param {string} name */
+  const shellButtonHtml = (f, dir, name) => {
+    if (heldWhy('shell')) return heldHtml('shell', `new shell in ${name}`, ICON.shell, 'icon-btn')
+    if (!can(f, 'shell')) return ''
+    const tip = findCard(selected())?.cwd === dir ? keyedTip(board().keys, `new shell in ${dir} · the selected worker's shell, and back`, 'shell-here') : `data-tip="${esc(`new shell in ${dir}`)}"`
+    return `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(name)}" ${tip}>${ICON.shell}</button>`
+  }
+
   /** @param {Floor} f @param {string} dir @param {boolean} hub */
   const dirHtml = (f, dir, hub) =>
     `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
-    ${heldWhy('shell') ? heldHtml('shell', `new shell in ${base(dir)}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(base(dir))}" data-tip="new shell in ${esc(dir)}">${ICON.shell}</button>` : ''}
+    ${shellButtonHtml(f, dir, base(dir))}
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}
   </div>`
@@ -170,7 +178,7 @@ export async function sidebar(deps) {
     ${w.state === 'carried' ? landingButtonHtml({ project: f.id, branch: worktreeBranch(w) }) : ''}
     ${!resumable ? '' : heldWhy('resume') ? heldHtml('resume', `resume ${resumable.callsign}`, ICON.resume, 'icon-btn') : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(resumable, 'resume')))}" aria-label="resume ${resumable.callsign}" data-tip="resume ${resumable.callsign}, its last worker">${ICON.resume}</button>`}
     ${w.actions.map((a) => wtVerbHtml(w.name, a)).join('')}
-    ${w.state === 'lost' ? '' : heldWhy('shell') ? heldHtml('shell', `new shell in ${w.name}`, ICON.shell, 'icon-btn') : can(f, 'shell') ? `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(where)}" aria-label="new shell in ${esc(w.name)}" data-tip="new shell in ${esc(where)}">${ICON.shell}</button>` : ''}
+    ${w.state === 'lost' ? '' : shellButtonHtml(f, where, w.name)}
     ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${workers.length ? `<span class="who-line">${workers.map((c) => `<a class="who" href="#${c.id}" data-tip="${esc(`${c.callsign} · ${statusName(c)}`)}">${c.callsign}</a> <span>${esc(statusName(c))}</span>`).join(' · ')}</span>` : ''}
   </div>`
@@ -433,7 +441,7 @@ export async function sidebar(deps) {
   /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
   /** @param {number} waiting */
   const railHtml = (waiting) =>
-    `<button class="icon-btn" data-side aria-label="show the sidebar" data-tip="${withKeys('show the sidebar', 'sidebar')}" aria-keyshortcuts="${keyshortcuts(board().keys, 'sidebar')}">${ICON.sidebar}</button>
+    `<button class="icon-btn" data-side aria-label="show the sidebar" ${keyedTip(board().keys, 'show the sidebar', 'sidebar')}>${ICON.sidebar}</button>
   ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrder(board()).map((c) => {
       const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
