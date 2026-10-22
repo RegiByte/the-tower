@@ -646,9 +646,9 @@ function toPane(pane) {
 function shellHere() {
   const c = selected() && findCard(selected())
   if (!c) return false
-  const here = board().shells.find((sh) => sh.cwd === c.cwd)
-  if (here && focusedShell() === here.id) return toPane('screen')
-  if (here) focusShell(here.id)
+  const there = board().shells.filter((sh) => sh.cwd === c.cwd)
+  if (there.some((sh) => sh.id === focusedShell())) return toPane('screen')
+  if (there.length) focusShell(there[0].id)
   else void spawnShellAt(c.project, c.cwd)
   return true
 }
