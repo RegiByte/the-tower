@@ -58,11 +58,12 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
 - *The world enters a machine only as events.* What a step needs to know about the renderer is in the machine's
   state, put there by the events that changed it, never read from the renderer as an event is handled. The worker a
   viewer watches is the tower page's selection while the window has their eye: the page's machine holds its main view
-  ([`view.js`](ref:hub/renderers/page/view.js)) and the window's focus and visibility, each changed by its own event,
-  and runs attention's steps beside them ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers),
-  [`attendStep`](ref:hub/src/shared/attend.ts#attendStep), [`watching`](ref:hub/src/shared/attend.ts#watching)); Tower
-  3D's holds its open panel the same way, the desk you sit at among them
-  ([`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers)). The view and the rings read one
+  ([`view.js`](ref:hub/renderers/page/view.js)), and attention's own state holds the window's focus and visibility
+  and the worker the view is on, each changed by its own event (`focus`, `visible`, `watch`:
+  [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), [`watching`](ref:hub/src/shared/attend.ts#watching));
+  the page's handlers that move the view tell attention
+  ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)); Tower 3D's holds its open panel the same way, the
+  desk you sit at among them ([`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers)). The view and the rings read one
   selection, so a wiring missed shows on screen, and a machine replays the same from its events. An event enters as
   it happens, apart from drawing: Tower 3D hands a board to its machine as it arrives, before its models are in or
   its first frame is drawn, which a hidden tab holds back.

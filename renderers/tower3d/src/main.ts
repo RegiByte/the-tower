@@ -16,7 +16,7 @@ import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
 import { boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, sentHome, shownHref, shownKey, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
-import { attendStep, attending, eyeStep, watching, type AttendEvent, type AttendOut, type Attending, type Eye, type EyeEvent } from '../../../src/shared/attend.ts'
+import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
@@ -1181,19 +1181,17 @@ const heed = (): Heed => ({ dismissed: seeing.state().attending.dismissed, visit
 
 /**
  * Tower 3D's machine: the panel open beside the world (the desk you sit at among them), whether the window has your
- * eye, and what asks for you, said and rung as every renderer does (`/attend.js`). The desk is read from the first two
- * as each event is handled: its waits ring for nobody while you look at it.
+ * eye, and what asks for you, said and rung as every renderer does (`/attend.js`). Attention is told the desk at
+ * which you sit as the panel changes: its waits ring for nobody while you look at it.
  */
-type Seeing = { panel: Panel | undefined; eye: Eye; attending: Attending }
-type SeeingEvent = AttendEvent | EyeEvent | { type: 'panel'; panel: Panel | undefined }
+type Seeing = { panel: Panel | undefined; attending: Attending }
+type SeeingEvent = AttendEvent | { type: 'panel'; panel: Panel | undefined }
 type SeeingEffect = AttendOut | StateEffect<Seeing> | TimerEffect<SeeingEvent>
 
-const watchedOf = (v: Seeing) => watching(v.eye, v.panel?.kind === 'desk' ? v.panel.id : undefined)
 const attend = (v: Seeing, e: AttendEvent): SeeingEffect[] => {
-  const [attending, effects] = attendStep(v.attending, e, watchedOf(v))
+  const [attending, effects] = attendNext(v.attending, e)
   return [{ type: 'state', state: { ...v, attending } }, ...effects]
 }
-const eyed = (v: Seeing, e: EyeEvent): SeeingEffect[] => [{ type: 'state', state: { ...v, eye: eyeStep(v.eye, e) } }]
 
 const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect> = {
   board: attend,
@@ -1202,14 +1200,18 @@ const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect> = {
   dismiss: attend,
   ring: attend,
   remind: attend,
-  focus: eyed,
-  visible: eyed,
-  panel: (v, e) => [{ type: 'state', state: { ...v, panel: e.panel } }],
+  focus: attend,
+  visible: attend,
+  watch: attend,
+  panel: (v, { panel }) => {
+    const [attending] = attendNext(v.attending, { type: 'watch', at: panel?.kind === 'desk' ? panel.id : undefined })
+    return [{ type: 'state', state: { panel, attending } }]
+  },
 }
 
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const seeing = loop({
-  state: { panel: undefined, eye: { focused: document.hasFocus(), visible: document.visibilityState === 'visible' }, attending: attending() } as Seeing,
+  state: { panel: undefined, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }) } as Seeing,
   handlers: seeingHandlers,
   execute: {
     ...(timers<SeeingEvent>() as Executors<TimerEffect<SeeingEvent>, SeeingEvent>),

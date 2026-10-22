@@ -701,6 +701,8 @@
       "wireSpawn"
     ],
     "/attend.js": [
+      "attendHandlers",
+      "attendNext",
       "attendStep",
       "attending",
       "chooseRing",
@@ -709,6 +711,7 @@
       "remind",
       "seeBoard",
       "stored",
+      "watchedIn",
       "watching"
     ],
     "/term-view.js": [

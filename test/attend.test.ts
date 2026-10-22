@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board, Wait } from '../src/bridge/board.ts'
 import type { Offer } from '../src/bridge/policies.ts'
-import { attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendOut } from '../src/shared/attend.ts'
+import { attendNext, attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendEvent, type AttendOut } from '../src/shared/attend.ts'
 
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })
 const offer = { key: 'nightly:1', project: 'p', policy: 'nightly', tag: 'quiet-owl', slot: 0, since: 0, until: 1 } as Offer
@@ -63,4 +63,14 @@ test('attend: attendStep runs each event through its step with the watched worke
   assert.deepEqual(kinds(attendStep(reminding, { type: 'remind' }, 'A')[1]), ['timer/start'])
   assert.deepEqual(kinds(attendStep(reminding, { type: 'remind' }, undefined)[1]), ['sound:question', 'timer/start'])
   assert.equal(attendStep(opened, { type: 'lost', lost: true }, undefined)[0].lost, true)
+})
+
+test('attend: the viewer looks at a worker only as events tell it, and its waits ring for nobody while the window has their eye', () => {
+  const [opened] = attendNext(attending(), { type: 'board', board: boardOf([]) })
+  const run = (events: AttendEvent[]) => events.reduce(([a], e) => attendNext(a, e), [opened, []] as ReturnType<typeof attendNext>)
+  const board = { type: 'board', board: boardOf([wait('A')]) } as const
+  assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, board])[1]), ['announce'])
+  assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'focus', focused: false }, board])[1]), ['announce', 'notify', 'sound:question'])
+  assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'visible', visible: false }, { type: 'visible', visible: true }, board])[1]), ['announce'])
+  assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'watch', at: undefined }, board])[1]), ['announce', 'notify', 'sound:question'])
 })

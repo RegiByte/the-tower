@@ -84,7 +84,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `attend.ts`: what a viewer is told about what asks for them
   ([[attention-list]]): a wait or an offer that begins
   said, notified and rung, a reminder while it waits, a dismissal kept and its notification closed; its steps run inside
-  a renderer's own machine through [`attendStep`](ref:hub/src/shared/attend.ts#attendStep). Each renderer runs
+  a renderer's own machine ([`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), run by [`attendNext`](ref:hub/src/shared/attend.ts#attendNext)). Each renderer runs
   it with its own executors of sound, notifications, its live region and the viewer's record, so they ring alike.
 - `keymap.ts`: every command a renderer runs from the keyboard, as data ([`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS)),
   matched against `board.keys` (the config's `keys` over the defaults), with the words for chords, the `?` sheet and

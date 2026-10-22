@@ -4,7 +4,7 @@ import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFoc
 import { POLICIES } from '/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
-import { attendStep, attending, eyeStep, watching } from '/attend.js'
+import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
@@ -49,7 +49,7 @@ import { palette } from './palette.js'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { DiffLayout, StatsRange } from '../../src/shared/panels.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
- * @import { AttendEffect, AttendEvent, Attending, Eye, EyeEvent } from '../../src/shared/attend.ts'
+ * @import { AttendEffect, AttendEvent, Attending } from '../../src/shared/attend.ts'
  * @import { MainView, Pane } from './view.js'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../src/shared/drafts.ts'
@@ -134,12 +134,13 @@ function tick() {
 
 /**
  * The page's machine: the board drawn, why there is none live and since when the tower is lost, the viewer's record,
- * what the main pane shows, whether the window has the viewer's eye, what the viewer is told about waits and offers
- * (`/attend.js`) and the waits and offers N visited this round (`Heed` in cards.ts). The watched worker is read from
- * the view and the eye as each event is handled, so the pane and the rings follow one selection.
- * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, eye: Eye, attending: Attending, visited: ReadonlySet<string> }} PageState
+ * what the main pane shows, what the viewer is told about waits and offers (`/attend.js`, which also holds whether the
+ * window has their eye and the worker the view is on, told by the `focus`, `visible` and `watch` events) and the waits
+ * and offers N visited this round (`Heed` in cards.ts). The view and the rings follow one selection: every move of
+ * the view tells attention.
+ * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
- * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | EyeEvent | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
+ * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
  *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'saved', id: string | undefined }
  *   | { type: 'typed' } | { type: 'autosave' } | { type: 'hold-draft' }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
@@ -152,14 +153,14 @@ const heedOf = (s) => ({ dismissed: s.attending.dismissed, visited: s.visited })
 const heed = () => heedOf(page.state())
 
 /** @param {PageState} s */
-const watchedOf = (s) => watching(s.eye, s.view.t === 'worker' ? s.view.id : undefined)
+const watchedOf = (s) => watchedIn(s.attending)
 
 /** @param {PageState} s @returns {PageEffect} */
 const into = (s) => ({ type: 'state', state: s })
 
 /** Attention's step, what it keeps for the viewer kept in the viewer's record too. @param {PageState} s @param {AttendEvent} e @returns {PageEffect[]} */
 const attend = (s, e) => {
-  const [attending, effects] = attendStep(s.attending, e, watchedOf(s))
+  const [attending, effects] = attendNext(s.attending, e)
   const viewer = effects.reduce((v, f) => (f.type === 'keep' ? { ...v, [f.field]: f.value } : v), s.viewer)
   return [into({ ...s, attending, viewer }), ...effects]
 }
@@ -176,11 +177,11 @@ const chain = (s, steps) => {
 /** The tower lost or back: attention hears of it only as it changes. @param {PageState} s @param {boolean} lost @param {number} at @returns {PageEffect[]} */
 const marked = (s, lost, at) => lost === (s.lostAt !== undefined) ? [into(s)] : attend({ ...s, lostAt: lost ? at : undefined }, { type: 'lost', lost })
 
-/** @param {PageState} s @param {EyeEvent} e @returns {PageEffect[]} */
-const see = (s, e) => [into({ ...s, eye: eyeStep(s.eye, e) })]
-
 /** Leaves the view open for `view` and enters it, its hash in the address bar. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
-const moved = (s, view) => [into({ ...s, view }), { type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }]
+const moved = (s, view) => chain({ ...s, view }, [looking, () => [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }]])
+
+/** Attention hears of the worker the view is on. @param {PageState} s @returns {PageEffect[]} */
+const looking = (s) => attend(s, { type: 'watch', at: s.view.t === 'worker' ? s.view.id : undefined })
 
 /** @type {Handlers<PageState, PageEvent, PageEffect>} */
 const pageHandlers = {
@@ -200,9 +201,10 @@ const pageHandlers = {
   dismiss: attend,
   ring: attend,
   remind: attend,
-  focus: see,
-  visible: see,
-  go: (s, { view }) => (sameRoom(s.view, view) ? [into({ ...s, view }), { type: 'hash', hash: hashOf(view) }, { type: 'draw' }] : moved(s, view)),
+  focus: attend,
+  visible: attend,
+  watch: attend,
+  go: (s, { view }) => (sameRoom(s.view, view) ? chain({ ...s, view }, [looking, () => [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }]]) : moved(s, view)),
   reopen: (s, { view }) => moved(s, view),
   saved: (s, { id }) => {
     if (s.view.t !== 'draft') return []
@@ -213,7 +215,7 @@ const pageHandlers = {
 
 /** @type {Loop<PageState, PageEvent>} */
 const page = loop({
-  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, eye: { focused: document.hasFocus(), visible: document.visibilityState === 'visible' }, attending: attending(), visited: new Set() },
+  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set() },
   handlers: pageHandlers,
   execute: {
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
