@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.54.0
+
+The command palette, and the foundations extensions will build on. No host restart, no config change, the renderer
+API 1.75 → 1.76 (additive). Restart the tower (`tower down tower && tower up tower`) and reload the page. A checkout
+that serves Tower 3D rebuilds it (`npm run tower3d`).
+
+- The command palette (⌘K): go to any worker, floor, shelf entry or draft, or do what the selected worker and its
+  floor offer, by typing. An empty query shows the selected worker's actions, who waits on you and your recent picks;
+  a query ranks by how well it matches (a better match always wins), then by the selected worker and its floor.
+  Entries show their chords, so the palette teaches the keys it replaces. Nothing in it is a form: a pick runs, or
+  opens the dialog its button opens, and asks the same confirm. Capabilities that name a command are its hint; the
+  rest show only when a query matches them. "Patterns users are discovering" opens a sheet of the patterns. Entries
+  and ranking are pure and served at `/palette.js`, so any renderer can draw the same palette.
+- Verb words: every verb the board offers has a label, a hint and the API verb it calls, keyed `<subject>/<verb>`
+  (`card/send-home`, `worktree/recut`), served at `/verb-words.js`. The tower page's buttons read their labels from it.
+  Keymap commands gain a short `label`.
+- `shell-here` toggles: from the worker's shell it hides the shell again and goes back to the worker's terminal; with
+  several shells in that directory it focuses the one the dock shows.
+- Every GET the tower serves is an entry of one table, each naming its API read or its kind (page, stream, schema),
+  checked against the API's declared reads by the typecheck. A query string on `/archive`, `/conversations`,
+  `/reviews`, `/screen` and `/shell` no longer answers 404.
+- `board()` and `allCards` take one `SystemView` record, the snapshot of the system the board is derived from.
+- `npm run test:page-boot` boots the tower page over a tower alone in headless Chrome, clean of page errors, in CI
+  beside Tower 3D's boot.
+
 ## v1.53.0
 
 What the tower can do, shown where you look. No host restart, no config change, the renderer API 1.72 → 1.75
