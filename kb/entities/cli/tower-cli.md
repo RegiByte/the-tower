@@ -5,7 +5,7 @@
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
   "reviewed": "2026-10-22",
-  "refs": ["hub/src/cli.ts", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
+  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
@@ -20,9 +20,17 @@
   ]
 }
 ---
-One command for the user and the workers: the verbs above are the user's; any other verb is a worker's, handed to
-the tower's directory (`src/directory.ts`, [[agent-directory]]). The tower mod puts the command on every session's
-PATH; `npm link` puts it on the user's (`bin` in `package.json`).
+One command for the user and the workers: the verbs above are the user's, the rest the workers', run by the tower's
+directory (`src/directory.ts`, [[agent-directory]]). The tower mod puts the command on every session's PATH; `npm link`
+puts it on the user's (`bin` in `package.json`).
+
+The verbs are data: one table, [`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS), each entry's name, whose it is
+(`of`: `user` or `worker`), what it takes (`usage`) and what it does (`help`). `tower --help` prints it, the user's then
+the workers'; `tower <verb> --help` prints one's usage; an unknown verb lists every name. The handlers stay beside their
+logic, keyed by the table's names: the user's in [`USER_RUNS`](ref:hub/src/cli.ts#USER_RUNS), the workers' in
+[`WORKER_RUNS`](ref:hub/src/directory.ts#WORKER_RUNS), each typed to hold exactly the verbs of its `of`, so a verb without
+a handler, a handler without a verb or two verbs of one name fail the typecheck. `src/cli.ts` dispatches; importing
+the table or the directory runs nothing.
 
 It does not use [[live-system]]: each command reads the logs it needs and exits. `ls` and `kill` fold every log from
 its checkpoint on ([`readSessions`](ref:hub/src/cli.ts#readSessions), [[fold-checkpoints]]). `spawn` and `resume`

@@ -2,44 +2,8 @@
  * The tower's directory, the workers' verbs of the `tower` command (`src/cli.ts`): who this session is and who else
  * is on duty, read from the running tower's board, and the floor's collections. An agent reaches another through
  * Claude Code's own messaging, by the `peer` name listed here. The tower mod puts the command on every session's PATH
- * (`src/mod/bin/tower`).
- *
- *   tower api [name]     the API's verbs and reads, one line each, or one in full as JSON Schema
- *   tower whoami         this session: callsign, peer name, floor and its dirs, its worktree and branch if it has one,
- *                        the floor's shelf and collections, and the config's path
- *   tower agents         the workers on duty on this session's floor
- *   tower agents --all   the workers on duty on every floor
- *   tower agent <CALLSIGN>  one worker: its latest prompt and answer in full, per conversation
- *   tower probes [run <name>]  each probe the tower runs: its state, last read, why it failed and when it reads next;
- *                        `run` reads one now (refused while off, while a read is in flight or within a minute of the last)
- *   tower policies [approve|run <tag|id>]  the floor's policies: each one's rule, approval, live runs, last run and
- *                        where it stands now; `approve` approves its words as they are, `run` starts it now (an open
- *                        offer's slot when it has one)
- *   tower runs [<tag|id>] [--limit n]  a policy's latest runs (5 unless told, 20 at most), each with its worker, what it showed and
- *                        its latest answer cut short; no policy named, the one this session is a run of
- *   tower show <file|url> [title]   put a file this session wrote, or a web page, in front of the user beside this session
- *   tower open <url> [title]        ask the user to open a page in a browser tab (one that can't be shown in place)
- *   tower reveal <path>             show a file or folder to the user selected in a Finder window
- *   tower edit <path> [line]        open a file or folder in the user's editor, a file at `line` if given
- *   tower keep <collection> [file]  a new item in one of the floor's collections, from a file or stdin (markdown)
- *   tower kept [collection]         the floor's collections with their item counts and latest items, or every item of one: tag, title, age, size, keeper and file
- *   tower read <tag|id>             one item of the floor's collections, in full
- *   tower thread [checkout]         the review thread about this session's work (a reviewer's is its author's), or another, and what is new to you
- *   tower note [on <checkout>] [re n<k>] [repo:path:lines …]   a message on the thread, the body on stdin, each anchor's
- *                                   lines quoted from the checkout's files as they are now (from your own, when it is a
- *                                   fork of that checkout: the version you read)
- *   tower send <CALLSIGN>           submit into a worker a pointer to the notes on its checkout's thread new to it
- *   tower review <CALLSIGN> [tell]  hire a reviewer of a worker's work, in a fork of its checkout (its card's `review`);
- *                                   with `tell`, the reviewer sends its notes to that worker when done
- *   tower home <CALLSIGN>          send a worker home with everyone under it: each that runs is killed, the deepest first (its
- *                                   card's `send-home`);
- *                                   naming this session's own callsign, it goes home once its turn ends (`tower.leave`)
- *   tower let-go <CALLSIGN>        take a stranded worker (stopped, killed or lost) off duty, still resumable (its card's `let-go`)
- *   tower hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]   start a
- *                                   worker on this floor, or the floor named, placed as a quick hire in a renderer
- *                                   places it there, on a prompt: the text of an item of this floor's collections, or
- *                                   stdin; refused past the hiring floor's `hiring` limits. `callsign` names the worker,
- *                                   `name` its new worktree
+ * (`src/mod/bin/tower`). The verbs are the workers' of the command's table (`src/cli-verbs.ts`), each run by its
+ * handler in `WORKER_RUNS`.
  *
  * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go to the host, which logs them
  * (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board. `hire` and `review` spawn
@@ -68,15 +32,14 @@ import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
 import { configPath } from './shared/paths.ts'
 import { readConfig } from './system.ts'
 import { CliError } from './cli-error.ts'
+import { usageLine, type Run, type VerbOf } from './cli-verbs.ts'
 import { SHELF_KINDS } from './shelf.ts'
 
-const TOWER = towerUrl(readConfig(configPath()))
+/** The running tower's URL, from the config's `port`. */
+const towerAt = (): string => towerUrl(readConfig(configPath()))
 
-/** A reader that closed its end early (`tower read <tag> | head -1`) has all it asked for. */
-process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-  if (err.code !== 'EPIPE') throw err
-  process.exit(0)
-})
+const me = process.env.TOWER_SESSION_ID
+const now = Date.now()
 
 /** Stdin read as a stream to its end: a pipe whose writer hasn't written yet is waited on. */
 const readStdin = async (): Promise<string> => {
@@ -86,8 +49,8 @@ const readStdin = async (): Promise<string> => {
 }
 
 const towerGet = (route: string): Promise<Response> =>
-  fetch(`${TOWER}${route}`).catch((err) => {
-    throw new CliError(`No tower answers at ${TOWER} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
+  fetch(`${towerAt()}${route}`).catch((err) => {
+    throw new CliError(`No tower answers at ${towerAt()} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
   })
 
 /** `/board` is a stream: its first event is the board now. */
@@ -183,7 +146,7 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     ...(card.run ? runLines(floor, card.run) : []),
     ...(card.worktree ? worktreeLines(floor, card.worktree) : [`You work in ${card.cwd}.`]),
     `The floor's hub is ${floor.hub}${floor.repos?.length ? `, with repos ${floor.repos.map(base).join(', ')}` : ''}.`,
-    `The tower answers at ${TOWER}: the user's page, and the API (\`tower api\` lists it).`,
+    `The tower answers at ${towerAt()}: the user's page, and the API (\`tower api\` lists it).`,
     shelfLine(floor),
     ...collectionsLines(floor),
     `The tower's config is ${board.config}: \`tower config check\` checks it.`,
@@ -230,7 +193,7 @@ const worktreeLines = (floor: Floor, { name, branch, from }: NonNullable<Card['w
 }
 
 const readArchive = async (project: string): Promise<Card[]> => {
-  const res = await fetch(`${TOWER}/archive/${project}`)
+  const res = await fetch(`${towerAt()}/archive/${project}`)
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for ${project}'s archive: ${await res.text()}`)
   return res.json()
 }
@@ -250,7 +213,7 @@ const cardNamed = async (board: Board, name: string): Promise<Card> => {
 }
 
 const readThreads = async (id: string): Promise<Brief[]> => {
-  const res = await fetch(`${TOWER}/conversations/${id}`)
+  const res = await fetch(`${towerAt()}/conversations/${id}`)
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for ${id}'s conversations: ${await res.text()}`)
   return res.json()
 }
@@ -296,7 +259,7 @@ const probeCliLine = (p: Board['probes'][number], now: number): string =>
 const isUrl = (target: string) => /^https?:\/\//.test(target)
 
 const shownOf = (command: 'show' | 'open', target: string | undefined, title: string | undefined): Omit<Shown, 'at'> => {
-  if (!target) throw new CliError(`Usage: tower ${command} ${command === 'show' ? '<file|url>' : '<url>'} [title]`)
+  if (!target) throw new CliError(usageLine(command))
   if (command === 'open') {
     if (!isUrl(target)) throw new CliError(`"${target}" is no http(s) URL: \`tower show\` puts a file in front of the user`)
     return { kind: 'link', target, title }
@@ -311,7 +274,7 @@ type Failure = { t: 'error'; code: string; message: string }
 
 /** POSTs are taken only from the tower's own origin. */
 const ask = async <T>(verb: string, body: unknown): Promise<T | Failure> => {
-  const res = await fetch(`${TOWER}/${verb}`, { method: 'POST', headers: { origin: TOWER, 'content-type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await fetch(`${towerAt()}/${verb}`, { method: 'POST', headers: { origin: towerAt(), 'content-type': 'application/json' }, body: JSON.stringify(body) })
   return (await res.json()) as T | Failure
 }
 
@@ -344,7 +307,7 @@ const collectionOf = (floor: Floor, name: string): FloorCollection => {
 }
 
 const readItem = async (floor: Floor, collection: string, id: string): Promise<string> => {
-  const res = await fetch(`${TOWER}/collection/${floor.id}/${collection}/${encodeURIComponent(id)}`)
+  const res = await fetch(`${towerAt()}/collection/${floor.id}/${collection}/${encodeURIComponent(id)}`)
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for ${collection}/${id}: ${await res.text()}`)
   return res.text()
 }
@@ -429,7 +392,7 @@ const postToHost = (me: string, event: Record<string, unknown>) =>
 /** A checkout's thread as the file holds it, `undefined` while nobody wrote on it. */
 const readThread = async (floor: Floor, checkout: string): Promise<string | undefined> => {
   collectionOf(floor, REVIEWS)
-  const res = await fetch(`${TOWER}/collection/${floor.id}/${REVIEWS}/${threadId(checkout)}`)
+  const res = await fetch(`${towerAt()}/collection/${floor.id}/${REVIEWS}/${threadId(checkout)}`)
   if (res.status === 404) return undefined
   if (!res.ok) throw new CliError(`The tower answered ${res.status} for the thread of ${checkout}: ${await res.text()}`)
   return res.text()
@@ -520,9 +483,9 @@ const apiLines = (schema: ApiSchema): string[] => {
   const width = Math.max(...[...Object.keys(schema.verbs), ...Object.keys(schema.reads), ...Object.keys(schema.streams)].map((name) => name.length))
   const line = (name: string, { description }: JsonSchema) => `  ${name.padEnd(width)}  ${description ?? ''}`.trimEnd()
   return [
-    `The tower's API ${schema.v}, at ${TOWER}. \`tower api <name>\` prints one verb's or read's JSON Schema.`,
+    `The tower's API ${schema.v}, at ${towerAt()}. \`tower api <name>\` prints one verb's or read's JSON Schema.`,
     '',
-    `Verbs: POST /<verb>, a JSON body, the header \`origin: ${TOWER}\`.`,
+    `Verbs: POST /<verb>, a JSON body, the header \`origin: ${towerAt()}\`.`,
     ...Object.entries(schema.verbs).map(([name, { input }]) => line(name, input)),
     '',
     'Reads: GET /<read>?<query>.',
@@ -596,118 +559,89 @@ const runReadLines = (run: RunRead, tz: string | undefined, now: number): string
   ...(run.worker.answer ? answerLines(run.worker.answer) : []),
 ]
 
-const RUNS_USAGE = 'Usage: tower runs [<tag|id>] [--limit n]'
 const RUNS_SHOWN = 5
 const RUNS_MOST = 20
 
 const runsArgs = (args: string[]): { policy?: string; limit: number } => {
   const at = args.indexOf('--limit')
   const limit = at === -1 ? RUNS_SHOWN : Number(args[at + 1])
-  if (at !== -1 && !(Number.isInteger(limit) && limit > 0)) throw new CliError(RUNS_USAGE)
+  if (at !== -1 && !(Number.isInteger(limit) && limit > 0)) throw new CliError(usageLine('runs'))
   if (limit > RUNS_MOST) throw new CliError(`tower runs shows at most ${RUNS_MOST} runs: \`tower agent <CALLSIGN>\` reads any run's worker in full`)
   const rest = at === -1 ? args : [...args.slice(0, at), ...args.slice(at + 2)]
-  if (rest.length > 1) throw new CliError(RUNS_USAGE)
+  if (rest.length > 1) throw new CliError(usageLine('runs'))
   return { policy: rest[0], limit }
 }
 
-/** What each worker verb takes, one line each: `tower <verb> --help` prints it, and an unknown verb lists them. */
-const USAGES: Record<string, string> = {
-  whoami: 'whoami',
-  agents: 'agents [--all]',
-  agent: 'agent <CALLSIGN>',
-  probes: 'probes [run <name>]',
-  policies: 'policies [approve|run <tag|id>]',
-  runs: 'runs [<tag|id>] [--limit n]',
-  show: 'show <file|url> [title]',
-  open: 'open <url> [title]',
-  reveal: 'reveal <path>',
-  edit: 'edit <path> [line]',
-  keep: 'keep [<collection> [file] [name <words>]]',
-  kept: 'kept [collection]',
-  read: 'read <tag|id>',
-  thread: 'thread [checkout]',
-  note: 'note [on <checkout>] [re n<k>] [repo:path:lines …]',
-  send: 'send <CALLSIGN>',
-  review: 'review <CALLSIGN> [tell]',
-  hire: 'hire [<tag|id>] [floor <id>] […]',
-  home: 'home <CALLSIGN>',
-  'let-go': 'let-go <CALLSIGN>',
-  api: 'api [name]',
-}
-
-const [verb, flag, ...rest] = process.argv.slice(2)
-if (verb in USAGES && (flag === '--help' || flag === '-h')) {
-  console.log(`Usage: tower ${USAGES[verb]}`)
-  process.exit(0)
-}
-const me = process.env.TOWER_SESSION_ID
-const now = Date.now()
-
-switch (verb) {
-  case 'api': {
-    const schema: ApiSchema = await (await towerGet('/schema')).json()
-    if (!flag) {
-      console.log(apiLines(schema).join('\n'))
-      break
-    }
-    const one = schema.verbs[flag] ?? schema.streams[flag] ?? schema.reads[flag]
-    if (!one) throw new CliError(`The API has no verb, read or stream "${flag}"`, '`tower api` lists them')
-    console.log(JSON.stringify(one, null, 2))
-    break
+const showOrOpen =
+  (verb: 'show' | 'open'): Run =>
+  async ([target, ...title]) => {
+    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+    const shown = shownOf(verb, target, title.join(' ') || undefined)
+    await postToHost(me, { hook_event_name: 'tower.show', ...shown })
+    console.log(verb === 'show' ? `Shown to the user beside this session: ${shown.target}` : `The user is asked to open ${shown.target}`)
   }
-  case 'whoami':
+
+export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
+  api: async ([name]) => {
+    const schema: ApiSchema = await (await towerGet('/schema')).json()
+    if (!name) {
+      console.log(apiLines(schema).join('\n'))
+      return
+    }
+    const one = schema.verbs[name] ?? schema.streams[name] ?? schema.reads[name]
+    if (!one) throw new CliError(`The API has no verb, read or stream "${name}"`, '`tower api` lists them')
+    console.log(JSON.stringify(one, null, 2))
+  },
+  whoami: async () => {
     console.log(whoami(await readBoard(), me).join('\n'))
-    break
-  case 'agents': {
+  },
+  agents: async ([all]) => {
     const board = await readBoard()
-    const floors = flag === '--all' ? board.floors.filter((f) => f.cards.some((c) => c.onDuty)) : [board.floors.find((f) => f.id === ownCard(board, me).project)!]
+    const floors = all === '--all' ? board.floors.filter((f) => f.cards.some((c) => c.onDuty)) : [board.floors.find((f) => f.id === ownCard(board, me).project)!]
     const everyone = board.floors.flatMap((f) => f.cards)
     console.log(floors.map((f) => floorLines(f, everyone, me, now).join('\n')).join('\n\n'))
-    break
-  }
-  case 'agent': {
-    if (!flag) throw new CliError('Usage: tower agent <CALLSIGN>')
+  },
+  agent: async ([callsign]) => {
+    if (!callsign) throw new CliError(usageLine('agent'))
     const board = await readBoard()
-    const card = await cardNamed(board, flag)
+    const card = await cardNamed(board, callsign)
     const floor = board.floors.find((f) => f.id === card.project)!
     const onBoard = board.floors.flatMap((f) => f.cards)
     const cards = floor.cards.includes(card) ? onBoard : [...onBoard, ...(await readArchive(floor.id))]
     console.log(agent(board, card, cards, await readThreads(card.id), now).join('\n'))
-    break
-  }
-  case 'probes': {
-    if (!flag) {
+  },
+  probes: async ([sub, name]) => {
+    if (!sub) {
       console.log((await readBoard()).probes.map((p) => probeCliLine(p, now)).join('\n'))
-      break
+      return
     }
-    if (flag !== 'run' || !rest[0]) throw new CliError(`Usage: tower ${USAGES.probes}`)
-    console.log(probedLine(rest[0], await command<Replies['probe/run']>('probe/run', { name: rest[0] })))
-    break
-  }
-  case 'policies': {
+    if (sub !== 'run' || !name) throw new CliError(usageLine('probes'))
+    console.log(probedLine(name, await command<Replies['probe/run']>('probe/run', { name: name })))
+  },
+  policies: async ([sub, tagOrId]) => {
     const board = await readBoard()
     const floor = ownFloor(board, me)
-    if (!flag) {
+    if (!sub) {
       if (!floor.policies.length) {
         console.log(`${floorTitle(floor)} has no policies.`)
-        break
+        return
       }
       const cards = await floorCards(floor)
       const width = [Math.max(...floor.policies.map((p) => p.tag.length)), Math.max(...floor.policies.map((p) => (p.title ?? '(untitled)').length))]
       console.log(floor.policies.flatMap((p) => policyLines(board, p, cards, width, now)).join('\n'))
-      break
+      return
     }
-    if ((flag !== 'approve' && flag !== 'run') || !rest[0]) throw new CliError(`Usage: tower ${USAGES.policies}`)
-    const policy = policyNamed(floor, rest[0])
+    if ((sub !== 'approve' && sub !== 'run') || !tagOrId) throw new CliError(usageLine('policies'))
+    const policy = policyNamed(floor, tagOrId)
     const name = `"${policy.title ?? policy.tag}" (${policy.tag})`
-    if (flag === 'approve') {
+    if (sub === 'approve') {
       if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
       const approve = callOf(policy, 'approve')
       if (!approve) throw new CliError(`${name} is approved as it is now (${shortHash(policy.hash)})`)
       await command(...withBy(approve))
       const words = policy.header.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
       console.log(`Approved ${name} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}`)
-      break
+      return
     }
     if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
     const offer = board.offers.find((o) => o.project === floor.id && o.policy === policy.id)
@@ -715,14 +649,13 @@ switch (verb) {
     if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
     const ran = await command<Replies['policy/run']>(...withBy(call))
     console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
-    break
-  }
-  case 'runs': {
-    const args = runsArgs([flag, ...rest].filter((a) => a !== undefined))
+  },
+  runs: async (words) => {
+    const args = runsArgs(words)
     const board = await readBoard()
     const floor = ownFloor(board, me)
     const own = ownCard(board, me).run
-    if (!args.policy && !own) throw new CliError(`You are no run of a policy: name one. ${RUNS_USAGE}`)
+    if (!args.policy && !own) throw new CliError(`You are no run of a policy: name one. ${usageLine('runs')}`)
     const policy = args.policy ? policyNamed(floor, args.policy) : floor.policies.find((p) => p.id === own!.policy)
     const id = policy?.id ?? own!.policy
     const res = await towerGet(`/runs/${floor.id}?policy=${encodeURIComponent(id)}&limit=${args.limit}`)
@@ -731,85 +664,72 @@ switch (verb) {
     const title = `${policy?.title ?? own?.title ?? id} (${policy?.tag ?? own!.tag})${policy?.header ? ` · ${policy.rule}` : ''}`
     if (!runs.length) {
       console.log(`${title} · no runs yet`)
-      break
+      return
     }
     const tz = policy?.header?.when.tz
     console.log([`${title} · runs ${runs[0].n} to ${runs.at(-1)!.n} of ${runs[0].n}`, ...runs.flatMap((r) => runReadLines(r, tz, now)), '`tower agent <CALLSIGN>` reads a run\'s whole brief.'].join('\n'))
-    break
-  }
-  case 'show':
-  case 'open': {
-    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
-    const shown = shownOf(verb, flag, rest.join(' ') || undefined)
-    await postToHost(me, { hook_event_name: 'tower.show', ...shown })
-    console.log(verb === 'show' ? `Shown to the user beside this session: ${shown.target}` : `The user is asked to open ${shown.target}`)
-    break
-  }
-  case 'reveal': {
-    if (!flag) throw new CliError('Usage: tower reveal <path>')
-    await command('reveal', { path: path.resolve(flag) })
-    console.log(`Revealed in Finder: ${path.resolve(flag)}`)
-    break
-  }
-  case 'edit': {
-    if (!flag) throw new CliError('Usage: tower edit <path> [line]')
-    const line = rest[0] === undefined ? undefined : Number(rest[0])
-    if (line !== undefined && !(Number.isInteger(line) && line > 0)) throw new CliError(`"${rest[0]}" is no line number. Usage: tower edit <path> [line]`)
-    await command('edit', { path: path.resolve(flag), line })
-    console.log(`Opened in the user's editor: ${path.resolve(flag)}${line ? `:${line}` : ''}`)
-    break
-  }
-  case 'keep': {
+  },
+  show: showOrOpen('show'),
+  open: showOrOpen('open'),
+  reveal: async ([target]) => {
+    if (!target) throw new CliError(usageLine('reveal'))
+    await command('reveal', { path: path.resolve(target) })
+    console.log(`Revealed in Finder: ${path.resolve(target)}`)
+  },
+  edit: async ([target, lineWord]) => {
+    if (!target) throw new CliError(usageLine('edit'))
+    const line = lineWord === undefined ? undefined : Number(lineWord)
+    if (line !== undefined && !(Number.isInteger(line) && line > 0)) throw new CliError(`"${lineWord}" is no line number. ${usageLine('edit')}`)
+    await command('edit', { path: path.resolve(target), line })
+    console.log(`Opened in the user's editor: ${path.resolve(target)}${line ? `:${line}` : ''}`)
+  },
+  keep: async ([collectionName, ...rest]) => {
     if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
     const floor = ownFloor(await readBoard(), me)
-    if (!flag) {
+    if (!collectionName) {
       console.log([`${floorTitle(floor)} keeps ${floor.collections.length ? 'these collections:' : 'no collections.'}`, ...floor.collections.map(collectionLine), KEEP_USAGE].join('\n'))
-      break
+      return
     }
-    const collection = collectionOf(floor, flag)
+    const collection = collectionOf(floor, collectionName)
     const args = keepArgs(rest)
     const { ext, content, name } = await keepContent(args.file)
     const { id } = await command<{ id: string }>('collection/create', { project: floor.id, collection: collection.id, name: args.name ?? name, ext, content })
     await postToHost(me, { hook_event_name: 'tower.keep', project: floor.id, collection: collection.id, id })
     const title = titleIn(id, content)
     console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} on ${floorTitle(floor)} as ${tagOf(id)}: ${collection.dir}/${id}`)
-    break
-  }
-  case 'kept': {
+  },
+  kept: async ([collectionName]) => {
     const floor = ownFloor(await readBoard(), me)
     if (!floor.collections.length) throw new CliError(`${floorTitle(floor)} keeps no collections`)
-    if (flag) {
-      const collection = collectionOf(floor, flag)
+    if (collectionName) {
+      const collection = collectionOf(floor, collectionName)
       console.log((await collectionLines(floor, collection, collection.items, now)).join('\n'))
     } else console.log((await overviewLines(floor, now)).join('\n'))
-    break
-  }
-  case 'read': {
-    if (!flag) throw new CliError('Usage: tower read <tag|id>')
+  },
+  read: async ([tagOrId]) => {
+    if (!tagOrId) throw new CliError(usageLine('read'))
     const floor = ownFloor(await readBoard(), me)
-    const { collection, item } = itemNamed(floor, flag)
+    const { collection, item } = itemNamed(floor, tagOrId)
     process.stdout.write(await readItem(floor, collection.id, item.id))
-    break
-  }
-  case 'thread': {
+  },
+  thread: async ([named]) => {
     const board = await readBoard()
     const card = ownCard(board, me)
     const floor = ownFloor(board, me)
-    const checkout = flag ?? threadCheckoutOf(card)
+    const checkout = named ?? threadCheckoutOf(card)
     const text = await readThread(floor, checkout)
     if (text === undefined) {
       console.log(`No notes on checkout ${checkout} yet. \`tower note\` writes the first.`)
       console.log(anchorLine(floor, checkout))
-      break
+      return
     }
     const unseen = unseenBy(parseThread(text), card.callsign)
     process.stdout.write(text.endsWith('\n') ? text : `${text}\n`)
     console.log(`\n(${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}) ${unseen.length ? `New to you since your last note: ${unseen.map((m) => `n${m.n}`).join(', ')}.` : 'Nothing new to you since your last note.'}`)
     console.log(anchorLine(floor, checkout))
-    break
-  }
-  case 'note': {
-    const note = noteArgs([flag, ...rest].filter((a) => a !== undefined))
+  },
+  note: async (args) => {
+    const note = noteArgs(args)
     if (process.stdin.isTTY) throw new CliError(NOTE_USAGE)
     const body = await readStdin()
     const board = await readBoard()
@@ -819,23 +739,21 @@ switch (verb) {
     const anchors = note.anchors.map((a) => quoted(floor, card.worktree?.from === checkout ? card.checkout : checkout, a))
     const { n } = await command<{ n: number }>('review/append', { project: floor.id, checkout, author: card.callsign, re: note.re, anchors, body })
     console.log(`Noted as n${n} on the thread of checkout ${checkout}${note.re ? `, answering n${note.re}` : ''}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)
-    break
-  }
-  case 'review': {
-    if (!flag) throw new CliError('Usage: tower review <CALLSIGN> [tell]')
+  },
+  review: async ([callsign, word]) => {
+    if (!callsign) throw new CliError(usageLine('review'))
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
-    const author = await cardNamed(board, flag)
+    const author = await cardNamed(board, callsign)
     const review = callOf(author, 'review')
     if (!review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
-    const tell = rest[0] === 'tell'
+    const tell = word === 'tell'
     const [verbName, body] = review
     const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me, hire: true })
     console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
-    break
-  }
-  case 'hire': {
-    const hire = hireArgs([flag, ...rest].filter((a) => a !== undefined))
+  },
+  hire: async (args) => {
+    const hire = hireArgs(args)
     if (!hire.item && process.stdin.isTTY) throw new CliError(HIRE_USAGE)
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
@@ -851,51 +769,42 @@ switch (verb) {
     if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. \`tower review\` is never limited.`)
     if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
     console.log(hiredLines(await readBoard(), floor, reply, form).join('\n'))
-    break
-  }
-  case 'home': {
-    if (!flag) throw new CliError('Usage: tower home <CALLSIGN>')
+  },
+  home: async ([callsign]) => {
+    if (!callsign) throw new CliError(usageLine('home'))
     const board = await readBoard()
-    const card = await cardNamed(board, flag)
+    const card = await cardNamed(board, callsign)
     if (card.id === me) {
       if (!process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
       await postToHost(me, { hook_event_name: 'tower.leave' })
       const crew = crewOf(board.floors.flatMap((f) => f.cards), card).filter((c) => c.live)
       console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
-      break
+      return
     }
     const calls = callOf(card, 'send-home')
     if (!calls) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker whose session runs can be sent home. \`tower agents --all\` shows who is on duty.`)
     for (const [verbName, body] of calls) await command(verbName, { ...body, by: me })
     const sent = [card, ...crewOf(board.floors.flatMap((f) => f.cards), card)].filter((c) => calls.some(([, { id }]) => id === c.id))
     console.log(`Sent home ${sent.map((c) => c.callsign).join(', ')}: ${sent.length === 1 ? 'its session ended, and it can' : 'their sessions ended, and each can'} be resumed.`)
-    break
-  }
-  case 'let-go': {
-    if (!flag) throw new CliError('Usage: tower let-go <CALLSIGN>')
-    const card = await cardNamed(await readBoard(), flag)
+  },
+  'let-go': async ([callsign]) => {
+    if (!callsign) throw new CliError(usageLine('let-go'))
+    const card = await cardNamed(await readBoard(), callsign)
     const call = callOf(card, 'let-go')
     if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a stranded worker (stopped, killed or lost), on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
-    break
-  }
-  case 'send': {
-    if (!flag) throw new CliError('Usage: tower send <CALLSIGN>')
+  },
+  send: async ([callsign]) => {
+    if (!callsign) throw new CliError(usageLine('send'))
     const board = await readBoard()
     const sender = ownCard(board, me)
-    const target = await cardNamed(board, flag)
+    const target = await cardNamed(board, callsign)
     if (!can(target, 'submit')) throw new CliError(`${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
     const text = await readThread(board.floors.find((f) => f.id === target.project)!, target.checkout)
     if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
     const notes = unseenBy(parseThread(text), target.callsign).map((m) => m.n)
     await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes, target.hiredBy?.callsign), by: me })
     console.log(`Sent ${target.callsign} a pointer to ${notes.length ? notes.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.`)
-    break
-  }
-  default:
-    throw new CliError(
-      `Unknown command "${verb ?? ''}". The user's: init, doctor, config check, up, down, update, spawn, resume, submit, kill, live, ls, ps, reap, screen, attach, app. A worker's: ${Object.values(USAGES).join(', ')}`,
-      'the tower:handbook skill says what each is for',
-    )
+  },
 }

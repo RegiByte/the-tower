@@ -1,37 +1,6 @@
 /**
- * `tower`, the one command for the user and the workers. The user's verbs, read from the system root and sent to the
- * daemons, are here; every other verb is a worker's, read from the running tower (`src/directory.ts`).
- *
- *   tower init [hub] [repos...]  write a first config: one project, its hub here or at [hub], beside [repos]
- *   tower doctor                 check what the tower needs, with a fix for each failure; exits 1 on any
- *   tower config check           check the config as the tower reads it, each problem at its key; exits 1 on any
- *   tower up [host|terms|tower...]    start the host, the terms daemon and the tower in the background, each unless
- *                                already running; only the ones named, when named
- *   tower down [host|terms|tower...]  stop what tower up started (the host's end ends every session, terms' every
- *                                shell); only the ones named, when named: `tower down tower && tower up tower`
- *                                restarts the tower alone. One it refuses (started by hand) is reported, the rest
- *                                still stopped, and it exits 1
- *   tower update                 move this checkout to the newest release (a tag vX.Y.Z): show its CHANGELOG entries,
- *                                check it out, install, rebuild Tower 3D if built, restart the tower if running; say
- *                                when the host needs a restart, never restart it
- *   tower spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]
- *                                start a session through the tower (in the project's hub by default), print its
- *                                id; --callsign names its worker (NAME-NN, or NAME given the id's number), refused
- *                                when the name is a running worker's
- *   tower resume <id> [--carry-on]
- *                                start a session that continues <id>'s conversation, print its id; through the
- *                                tower's resume queue. --carry-on tells Claude it was cut off mid-turn by the host
- *                                and to carry on (a card's `carry-on`)
- *   tower submit <id> <text...>  type a prompt and submit it; a worker's prompt (TOWER_SESSION_ID) is named in its log first
- *   tower kill <id|CALLSIGN>     end a session, by its id or its worker's callsign; a worker's kill (TOWER_SESSION_ID) is named in its log first
- *   tower live                   ids of running sessions
- *   tower ls                     every session, with project, status and what it left running
- *   tower ps                     every process a session left running, with the ports it listens on
- *   tower reap [id]              end what <id> left running, or what every session of this root no longer live left running
- *   tower screen <id> [seconds]  the session's screen, now or at a moment, rebuilt from its log
- *   tower attach <id>            sit at the session: its live screen, your keyboard. Ctrl-] detaches
- *   tower app                    open the tower as a Mac app, built from this checkout on first use or when its source
- *                                changed (`src/app.ts`); the browser stays the default
+ * `tower`, the one command for the user and the workers. Its verbs are a table (`src/cli-verbs.ts`); the user's,
+ * read from the system root and sent to the daemons, run here, the workers' in `src/directory.ts`.
  */
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
@@ -39,6 +8,8 @@ import { parseArgs } from 'node:util'
 import { openApp } from './app.ts'
 import { attach } from './attach.ts'
 import { CliError, reported } from './cli-error.ts'
+import { helpLines, unknownLine, usageLine, verbNamed, type Run, type VerbName, type VerbOf } from './cli-verbs.ts'
+import { WORKER_RUNS } from './directory.ts'
 import { checkConfigFile, CONFIG_DOCS, problemLines } from './config-check.ts'
 import { doctor, verdictLines } from './doctor.ts'
 import { init } from './init.ts'
@@ -71,14 +42,14 @@ const fromHost = <T>(request: Promise<T>): Promise<T> =>
 const request = (msg: ToHost) => fromHost(hostRequest(paths, msg))
 
 /** The log of a session the user named: a name no session has is a usage slip. */
-const sessionLogFile = (id: string | undefined): string => {
-  if (!id) throw new CliError(`Usage: tower ${command} <id>`, '`tower ls` lists every session by its id')
+const sessionLogFile = (verb: VerbName, id: string | undefined): string => {
+  if (!id) throw new CliError(`Usage: tower ${verb} <id>`, '`tower ls` lists every session by its id')
   const file = logFileOf(paths, id)
   if (!existsSync(file)) throw new CliError(`No session "${id}" in ${paths.sessions}`, '`tower ls` lists every session by its id')
   return file
 }
 
-const readSessionLog = (id: string | undefined): SessionLog => readLog(sessionLogFile(id), everyEvent).log
+const readSessionLog = (verb: VerbName, id: string | undefined): SessionLog => readLog(sessionLogFile(verb, id), everyEvent).log
 
 const counted = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -116,152 +87,129 @@ const towerCommand = async (verb: 'spawn' | 'resume', body: unknown): Promise<Fr
   return res.json()
 }
 
-/** What each of the user's verbs takes: `tower <verb> --help` prints it. */
-const USAGES: Record<string, string> = {
-  init: 'init [hub] [repos...]',
-  doctor: 'doctor',
-  config: 'config check',
-  up: 'up [host|terms|tower...]',
-  down: 'down [host|terms|tower...]',
-  update: 'update',
-  spawn: 'spawn <project> [--cwd <dir>] [--callsign <C>] [--model <m>] [--effort <e>] [-- <prompt...>]',
-  resume: 'resume <id> [--carry-on]',
-  submit: 'submit <id> <text...>',
-  kill: 'kill <id|CALLSIGN>',
-  live: 'live',
-  ls: 'ls',
-  ps: 'ps',
-  reap: 'reap [id]',
-  screen: 'screen <id> [seconds]',
-  attach: 'attach <id>',
-  app: 'app',
+
+const USER_RUNS: Record<VerbOf<'user'>, Run> = {
+  init: async (args) => {
+    const [hub = process.cwd(), ...repos] = args
+    const config = await init(paths.config, hub, repos)
+    console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.\nThen ask any worker: "give me a tour of the tower".`)
+  },
+  doctor: async () => {
+    const verdicts = await doctor(paths)
+    console.log(verdictLines(verdicts).join('\n'))
+    if (verdicts.some((v) => v.level === 'fail')) process.exitCode = 1
+  },
+  up: async (args) => {
+    for (const [daemon, answer] of await bringAllUp(daemonsNamed(paths, towerPort(readConfig(paths.config)), args))) console.log(`${daemon.name}: ${answer} · ${daemon.where} · log ${daemon.log}`)
+  },
+  down: async (args) => {
+    for (const [daemon, result] of await bringAllDown(daemonsNamed(paths, towerPort(readConfig(paths.config)), args))) {
+      if (result instanceof Error) {
+        console.error(result.message)
+        process.exitCode = 1
+      } else console.log(`${daemon.name}: ${result}`)
+    }
+  },
+  update: () => update(paths),
+  spawn: async ([project, ...rest]) => {
+    const { values, positionals } = parseArgs({
+      args: rest,
+      allowPositionals: true,
+      options: { cwd: { type: 'string' }, callsign: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
+    })
+    if (!project) throw new CliError(usageLine('spawn'))
+    const prompt = positionals.join(' ') || undefined
+    print(await towerCommand('spawn', { project, ...values, prompt }))
+  },
+  resume: async ([id, ...rest]) => {
+    const { values } = parseArgs({ args: rest, options: { 'carry-on': { type: 'boolean' } } })
+    const prompt = values['carry-on'] ? CARRY_ON : undefined
+    const log = readSessionLog('resume', id)
+    const conversation = latestSaved(conversationsOf(log))
+    if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
+    print(await towerCommand('resume', { id: log.header.id, conversation: conversation.id, prompt }))
+  },
+  submit: async ([id, ...rest]) => {
+    const by = process.env.TOWER_SESSION_ID
+    if (by) print(await request({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } }))
+    print(await fromHost(submitText(paths, id, rest.join(' '))))
+  },
+  kill: async ([id]) => {
+    const by = process.env.TOWER_SESSION_ID
+    const live = await liveIds(paths)
+    const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfig(paths.config)))?.header.id ?? id)
+    if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: { hook_event_name: KILLED_BY, by } }))
+    print(await request({ t: 'kill', id: target }))
+  },
+  live: async () => print(await request({ t: 'live' })),
+  ls: async () => {
+    const live = await liveIds(paths)
+    const running = await resourcesOf()
+    for (const { header, facts } of readSessions()) {
+      const { status, since } = withLiveness(facts.state, header.id, live)
+      const entered = header.startedAt + since * 1000
+      const own = running.filter((r) => r.session === header.id)
+      const word = facts.broken ? 'broken' : status
+      const why = facts.broken && `its log breaks at ${facts.broken.at}s: ${facts.broken.message}`
+      console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${span(Date.now() - entered)}`.padEnd(11), summary(own), why].filter(Boolean).join('  ').trimEnd())
+    }
+  },
+  ps: async () => {
+    for (const r of await resourcesOf()) {
+      const ports = r.ports.map((port) => `:${port}`).join(' ')
+      console.log([r.session, String(r.pid).padStart(6), (r.orphan ? 'orphan' : '').padEnd(6), ports.padEnd(12), r.command].join('  '))
+    }
+  },
+  reap: async ([id]) => {
+    if (id !== undefined) sessionLogFile('reap', id)
+    const live = await liveIds(paths)
+    // The machine's processes carry the sessions of every system root on it: only this root's are its to end.
+    const ours = (r: Resource) => existsSync(logFileOf(paths, r.session))
+    const doomed = (await resourcesOf()).filter((r) => (id === undefined ? ours(r) && !live.has(r.session) : r.session === id))
+    for (const r of reap(doomed)) console.log([r.session, String(r.pid).padStart(6), r.command].join('  '))
+  },
+  attach: async ([id]) => {
+    sessionLogFile('attach', id)
+    await fromHost(attach(paths, id))
+  },
+  screen: async ([id, seconds]) => {
+    const log = readSessionLog('screen', id)
+    const rows = seconds === undefined ? await screenAt(lastFrame(log)) : await screenAt(log, Number(seconds))
+    console.log(rows.join('\n'))
+  },
+  app: async () => console.log(await openApp(paths)),
+  config: async ([sub]) => {
+    if (sub !== 'check') throw new CliError(usageLine('config'), 'it checks the config as the tower reads it, and changes nothing')
+    if (!existsSync(paths.config)) throw new CliError(`No config at ${paths.config}`, 'tower init [hub] [repos...]: a first project from a directory')
+    const problems = checkConfigFile(paths.config)
+    const fails = problems.filter((p) => p.level === 'fail').length
+    console.log([`${paths.config}: ${fails ? `${fails} problem${fails === 1 ? '' : 's'} the tower can't take` : `the tower takes it, ${checkedSummary(readConfig(paths.config))}`}${problems.length > fails ? `, ${problems.length - fails} key${problems.length - fails === 1 ? '' : 's'} it ignores` : ''}.`, ...problemLines(problems), `Every key is documented in ${CONFIG_DOCS}. The tower reads the file again on every change, so an edit needs no restart, but for port.`].join('\n'))
+    if (fails) process.exitCode = 1
+  },
 }
 
-const [command, id, ...rest] = process.argv.slice(2)
-const asksUsage = command in USAGES && (id === '--help' || id === '-h')
+const RUNS: Record<VerbName, Run> = { ...USER_RUNS, ...WORKER_RUNS }
 
-const main = async (): Promise<void> => {
-  if (asksUsage) {
-    console.log(`Usage: tower ${USAGES[command]}`)
+const isHelp = (word: string | undefined) => word === '--help' || word === '-h'
+
+const main = async ([name, ...args]: string[]): Promise<void> => {
+  if (name === undefined || isHelp(name)) {
+    console.log(helpLines().join('\n'))
     return
   }
-  switch (command) {
-    case 'init': {
-      const [hub = process.cwd(), ...repos] = process.argv.slice(3)
-      const config = await init(paths.config, hub, repos)
-      console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.\nThen ask any worker: "give me a tour of the tower".`)
-      break
-    }
-    case 'doctor': {
-      const verdicts = await doctor(paths)
-      console.log(verdictLines(verdicts).join('\n'))
-      if (verdicts.some((v) => v.level === 'fail')) process.exitCode = 1
-      break
-    }
-    case 'up':
-      for (const [daemon, answer] of await bringAllUp(daemonsNamed(paths, towerPort(readConfig(paths.config)), process.argv.slice(3)))) console.log(`${daemon.name}: ${answer} · ${daemon.where} · log ${daemon.log}`)
-      break
-    case 'down':
-      for (const [daemon, result] of await bringAllDown(daemonsNamed(paths, towerPort(readConfig(paths.config)), process.argv.slice(3)))) {
-        if (result instanceof Error) {
-          console.error(result.message)
-          process.exitCode = 1
-        } else console.log(`${daemon.name}: ${result}`)
-      }
-      break
-    case 'update':
-      await update(paths)
-      break
-    case 'spawn': {
-      const { values, positionals } = parseArgs({
-        args: rest,
-        allowPositionals: true,
-        options: { cwd: { type: 'string' }, callsign: { type: 'string' }, model: { type: 'string' }, effort: { type: 'string' } },
-      })
-      if (!id) throw new CliError(`Usage: tower ${USAGES.spawn}`)
-      const prompt = positionals.join(' ') || undefined
-      print(await towerCommand('spawn', { project: id, ...values, prompt }))
-      break
-    }
-    case 'resume': {
-      const { values } = parseArgs({ args: rest, options: { 'carry-on': { type: 'boolean' } } })
-      const prompt = values['carry-on'] ? CARRY_ON : undefined
-      const log = readSessionLog(id)
-      const conversation = latestSaved(conversationsOf(log))
-      if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
-      print(await towerCommand('resume', { id: log.header.id, conversation: conversation.id, prompt }))
-      break
-    }
-    case 'submit': {
-      const by = process.env.TOWER_SESSION_ID
-      if (by) print(await request({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } }))
-      print(await fromHost(submitText(paths, id, rest.join(' '))))
-      break
-    }
-    case 'kill': {
-      const by = process.env.TOWER_SESSION_ID
-      const live = await liveIds(paths)
-      const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfig(paths.config)))?.header.id ?? id)
-      if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: { hook_event_name: KILLED_BY, by } }))
-      print(await request({ t: 'kill', id: target }))
-      break
-    }
-    case 'live':
-      print(await request({ t: 'live' }))
-      break
-    case 'ls': {
-      const live = await liveIds(paths)
-      const running = await resourcesOf()
-      for (const { header, facts } of readSessions()) {
-        const { status, since } = withLiveness(facts.state, header.id, live)
-        const entered = header.startedAt + since * 1000
-        const own = running.filter((r) => r.session === header.id)
-        const word = facts.broken ? 'broken' : status
-        const why = facts.broken && `its log breaks at ${facts.broken.at}s: ${facts.broken.message}`
-        console.log([header.id, header.project.padEnd(8), word.padEnd(11), `for ${span(Date.now() - entered)}`.padEnd(11), summary(own), why].filter(Boolean).join('  ').trimEnd())
-      }
-      break
-    }
-    case 'ps':
-      for (const r of await resourcesOf()) {
-        const ports = r.ports.map((port) => `:${port}`).join(' ')
-        console.log([r.session, String(r.pid).padStart(6), (r.orphan ? 'orphan' : '').padEnd(6), ports.padEnd(12), r.command].join('  '))
-      }
-      break
-    case 'reap': {
-      if (id !== undefined) sessionLogFile(id)
-      const live = await liveIds(paths)
-      // The machine's processes carry the sessions of every system root on it: only this root's are its to end.
-      const ours = (r: Resource) => existsSync(logFileOf(paths, r.session))
-      const doomed = (await resourcesOf()).filter((r) => (id === undefined ? ours(r) && !live.has(r.session) : r.session === id))
-      for (const r of reap(doomed)) console.log([r.session, String(r.pid).padStart(6), r.command].join('  '))
-      break
-    }
-    case 'attach':
-      sessionLogFile(id)
-      await fromHost(attach(paths, id))
-      break
-    case 'screen': {
-      const log = readSessionLog(id)
-      const rows = rest[0] === undefined ? await screenAt(lastFrame(log)) : await screenAt(log, Number(rest[0]))
-      console.log(rows.join('\n'))
-      break
-    }
-    case 'app':
-      console.log(await openApp(paths))
-      break
-    case 'config': {
-      if (id !== 'check') throw new CliError('Usage: tower config check', 'it checks the config as the tower reads it, and changes nothing')
-      if (!existsSync(paths.config)) throw new CliError(`No config at ${paths.config}`, 'tower init [hub] [repos...]: a first project from a directory')
-      const problems = checkConfigFile(paths.config)
-      const fails = problems.filter((p) => p.level === 'fail').length
-      console.log([`${paths.config}: ${fails ? `${fails} problem${fails === 1 ? '' : 's'} the tower can't take` : `the tower takes it, ${checkedSummary(readConfig(paths.config))}`}${problems.length > fails ? `, ${problems.length - fails} key${problems.length - fails === 1 ? '' : 's'} it ignores` : ''}.`, ...problemLines(problems), `Every key is documented in ${CONFIG_DOCS}. The tower reads the file again on every change, so an edit needs no restart, but for port.`].join('\n'))
-      if (fails) process.exitCode = 1
-      break
-    }
-    default:
-      await import('./directory.ts')
+  const verb = verbNamed(name)
+  if (!verb) throw new CliError(unknownLine(name), '`tower --help` says what each takes and does; the tower:handbook skill says what each is for')
+  if (isHelp(args[0])) {
+    console.log(usageLine(verb))
+    return
   }
+  await RUNS[verb](args)
 }
 
-await main().catch(reported)
+/** A reader that closed its end early (`tower read <tag> | head -1`) has all it asked for. */
+process.stdout.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code !== 'EPIPE') throw err
+  process.exit(0)
+})
+
+await main(process.argv.slice(2)).catch(reported)

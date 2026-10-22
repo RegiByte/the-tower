@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-22",
   "refs": [
     "hub/src/shared/api.ts#VERBS",
     "hub/src/tower/server.ts#onPath",
@@ -20,7 +20,7 @@
     "hub/src/shared/panels.ts#fileCall",
     "hub/src/shared/panels.ts#threadFiles",
     "hub/src/bridge/board.ts#Board",
-    "hub/src/directory.ts#USAGES",
+    "hub/src/cli-verbs.ts#CLI_VERBS",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#pictureHeadHtml",
     "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"

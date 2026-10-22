@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-22",
-  "refs": ["hub/src/cli.ts", "hub/src/directory.ts#USAGES", "hub/src/mod/bin/tower", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/shared/paths.ts#configPath", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/env.ts#withoutParentSession", "hub/src/bridge/facts.ts", "hub/package.json"]
+  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/mod/bin/tower", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/shared/paths.ts#configPath", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/env.ts#withoutParentSession", "hub/src/bridge/facts.ts", "hub/package.json"]
 }
 ---
 **Problem.** The project had grown four names (the repo's, the package's, the user's CLI `mc` with its mod, env and

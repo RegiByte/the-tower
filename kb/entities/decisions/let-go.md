@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-22",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",
@@ -23,7 +23,7 @@
     "hub/src/shared/cards.ts#resumeStranded",
     "hub/renderers/tower3d/src/main.ts#letWorkerGo",
     "hub/renderers/tower3d/src/acts.ts#HELD",
-    "hub/src/directory.ts#USAGES",
+    "hub/src/cli-verbs.ts#CLI_VERBS",
     "hub/test/board.test.ts"
   ],
   "links": [
