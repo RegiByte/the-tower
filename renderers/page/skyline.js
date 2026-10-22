@@ -1,11 +1,11 @@
 import { skyAt } from '/design.js'
-import { loudest, heededWaits, whyNot, esc, gistLine, statusName } from '/cards.js'
+import { loudest, heededWaits, whyNot, esc, gistLine, statusName, can } from '/cards.js'
 import { onDuty, $, byStart, signHtml } from './kit.js'
 import { chordLabel } from '/keymap.js'
 
 /**
  * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
- * @import { Heed } from '../../src/shared/cards.ts'
+ * @import { DaemonVerb, Heed } from '../../src/shared/cards.ts'
  */
 
 /**
@@ -15,6 +15,8 @@ import { chordLabel } from '/keymap.js'
  *   board: () => Board,
  *   heed: () => Heed,
  *   cards: () => Card[],
+ *   heldWhy: (verb: DaemonVerb) => string | undefined,
+ *   heldHtml: (verb: DaemonVerb, label: string, inner: string) => string,
  * }} SkylineDeps
  */
 
@@ -24,7 +26,7 @@ import { chordLabel } from '/keymap.js'
  * @param {SkylineDeps} deps
  */
 export function skyline(deps) {
-  const { callsign, paint, board, heed, cards } = deps
+  const { callsign, paint, board, heed, cards, heldWhy, heldHtml } = deps
   /** Windows a building shows: its most recent sessions, oldest at the bottom. */
   const BUILDING_WINDOWS = 40
   const BUILDING_MIN_WINDOWS = 16
@@ -59,13 +61,32 @@ export function skyline(deps) {
     if (clock) clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  function skylineHtml() {
+  /** No worker has ever run on any floor: none on the board and none archived. */
+  const firstRun = () => board().floors.every((f) => f.cards.length === 0 && f.archived === 0)
+
+  /** @param {Floor} f */
+  const firstWorkerHtml = (f) => {
+    const label = `Start a worker on ${f.name}`
+    return heldWhy('spawn') ? heldHtml('spawn', label, label) : can(f, 'spawn') ? `<button class="primary" data-spawn="${esc(f.id)}">${esc(label)}</button>` : ''
+  }
+
+  const welcomeHtml = () => `<div class="hello welcome"><div class="big">Welcome to the tower</div>
+    <dl><dt>A floor</dt><dd>is a project: the directory its workers start in, and the repos they work in.</dd>
+      <dt>A worker</dt><dd>is a Claude Code session the tower runs, with a callsign of its own.</dd></dl>
+    <div class="starts">${board().floors.map(firstWorkerHtml).join('')}</div>
+    <div class="sub">Then ask it “give me a tour of the tower”: it shows you the tower on your own floors.</div>
+    <div class="clock" id="clock"></div></div>`
+
+  function helloHtml() {
     const waiting = heededWaits(board(), heed()).length
     const working = cards().filter((c) => c.status === 'working').length
     const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
-    return `<div class="stars"></div><div class="orb" id="orb"></div>
-    <div class="hello"><div class="big">${big}</div><div class="sub">${waiting && board().keys['next-waiting'].length ? `press ${board().keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board().hostUp ? `click a window to read it · ${esc(whyNot(board(), 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
-      <div class="clock" id="clock"></div></div>
+    return `<div class="hello"><div class="big">${big}</div><div class="sub">${waiting && board().keys['next-waiting'].length ? `press ${board().keys['next-waiting'].map(chordLabel).join(' or ')} to go to the next one` : !board().hostUp ? `click a window to read it · ${esc(whyNot(board(), 'spawn'))}` : 'click a window, or + on a floor to start a session'}</div>
+      <div class="clock" id="clock"></div></div>`
+  }
+
+  function skylineHtml() {
+    return `<div class="stars"></div><div class="orb" id="orb"></div>${firstRun() ? welcomeHtml() : helloHtml()}
     <div class="city">${board().floors.map(buildingHtml).join('')}</div><div class="street"></div>`
   }
 

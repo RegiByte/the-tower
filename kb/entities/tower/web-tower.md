@@ -20,7 +20,9 @@ brief (`brief-pane.js`) and Changes and Reviews ([`review`](ref:hub/renderers/pa
 [`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the shelf, the archive, a draft, what a
 floor keeps and the dialogs. What they draw with alike is `kit.js`, what they read off the board alike
 [`boardKit`](ref:hub/renderers/page/board.js#boardKit). The skyline home shows projects as buildings and sessions as lit
-windows, one row of buildings narrowing to fit any number of floors.
+windows, one row of buildings narrowing to fit any number of floors. Until any worker has run (no card on any floor,
+none archived) it welcomes the user instead: a floor and a worker in a line each, a button per floor to start the
+first worker, and the tour to ask it for ([`skyline`](ref:hub/renderers/page/skyline.js#skyline)).
 
 The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) and time in state, and a worker's running subagents as

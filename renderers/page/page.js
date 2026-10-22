@@ -289,7 +289,7 @@ const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShow
 
 const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view })
 
-const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards })
+const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards, heldWhy, heldHtml })
 
 const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys })
 

@@ -385,6 +385,13 @@ dialog.confirm .actions { flex: none; }
   box-shadow: var(--shadow); }
 .hello .big { font: 900 var(--fs-3xl)/1.1 var(--display); text-transform: uppercase; letter-spacing: .05em; }
 .hello .sub { color: var(--muted); margin-top: var(--sp-s); }
+.welcome { max-width: 34em; }
+.welcome dl { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2xs) var(--sp-m); margin: var(--sp-l) 0 0; }
+.welcome dt { font-weight: 700; }
+.welcome dd { margin: 0; color: var(--muted); }
+.welcome .starts { display: flex; flex-wrap: wrap; gap: var(--sp-s); margin-top: var(--sp-l); }
+.welcome .starts button { min-height: var(--control); padding: 0 var(--sp-l); }
+.welcome .sub { margin-top: var(--sp-m); }
 .hello .clock { color: var(--faint); font-size: var(--fs-s); margin-top: var(--sp-2xs); font-variant-numeric: tabular-nums; }
 .city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: min(34px, 2vw); padding: 0 var(--sp-2xl); }
 .building { flex: 0 1 196px; min-width: 0; container-type: inline-size; display: flex; flex-direction: column; align-items: center; }
