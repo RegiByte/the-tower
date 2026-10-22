@@ -598,6 +598,7 @@
       "settingsHtml",
       "soundSection",
       "themeSection",
+      "tipsSection",
       "wirePrefs"
     ],
     "/tips.js": [

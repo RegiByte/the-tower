@@ -1,7 +1,8 @@
 /**
  * What a viewer keeps in `tower.store` that every renderer of theirs reads alike, as one record: the waits and offers
  * they dismissed, how often a wait rings, how the brief draws prompts and answers, how Changes draws a diff and whether
- * it shows its file tree, the gone-home crews they unfolded and the Stats panel's range. `readViewer(tower.store.get)`
+ * it shows its file tree, the gone-home crews they unfolded, the Stats panel's range, and whether tips show and those
+ * dismissed for good (`/capabilities.js`). `readViewer(tower.store.get)`
  * reads it whole, each field under its key in `VIEWER_KEYS` and `VIEWER_DEFAULT`'s where nothing of its kind is kept; a
  * renderer writes a field with `tower.store.set(VIEWER_KEYS[field], value)`. `tower.store` has no change event: a
  * renderer reads the record again on every board, and when a page it frames writes to the store, to pick up what another
@@ -24,6 +25,10 @@ export type Viewer = {
   /** The hirers whose gone-home crew is unfolded, by card id. */
   crewsUnfolded: string[]
   statsRange: StatsRange
+  /** Whether tips show at all. */
+  tips: boolean
+  /** The tips dismissed for good, by `tipKey`. */
+  tipsDismissed: string[]
 }
 
 export const VIEWER_KEYS = {
@@ -34,9 +39,11 @@ export const VIEWER_KEYS = {
   changesTree: 'changes.tree',
   crewsUnfolded: 'crews.unfolded',
   statsRange: 'stats.range',
+  tips: 'tips.on',
+  tipsDismissed: 'tips.dismissed',
 } as const satisfies { [K in keyof Viewer]: string }
 
-export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', changesTree: false, crewsUnfolded: [], statsRange: 'week' }
+export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', changesTree: false, crewsUnfolded: [], statsRange: 'week', tips: true, tipsDismissed: [] }
 
 /** Whether `kept` is of the kind of `like`, a field's default: a list of strings, or a value of the same `typeof`. */
 const sameKind = (kept: unknown, like: unknown) =>

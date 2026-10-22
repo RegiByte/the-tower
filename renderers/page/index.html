@@ -356,7 +356,15 @@ dialog.confirm .actions { flex: none; }
 .grip { display: none; position: absolute; top: -4px; left: 0; right: 0; height: 8px; cursor: row-resize; z-index: 2; }
 .main.shell-open .grip { display: block; }
 .grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.tabs { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-s) var(--sp-xl); overflow-x: auto; scrollbar-width: none; font-size: var(--fs-s); color: var(--faint); }
+.strip { display: flex; align-items: center; }
+.tabs { display: flex; flex: 0 1 auto; min-width: 0; align-items: center; gap: var(--sp-s); padding: var(--sp-s) var(--sp-xl); overflow-x: auto; scrollbar-width: none; font-size: var(--fs-s); color: var(--faint); }
+.tabs > span { white-space: nowrap; }
+.tip { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: var(--sp-2xs); padding-right: var(--sp-l); overflow: hidden; white-space: nowrap; font-size: var(--fs-s); color: var(--muted); }
+.tip.cramped { visibility: hidden; }
+.tip .tip-body { display: flex; align-items: center; gap: var(--sp-s); margin-left: auto; min-height: var(--control); padding: 0 var(--sp-m); border: 0; border-radius: var(--radius); background: none; color: inherit; font: inherit; font-weight: 400; }
+.tip button.tip-body:hover { background: var(--panel-2); color: var(--ink); }
+.tip .tip-body .eyebrow { color: var(--faint); }
+.tip .tip-body b { color: var(--ink); }
 .tab { display: flex; align-items: center; gap: var(--sp-m); flex: none; min-height: var(--control); padding: 0 0 0 var(--sp-l); font-weight: 400; font-size: var(--fs-s); background: var(--panel); color: var(--muted); }
 .tab::before { content: ""; width: 8px; height: 8px; border-radius: var(--radius-s); background: var(--p, var(--deco)); }
 .tab .what { color: var(--ink); font-weight: 700; max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -468,7 +476,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
   <div class="sky" id="sky"></div>
   <div class="dock">
     <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-controls="shell-pane" aria-label="shells height" aria-valuemin="120" tabindex="0" data-tip="drag, or ↑ and ↓, to resize the shells"></div>
-    <div class="tabs" id="tabs"></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
+    <div class="strip"><div class="tabs" id="tabs"></div><div class="tip" id="tip"></div></div><div class="shell-pick" id="shell-pick" popover aria-label="new shell in"></div>
     <div class="shell-pane" id="shell-pane"><div class="term" id="s-screen"></div><span id="s-mode"></span></div>
   </div>
 </main>

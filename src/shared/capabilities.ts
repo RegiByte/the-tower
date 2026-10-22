@@ -18,21 +18,21 @@ export type Pattern = { id: string; title: string; summary: string; story: strin
 export type Tip = ({ kind: 'capability' } & Capability) | ({ kind: 'pattern' } & Pattern)
 
 export const CAPABILITIES: Capability[] = [
-  { id: 'hire-crew', text: 'Ask a worker to split a task and hire a crew for it with `tower hire`: each hire gets its own worktree and reports back to it.' },
-  { id: 'changes', text: 'A worker’s Changes tab holds everything it changed, in every repo of its floor: commits and uncommitted files.', command: 'pane-changes' },
-  { id: 'review-notes', text: 'Pick lines in Changes to leave a review note; the worker reads it on its checkout’s review thread.', command: 'pane-reviews' },
-  { id: 'review-self', text: 'Tell a worker “when you’re done, get yourself reviewed”: it hires a reviewer with `tower review` and answers each note.' },
-  { id: 'brief', text: 'A worker’s Brief reads its last turns as a chat, across `/clear` and resumes, without scrolling its terminal.', command: 'pane-brief' },
-  { id: 'next-waiting', text: 'Jump to the next worker waiting on you: a question first, then whoever has waited longest.', command: 'next-waiting' },
-  { id: 'move', text: 'Step through the workers on duty in the sidebar’s order, from anywhere, a terminal included.', command: 'next-worker' },
-  { id: 'show', text: 'Ask a worker to show you what it made: `tower show` opens a page, picture or file in a tab beside its terminal.' },
-  { id: 'drafts', text: 'Keep a prompt for later as a draft (“keep that as a draft”); a draft starts a worker when you are ready.' },
-  { id: 'shells', text: 'Shells start in any of a floor’s directories and keep running after you close the page or restart the tower.', verb: 'shell' },
-  { id: 'stats', text: 'Stats in the sidebar reads spend, turns, waits and the week’s budget over any window; The Week at /r/week/ reads the week as a yearbook.' },
-  { id: 'tidy', text: 'A floor’s Tidy lists what can go: worktrees whose work landed, leftover processes, old logs. Nothing goes until you press.', verb: 'tidy' },
-  { id: 'policies', text: 'A policy is standing work on a schedule: “every weekday at 9, have a worker check the dependency updates”.' },
-  { id: 'resume', text: 'A worker that ended can be resumed from its floor’s archive, its conversation carried on in a new session.' },
-  { id: 'keys', text: 'Every key the page answers to, and what each status means, are on one sheet; the config’s `keys` rebinds any of them.', command: 'help' },
+  { id: 'hire-crew', text: 'Ask a worker to split a task and hire a crew for it with `tower hire`.' },
+  { id: 'changes', text: 'Changes holds all a worker changed, in every repo of its floor.', command: 'pane-changes' },
+  { id: 'review-notes', text: 'Pick lines in Changes to leave a note on the worker’s review thread.', command: 'pane-reviews' },
+  { id: 'review-self', text: 'Tell a worker “get yourself reviewed when you’re done”: it hires its reviewer.' },
+  { id: 'brief', text: 'The Brief reads a worker’s last turns as a chat, without scrolling its terminal.', command: 'pane-brief' },
+  { id: 'next-waiting', text: 'Go to the next worker waiting on you: a question first, then the longest wait.', command: 'next-waiting' },
+  { id: 'move', text: 'Step through the workers on duty from anywhere, a terminal included.', command: 'next-worker' },
+  { id: 'show', text: 'Ask a worker to show you what it made: it opens beside its terminal.' },
+  { id: 'drafts', text: 'Say “keep that as a draft”: a draft starts a worker when you are ready.' },
+  { id: 'shells', text: 'Shells keep running after you close the page or restart the tower.', verb: 'shell' },
+  { id: 'stats', text: 'Stats reads spend, waits and the week’s budget; The Week reads it as a yearbook.' },
+  { id: 'tidy', text: 'A floor’s Tidy lists what can go, landed worktrees to old logs; nothing goes unasked.', verb: 'tidy' },
+  { id: 'policies', text: 'A policy is standing work: “every weekday at 9, check the dependency updates”.' },
+  { id: 'resume', text: 'A worker that ended resumes from its floor’s archive, its conversation carried on.' },
+  { id: 'keys', text: 'Every key and what each status means are on one sheet; the config rebinds any key.', command: 'help' },
 ]
 
 /** A pattern from its file: `# Title`, a blank line, a one-paragraph summary, a blank line, then the story. */

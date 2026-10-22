@@ -13,6 +13,7 @@ import { shelf } from './shelf.js'
 import { worker } from './worker.js'
 import { review } from './review.js'
 import { shells } from './shells.js'
+import { tipStrip } from './tip.js'
 import { screen } from './screen.js'
 import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
@@ -25,7 +26,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { DEFAULT_KEYS, MOVE_COMMAND, commandOf } from '/keymap.js'
+import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, commandOf } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -120,6 +121,7 @@ function render() {
 }
 
 function tick() {
+  paintTip()
   if (mainClass(view()) === 'home') paintSky()
   paintLimits()
   for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
@@ -282,6 +284,7 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
 const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
@@ -449,6 +452,13 @@ document.addEventListener('click', async (e) => {
   if (markdown) return chooseBriefMarkdown(markdown)
   const files = target.closest('[data-changes-files]')?.dataset.changesFiles
   if (files) return (keepViewer('changesTree', files === 'shown'), render())
+  const tips = target.closest('[data-tips]')?.dataset.tips
+  if (tips) return (keepViewer('tips', tips === 'on'), render())
+  if (target.closest('[data-tips-again]')) return (keepViewer('tipsDismissed', []), render())
+  const dismissTip = target.closest('[data-tip-dismiss]')?.dataset.tipDismiss
+  if (dismissTip) return (keepViewer('tipsDismissed', [...viewer().tipsDismissed, dismissTip]), render())
+  const tipRun = target.closest('[data-tip-run]')?.dataset.tipRun
+  if (tipRun) return run(tipRun, new KeyboardEvent('keydown')) || toast(`Not from here: ${COMMANDS.find((c) => c.id === tipRun)?.does}`)
   const draftAct = target.closest('[data-draft-act]')?.dataset.draftAct
   if (draftAct === 'send') return sendDraft()
   if (draftAct === 'transfer') return openTransfer()

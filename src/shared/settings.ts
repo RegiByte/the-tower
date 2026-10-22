@@ -10,6 +10,8 @@
  *   data-sound-play="<sound>"    play a sound of `SOUNDS` the way the renderer rings
  *   data-brief-markdown="<m>"    prompts and answers rendered or raw (`BRIEF_MARKDOWNS`), kept under `BRIEF_MARKDOWN_KEY`
  *   data-changes-files="<f>"     Changes' file tree shown or hidden beside the diffs, kept under `CHANGES_TREE_KEY` (`/panels.js`)
+ *   data-tips="<on|off>"         whether tips show, kept under `VIEWER_KEYS.tips` (`/viewer.js`)
+ *   data-tips-again              the tips dismissed for good shown again
  *
  * The appearance is data: `PREF_SECTIONS` describes each setting of `tower.prefs`, `prefSections` draws them, and
  * `wirePrefs(popover, tower.prefs.set)` wires every one, so a setting added here reaches every renderer with no wiring
@@ -96,6 +98,14 @@ export const changesSection = (tree: boolean) =>
     `<div class="seg" role="group" aria-label="changes">${
       choice('data-changes-files', 'shown', 'Tree', 'the changed files as a tree beside the diffs, each going to its file', tree) +
       choice('data-changes-files', 'hidden', 'None', 'the diffs alone', !tree)}</div>`)
+
+/** Whether tips show, and the tips dismissed for good brought back. */
+export const tipsSection = (on: boolean, dismissed: number) =>
+  section('Tips', 'what the tower can do, one at a time',
+    `<div class="seg" role="group" aria-label="tips">${
+      choice('data-tips', 'on', 'On', 'a tip at a time where there is room, the next every few minutes', on) +
+      choice('data-tips', 'off', 'Off', 'no tips', !on)}</div>` +
+    (dismissed ? `<div class="row"><button data-tips-again data-tip="show the tips you dismissed again">Show ${dismissed} dismissed again</button></div>` : ''))
 
 /** One choice of a segmented setting: its value, the word on it, what it means, an icon before the word. */
 export type PrefChoice = { value: string | number; label: string; means: string; icon?: string }
