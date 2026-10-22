@@ -331,25 +331,6 @@ async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIE
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
 }
 
-/** The contract for renderers in any language. */
-const apiSchema = (): string => JSON.stringify({
-  v: API_VERSION,
-  verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
-  reads: describeReads(READS),
-  streams: {
-    board: {
-      description: 'The whole system as one view, again whenever it changes.',
-      read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
-      message: boardSchema,
-    },
-    'screen/<id>': { description: 'A session\'s screen as a snapshot, then its output (`ScreenMsg`, src/shared/shelf-page.ts).' },
-    'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
-    'shell/<id>': { description: 'A shell\'s screen, then its output (`ShellStream`, src/shared/terms.ts).' },
-    mux: { description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' },
-  },
-  error: z.toJSONSchema(ApiErrorSchema),
-})
-
 async function origins(res: http.ServerResponse) {
   const dirs = Object.values(readConfig().projects).flatMap(projectDirs)
   const urls = await Promise.all(
@@ -1492,7 +1473,7 @@ const READS = [
   plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
   plain('stream', { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
   plain('stream', { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
-  plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end((schemaBody ??= apiSchema())) }),
+  plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
   apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
   apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
   apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
@@ -1511,10 +1492,8 @@ const READS = [
   apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
   plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
   plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
-  apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
+  apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.path!) }),
 ] as const satisfies readonly Read[]
-
-let schemaBody: string | undefined
 
 /** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
 const pathOf = (path: RegExp) =>
@@ -1533,6 +1512,25 @@ const describeReads = (reads: readonly Read[]) =>
       return ['read' in entry ? entry.read : path.slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/', { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
     }),
   )
+
+/** The contract for renderers in any language. */
+const apiSchema: string = JSON.stringify({
+  v: API_VERSION,
+  verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
+  reads: describeReads(READS),
+  streams: {
+    board: {
+      description: 'The whole system as one view, again whenever it changes.',
+      read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+      message: boardSchema,
+    },
+    'screen/<id>': { description: 'A session\'s screen as a snapshot, then its output (`ScreenMsg`, src/shared/shelf-page.ts).' },
+    'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
+    'shell/<id>': { description: 'A shell\'s screen, then its output (`ShellStream`, src/shared/terms.ts).' },
+    mux: { description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' },
+  },
+  error: z.toJSONSchema(ApiErrorSchema),
+})
 
 type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
 
