@@ -248,7 +248,7 @@ const viewOf = (): SystemView => ({
 const boardOf = () => board(viewOf())
 
 /** Every session's card, the ones the board leaves out included. */
-const everyCard = (now: number) => allCards(readConfig(), system.sessions(), system.live(), system.running(), system.peers(), system.shells(), system.threads(), system.repos(), policiesNow(), now)
+const everyCard = (now: number) => allCards({ ...viewOf(), now })
 
 function archive(res: http.ServerResponse, project: string) {
   if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)

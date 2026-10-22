@@ -641,22 +641,11 @@ export type Policies = { files: PolicyFile[]; facts: Map<string, PolicyFacts> }
 export const NO_POLICIES: Policies = { files: [], facts: new Map() }
 
 /**
- * Every session's card, archived or not: what the board and the archive are cut from. `repos`: what git says in each
+ * Every session's card, archived or not, from the sessions, host, processes, peers, shells, threads, repos, policies and now of `view`: what the board and the archive are cut from. `repos`: what git says in each
  * project dir (`src/worktrees.ts`), by dir. `shells`: the terms daemon's, which hold a worktree in use as a session
  * does. `threads`: every review thread file, parsed. `now`: epoch ms.
  */
-export const allCards = (
-  config: Config,
-  sessions: Session[],
-  host: HostLive | undefined,
-  running: Resource[],
-  peers: Peer[],
-  shells: Shell[] | undefined,
-  threads: { project: string; id: string; thread: ReviewThread }[],
-  repos: Map<string, RepoRead>,
-  policies: Policies,
-  now: number,
-): Card[] => {
+export const allCards = ({ config, sessions, host, processes, peers, shells, threads, repos, policies, now }: SystemView): Card[] => {
   const continued = continuations(sessions)
   const runOf = (first: string, project: string) => cardRun(first, policies.files.filter((f) => f.project === project), policies.facts.get(project) ?? NO_POLICY_FACTS)
   const reads = [...repos.values()]
@@ -679,7 +668,7 @@ export const allCards = (
       sessions,
       continued,
       host?.ids ?? new Set(),
-      running,
+      processes,
       peers,
       cardWorktree(config.projects[s.header.project], s.header.cwd, reads, projectRead(config.projects[s.header.project])),
       unresumableOf(s.header),
@@ -726,10 +715,11 @@ export type SystemView = {
   now: number
 }
 
-export const board = ({ config, sessions, host, processes: running, peers, shells, items, threads, repos, logFiles: logs, probes, streams, policies, paths, now }: SystemView): Board => {
+export const board = (view: SystemView): Board => {
+  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
-  const cards = allCards(config, sessions, host, running, peers, shells, threads, repos, policies, now)
+  const cards = allCards(view)
   const policiesOf = (id: string): PolicyView[] =>
     Object.hasOwn(projectCollections(config, id), POLICIES)
       ? policyViews(id, policies.files.filter((f) => f.project === id), policies.facts.get(id) ?? NO_POLICY_FACTS, cards.filter((c) => c.project === id), host !== undefined, now)
@@ -756,7 +746,7 @@ export const board = ({ config, sessions, host, processes: running, peers, shell
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),
         threads: floorThreadsNow.filter((t) => t.landed).map((t) => t.checkout),
         prune: prunable(floorCards, worktrees, cards),
-        logs: oldLogs(floorCards, logs, config.retention?.days, now),
+        logs: oldLogs(floorCards, logFiles, config.retention?.days, now),
         streams: [...systemStreams, ...oldStreams(streams.filter((m) => m.file.startsWith(`projects/${id}/`)), config.retention?.days, now)],
       }
       return {
