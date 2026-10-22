@@ -1448,9 +1448,12 @@ type Kind = 'page' | 'stream' | 'schema'
  * read's schema in `QUERIES` before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route
  * that declares none. An entry is the API read it `read`s, a name of `Reads` or `QUERIES`, or says its `kind`.
  */
+type StreamDoc = { description: string; read?: string; message?: object }
+
 type ReadRoute = {
   path: RegExp
   query?: z.ZodType
+  stream?: StreamDoc
   serve(served: Served<z.ZodType>): unknown
 }
 
@@ -1466,13 +1469,19 @@ const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): Rea
 
 const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: Kind } => ({ ...entry, kind })
 
+const streamRead = (stream: StreamDoc, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: 'stream' } => ({ ...plain('stream', entry), kind: 'stream', stream })
+
 const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
 
 /** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
 const READS = [
   plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
-  plain('stream', { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
-  plain('stream', { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
+  streamRead({
+    description: 'The whole system as one view, again whenever it changes.',
+    read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+    message: boardSchema,
+  }, { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
+  streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
   plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
   apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
   apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
@@ -1503,13 +1512,21 @@ const pathOf = (path: RegExp) =>
     .replace(/\(\?<(\w+)>[^()]*\)/g, '{$1}')
     .replaceAll('\\/', '/')
 
+const keyOf = (entry: Read) => ('read' in entry ? entry.read : pathOf(entry.path).slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/')
+
+/** The streams: each declared on its `READS` entry, and the one only `/mux` reaches. */
+const describeStreams = (reads: readonly Read[]): Record<string, StreamDoc> => ({
+  ...Object.fromEntries(reads.flatMap((entry) => (entry.stream ? [[keyOf(entry), entry.stream]] : []))),
+  'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
+})
+
 /** Every entry of `READS` as `{ path, kind, query? }`, keyed by its API read or, for a route that is none, by its path. */
 const describeReads = (reads: readonly Read[]) =>
   Object.fromEntries(
     reads.map((entry) => {
       const path = pathOf(entry.path)
       const kind = 'read' in entry ? 'json' : entry.kind
-      return ['read' in entry ? entry.read : path.slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/', { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
+      return [keyOf(entry), { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
     }),
   )
 
@@ -1518,17 +1535,7 @@ const apiSchema: string = JSON.stringify({
   v: API_VERSION,
   verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
   reads: describeReads(READS),
-  streams: {
-    board: {
-      description: 'The whole system as one view, again whenever it changes.',
-      read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
-      message: boardSchema,
-    },
-    'screen/<id>': { description: 'A session\'s screen as a snapshot, then its output (`ScreenMsg`, src/shared/shelf-page.ts).' },
-    'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
-    'shell/<id>': { description: 'A shell\'s screen, then its output (`ShellStream`, src/shared/terms.ts).' },
-    mux: { description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' },
-  },
+  streams: describeStreams(READS),
   error: z.toJSONSchema(ApiErrorSchema),
 })
 
