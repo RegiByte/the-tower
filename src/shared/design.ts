@@ -386,7 +386,7 @@ ${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 
 .spawn-form .draft b { color: var(--ink); }
 .spawn-form .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); min-height: 0; }
 .spawn-form .task { display: flex; flex-direction: column; gap: var(--sp-m); padding: var(--sp-xl) var(--sp-2xl); border-right: 1px solid var(--line); min-height: 0; }
-.spawn-form .setup { display: grid; align-content: start; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); overflow: auto; }
+.spawn-form .setup { display: grid; align-content: start; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); overflow: auto; scrollbar-gutter: stable; }
 .spawn-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .spawn-form legend { padding: 0; margin-bottom: var(--sp-m); }
 .spawn-form .lbl { display: flex; align-items: baseline; gap: var(--sp-m); }
