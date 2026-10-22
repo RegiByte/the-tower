@@ -39,13 +39,13 @@ every other key, and reach every renderer the way `user.name` does.
   [`keysHint`](ref:hub/src/shared/keymap.ts#keysHint) is a control's tip (`Esc outside a terminal or a text field`), so
   every button a command runs names its chords as the config binds them, and
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
-- `shell-here` (⌃`) opens or focuses a shell in the selected worker's directory, and from that shell closes the dock's view (the shell
+- `shell-here` (⌃`) opens or focuses a shell in the selected worker's directory, and from any shell closes the dock's view (the shell
   keeps running) and returns to the worker's terminal, read from the board's shells by cwd. xterm sends no bytes for ⌃`, so neither a shell nor Claude ever sees it.
 - `palette` (⌘K) opens the command palette, which lists the global commands by their `label` with their chords, so
   it teaches the keymap as it replaces it ([[command-palette]]).
 - `leave-terminal` (⌥Esc) returns focus to where it was before the terminal
-  ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃1–4) show the selected worker's
-  panes, from inside the terminal too. Neither is Claude's: ⌥Esc reaches it as Esc twice and Claude binds no ⌃ digit.
+  ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃⇧1–4) show the selected worker's
+  panes, from inside the terminal too. Neither is Claude's: ⌥Esc reaches it as Esc twice and Claude binds no ⌃⇧ digit. macOS takes ⌃ digits for its desktops, which is why the panes carry ⇧.
   A default must not eat a printable character on any common layout, which rules out ⌥ with a digit.
 - Tower 3D runs the moves, the panes and `leave-terminal` from `board.keys` in the world, at a desk and in its
   terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and lists them on its pause card with

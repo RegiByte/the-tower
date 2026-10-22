@@ -176,8 +176,8 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `sidebar` | global | `Meta+B` |
 | `palette` (the command palette) | global | `Meta+K` |
 | `help` (the `?` sheet) | global | `?` |
-| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+1` … `Ctrl+4` |
-| `shell-here` (a shell in the selected worker's directory; from it, hides the shell and goes back) | global | `Ctrl+Backquote` |
+| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+Shift+1` … `Ctrl+Shift+4` |
+| `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Ctrl+Backquote` |
 | `leave-terminal` | terminal | `Alt+Escape` |
 | `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end`, `word-left`, `word-right` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight`, `Alt+ArrowLeft`, `Alt+ArrowRight` |
 | `save-draft` | field | `Meta+S`, `Ctrl+S` |
@@ -190,5 +190,5 @@ override, naming the other command: rebind that one too, or set it to `null`. An
 ignored. A character chord and a key chord that are the same key on a US layout (`?` and `Shift+Slash`) are a warning:
 the check can't know your layout, and on that key only the command listed first runs. A global chord with a modifier is kept from the terminal: `Ctrl` chords there are Claude's and the shell's
 own keys, and the browser keeps some `Meta` chords (⌘W, ⌘T, ⌘Q) for itself. A default that fires in a terminal or a field types nothing worth keeping: ⌥ with a digit types `#` or `€`
-on some layouts, so the panes are on ⌃1–4, which in a terminal are only legacy control bytes. macOS takes ⌃1–4
-while "Switch to Desktop" shortcuts are on in its Keyboard settings: rebind the panes then.
+on some layouts, so the panes are on ⌃⇧1–4, which a terminal gets no bytes for. macOS takes ⌃1, ⌃2… (one per desktop) for
+"Switch to Desktop" while those shortcuts are on in its Keyboard settings, so the panes avoid them.

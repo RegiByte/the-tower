@@ -13,7 +13,8 @@
  * Meta only while nothing types (a terminal or a text field would take it as typing); `terminal` with focus in a
  * terminal; `field` in a text field. ⌥ letters reach the tower from a terminal while xterm's `macOptionIsMeta` is off.
  * A default that fires in a terminal or a field types nothing worth keeping: ⌥ digits type `#` or `€` on some layouts,
- * ⌃ digits only legacy control bytes (⌃3 an Esc, ⌃4 a quit signal in a shell).
+ * ⌃ digits only legacy control bytes (⌃3 an Esc, ⌃4 a quit signal in a shell). macOS takes ⌃ with a digit for Mission
+ * Control's "Switch to Desktop N" before a browser sees it, so the panes are on ⌃⇧ digits, which it leaves alone.
  */
 
 export type Scope = 'global' | 'terminal' | 'field'
@@ -38,11 +39,11 @@ export const COMMANDS = [
   { id: 'sidebar', label: 'Sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
   { id: 'palette', label: 'Command palette', scope: 'global', group: 'Page', chords: ['Meta+K'], does: 'the command palette: go to a worker, a floor, a shelf entry or a draft, or run a command or what the selected worker offers, by typing' },
   { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
-  { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+1'], does: "the selected worker's terminal, focused" },
-  { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+2'], does: "the selected worker's brief" },
-  { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+3'], does: "the selected worker's changes" },
-  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+4'], does: "the selected worker's review thread" },
-  { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from that shell, hides it and goes back to the worker's terminal" },
+  { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused" },
+  { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief" },
+  { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes" },
+  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+4'], does: "the selected worker's review thread" },
+  { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from any shell, hides the dock and goes back to the worker's terminal" },
   { id: 'leave-terminal', label: 'Leave the terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
   { id: 'newline', label: 'New line', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
   { id: 'delete-word', label: 'Delete a word', scope: 'terminal', group: 'Terminal', chords: ['Ctrl+Backspace'], does: 'delete the word before the cursor, as ⌥⌫ does' },

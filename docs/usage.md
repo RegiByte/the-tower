@@ -143,7 +143,7 @@ and "Patterns users are discovering" opens a sheet of the patterns. The config's
 
 ## A worker's brief
 
-A worker's **Brief** tab (⌃2) reads its last turns as a chat, your prompts and its answers, in every conversation it
+A worker's **Brief** tab (⌃⇧2) reads its last turns as a chat, your prompts and its answers, in every conversation it
 held (after each `/clear`, and across resumes), without scrolling its terminal. Workers read the same thing:
 
 > "What did HOLMES-42 last tell me?" · "Summarize what this floor's workers did today."
