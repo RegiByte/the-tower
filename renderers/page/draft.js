@@ -193,6 +193,7 @@ export function draft(deps) {
       <span class="line">${lineOf(c)}</span></button>`).join('')
     $('transfer').returnValue = ''
     $('transfer').showModal()
+    $('transfer-targets').querySelector('button')?.focus()
   }
 
   $('transfer').addEventListener('close', async () => {

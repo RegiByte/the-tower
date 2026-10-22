@@ -60,11 +60,13 @@ export function dialogs(deps) {
   }
 
   for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.confirm'))) {
-    d.addEventListener('click', (e) => e.target === d && outside(d, e) && d.close())
+    let pressedOutside = false
+    d.addEventListener('pointerdown', (e) => (pressedOutside = e.target === d && outside(d, e)))
+    d.addEventListener('click', (e) => e.target === d && pressedOutside && outside(d, e) && d.close())
   }
 
-  for (const title of document.querySelectorAll('dialog.sheet h2:first-child')) {
-    title.insertAdjacentHTML('beforeend', `<button class="icon-btn" value="" aria-label="Close" data-tip="Close">${ICON.close}</button>`)
+  for (const head of document.querySelectorAll('dialog.sheet header')) {
+    head.insertAdjacentHTML('beforeend', `<button class="icon-btn" value="" aria-label="Close" data-tip="Close">${ICON.close}</button>`)
   }
 
   return { showLanding, showKeys, ask }
