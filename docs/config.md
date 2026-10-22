@@ -174,6 +174,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `next-waiting` | global | `Alt+J`, `N` |
 | `home` (back to the skyline) | global | `Escape` |
 | `sidebar` | global | `Meta+B` |
+| `palette` (the command palette) | global | `Meta+K` |
 | `help` (the `?` sheet) | global | `?` |
 | `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+1` … `Ctrl+4` |
 | `shell-here` (a shell in the selected worker's directory; from it, hides the shell and goes back) | global | `Ctrl+Backquote` |

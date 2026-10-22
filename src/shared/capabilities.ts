@@ -18,6 +18,7 @@ export type Pattern = { id: string; title: string; summary: string; story: strin
 export type Tip = ({ kind: 'capability' } & Capability) | ({ kind: 'pattern' } & Pattern)
 
 export const CAPABILITIES: Capability[] = [
+  { id: 'palette', text: 'Go to any worker or run any command by typing its name in the command palette.', command: 'palette' },
   { id: 'hire-crew', text: 'Ask a worker to split a task and hire a crew for it with `tower hire`.' },
   { id: 'changes', text: 'Changes holds all a worker changed, in every repo of its floor.', command: 'pane-changes' },
   { id: 'review-notes', text: 'Pick lines in Changes to leave a note on the worker’s review thread.', command: 'pane-changes' },

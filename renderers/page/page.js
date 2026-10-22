@@ -1,4 +1,4 @@
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
 import { POLICIES } from '/policies.js'
@@ -35,6 +35,8 @@ import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
 import { AUTOSAVE_MS, DRAFTS } from '/drafts.js'
 import { verbLabel } from '/verb-words.js'
+import { CAPABILITIES } from '/capabilities.js'
+import { palette } from './palette.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -51,6 +53,8 @@ import { verbLabel } from '/verb-words.js'
  * @import { MainView, Pane } from './view.js'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../src/shared/drafts.ts'
+ * @import { Pick } from '../../src/shared/palette.ts'
+ * @import { Capability } from '../../src/shared/capabilities.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
@@ -298,6 +302,78 @@ const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards,
 const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys })
 
 
+/** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
+function goToFloor(project) {
+  if (document.body.classList.contains('collapsed')) toggleSide()
+  const fold = () => /** @type {HTMLElement | null} */ ($('floors').querySelector(`[data-floor-fold="${CSS.escape(project)}"]`))
+  if (fold()?.getAttribute('aria-expanded') === 'false') toggleFloor(project)
+  fold()?.scrollIntoView({ block: 'start' })
+  fold()?.focus()
+}
+
+/**
+ * Runs what a palette entry does (`/palette.js`) through the handlers its buttons and keys run; `row` is the entry's
+ * row, busy while a request it makes is in flight.
+ * @param {Pick} does @param {HTMLElement} row
+ */
+function doPick(does, row) {
+  if (does.t === 'command') return void run(does.id, new KeyboardEvent('keydown'))
+  if (does.t === 'patterns') return void showPatterns()
+  if (does.t === 'learn') return learnPick(does.id)
+  if (does.t === 'go') {
+    const to = does.target
+    if (to.t === 'worker') return moveTo(to.id)
+    if (to.t === 'floor') return goToFloor(to.project)
+    if (to.t === 'draft') return void openDraft(to.project, to.id)
+    const entry = /** @type {Floor} */ (floorOf(to.project)).shelf?.[to.n]
+    return entry && 'link' in entry ? void window.open(entry.link, '_blank', 'noreferrer') : openShelf(to.project, to.n)
+  }
+  if (does.subject === 'floor') {
+    const f = /** @type {Floor} */ (floorOf(does.project))
+    if (does.verb === 'spawn' || does.verb === 'cut') return openSpawn(f.id)
+    if (does.verb === 'shell') return void spawnShellAt(f.id, f.hub)
+    if (does.verb === 'editor') return void openInEditor(row, f, f.hub)
+    return void tidyAll(row, f)
+  }
+  const c = findCard(does.id)
+  if (!c) return toast('That worker is no longer on the board')
+  if (does.subject === 'resource') {
+    const r = c.resources.find((r) => r.pid === does.pid)
+    const call = r && callOf(r, 'reap')
+    return call ? void told(pressing(row, () => tower.run(call))) : toast(noLongerOffered(`process ${does.pid}`, 'reap'))
+  }
+  if (does.subject === 'conversation') {
+    const conv = c.conversations.find((v) => v.id === does.conversation)
+    const call = conv && callOf(conv, 'resume')
+    if (does.verb === 'goto' && conv?.resumedBy) return moveTo(conv.resumedBy.id)
+    return call ? void resume(row, call) : toast(noLongerOffered(c.callsign, does.verb))
+  }
+  const verb = does.verb
+  if (verb === 'resume' || verb === 'carry-on') {
+    const call = callOf(c, verb)
+    return call ? void resume(row, call) : toast(noLongerOffered(c.callsign, verb))
+  }
+  if (verb === 'goto') {
+    const to = c.conversations.at(-1)?.resumedBy
+    return to ? moveTo(to.id) : toast(noLongerOffered(c.callsign, verb))
+  }
+  if (verb === 'review') return void hireReviewer(row, c)
+  if (verb === 'reap') return void reapAll(row, c)
+  if (verb === 'let-go') return void letGo(row, c)
+  if (verb === 'send-home') return void sendHome(row, c)
+}
+
+/** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
+function learnPick(id) {
+  const capability = /** @type {Capability} */ (CAPABILITIES.find((k) => k.id === id))
+  const floor = capability.verb && floorOf(findCard(selected())?.project ?? '')
+  const verb = capability.verb
+  const action = floor && verb && can(floor, verb) ? { label: verbLabel('floor', verb), run: () => doPick({ t: 'action', subject: 'floor', verb, project: floor.id }, $('palette-input')) } : undefined
+  toast(capability.text.replace(/`/g, ''), action)
+}
+
+const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, pick: doPick })
+
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
 
@@ -405,6 +481,25 @@ async function resumeAll(button, f) {
   if (line) toast(line)
 }
 
+/** Hires a reviewer of `author`'s work in a fork of its checkout. @param {HTMLElement} button @param {Card} author */
+async function hireReviewer(button, author) {
+  const r = await told(pressing(button, async () => tower.run(offeredCall(author, 'review', author.callsign))))
+  if (r) toast(`A reviewer of ${callsign(author.id)} starts in ${/** @type {NonNullable<Replies['spawn']['cut']>} */ (r.cut).name}, a fork of ${author.checkout}`)
+}
+
+/** Ends everything a worker left running, asked first. @param {HTMLElement} button @param {Card} c */
+async function reapAll(button, c) {
+  if (await ask(reapAsk(c), 'End them')) told(pressing(button, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
+}
+
+/** Does all a floor's Tidy lists, asked first with the list. @param {HTMLElement} button @param {Floor} f */
+async function tidyAll(button, f) {
+  if (await ask(tidyAllAsk(f, Date.now()), verbLabel('floor', 'tidy'))) told(pressing(button, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
+}
+
+/** Opens one of a floor's dirs in the user's editor. @param {HTMLElement} button @param {Floor} f @param {string} dir */
+const openInEditor = (button, f, dir) => told(pressing(button, async () => tower.run(offeredCall(f, 'editor', f.name), { dir })))
+
 /** @param {HTMLElement} button @param {Card} c */
 async function letGo(button, c) {
   if (!(await ask(letGoAsk(c), verbLabel('card', 'let-go')))) return
@@ -493,10 +588,7 @@ document.addEventListener('click', async (e) => {
   const tidyCall = target.closest('[data-tidy-call]')
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
-  if (tidy) {
-    const f = /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy)))
-    return (await ask(tidyAllAsk(f, Date.now()), verbLabel('floor', 'tidy'))) && told(pressing(tidy, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
-  }
+  if (tidy) return tidyAll(tidy, /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy))))
   const picked = target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)
   const pickAdd = target.closest('[data-pick-add]')
@@ -561,10 +653,7 @@ document.addEventListener('click', async (e) => {
   if (goto) return gotoFile(goto)
   if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected()) }), render())
   const open = target.closest('[data-open]')
-  if (open) {
-    const f = /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject)))
-    return told(pressing(open, async () => tower.run(offeredCall(f, 'editor', f.name), { dir: open.dataset.open })))
-  }
+  if (open) return openInEditor(open, /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
   const doc = target.closest('[data-doc]')
@@ -597,18 +686,11 @@ document.addEventListener('click', async (e) => {
   const reapOne = target.closest('[data-reap-process]')
   if (reapOne) return told(pressing(reapOne, () => tower.run(JSON.parse(/** @type {string} */ (reapOne.dataset.reapProcess)))))
   const reapable = target.closest('[data-reap]')
-  if (reapable) {
-    const c = /** @type {Card} */ (findCard(reapable.dataset.reap))
-    if (await ask(reapAsk(c), 'End them')) told(pressing(reapable, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
-    return
-  }
+  if (reapable) return reapAll(reapable, /** @type {Card} */ (findCard(reapable.dataset.reap)))
   const actor = target.closest('[data-act]')
   const act = actor?.dataset.act
   if (act === 'send-home') return sendHome(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected())))
-  if (act === 'review') {
-    const author = /** @type {Card} */ (findCard(selected()))
-    return told(pressing(/** @type {HTMLElement} */ (actor), async () => tower.run(offeredCall(author, 'review', author.callsign)))).then((r) => r && toast(`A reviewer of ${callsign(author.id)} starts in ${/** @type {NonNullable<Replies['spawn']['cut']>} */ (r.cut).name}, a fork of ${author.checkout}`))
-  }
+  if (act === 'review') return hireReviewer(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected())))
   if (act === 'home') return goHome()
   if (act === 'drive') {
     showPane('screen')
@@ -641,7 +723,7 @@ function applyScheme() {
 tower.onScheme(applyScheme)
 tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendScheme(), drawSettings()))
 
-const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open
 
 /** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
 /** @param {Pane} pane */
@@ -672,6 +754,7 @@ function run(id, e) {
   if (move) return (e.repeat || goMove(move), true)
   if (id === 'sidebar') return (toggleSide(), true)
   if (id === 'help') return (showKeys(), true)
+  if (id === 'palette') return (openPalette(), true)
   if (id === 'leave-terminal') return (leaveTerminal(), true)
   if (id === 'shell-here') return e.repeat || shellHere()
   if (id === 'home' && view().t !== 'home') return (goHome(), true)

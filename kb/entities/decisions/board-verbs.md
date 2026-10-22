@@ -59,7 +59,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 - What a verb is called is shared too: [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed
   `<subject>/<verb>` since one name means different things on different subjects (`card/resume`, `branch/recut`),
   holds each verb's label, a hint, whether it asks first, the API verb its call makes (its agent facet, described in
-  `VERBS`) and the keymap command that does the same; buttons read their words from it.
+  `VERBS`) and the keymap command that does the same; buttons and the palette read their words from it ([[command-palette]]).
 - [Board tests](ref:hub/test/board.test.ts) pin the rules over the recorded fixtures.
 - An offer is advice, not a permission. The server refuses only what the facts rule out: a conversation Claude
   hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/server.ts#resume)); a pid that

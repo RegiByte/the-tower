@@ -56,7 +56,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `palette.ts`: the command palette as data ([`paletteEntries`](ref:hub/src/shared/palette.ts#paletteEntries)): what a
   viewer can go to, do and learn from where they stand, each entry's `does` a tagged message the renderer runs through
   its own handlers, and [`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette), which groups them for what was
-  typed by one table of weights.
+  typed by one table of weights ([[command-palette]]).
 - `markdown.ts`: markdown as html, the only way a renderer draws it ([[markdown-safe]]).
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).

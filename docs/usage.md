@@ -131,6 +131,16 @@ A worker left waiting a long time can have its conversation compacted while it w
 its wait on you, but its next turn starts from the summary. `"idleCompaction": false` in `~/.claude/settings.json`
 turns it off; the tower leaves it as Claude sets it.
 
+## The command palette
+
+⌘K opens the command palette anywhere in the tower page, a terminal included. Type to go to a worker (by callsign,
+task or floor), a floor, a shelf entry or a draft; to run a command, shown with its key; or to do what the selected
+worker and the floors offer: resume, review, send home, a new worker or shell, Tidy. ↑↓ move, Enter picks, Esc
+closes. A pick runs exactly what its button runs, a verb that can't be taken back asking first, and a pick that
+needs words (a prompt, a note) opens the form that takes them. With nothing typed it lists what the selected worker
+offers, who waits on you and what you picked lately. A typed word also finds what the tower can teach (the tips),
+and "Patterns users are discovering" opens a sheet of the patterns. The config's `keys` rebinds ⌘K as `palette`.
+
 ## A worker's brief
 
 A worker's **Brief** tab (⌃2) reads its last turns as a chat, your prompts and its answers, in every conversation it
@@ -192,7 +202,7 @@ capability, one line on what the tower lets you do, or a pattern, a short story 
 that no feature is named for. A tip that names a key shows its chord, and clicking it runs that key. The × dismisses
 a tip for good, and settings turn tips off or bring the dismissed ones back.
 
-Capabilities are `CAPABILITIES` in `src/shared/capabilities.ts`. Patterns are markdown files in
+The command palette (⌘K) finds them too: a capability that names a key is that command's hint there, and the rest show when what you type matches them. Capabilities are `CAPABILITIES` in `src/shared/capabilities.ts`. Patterns are markdown files in
 [patterns/](patterns/), one per story: a `# Title`, a one-paragraph summary, then the story, with invented first names
 and no real companies or numbers. A pull request adds one. Any renderer reads them, the capabilities from
 `/capabilities.js` and the patterns at `GET /patterns`.

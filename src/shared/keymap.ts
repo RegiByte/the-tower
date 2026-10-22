@@ -36,6 +36,7 @@ export const COMMANDS = [
   { id: 'next-waiting', label: 'Next waiting on you', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then the slots policies offer' },
   { id: 'home', label: 'Skyline', scope: 'global', group: 'Move', chords: ['Escape'], does: 'back to the skyline' },
   { id: 'sidebar', label: 'Sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
+  { id: 'palette', label: 'Command palette', scope: 'global', group: 'Page', chords: ['Meta+K'], does: 'the command palette: go to a worker, a floor, a shelf entry or a draft, or run a command or what the selected worker offers, by typing' },
   { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
   { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+1'], does: "the selected worker's terminal, focused" },
   { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+2'], does: "the selected worker's brief" },

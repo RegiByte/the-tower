@@ -59,7 +59,7 @@ export function dialogs(deps) {
     return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
   }
 
-  for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.confirm'))) {
+  for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.confirm, dialog.palette'))) {
     let pressedOutside = false
     d.addEventListener('pointerdown', (e) => (pressedOutside = e.target === d && outside(d, e)))
     d.addEventListener('click', (e) => e.target === d && pressedOutside && outside(d, e) && d.close())
