@@ -55,8 +55,8 @@ later) draws the same palette, and only the drawing is a renderer's.
 - A verb's words (label, hint, whether it asks first) are its human facet in
   [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed `<subject>/<verb>`, linked by `api` to its agent
   facet in `VERBS` ([[board-verbs]]); the page's buttons read the same table.
-- The tower page ([`palette`](ref:hub/renderers/page/palette.js#palette)) draws it as a `<dialog>`: one input,
-  groups with headings, a hint line, the chords at the right; ↑↓ move, Enter picks, Esc closes. It opens on the
+- The tower page ([`palette`](ref:hub/renderers/page/palette.js#palette)) draws it as a `<dialog>` of bounded height
+  that scrolls inside: one input, groups with headings that stay at the top as their group scrolls under them, a hint line, the chords at the right; ↑↓ move, Enter picks, Esc closes. It opens on the
   keymap command `palette` (⌘K, global, rebound by the config's `keys`, [[keymap]]), dispatches picks through
   [`doPick`](ref:hub/renderers/page/page.js#doPick), keeps recent picks in `tower.store` as view state, and a
   capability teaches ⌘K in the tips.

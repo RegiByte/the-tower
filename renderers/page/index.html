@@ -238,8 +238,8 @@ dialog.palette { padding: 0; width: min(640px, calc(100vw - 32px)); margin-top: 
 dialog.palette[open] { display: flex; flex-direction: column; max-height: min(560px, 76vh); }
 #palette-input { flex: none; width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font: 400 var(--fs-l)/1.4 var(--ui); padding: var(--sp-l) var(--sp-xl); outline: none; }
 #palette-input::placeholder { color: var(--faint); }
-.pal-list { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-xs) var(--sp-s) var(--sp-s); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.pal-group { padding: var(--sp-m) var(--sp-m) var(--sp-xs); }
+.pal-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 var(--sp-s) var(--sp-s); scroll-padding-top: calc(var(--sp-m) + var(--sp-xs) + var(--fs-xs)); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.pal-group { position: sticky; top: 0; z-index: 1; background: var(--panel); padding: var(--sp-m) var(--sp-m) var(--sp-xs); }
 .pal-item { display: flex; align-items: baseline; gap: var(--sp-m); padding: var(--sp-s) var(--sp-m); border-radius: var(--radius-s); cursor: pointer; min-width: 0; }
 .pal-item[aria-selected="true"] { background: var(--panel-2); box-shadow: inset 3px 0 0 var(--ink); }
 .pal-label { flex: none; max-width: 60%; color: var(--ink); font-size: var(--fs-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
