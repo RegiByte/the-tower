@@ -137,9 +137,11 @@ turns it off; the tower leaves it as Claude sets it.
 task or floor), a floor, a shelf entry or a draft; to run a command, shown with its key; or to do what the selected
 worker and the floors offer: resume, review, send home, a new worker or shell, Tidy. ↑↓ move, Enter picks, Esc
 closes. A pick runs exactly what its button runs, a verb that can't be taken back asking first, and a pick that
-needs words (a prompt, a note) opens the form that takes them. With nothing typed it lists what the selected worker
-offers, who waits on you and what you picked lately. A typed word also finds what the tower can teach (the tips),
-and "Patterns users are discovering" opens a sheet of the patterns. The config's `keys` rebinds ⌘K as `palette`.
+needs words (a prompt, a note) opens the form that takes them. With nothing typed it opens on what the selected worker
+offers, who waits on you and what you picked lately, and below them, to scroll through, everything else: the workers
+on your floor, then on the others, the commands, each floor's verbs, the floors, the shelf, the drafts, and last what
+the tower can teach (the tips) with "Patterns users are discovering", which opens a sheet of the patterns. A typed
+word finds the tips too, two at most. The config's `keys` rebinds ⌘K as `palette`.
 
 ## A worker's brief
 

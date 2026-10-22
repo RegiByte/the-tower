@@ -30,12 +30,19 @@ later) draws the same palette, and only the drawing is a renderer's.
   `card/brief`, `card/note`) runs as that command and shows its chords, and the command isn't listed twice; `submit`,
   `kill` and `cut` are left out (typed in the terminal, ended by `send-home` per [[crews]], chosen in the new-worker
   form). A floor's `shell` and `editor` act on its hub.
-- No word soup: a capability that names a command is that command's hint, not a row; Learn entries show only when the
-  query matches them (never on an empty query) and at most two; patterns are one entry that opens a sheet of
-  `GET /patterns`.
+- No word soup: a capability that names a command is that command's hint, not a row; on a typed query Learn entries
+  show only when it matches them, at most two; patterns are one entry that opens a sheet of `GET /patterns`.
+- The empty query is the whole catalog (changed 2026-10-21; at first Learn never showed on it and the opening was
+  three short groups alone): the user found the opening too narrow, since a curious user wants to scroll through
+  everything they can do before they know what to search for. The contextual groups stay on top, and below them every
+  other entry once, in sections ([`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette)): the workers on the
+  selected worker's floor, the workers on the others, the commands, each floor's verbs, the floors, the shelf, the
+  drafts, and Learn last. Going to a worker is what the palette is opened for most; the commands are the same on every
+  floor; places come after what can be done; Learn is reading matter, so it closes the list. Within each section the
+  viewer's floor comes first, and within a group the same boosts as a typed query.
 - Ranking ([`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette)), small and explainable, its weights one table
   ([`WEIGHTS`](ref:hub/src/shared/palette.ts#WEIGHTS)): with nothing typed, the selected worker's verbs (primary
-  first), who waits on you in `board.waiting`'s order, and recent picks, five each. With a query, each entry is scored
+  first, all of them), who waits on you in `board.waiting`'s order, and recent picks, five each, then the catalog. With a query, each entry is scored
   on its label and keywords ([`matchScore`](ref:hub/src/shared/palette.ts#matchScore)): a prefix over a word start
   over a substring over letters in order, the last on a label only and never on a Learn sentence; a keyword counts
   less than the label (its prefix with every boost stays below a label's word start). A query that matches nothing as

@@ -260,25 +260,51 @@ export const entryScore = (e: Entry, query: string, r: Ranking): number => {
 
 export type PaletteGroup = { group: string; entries: Entry[] }
 
-/** The palette before anything is typed: the selected worker's verbs, primary first, who waits on the viewer, and their picks lately (Learn's left out), each group short. */
-const opening = (entries: Entry[], r: Ranking): PaletteGroup[] => {
-  const byId = new Map(entries.map((e) => [e.id, e]))
-  const own = entries.filter((e) => r.selected !== undefined && e.card === r.selected && e.does.t !== 'go')
-  const waiting = r.waiting.flatMap((id) => byId.get(`worker:${id}`) ?? [])
-  const shown = new Set([...own, ...waiting].map((e) => e.id))
-  const recent = r.recent.flatMap((id) => (shown.has(id) ? [] : byId.get(id) ?? [])).filter((e) => !e.learn)
-  return [
-    { group: own[0]?.group ?? '', entries: own },
-    { group: 'Waiting on you', entries: waiting },
-    { group: 'Recent', entries: recent },
-  ]
-    .map((g) => ({ ...g, entries: g.entries.slice(0, WEIGHTS.groupCap) }))
-    .filter((g) => g.entries.length)
+/**
+ * The catalog's sections in order, below the opening groups: workers to go to, the commands, the floors' verbs, then
+ * the places (floors, shelf entries, drafts), and Learn last. Going to a worker is what the palette is opened for most;
+ * commands are the same on every floor; places come after what can be done.
+ */
+const SECTIONS = ['go:worker', 'command', 'action', 'go:floor', 'go:shelf', 'go:draft', 'learn']
+
+const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
+
+/**
+ * Every entry not in `shown`, in groups: the sections in order, the viewer's floor first within each, and within a
+ * group by boost. Workers are split into the viewer's floor's and the others'.
+ */
+const catalog = (entries: Entry[], shown: ReadonlySet<string>, r: Ranking): PaletteGroup[] => {
+  const here = (e: Entry) => r.floor !== undefined && e.project === r.floor
+  const floorName = entries.find((e) => e.id === `floor:${r.floor}`)?.label
+  const groupOf = (e: Entry) =>
+    e.does.t !== 'go' || e.does.target.t !== 'worker' || floorName === undefined ? e.group : here(e) ? `Workers on ${floorName}` : 'Workers on other floors'
+  const groups = new Map<string, Entry[]>()
+  const rest = entries.filter((e) => !shown.has(e.id)).sort((a, b) => sectionOf(a) - sectionOf(b) || Number(here(b)) - Number(here(a)))
+  for (const e of rest) groups.set(groupOf(e), [...(groups.get(groupOf(e)) ?? []), e])
+  return [...groups].map(([group, list]) => ({ group, entries: list.sort((a, b) => boostOf(b, r) - boostOf(a, r)) }))
 }
 
 /**
- * The entries in groups for `query`: with nothing typed, the opening groups; else each entry that matches, by score
- * within its group, the groups by their best entry, Learn's capped.
+ * The palette before anything is typed: the selected worker's verbs, primary first, who waits on the viewer and their
+ * picks lately (Learn's left out), the last two short; then the catalog, every other entry once, Learn last.
+ */
+const opening = (entries: Entry[], r: Ranking): PaletteGroup[] => {
+  const byId = new Map(entries.map((e) => [e.id, e]))
+  const own = entries.filter((e) => r.selected !== undefined && e.card === r.selected && e.does.t !== 'go')
+  const waiting = r.waiting.flatMap((id) => byId.get(`worker:${id}`) ?? []).slice(0, WEIGHTS.groupCap)
+  const ownOrWaiting = new Set([...own, ...waiting].map((e) => e.id))
+  const recent = r.recent.flatMap((id) => (ownOrWaiting.has(id) ? [] : byId.get(id) ?? [])).filter((e) => !e.learn).slice(0, WEIGHTS.groupCap)
+  const context = [
+    { group: own[0]?.group ?? '', entries: own },
+    { group: 'Waiting on you', entries: waiting },
+    { group: 'Recent', entries: recent },
+  ].filter((g) => g.entries.length)
+  return [...context, ...catalog(entries, new Set(context.flatMap((g) => g.entries.map((e) => e.id))), r)]
+}
+
+/**
+ * The entries in groups for `query`: with nothing typed, the opening groups and the catalog; else each entry that
+ * matches, by score within its group, the groups by their best entry, Learn's capped.
  */
 export const rankPalette = (entries: Entry[], query: string, r: Ranking): PaletteGroup[] => {
   const q = query.trim()

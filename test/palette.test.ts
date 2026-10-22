@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { WEIGHTS, matchScore, rankPalette, type Entry, type Ranking } from '../src/shared/palette.ts'
+import { WEIGHTS, matchScore, rankPalette, type Entry, type GoTarget, type Ranking } from '../src/shared/palette.ts'
 
 const entry = (id: string, label: string, more: Partial<Entry> = {}): Entry => ({ id, group: 'Commands', label, keywords: [], does: { t: 'command', id: 'help' }, ...more })
 
@@ -54,25 +54,32 @@ test('groups come in the order of their best entry', () => {
   assert.deepEqual(rankPalette(entries, 'resume', nowhere).map((g) => g.group), ['Workers', 'Commands'])
 })
 
-test('with nothing typed: the selected worker’s verbs, who waits, then recent picks, each capped', () => {
-  const own = Array.from({ length: 7 }, (_, n) => entry(`card/${n}`, `Verb ${n}`, { group: 'ODIN-07', card: 'w1', does: { t: 'action', subject: 'card', verb: 'review', id: 'w1' } }))
-  const workers = Array.from({ length: 7 }, (_, n) => entry(`worker:w${n + 2}`, `W${n + 2}`, { group: 'Workers', card: `w${n + 2}`, does: { t: 'go', target: { t: 'worker', id: `w${n + 2}` } } }))
+const go = (id: string, label: string, target: GoTarget, more: Partial<Entry> = {}): Entry => entry(id, label, { does: { t: 'go', target }, ...more })
+
+test('with nothing typed: the selected worker’s verbs, who waits and recent picks, the last two capped, then every other entry once, Learn last', () => {
+  const own = Array.from({ length: 7 }, (_, n) => entry(`card/${n}`, `Verb ${n}`, { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'review', id: 'w1' } }))
+  const workers = Array.from({ length: 7 }, (_, n) => go(`worker:w${n + 2}`, `W${n + 2}`, { t: 'worker', id: `w${n + 2}` }, { group: 'Workers', card: `w${n + 2}`, project: n % 2 ? 'p1' : 'p2' }))
   const commands = Array.from({ length: 7 }, (_, n) => entry(`command:${n}`, `Command ${n}`))
-  const r: Ranking = { selected: 'w1', floor: 'p1', recent: ['card/0', ...commands.map((e) => e.id)], waiting: workers.map((e) => e.card!) }
-  const groups = rankPalette([...own, ...workers, ...commands], '', r)
-  assert.deepEqual(groups.map((g) => g.group), ['ODIN-07', 'Waiting on you', 'Recent'])
-  assert.deepEqual(groups.map((g) => g.entries.length), [WEIGHTS.groupCap, WEIGHTS.groupCap, WEIGHTS.groupCap])
-  assert.deepEqual(groups[1].entries.map((e) => e.id), workers.slice(0, WEIGHTS.groupCap).map((e) => e.id))
-  assert.ok(!groups[2].entries.some((e) => e.id === 'card/0'), 'a recent pick already shown is not repeated')
-})
-
-test('a recent Learn pick stays out of the empty palette', () => {
+  const floors = [go('floor:p2', 'Two', { t: 'floor', project: 'p2' }, { group: 'Floors', project: 'p2' }), go('floor:p1', 'One', { t: 'floor', project: 'p1' }, { group: 'Floors', project: 'p1' })]
+  const floorVerbs = ['p2', 'p1'].map((p) => entry(`floor/tidy@${p}`, 'Tidy', { group: p === 'p1' ? 'One' : 'Two', project: p, does: { t: 'action', subject: 'floor', verb: 'tidy', project: p } }))
+  const shelf = go('shelf:p1/0', 'KB', { t: 'shelf', project: 'p1', n: 0 }, { group: 'Shelf', project: 'p1' })
+  const draft = go('draft:p2/d', 'A draft', { t: 'draft', project: 'p2', id: 'd' }, { group: 'Drafts', project: 'p2' })
   const learn = entry('learn:shells', 'Shells keep running', { group: 'Learn', learn: true })
-  assert.deepEqual(rankPalette([learn, entry('command:help', 'Keys')], '', { ...nowhere, recent: ['learn:shells', 'command:help'] }).flatMap((g) => g.entries.map((e) => e.id)), ['command:help'])
+  const entries = [...own, learn, draft, shelf, ...floors, ...floorVerbs, ...workers, ...commands]
+  const r: Ranking = { selected: 'w1', floor: 'p1', recent: ['card/0', learn.id, ...commands.map((e) => e.id)], waiting: workers.map((e) => e.card!) }
+  const groups = rankPalette(entries, '', r)
+  assert.deepEqual(groups.map((g) => g.group), ['ODIN-07', 'Waiting on you', 'Recent', 'Workers on One', 'Workers on other floors', 'Commands', 'One', 'Two', 'Floors', 'Shelf', 'Drafts', 'Learn'])
+  assert.deepEqual(groups.slice(0, 3).map((g) => g.entries.length), [own.length, WEIGHTS.groupCap, WEIGHTS.groupCap])
+  assert.deepEqual(groups[1].entries.map((e) => e.id), workers.slice(0, WEIGHTS.groupCap).map((e) => e.id))
+  assert.ok(!groups[2].entries.some((e) => e.id === 'card/0' || e.learn), 'a recent pick already shown, or a Learn one, is not in Recent')
+  assert.deepEqual(groups[3].entries.map((e) => e.id), ['worker:w7'], 'workers waiting on the viewer are not repeated below')
+  assert.deepEqual(groups[5].entries.map((e) => e.id), ['command:5', 'command:6'])
+  assert.deepEqual(groups[8].entries.map((e) => e.id), ['floor:p1', 'floor:p2'], 'the viewer’s floor first')
+  assert.deepEqual(ids(groups).toSorted(), entries.map((e) => e.id).toSorted(), 'every entry once')
 })
 
-test('Learn shows only on a match, at most two', () => {
+test('a Learn entry shows on an empty query only at the bottom, and on a match at most two', () => {
   const learn = Array.from({ length: 4 }, (_, n) => entry(`learn:${n}`, `Shells keep running ${n}`, { group: 'Learn', learn: true }))
-  assert.deepEqual(rankPalette(learn, '', nowhere), [])
+  assert.deepEqual(ids(rankPalette([...learn, entry('command:help', 'Keys')], '', nowhere)), ['command:help', ...learn.map((e) => e.id)])
   assert.equal(rankPalette(learn, 'shells', nowhere)[0].entries.length, WEIGHTS.learnCap)
 })
