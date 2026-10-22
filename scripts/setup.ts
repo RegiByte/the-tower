@@ -47,7 +47,7 @@ const url = towerUrl(config)
 const [project] = Object.keys(config.projects)
 const next: [string, string][] = [
   ['npm link', 'puts the tower command on your PATH'],
-  ['a first worker', `+ on a floor of the tower page, or: tower spawn ${project}`],
+  ['a first worker', `Start a worker on the tower page (or + on a floor), or: tower spawn ${project}`],
   ['a tour', 'say "give me a tour of the tower" to any worker: it shows you the tower on your own floors'],
   ['your config', `${paths.config}: floors, shelf, editor (docs/config.md)`],
   ['tower config check', 'checks the config after an edit, each problem at its key'],
