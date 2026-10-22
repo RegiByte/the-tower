@@ -1203,10 +1203,7 @@ const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect> = {
   focus: attend,
   visible: attend,
   watch: attend,
-  panel: (v, { panel }) => {
-    const [attending] = attendNext(v.attending, { type: 'watch', at: panel?.kind === 'desk' ? panel.id : undefined })
-    return [{ type: 'state', state: { panel, attending } }]
-  },
+  panel: (v, { panel }) => attend({ ...v, panel }, { type: 'watch', at: panel?.kind === 'desk' ? panel.id : undefined }),
 }
 
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */

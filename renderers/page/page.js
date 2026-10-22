@@ -136,8 +136,8 @@ function tick() {
  * The page's machine: the board drawn, why there is none live and since when the tower is lost, the viewer's record,
  * what the main pane shows, what the viewer is told about waits and offers (`/attend.js`, which also holds whether the
  * window has their eye and the worker the view is on, told by the `focus`, `visible` and `watch` events) and the waits
- * and offers N visited this round (`Heed` in cards.ts). The view and the rings follow one selection: every move of
- * the view tells attention.
+ * and offers N visited this round (`Heed` in cards.ts). The view and the rings follow one selection because every
+ * handler that sets `view` does it through `viewed`, which tells attention.
  * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
  * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
@@ -178,10 +178,11 @@ const chain = (s, steps) => {
 const marked = (s, lost, at) => lost === (s.lostAt !== undefined) ? [into(s)] : attend({ ...s, lostAt: lost ? at : undefined }, { type: 'lost', lost })
 
 /** Leaves the view open for `view` and enters it, its hash in the address bar. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
-const moved = (s, view) => chain({ ...s, view }, [looking, () => [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }]])
+const moved = (s, view) => viewed(s, view, [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }])
 
-/** Attention hears of the worker the view is on. @param {PageState} s @returns {PageEffect[]} */
-const looking = (s) => attend(s, { type: 'watch', at: s.view.t === 'worker' ? s.view.id : undefined })
+/** The one way a handler sets `view`: attention hears of the worker the view is on, then `effects` follow. @param {PageState} s @param {MainView} view @param {PageEffect[]} effects @returns {PageEffect[]} */
+const viewed = (s, view, effects) =>
+  chain({ ...s, view }, [(s) => attend(s, { type: 'watch', at: s.view.t === 'worker' ? s.view.id : undefined }), () => effects])
 
 /** @type {Handlers<PageState, PageEvent, PageEffect>} */
 const pageHandlers = {
@@ -204,12 +205,12 @@ const pageHandlers = {
   focus: attend,
   visible: attend,
   watch: attend,
-  go: (s, { view }) => (sameRoom(s.view, view) ? chain({ ...s, view }, [looking, () => [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }]]) : moved(s, view)),
+  go: (s, { view }) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }]) : moved(s, view)),
   reopen: (s, { view }) => moved(s, view),
   saved: (s, { id }) => {
     if (s.view.t !== 'draft') return []
     const view = { ...s.view, id }
-    return [into({ ...s, view }), { type: 'hash', hash: hashOf(view) }, { type: 'draw' }]
+    return viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }])
   },
 }
 
