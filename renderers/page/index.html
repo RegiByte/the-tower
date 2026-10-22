@@ -249,7 +249,7 @@ dialog.palette[open] { display: flex; flex-direction: column; max-height: min(56
 .pal-chords { flex: none; display: flex; gap: var(--sp-2xs); margin-left: auto; }
 .pal-empty { padding: var(--sp-xl) var(--sp-m); color: var(--muted); font-size: var(--fs-m); }
 .pal-foot { flex: none; display: flex; align-items: baseline; gap: var(--sp-l); border-top: 1px solid var(--line); padding: var(--sp-s) var(--sp-xl); color: var(--muted); font-size: var(--fs-s); }
-.pal-hint-line { flex: 1; min-width: 0; }
+.pal-hint-line { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pal-keys { flex: none; display: flex; align-items: baseline; gap: var(--sp-2xs); color: var(--faint); white-space: nowrap; }
 .pal-keys kbd { margin-left: var(--sp-xs); }
 .patterns .pattern + .pattern { margin-top: var(--sp-2xl); padding-top: var(--sp-xl); border-top: 1px solid var(--line); }
