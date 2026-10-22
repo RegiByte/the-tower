@@ -151,4 +151,5 @@ stepped frame by frame, a seeded `random`, and fixture boards
 ([`watchStream`](ref:hub/renderers/tower3d/src/fixtures.ts#watchStream)), so two loads with the same seed and steps
 give the same pixels. [`drive.ts`](ref:hub/scripts/drive.ts), [`sandbox.ts`](ref:hub/scripts/sandbox.ts),
 [`frames.ts`](ref:hub/scripts/frames.ts) and [`tour.ts`](ref:hub/scripts/tour.ts) drive, host, record and shoot it;
-[`tower3d-boot.ts`](ref:hub/scripts/tower3d-boot.ts) boots it once in CI.
+[`tower3d-boot.ts`](ref:hub/scripts/tower3d-boot.ts) boots it once in CI, on a tower alone
+([`tower-alone.ts`](ref:hub/scripts/tower-alone.ts)).
