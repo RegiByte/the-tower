@@ -229,6 +229,17 @@ const whereOf = (c: Command, chords: string[]): string => {
 }
 
 /**
+ * A command's chords as a tip names them, saying where a global chord without ⌥, ⌃ or ⌘ fires: `⌘B`, `Esc outside a
+ * terminal or a text field`, `⌥J · N, N outside a terminal or a text field`. Empty when unbound.
+ */
+export const keysHint = (keys: Keys, id: string): string => {
+  const chords = keys[id] ?? []
+  const c = COMMAND.get(id)
+  if (!c || c.scope !== 'global' || !chords.some(isPlain)) return keysLabel(keys, id)
+  return `${keysLabel(keys, id)}${chords.every(isPlain) ? ' ' : ', '}${whereOf(c, chords)}`
+}
+
+/**
  * The keys as a sheet, grouped, each row a command's chords and what it does with where it works; unbound commands are
  * left out. Rows are pairs of spans for a two-column grid, the chords' `.chords`, each group headed by an `<h3>`.
  */

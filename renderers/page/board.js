@@ -1,5 +1,5 @@
 import { HOST_MEANS, heededWaits, whyNot, can, esc, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS } from '/cards.js'
-import { keysLabel } from '/keymap.js'
+import { keyedText } from './kit.js'
 
 /**
  * @import { Board, Card, Unresumable } from '../../src/bridge/board.ts'
@@ -53,7 +53,7 @@ export function boardKit(deps) {
     `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb))}">${inner}</button>`
 
   /** @param {string} what @param {string} id */
-  const withKeys = (what, id) => (keysLabel(board().keys, id) ? `${what} (${keysLabel(board().keys, id)})` : what)
+  const withKeys = (what, id) => keyedText(board().keys, what, id)
 
   /** @param {string} project */
   const floorOf = (project) => board().floors.find((f) => f.id === project)

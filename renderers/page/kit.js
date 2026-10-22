@@ -2,7 +2,7 @@ import { esc, gistOf, shownHref, shownKey, when } from '/cards.js'
 import { GIST_ICON, ICON } from '/icons.js'
 import { keepingFocus } from '/panels.js'
 import { toaster } from '/toasts.js'
-import { keysLabel, keyshortcuts } from '/keymap.js'
+import { keysHint, keyshortcuts } from '/keymap.js'
 
 /**
  * What the tower page's panes draw with alike: a card's gist, times, the close of a view, a toast, painting only
@@ -56,12 +56,12 @@ const signHtml = (n, name, extra = '') =>
 /** A meter's fill: ink, broken past `hot`. @param {number} pct @param {number} hot */
 const fillOf = (pct, hot) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
 
-/**
- * A control's tip, what it does with the chords of the command it shares when it has any (`hide the sidebar (⌘B)`),
- * and those chords as its `aria-keyshortcuts`. @param {Keys} keys @param {string} what @param {string} id
- */
+/** What a control does with the chords of the command it shares, when it has any: `hide the sidebar (⌘B)`. @param {Keys} keys @param {string} what @param {string} id */
+const keyedText = (keys, what, id) => (keysHint(keys, id) ? `${what} (${keysHint(keys, id)})` : what)
+
+/** A control's tip (`keyedText`), and the chords as its `aria-keyshortcuts`. @param {Keys} keys @param {string} what @param {string} id */
 const keyedTip = (keys, what, id) =>
-  keysLabel(keys, id) ? `data-tip="${esc(`${what} (${keysLabel(keys, id)})`)}" aria-keyshortcuts="${keyshortcuts(keys, id)}"` : `data-tip="${esc(what)}"`
+  keyshortcuts(keys, id) ? `data-tip="${esc(keyedText(keys, what, id))}" aria-keyshortcuts="${keyshortcuts(keys, id)}"` : `data-tip="${esc(what)}"`
 
 /** The close of a view in the main pane: back to the skyline. @param {Keys} keys */
 const closeHomeHtml = (keys) => `<button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`
@@ -135,4 +135,4 @@ const toast = toaster($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedTip, closeHomeHtml, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told }
