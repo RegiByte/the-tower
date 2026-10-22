@@ -78,6 +78,27 @@ test('with nothing typed: the selected worker’s verbs, who waits and recent pi
   assert.deepEqual(ids(groups).toSorted(), entries.map((e) => e.id).toSorted(), 'every entry once')
 })
 
+test('with nothing typed: the selected worker’s earlier conversations go to the catalog, among the floors’ verbs, its floor’s first', () => {
+  const verb = entry('card/brief', 'Brief', { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'review', id: 'w1' } })
+  const earlier = Array.from({ length: 12 }, (_, n) => entry(`conversation/resume@c${n}`, 'Resume: an earlier conversation', { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'conversation', verb: 'resume', id: 'w1', conversation: `c${n}` } }))
+  const tidy = entry('floor/tidy@p2', 'Tidy', { group: 'Two', project: 'p2', does: { t: 'action', subject: 'floor', verb: 'tidy', project: 'p2' } })
+  const groups = rankPalette([tidy, ...earlier, verb, entry('command:help', 'Keys')], '', { ...nowhere, selected: 'w1', floor: 'p1' })
+  assert.deepEqual(groups.map((g) => [g.group, g.entries.length]), [['ODIN-07', 1], ['Commands', 1], ['ODIN-07: earlier conversations and processes', 12], ['Two', 1]])
+})
+
+test('with nothing typed: a recent pick past Recent’s cap doesn’t lift another floor’s entry over the viewer’s', () => {
+  const floors = ['p2', 'p1'].map((p) => go(`floor:${p}`, p, { t: 'floor', project: p }, { group: 'Floors', project: p }))
+  const commands = Array.from({ length: WEIGHTS.groupCap }, (_, n) => entry(`command:${n}`, `Command ${n}`))
+  const groups = rankPalette([...floors, ...commands], '', { ...nowhere, floor: 'p1', recent: [...commands.map((e) => e.id), 'floor:p2'] })
+  assert.deepEqual(groups.find((g) => g.group === 'Floors')?.entries.map((e) => e.id), ['floor:p1', 'floor:p2'])
+})
+
+test('with nothing typed: a floor named like a section, or like another floor, keeps its verbs apart', () => {
+  const tidy = (p: string, name: string) => entry(`floor/tidy@${p}`, 'Tidy', { group: name, project: p, does: { t: 'action', subject: 'floor', verb: 'tidy', project: p } })
+  const groups = rankPalette([entry('command:help', 'Keys'), tidy('p1', 'Commands'), tidy('p2', 'Same'), tidy('p3', 'Same')], '', nowhere)
+  assert.deepEqual(groups.map((g) => [g.group, g.entries.length]), [['Commands', 1], ['Commands', 1], ['Same', 1], ['Same', 1]])
+})
+
 test('a Learn entry shows on an empty query only at the bottom, and on a match at most two', () => {
   const learn = Array.from({ length: 4 }, (_, n) => entry(`learn:${n}`, `Shells keep running ${n}`, { group: 'Learn', learn: true }))
   assert.deepEqual(ids(rankPalette([...learn, entry('command:help', 'Keys')], '', nowhere)), ['command:help', ...learn.map((e) => e.id)])

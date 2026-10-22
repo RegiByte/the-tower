@@ -269,28 +269,37 @@ const SECTIONS = ['go:worker', 'command', 'action', 'go:floor', 'go:shelf', 'go:
 
 const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
 
+/** A verb of the selected worker's earlier conversations or processes, which the catalog lists apart from its own verbs. */
+const isEarlier = (e: Entry) => e.does.t === 'action' && (e.does.subject === 'conversation' || e.does.subject === 'resource')
+
 /**
  * Every entry not in `shown`, in groups: the sections in order, the viewer's floor first within each, and within a
- * group by boost. Workers are split into the viewer's floor's and the others'.
+ * group the viewer's floor first, then by boost. Workers are split into the viewer's floor's and the others'; the
+ * selected worker's earlier conversations and processes are a group of their own. A floor's verbs are a group per
+ * floor, kept apart from any group of the same name.
  */
 const catalog = (entries: Entry[], shown: ReadonlySet<string>, r: Ranking): PaletteGroup[] => {
   const here = (e: Entry) => r.floor !== undefined && e.project === r.floor
   const floorName = entries.find((e) => e.id === `floor:${r.floor}`)?.label
   const groupOf = (e: Entry) =>
-    e.does.t !== 'go' || e.does.target.t !== 'worker' || floorName === undefined ? e.group : here(e) ? `Workers on ${floorName}` : 'Workers on other floors'
-  const groups = new Map<string, Entry[]>()
+    isEarlier(e) ? `${e.group}: earlier conversations and processes`
+    : e.does.t !== 'go' || e.does.target.t !== 'worker' || floorName === undefined ? e.group
+    : here(e) ? `Workers on ${floorName}` : 'Workers on other floors'
+  const keyOf = (e: Entry) => [sectionOf(e), e.does.t === 'action' && e.does.subject === 'floor' ? e.project : '', groupOf(e)].join('\0')
+  const byFloorThenBoost = (a: Entry, b: Entry) => Number(here(b)) - Number(here(a)) || boostOf(b, r) - boostOf(a, r)
+  const groups = new Map<string, PaletteGroup>()
   const rest = entries.filter((e) => !shown.has(e.id)).sort((a, b) => sectionOf(a) - sectionOf(b) || Number(here(b)) - Number(here(a)))
-  for (const e of rest) groups.set(groupOf(e), [...(groups.get(groupOf(e)) ?? []), e])
-  return [...groups].map(([group, list]) => ({ group, entries: list.sort((a, b) => boostOf(b, r) - boostOf(a, r)) }))
+  for (const e of rest) groups.set(keyOf(e), { group: groupOf(e), entries: [...(groups.get(keyOf(e))?.entries ?? []), e] })
+  return [...groups.values()].map((g) => ({ ...g, entries: g.entries.sort(byFloorThenBoost) }))
 }
 
 /**
- * The palette before anything is typed: the selected worker's verbs, primary first, who waits on the viewer and their
+ * The palette before anything is typed: the selected worker's own verbs, primary first, who waits on the viewer and their
  * picks lately (Learn's left out), the last two short; then the catalog, every other entry once, Learn last.
  */
 const opening = (entries: Entry[], r: Ranking): PaletteGroup[] => {
   const byId = new Map(entries.map((e) => [e.id, e]))
-  const own = entries.filter((e) => r.selected !== undefined && e.card === r.selected && e.does.t !== 'go')
+  const own = entries.filter((e) => r.selected !== undefined && e.card === r.selected && e.does.t !== 'go' && !isEarlier(e))
   const waiting = r.waiting.flatMap((id) => byId.get(`worker:${id}`) ?? []).slice(0, WEIGHTS.groupCap)
   const ownOrWaiting = new Set([...own, ...waiting].map((e) => e.id))
   const recent = r.recent.flatMap((id) => (ownOrWaiting.has(id) ? [] : byId.get(id) ?? [])).filter((e) => !e.learn).slice(0, WEIGHTS.groupCap)
