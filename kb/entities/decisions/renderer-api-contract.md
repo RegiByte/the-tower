@@ -31,11 +31,12 @@ went wrong, and know which changes can break it.
   [`ERROR_STATUS`](ref:hub/src/shared/api.ts#ERROR_STATUS). The board stream sends `{v, error: {code, message}}`
   while the tower can't build the board ([[board-errors]]); over the postMessage tunnel an answer's error carries the
   same `{code, message}`, and `tower.js` rejects with an `Error` holding `code`.
-- **Verbs come with their requests.** Each card, conversation and floor carries `actions`: each verb offered now,
+- **Verbs come with their requests.** Each card, conversation, floor, policy and offer carries `actions`: each verb offered now,
   with its `call` when it is a request, `[verb, body]` with every field the board knows. The renderer adds only what
   the user supplies (a prompt's text, a floor's directory). `drive`, `brief` and `goto` are moves within the
   renderer, not requests, and have no call. `verbs` and `calls`, the same split in two, are derived from `actions`
-  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)) and kept for renderers that read them.
+  ([`offered`](ref:hub/src/bridge/verbs.ts#offered); a policy and an offer carry `calls` only,
+  [`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)) and kept for renderers that read them.
 - **The contract is served.** `GET /schema` answers the verbs' input and reply schemas and the error as JSON Schema
   ([`apiSchema`](ref:hub/src/tower/server.ts#apiSchema)), and its `streams`: the board's message as the JSON Schema of
   the TypeScript type `BoardMsg`, JSDoc as descriptions. `npm run schema:board`

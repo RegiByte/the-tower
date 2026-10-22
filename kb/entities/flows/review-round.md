@@ -4,7 +4,7 @@
   "name": "Review round",
   "summary": "One review end to end: a worker (or the user) hires a reviewer in a fork of the author's checkout, the reviewer leaves notes on the checkout's thread, delivers a pointer to them, and the author answers each note on the same thread.",
   "in": "tower",
-  "reviewed": "2026-10-20",
+  "reviewed": "2026-10-21",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
   "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/server.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
 }
@@ -17,7 +17,7 @@ sequenceDiagram
   participant H as [[host-daemon]]
   participant R as [[system-root]]
   A->>M: tower review <CALLSIGN> [tell]
-  M->>T: GET /board: the author's card, its calls.review
+  M->>T: GET /board: the author's card, its review action
   M->>T: POST /spawn {cut: {from: checkout}, prompt: /tower:review <CALLSIGN> [tell], by: hirer, hire: true}
   T->>T: fork: a worktree per repo from a snapshot of the author's checkout
   T->>H: spawn in the fork, started on the review skill

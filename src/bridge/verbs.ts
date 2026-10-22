@@ -121,15 +121,29 @@ export type BranchAction = Action<BranchVerb, BranchCalls>
 /** What a thing offers: its `actions`, and the same as `verbs` and `calls` for the renderers that read those. */
 type Offers<V extends string, C> = { verbs: V[]; calls: C; actions: Action<V, C>[] }
 
-export const offered = <V extends string, C>(actions: Action<V, C>[]): Offers<V, C> => ({
-  verbs: actions.map((a) => a.verb as V),
+/** A policy or an offer: its `actions`, and the same as `calls` for the renderers that read those. */
+type CalledOffers<V extends string, C> = { calls: C; actions: Action<V, C>[] }
+
+export const calledOffers = <V extends string, C>(actions: Action<V, C>[]): CalledOffers<V, C> => ({
   calls: Object.fromEntries(actions.flatMap((a) => ('call' in a ? [[a.verb, a.call]] : []))) as C,
   actions,
 })
 
+export const offered = <V extends string, C>(actions: Action<V, C>[]): Offers<V, C> => ({ verbs: actions.map((a) => a.verb as V), ...calledOffers(actions) })
+
 /** Each verb with its call, built by `requests` for the verbs that have one. */
 const actionsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): Offers<V, C> =>
   offered(verbs.map((verb) => (requests[verb] ? { verb, call: requests[verb]() } : { verb }) as Action<V, C>))
+
+/** `run` starts a run of a policy now, by hand, while it may (`runnable`); `approve` approves its current hash, until approved. */
+export type PolicyVerb = 'run' | 'approve'
+export type PolicyCalls = { run?: Call<'policy/run'>; approve?: Call<'policy/approve'> }
+export type PolicyAction = Action<PolicyVerb, PolicyCalls>
+
+/** `accept` starts the run an open offer's slot offers. */
+export type OfferVerb = 'accept'
+export type OfferCalls = { accept: Call<'policy/run'> }
+export type OfferAction = Action<OfferVerb, OfferCalls>
 
 /** A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor. */
 export type ProbeVerb = 'run'

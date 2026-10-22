@@ -84,8 +84,8 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   ([`liveRuns`](ref:hub/src/bridge/policies.ts#liveRuns)), last run, last pass, the newest slot with a fact, the open
   offer, `needs`: `reapprove` for an auto policy edited since its approval, `invalid` for one approved once, `held` for the latest pass's slot while it is open and a run still runs: the
   runs holding it, `heldSlot`; derived and shown (`tower policies`, the panel's Needs you), never rung or notified), with
-  `run` and `approve` calls; `board.offers` ([`offersOf`](ref:hub/src/bridge/policies.ts#offersOf)), an offered slot
-  open until the policy's next slot or its run, carrying its check's output onto the run that accepts it; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
+  `run` and `approve` as its `actions` ([[board-verbs]]); `board.offers` ([`offersOf`](ref:hub/src/bridge/policies.ts#offersOf)), an offered slot
+  open until the policy's next slot or its run, carrying its check's output onto the run that accepts it, with `accept` as its `actions`; `card.run` ([`cardRun`](ref:hub/src/bridge/policies.ts#cardRun)),
   the run fact naming the first session of a worker's lineage. `GET /runs/<project>?policy&limit`
   ([`runsRead`](ref:hub/src/bridge/policies.ts#runsRead)) reads a policy's runs, each worker as it is now.
 - *The runner.* [`standing`](ref:hub/src/shared/policies.ts#standing) says where a policy stands (a view is valid, with its header, or invalid, with its problems; a run is by hand

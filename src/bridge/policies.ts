@@ -8,6 +8,7 @@ import { nextSlot, ruleWords, type PolicyHeader, type Problem } from '../shared/
 import { tagOf } from '../shared/tags.ts'
 import type { Card } from './board.ts'
 import type { StreamFact } from './streams.ts'
+import { calledOffers, type OfferAction, type OfferCalls, type OfferVerb, type PolicyAction, type PolicyCalls, type PolicyVerb } from './verbs.ts'
 
 export const RUNS_STREAM = 'runs'
 export const APPROVALS_STREAM = 'approvals'
@@ -70,7 +71,8 @@ export type HeldBy = { n: number; id: string; callsign?: string; since: number }
  * (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its
  * latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names;
  * `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval,
- * or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash.
+ * or invalid once approved), else a slot held while it is still open (`HeldBy`). `actions`: `run` it now, by hand, and
+ * `approve` its current hash, each with its call; `calls` says the same.
  */
 export type PolicyView = PolicyBase & (ValidPolicy | InvalidPolicy)
 
@@ -91,14 +93,15 @@ type PolicyBase = {
   passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
   seen?: number
   offer?: { slot: number; since: number; until: number; check?: CheckResult }
-  calls: { run?: Call<'policy/run'>; approve?: Call<'policy/approve'> }
+  calls: PolicyCalls
+  actions: PolicyAction[]
 }
 
 /**
  * A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check
  * found, which the run accepting it records.
  */
-export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult; calls: { accept: Call<'policy/run'> } }
+export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult; calls: OfferCalls; actions: OfferAction[] }
 
 /** The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check. */
 export type CardRun = { policy: string; tag: string; title?: string; n: number; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: number })
@@ -190,10 +193,10 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
       ...(passed && { passed: { at: passed[0], slot: slotOf(passed[1].slot), outcome: passed[1].outcome, ...(passed[1].check && { check: passed[1].check }) } }),
       ...(slots.length > 0 && { seen: Math.max(...slots) }),
       ...(header && { offer: openOffer(header, runs.map(([, r]) => r), passes, now) }),
-      calls: {
-        ...(runnable && { run: ['policy/run', { project, policy: id, start: 'hand' }] }),
-        ...(header && !approval && { approve: ['policy/approve', { project, policy: id, hash }] }),
-      },
+      ...calledOffers<PolicyVerb, PolicyCalls>([
+        ...(runnable ? [{ verb: 'run' as const, call: ['policy/run', { project, policy: id, start: 'hand' }] as Call<'policy/run'> }] : []),
+        ...(header && !approval ? [{ verb: 'approve' as const, call: ['policy/approve', { project, policy: id, hash }] as Call<'policy/approve'> }] : []),
+      ]),
     }
   })
 }
@@ -203,7 +206,7 @@ export const offersOf = (project: string, views: PolicyView[]): Offer[] =>
   views
     .flatMap((v) =>
       v.offer
-        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, calls: { accept: ['policy/run', { project, policy: v.id, slot: v.offer.slot, start: 'offer', ...(v.offer.check && { check: v.offer.check }) }] as Call<'policy/run'> } }]
+        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, ...calledOffers<OfferVerb, OfferCalls>([{ verb: 'accept', call: ['policy/run', { project, policy: v.id, slot: v.offer.slot, start: 'offer', ...(v.offer.check && { check: v.offer.check }) }] }]) }]
         : [],
     )
     .sort((a, b) => a.since - b.since)

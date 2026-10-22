@@ -42,12 +42,15 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   [`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)) by the states the fold decides ([[tower-cuts-worktrees]],
   [[discard]], [[absorbed]], [[carried]]); a card's leftover processes
   ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)) `reap` always; each probe
-  ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)) `run` unless it is off ([[probes]]).
+  ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)) `run` unless it is off ([[probes]]); a policy `run` while
+  it may run by hand and `approve` until its hash is approved, an open offer `accept` (`PolicyVerb`, `OfferVerb`,
+  [[policies]]).
 - Each verb that is a request of the renderer API comes with its call, the pair one of the thing's `actions`
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings, [`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)),
   so a renderer adds only what the user supplies ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within
   the renderer and have no call. `verbs` and `calls` say the same apart, derived from `actions`
-  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)).
+  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)); a policy and an offer carry `calls` beside theirs, and no `verbs`
+  ([`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)).
 - Renderers ask whether a verb is offered (`can(thing, verb)` in both) and take its call from the same list
   ([`callOf`](ref:hub/src/shared/cards.ts#callOf), none once the board stopped offering it; a press takes it through
   [`offeredCall`](ref:hub/src/shared/cards.ts#offeredCall), which says so in a toast when the board moved on), and draw it: an absent verb is not drawn,

@@ -2910,43 +2910,17 @@
               "additionalProperties": false
             },
             "calls": {
-              "type": "object",
-              "properties": {
-                "run": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    {
-                      "type": "string",
-                      "const": "policy/run"
-                    },
-                    {
-                      "type": "object",
-                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                    }
-                  ],
-                  "maxItems": 2
-                },
-                "approve": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    {
-                      "type": "string",
-                      "const": "policy/approve"
-                    },
-                    {
-                      "type": "object",
-                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                    }
-                  ],
-                  "maxItems": 2
-                }
-              },
-              "additionalProperties": false
+              "$ref": "#/definitions/PolicyCalls"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyAction"
+              }
             }
           },
           "required": [
+            "actions",
             "calls",
             "hash",
             "header",
@@ -3095,43 +3069,17 @@
               "additionalProperties": false
             },
             "calls": {
-              "type": "object",
-              "properties": {
-                "run": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    {
-                      "type": "string",
-                      "const": "policy/run"
-                    },
-                    {
-                      "type": "object",
-                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                    }
-                  ],
-                  "maxItems": 2
-                },
-                "approve": {
-                  "type": "array",
-                  "minItems": 2,
-                  "items": [
-                    {
-                      "type": "string",
-                      "const": "policy/approve"
-                    },
-                    {
-                      "type": "object",
-                      "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                    }
-                  ],
-                  "maxItems": 2
-                }
-              },
-              "additionalProperties": false
+              "$ref": "#/definitions/PolicyCalls"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyAction"
+              }
             }
           },
           "required": [
+            "actions",
             "calls",
             "hash",
             "id",
@@ -3141,7 +3089,7 @@
           ]
         }
       ],
-      "description": "A policy on its floor: valid, with its `header`, `rule` and `next`, or invalid, with its `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved), else a slot held while it is still open (`HeldBy`). `calls.run` runs it now, by hand; `calls.approve` approves its current hash."
+      "description": "A policy on its floor: valid, with its `header`, `rule` and `next`, or invalid, with its `problems`. `rule`: its crons in words; `next`: its next slot (epoch ms); `approved`: the approval of its current hash; `live`: the current cards of its runs that run; `last`: its latest run, `n` its number; `passed`: its latest pass, for why; `seen`: the newest slot any of its facts names; `offer`: its open offer; `needs`: an `auto` policy that lost the right to run on its own (edited since its approval, or invalid once approved), else a slot held while it is still open (`HeldBy`). `actions`: `run` it now, by hand, and `approve` its current hash, each with its call; `calls` says the same."
     },
     "PolicyHeader": {
       "type": "object",
@@ -3273,6 +3221,105 @@
         "check-failed"
       ],
       "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
+    },
+    "PolicyCalls": {
+      "type": "object",
+      "properties": {
+        "run": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "policy/run"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "approve": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "policy/approve"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": false
+    },
+    "PolicyAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "run"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "policy/run"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "approve"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "policy/approve"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "Problem": {
       "type": "object",
@@ -3857,28 +3904,13 @@
           "$ref": "#/definitions/CheckResult"
         },
         "calls": {
-          "type": "object",
-          "properties": {
-            "accept": {
-              "type": "array",
-              "minItems": 2,
-              "items": [
-                {
-                  "type": "string",
-                  "const": "policy/run"
-                },
-                {
-                  "type": "object",
-                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                }
-              ],
-              "maxItems": 2
-            }
-          },
-          "required": [
-            "accept"
-          ],
-          "additionalProperties": false
+          "$ref": "#/definitions/OfferCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OfferAction"
+          }
         }
       },
       "required": [
@@ -3889,10 +3921,65 @@
         "slot",
         "since",
         "until",
-        "calls"
+        "calls",
+        "actions"
       ],
       "additionalProperties": false,
       "description": "A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check found, which the run accepting it records."
+    },
+    "OfferCalls": {
+      "type": "object",
+      "properties": {
+        "accept": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "policy/run"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "accept"
+      ],
+      "additionalProperties": false
+    },
+    "OfferAction": {
+      "type": "object",
+      "properties": {
+        "verb": {
+          "type": "string",
+          "const": "accept"
+        },
+        "call": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "policy/run"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "verb",
+        "call"
+      ],
+      "additionalProperties": false,
+      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
     "RateLimit": {
       "type": "object",
