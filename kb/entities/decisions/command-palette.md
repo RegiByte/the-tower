@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-21",
   "reviewed": "2026-10-21",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -38,8 +38,12 @@ later) draws the same palette, and only the drawing is a renderer's.
   first), who waits on you in `board.waiting`'s order, and recent picks, five each. With a query, each entry is scored
   on its label and keywords ([`matchScore`](ref:hub/src/shared/palette.ts#matchScore)): a prefix over a word start
   over a substring over letters in order, the last on a label only and never on a Learn sentence; a keyword counts
-  less than the label. Small fixed boosts favour the selected worker, then its floor, then recent picks, each tier
-  wider than every boost; groups go by their best entry. [Unit tests](ref:hub/test/palette.test.ts) pin the tiers,
+  less than the label (its prefix with every boost stays below a label's word start). A query that matches nothing as
+  typed is tried without a trailing "s" (`shells` finds Shell here), at a factor of its tier; a Learn entry's match
+  counts for half, so what can be gone to or done comes first. Small fixed boosts favour the selected worker, then its
+  floor, then recent picks, each tier wider than every boost; groups go by their best entry. "Waiting on you" is the
+  viewer's waits, dismissals left out (`heededWaits`, the same list ⌥J walks), and Recent never brings back a Learn
+  entry. [Unit tests](ref:hub/test/palette.test.ts) pin the tiers,
   each boost and each cap.
 - A verb's words (label, hint, whether it asks first) are its human facet in
   [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed `<subject>/<verb>`, linked by `api` to its agent

@@ -9,6 +9,7 @@ import { $, told } from './kit.js'
  * @import { Board, FloorItem } from '../../src/bridge/board.ts'
  * @import { Entry, Pick, PaletteGroup } from '../../src/shared/palette.ts'
  * @import { Pattern } from '../../src/shared/capabilities.ts'
+ * @import { Heed } from '../../src/shared/cards.ts'
  */
 
 /**
@@ -16,6 +17,7 @@ import { $, told } from './kit.js'
  *   board: () => Board,
  *   selected: () => string | undefined,
  *   draftTitle: (project: string, item: FloorItem) => string,
+ *   heed: () => Heed,
  *   pick: (does: Pick, row: HTMLElement) => void,
  * }} PaletteDeps
  */
@@ -31,7 +33,7 @@ const RECENT_MAX = 20
  * @param {PaletteDeps} deps
  */
 export async function palette(deps) {
-  const { board, selected, draftTitle, pick } = deps
+  const { board, selected, draftTitle, heed, pick } = deps
   const dialog = $('palette')
   const input = /** @type {HTMLInputElement} */ ($('palette-input'))
   /** @type {string[]} */
@@ -40,7 +42,7 @@ export async function palette(deps) {
   let shown = []
   let active = 0
 
-  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, draftTitle })
+  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftTitle })
 
   /** @param {Entry} e @param {number} n */
   const rowHtml = (e, n) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="pal-${n}" aria-selected="${n === active}" data-palette-entry="${esc(e.id)}">

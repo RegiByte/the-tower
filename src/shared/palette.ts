@@ -7,7 +7,7 @@
 import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
 import type { Capability } from './capabilities.ts'
-import { commandName, gistLine } from './cards.ts'
+import { commandName, gistLine, heededWaits, type Heed } from './cards.ts'
 import { DRAFTS } from './drafts.ts'
 import { COMMANDS, type CommandId } from './keymap.ts'
 import { VERB_WORDS, verbId, type VerbId } from './verb-words.ts'
@@ -47,13 +47,14 @@ export type Entry = {
 
 /**
  * What the palette is drawn from: the board, the worker selected, the capabilities, the entry ids the viewer picked,
- * the latest first, and a draft's title as the renderer has read it.
+ * the latest first, the waits the viewer dismissed, and a draft's title as the renderer has read it.
  */
 export type PaletteContext = {
   board: Board
   selected: string | undefined
   capabilities: readonly Capability[]
   recent: readonly string[]
+  heed: { dismissed: Heed['dismissed'] }
   draftTitle: (project: string, item: FloorItem) => string
 }
 
@@ -62,14 +63,19 @@ export type Ranking = { selected: string | undefined; floor: string | undefined;
 
 /**
  * The scorer's weights. A match on the label scores its tier; on a keyword, its tier times `keyword`. Each tier is
- * more than the next plus every boost an entry can get, so a better match always ranks first.
+ * more than the next plus every boost an entry can get, so a better label match always ranks first. A keyword counts
+ * for less: its prefix, with every boost, stays below a word start on a label. A query matching nothing as typed is
+ * tried again without a trailing "s", at its tier times `plural`. A Learn entry scores its match times `learn`, so
+ * what can be gone to or done comes first.
  */
 export const WEIGHTS = {
   prefix: 100,
   wordStart: 70,
   substring: 40,
   subsequence: 10,
-  keyword: 0.6,
+  keyword: 0.45,
+  plural: 0.9,
+  learn: 0.5,
   selected: 12,
   floor: 6,
   recent: 8,
@@ -201,7 +207,7 @@ export const rankingOf = (ctx: PaletteContext): Ranking => ({
   selected: ctx.selected,
   floor: cardOf(ctx.board, ctx.selected)?.project,
   recent: ctx.recent,
-  waiting: ctx.board.waiting.map((w) => w.id),
+  waiting: heededWaits(ctx.board, ctx.heed).map((w) => w.id),
 })
 
 const isWordStart = (text: string, at: number) => at === 0 || !/[\p{L}\p{N}]/u.test(text[at - 1])
@@ -235,24 +241,32 @@ const closeScore = (text: string, query: string) => {
   return score === WEIGHTS.subsequence ? 0 : score
 }
 
+/** `score` for `query` as typed, else for it without a trailing "s" (`shells` finds `Shell here`), weighed by `plural`. */
+const singularToo = (score: (text: string, query: string) => number) => (text: string, query: string) =>
+  score(text, query) || (/[^s]s$/i.test(query) ? score(text, query.slice(0, -1)) * WEIGHTS.plural : 0)
+
+const labelScore = singularToo(matchScore)
+const sentenceScore = singularToo(closeScore)
+
 /**
  * An entry's score for `query`: its best match on the label or a keyword, plus its boost; 0 when nothing matches.
- * Letters in order count only on the label of an entry that isn't a Learn sentence.
+ * Letters in order count only on the label of an entry that isn't a Learn sentence; a Learn entry's match counts for
+ * less (`WEIGHTS.learn`).
  */
 export const entryScore = (e: Entry, query: string, r: Ranking): number => {
-  const match = Math.max((e.learn ? closeScore : matchScore)(e.label, query), ...e.keywords.map((k) => closeScore(k, query) * WEIGHTS.keyword))
-  return match && match + boostOf(e, r)
+  const match = Math.max((e.learn ? sentenceScore : labelScore)(e.label, query), ...e.keywords.map((k) => sentenceScore(k, query) * WEIGHTS.keyword))
+  return match && match * (e.learn ? WEIGHTS.learn : 1) + boostOf(e, r)
 }
 
 export type PaletteGroup = { group: string; entries: Entry[] }
 
-/** The palette before anything is typed: the selected worker's verbs, primary first, who waits on the viewer, and their picks lately, each group short. */
+/** The palette before anything is typed: the selected worker's verbs, primary first, who waits on the viewer, and their picks lately (Learn's left out), each group short. */
 const opening = (entries: Entry[], r: Ranking): PaletteGroup[] => {
   const byId = new Map(entries.map((e) => [e.id, e]))
   const own = entries.filter((e) => r.selected !== undefined && e.card === r.selected && e.does.t !== 'go')
   const waiting = r.waiting.flatMap((id) => byId.get(`worker:${id}`) ?? [])
   const shown = new Set([...own, ...waiting].map((e) => e.id))
-  const recent = r.recent.flatMap((id) => (shown.has(id) ? [] : byId.get(id) ?? []))
+  const recent = r.recent.flatMap((id) => (shown.has(id) ? [] : byId.get(id) ?? [])).filter((e) => !e.learn)
   return [
     { group: own[0]?.group ?? '', entries: own },
     { group: 'Waiting on you', entries: waiting },

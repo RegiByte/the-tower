@@ -372,7 +372,7 @@ function learnPick(id) {
   toast(capability.text.replace(/`/g, ''), action)
 }
 
-const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, pick: doPick })
+const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick })
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
