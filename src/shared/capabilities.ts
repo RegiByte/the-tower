@@ -20,7 +20,7 @@ export type Tip = ({ kind: 'capability' } & Capability) | ({ kind: 'pattern' } &
 export const CAPABILITIES: Capability[] = [
   { id: 'hire-crew', text: 'Ask a worker to split a task and hire a crew for it with `tower hire`.' },
   { id: 'changes', text: 'Changes holds all a worker changed, in every repo of its floor.', command: 'pane-changes' },
-  { id: 'review-notes', text: 'Pick lines in Changes to leave a note on the worker’s review thread.', command: 'pane-reviews' },
+  { id: 'review-notes', text: 'Pick lines in Changes to leave a note on the worker’s review thread.', command: 'pane-changes' },
   { id: 'review-self', text: 'Tell a worker “get yourself reviewed when you’re done”: it hires its reviewer.' },
   { id: 'brief', text: 'The Brief reads a worker’s last turns as a chat, without scrolling its terminal.', command: 'pane-brief' },
   { id: 'next-waiting', text: 'Go to the next worker waiting on you: a question first, then the longest wait.', command: 'next-waiting' },
