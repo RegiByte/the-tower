@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-21",
-  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
+  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) was decided inside each renderer:
@@ -56,6 +56,10 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   [`offeredCall`](ref:hub/src/shared/cards.ts#offeredCall), which says so in a toast when the board moved on), and draw it: an absent verb is not drawn,
   except a verb whose daemon is down, drawn disabled with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence
   (below). Monitors and screens read `live`, a fact, not a verb.
+- What a verb is called is shared too: [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed
+  `<subject>/<verb>` since one name means different things on different subjects (`card/resume`, `branch/recut`),
+  holds each verb's label, a hint, whether it asks first, the API verb its call makes (its agent facet, described in
+  `VERBS`) and the keymap command that does the same; buttons read their words from it.
 - [Board tests](ref:hub/test/board.test.ts) pin the rules over the recorded fixtures.
 - An offer is advice, not a permission. The server refuses only what the facts rule out: a conversation Claude
   hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/server.ts#resume)); a pid that

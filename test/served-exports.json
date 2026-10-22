@@ -616,6 +616,11 @@
       "tipKey",
       "tipsOf"
     ],
+    "/verb-words.js": [
+      "VERB_WORDS",
+      "verbId",
+      "verbLabel"
+    ],
     "/markdown.js": [
       "documentHtml",
       "fenceText",

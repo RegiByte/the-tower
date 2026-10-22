@@ -6,6 +6,7 @@ import { toolHtml, when, $, fillOf, keyedTip, shownPane, shownKey, shownHref, DO
 import { shownFrom } from '/brief.js'
 import { documentHtml } from '/markdown.js'
 import { pressing } from '/press.js'
+import { verbLabel } from '/verb-words.js'
 
 /**
  * @import { Board, Card, CardResource, CardShown, Floor } from '../../src/bridge/board.ts'
@@ -72,16 +73,16 @@ export async function worker(deps) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
     repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
-    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', 'Resume', `${ICON.resume} Resume`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} Resume</button>`}
-    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', 'Review', 'Review') : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">Review</button>`}
-    ${letGoHtml(c, 'Let go')}
-    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">Send home</button>` : ''}
+    ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
+    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', verbLabel('card', 'review'), verbLabel('card', 'review')) : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">${verbLabel('card', 'review')}</button>`}
+    ${letGoHtml(c, verbLabel('card', 'let-go'))}
+    ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">${verbLabel('card', 'send-home')}</button>` : ''}
     <button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(board().keys, 'back to the skyline', 'home')}>${ICON.close}</button>`)
     $('bar-details').innerHTML = detailsHtml(c)
     $('bar-left').innerHTML = leftHtml(c)
     $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
     $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
-    ${can(c, 'drive') ? `<button class="primary" data-act="drive" ${keyedTip(board().keys, 'answer in its terminal', 'pane-terminal')}>Open terminal</button>` : ''}`
+    ${can(c, 'drive') ? `<button class="primary" data-act="drive" ${keyedTip(board().keys, 'answer in its terminal', 'pane-terminal')}>${verbLabel('card', 'drive')}</button>` : ''}`
     repaint($('bar-line'), paneTabsHtml(c, paneOf(c)))
     keepShownTabs($('bar-line'), c.id)
     renderPane(c)
@@ -96,9 +97,9 @@ export async function worker(deps) {
     if (!c.resources.length) return `<h3>${callsign(c.id)} left nothing running</h3>`
     /** @param {CardResource} r */
     const row = (r) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
-    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(callOf(r, 'reap')))}" data-tip="end process ${r.pid}">End</button></div>`
+    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(callOf(r, 'reap')))}" data-tip="end process ${r.pid}">${verbLabel('resource', 'reap')}</button></div>`
     return `<h3>Left running by ${callsign(c.id)}</h3>${c.resources.map(row).join('')}
-    <div class="all"><button class="danger" data-reap="${c.id}">End all ${c.resources.length}</button></div>`
+    <div class="all"><button class="danger" data-reap="${c.id}">${verbLabel('card', 'reap')} ${c.resources.length}</button></div>`
   }
 
   /** @param {Card} c */
@@ -267,12 +268,12 @@ export async function worker(deps) {
   async function sendHome(button, c) {
     if (!can(c, 'send-home')) return toast(noLongerOffered(c.callsign, 'send-home'))
     const sent = sentHome(cards(), c)
-    if (!(await ask(sendHomeAsk(c, sent), 'Send home'))) return
+    if (!(await ask(sendHomeAsk(c, sent), verbLabel('card', 'send-home')))) return
     const ended = await pressing(button, async () => {
       for (const call of sendHomeCalls(c)) if (!(await told(tower.run(call)))) return false
       return true
     })
-    if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: 'Resume', run: () => resumeSentHome(c) } : undefined)
+    if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: verbLabel('card', 'resume'), run: () => resumeSentHome(c) } : undefined)
   }
 
   /** Killing asks first; once killed, the toast offers the worker's resume, read from the board or its floor's archive. */

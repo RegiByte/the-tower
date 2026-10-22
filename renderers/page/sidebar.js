@@ -8,6 +8,7 @@ import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
 import { DRAFTS, draftsOf } from '/drafts.js'
+import { verbLabel } from '/verb-words.js'
 
 /**
  * @import { Board, Card, Floor, FloorCollection, FloorItem, Unresumable } from '../../src/bridge/board.ts'
@@ -80,7 +81,7 @@ export async function sidebar(deps) {
     ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.project, c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
     ${satellitesHtml(c)}
-    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', 'resume', `${ICON.resume} resume`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} resume</button>`}${letGoHtml(c, 'let go')}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
   </div>`
   }
 
@@ -216,7 +217,7 @@ export async function sidebar(deps) {
    * @param {Floor} f
    */
   const tidyHtml = (f) => `<div class="worktrees">
-    ${can(f, 'tidy') ? `<div class="drafts-head eyebrow">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" data-tip="do all of it, as listed">Tidy all</button></div>
+    ${can(f, 'tidy') ? `<div class="drafts-head eyebrow">${esc(tidyLine(f.tidy))}<button class="tidy-all" data-tidy="${f.id}" data-tip="do all of it, as listed">${verbLabel('floor', 'tidy')}</button></div>
     ${tidyRows(f, Date.now()).map(tidyRowHtml).join('')}` : ''}
     ${editedRows(f).length ? `<div class="drafts-head eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${editedRows(f).map(editedRowHtml).join('')}` : ''}</div>`
 

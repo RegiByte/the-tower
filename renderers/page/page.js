@@ -34,6 +34,7 @@ import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
 import { AUTOSAVE_MS, DRAFTS } from '/drafts.js'
+import { verbLabel } from '/verb-words.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -406,7 +407,7 @@ async function resumeAll(button, f) {
 
 /** @param {HTMLElement} button @param {Card} c */
 async function letGo(button, c) {
-  if (!(await ask(letGoAsk(c), 'Let go'))) return
+  if (!(await ask(letGoAsk(c), verbLabel('card', 'let-go')))) return
   if (await told(pressing(button, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) toast(letGoneLine(c))
 }
 
@@ -473,7 +474,7 @@ document.addEventListener('click', async (e) => {
     const w = board().floors.flatMap((f) => f.worktrees).find((w) => JSON.stringify(callOf(w, 'discard')) === discarding.dataset.discard)
     const call = w && callOf(w, 'discard')
     if (!w || !call) return toast(noLongerOffered(/** @type {string} */ (discarding.dataset.wtName), 'discard'))
-    if (!(await ask(discardAsk(w), 'Discard'))) return
+    if (!(await ask(discardAsk(w), verbLabel('worktree', 'discard')))) return
     return told(pressing(discarding, () => tower.run(call, { author: board().user.name }))).then((r) => r && toast(discardedLine(r)))
   }
   const wtCall = target.closest('[data-wt-call]')
@@ -494,7 +495,7 @@ document.addEventListener('click', async (e) => {
   const tidy = target.closest('[data-tidy]')
   if (tidy) {
     const f = /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy)))
-    return (await ask(tidyAllAsk(f, Date.now()), 'Tidy all')) && told(pressing(tidy, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
+    return (await ask(tidyAllAsk(f, Date.now()), verbLabel('floor', 'tidy'))) && told(pressing(tidy, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
   }
   const picked = target.closest('[data-pick]')?.dataset.pick
   if (picked) return pickLine(picked, e.shiftKey)

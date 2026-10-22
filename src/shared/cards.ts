@@ -8,6 +8,7 @@ import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
 import { CLAUDE_UNTESTED } from './claude.ts'
 import { shelfItem, type Renderer, type ShelfEntry } from './model.ts'
+import { VERB_WORDS } from './verb-words.ts'
 import { VIEWER_KEYS } from './viewer.ts'
 
 export { tagOf } from './tags.ts'
@@ -945,8 +946,14 @@ export const detailsOf = (c: Card): [string, string][] =>
 
 export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', 'at-risk': 'unsaved work', carried: 'landed, edited', removable: 'removable' }
 
-/** The verbs on worktrees and kept branches, as buttons say them. */
-export const WORKTREE_VERB_NAME = { recut: 'recut', prune: 'forget', remove: 'remove', delete: 'delete', discard: 'discard' } as const
+/** The verbs on worktrees and kept branches, as the sidebar's small buttons say them: their labels (`/verb-words.js`), lowercased. */
+export const WORKTREE_VERB_NAME = {
+  recut: VERB_WORDS['worktree/recut'].label.toLowerCase(),
+  prune: VERB_WORDS['worktree/prune'].label.toLowerCase(),
+  remove: VERB_WORDS['worktree/remove'].label.toLowerCase(),
+  delete: VERB_WORDS['branch/delete'].label.toLowerCase(),
+  discard: VERB_WORDS['worktree/discard'].label.toLowerCase(),
+}
 
 /** What a worktree verb asks before it runs, by the name of the worktree or kept branch; a verb absent asks nothing. */
 export const WORKTREE_ASK: Partial<Record<keyof typeof WORKTREE_VERB_NAME, (name: string) => string>> = {
