@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-21",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#READS", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json"]
 }
 ---
 **Problem.** The [[renderer-api]] is the contract the next renderer reads, and that renderer may not be written in
@@ -24,7 +24,9 @@ went wrong, and know which changes can break it.
   runs in the tower only: the host and the terms daemon keep their own small protocols.
 - **One dispatch.** Every `POST /<verb>` is parsed, handled and answered in one place
   ([`command`](ref:hub/src/tower/server.ts#command)); a body that doesn't parse is refused before any handler runs.
-  `mux/watch` and `mux/unwatch` are transport: parsed the same way, but not verbs.
+  `mux/watch` and `mux/unwatch` are transport: parsed the same way, but not verbs. Every GET read is an entry of one
+  table ([`READS`](ref:hub/src/tower/server.ts#READS)), matched on its pathname, its query parsed by its schema in
+  `QUERIES` before its handler runs.
 - **Errors are data.** Every failure, of a verb, a read or a handler that throws, answers
   [`{t: 'error', code, message}`](ref:hub/src/shared/api.ts#ApiError). Renderers branch on `code`, never on `message`;
   the codes and what each means are [`ERROR_CODES`](ref:hub/src/shared/api.ts#ERROR_CODES), their HTTP statuses

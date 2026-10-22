@@ -248,10 +248,7 @@ function conversations(res: http.ServerResponse, id: string) {
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logOf, pairs, callsignsOf(config))))
 }
 
-async function changes(res: http.ServerResponse, id: string, search: string | undefined) {
-  const query = QUERIES['changes/<id>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
-  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
-  const { scope } = query.data
+async function changes(res: http.ServerResponse, id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>) {
   const session = system.session(id)
   if (!session) return fail(res, 'not_found', `No session "${id}"`)
   const { project, cwd } = session.header
@@ -269,13 +266,11 @@ const MAX_BUCKETS = 2400
 
 /** By default, the day `to` falls in and the six whole local days before it. */
 /** What landing changed on a branch of a project, read from git now. */
-async function landingRead(res: http.ServerResponse, search: string) {
-  const query = QUERIES.landing.safeParse(Object.fromEntries(new URLSearchParams(search)))
-  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
-  const project = readConfig().projects[query.data.project]
-  if (!project) return fail(res, 'not_found', `No project "${query.data.project}"`)
+async function landingRead(res: http.ServerResponse, query: z.output<typeof QUERIES.landing>) {
+  const project = readConfig().projects[query.project]
+  if (!project) return fail(res, 'not_found', `No project "${query.project}"`)
   try {
-    const landing = await landingOf(project, query.data.branch)
+    const landing = await landingOf(project, query.branch)
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(landing))
   } catch (err) {
     if (!(err instanceof WorktreeError)) throw err
@@ -283,20 +278,15 @@ async function landingRead(res: http.ServerResponse, search: string) {
   }
 }
 
-function probeRead(res: http.ServerResponse, name: string, search: string) {
-  const query = QUERIES['probe/<name>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
-  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+function probeRead(res: http.ServerResponse, name: string, { last }: z.output<(typeof QUERIES)['probe/<name>']>) {
   const { probes } = boardOf()
   const status = probes.find((p) => p.name === name)
   if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
-  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), query.data.last)))
+  res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), last)))
 }
 
-function runsOfPolicy(res: http.ServerResponse, project: string, search: string) {
-  const query = QUERIES['runs/<project>'].safeParse(Object.fromEntries(new URLSearchParams(search)))
-  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+function runsOfPolicy(res: http.ServerResponse, project: string, { policy, limit }: z.output<(typeof QUERIES)['runs/<project>']>) {
   if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-  const { policy, limit } = query.data
   const facts = policyFactsOf(project)
   const hash = system.policies().find((p) => p.project === project && p.id === policy)?.hash
   if (hash === undefined && !facts.runs.some(([, r]) => r.policy === policy)) return fail(res, 'not_found', `${project} has no policy "${policy}", and no runs of one`)
@@ -304,12 +294,10 @@ function runsOfPolicy(res: http.ServerResponse, project: string, search: string)
   res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(runsRead(policy, hash, facts, everyCard(Date.now()), answerOf, limit)))
 }
 
-async function statsRead(res: http.ServerResponse, search: string) {
-  const query = QUERIES.stats.safeParse(Object.fromEntries(new URLSearchParams(search)))
-  if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIES.stats>) {
   const now = Date.now()
-  const { to = now, bucket, project } = query.data
-  const from = query.data.from ?? bucketStart(bucketStart(to, 'day') - 6 * DAY_MS + DAY_MS / 2, 'day')
+  const { to = now, bucket, project } = query
+  const from = query.from ?? bucketStart(bucketStart(to, 'day') - 6 * DAY_MS + DAY_MS / 2, 'day')
   if (from >= to) return fail(res, 'invalid', '`from` must come before `to`')
   if ((to - from) / BUCKET_MS[bucket] > MAX_BUCKETS) return fail(res, 'invalid', `At most ${MAX_BUCKETS} ${bucket}s: narrow the window or take days`)
   const sessions = system.sessions()
@@ -1435,6 +1423,69 @@ const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
 const isFromTower = (req: http.IncomingMessage): boolean =>
   TOWER_HOSTS.has(req.headers.host ?? '') && (req.method !== 'POST' || req.headers.origin === `http://${req.headers.host}`)
 
+type Served<Q extends z.ZodType> = {
+  req: http.IncomingMessage
+  res: http.ServerResponse
+  /** The path's named groups, decoded; an optional group that didn't match is `undefined`. */
+  params: Record<string, string | undefined>
+  query: z.output<Q>
+  /** The url's query string with its `?`, or `''`: what a redirect carries on. */
+  search: string
+}
+
+/**
+ * A GET route: `path` matched against the pathname, its named groups the params; the query string parsed by `query`
+ * before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route that declares none.
+ */
+type Read<Q extends z.ZodType = z.ZodType> = {
+  path: RegExp
+  query?: Q
+  serve(served: Served<Q>): unknown
+}
+
+const read = <Q extends z.ZodType = z.ZodUnknown>(entry: Read<Q>): Read => entry
+
+const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
+
+/** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
+const READS: Read[] = [
+  read({ path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
+  read({ path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
+  read({ path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
+  read({ path: /^\/schema$/, serve: ({ res }) => res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
+  read({ path: /^\/origins$/, serve: ({ res }) => origins(res) }),
+  read({ path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
+  read({ path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
+  read({ path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
+  read({ path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
+  read({ path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
+  read({ path: /^\/changes\/(?<id>[\w-]+)$/, query: QUERIES['changes/<id>'], serve: ({ res, params, query }) => changes(res, params.id!, query) }),
+  read({ path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
+  read({ path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
+  read({ path: /^\/stats$/, query: QUERIES.stats, serve: ({ res, query }) => statsRead(res, query) }),
+  read({ path: /^\/landing$/, query: QUERIES.landing, serve: ({ res, query }) => landingRead(res, query) }),
+  read({ path: /^\/runs\/(?<project>[\w-]+)$/, query: QUERIES['runs/<project>'], serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
+  read({ path: /^\/probe\/(?<name>[\w-]+)$/, query: QUERIES['probe/<name>'], serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
+  read({ path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
+  read({ path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
+  read({ path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
+  read({ path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
+  read({ path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
+]
+
+/** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
+function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
+  for (const entry of READS) {
+    const match = entry.path.exec(pathname)
+    if (!match) continue
+    const params = Object.fromEntries(Object.entries(match.groups ?? {}).map(([name, value]) => [name, value === undefined ? undefined : decodeURIComponent(value)]))
+    const query = (entry.query ?? z.unknown()).safeParse(Object.fromEntries(new URLSearchParams(search)))
+    if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+    return entry.serve({ req, res, params, query: query.data, search })
+  }
+  fail(res, 'not_found', `Nothing at "${pathname}"`)
+}
+
 async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (!isFromTower(req)) {
     res.writeHead(403).end()
@@ -1453,43 +1504,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   }
   if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript' }).end(towerClient())
   if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
-  if (req.method === 'GET' && url === '/board') return streamBoard(req, res)
-  if (req.method === 'GET' && url === '/origins') return origins(res)
-  if (req.method === 'GET' && url === '/patterns') return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(readPatterns() satisfies Reads['patterns']))
-  if (req.method === 'GET' && url === '/schema') return res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema)
-  if (req.method === 'GET' && url === '/mux') return openMux(req, res)
-  const archived = /^\/archive\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && archived) return archive(res, archived)
-  const held = /^\/conversations\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && held) return conversations(res, held)
-  const reviewed = /^\/reviews\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && reviewed) return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(reviewHistory(system.threads().filter((t) => t.project === reviewed))))
-  const changed = /^\/changes\/([\w-]+)(?:\?(.*))?$/.exec(url)
-  if (req.method === 'GET' && changed) return changes(res, changed[1], changed[2])
-  const screen = /^\/screen\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && screen) return streamScreen(screen, req, res)
-  const shell = /^\/shell\/([\w-]+)$/.exec(url)?.[1]
-  if (req.method === 'GET' && shell) return streamShell(shell, req, res)
-  const shelved = /^\/shelf\/([\w-]+)\/(\d+)(?:\/(.+))?$/.exec(url.split('?')[0])
-  if (req.method === 'GET' && shelved) return shelf(res, shelved[1], Number(shelved[2]), shelved[3] && decodeURIComponent(shelved[3]))
   const [pathname, search] = url.split('?')
-  const query = search === undefined ? '' : `?${search}`
-  if (req.method === 'GET' && pathname === '/') return home(res, query)
-  if (req.method === 'GET' && pathname === '/renderers') return renderersRead(res)
-  const rendering = /^\/r\/([\w-]+)(?:\/(.*))?$/.exec(pathname)
-  if (req.method === 'GET' && rendering) return rendered(res, rendering[1], rendering[2] === undefined ? undefined : decodeURIComponent(rendering[2]), query)
-  if (req.method === 'GET' && pathname === '/stats') return statsRead(res, search ?? '')
-  if (req.method === 'GET' && pathname === '/landing') return landingRead(res, search ?? '')
-  const policyRuns = /^\/runs\/([\w-]+)$/.exec(pathname)?.[1]
-  if (req.method === 'GET' && policyRuns) return runsOfPolicy(res, policyRuns, search ?? '')
-  const probed = /^\/probe\/([\w-]+)$/.exec(pathname)?.[1]
-  if (req.method === 'GET' && probed) return probeRead(res, probed, search ?? '')
-  const ran = /^\/run\/([\w-]+)\/(\d+)(?:\/(.+))?$/.exec(pathname)
-  if (req.method === 'GET' && ran) return run(res, ran[1], Number(ran[2]), ran[3] && decodeURIComponent(ran[3]), query)
-  const item = /^\/collection\/([\w-]+)\/([\w-]+)\/([^/]+)$/.exec(pathname)
-  if (req.method === 'GET' && item) return collectionItem(res, item[1], item[2], decodeURIComponent(item[3]))
-  const shown = /^\/shown\/([\w-]+)(\/.+)$/.exec(pathname)
-  if (req.method === 'GET' && shown) return shownFile(res, shown[1], decodeURIComponent(shown[2]))
+  if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)
   if (req.method === 'POST') return command(req, res, pathname.slice(1))
   fail(res, 'not_found', `Nothing at "${pathname}"`)
 }

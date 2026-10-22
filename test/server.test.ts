@@ -215,6 +215,7 @@ test('server: every read answers', async () => {
     assert.ok(reply.type.startsWith(type), `${pathname}: ${reply.type}`)
     if (shape) assert.ok(shape(reply.body), `${pathname}: ${reply.body.slice(0, 300)}`)
   }
+  assert.equal((await get('/archive/lab?x=1')).status, 200)
   assert.equal((await get('/')).status, 302)
   assert.ok(await firstEvent(`/screen/${SESSION}`))
   assert.equal(((await firstEvent('/shell/none')) as { t: string }).t, 'error')
