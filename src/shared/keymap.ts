@@ -21,7 +21,7 @@ export type Scope = 'global' | 'terminal' | 'field'
 /** What holds focus when a key is pressed: a terminal, a text field (or an open dialog), or the page itself. */
 export type Focus = 'terminal' | 'field' | 'page'
 
-export type Command = { id: string; scope: Scope; group: string; does: string; chords: string[] }
+export type Command = { id: string; scope: Scope; group: string; does: string; chords: readonly string[] }
 
 /** Each command id with its chords, as written in a canonical form (`chordOf`). */
 export type Keys = Record<string, string[]>
@@ -29,7 +29,7 @@ export type Keys = Record<string, string[]>
 /** The command each move between workers runs (`neighbours`' `prev`, `next` and `waiting`). */
 export const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' } as const
 
-export const COMMANDS: Command[] = [
+export const COMMANDS = [
   { id: 'prev-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowUp'], does: "previous worker on duty, in the sidebar's order: the top floor first, each floor's crews in order" },
   { id: 'next-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowDown'], does: "next worker on duty, in the sidebar's order" },
   { id: 'next-waiting', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then the slots policies offer' },
@@ -53,9 +53,11 @@ export const COMMANDS: Command[] = [
   { id: 'save-draft', scope: 'field', group: 'Fields', chords: ['Meta+S', 'Ctrl+S'], does: 'save the open draft' },
   { id: 'submit', scope: 'field', group: 'Fields', chords: ['Meta+Enter', 'Ctrl+Enter'], does: 'start a session from the open draft or the new session dialog; add a review note' },
   { id: 'cancel-pick', scope: 'field', group: 'Fields', chords: ['Escape'], does: 'drop the lines picked for a review note' },
-]
+] as const satisfies readonly Command[]
 
-const COMMAND = new Map(COMMANDS.map((c) => [c.id, c]))
+export type CommandId = (typeof COMMANDS)[number]['id']
+
+const COMMAND = new Map<string, Command>(COMMANDS.map((c) => [c.id, c]))
 
 const MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'Meta'] as const
 type Modifier = (typeof MODIFIERS)[number]
