@@ -30,12 +30,13 @@ so can a renderer of your own.
 
 ```sh
 git clone https://github.com/RegiByte/the-tower.git tower && cd tower
-npm run setup        # install, write a first config, check the machine, start everything
-open http://127.0.0.1:4317
+npm run setup        # install, write a first config, check the machine, start everything, open the tower
 ```
 
+Setup ends with what to do next: `npm link`, a first worker, the tour, the config and the commands that check it.
+
 `npm run setup -- <dir> [repos...]` makes `<dir>` the first project in place of this checkout; `--tower3d` also
-builds Tower 3D (`npm run tower3d` any time later, then open `/r/tower3d/`).
+builds Tower 3D (`npm run tower3d` any time later, then open `/r/tower3d/`); `--no-open` leaves the browser closed.
 
 `npm link` puts the `tower` command on your PATH (it is also on the PATH of every session the tower runs):
 
@@ -68,7 +69,7 @@ Talk to your workers: "show me the page you built", "hire a worker for the flaky
 what the tower makes possible: setting up your floors (a project's hub and repos), showing, hiring, checking on
 workers, review threads, collections, the shelf, resume, Tidy, shells, Stats, Tower 3D and renderers of your own.
 
-New to it? Ask any worker "show me how to use the tower": it gives you a tour of your own floors.
+New to it? Ask any worker "give me a tour of the tower": it shows you the tower on your own floors.
 
 To customize it (your own renderer, a copy of one that ships, shelf pages, scripts over the API, your own kinds of
 files), read [docs/extending.md](docs/extending.md): every extension point, its contract, and what isn't one.

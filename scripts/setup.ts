@@ -7,6 +7,7 @@
  *   npm run setup                              the first project is this checkout
  *   npm run setup -- <hub> [repos...]          the first project is <hub>, beside [repos], relative to where npm ran
  *   npm run setup -- --tower3d [<hub> ...]     also build Tower 3D
+ *   npm run setup -- --no-open [<hub> ...]     leave the browser closed at the end
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -20,7 +21,7 @@ import { configPath, systemPaths } from '../src/shared/paths.ts'
 import { readConfig } from '../src/system.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
-const { values, positionals } = parseArgs({ allowPositionals: true, options: { tower3d: { type: 'boolean' } } })
+const { values, positionals } = parseArgs({ allowPositionals: true, options: { tower3d: { type: 'boolean' }, 'no-open': { type: 'boolean' } } })
 const paths = systemPaths(configPath())
 
 if (existsSync(paths.config)) console.log(`config: ${paths.config} exists, kept as it is`)
@@ -42,11 +43,23 @@ if (values.tower3d) execFileSync('npm', ['run', 'tower3d'], { cwd: REPO, stdio: 
 const config = readConfig(paths.config)
 for (const [daemon, answer] of await bringAllUp(daemons(paths, towerPort(config)))) console.log(`${daemon.name}: ${answer} · log ${daemon.log}`)
 
+const url = towerUrl(config)
+const [project] = Object.keys(config.projects)
+const next: [string, string][] = [
+  ['npm link', 'puts the tower command on your PATH'],
+  ['a first worker', `+ on a floor of the tower page, or: tower spawn ${project}`],
+  ['a tour', 'say "give me a tour of the tower" to any worker: it shows you the tower on your own floors'],
+  ['your config', `${paths.config}: floors, shelf, editor (docs/config.md)`],
+  ['tower config check', 'checks the config after an edit, each problem at its key'],
+  ['tower doctor', 'checks what the tower needs, with a fix for each failure'],
+  ['tower update', 'moves this checkout to the newest release'],
+  values.tower3d ? ['Tower 3D', `${url}/r/tower3d/`] : ['npm run tower3d', 'builds Tower 3D, then open /r/tower3d/'],
+]
+const width = Math.max(...next.map(([what]) => what.length)) + 2
 console.log(`
-The tower: ${towerUrl(config)}
+The tower is up at ${url}${values['no-open'] ? '' : ', opening in your browser'}.
 
-  npm link                 puts the tower command on your PATH (tower up, tower down, tower doctor, tower spawn …)
-  ${values.tower3d ? `${towerUrl(config)}/r/tower3d/   Tower 3D` : 'npm run tower3d          builds Tower 3D, then open /r/tower3d/'}
-  ${paths.config}   your config: projects, shelf, editor (README)
+Next:
+${next.map(([what, why]) => `  ${what.padEnd(width)}${why}`).join('\n')}`)
 
-New to the tower? Ask any worker: "show me how to use the tower".`)
+if (!values['no-open']) execFileSync('open', [url])

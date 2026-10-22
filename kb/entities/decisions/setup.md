@@ -38,7 +38,9 @@ command should reach a running tower with a worker to spawn.
   session.
 - **`npm run setup`** ([`setup.ts`](ref:hub/scripts/setup.ts)): `npm ci`, `init` unless a config exists (its project
   is the clone itself unless directories are given), the doctor's [`readiness`](ref:hub/src/doctor.ts#readiness)
-  checks (all but the daemons, which it is about to start), then `up`, then the URL. `--tower3d` also builds Tower 3D
+  checks (all but the daemons, which it is about to start), then `up`, then what to do next (the URL, `npm link`, a
+  first worker, the tour, the config and the commands that check and update it) for whoever ran it, a person or an
+  agent setting up for one, and the URL opened in the browser unless `--no-open`. `--tower3d` also builds Tower 3D
   ([[renderers-in-config]]).
 
 **Alternatives considered.**
