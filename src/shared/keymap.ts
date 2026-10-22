@@ -21,7 +21,8 @@ export type Scope = 'global' | 'terminal' | 'field'
 /** What holds focus when a key is pressed: a terminal, a text field (or an open dialog), or the page itself. */
 export type Focus = 'terminal' | 'field' | 'page'
 
-export type Command = { id: string; scope: Scope; group: string; does: string; chords: readonly string[] }
+/** `label`: the command's name, a few words, as a palette lists it; `does`: what it does, as the `?` sheet says it. */
+export type Command = { id: string; label: string; scope: Scope; group: string; does: string; chords: readonly string[] }
 
 /** Each command id with its chords, as written in a canonical form (`chordOf`). */
 export type Keys = Record<string, string[]>
@@ -30,29 +31,29 @@ export type Keys = Record<string, string[]>
 export const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting: 'next-waiting' } as const
 
 export const COMMANDS = [
-  { id: 'prev-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowUp'], does: "previous worker on duty, in the sidebar's order: the top floor first, each floor's crews in order" },
-  { id: 'next-worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowDown'], does: "next worker on duty, in the sidebar's order" },
-  { id: 'next-waiting', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then the slots policies offer' },
-  { id: 'home', scope: 'global', group: 'Move', chords: ['Escape'], does: 'back to the skyline' },
-  { id: 'sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
-  { id: 'help', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
-  { id: 'pane-terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+1'], does: "the selected worker's terminal, focused" },
-  { id: 'pane-brief', scope: 'global', group: 'Panes', chords: ['Ctrl+2'], does: "the selected worker's brief" },
-  { id: 'pane-changes', scope: 'global', group: 'Panes', chords: ['Ctrl+3'], does: "the selected worker's changes" },
-  { id: 'pane-reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+4'], does: "the selected worker's review thread" },
-  { id: 'shell-here', scope: 'global', group: 'Panes', chords: ['Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from that shell, hides it and goes back to the worker's terminal" },
-  { id: 'leave-terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
-  { id: 'newline', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
-  { id: 'delete-word', scope: 'terminal', group: 'Terminal', chords: ['Ctrl+Backspace'], does: 'delete the word before the cursor, as ⌥⌫ does' },
-  { id: 'delete-to-start', scope: 'terminal', group: 'Terminal', chords: ['Meta+Backspace'], does: 'delete to the start of the line' },
-  { id: 'delete-to-end', scope: 'terminal', group: 'Terminal', chords: ['Meta+Delete'], does: 'delete to the end of the line' },
-  { id: 'line-start', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowLeft'], does: 'go to the start of the line' },
-  { id: 'line-end', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowRight'], does: 'go to the end of the line' },
-  { id: 'word-left', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowLeft'], does: 'go back one word' },
-  { id: 'word-right', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowRight'], does: 'go forward one word' },
-  { id: 'save-draft', scope: 'field', group: 'Fields', chords: ['Meta+S', 'Ctrl+S'], does: 'save the open draft' },
-  { id: 'submit', scope: 'field', group: 'Fields', chords: ['Meta+Enter', 'Ctrl+Enter'], does: 'start a session from the open draft or the new session dialog; add a review note' },
-  { id: 'cancel-pick', scope: 'field', group: 'Fields', chords: ['Escape'], does: 'drop the lines picked for a review note' },
+  { id: 'prev-worker', label: 'Previous worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowUp'], does: "previous worker on duty, in the sidebar's order: the top floor first, each floor's crews in order" },
+  { id: 'next-worker', label: 'Next worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowDown'], does: "next worker on duty, in the sidebar's order" },
+  { id: 'next-waiting', label: 'Next waiting on you', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then the slots policies offer' },
+  { id: 'home', label: 'Skyline', scope: 'global', group: 'Move', chords: ['Escape'], does: 'back to the skyline' },
+  { id: 'sidebar', label: 'Sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
+  { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
+  { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+1'], does: "the selected worker's terminal, focused" },
+  { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+2'], does: "the selected worker's brief" },
+  { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+3'], does: "the selected worker's changes" },
+  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+4'], does: "the selected worker's review thread" },
+  { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from that shell, hides it and goes back to the worker's terminal" },
+  { id: 'leave-terminal', label: 'Leave the terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
+  { id: 'newline', label: 'New line', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
+  { id: 'delete-word', label: 'Delete a word', scope: 'terminal', group: 'Terminal', chords: ['Ctrl+Backspace'], does: 'delete the word before the cursor, as ⌥⌫ does' },
+  { id: 'delete-to-start', label: 'Delete to the start', scope: 'terminal', group: 'Terminal', chords: ['Meta+Backspace'], does: 'delete to the start of the line' },
+  { id: 'delete-to-end', label: 'Delete to the end', scope: 'terminal', group: 'Terminal', chords: ['Meta+Delete'], does: 'delete to the end of the line' },
+  { id: 'line-start', label: 'Start of the line', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowLeft'], does: 'go to the start of the line' },
+  { id: 'line-end', label: 'End of the line', scope: 'terminal', group: 'Terminal', chords: ['Meta+ArrowRight'], does: 'go to the end of the line' },
+  { id: 'word-left', label: 'Word left', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowLeft'], does: 'go back one word' },
+  { id: 'word-right', label: 'Word right', scope: 'terminal', group: 'Terminal', chords: ['Alt+ArrowRight'], does: 'go forward one word' },
+  { id: 'save-draft', label: 'Save the draft', scope: 'field', group: 'Fields', chords: ['Meta+S', 'Ctrl+S'], does: 'save the open draft' },
+  { id: 'submit', label: 'Start or add', scope: 'field', group: 'Fields', chords: ['Meta+Enter', 'Ctrl+Enter'], does: 'start a session from the open draft or the new session dialog; add a review note' },
+  { id: 'cancel-pick', label: 'Drop the picked lines', scope: 'field', group: 'Fields', chords: ['Escape'], does: 'drop the lines picked for a review note' },
 ] as const satisfies readonly Command[]
 
 export type CommandId = (typeof COMMANDS)[number]['id']

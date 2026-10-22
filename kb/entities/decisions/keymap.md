@@ -20,7 +20,7 @@ customizable. Overrides are the user's intent, so they live in the config, the o
 every other key, and reach every renderer the way `user.name` does.
 
 **How.**
-- [`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS): `{ id, scope, group, does, chords }`. Scopes: `global`
+- [`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS): `{ id, label, scope, group, does, chords }`, `label` its name in a few words as a palette lists it, `does` what it does as the `?` sheet says it. Scopes: `global`
   (anywhere, but a chord without Alt, Ctrl or Meta only while nothing types), `terminal`, `field` (a text field or an
   open dialog). A letter or digit in a chord is the physical key, so ⌥'s composed characters on a Mac don't matter;
   another character is matched by what it types, and Alt with a character is refused.

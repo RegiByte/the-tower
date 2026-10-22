@@ -40,6 +40,7 @@
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /capabilities.js   what the tower lets a user do, and the tips renderers show of it and of the patterns (src/shared/capabilities.ts)
+ *   GET  /palette.js        the command palette's entries and their ranking for what the viewer typed (src/shared/palette.ts)
  *   GET  /verb-words.js     each verb the board offers in words: label, hint, whether it asks first, its API verb (src/shared/verb-words.ts)
  *   GET  /fonts/<file>  a face the design names
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data, by?}

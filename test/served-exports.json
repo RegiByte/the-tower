@@ -621,6 +621,15 @@
       "verbId",
       "verbLabel"
     ],
+    "/palette.js": [
+      "PATTERNS_ENTRY",
+      "WEIGHTS",
+      "entryScore",
+      "matchScore",
+      "paletteEntries",
+      "rankPalette",
+      "rankingOf"
+    ],
     "/markdown.js": [
       "documentHtml",
       "fenceText",
