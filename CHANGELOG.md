@@ -12,6 +12,14 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.55.1
+
+The palette in WebKit. No host restart, no config change, the renderer API unchanged at 1.76. Reload the page.
+
+- In `tower app` and Safari, ⌘K opened the palette empty: the input and the footer with nothing between them. Its
+  list now keeps its rows' height in WebKit as it does in Chrome, and still scrolls under the palette's height
+  (thanks, Carlos Bonetti).
+
 ## v1.55.0
 
 The palette after a first night of use, and keys macOS leaves alone. No host restart, no config change, the renderer
