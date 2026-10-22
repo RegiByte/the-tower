@@ -27,6 +27,7 @@ export const CAPABILITIES: Capability[] = [
   { id: 'move', text: 'Step through the workers on duty from anywhere, a terminal included.', command: 'next-worker' },
   { id: 'show', text: 'Ask a worker to show you what it made: it opens beside its terminal.' },
   { id: 'drafts', text: 'Say “keep that as a draft”: a draft starts a worker when you are ready.' },
+  { id: 'shell-here', text: 'Open a shell in the selected worker’s directory, and toggle back, from the keyboard.', command: 'shell-here' },
   { id: 'shells', text: 'Shells keep running after you close the page or restart the tower.', verb: 'shell' },
   { id: 'stats', text: 'Stats reads spend, waits and the week’s budget; The Week reads it as a yearbook.' },
   { id: 'tidy', text: 'A floor’s Tidy lists what can go, landed worktrees to old logs; nothing goes unasked.', verb: 'tidy' },
