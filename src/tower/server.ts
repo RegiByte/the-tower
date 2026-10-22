@@ -12,6 +12,7 @@
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
  *   GET  /origins       the web page of each project directory's origin remote, by directory
+ *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
  *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
@@ -38,6 +39,7 @@
  *   GET  /policies.js   what renderers say and decide about policies: rules and slots in words, standing (src/shared/policies.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
+ *   GET  /capabilities.js   what the tower lets a user do, and the tips renderers show of it and of the patterns (src/shared/capabilities.ts)
  *   GET  /fonts/<file>  a face the design names
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data, by?}
  *        | /resize {id, cols, rows} | /kill {id, by?}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
@@ -109,6 +111,7 @@ import { designCss, fonts } from '../shared/design.ts'
 import { callOf, can, esc, hireRefusal, shelfKind, shelfPage } from '../shared/cards.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
+import { readPatterns } from '../patterns.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
 
 const PUBLISH_DEBOUNCE_MS = 150
@@ -1452,6 +1455,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
   if (req.method === 'GET' && url === '/board') return streamBoard(req, res)
   if (req.method === 'GET' && url === '/origins') return origins(res)
+  if (req.method === 'GET' && url === '/patterns') return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(readPatterns() satisfies Reads['patterns']))
   if (req.method === 'GET' && url === '/schema') return res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema)
   if (req.method === 'GET' && url === '/mux') return openMux(req, res)
   const archived = /^\/archive\/([\w-]+)$/.exec(url)?.[1]

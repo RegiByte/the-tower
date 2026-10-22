@@ -607,6 +607,14 @@
       "tipsCss",
       "watchTips"
     ],
+    "/capabilities.js": [
+      "CAPABILITIES",
+      "TIP_MS",
+      "parsePattern",
+      "tipAt",
+      "tipKey",
+      "tipsOf"
+    ],
     "/markdown.js": [
       "documentHtml",
       "fenceText",

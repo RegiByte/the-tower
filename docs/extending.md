@@ -220,7 +220,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
   `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/runs/<project>`
   (`?policy&limit`: a policy's runs, newest first, each with its worker as it is now), `/landing?project&branch` (what
-  landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`. `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
+  landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
   weekly limit as last read in the window (`weekly`), and the points of it used outside the tower in the window (`outside`: claude.ai, the desktop app, another machine, as the quota probe saw it climb while no session worked; the budget's `outside` is this week's, and what 1% buys leaves it out). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
@@ -290,6 +290,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |
 | `/tips.js` | the tooltip every renderer shows for `data-tip`, and the placing of popovers by their button |
+| `/capabilities.js` | what the tower lets a user do as data (`CAPABILITIES`, each maybe naming a keymap command or a floor verb), the patterns' format (`parsePattern`, read at `/patterns`), and both laid out as tips (`tipsOf`, `tipAt`, dismissed by `tipKey`) |
 | `/press.js` | a control busy while what it asks is in flight (`pressing(control, request)`: `aria-busy` on it and on every control drawn with the same identity, a second press ignored), and a control's identity in html drawn anew (`identityOf`) |
 | `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |

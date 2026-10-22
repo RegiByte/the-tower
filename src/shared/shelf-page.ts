@@ -15,6 +15,7 @@ import type { ReviewHistory } from '../bridge/reviews.ts'
 import type { RepoChanges } from '../changes.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.ts'
 import type { Scheme } from './design.ts'
+import type { Pattern } from './capabilities.ts'
 import type { Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
@@ -44,6 +45,8 @@ export type Reads = {
   renderers: { default: string; renderers: Renderer[] }
   /** The web page of each project directory's origin remote, by directory. */
   origins: Record<string, string>
+  /** What users found doing with the tower, one story each, from the checkout's `docs/patterns/` (`/capabilities.js`). */
+  patterns: Pattern[]
   /** The files of a project's nth shelf entry, relative to its hub. */
   'shelf/<project>/<n>': string[]
   /** One of them as text. */
