@@ -1465,23 +1465,23 @@ type Kind = 'page' | 'stream' | 'schema'
  * read's schema in `QUERIES` before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route
  * that declares none. An entry is the API read it `read`s, a name of `Reads` or `QUERIES`, or says its `kind`.
  */
-type Read = {
+type ReadRoute = {
   path: RegExp
   query?: z.ZodType
-  read?: ReadName
-  kind?: Kind
   serve(served: Served<z.ZodType>): unknown
 }
 
+type Read = ReadRoute & ({ read: ReadName } | { kind: Kind })
+
 type ReadEntry<Q extends z.ZodType> = { path: RegExp; serve(served: Served<Q>): unknown }
 
-const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): Read & { read: N } => ({
+const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): ReadRoute & { read: N } => ({
   ...entry,
   read: name,
   query: name in QUERIES ? QUERIES[name as Query] : undefined,
 })
 
-const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): Read => ({ ...entry, kind })
+const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: Kind } => ({ ...entry, kind })
 
 const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
 
@@ -1512,9 +1512,12 @@ const READS = [
   apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
 ] as const satisfies readonly Read[]
 
-/** Types only when every read the API declares has an entry in `READS`. */
-const everyReadServed: Exclude<ReadName, (typeof READS)[number] extends infer E ? (E extends { read: infer N } ? N : never) : never> extends never ? true : never = true
+type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
+
+/** Types only when every read the API declares has an entry in `READS`; otherwise the missing reads are the type. */
+const everyReadServed: Exclude<ReadName, ServedReads> extends never ? true : Exclude<ReadName, ServedReads> = true
 void everyReadServed
+
 /** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
 function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
   for (const entry of READS) {
