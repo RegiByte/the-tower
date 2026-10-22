@@ -162,8 +162,9 @@ never landed is only thrown away on purpose (**discard**), after a note on its t
 ## Shells
 
 Plain shells in a floor's directories, docked as tabs under the terminal (the shell button on a directory, or the
-dock's `+`). They outlive the tower page: close the tab or restart the tower and the shell keeps running until you
-end it or it exits.
+dock's `+`). ⌃` opens one in the selected worker's directory, its worktree, to check its work before it lands, and
+from there goes back to the worker's terminal. They outlive the tower page: close the tab or restart the tower and the
+shell keeps running until you end it or it exits.
 
 ## Stats and The Week
 

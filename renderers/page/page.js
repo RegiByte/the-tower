@@ -281,7 +281,7 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 
 const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
-const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
@@ -642,6 +642,17 @@ function toPane(pane) {
   return true
 }
 
+/** From a shell in the selected worker's directory, back to its terminal; else to that shell, started when none runs there. */
+function shellHere() {
+  const c = selected() && findCard(selected())
+  if (!c) return false
+  const here = board().shells.find((sh) => sh.cwd === c.cwd)
+  if (here && focusedShell() === here.id) return toPane('screen')
+  if (here) focusShell(here.id)
+  else void spawnShellAt(c.project, c.cwd)
+  return true
+}
+
 /** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. @param {string} id @param {KeyboardEvent} e */
 function run(id, e) {
   const pane = PANE_COMMAND[id]
@@ -651,6 +662,7 @@ function run(id, e) {
   if (id === 'sidebar') return (toggleSide(), true)
   if (id === 'help') return (showKeys(), true)
   if (id === 'leave-terminal') return (leaveTerminal(), true)
+  if (id === 'shell-here') return e.repeat || shellHere()
   if (id === 'home' && view().t !== 'home') return (goHome(), true)
   return false
 }

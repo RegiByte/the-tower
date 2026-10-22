@@ -92,6 +92,12 @@ export function shells(deps) {
   /** A shell's tab opens its view, or closes it when it is the one open. @param {string} id */
   const toggleShell = (id) => (id === shell?.id ? closeShell() : openShell(id))
 
+  /** Focuses the shell `id`, opened in the dock unless it is the one open there. @param {string} id */
+  const focusShell = (id) => (id === shell?.id ? shell.view.term()?.focus() : openShell(id))
+
+  /** The id of the shell open in the dock while focus is in it. */
+  const focusedShell = () => (shell && $('s-screen').contains(document.activeElement) ? shell.id : undefined)
+
   /** Closes the view only: the shell keeps running until it is killed. */
   function closeShell() {
     shell?.view.close()
@@ -106,6 +112,13 @@ export function shells(deps) {
     const f = /** @type {Floor} */ (floorOf(project))
     const reply = await told(pressing(button, async () => tower.run(offeredCall(f, 'shell', f.name), { cwd })))
     if (reply) openShell(reply.id)
+  }
+
+  /** A shell started from the keyboard, pressed as the sidebar's button for its directory is, drawn or not. @param {string} project @param {string} cwd */
+  function spawnShellAt(project, cwd) {
+    const button = document.createElement('button')
+    Object.assign(button.dataset, { shellProject: project, shellDir: cwd })
+    return spawnShell(button, project, cwd)
   }
 
   /** The grip's reading of the shells' height, which stays between 120px and all but 160px of the window. */
@@ -138,5 +151,5 @@ export function shells(deps) {
     resizeShells($('shell-pane').offsetHeight + step)
   })
 
-  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell }
+  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell }
 }
