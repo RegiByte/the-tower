@@ -283,7 +283,7 @@ const { floorInView, drawSideView, sideView } = await stats({ view, findCard, fl
 
 const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
 
-const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
+const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
 const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
@@ -652,12 +652,12 @@ function toPane(pane) {
   return true
 }
 
-/** From a shell in the selected worker's directory, back to its terminal; else to that shell, started when none runs there. */
+/** From a shell in the selected worker's directory, hides the dock's view of it and returns to the worker's terminal; else to that shell, started when none runs there. */
 function shellHere() {
   const c = selected() && findCard(selected())
   if (!c) return false
   const there = board().shells.filter((sh) => sh.cwd === c.cwd)
-  if (there.some((sh) => sh.id === focusedShell())) return toPane('screen')
+  if (there.some((sh) => sh.id === focusedShell())) return (closeShell(), toPane('screen'))
   if (there.length) focusShell(there[0].id)
   else void spawnShellAt(c.project, c.cwd)
   return true

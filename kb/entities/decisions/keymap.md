@@ -39,8 +39,8 @@ every other key, and reach every renderer the way `user.name` does.
   [`keysHint`](ref:hub/src/shared/keymap.ts#keysHint) is a control's tip (`Esc outside a terminal or a text field`), so
   every button a command runs names its chords as the config binds them, and
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
-- `shell-here` (⌃`) toggles between the selected worker's terminal and a shell in its directory, read from the board's
-  shells by cwd. xterm sends no bytes for ⌃`, so neither a shell nor Claude ever sees it.
+- `shell-here` (⌃`) opens or focuses a shell in the selected worker's directory, and from that shell closes the dock's view (the shell
+  keeps running) and returns to the worker's terminal, read from the board's shells by cwd. xterm sends no bytes for ⌃`, so neither a shell nor Claude ever sees it.
 - `leave-terminal` (⌥Esc) returns focus to where it was before the terminal
   ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃1–4) show the selected worker's
   panes, from inside the terminal too. Neither is Claude's: ⌥Esc reaches it as Esc twice and Claude binds no ⌃ digit.

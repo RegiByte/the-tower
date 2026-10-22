@@ -151,5 +151,5 @@ export function shells(deps) {
     resizeShells($('shell-pane').offsetHeight + step)
   })
 
-  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell }
+  return { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, closeShell }
 }

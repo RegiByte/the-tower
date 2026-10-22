@@ -141,7 +141,7 @@ export async function sidebar(deps) {
   const shellButtonHtml = (f, dir, name) => {
     if (heldWhy('shell')) return heldHtml('shell', `new shell in ${name}`, ICON.shell, 'icon-btn')
     if (!can(f, 'shell')) return ''
-    const tip = findCard(selected())?.cwd === dir ? keyedTip(board().keys, `new shell in ${dir} · the selected worker's shell, and back`, 'shell-here') : `data-tip="${esc(`new shell in ${dir}`)}"`
+    const tip = findCard(selected())?.cwd === dir ? keyedTip(board().keys, `new shell in ${dir} · the selected worker's shell; the same key hides it`, 'shell-here') : `data-tip="${esc(`new shell in ${dir}`)}"`
     return `<button class="icon-btn" data-shell-project="${esc(f.id)}" data-shell-dir="${esc(dir)}" aria-label="new shell in ${esc(name)}" ${tip}>${ICON.shell}</button>`
   }
 
