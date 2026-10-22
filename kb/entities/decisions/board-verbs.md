@@ -51,7 +51,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   the renderer and have no call. `verbs` and `calls` say the same apart, derived from `actions`
   ([`offered`](ref:hub/src/bridge/verbs.ts#offered)); a policy and an offer carry `calls` beside theirs, and no `verbs`
   ([`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)).
-- Renderers ask whether a verb is offered (`can(thing, verb)` in both) and take its call from the same list
+- Renderers and the core ask whether a verb is offered ([`can`](ref:hub/src/shared/cards.ts#can), over `actions`) and take its call from the same list
   ([`callOf`](ref:hub/src/shared/cards.ts#callOf), none once the board stopped offering it; a press takes it through
   [`offeredCall`](ref:hub/src/shared/cards.ts#offeredCall), which says so in a toast when the board moved on), and draw it: an absent verb is not drawn,
   except a verb whose daemon is down, drawn disabled with [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence

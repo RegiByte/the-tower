@@ -67,7 +67,7 @@ import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteAction } from '../bridge/verbs.ts'
 import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../bridge/policies.ts'
 import type { Call, Replies } from './api.ts'
-import { DISMISS_OFFER_TITLE, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
+import { DISMISS_OFFER_TITLE, can, callOf, esc, noun, paceWords, plural, sendTarget, sendTargets, threadCheckoutOf, tokenCount as tokens, workerIn } from './cards.ts'
 import { heldWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
@@ -357,7 +357,7 @@ export function threadViewOf(board: Board, at: ThreadPlace, viewer: ThreadViewer
   return {
     checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
     reader: at.reader, changes: viewer.changes, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
-    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.offers.verbs.includes('note'),
+    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: can(at.offers, 'note'),
   }
 }
 
@@ -1125,8 +1125,10 @@ const runHeld = (p: ValidPolicyView) =>
 const callHtml = (call: Call<'policy/run' | 'policy/approve'>, label: string, tip: string, cls = '') =>
   `<button class="${cls}" data-policy-call="${esc(JSON.stringify(call))}" data-tip="${esc(tip)}">${label}</button>`
 
-const approveHtml = (p: PolicyView) =>
-  p.calls.approve ? callHtml(p.calls.approve, 'Approve', `approve these words (${shortHash(p.hash)}): ${p.header?.start === 'auto' ? 'its slots then start on their own, until it is edited' : 'they start on their own once start is "auto"'}`) : ''
+const approveHtml = (p: PolicyView) => {
+  const call = callOf(p, 'approve')
+  return call ? callHtml(call, 'Approve', `approve these words (${shortHash(p.hash)}): ${p.header?.start === 'auto' ? 'its slots then start on their own, until it is edited' : 'they start on their own once start is "auto"'}`) : ''
+}
 
 const problemsHtml = (problems: Problem[]) =>
   `<ul class="problems">${problems.map((x) => `<li><code>${esc(x.path)}</code> ${esc(x.message)}</li>`).join('')}</ul>`
@@ -1139,7 +1141,8 @@ const policyHeadHtml = (v: PoliciesView, p: PolicyView, acts: string) => {
 
 function policyHtml(v: PoliciesView, p: PolicyView) {
   if (!p.header) return `<article class="policy invalid">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p.problems)}</article>`
-  const run = p.calls.run ? callHtml(p.calls.run, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(p))}">Run now</button>`
+  const call = callOf(p, 'run')
+  const run = call ? callHtml(call, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(p))}">Run now</button>`
   const next = p.next === undefined ? 'no slot ahead' : `next ${slotWords(p.next, tzOf(p), v.now)}`
   const live = `<span>live ${p.live.length}/${p.header.live}${p.live.length ? `: ${p.live.map((id) => workerHtml(v.board, id)).join(', ')}` : ''}</span>`
   return `<article class="policy">${policyHeadHtml(v, p, approveHtml(p) + run)}
@@ -1160,7 +1163,7 @@ const offerRowHtml = (v: PoliciesView, o: Offer) => {
   const dismissed = v.dismissed.has(o.key)
   const dismiss = dismissed ? '<small>dismissed</small>' : `<button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button>`
   return `<div class="offer${dismissed ? ' dismissed' : ''}"><span class="lamp"></span><button class="title" data-policy-open="${esc(o.policy)}" data-tip="open its file">${esc(o.title ?? o.tag)}</button>
-    <span class="when">${esc(offerWords(v.board, o, v.now))}</span><span class="acts">${callHtml(o.calls.accept, 'Accept', 'start the run this slot offers, on the file as it is now', 'primary')}${dismiss}</span></div>`
+    <span class="when">${esc(offerWords(v.board, o, v.now))}</span><span class="acts">${callHtml(callOf(o, 'accept')!, 'Accept', 'start the run this slot offers, on the file as it is now', 'primary')}${dismiss}</span></div>`
 }
 
 /**

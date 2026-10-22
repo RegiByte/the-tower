@@ -702,15 +702,16 @@ switch (verb) {
     const name = `"${policy.title ?? policy.tag}" (${policy.tag})`
     if (flag === 'approve') {
       if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
-      if (!policy.calls.approve) throw new CliError(`${name} is approved as it is now (${shortHash(policy.hash)})`)
-      await command(...withBy(policy.calls.approve))
+      const approve = callOf(policy, 'approve')
+      if (!approve) throw new CliError(`${name} is approved as it is now (${shortHash(policy.hash)})`)
+      await command(...withBy(approve))
       const words = policy.header.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
       console.log(`Approved ${name} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}`)
       break
     }
     if (!policy.header) throw new CliError(`${name} is invalid: ${standingWords(policy, board, now)}`)
     const offer = board.offers.find((o) => o.project === floor.id && o.policy === policy.id)
-    const call = offer?.calls.accept ?? policy.calls.run
+    const call = (offer && callOf(offer, 'accept')) ?? callOf(policy, 'run')
     if (!call) throw new CliError(`${name} can't be run now: ${standingWords(policy, board, now)}${policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
     const ran = await command<Replies['policy/run']>(...withBy(call))
     console.log(`Started run ${ran.n} of ${name}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header.when.tz, now)}` : ', by hand'}: ${callsignOn(board, ran.id)}, session ${ran.id}. \`tower agent ${callsignOn(board, ran.id)}\` follows it.`)
