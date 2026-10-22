@@ -30,6 +30,9 @@ export function tipStrip(deps) {
   /** @type {Pattern[]} */
   let patterns = []
 
+  /** A capability's words, escaped, its backticked spans as code. @param {string} text */
+  const wordsHtml = (text) => esc(text).replace(/`([^`]+)`/g, '<code>$1</code>')
+
   /** @param {Tip} tip */
   function tipHtml(tip) {
     const dismiss = `<button class="icon-btn" data-tip-dismiss="${esc(tipKey(tip))}" aria-label="dismiss this tip for good" data-tip="dismiss this tip for good: settings bring it back">${ICON.close}</button>`
@@ -37,7 +40,7 @@ export function tipStrip(deps) {
       return `<span class="tip-body" tabindex="0" data-tip="${esc(`${tip.summary}\n\n${tip.story.replace(/(?<!\n)\n(?!\n)/g, ' ')}`)}"><span class="eyebrow">pattern</span><b>${esc(tip.title)}</b></span>${dismiss}`
     const chord = tip.command && keysLabel(keys(), tip.command)
     const caps = tip.command ? keys()[tip.command].map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join('') : ''
-    const text = `<span class="eyebrow">tip</span>${esc(tip.text)}${caps}`
+    const text = `<span class="eyebrow">tip</span><span>${wordsHtml(tip.text)}</span>${caps}`
     const does = tip.command && COMMANDS.find((c) => c.id === tip.command)?.does
     return (chord ? `<button class="tip-body" data-tip-run="${tip.command}" data-tip="${esc(`${chord}: ${does}`)}">${text}</button>` : `<span class="tip-body">${text}</span>`) + dismiss
   }
