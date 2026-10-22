@@ -230,9 +230,11 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Errors** are data: `{t: 'error', code, message}`. Branch on `code` (`invalid`, `not_found`, `refused`,
   `unavailable`…), never on `message`.
 
-`GET /schema` serves every verb's input and reply, and the error, as JSON Schema: a renderer or a script in any
-language learns the contract from the tower. `tower api` lists the verbs and the reads that take a query, one line
-each, and `tower api <name>` prints one's schema (a read's query: its reply is typed in the module its route's line names). Every route is listed in the header of `src/tower/server.ts`.
+`GET /schema` serves every verb's input and reply, and the error, as JSON Schema, and every GET route as a read
+(`reads`, keyed by name: its `path` with named params like `/screen/{id}`, its `kind`, `json`, `stream`, `page` or
+`schema`, and its `query` as JSON Schema when it takes one): a renderer or a script in any
+language learns the contract from the tower. `tower api` lists the verbs and the json reads, one line
+each, and `tower api <name>` prints one's schema (a read's reply is typed in the module its route's line names). Every route is listed in the header of `src/tower/server.ts`.
 
 The version is `major.minor`, the same on the board, `/schema` and `/tower.js`. An addition an older client reads past
 moves the minor; a rename, a removal or a changed meaning moves the major, with a line in `CHANGELOG.md` saying what to

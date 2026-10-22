@@ -332,10 +332,10 @@ async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIE
 }
 
 /** The contract for renderers in any language. */
-const apiSchema = JSON.stringify({
+const apiSchema = (): string => JSON.stringify({
   v: API_VERSION,
   verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
-  reads: Object.fromEntries(Object.entries(QUERIES).map(([read, query]) => [read, { query: z.toJSONSchema(query, { io: 'input' }) }])),
+  reads: describeReads(READS),
   streams: {
     board: {
       description: 'The whole system as one view, again whenever it changes.',
@@ -1492,7 +1492,7 @@ const READS = [
   plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
   plain('stream', { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
   plain('stream', { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
-  plain('schema', { path: /^\/schema$/, serve: ({ res }) => res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
+  plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end((schemaBody ??= apiSchema())) }),
   apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
   apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
   apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
@@ -1513,6 +1513,26 @@ const READS = [
   plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
   apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
 ] as const satisfies readonly Read[]
+
+let schemaBody: string | undefined
+
+/** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
+const pathOf = (path: RegExp) =>
+  path.source
+    .replace(/^\^|\$$/g, '')
+    .replace(/\(\?:\\\/\(\?<(\w+)>[^()]*\)\)\?/g, '[/{$1}]')
+    .replace(/\(\?<(\w+)>[^()]*\)/g, '{$1}')
+    .replaceAll('\\/', '/')
+
+/** Every entry of `READS` as `{ path, kind, query? }`, keyed by its API read or, for a route that is none, by its path. */
+const describeReads = (reads: readonly Read[]) =>
+  Object.fromEntries(
+    reads.map((entry) => {
+      const path = pathOf(entry.path)
+      const kind = 'read' in entry ? 'json' : entry.kind
+      return ['read' in entry ? entry.read : path.slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/', { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
+    }),
+  )
 
 type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
 

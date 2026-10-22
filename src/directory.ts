@@ -514,7 +514,7 @@ const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: S
 }
 
 type JsonSchema = { description?: string }
-type ApiSchema = { v: string; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { query: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
+type ApiSchema = { v: string; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { path: string; kind: 'json' | 'stream' | 'page' | 'schema'; query?: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
 
 const apiLines = (schema: ApiSchema): string[] => {
   const width = Math.max(...[...Object.keys(schema.verbs), ...Object.keys(schema.reads), ...Object.keys(schema.streams)].map((name) => name.length))
@@ -526,7 +526,7 @@ const apiLines = (schema: ApiSchema): string[] => {
     ...Object.entries(schema.verbs).map(([name, { input }]) => line(name, input)),
     '',
     'Reads: GET /<read>?<query>.',
-    ...Object.entries(schema.reads).map(([name, { query }]) => line(name, query)),
+    ...Object.entries(schema.reads).filter(([, { kind }]) => kind === 'json').map(([name, { path, query }]) => line(name, { description: [path, query?.description].filter(Boolean).join('  ') })),
     '',
     'Streams: GET, server-sent events. `tower api board` prints how to read the board and its message schema.',
     ...Object.entries(schema.streams).map(([name, { description }]) => line(name, { description })),
@@ -650,7 +650,7 @@ switch (verb) {
       console.log(apiLines(schema).join('\n'))
       break
     }
-    const one = schema.verbs[flag] ?? schema.reads[flag] ?? schema.streams[flag]
+    const one = schema.verbs[flag] ?? schema.streams[flag] ?? schema.reads[flag]
     if (!one) throw new CliError(`The API has no verb, read or stream "${flag}"`, '`tower api` lists them')
     console.log(JSON.stringify(one, null, 2))
     break

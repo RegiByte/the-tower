@@ -4,8 +4,8 @@
   "name": "Tower server",
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#READS", "hub/src/tower/server.ts#route", "hub/src/tower/server.ts#readBody", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
+  "reviewed": "2026-10-22",
+  "refs": ["hub/src/tower/server.ts#sandboxed", "hub/src/tower/server.ts#handle", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#READS", "hub/src/tower/server.ts#describeReads", "hub/src/tower/server.ts#route", "hub/src/tower/server.ts#readBody", "hub/src/tower/server.ts#HANDLERS", "hub/src/tower/server.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/server.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#sendBoard", "hub/src/tower/server.ts#sse", "hub/src/tower/server.ts#run", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -69,8 +69,9 @@ that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema 
 refuses an entry naming a read the API doesn't declare and a declared read with no entry. [`route`](ref:hub/src/tower/server.ts#route) takes the first entry that matches, decodes its
 params and parses the query string by its schema, refusing it as `invalid` before the entry serves; a route with no
 schema ignores the query. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
-[`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, every read's query, and the error, as JSON
-Schema, each stream described, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
+[`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, every entry of `READS` as a read
+(its path with named params, its kind, its query's schema), and the error, as JSON
+Schema, derived by [`describeReads`](ref:hub/src/tower/server.ts#describeReads) from the entries themselves, each stream described, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
 that throws answers `config` for a [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError), else `internal`
 ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)), and goes to the log.
 

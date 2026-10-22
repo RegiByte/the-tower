@@ -186,7 +186,7 @@ test('server: every read answers', async () => {
   const isArray = (body: string) => Array.isArray(json(body))
   const has = (...keys: string[]) => (body: string) => keys.every((key) => Object.hasOwn(json(body) as object, key))
   const reads: [path: string, type: string, shape?: (body: string) => boolean][] = [
-    ['/schema', 'application/json', has('v', 'verbs', 'reads', 'streams', 'error')],
+    ['/schema', 'application/json', (body) => has('v', 'verbs', 'reads', 'streams', 'error')(body) && (json(body) as { reads: Record<string, { path: string }> }).reads['changes/<id>']?.path === '/changes/{id}'],
     ['/renderers', 'application/json', has('default', 'renderers')],
     ['/origins', 'application/json', has()],
     [`/conversations/${SESSION}`, 'application/json', isArray],
