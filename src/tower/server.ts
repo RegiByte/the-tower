@@ -104,7 +104,7 @@ import type { Prune } from '../bridge/prunable.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import type { Resource } from '../bridge/resources.ts'
 import type { BoardMsg, Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
-import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Replies, type Route, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Query, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { z } from 'zod'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { designCss, fonts } from '../shared/design.ts'
@@ -1451,46 +1451,70 @@ type Served<Q extends z.ZodType> = {
   search: string
 }
 
+/** Every read the API declares: the keys of `Reads` and of `QUERIES`. */
+type ReadName = keyof Reads | Query
+
+/** A read's query schema in `QUERIES`, or none for a read that takes no query. */
+type QueryOf<N extends ReadName> = N extends Query ? (typeof QUERIES)[N] : z.ZodUnknown
+
+/** What a GET route that is no API read is: a page the tower serves, a stream, or the API's own description. */
+type Kind = 'page' | 'stream' | 'schema'
+
 /**
- * A GET route: `path` matched against the pathname, its named groups the params; the query string parsed by `query`
- * before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route that declares none.
+ * A GET route: `path` matched against the pathname, its named groups the params; the query string parsed by the
+ * read's schema in `QUERIES` before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route
+ * that declares none. An entry is the API read it `read`s, a name of `Reads` or `QUERIES`, or says its `kind`.
  */
-type Read<Q extends z.ZodType = z.ZodType> = {
+type Read = {
   path: RegExp
-  query?: Q
-  serve(served: Served<Q>): unknown
+  query?: z.ZodType
+  read?: ReadName
+  kind?: Kind
+  serve(served: Served<z.ZodType>): unknown
 }
 
-const read = <Q extends z.ZodType = z.ZodUnknown>(entry: Read<Q>): Read => entry
+type ReadEntry<Q extends z.ZodType> = { path: RegExp; serve(served: Served<Q>): unknown }
+
+const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): Read & { read: N } => ({
+  ...entry,
+  read: name,
+  query: name in QUERIES ? QUERIES[name as Query] : undefined,
+})
+
+const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): Read => ({ ...entry, kind })
 
 const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
 
 /** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
-const READS: Read[] = [
-  read({ path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
-  read({ path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
-  read({ path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
-  read({ path: /^\/schema$/, serve: ({ res }) => res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
-  read({ path: /^\/origins$/, serve: ({ res }) => origins(res) }),
-  read({ path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
-  read({ path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
-  read({ path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
-  read({ path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
-  read({ path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
-  read({ path: /^\/changes\/(?<id>[\w-]+)$/, query: QUERIES['changes/<id>'], serve: ({ res, params, query }) => changes(res, params.id!, query) }),
-  read({ path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
-  read({ path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
-  read({ path: /^\/stats$/, query: QUERIES.stats, serve: ({ res, query }) => statsRead(res, query) }),
-  read({ path: /^\/landing$/, query: QUERIES.landing, serve: ({ res, query }) => landingRead(res, query) }),
-  read({ path: /^\/runs\/(?<project>[\w-]+)$/, query: QUERIES['runs/<project>'], serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
-  read({ path: /^\/probe\/(?<name>[\w-]+)$/, query: QUERIES['probe/<name>'], serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
-  read({ path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
-  read({ path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
-  read({ path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
-  read({ path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
-  read({ path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
-]
+const READS = [
+  plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
+  plain('stream', { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
+  plain('stream', { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
+  plain('schema', { path: /^\/schema$/, serve: ({ res }) => res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
+  apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
+  apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
+  apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
+  apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
+  apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
+  apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
+  apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
+  plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
+  plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
+  apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
+  apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
+  apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
+  apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
+  apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
+  apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),
+  apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
+  plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
+  plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
+  apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<file>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.file!) }),
+] as const satisfies readonly Read[]
 
+/** Types only when every read the API declares has an entry in `READS`. */
+const everyReadServed: Exclude<ReadName, (typeof READS)[number] extends infer E ? (E extends { read: infer N } ? N : never) : never> extends never ? true : never = true
+void everyReadServed
 /** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
 function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
   for (const entry of READS) {

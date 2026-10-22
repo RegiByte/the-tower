@@ -63,8 +63,10 @@ schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 return a reply or an error as a value; a daemon that answers no becomes `refused` (`not_found` when the terms daemon
 holds no such shell), one that doesn't answer `unavailable`. Every GET but the served files (`/tower.js`, the
 design, the modules, the vendored scripts) is an entry of [`READS`](ref:hub/src/tower/server.ts#READS): a pattern
-matched against the pathname, whose named groups are its params, the query's schema from `QUERIES` when it takes one,
-and what serves it. [`route`](ref:hub/src/tower/server.ts#route) takes the first entry that matches, decodes its
+matched against the pathname, whose named groups are its params, and what serves it. An entry is either an API read
+that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema taken from `QUERIES[name]`) or says its
+`kind`, a `page` (`/`, `/r/…`, `/run/…`), a `stream` (`/board`, `/mux`, `/screen`, `/shell`) or the `schema`. The typecheck
+refuses an entry naming a read the API doesn't declare and a declared read with no entry. [`route`](ref:hub/src/tower/server.ts#route) takes the first entry that matches, decodes its
 params and parses the query string by its schema, refusing it as `invalid` before the entry serves; a route with no
 schema ignores the query. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
 [`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, every read's query, and the error, as JSON
