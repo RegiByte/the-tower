@@ -4,7 +4,7 @@
   "name": "tower",
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-22",
   "refs": ["hub/src/cli.ts", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
@@ -12,7 +12,7 @@
     { "to": "terms-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower up: starts it detached, unless this system's tower already listens on its port" },
     { "to": "system-root", "verb": "writes", "carries": "host.pid, terms.pid and tower.pid on tower up; removes them on tower down; config.json once, on tower init, when none exists" },
-    { "to": "system-root", "verb": "reads", "carries": "every session log from its checkpoint on for ls and kill, a whole log for screen and resume's conversation; tails one for attach (ps and reap read the process table only)" },
+    { "to": "system-root", "verb": "reads", "carries": "every session log from its checkpoint on for ls and kill, a whole log for screen and resume's conversation; tails one for attach (ps reads the process table only; reap reads it and checks each session's log in the root)" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, the checkpoints of the logs ls and kill fold" },
     { "to": "tower-server", "verb": "calls", "carries": "tower spawn and tower resume: POST /spawn and POST /resume, so every session is started by the tower; refused with the fix `tower up` when it is not running" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower update: stops it, moves the checkout to the newest release, starts it again" },
