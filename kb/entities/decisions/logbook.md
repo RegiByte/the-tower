@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/renderers/tower3d/src/desk.ts#dressBinder",
     "hub/renderers/tower3d/src/desk.ts#monitorOf",
@@ -35,8 +35,8 @@
   ]
 }
 ---
-**Problem.** A worker's past was reachable only as text: the brief lists every session's conversations, but what
-each session's terminal ended on, and who worked on a floor last week, had no place in the building.
+**Problem.** A worker's past is text in the brief, which lists every session's conversations; what each session's
+terminal ended on, and who worked on a floor last week, need a place in the building.
 
 **Why.** Tower 3D is lived in. A worker's history should be a thing on its desk, and a floor's past workers a thing
 in its corner; both from data the system already derives (`card.lineage`, the archive read, the screen stream), so
@@ -81,7 +81,6 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
 - *The logbook in the side panel*: too narrow for a terminal; the reader holds a screen and the brief.
 - *The screen over the brief in one grid*: a long answer squeezed the screen to a strip.
 
-**Consequences.** No board, API or host change. The screen keeps no checkpoint, so the replay of a long session waits
-for its whole log to be rebuilt. Every floor's archive is read in the background: `board.archiveAt` is one value for
-the whole board, so any worker archived anywhere moves every floor's `archiveKey`, and the page reads
-`GET /archive/<project>` once per floor; if that shows up in the tower's CPU, read only the floors in view.
+**Consequences.** The screen keeps no checkpoint, so the replay of a long session waits for its whole log to be
+rebuilt. `board.archiveAt` is one value for the whole board, so any worker archived anywhere moves every floor's
+`archiveKey`, and Tower 3D reads `GET /archive/<project>` once per floor.

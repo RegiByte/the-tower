@@ -4,7 +4,7 @@
   "name": "Session lifecycle",
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/server.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/server.ts#spawnCut"]
 }
@@ -46,9 +46,10 @@ sequenceDiagram
   H->>R: x event {exitCode, hostStopped?}
 ```
 
-- **Triggers.** The tower's spawn dialog, or `tower spawn`. Both build the request with
-  [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which mints the session id, names Claude by its
-  [[callsign]] and composes its `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]); the host adds only its own wiring
+- **Triggers.** The `spawn` verb, from a renderer's spawn dialog or `tower spawn`. The tower draws the session id
+  ([`newWorker`](ref:hub/src/tower/server.ts#newWorker), [[callsign-free-name]]) and builds the request with
+  [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which names Claude by its [[callsign]] and composes its
+  `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]); the host adds only its own wiring
   ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)).
 - **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
   the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
@@ -59,7 +60,7 @@ sequenceDiagram
   reach the PTY. A renderer never talks to Claude; it reads the log and asks the host.
 - **The screen is replayed, not stored.** Opening a session rebuilds its screen from the `o` and `r`
   events ([`snapshot`](ref:hub/src/bridge/screen.ts#snapshot)), then streams appended output. The log is read for
-  those alone ([`screenEvents`](ref:hub/src/tail.ts#screenEvents)): no other line is parsed.
+  those and `x` alone ([`screenEvents`](ref:hub/src/tail.ts#screenEvents)): no other line is parsed.
 - **End.** The PTY exits by itself, by `kill`, because the host stopped (`hostStopped`), or by a signal from
   outside the tower (`exitCode` above 128, other than the host's SIGHUP 129). A session with no `x` whose host is
   gone shows as `lost`. Lost, stopped with the host or killed from outside, it is stranded: on duty until resumed or

@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Tidy: one list of what can go, computed, applied as shown",
-  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose (their hirer gone), and the logs of workers ended more than retention.days ago (log-retention): hires whose hirer is no longer on duty, quiet between turns (a finished turn even with its answer unread), no running worker reporting to them, their worktree's work landed. A worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
+  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose (hirer gone, quiet, work landed), and old logs and stream months to archive; a worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -25,7 +25,6 @@
     "hub/src/shared/cards.ts#tidyLine",
     "hub/src/shared/cards.ts#tidyRows",
     "hub/src/shared/cards.ts#editedRows",
-    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
     "hub/renderers/tower3d/src/cards.ts#landedRow",
     "hub/test/prunable.test.ts",
@@ -33,10 +32,9 @@
   ]
 }
 ---
-**Problem.** The tower knew every process a session left ([[leftover]]) and every worker's status and how long it
-had held it, and could end each by hand, but nothing said what could go: stuck processes and idle workers, pruned
-without touching what belongs to running agents. A `tidy` floor verb already removed worktrees, deleted absorbed
-branches and filed landed threads.
+**Problem.** The tower knows every process a session left ([[leftover]]), every worker's status and how long it has
+held it, and every worktree's and thread's state, and can end or remove each by hand, but something has to say what
+can go, without touching what belongs to running agents.
 
 **Why.** What can go is a policy over facts the board already has, so it is computed, not stored, and lives in the
 bridge where every renderer and worker reads it ([[renderer-is-disposable]], [[agents-have-every-capability]]).
@@ -114,5 +112,4 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   archives a log on its own, and each checks its own conditions, not the ones Tidy listed by. A row's call is Tidy's
   own, so a row does exactly what the whole would do to it.
 
-**Impact.** The board carries `floor.tidy`, `Card.stuck`, `typedAt`, `heardAt`; `tidy` takes the plan or any part of
-it, and its reply adds `reaped`, `killed` and `skipped`. Shells from the terms daemon are never listed. No host change.
+**Impact.** The board carries `floor.tidy` and `Card.stuck`. Shells from the terms daemon are never listed.

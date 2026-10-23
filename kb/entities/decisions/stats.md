@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
@@ -23,7 +23,6 @@
     "hub/src/bridge/landed.ts#parseLog",
     "hub/src/landed.ts#readLanded",
     "hub/test/fixtures/landed.gitlog",
-    "hub/src/tower/tower.js",
     "hub/test/stats.test.ts"
   ],
   "links": [
@@ -70,13 +69,14 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES); `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
   waits answered and the weekly budget with its pace. They move only with readings, turns and prompts, which already
-  change the board, so they add no pushes; a day that turns while nothing happens shows yesterday's until the next
-  event, which `today.since` tells.
+  change the board, so they add no pushes; a day that turns while nothing happens shows within a minute, as the tower
+  rebuilds the board on a clock ([`CLOCK_PUBLISH_MS`](ref:hub/src/tower/server.ts#CLOCK_PUBLISH_MS)), and
+  `today.since` says which day it is.
 
 **Alternatives considered.**
 - *Sum each card's `costUsd`.* Resumes carry it, so it overstates.
 - *Only deltas between readings, a drop counted in full.* A `/clear` with no reading between its two conversations
-  shows no drop, and the new conversation's cost is lost (the `clear` fixture).
+  shows no drop, and the new conversation's cost is lost.
 - *Waits from a `Stop` to the next turn.* A turn a task's notification, a schedule or a peer starts is not the user
   answering.
 - *Asks from `tool.check` with decision `ask`.* Nearly all are settled by auto mode; `PermissionRequest` is what the

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/worktrees.ts#discardable",
     "hub/src/worktrees.ts#discard",
@@ -16,13 +16,12 @@
     "hub/src/tower/server.ts#discardWorktree",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/cards.ts#discardAsk",
-    "hub/src/shared/cards.ts#discardedLine",
-    "hub/renderers/page/index.html", "hub/renderers/page/page.js"
+    "hub/src/shared/cards.ts#discardedLine"
   ]
 }
 ---
-**Problem.** The tower never threw work away ([[tower-cuts-worktrees]]): a worktree at risk offered nothing, and was
-removed by hand in a shell, with `--force` and `git branch -D`, leaving no record of what went.
+**Problem.** Removal never throws work away ([[tower-cuts-worktrees]]), so a worktree whose work the user gives up on
+would be removed by hand in a shell, with `--force` and `git branch -D`, leaving no record of what went.
 
 **Why.** Discarding is a real decision the user makes about work, so it is a verb every renderer and worker can
 reach ([[agents-have-every-capability]]), and it leaves a fact where the work's history already lives: its review
@@ -56,5 +55,5 @@ thread ([[review-threads]]).
   the verb refuses there.
 - *A force flag on `worktree/remove`*: one verb would mean two things; discard has its own guard and its own record.
 
-**Impact.** Verb `worktree/discard {project, name, author, held}` replying `{tips, thread}`. Removal can lose work by
-this verb alone. No host change.
+**Impact.** Verb `worktree/discard` ([`VERBS`](ref:hub/src/shared/api.ts#VERBS)). Removal can lose work by this verb
+alone.

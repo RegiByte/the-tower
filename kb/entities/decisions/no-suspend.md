@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/protocol.ts#sessionKeys", "hub/src/tower/server.ts#HANDLERS", "hub/src/attach.ts"]
 }
 ---
@@ -27,5 +27,4 @@ answer if Claude ever suspends some other way. Marking the session `suspended` o
 output: it reads Claude's on-screen wording, which any release can change. Filtering in each renderer:
 logic every renderer would repeat.
 
-**Consequences.** Ctrl+Z does nothing in a worker. The press is not logged as input. The host and the
-log format are unchanged.
+**Consequences.** Ctrl+Z does nothing in a worker. The press is not logged as input.
