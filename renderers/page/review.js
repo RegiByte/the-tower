@@ -107,7 +107,7 @@ export function review(deps) {
     const [repo, f] = fileAt(key)
     changeReads.dispatch({ type: 'mark', id: /** @type {string} */ (selected()), repo, marks: marksToggled(read().viewed, repo, f) })
     folds.delete(key)
-    keepingFileTop($('changes'), key, render)
+    keepingFileTop($('changes'), key, render, true)
   }
 
   /** @param {string} key */

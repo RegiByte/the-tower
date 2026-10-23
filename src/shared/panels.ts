@@ -1227,12 +1227,14 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
 /**
  * Runs `write`, which folds or unfolds the file `key` in the Changes panel `el` (its Viewed box, its caret), and, when the
  * reader was inside that file's diff (its header stuck to the top), scrolls the file back to its header: the next file
- * follows it, where the scroll alone would leave the reader as far down as the fold took away.
+ * follows it, where the scroll alone would leave the reader as far down as the fold took away. A Viewed box (`viewed`)
+ * ticked while the file tree is drawn beside the diffs always scrolls the file to the top.
  */
-export function keepingFileTop(el: HTMLElement, key: string, write: () => void) {
+export function keepingFileTop(el: HTMLElement, key: string, write: () => void, viewed = false) {
   const at = `[data-file="${CSS.escape(key)}"]`
   const file = el.querySelector(at)
-  const inside = file && file.getBoundingClientRect().top < file.querySelector('header')!.getBoundingClientRect().top - file.clientTop - 0.5
+  const inside = file && ((viewed && el.querySelector('.changes-tree')) ||
+    file.getBoundingClientRect().top < file.querySelector('header')!.getBoundingClientRect().top - file.clientTop - 0.5)
   write()
   if (inside) el.querySelector(at)?.scrollIntoView({ block: 'start' })
 }

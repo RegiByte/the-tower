@@ -2213,7 +2213,7 @@ function toggleViewed(id: string, read: ChangesRead, key: string) {
   const [repo, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
   markViewed(id, repo, marksToggled(read.viewed, repo, f))
   s.folds.delete(key)
-  keepingFileTop($('desk-changes'), key, renderPanel)
+  keepingFileTop($('desk-changes'), key, renderPanel, true)
 }
 
 const dropPick = () => ((s.pick = undefined), (s.pickText = ''))
