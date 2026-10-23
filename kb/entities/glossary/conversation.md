@@ -4,7 +4,7 @@
   "name": "Conversation",
   "summary": "One of Claude's conversations, known by the session_id of its classic hooks; a session holds one or more, a new one after each /clear or in-session /resume, each with its latest user prompt and Claude's latest answer.",
   "in": "tower",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/bridge/conversation.ts#Conversation", "hub/src/bridge/conversation.ts#USER_ORIGINS"]
 }
 ---

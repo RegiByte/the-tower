@@ -4,7 +4,7 @@
   "name": "Kept branch",
   "summary": "A branch the tower cut (it has a branch.<br>.towerBase config) that no worktree has checked out: left by a removal because it wasn't absorbed, such as an open pull request; checked out again by branch/recut, deleted by Tidy once absorbed, or by its own branch/delete once absorbed or carried.",
   "in": "tower",
-  "reviewed": "2026-10-19",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/worktrees.ts#readRepo", "hub/src/bridge/worktrees.ts#floorBranches", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#deleteBranch", "hub/src/worktrees.ts#nameIsFree"]
 }
 ---
