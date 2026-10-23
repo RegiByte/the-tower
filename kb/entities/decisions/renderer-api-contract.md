@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/api.ts#ApiError", "hub/src/tower/server.ts#command", "hub/src/tower/server.ts#READS", "hub/src/tower/server.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json"]
 }
 ---
@@ -33,14 +33,15 @@ went wrong, and know which changes can break it.
   [`ERROR_STATUS`](ref:hub/src/shared/api.ts#ERROR_STATUS). The board stream sends `{v, error: {code, message}}`
   while the tower can't build the board ([[board-errors]]); over the postMessage tunnel an answer's error carries the
   same `{code, message}`, and `tower.js` rejects with an `Error` holding `code`.
-- **Verbs come with their requests.** Each card, conversation, floor, policy and offer carries `actions`: each verb offered now,
+- **Verbs come with their requests.** Everything the board offers verbs on (a card, a conversation, a floor, a note, a
+  worktree, a branch, a policy, an offer…) carries `actions`: each verb offered now,
   with its `call` when it is a request, `[verb, body]` with every field the board knows. The renderer adds only what
   the user supplies (a prompt's text, a floor's directory). `drive`, `brief` and `goto` are moves within the
   renderer, not requests, and have no call. `verbs` and `calls`, the same split in two, are derived from `actions`
   ([`offered`](ref:hub/src/bridge/verbs.ts#offered); a policy and an offer carry `calls` only,
   [`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)) and kept for renderers that read them.
-- **The contract is served.** `GET /schema` answers the verbs' input and reply schemas and the error as JSON Schema
-  ([`apiSchema`](ref:hub/src/tower/server.ts#apiSchema)), and its `streams`: the board's message as the JSON Schema of
+- **The contract is served.** `GET /schema` answers the verbs' input and reply schemas, every GET route as a read
+  and the error as JSON Schema ([`apiSchema`](ref:hub/src/tower/server.ts#apiSchema), [[tower-server]]), and its `streams`: the board's message as the JSON Schema of
   the TypeScript type `BoardMsg`, JSDoc as descriptions. `npm run schema:board`
   ([`board-schema.ts`](ref:hub/scripts/board-schema.ts)) writes the committed `src/shared/board.schema.json` from the
   type, and [`board-schema.test.ts`](ref:hub/test/board-schema.test.ts) fails when it is stale. `tower api board`
@@ -61,8 +62,8 @@ went wrong, and know which changes can break it.
   by a renderer copied out of the checkout, so they are versioned with the API: removing or renaming a name is a major,
   with a CHANGELOG line saying what to use instead; adding one is a minor; a name on its way out stays `@deprecated`
   until a major. The libraries served beside them (`/xterm.js`, `/marked.js`…) are those libraries' own APIs, outside
-  the contract. [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name with the major
-  it was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
+  the contract. [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name as of the major it
+  was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
   diff. `window.tower` is typed once, as [`Tower`](ref:hub/src/shared/shelf-page.ts#Tower) beside the protocol it
   speaks: `tower.js` is checked against it through JSDoc ([`tsconfig.client.json`](ref:hub/tsconfig.client.json), run

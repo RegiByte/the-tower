@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-19",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/shared/loop.ts",
     "hub/src/shared/loop.ts#loop",
@@ -19,7 +19,7 @@
     "hub/src/shared/reads.ts#stepped",
     "hub/src/shared/reads.ts#heldHandlers",
     "hub/src/shared/reads.ts#reading",
-    "hub/src/shared/attend.ts#attendStep",
+    "hub/src/shared/attend.ts#attendHandlers",
     "hub/src/shared/attend.ts#watching",
     "hub/renderers/page/view.js",
     "hub/renderers/page/page.js#pageHandlers",
@@ -34,11 +34,10 @@
   ]
 }
 ---
-**Problem.** The renderers kept their lifecycles in module variables, timers and if-chains in handlers, and wrote
-the same one more than once: the "hold the last read until the next lands" logic eight times across the tower page
-and Tower 3D, the attention ring twice, the spawn dialog twice. Every copy drifted, and each drift was a bug a
-user could see (a poll left running after its pane closed, a failure toasted on every draw, a ring in one
-renderer and silence in the other). Logic spread across handlers could not be tested without a browser.
+**Problem.** Lifecycles kept in module variables, timers and if-chains in handlers get written once per renderer
+(holding the last read until the next lands, the attention ring, the spawn dialog), and every copy drifts into a bug
+a user can see: a poll left running after its pane closed, a failure toasted on every draw, a ring in one renderer
+and silence in the other. Logic spread across handlers can't be tested without a browser.
 
 **Why.** The bridge has been the steadiest part of the tower because it is pure folds over facts, replayed against
 recorded logs. A renderer's stateful logic gets the same treatment: plain state, pure steps, effects as data, the
@@ -56,17 +55,14 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   a missing one is a type error), each `(state, event) → effects`. The next state is an effect, `state`, put
   first so executors that read the loop's state see the new one.
 - *The world enters a machine only as events.* What a step needs to know about the renderer is in the machine's
-  state, put there by the events that changed it, never read from the renderer as an event is handled. The worker a
-  viewer watches is the tower page's selection while the window has their eye: the page's machine holds its main view
-  ([`view.js`](ref:hub/renderers/page/view.js)), and attention's own state holds the window's focus and visibility
-  and the worker the view is on, each changed by its own event (`focus`, `visible`, `watch`:
-  [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), [`watching`](ref:hub/src/shared/attend.ts#watching));
-  the page's handlers that move the view tell attention
-  ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)); Tower 3D's holds its open panel the same way, the
-  desk you sit at among them ([`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers)). The view and the rings follow one
-  selection because each move of the view tells attention (`watch`), and a machine replays the same from its events. An event enters as
-  it happens, apart from drawing: Tower 3D hands a board to its machine as it arrives, before its models are in or
-  its first frame is drawn, which a hidden tab holds back.
+  state, put there by the events that changed it, never read from the renderer as an event is handled. Attention
+  holds the window's focus and visibility and the worker the view is on, each changed by its own event (`focus`,
+  `visible`, `watch`: [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers),
+  [`watching`](ref:hub/src/shared/attend.ts#watching)); every handler that moves a renderer's view tells attention
+  `watch` (the tower page's [`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers), [[web-tower]]; Tower 3D's
+  [`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers), the desk you sit at), so the view and the
+  rings follow one selection and replay the same from their events. An event enters as it happens, apart from
+  drawing: Tower 3D hands a board to its machine as it arrives, before its first frame, which a hidden tab holds back.
 - *Time is data.* A timer is an effect carrying the event it fires
   ([`TimerEffect`](ref:hub/src/shared/loop.ts#TimerEffect), run by [`timers`](ref:hub/src/shared/loop.ts#timers)):
   starting one under an id replaces the one running there, and leaving a view cancels it in the handler that
@@ -78,7 +74,9 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   in order, and queues an event dispatched while another is handled until that one's effects have run, so every
   handler sees the state the one before it left. It holds no subscriptions, interceptors or registries.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
-  minor); its first is [`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers); a terminal's hold on its PTY's one size is another ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)), run by every terminal the tower page and Tower 3D open. A machine only one renderer
+  minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`/attend.js`), the
+  new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)) and a terminal's hold on its PTY's
+  one size ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)). A machine only one renderer
   has (the tower page's main view and the [`stats`](ref:hub/renderers/page/stats.js#stats) its sidebar shows, Tower 3D's movement) lives beside that renderer, in the same shape.
 - *Tests.* Steps are pure functions, so a machine's bug is pinned by a unit test of its steps
   ([`reads.test.ts`](ref:hub/test/reads.test.ts)) where the behaviour is worth locking down.
@@ -86,7 +84,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
 **Alternatives considered.**
 - *A full re-frame (subscriptions, interceptors, coeffects).* Renderers derive their views from the board, which
   already plays the subscriptions' part; the rest is machinery no machine asked for.
-- *A library (an event-loop library such as emergent, an actor or statechart library).* The loop is about sixty lines and the
+- *A library (an event-loop library such as emergent, an actor or statechart library).* The loop is small and the
   tower serves its shared modules to renderers in any language; a dependency would be API surface for little.
 - *Each machine its own shape* (`[state, effects]` here, callbacks there). That is how the copies drifted.
 

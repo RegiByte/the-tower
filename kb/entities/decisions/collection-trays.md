@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/cards.ts#shellPlaces", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/ui.ts#shellPickHtml"]
+  "reviewed": "2026-10-23",
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
 }
 ---
 **Problem.** A renderer that draws trays only for the collections it gives a meaning to hides the rest: what a worker
@@ -29,17 +29,17 @@ and reads items alike ([[renderer-is-disposable]]).
   written, anything else left to Finder and the editor. [`deleteAsk`](ref:hub/src/shared/items.ts#deleteAsk) is what a
   renderer asks first: deleting is the user's.
 - What opening a row means stays the renderer's. The tower page opens a draft in its editor and any other item in an
-  item view in the main pane, which follows the board: a changed item is read again, a deleted one closes.
+  item view in the main pane ([`kept.js`](ref:hub/renderers/page/kept.js)), which follows the board: a changed item
+  is read again, a deleted one closes.
 - A sidebar tray is bounded ([`collectionPeekHtml`](ref:hub/src/shared/items.ts#collectionPeekHtml)) and lists the
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
 - Drafts keep their own tray on the shared rows, with a way to make one; review threads keep theirs, with the threads
   Tidy filed in a fold below ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the board's
   `reviews` items), each opened in the item view; policies have their own panel.
 - A prompt in the new-worker form that closes without starting is kept
-  ([`keepUnsent`](ref:hub/src/shared/drafts.ts#keepUnsent)): a new draft, or the draft the form was opened on, with
+  ([`keepUnsent`](ref:hub/src/shared/drafts.ts#keepUnsent), run by the shared new-worker dialog's machine,
+  [`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)): a new draft, or the draft the form was opened on, with
   its edits. A blank prompt is never kept.
-- Shells start from [`shellPlaces`](ref:hub/src/shared/cards.ts#shellPlaces) (hubs, repos and worktrees, the floor in
-  view first), a picker every renderer draws alike ([`shellPickHtml`](ref:hub/renderers/tower3d/src/ui.ts#shellPickHtml)).
 - A tray shows only while its collection holds items. An empty tray would sit under every floor for each collection
   declared at the top level; what a collection is for is said where items are made (`tower whoami`, `tower keep`).
 
@@ -57,4 +57,4 @@ and reads items alike ([[renderer-is-disposable]]).
 Tower 3D lists each collection that holds items in its floor panel, titled through
 [`keptText`](ref:hub/renderers/tower3d/src/kept.ts#keptText): a draft opens its editor, a game its cabinet
 ([[arcade]]), any other item the reader ([`openKept`](ref:hub/renderers/tower3d/src/main.ts#openKept)); its spawn
-dialog keeps an unsent prompt with `keepUnsent`.
+dialog runs the same machine, so it keeps an unsent prompt too.

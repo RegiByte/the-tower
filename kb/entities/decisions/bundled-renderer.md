@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts", "hub/renderers/tower3d/src/files.ts#bytesOf", "hub/src/tower/server.ts#ANY_ORIGIN"]
 }
 ---
@@ -29,8 +29,8 @@ a hash of their bytes; each import is the file's URL relative to the page, and
 - *Plain ES modules beside an `html` shelf page*: these work only at `/run` and break on the shelf.
 - *`Access-Control-Allow-Origin` on shelf files*: this would let any site in the browser read them. Shelf pages
   stay as they are: they fetch nothing beside them.
-- *Models embedded in the bundle (esbuild's `binary` loader)*: base64 in the script, a third larger than the files,
-  decoded and parsed as JavaScript on every load, and copied into each page.
+- *Models embedded in the bundle (esbuild's `binary` loader)*: base64 in the script, larger than the files, decoded
+  and parsed as JavaScript on every load, and copied into each page.
 - *ES modules with esbuild's `splitting`, the pages sharing chunks*: what the four pages share once the models are
   files is three.js and the loaders, and the lab, dresser and editor are seldom open together. Modules load framed
   (the renderer's files carry CORS), so it stays open if the shared code grows.
@@ -40,14 +40,12 @@ a hash of their bytes; each import is the file's URL relative to the page, and
 - *Staying in one file*: rejected for size, even with no build step.
 
 **Consequences.** The renderer has a build step, and its output is git-ignored; `npm run tower3d` measures the
-KayKit kit, then clears `out/assets/` so old hashes don't pile up: a kit that fails leaves the last build whole.
-Models and other assets are files beside the pages or come from a CORS-enabled CDN, never shelf files. Tower 3D's
-models are Blender scripts (`renderers/tower3d/models/*.py`, `npm run tower3d:models`) exported to `.glb` files that
-are committed; the KayKit models the office uses are measured at build time into one file
-(`out/kaykit/kit.kaykit`, [[office-kaykit]]). The build bundles four entries and copies their pages into `out/`
-beside the bundles with esbuild's `copy` loader, so `out/` is the built renderer the tower serves at `/r/tower3d/`
-and exists only once built ([[renderers-in-config]]). A page of it on a shelf is a `renderer` entry (the Lab
-declared with `entry` `lab.html`), never an `html` one, which can't fetch its models. Fixture frames stay byte for
-byte the same across loads because the models parse in a fixed order: they wait for every file before parsing, as
-materials are made in parse order and that order breaks ties in the draw order. A next renderer that grows past a
-file follows the same pattern.
+KayKit kit into one file (`out/kaykit/kit.kaykit`, [[office-kaykit]]), then clears `out/assets/` so old hashes don't
+pile up: a kit that fails leaves the last build whole. Models are files beside the pages or come from a CORS-enabled
+CDN, never shelf files; Tower 3D's own are Blender scripts (`renderers/tower3d/models/*.py`, `npm run tower3d:models`)
+exported to committed `.glb` files. The build copies the four pages into `out/` beside their bundles, so `out/` is the
+built renderer ([[renderers-in-config]]); a page of it on a shelf is a `renderer` entry, never an `html` one, which
+can't fetch its models. Fixture frames stay byte for byte the same across loads because every model file is fetched
+before any is parsed: materials are made in parse order, and that order breaks ties in the draw order
+([`loadModels`](ref:hub/renderers/tower3d/src/models.ts#loadModels)). A next renderer that grows past a file follows the same
+pattern.

@@ -6,13 +6,12 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
 **Context.** Shelf pages and renderers need to read the system and act on it, or no renderer could ever do what
-the tower page does: by definition the tower could not be replaced from inside it. The tower page already drove
-everything through HTTP routes and SSE streams.
+the tower page does: the tower could not be replaced from inside it.
 
 **Decision.** Those routes are the API: commands declared as schemas in [`src/shared/api.ts`](ref:hub/src/shared/api.ts)
 ([[renderer-api-contract]]), reads, streams and the tunnel typed in
@@ -54,7 +53,7 @@ own, full screen. [[tower3d]] is a full-parity renderer.
 `get` answers JSON as data and anything else as text, `text` reads any read as text and `blob` as a `Blob` of its
 type, which is how a framed renderer draws an image in WebGL ([[blob-reads]]). The reads (a shelf's files, a
 collection's item, a file a worker showed, [[changes-view]], [[stats]], [[review-threads]] and more) are typed by
-`Reads` in `shelf-page.ts`; the verbs and the reads that take a query are listed at `/schema`, and each verb's reply
+`Reads` in `shelf-page.ts`; every verb and every GET route are listed at `/schema` ([[tower-server]]), and each verb's reply
 and its errors are in [[renderer-api-contract]].
 `remember`/`recall` keep one value per page in the viewer's browser (where a walker stood): a framed page's
 own storage throws at its opaque origin, so the framing tower keeps it, per shelf entry.
@@ -72,6 +71,7 @@ appearance and colour scheme, `prefs` and `scheme`, are [[viewer-prefs]].
   could reach the routes anyway once it runs at the tower's origin.
 
 **Consequences.** The tower *server* is no longer disposable: its routes are the contract, and only the tower
-*page* is a disposable renderer. A page's remote scripts can type into PTYs. `v` ([[renderer-api-contract]], declared once in `api.ts`), carried by both transports and checked by `tower.js`; a breaking change to
-the routes or the board bumps it. A framed page sits at an opaque origin, where modules load only with CORS: the tower serves its shared modules,
+*page* is a disposable renderer. A page's remote scripts can type into PTYs. Both transports carry the API version
+`v`, checked by `tower.js`, and a breaking change to the routes or the board moves its major ([[renderer-api-contract]]).
+A framed page sits at an opaque origin, where modules load only with CORS: the tower serves its shared modules,
 stylesheet and faces to any origin ([`ANY_ORIGIN`](ref:hub/src/tower/server.ts#ANY_ORIGIN)).

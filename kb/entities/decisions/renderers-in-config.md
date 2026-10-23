@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/cards.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
 }
 ---
@@ -23,7 +23,7 @@ update of the core never touches it.
   directory of the renderer's built files, `entry` its page in it. The core declares `page`, `week` and `tower3d`
   ([`BUILT_INS`](ref:hub/src/renderers.ts#BUILT_INS)); a config entry under a built-in's name overrides its fields,
   so `{ "tower3d": { "settings": … } }` keeps the root ([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)).
-  `renderer` defaults to `page`; naming none is a config error ([`defaultRenderer`](ref:hub/src/renderers.ts#defaultRenderer)).
+  `renderer` defaults to `page`; naming a renderer that isn't declared is a config error ([`defaultRenderer`](ref:hub/src/renderers.ts#defaultRenderer)).
 - *Serving.* [`/r/<name>/`](ref:hub/src/tower/server.ts#rendered) serves the entry, and `/r/<name>/<file>` anything
   below the root but a path with a part starting with `.` ([`rendererFile`](ref:hub/src/renderers.ts#rendererFile),
   [`hiddenBelow`](ref:hub/src/shelf.ts#hiddenBelow)), at the tower's origin, unsandboxed: a declared renderer is
@@ -60,5 +60,3 @@ update of the core never touches it.
   fetches its files, as Lab fetches its models ([[bundled-renderer]]).
 
 **Impact.** A user writes a renderer anywhere, declares it, and makes it the default without touching the repo.
-Tower 3D runs at `/r/tower3d/`, the URL the recipes (`drive`, `tool:frames`, the sandbox) use, and a shelf names it as
-`{ "renderer": "tower3d" }`, which keeps its settings framed.

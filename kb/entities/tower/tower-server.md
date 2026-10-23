@@ -71,7 +71,7 @@ params and parses the query string by its schema, refusing it as `invalid` befor
 schema ignores the query. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
 [`/schema`](ref:hub/src/tower/server.ts#apiSchema) serves every verb's input and reply, every entry of `READS` as a read
 (its path with named params, its kind, its query's schema), and the error, as JSON
-Schema, derived by [`describeReads`](ref:hub/src/tower/server.ts#describeReads) from the entries themselves, each stream described (on its `READS` entry), and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
+Schema, derived by [`describeReads`](ref:hub/src/tower/server.ts#describeReads) from the entries themselves, the streams described on their `READS` entries (`/board`, `/mux`) beside `terminal/<id>`, which only `/mux` reaches, and the `board` stream's message as the JSON Schema generated from `BoardMsg` ([[renderer-api-contract]]); `/board` sends `{v, board}`, or `{v, error}` while the board can't be built ([[board-errors]]). A handler
 that throws answers `config` for a [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError), else `internal`
 ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)), and goes to the log.
 
