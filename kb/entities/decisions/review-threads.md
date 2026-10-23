@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/bridge/reviews.ts#checkoutState",
     "hub/src/bridge/reviews.ts#filedThreadOf",
