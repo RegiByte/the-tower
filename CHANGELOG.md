@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.56.1
+
+Changes with the file tree. No host restart, no config change, the renderer API unchanged at 1.77. Reload the page;
+rebuild Tower 3D (`npm run tower3d`) if you use it.
+
+- With the file tree open beside the diffs, ticking a file's Viewed box now always scrolls that file to the top, the
+  next file right after it. It only did when the reader was inside the file's diff, so a header partway down the
+  screen folded in place and left the reader to find the next file. Without the tree, and for the fold caret, nothing
+  changes. Thanks to Carlos Bonetti (#185).
+
 ## v1.56.0
 
 Groundwork for extensions, and a reap that stays in its own root. No host restart, no config change, the renderer API
