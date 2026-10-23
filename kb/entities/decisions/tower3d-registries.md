@@ -6,14 +6,14 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/stage.ts", "hub/renderers/tower3d/src/door.ts#installDoor"]
 }
 ---
-**Problem.** `main.ts` held dozens of module-level `let`s and did everything: near-identical keep/make/remove loops
-for desks, walls and guests; act kinds dispatched by `if` chains in two places (offers, run); one long `update`
-doing every per-frame job inline. Each new layer, act kind or per-frame job landed in the same file by hand, and the
-door ([[tower3d-door]]) could not leave `main.ts` without being handed a dozen closures.
+**Problem.** A renderer that grows a thing at a time (a layer of things drawn per board, a kind of thing to aim at, a
+per-frame job) repeats itself: near-identical keep/make/remove loops, act kinds dispatched by `if` chains in two
+places (offers, run), one long `update`, state scattered in module-level `let`s, and a door ([[tower3d-door]]) that
+must be handed every closure.
 
 **Why.** "Mods emerge, then freeze": extract the patterns that already exist, build on them, and only then name the
 shape of a mod. These shapes extract; they are not a plugin API.
@@ -36,8 +36,7 @@ shape of a mod. These shapes extract; they are not a plugin API.
   drives an `Engine`, the functions the page's own input and frames call. The three.js setup lives in
   [`stage.ts`](ref:hub/renderers/tower3d/src/stage.ts) so layers and the door import the scene and camera.
 
-A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door]]): the same walk before and after,
-every stage's state and PNG identical.
+A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door]]), expecting identical frames.
 
 **Alternatives considered.**
 - State passed explicitly to every function: more functional on paper, but every call site and handler changes

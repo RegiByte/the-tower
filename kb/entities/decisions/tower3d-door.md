@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
@@ -30,19 +30,18 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   next frame draws it, so they hold with no frame between them. A verb used wrongly throws with what to do instead
   (a verb not offered, a held verb pressed, a thing placed only by a frame not yet run). `ready()` resolves once the
   first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart),
-  [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music and never
-  stores the walker's spot.
+  [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music, rings nothing
+  and never stores the walker's spot.
 - `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES),
   a list of boards delivered one by one through `advance`, so what happens between boards can be recorded. Scenarios
   state facts; callsign, the worker's lifecycle ([`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf)), its crew
   ([`withReports`](ref:hub/src/bridge/board.ts#withReports)) and verbs come from the bridge's own functions, so a
   contract change breaks the build and a fixture draws what the board would. A fixture's screens open no streams: there is no host behind it, and replies landing
   between steps would make frames differ.
-- The tools around it: `npm run drive` (headless Chrome, page errors collected), `npm run sandbox` (a throwaway
-  system), model names as data (`contract.ts`) checked against every `.glb` by `npm test`, `lab.html` for one
-  model, `npm run tool:frames` (a fixed walk on every fixture board, each stage's state and PNG compared byte for
-  byte; it refuses a walk that does not repeat), and in CI `npm run test:tower3d-boot` (the built bundle on
-  `?board=busy`, booted through `ready()` with no page error, rejection, console error or failed load).
+- The tools around it ([[tower3d]]): `npm run drive` (headless Chrome, page errors collected), `npm run sandbox`,
+  `npm run tool:frames` (a fixed walk on every fixture board, each stage's state and PNG compared byte for byte; it
+  refuses a walk that does not repeat), model names as data checked against every `.glb` by `npm test`, and in CI
+  `npm run test:tower3d-boot`, the built bundle booted on a fixture board through `ready()` with no page error.
 
 **Alternatives considered.**
 - Keep driving real input over CDP: fragile and slow.
@@ -50,5 +49,4 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
 - Boards recorded from the real system: real shapes, but client prompts and paths would land in git and a
   scrubber would have to follow every new text field.
 
-**Impact.** `main.ts` takes intents and steps a clock, and its state can be read from outside. Two loads with one
-seed, clock and steps give identical pixels.
+**Impact.** Two loads with one seed, clock and steps give identical pixels.

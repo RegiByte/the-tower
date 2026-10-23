@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/renderers/tower3d/src/levels.ts#levelsShown",
     "hub/renderers/tower3d/src/levels.ts#levelOf",
@@ -51,7 +51,7 @@ landing doors of every level it passes go by.
 - Picking skips what is hidden, so other levels cannot be aimed at.
 - A floor's loft ([[floor-plan]]) stands inside its level and reaches no slab, so the box still closes.
 - The door reports what the last frame drew ([`DoorState`](ref:hub/renderers/tower3d/src/door.ts#DoorState)
-  `drawn`), and the frames scenario leaves it out, as it does fps.
+  `drawn`).
 
 **Alternatives considered.**
 - *Building-wide batches with per-instance visibility*: one draw call per pack in the overview, but it hides only
@@ -62,7 +62,6 @@ landing doors of every level it passes go by.
 - *Hiding the facade's bands with their level*: a window's top and bottom then show a gap where the next level's
   band stood.
 
-**Impact.** Away from the overview, a frame draws only what can be seen; the overview costs a few more calls, the
-price of per-level batches. Anything new that stands on a level hangs on its level root
+**Impact.** Away from the overview, a frame draws only what can be seen. Anything new that stands on a level hangs on its level root
 ([`hangOn`](ref:hub/renderers/tower3d/src/levels.ts#hangOn)); anything that stands outside the glass goes in a
 level's `foot`.

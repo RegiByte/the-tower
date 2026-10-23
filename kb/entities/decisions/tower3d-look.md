@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-10",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/light/setting.ts#startLighting",
@@ -34,9 +34,9 @@
   ]
 }
 ---
-**Problem.** Tower 3D's outside was boxes papered with a window texture under one flat light that never changed
-through the day. A procedural city and shell, and a light rig with contact shadows and a night bloom, replace them.
-The lighting costs GPU time, so anyone it annoys, or whose machine it slows, needs a way to turn it off.
+**Problem.** A building and city worth looking at through the day, generated rather than modelled, and a light rig
+with shadows and a night bloom. The lighting costs GPU time, so anyone it annoys, or whose machine it slows, needs a
+way to turn it off.
 
 **How.**
 - *The exterior is always drawn.* [`exterior/`](ref:hub/renderers/tower3d/src/exterior/geo.ts) is geometry as
@@ -94,5 +94,4 @@ The lighting costs GPU time, so anyone it annoys, or whose machine it slows, nee
   turn it off. A viewer's choice about how the page draws is view state, and that goes through `tower.store`.
 - *Screen-space AO and point lamps over your level*: a lot of GPU time for a subtle effect.
 
-**Impact.** Tower 3D's frames on the fixture boards are drawn with the lighting on; `npm run tool:frames` records
-them that way, and `?lighting=off` draws the exterior under the plain light.
+**Impact.** Tower 3D's frames on the fixture boards are drawn with the lighting on, unless `?lighting=off`.

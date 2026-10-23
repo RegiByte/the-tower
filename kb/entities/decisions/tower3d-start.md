@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/renderers/tower3d/index.html",
     "hub/renderers/tower3d/src/loading.ts",
@@ -20,9 +20,9 @@
   ]
 }
 ---
-**Problem.** On reload Tower 3D froze: the page waited for its first board with only the city drawn (a half-loaded
-look), then one task built the building, and the first full draw compiled every shader program on the main thread,
-for seconds with the GPU's program cache cold.
+**Problem.** Drawn as soon as it could, a reload showed a half-loaded look (the city alone while the first board came),
+then froze while one task built the building and the first full draw compiled every shader program on the main
+thread, for seconds with the GPU's program cache cold.
 
 **How.**
 - *The screen is static html.* `#loading` in [index.html](ref:hub/renderers/tower3d/index.html) shows at once, in
@@ -40,7 +40,7 @@ for seconds with the GPU's program cache cold.
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.
 - *The board is seen before it is drawn.* The page reads the viewer's record and subscribes to the board as it boots,
-  beside the models, and hands every board to its attention machine as it arrives ([[machines]]). Drawing waits for
+  beside the models, and hands every board to its attention machine as it arrives ([[attention-list]], [[machines]]). Drawing waits for
   the models ([`onLoaded`](ref:hub/renderers/tower3d/src/main.ts#onLoaded)) and the start waits on a shown tab
   (Chrome decodes an image and runs a frame only for one), so a page opened or reloaded behind another tab still
   rings when a worker starts waiting on you.
@@ -55,6 +55,5 @@ for seconds with the GPU's program cache cold.
 - *The floors in view first, the rest of the models after*: every floor draws desks, workers and the kit, so
   holding some back is the half-loaded look again.
 
-**Impact.** The shader compile no longer blocks the first draw; cold, it becomes a wait the screen animates through.
-The longest task left is `onBoard`'s building of the zones' batches. Fixture pages skip the screen and draw from
-their first frame, so their frames are unchanged.
+**Impact.** The shader compile never blocks a drawn frame; cold, it is a wait the screen animates through. Fixture
+pages skip the screen and draw from their first frame.
