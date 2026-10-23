@@ -6,12 +6,12 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
-**Problem.** The tower page and Tower 3D looked generic and unlike each other, with eight equally loud status
-colours, and colours were defined three times (the page's CSS, Tower 3D's CSS, `palette.ts`).
+**Problem.** The tower page and Tower 3D looked generic and unlike each other, every status colour equally loud,
+and each renderer defined its colours on its own.
 
 **Why.** The tower is used all day: it should be calm to look at for hours, and one language for every renderer
 grows as components are added.
@@ -74,8 +74,8 @@ terminal that is a block of the ink colour.
   textures keeps its own text.
 
 **Alternatives considered.**
-- Other directions: Paper & Ink alone (noisy in dense lists), Plant Floor (the most generic), a Sims skin (trade
-  dress), the old dark theme warmer (doesn't fix generic).
+- Other directions: Paper & Ink alone (noisy in dense lists), a game skin (trade dress), a warmer dark theme
+  (still generic).
 - Following the clock for the scheme: the UI would change under the user mid-session.
 - Tower 3D's world following the scheme: every canvas label would repaint on a toggle, and a sign in the building
   would change with the viewer's OS appearance.
@@ -84,6 +84,5 @@ terminal that is a block of the ink colour.
   in git.
 
 **Impact.** A renderer or shelf page gets the look by linking `/design.css`, or importing `/design.js` for data such
-as the terminal theme and the sky. Tower 3D bundles the same module for its sky, its panels' terminal and its world
-palette; its floors keep large planes neutral and the project colour on small things
-([`floorPalette`](ref:hub/renderers/tower3d/src/palette.ts#floorPalette)).
+as the terminal theme and the sky. Tower 3D bundles the same module; its floors keep large planes neutral and the
+project colour on small things ([`floorPalette`](ref:hub/renderers/tower3d/src/palette.ts#floorPalette)).

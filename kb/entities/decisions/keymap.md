@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
 }
 ---
@@ -39,10 +39,9 @@ every other key, and reach every renderer the way `user.name` does.
   [`keysHint`](ref:hub/src/shared/keymap.ts#keysHint) is a control's tip (`Esc outside a terminal or a text field`), so
   every button a command runs names its chords as the config binds them, and
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
-- `shell-here` (⌃`) opens or focuses a shell in the selected worker's directory, and from any shell closes the dock's view (the shell
-  keeps running) and returns to the worker's terminal, read from the board's shells by cwd. xterm sends no bytes for ⌃`, so neither a shell nor Claude ever sees it.
-- `palette` (⌘K) opens the command palette, which lists the global commands by their `label` with their chords, so
-  it teaches the keymap as it replaces it ([[command-palette]]).
+- `shell-here` (⌃`) goes between the selected worker's terminal and a shell in its directory, read from the board's
+  shells by cwd; xterm sends no bytes for ⌃`, so neither a shell nor Claude sees it. `palette` (⌘K) lists the global
+  commands by `label` with their chords, so it teaches the keymap ([[command-palette]]).
 - `leave-terminal` (⌥Esc) returns focus to where it was before the terminal
   ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃⇧1–4) show the selected worker's
   panes, from inside the terminal too. Neither is Claude's: ⌥Esc reaches it as Esc twice and Claude binds no ⌃⇧ digit. macOS takes ⌃ digits for its desktops, which is why the panes carry ⇧.
@@ -56,7 +55,7 @@ every other key, and reach every renderer the way `user.name` does.
   already reads, checked with the rest of it.
 - Matching every chord by `code` (`Shift+Slash` for `?`): the sheet would name a key the user's layout may not have.
 - Plain letters inside a terminal: they are Claude's typing. F6 to cycle panes: Chrome keeps it.
-- A rebinding UI in the sheet: the config is where intent lives, and no one has asked for one.
+- A rebinding UI in the sheet: the config is where intent lives.
 
 **Impact.** `/keymap.js` and `board.keys` are part of the renderer API, and the `?` sheet can't drift from the
 bindings. `MOVE_KEYS` and `moveOfKey` in `/cards.js` are deprecated in their favour until the API's next major.

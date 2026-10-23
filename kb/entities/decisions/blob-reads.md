@@ -6,14 +6,13 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/tower/tower.js",
     "hub/src/shared/shelf-page.ts#FromPage",
-    "hub/src/shared/api.ts#API_VERSION",
-    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/shelf.ts#shownServes",
     "hub/src/shelf.ts#shelfServes",
+    "hub/src/shared/markdown.ts#documentHtml",
     "hub/renderers/tower3d/src/showing.ts#posterOf",
     "hub/renderers/tower3d/src/showing.ts#pictured",
     "hub/renderers/tower3d/src/gallery.ts#fitPicture",
@@ -30,26 +29,28 @@ screenshot only as a poster naming it. And markdown with `![](plot.png)` needs t
 what.
 
 **How.**
-- **A read mode, no new route.** [`tower.js`](ref:hub/src/tower/tower.js) gains `tower.blob(path)`: any read the
-  API serves, as a `Blob` of its type. At the tower's origin it is `fetch(path).then(r => r.blob())`; framed it is
-  one new tunnel message, `{t: 'blob', id, path}` ([`FromPage`](ref:hub/src/shared/shelf-page.ts#FromPage)),
-  which the tower page answers with a one-line relay. A `Blob` is structured-cloneable: it crosses `postMessage`
-  with its MIME type. Who may read what is unchanged.
+- **A read mode, no new route.** [`tower.js`](ref:hub/src/tower/tower.js) has `tower.blob(path)`: any read the
+  API serves, as a `Blob` of its type. At the tower's origin it is a `fetch`; framed it is one tunnel message,
+  `{t: 'blob', id, path}` ([`FromPage`](ref:hub/src/shared/shelf-page.ts#FromPage)), which `tower.relay` in the
+  framing page answers. A `Blob` is structured-cloneable: it crosses `postMessage` with its MIME type. Who may read
+  what is unchanged.
 - **Markdown pulls in its images.** [`shownServes`](ref:hub/src/shelf.ts#shownServes) lets a shown `.md` serve
-  the images (png, jpg, gif, webp, svg) beside or below it, and [`shelfServes`](ref:hub/src/shelf.ts#shelfServes)
-  does the same for an `md` shelf entry's files. Only images: showing a README doesn't open its repo. Both readers
-  rewrite a relative image's `href` to its served path while `marked` parses (`walkTokens`); links are left
-  alone, so in-page anchors and links between shelf docs keep working.
+  the images beside or below it, and [`shelfServes`](ref:hub/src/shelf.ts#shelfServes) does the same for an `md`
+  shelf entry's files. Only images: showing a README doesn't open its repo.
+  [`documentHtml`](ref:hub/src/shared/markdown.ts#documentHtml) rewrites a relative image's `href` to its served
+  path as it parses; links are left alone, so in-page anchors and links between shelf docs keep working
+  ([[markdown-safe]]).
 - **Tower 3D** ([`posterOf`](ref:hub/renderers/tower3d/src/showing.ts#posterOf)): an image showing is read as a
-  blob, put on a blob URL (same-origin to the page that made it, so the canvas stays clean) and decoded by an
-  `<img>`, which takes every format, SVG included, and drawn onto a canvas. The monitor's sheet is repainted with it letterboxed on the screen's dark; the gallery gets a second texture of the
-  bare image ([`fitPicture`](ref:hub/renderers/tower3d/src/gallery.ts#fitPicture)), as large as its place allows
-  at its own proportions, the frame, plaque and ribbon around it. A markdown poster typesets its images,
-  shrunk to the room left on the sheet. The poster stands until the read settles; a file gone keeps it.
+  blob, put on a blob URL (same-origin to the page that made it, so the canvas stays clean), decoded by an `<img>`,
+  which takes every format, SVG included, and drawn onto a canvas: letterboxed on the monitor's sheet, bare at its
+  own proportions in the gallery ([`fitPicture`](ref:hub/renderers/tower3d/src/gallery.ts#fitPicture)). A markdown
+  poster typesets its images. The poster stands until the read settles; a file gone keeps it. Videos go the same
+  way, played on a blob URL with their frames painted into the world ([[agent-show]]). HTML pages and PDFs stay
+  posters.
 - **Fixtures and the door.** On a fixture board every image reads as one plot drawn on a canvas
-  ([`readBlob`](ref:hub/renderers/tower3d/src/fixtures.ts#readBlob)), and the busy board shows a PNG. Decoding
-  runs in real time, outside the stepped clock, so the door's `ready()` also waits for the first board's pictures
-  ([`pictured`](ref:hub/renderers/tower3d/src/showing.ts#pictured)); the frames walk is the same on every run.
+  ([`readBlob`](ref:hub/renderers/tower3d/src/fixtures.ts#readBlob)). Decoding runs in real time, outside the
+  stepped clock, so the door's `ready()` also waits for the first board's pictures
+  ([`pictured`](ref:hub/renderers/tower3d/src/showing.ts#pictured)) and the frames walk is the same on every run.
 
 **Alternatives considered.**
 - *CORS on `/shown` and `/shelf`.* Any web site open in the browser could read shown files over loopback.
@@ -57,8 +58,3 @@ what.
 - *An `ArrayBuffer` with a transfer list.* Loses the MIME type that decoding needs.
 - *`createImageBitmap(blob)`.* Chrome refuses SVG blobs; the `<img>` path takes every format.
 - *A `<base href>` in the readers' srcdoc.* Resolves images, but sends `#anchor` links to the base URL.
-
-**Impact.** One read mode on the renderer API for every renderer and shelf page. Tower 3D's wall and monitors
-carry the real screenshots and plots workers show, and markdown reports show their figures everywhere. The host
-and the board are unchanged. HTML pages and PDFs stay posters. Videos (`.mp4`, `.webm`) go the same way: read as a blob, played on a blob URL,
-their frames painted into the world ([[agent-show]]).

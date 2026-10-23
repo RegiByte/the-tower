@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/shared/prefs.ts",
     "hub/src/shared/prefs.ts#PREFS_DEFAULT",
@@ -36,7 +36,7 @@
     "hub/src/shared/shelf-page.ts",
     "hub/src/shared/panels.ts#scopeHtml",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/renderers/tower3d/src/term.ts",
+    "hub/src/shared/term-view.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
     "hub/renderers/tower3d/src/main.ts#paintSettings"
   ],
@@ -87,10 +87,11 @@ they are written once in shared code and a next renderer gets them by importing 
   renderer to touch. It is a native `popover` (light dismiss, top layer, not a modal). Tower 3D adds its own section
   ([`paintSettings`](ref:hub/renderers/tower3d/src/main.ts#paintSettings)) and offers no alerts: the page framing it
   sends the notifications.
-- *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts)) draw in `--mono` at `termSize` while their viewer
-  drives them, so a bigger font gives the session fewer columns and rows (the PTY has one size); a watched one fits
-  the PTY at a size up to `termSize` ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in
-  the face itself ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)).
+- *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts), [`term-view.ts`](ref:hub/src/shared/term-view.ts))
+  draw in `--mono` at `termSize` while their viewer holds the PTY, so a bigger font gives the session fewer columns
+  and rows (the PTY has one size); a watching one fits the PTY at a size up to `termSize`
+  ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in the face itself
+  ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)).
 - *Motion and contrast* live in `/design.css` ([`reduced`](ref:hub/src/shared/design.ts#reduced),
   [`designCss`](ref:hub/src/shared/design.ts#designCss)): the root's choice overrides the system's. Tower 3D's camera
   reads [`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion); the text it paints on canvas in the world keeps
@@ -101,10 +102,10 @@ they are written once in shared code and a next renderer gets them by importing 
   element inside the viewport, and [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands a popover by its
   button the same way.
 - *Every explanation through it*: renderers and shared views say what a control does with `data-tip`, a control with
-  no visible name carries an `aria-label`, and a tip that repeats a visible name has none. `title` stays only where no
-  tip can show: an `<iframe>`'s accessible name, a native `<option>` ([`scopeHtml`](ref:hub/src/shared/panels.ts#scopeHtml))
-  and a markdown link's title, drawn also into framed documents that run no `watchTips`. The status counts' and host
-  lamp's words live in `/cards.js` ([`ATTENTION_MEANS`](ref:hub/src/shared/cards.ts#ATTENTION_MEANS),
+  no visible name carries an `aria-label`. `title` stays only where no tip can show: an `<iframe>`'s accessible name,
+  a native `<option>` ([`scopeHtml`](ref:hub/src/shared/panels.ts#scopeHtml)) and a markdown link's title in framed
+  documents that run no `watchTips`. The status counts' and host lamp's words live in `/cards.js`
+  ([`ATTENTION_MEANS`](ref:hub/src/shared/cards.ts#ATTENTION_MEANS),
   [`statusLegendHtml`](ref:hub/src/shared/cards.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/cards.ts#hostState),
   [`HOST_MEANS`](ref:hub/src/shared/cards.ts#HOST_MEANS)), read by their tooltips and the `?` sheet alike.
 
@@ -119,7 +120,6 @@ they are written once in shared code and a next renderer gets them by importing 
   by a scrolling parent and can't stay inside the viewport.
 - *A face picker listing installed faces* (Local Font Access): Chrome only, behind a permission prompt.
 
-**Impact.** Every page that links `/design.css` and `/tower.js` gets the viewer's scheme, faces, motion and contrast
-for free, a framed renderer through the relay; a next renderer gets the popover and the tooltips by importing
-`/settings.js` and `/tips.js`. A renderer that draws the shared views without `watchTips` shows none of their
-explanations, only their labels.
+**Impact.** Every page that links `/design.css` and `/tower.js` gets the viewer's scheme, faces, motion and contrast,
+a framed renderer through the relay; a next renderer gets the popover and the tooltips by importing `/settings.js`
+and `/tips.js`. A renderer that draws the shared views without `watchTips` shows only their labels.

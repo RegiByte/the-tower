@@ -6,8 +6,8 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/cards.ts#whyNot", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
+  "reviewed": "2026-10-23",
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/cards.ts#whyNot", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
 }
 ---
 **Problem.** Each object in Tower 3D did one thing on E. Everything else (brief, resume, reap, kill, spawn, a
@@ -22,12 +22,12 @@ appear in a corner, each on its own button, consequential ones are held, and the
 - [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives an aimed object's offers, primary first, from
   the board on every frame. The mesh stores only the object's identity, so offers never go stale between boards.
 - Each verb has one key everywhere ([`KEY`](ref:hub/renderers/tower3d/src/acts.ts#KEY)), grouped by meaning (E
-  uses, F goes on, Q looks closer, X ends, Z reaps, H hands over). Keys are bound to verbs, never to objects, and
+  uses, F goes on, Q looks closer, X ends, H hands over). Keys are bound to verbs, never to objects, and
   verbs sharing a key are never offered together.
 - [`HELD`](ref:hub/renderers/tower3d/src/acts.ts#HELD) verbs, those that end something, run only after the key or
   mouse button is held ([`HOLD_MS`](ref:hub/renderers/tower3d/src/acts.ts#HOLD_MS)), a ring filling on the key cap;
   releasing early cancels. The hold is the confirmation.
-- The mouse path: the wheel marks a verb and a click runs it. In the overview the list follows the cursor.
+- The mouse path: the wheel marks a verb and a click runs it.
 - A verb that needs a daemon stays listed while the daemon is down or the tower is lost, faded, with why under it
   ([`heldWhy`](ref:hub/renderers/tower3d/src/acts.ts#heldWhy) over [`whyNot`](ref:hub/src/shared/cards.ts#whyNot));
   its key says why in a toast and runs nothing. The panels draw those verbs' buttons inert, as the tower page does.
@@ -44,5 +44,5 @@ appear in a corner, each on its own button, consequential ones are held, and the
 - The two-click "sure?" for destructive verbs. It stays on the desk panel's buttons ([[press-feedback]]), but in the
   world a hold is one gesture, and a tap can't misfire.
 
-**Impact.** Every verb is reachable without opening a panel. A new object or verb is one entry in `offersOf` and, if
+**Impact.** Every verb is reachable without opening a panel. A new object or verb is one entry in `OFFERS` and, if
 it has a new meaning, one key.

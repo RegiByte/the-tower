@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/renderers/tower3d/src/term.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/bridge/screen.ts#lastFrame"]
+  "reviewed": "2026-10-23",
+  "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/src/shared/term-view.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
 **Context.** A session's screen is replayed into a viewer's xterm with no scrollback: the log is the history, and a
@@ -22,11 +22,12 @@ and resume's `--settings`, beside the session's `additionalDirectories` ([[repos
 outrank the user's own, so it holds whatever `~/.claude/settings.json` says. It is listed in `CLAUDE_SURFACES`: a
 release that renames the setting or its value drops sessions back to arrow keys.
 
-A session's terminal sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), every
-renderer): one SGR report per row of travel, the remainder carried, since xterm left alone sends one report per wheel event
-however far it went, so a flick would reach Claude as a fraction of its travel. With no terminal named in its env ([[env-scrub]]), Claude moves a row per
-report and stops with the wheel, so the transcript follows the finger. A shell's terminal keeps xterm's wheel: xterm
-does not say which mouse encoding a shell's program asked for.
+A session's terminal sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), through
+the shared terminal view every renderer mounts, [`term-view.ts`](ref:hub/src/shared/term-view.ts)): one SGR report
+per row of travel, the remainder carried, since xterm left alone sends one report per wheel event however far it
+went, so a flick would reach Claude as a fraction of its travel. Claude moves its transcript a scroll speed's rows per
+report (`/scroll-speed`; 1 follows the finger). A shell's terminal keeps xterm's wheel: xterm does not say which
+mouse encoding a shell's program asked for.
 
 **Alternatives considered.**
 - Scrollback in the viewer: the default TUI redraws its live region in place, so a scrollback fills with stale frames.
@@ -36,8 +37,7 @@ does not say which mouse encoding a shell's program asked for.
 - xterm's `scrollSensitivity`: still one report per event, so a flick stays capped. Dividing by Claude's scroll speed:
   it is the user's Claude setting, which a renderer cannot read.
 
-**Consequences.** Every worker runs fullscreen, the user's setting notwithstanding; a user who wants Claude's default
-renderer elsewhere keeps it outside the tower.
+**Consequences.** Every worker runs fullscreen, the user's setting notwithstanding.
 
 As Claude exits it leaves the alternate screen for the empty normal screen and prints its resume line there, so a
 whole log replays to that line alone. An ended session's screen is therefore cut just before that exit

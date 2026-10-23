@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-23",
   "refs": [
     "hub/src/shared/press.ts#pressing",
     "hub/renderers/page/dialogs.js#dialogs",
@@ -61,8 +61,7 @@ them.
   ([`restoreItem`](ref:hub/src/collections.ts#restoreItem)), so its tag, its place and its name are what they were.
   The id is claimed with an exclusive create: a restore never overwrites, and an id taken again is refused.
 - The tower page asks in a dialog of its own, drawn from the design's tokens, never the browser's `confirm()`
-  ([`dialogs`](ref:hub/renderers/page/dialogs.js#dialogs)): the shared ask's first line is its question, the rest what
-  it means, and the button that goes ahead is named for the verb; Cancel, Escape and the backdrop answer no.
+  ([`dialogs`](ref:hub/renderers/page/dialogs.js#dialogs)), its go-ahead button named for the verb.
 - A framed page may not open `confirm()`, so Tower 3D's destructive buttons arm on a first press ("sure?", the
   shared ask as its tip) and run on a second soon after ([`confirmed`](ref:hub/renderers/tower3d/src/main.ts#confirmed),
   [`askingButton`](ref:hub/renderers/tower3d/src/ui.ts#askingButton)).
@@ -77,4 +76,4 @@ them.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
 **Impact.** `/press.js` and `/toasts.js` are served modules every renderer may import, and `collection/restore` is a
-verb. A draft deleted anywhere can be put back from its toast.
+verb.
