@@ -4,7 +4,7 @@
   "name": "No host answering",
   "summary": "Nothing answers on control.sock: the board shows the host down, running sessions turn lost, and every session verb fails as unavailable until a host is started.",
   "in": "host",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/client.ts#connectHost", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/shared/socket.ts#claimSocket", "hub/src/bridge/status.ts#withLiveness", "hub/src/tower/server.ts#daemon"]
 }
 ---
@@ -19,7 +19,8 @@
   unanswered for 30 s fails naming it ("may be wedged") and closes the connection, so a hung host reads as an error, not a wait.
 
 **Host outdated.** A host that answers with another protocol than its clients (`board.hostOutdated`) is up and
-works; it runs code older than the tower's, so the renderers say `host outdated`. It updates when restarted
+works; it runs code older than the tower's, so the renderers say `host outdated`, and a verb that needs what it lacks
+refuses, naming the restart (a `fact` below protocol 2, a spawn's facts below 3). It updates when restarted
 (`tower down`, then `tower up`), which ends every session: they stay resumable.
 
 **Where to look first.** The system root, the directory holding `config.json` (`TOWER_CONFIG` overrides

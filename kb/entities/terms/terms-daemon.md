@@ -4,7 +4,7 @@
   "name": "Terms daemon",
   "summary": "The detached Node process that owns login shells started in project directories and streams their screens to viewers.",
   "in": "terms",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/terms.ts#ShellStream", "hub/src/shared/terms.ts#SHELL_SCROLLBACK", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "config.json on every spawn: the project's dirs" }

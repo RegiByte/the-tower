@@ -4,7 +4,7 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every probe's stream folded, every collection's items and review threads, every policy parsed and each project's policy facts folded, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/bridge/probes.ts#probeFacts", "hub/src/bridge/policies.ts#policyFacts", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
