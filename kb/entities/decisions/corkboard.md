@@ -18,7 +18,7 @@
     "hub/renderers/tower3d/src/main.ts#openDraftPanel",
     "hub/renderers/tower3d/src/hands.ts#holdNote",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/src/tower/server.ts#design"
+    "hub/src/tower/http.ts#design"
   ]
 }
 ---
@@ -34,7 +34,7 @@ tower page.
 - **One editor, two layouts.** The draft editor's logic (saves queued, another writer's change taken unless the
   editor holds edits, a conflict held until settled, unsettled edits kept as a new draft on leaving, send only after
   a save) is [`src/shared/drafts.ts`](ref:hub/src/shared/drafts.ts): DOM-free, its collection reads and writes passed
-  in. The tower page imports it as `/drafts.js` (served by [`design`](ref:hub/src/tower/server.ts#design)); Tower 3D
+  in. The tower page imports it as `/drafts.js` (served by [`design`](ref:hub/src/tower/http.ts#design)); Tower 3D
   bundles it. Each keeps its own textarea, layout and autosave timer. The core never imports it: what drafts mean
   stays with renderers.
 - **The corkboard** ([`corkFor`](ref:hub/renderers/tower3d/src/layout.ts#corkFor)): only on floors that keep a

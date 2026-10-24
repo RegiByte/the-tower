@@ -49,7 +49,7 @@ and a config fixed after it broke brings the board back ([[board-errors]]).
 `running()` (leftover processes), `peers()` (the peer names of sessions' Claudes, [[agent-directory]]), both from one
 `ps` scan, and `repos()` are read every 5 s only while someone [`observe`s](ref:hub/src/system.ts#watchSystem); the
 first observer after none waits for a fresh read. A board client of the tower observes while it holds the board, a
-reap or a Tidy for its request ([`streamBoard`](ref:hub/src/tower/server.ts#streamBoard)); with no renderer open, the
+reap or a Tidy for its request ([`streamBoard`](ref:hub/src/tower/publisher.ts#streamBoard)); with no renderer open, the
 tower runs no `ps`, `lsof` or git.
 
 `repos()` is every project dir's git, read on a worker thread ([`repo-reader.ts`](ref:hub/src/repo-reader.ts),

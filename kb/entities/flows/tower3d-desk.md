@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-10-24",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#relay", "hub/src/tower/server.ts#muxWatch", "hub/src/tower/server.ts#screenStream", "hub/src/tower/server.ts#terminalStream", "hub/src/tower/server.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle"]
 }
 ---
 ```mermaid
@@ -54,14 +54,14 @@ sequenceDiagram
 - **The transport depends on where Tower 3D runs.** At `/r/tower3d/` `/tower.js` calls the routes and opens one
   `/mux` stream; framed from a shelf in the tower page, it posts to the page, which makes the same requests through
   its [`relay`](ref:hub/src/tower/tower.js#relay). The server parses each command by its schema
-  ([`command`](ref:hub/src/tower/server.ts#command)) and relays it to the host over `control.sock`
+  ([`command`](ref:hub/src/tower/http.ts#command)) and relays it to the host over `control.sock`
   ([`hostRequest`](ref:hub/src/machine.ts#hostRequest)) ([[renderer-api]]).
 - **Snapshot, then tail.** The screen stream sends the screen rebuilt from the log, then each `o`, `r` and `x` the
-  host appends ([`screenStream`](ref:hub/src/tower/server.ts#screenStream)). A session that is no longer running
+  host appends ([`screenStream`](ref:hub/src/tower/http.ts#screenStream)). A session that is no longer running
   sends only its snapshot: the terminal opens read-only, claims nothing and sends no keys.
 - **Claimed on open, when it is the only terminal.** One PTY, one size: whoever types owns it. The desk opens the
   `terminal/<id>` stream, whose snapshot says how many other terminals are open on the session
-  ([`terminalStream`](ref:hub/src/tower/server.ts#terminalStream); a monitor's `screen/<id>` stream is not one).
+  ([`terminalStream`](ref:hub/src/tower/http.ts#terminalStream); a monitor's `screen/<id>` stream is not one).
   With none, [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal at the
   viewer's font (`tower.prefs`) and sends `resize` as soon as the snapshot arrives, so typing works at once. Beside
   another it reads "watching" at a font that fits, so opening never reflows the session under whoever is working.

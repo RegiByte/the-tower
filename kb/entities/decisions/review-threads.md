@@ -17,8 +17,8 @@
     "hub/src/shared/model.ts#checkoutOf",
     "hub/src/bridge/reviews.ts#floorThreads",
     "hub/src/system.ts#threadsIn",
-    "hub/src/tower/server.ts#appendReview",
-    "hub/src/tower/server.ts#tidyProject",
+    "hub/src/tower/dispatch.ts#appendReview",
+    "hub/src/tower/dispatch.ts#tidyProject",
     "hub/src/shared/reviews.ts#landedThreadId",
     "hub/src/shared/reviews.ts#verdictOf",
     "hub/src/bridge/reviews.ts#reviewHistory",
@@ -68,7 +68,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   readable once the code moves on; [`anchorState`](ref:hub/src/shared/reviews.ts#anchorState) looks for those
   lines in the reader's current Changes to say whether they changed or left the diff. The format is a pure parser
   and printer ([`reviews.ts`](ref:hub/src/shared/reviews.ts), served as `/reviews.js`), total over hand edits.
-- *Writing: append only, through one verb.* [`review/append`](ref:hub/src/tower/server.ts#appendReview) numbers the
+- *Writing: append only, through one verb.* [`review/append`](ref:hub/src/tower/dispatch.ts#appendReview) numbers the
   note from the thread and writes it in one synchronous step, so appends from the page, `tower note` and every
   worker never interleave; a generic append would leave numbering to clients racing each other. It refuses an
   unknown `re`, a note with neither body nor anchor, and a body that would break the parse (a heading outside a
@@ -92,7 +92,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   ([[board-verbs]]), and `card.unseen` counted, only while the work is live. `review/append` still takes any checkout.
 - *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once its work
   has landed and `main`'s once every main checkout is level with its upstream and no worker runs there
-  ([`tidyProject`](ref:hub/src/tower/server.ts#tidyProject), [[tidy]]; a [[discard]]ed worktree's at once, after
+  ([`tidyProject`](ref:hub/src/tower/dispatch.ts#tidyProject), [[tidy]]; a [[discard]]ed worktree's at once, after
   the note naming its tips). A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
   gives it (`<checkout>@<time>.md`) and frees the checkout's name, so a reused name never inherits old notes.
   Filed threads are the review history: [`reviewHistory`](ref:hub/src/bridge/reviews.ts#reviewHistory), at

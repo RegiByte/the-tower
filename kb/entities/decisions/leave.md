@@ -13,7 +13,7 @@
     "hub/src/bridge/facts.ts#leavesNow",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/board.ts#Card",
-    "hub/src/tower/server.ts#sendLeaversHome",
+    "hub/src/tower/dispatch.ts#sendLeaversHome",
     "hub/src/shared/status-words.ts#statusName",
     "hub/src/mod/skills/handbook/SKILL.md"
   ],
@@ -40,7 +40,7 @@ answer, and a next run reading its predecessors would find no handoff note.
   raises no wait or ring. A screen or a question still waits on the user: the turn can't end until someone answers.
 - *Effective when the turn ends.* [`leavesNow`](ref:hub/src/bridge/facts.ts#leavesNow): a leave is pending and no
   main-loop turn runs (`turnStartedAt` cleared by `turn.complete`, after the answer is folded). On every change of the
-  live system the tower server ([`sendLeaversHome`](ref:hub/src/tower/server.ts#sendLeaversHome)) takes each leaving
+  live system the tower server ([`sendLeaversHome`](ref:hub/src/tower/dispatch.ts#sendLeaversHome)) takes each leaving
   card that `leavesNow` (computing the cards only when a live session does, or a departure is in flight) and runs its `send-home` through the public `kill` handler, each body parsed by the verb's schema as
   a `POST` would be: everyone under it that runs, deepest first, then itself.
   Each kill is `by` the leaving worker ([[worker-prompts]]). A worker is sent once while it is leaving. The leave lives in

@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-24",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
-  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/server.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/server.ts#spawnCut", "hub/src/tower/server.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
+  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/dispatch.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 ```mermaid
@@ -44,8 +44,8 @@ sequenceDiagram
   ([`cardNamed`](ref:hub/src/directory.ts#cardNamed), [[board-archive]]).
 - **The fork, the pair and the thread** are [[reviewer]]'s and [[review-threads]]': the reviewer works in a fork of
   the author's checkout ([`fork`](ref:hub/src/worktrees.ts#fork); a failed spawn rolls the cut back,
-  [`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)), the pair is derived from its first prompt, and notes are
-  appended only through [`review/append`](ref:hub/src/tower/server.ts#appendReview). The hire itself is a fact
+  [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)), the pair is derived from its first prompt, and notes are
+  appended only through [`review/append`](ref:hub/src/tower/dispatch.ts#appendReview). The hire itself is a fact
   ([[hire]]), never refused by the hiring limits ([[hiring-limits]]).
 - **Delivery is a submit.** [`sendText`](ref:hub/src/shared/reviews.ts#sendText) is one line naming the notes
   new to the target ([`unseenBy`](ref:hub/src/shared/reviews.ts#unseenBy)) and how to read and answer them; it

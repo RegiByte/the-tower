@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-24",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/tower/server.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/dispatch.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf"]
 }
 ---
 ```mermaid
@@ -29,11 +29,11 @@ sequenceDiagram
 ```
 
 - **Limits and order live in the tower** ([[hiring-limits]]). A `spawn` with `hire` and `by` is `by`'s hire, whoever
-  sends it: [`hired`](ref:hub/src/tower/server.ts#hired) weighs it with
+  sends it: [`hired`](ref:hub/src/tower/dispatch.ts#hired) weighs it with
   [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal) against the floor's `hiring`, and past it answers `limited`
   (409), the command telling the worker to ask the user. A hirer's hires queue by its callsign
-  ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), each holding the turn until the system
-  [`counted`](ref:hub/src/tower/server.ts#counted) it, so the next is weighed against it.
+  ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system
+  [`counted`](ref:hub/src/tower/dispatch.ts#counted) it, so the next is weighed against it.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default
   ([`spawnDefaults`](ref:hub/src/shared/spawn-form.ts#spawnDefaults), [`spawnCall`](ref:hub/src/shared/spawn-form.ts#spawnCall)):
   a new worktree when the floor cuts by default, else the hub. The prompt is stdin or a kept item's text; an empty

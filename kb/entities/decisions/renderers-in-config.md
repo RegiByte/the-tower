@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/tower/http.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
 }
 ---
 **Problem.** A renderer living only on a project's shelf reaches the user only if their config puts a path into
@@ -24,18 +24,18 @@ update of the core never touches it.
   ([`BUILT_INS`](ref:hub/src/renderers.ts#BUILT_INS)); a config entry under a built-in's name overrides its fields,
   so `{ "tower3d": { "settings": … } }` keeps the root ([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)).
   `renderer` defaults to `page`; naming a renderer that isn't declared is a config error ([`defaultRenderer`](ref:hub/src/renderers.ts#defaultRenderer)).
-- *Serving.* [`/r/<name>/`](ref:hub/src/tower/server.ts#rendered) serves the entry, and `/r/<name>/<file>` anything
+- *Serving.* [`/r/<name>/`](ref:hub/src/tower/http.ts#rendered) serves the entry, and `/r/<name>/<file>` anything
   below the root but a path with a part starting with `.` ([`rendererFile`](ref:hub/src/renderers.ts#rendererFile),
   [`hiddenBelow`](ref:hub/src/shelf.ts#hiddenBelow)), at the tower's origin, unsandboxed: a declared renderer is
   trusted like the tower page and calls the routes directly. Its files carry CORS so a framed renderer loads them,
   which lets any site read them too: a root that is a repo or a project folder would otherwise give the web its
-  `.git` and `.env`. `/` redirects to the configured renderer ([`home`](ref:hub/src/tower/server.ts#home)), keeping
+  `.git` and `.env`. `/` redirects to the configured renderer ([`home`](ref:hub/src/tower/http.ts#home)), keeping
   the query, and the browser keeps the fragment (`/#<id>`).
 - *Available, derived.* A renderer is available while its entry exists. The core never builds a renderer: `npm run
   tower3d` copies Tower 3D's pages into `out/` beside its bundle, so its root is built output and exists only once
   built. An unbuilt renderer's URL shows a page naming the missing entry and linking those that are built; an
   undeclared name's lists the declared ones.
-- *Discovery.* `GET /renderers` ([`renderersRead`](ref:hub/src/tower/server.ts#renderersRead)), computed per request:
+- *Discovery.* `GET /renderers` ([`renderersRead`](ref:hub/src/tower/http.ts#renderersRead)), computed per request:
   the default and each renderer with its root, entry, `available` and `settings`. The tower page and Tower 3D list
   them with [`renderersHtml`](ref:hub/src/shared/shelf-words.ts#renderersHtml).
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with

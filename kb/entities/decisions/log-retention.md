@@ -23,7 +23,7 @@
     "hub/src/tail.ts#readEvents",
     "hub/src/archive.ts#archiveLog",
     "hub/src/system.ts#watchSystem",
-    "hub/src/tower/server.ts#tidyProject",
+    "hub/src/tower/dispatch.ts#tidyProject",
     "hub/src/shared/tidy.ts#tidyRows",
     "hub/test/checkpoints.test.ts"
   ],

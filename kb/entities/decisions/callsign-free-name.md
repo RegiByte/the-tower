@@ -17,9 +17,9 @@
     "hub/src/bridge/chains.ts#namer",
     "hub/src/bridge/chains.ts#resumeName",
     "hub/src/shared/launch.ts#spawnRequest",
-    "hub/src/tower/server.ts#newWorker",
-    "hub/src/tower/server.ts#workerIds",
-    "hub/src/tower/server.ts#freeName"
+    "hub/src/tower/dispatch.ts#newWorker",
+    "hub/src/tower/dispatch.ts#workerIds",
+    "hub/src/tower/dispatch.ts#freeName"
   ]
 }
 ---
@@ -39,10 +39,10 @@ deriving it again from a list that can change can say it wrongly.
   ([`nameIn`](ref:hub/src/shared/callsign.ts#nameIn)) is held ([`freshId`](ref:hub/src/shared/callsign.ts#freshId)), up
   to a bound past which nearly every name is held and the last draw stands, its number telling it apart. The held names
   are those of the tower's workers on duty with the host's live set
-  ([`workerIds`](ref:hub/src/tower/server.ts#workerIds), [`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns)),
+  ([`workerIds`](ref:hub/src/tower/dispatch.ts#workerIds), [`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns)),
   a session whose log isn't read yet holding its id's callsign, so a burst of spawns and a worker stranded by a host
   restart both count. `tower spawn` asks the tower, so it draws the same way.
-  Spawns, worktree cuts (whose draw also needs a free worktree name, [`freeName`](ref:hub/src/tower/server.ts#freeName)),
+  Spawns, worktree cuts (whose draw also needs a free worktree name, [`freeName`](ref:hub/src/tower/dispatch.ts#freeName)),
   forking resumes, reviewers and policy runs draw; a resume that carries a worker on keeps its name.
 - *Typed.* A callsign typed as a worker starts (the spawn verb's `callsign`, the New worker dialog, `tower spawn
   --callsign`, `tower hire … callsign`) is checked by [`callsignRefused`](ref:hub/src/shared/callsign.ts#callsignRefused),
@@ -50,7 +50,7 @@ deriving it again from a list that can change can say it wrongly.
   has that very callsign, so it may share a name with another. A bare `NAME` takes its id's number at the spawn, so it
   follows the drawn rule: refused when a worker on duty has that name, whatever the number
   ([`heldCallsigns`](ref:hub/src/bridge/chains.ts#heldCallsigns), the tower's in
-  [`newWorker`](ref:hub/src/tower/server.ts#newWorker)). The dialog checks it against the board's cards on duty as it is
+  [`newWorker`](ref:hub/src/tower/dispatch.ts#newWorker)). The dialog checks it against the board's cards on duty as it is
   typed, the tower again at the spawn.
 - *Read from the log.* [`workerName`](ref:hub/src/bridge/chains.ts#workerName) takes the first session of the worker's
   lineage and reads its `--name` ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)); a log without one (written before

@@ -7,12 +7,12 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-24",
-  "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts", "hub/renderers/tower3d/src/files.ts#bytesOf", "hub/src/tower/server.ts#ANY_ORIGIN"]
+  "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts", "hub/renderers/tower3d/src/files.ts#bytesOf", "hub/src/tower/http.ts#ANY_ORIGIN"]
 }
 ---
 **Context.** A first-person tower is too large for one html file. Framed in the tower, a page runs at an opaque
 origin: an `html` shelf page fetches nothing beside it and imports no module there, while a declared renderer's
-files carry CORS ([`ANY_ORIGIN`](ref:hub/src/tower/server.ts#ANY_ORIGIN), the rule and its cost in
+files carry CORS ([`ANY_ORIGIN`](ref:hub/src/tower/http.ts#ANY_ORIGIN), the rule and its cost in
 [[renderers-in-config]]), so framed as a `renderer` shelf entry it loads what is below its root as it does at
 `/r/<name>/`.
 
@@ -35,7 +35,7 @@ a hash of their bytes; each import is the file's URL relative to the page, and
   files is three.js and the loaders, and the lab, dresser and editor are seldom open together. Modules load framed
   (the renderer's files carry CORS), so it stays open if the shared code grows.
 - *Browser caching of the hashed files*: the tower serves every renderer file `no-store`
-  ([`serveFile`](ref:hub/src/tower/server.ts#serveFile)), and reading the files over loopback costs little against
+  ([`serveFile`](ref:hub/src/tower/http.ts#serveFile)), and reading the files over loopback costs little against
   parsing them. An immutable header for hashed names is a server change to make only if a measurement asks for it.
 - *Staying in one file*: rejected for size, even with no build step.
 

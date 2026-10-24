@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/server.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
+  "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
 **Problem.** The tower page and Tower 3D looked generic and unlike each other, every status colour equally loud,
@@ -23,7 +23,7 @@ terminal that is a block of the ink colour.
   ([`terminalTheme`](ref:hub/src/shared/design.ts#terminalTheme)), the faces and the sky through the day
   ([`skyAt`](ref:hub/src/shared/design.ts#skyAt)). It imports nothing, so it runs in Node, in the browser and in
   Tower 3D's bundle.
-- The tower serves it three ways ([`design`](ref:hub/src/tower/server.ts#design)): `/design.css`
+- The tower serves it three ways ([`design`](ref:hub/src/tower/http.ts#design)): `/design.css`
   ([`designCss`](ref:hub/src/shared/design.ts#designCss): faces, `--` variables and the shared components, among
   them the attention classes and every button's pressed, held and busy states, [[press-feedback]]), `/design.js`
   and `/fonts/<file>` from the `@fontsource` packages. All three answer any origin: a framed shelf page has an

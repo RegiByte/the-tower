@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-24",
   "involves": ["operator", "tower-server", "terms-daemon"],
-  "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/tower/server.ts#streamShell"]
+  "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/tower/http.ts#streamShell"]
 }
 ---
 ```mermaid

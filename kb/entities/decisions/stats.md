@@ -19,7 +19,7 @@
     "hub/src/bridge/stats.ts#today",
     "hub/src/bridge/probes.ts#probeFacts",
     "hub/src/shared/api.ts#QUERIES",
-    "hub/src/tower/server.ts#statsRead",
+    "hub/src/tower/http.ts#statsRead",
     "hub/src/bridge/landed.ts#parseLog",
     "hub/src/landed.ts#readLanded",
     "hub/test/fixtures/landed.gitlog",
@@ -65,12 +65,12 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   counts once in All. Nobody is credited: the tower parses neither commands nor commit messages, and a team repo's
   numbers count teammates' landings too. Git is read on each `/stats`, over a bounded window, and history on a branch
   never changes, so nothing is held between reads.
-- *A read, not the board.* `GET /stats?from&to&bucket&project` ([`statsRead`](ref:hub/src/tower/server.ts#statsRead)),
+- *A read, not the board.* `GET /stats?from&to&bucket&project` ([`statsRead`](ref:hub/src/tower/http.ts#statsRead)),
   its query a schema in [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES); `tower.stats(query)` reads it.
 - *Today on the board.* `board.today` ([`today`](ref:hub/src/bridge/stats.ts#today)): today's spend, agent-hours,
   waits answered and the weekly budget with its pace. They move only with readings, turns and prompts, which already
   change the board, so they add no pushes; a day that turns while nothing happens shows within a minute, as the tower
-  rebuilds the board on a clock ([`CLOCK_PUBLISH_MS`](ref:hub/src/tower/server.ts#CLOCK_PUBLISH_MS)), and
+  rebuilds the board on a clock ([`CLOCK_PUBLISH_MS`](ref:hub/src/tower/publisher.ts#CLOCK_PUBLISH_MS)), and
   `today.since` says which day it is.
 
 **Alternatives considered.**

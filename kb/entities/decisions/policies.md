@@ -27,10 +27,10 @@
     "hub/src/streams.ts#appendFact",
     "hub/src/policies.ts#runPolicies",
     "hub/src/policies.ts#runCheck",
-    "hub/src/tower/server.ts#runPolicy",
-    "hub/src/tower/server.ts#passPolicy",
-    "hub/src/tower/server.ts#approvePolicy",
-    "hub/src/tower/server.ts#runsOfPolicy",
+    "hub/src/tower/dispatch.ts#runPolicy",
+    "hub/src/tower/dispatch.ts#passPolicy",
+    "hub/src/tower/dispatch.ts#approvePolicy",
+    "hub/src/tower/http.ts#runsOfPolicy",
     "hub/src/system.ts#watchSystem",
     "hub/src/shared/api.ts#SPAWN_FIELDS",
     "hub/src/directory.ts#policyLines",
@@ -73,11 +73,11 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   the worker's id, `start` auto | offer | hand, `by`, the check) and `s` (a pass: offered, no-work, held,
   check-failed, with the check); `approvals/` holds `a` (a hash approved, `by`). The tower is the one writer
   ([`appendFact`](ref:hub/src/streams.ts#appendFact)), through one verb each:
-  [`policy/run`](ref:hub/src/tower/server.ts#runPolicy) (parses the file now, spawns on `hire` and the prose,
+  [`policy/run`](ref:hub/src/tower/dispatch.ts#runPolicy) (parses the file now, spawns on `hire` and the prose,
   appends `r`, kills the worker if the append fails; refuses an invalid policy, another runner's, a slot already
   run, runs past `live`; needs no approval, since the caller consents, except `start: auto`, refused unless the hash read now is approved),
-  [`policy/pass`](ref:hub/src/tower/server.ts#passPolicy) (refused once the slot has a fact) and
-  [`policy/approve`](ref:hub/src/tower/server.ts#approvePolicy) (refused unless the hash is the file's now). A
+  [`policy/pass`](ref:hub/src/tower/dispatch.ts#passPolicy) (refused once the slot has a fact) and
+  [`policy/approve`](ref:hub/src/tower/dispatch.ts#approvePolicy) (refused unless the hash is the file's now). A
   policy's verbs are taken one at a time, each until the system holds its fact.
 - *Derived on the board.* [`policyViews`](ref:hub/src/bridge/policies.ts#policyViews): each floor's `policies` (rule,
   next slot, approval of the current hash, live runs followed through resumes

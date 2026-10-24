@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/tower/server.ts#isFromTower", "hub/src/directory.ts#command", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/host/main.ts", "hub/src/git.ts#spawnGit"]
+  "refs": ["hub/src/tower/http.ts#isFromTower", "hub/src/directory.ts#command", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/host/main.ts", "hub/src/git.ts#spawnGit"]
 }
 ---
 **Problem.** The tower skill told workers never to start, prompt, kill or resume workers ([[agent-directory]]).
@@ -30,7 +30,7 @@ open to every renderer and every agent.
   account: another account on the machine can read and drive it. A machine shared with people the user does not
   trust is a breach the tower can't close.
 - *Guarded:* browser pages. The tower answers only its own Host names and requires its own Origin on every
-  POST ([`isFromTower`](ref:hub/src/tower/server.ts#isFromTower)), which stops DNS rebinding and cross-site
+  POST ([`isFromTower`](ref:hub/src/tower/http.ts#isFromTower)), which stops DNS rebinding and cross-site
   requests. A GET passes on its Host alone, so no read changes the system: every route that writes, starts, kills or
   sends is a `POST` verb. A read may write only `cache/` ([[fold-checkpoints]]), and git reads run with
   `--no-optional-locks`, so one never rewrites a worker's index under it. A page at another origin can send a GET

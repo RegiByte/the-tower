@@ -30,6 +30,7 @@ sequenceDiagram
   M->>T: the same with the tower's port, tower.log, tower.pid
   O->>M: tower down [host|terms|tower...]
   M->>T: SIGTERM the pid in tower.pid, if it still runs src/tower/server.ts, then wait for it to exit
+  T->>T: halt its resources in reverse (connections closed, ticks and watchers stopped), then exit
   M->>S: the same with terms.pid
   M->>H: the same with host.pid
 ```

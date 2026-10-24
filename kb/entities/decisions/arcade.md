@@ -19,7 +19,7 @@
     "hub/renderers/tower3d/src/main.ts#frameAside",
     "hub/renderers/tower3d/src/ui.ts#gameHtml",
     "hub/src/shared/titles.ts",
-    "hub/src/tower/server.ts#collectionItem",
+    "hub/src/tower/http.ts#collectionItem",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/tower3d/src/fixtures.ts#FIXTURE_GAMES",
     "hub/scripts/frames.scenario.js"
@@ -65,7 +65,7 @@ meaning by one renderer, with no change to the core.
   game kept meanwhile moves every cabinet along: the camera follows the open game's cabinet, and a game pushed off the
   end of the arcade closes.
 - **Contained by what exists.** The tower serves a collection's html under the shelf CSP sandbox
-  ([`collectionItem`](ref:hub/src/tower/server.ts#collectionItem)): an opaque origin, so a game's POST is refused
+  ([`collectionItem`](ref:hub/src/tower/http.ts#collectionItem)): an opaque origin, so a game's POST is refused
   (403) and it has no storage. High scores are kept in memory (the user's answer).
 - **Workers are told how** ([`SKILL.md`](ref:hub/src/mod/skills/handbook/SKILL.md)): one html file, inline CSS and JS,
   no network, a `<title>`, no storage, alert or forms, keyboard and mouse, any frame size; preview with

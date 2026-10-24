@@ -18,8 +18,8 @@
     "hub/src/bridge/board.ts#board",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/verbs.ts#floorOffers",
-    "hub/src/tower/server.ts#tidyProject",
-    "hub/src/tower/server.ts#movedOn",
+    "hub/src/tower/dispatch.ts#tidyProject",
+    "hub/src/tower/dispatch.ts#movedOn",
     "hub/src/worktrees.ts#tidy",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/tidy.ts#tidyLine",
@@ -76,8 +76,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   landed threads by checkout, `prune`, `logs`, and `streams`, the closed months of the system's streams, which every floor
   lists, and of the floor's own ([[log-retention]]). `tidy` is offered while it lists anything, its call `['tidy', { project, plan }]`
   ([`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)).
-- [`tidyProject`](ref:hub/src/tower/server.ts#tidyProject) checks the plan against the floor as read now
-  ([`movedOn`](ref:hub/src/tower/server.ts#movedOn): processes, workers, threads, logs, stream months) and git's part
+- [`tidyProject`](ref:hub/src/tower/dispatch.ts#tidyProject) checks the plan against the floor as read now
+  ([`movedOn`](ref:hub/src/tower/dispatch.ts#movedOn): processes, workers, threads, logs, stream months) and git's part
   after its fetch ([`tidy`](ref:hub/src/worktrees.ts#tidy)), and answers `refused` before touching anything when an
   item no longer qualifies. It applies only what is listed, in order: worktrees and branches, threads filed, processes
   reaped (SIGTERM), workers killed through the host, old logs and stream months archived. Each worker is checked again

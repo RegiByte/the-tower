@@ -5,7 +5,7 @@
   "summary": "Processes a session started can outlive it (servers, nohup'd or detached jobs); they are found by the TOWER_SESSION_ID they inherited, listed by tower ps and on the card, and ended by reap.",
   "in": "tower",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#parseProcesses", "hub/src/machine.ts#resourcesOf", "hub/src/machine.ts#reap", "hub/src/tower/server.ts#reapSession", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts", "hub/src/bridge/prunable.ts#prunable"]
+  "refs": ["hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#parseProcesses", "hub/src/machine.ts#resourcesOf", "hub/src/machine.ts#reap", "hub/src/tower/dispatch.ts#reapSession", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts", "hub/src/bridge/prunable.ts#prunable"]
 }
 ---
 **Symptom.** A session is exited or lost, yet a port it opened still answers. Its card lists what it left running
@@ -29,8 +29,8 @@ a little; a reap reads it afresh when no renderer does.
   ([`parseProcesses`](ref:hub/src/bridge/resources.ts#parseProcesses)).
 
 **Fix.** Reap: the card's `reap` (tower page, Tower 3D), which ends that session's leftovers
-([`reapSession`](ref:hub/src/tower/server.ts#reapSession); `refused` when it left nothing), one of them alone
-(`reap/process`, [`reapProcess`](ref:hub/src/tower/server.ts#reapProcess); `refused` unless that pid is one of the
+([`reapSession`](ref:hub/src/tower/dispatch.ts#reapSession); `refused` when it left nothing), one of them alone
+(`reap/process`, [`reapProcess`](ref:hub/src/tower/dispatch.ts#reapProcess); `refused` unless that pid is one of the
 session's leftovers: End on a row of the tower page's leftovers popover, opened from the worker header's `N▪` chip,
 or Z on a row of Tower 3D's Running board), or
 `tower reap <id>`; `tower reap` with no id ends what every session of its system root no longer live left running.

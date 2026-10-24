@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/server.ts#hired", "hub/src/tower/server.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLine", "hub/src/shared/worker-details.ts#hirerName"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLine", "hub/src/shared/worker-details.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -40,7 +40,7 @@ the easy path stops them, as long as it is named for what it is.
   floor: a chain can't escape its limits by crossing floors.
 - *One at a time.* Claude runs a worker's Bash calls in parallel, so hires that each read the board first would all
   pass. The tower takes a hirer's hires in turn, by its callsign
-  ([`inTurn`](ref:hub/src/tower/server.ts#inTurn)), each holding the turn until the system counts it (its log tracked,
+  ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system counts it (its log tracked,
   the hirer's log naming it, the host running it), so the next is weighed against it. Nothing is stored for it: the
   turn waits on what the logs already say.
 - *Reviews are never refused.* A self-review must stay possible at any depth: the system enables workflows, it

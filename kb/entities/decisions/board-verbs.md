@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
+  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) depends on rules over its status, its
@@ -64,8 +64,8 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   `VERBS`) and the keymap command that does the same; buttons and the palette read their words from it ([[command-palette]]).
 - [Board tests](ref:hub/test/board.test.ts) pin the rules over the recorded fixtures.
 - An offer is advice, not a permission. The server refuses only what the facts rule out: a conversation Claude
-  hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/server.ts#resume)); a pid that
-  isn't one of the session's leftovers ([`reapProcess`](ref:hub/src/tower/server.ts#reapProcess)); a lost
+  hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/dispatch.ts#resume)); a pid that
+  isn't one of the session's leftovers ([`reapProcess`](ref:hub/src/tower/dispatch.ts#reapProcess)); a lost
   worktree. A call the board doesn't offer right now, such as resuming the conversation of a session still
   running, goes through, the way it would from a terminal ([[agents-have-every-capability]]).
 

@@ -18,7 +18,7 @@
     "hub/src/bridge/probes.ts#probeStatus",
     "hub/src/bridge/probes.ts#ProbeStatus",
     "hub/src/bridge/probes.ts#probeView",
-    "hub/src/tower/server.ts#probeRead",
+    "hub/src/tower/http.ts#probeRead",
     "hub/src/shared/limits.ts#probeLine",
     "hub/src/shared/limits.ts#probeTitle",
     "hub/src/directory.ts#probeCliLine",
@@ -100,7 +100,7 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
 - *Where it shows.* Renderers draw each probe under the limits from the same words
   ([`probeLine`](ref:hub/src/shared/limits.ts#probeLine), [`probeTitle`](ref:hub/src/shared/limits.ts#probeTitle) in
   `/cards.js`). `GET /probe/<name>?last`
-  ([`probeRead`](ref:hub/src/tower/server.ts#probeRead), [`probeView`](ref:hub/src/bridge/probes.ts#probeView);
+  ([`probeRead`](ref:hub/src/tower/http.ts#probeRead), [`probeView`](ref:hub/src/bridge/probes.ts#probeView);
   `tower.probe`) answers the status and its latest reads, newest first, each answer as it came. `tower probes`
   prints one line each ([`probeCliLine`](ref:hub/src/directory.ts#probeCliLine)), and `tower doctor` asks the running
   tower for the quota probe ([`quotaProbe`](ref:hub/src/doctor.ts#quotaProbe)): ok while it answers, else a warning

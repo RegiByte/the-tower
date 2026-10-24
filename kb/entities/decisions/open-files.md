@@ -9,12 +9,12 @@
   "reviewed": "2026-10-24",
   "refs": [
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/tower/server.ts#onPath",
-    "hub/src/tower/server.ts#unnamed",
+    "hub/src/tower/dispatch.ts#onPath",
+    "hub/src/tower/dispatch.ts#unnamed",
     "hub/src/machine.ts#revealInFinder",
     "hub/src/machine.ts#runEditor",
     "hub/src/shared/model.ts#editorArgv",
-    "hub/src/tower/server.ts#inEditor",
+    "hub/src/tower/dispatch.ts#inEditor",
     "hub/src/shared/file-acts.ts#fileButtonsHtml",
     "hub/src/shared/file-acts.ts#fileSpansHtml",
     "hub/src/shared/file-acts.ts#fileCall",
@@ -48,10 +48,10 @@ for the user.
   template, each placeholder anywhere in an argument, and a placeholder the action doesn't take is a `config`
   error. With no `editor` the three are VS Code's (`code --new-window {dir}`, `code {path}`, `code --goto {path}:{line}`);
   a set `editor` needs all three, and one missing is a `config` error naming it, so one editor never mixes with another.
-  [`inEditor`](ref:hub/src/tower/server.ts#inEditor) runs it with no shell
+  [`inEditor`](ref:hub/src/tower/dispatch.ts#inEditor) runs it with no shell
   ([`runEditor`](ref:hub/src/machine.ts#runEditor)); a command not on the tower's PATH is a `config` error naming
   the key, or saying the command is the default. The floor verb that offers `open` is `editor`.
-- *Paths the system names* ([`onPath`](ref:hub/src/tower/server.ts#onPath)): the path must be absolute (`invalid`
+- *Paths the system names* ([`onPath`](ref:hub/src/tower/dispatch.ts#onPath)): the path must be absolute (`invalid`
   otherwise), is resolved (`..` can't climb out) and compared with its links followed (`/tmp` is `/private/tmp`
   on macOS; a missing path through its nearest existing folder), and must be inside a project's dirs (their worktrees are below
   them), inside the system root (the config's directory: the config, logs and collections), or exactly a file a

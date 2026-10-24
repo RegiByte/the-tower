@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/protocol.ts#sessionKeys", "hub/src/tower/server.ts#HANDLERS", "hub/src/attach.ts"]
+  "refs": ["hub/src/shared/protocol.ts#sessionKeys", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/attach.ts"]
 }
 ---
 **Context.** Ctrl+Z in a worker's terminal makes Claude leave its screen, print "Claude Code has been

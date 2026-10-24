@@ -10,7 +10,7 @@
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
-    "hub/src/tower/server.ts#spawnCut",
+    "hub/src/tower/dispatch.ts#spawnCut",
     "hub/src/shared/api.ts",
     "hub/src/bridge/verbs.ts#cardOffers",
     "hub/src/bridge/board.ts#board",

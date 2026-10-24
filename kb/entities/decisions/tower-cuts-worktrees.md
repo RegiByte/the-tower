@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -39,7 +39,7 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   true after a merge, rebase, squash or cherry-pick, with no GitHub. A copy landed edited is [[carried]]. No fuzzy
   matching (similar subjects, most hunks): a wrong absorbed deletes work.
 - **The cut** ([`cut`](ref:hub/src/worktrees.ts#cut), offered through `spawn {cut}`,
-  [`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)): preflight every repo (a repo with an origin, a valid and free
+  [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)): preflight every repo (a repo with an origin, a valid and free
   branch, a free path not named `main`, each `worktrees.links` key ignored and untracked), fetch (else `offline`; a
   burst of verbs shares one fetch per repo: [`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin)), resolve the base
   (an origin branch, `origin/HEAD` by default), then per repo `worktree add --no-track -b`, record `towerBase` and

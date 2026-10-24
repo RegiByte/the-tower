@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-03",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/server.ts#openMux", "hub/src/tower/server.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
+  "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/http.ts#openMux", "hub/src/tower/http.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
 **Context.** Shelf pages and renderers need to read the system and act on it, or no renderer could ever do what
@@ -44,10 +44,10 @@ the board, board errors and the viewer's appearance follow as they change. The r
 with every message, and nothing reaches the page before its `hello`. A document the frame navigates to never has
 the token, and a frame that loads without a `hello` ends the relay, so a page followed by a link neither reads the
 board nor drives the routes. Streams are multiplexed on one SSE connection per client
-([`openMux`](ref:hub/src/tower/server.ts#openMux)): a browser holds at most six connections to a host, and a
+([`openMux`](ref:hub/src/tower/http.ts#openMux)): a browser holds at most six connections to a host, and a
 renderer with a live screen per desk would otherwise starve. The tower page itself streams through
 `tower.js`. A declared renderer runs at the tower's origin at `/r/<name>/` ([[renderers-in-config]]), and
-[`/run/<project>/<n>`](ref:hub/src/tower/server.ts#run) serves a shelf's `html` entry there too, so it runs on its
+[`/run/<project>/<n>`](ref:hub/src/tower/http.ts#run) serves a shelf's `html` entry there too, so it runs on its
 own, full screen. [[tower3d]] is a full-parity renderer.
 
 `get` answers JSON as data and anything else as text, `text` reads any read as text and `blob` as a `Blob` of its
@@ -74,4 +74,4 @@ appearance and colour scheme, `prefs` and `scheme`, are [[viewer-prefs]].
 *page* is a disposable renderer. A page's remote scripts can type into PTYs. Both transports carry the API version
 `v`, checked by `tower.js`, and a breaking change to the routes or the board moves its major ([[renderer-api-contract]]).
 A framed page sits at an opaque origin, where modules load only with CORS: the tower serves its shared modules,
-stylesheet and faces to any origin ([`ANY_ORIGIN`](ref:hub/src/tower/server.ts#ANY_ORIGIN)).
+stylesheet and faces to any origin ([`ANY_ORIGIN`](ref:hub/src/tower/http.ts#ANY_ORIGIN)).

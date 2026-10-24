@@ -34,7 +34,7 @@
     "hub/src/shared/highlight.ts#highlightCss",
     "hub/src/shared/reviews-panel.ts#reviewsHtml",
     "hub/src/shared/model.ts#briefConfig",
-    "hub/src/tower/server.ts#conversations",
+    "hub/src/tower/http.ts#conversations",
     "hub/src/directory.ts#threadLines",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
@@ -61,7 +61,7 @@ reply: the last turns are the useful window. A worker is its lineage of sessions
 renderer can draw the brief alike, inline.
 
 **Decision.**
-- *Turns, from the logs.* `GET /conversations/<id>` ([`conversations`](ref:hub/src/tower/server.ts#conversations))
+- *Turns, from the logs.* `GET /conversations/<id>` ([`conversations`](ref:hub/src/tower/http.ts#conversations))
   serves each conversation with its last `brief.pairs` turns ([`briefConfig`](ref:hub/src/shared/model.ts#briefConfig)),
   oldest first. A turn ([`Turn`](ref:hub/src/bridge/turns.ts#Turn)) is a user prompt or a message another worker sent,
   with Claude's latest main-loop answer before the next prompt; a turn with no answer is still being worked on.

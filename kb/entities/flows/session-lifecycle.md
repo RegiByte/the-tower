@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-24",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/server.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/server.ts#spawnCut"]
+  "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut"]
 }
 ---
 ```mermaid
@@ -47,13 +47,13 @@ sequenceDiagram
 ```
 
 - **Triggers.** The `spawn` verb, from a renderer's spawn dialog or `tower spawn`. The tower draws the session id
-  ([`newWorker`](ref:hub/src/tower/server.ts#newWorker), [[callsign-free-name]]) and builds the request with
+  ([`newWorker`](ref:hub/src/tower/dispatch.ts#newWorker), [[callsign-free-name]]) and builds the request with
   [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which names Claude by its [[callsign]] and composes its
   `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]); the host adds only its own wiring
   ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)).
 - **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
   the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
-  back if the spawn fails ([`spawnCut`](ref:hub/src/tower/server.ts#spawnCut)). The host accepts a `cwd` only through
+  back if the spawn fails ([`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)). The host accepts a `cwd` only through
   [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs), which also gives the other directories the session may
   read; a worktree whose folder is gone in any repo is refused as `lost` ([[tower-cuts-worktrees]]).
 - **The log is written before anything else sees it.** Input and resizes are appended before they

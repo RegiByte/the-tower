@@ -8,9 +8,9 @@
   "date": "2026-10-07",
   "reviewed": "2026-10-24",
   "refs": [
-    "hub/src/tower/server.ts#currentBoard",
-    "hub/src/tower/server.ts#errorOf",
-    "hub/src/tower/server.ts#problemPage", "hub/src/tower/server.ts#withConfig",
+    "hub/src/tower/publisher.ts#currentBoard",
+    "hub/src/tower/answers.ts#errorOf",
+    "hub/src/tower/http.ts#problemPage", "hub/src/tower/http.ts#withConfig",
     "hub/src/shared/shelf-page.ts#BoardMsg",
     "hub/src/shared/shelf-page.ts#BoardError",
     "hub/src/shared/health.ts#boardErrorTitle",
@@ -32,14 +32,14 @@ parse) must not leave every renderer empty with the reason only in `tower.log`, 
 belongs to the API, not to one page. The fix is the user's (a typo in the config): the message has to name it.
 
 **How.**
-- **The stream carries the failure.** [`currentBoard`](ref:hub/src/tower/server.ts#currentBoard) catches whatever
+- **The stream carries the failure.** [`currentBoard`](ref:hub/src/tower/publisher.ts#currentBoard) catches whatever
   building the board throws and sends `{v, error: {code, message}}`
   ([`BoardMsg`](ref:hub/src/shared/shelf-page.ts#BoardMsg)) on the same stream, deduplicated like boards
-  ([`publish`](ref:hub/src/tower/server.ts#publish)); a framed page's `board` message carries it the same way.
+  ([`publish`](ref:hub/src/tower/publisher.ts#publish)); a framed page's `board` message carries it the same way.
 - **Two codes.** [`ConfigError`](ref:hub/src/shared/model.ts#ConfigError) marks what the user must fix in the config:
   JSON that doesn't parse ([`readConfig`](ref:hub/src/system.ts#readConfig) names the file), and a key with a value
   the tower can't use, thrown where that key is read. It answers `config`; anything else answers `internal` and goes
-  to the log with its stack ([`errorOf`](ref:hub/src/tower/server.ts#errorOf)). The same mapping answers any request
+  to the log with its stack ([`errorOf`](ref:hub/src/tower/answers.ts#errorOf)). The same mapping answers any request
   whose handler throws.
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. Renderers show it over the last board they
@@ -66,5 +66,5 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
 
 **Impact.** The tower survives config JSON that doesn't parse. `/`, `/r/<name>/` and `/run/<project>/<n>` need the
 config to find what they serve, so they answer the `config` error as an HTML page a browser tab reads
-([`withConfig`](ref:hub/src/tower/server.ts#withConfig), [`problemPage`](ref:hub/src/tower/server.ts#problemPage));
+([`withConfig`](ref:hub/src/tower/http.ts#withConfig), [`problemPage`](ref:hub/src/tower/http.ts#problemPage));
 the API's routes answer JSON. The host, the terms daemon and `tower` read the config their own way.
