@@ -8,6 +8,7 @@
 import { z } from 'zod'
 import type { Board } from '../bridge/board.ts'
 import type { StreamFact } from '../bridge/streams.ts'
+import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 
 export type { StreamFact }
 
@@ -24,6 +25,9 @@ const STORES = '1.83'
 const FOLDS = '1.84'
 /** The minor middleware and hooks arrived in: `around`, `hooks`, `answers` and `ctx.raise`. */
 const AROUND = '1.85'
+
+/** The minor triggers and checks arrived in: slots, the board trigger, checks and `ctx.run`. */
+const TRIGGERS = '1.86'
 
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -51,14 +55,14 @@ export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 export const LEGACY: Record<string, string> = {}
 
 /** Every problem an extension can have, by what it is. */
-export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook'] as const
+export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook', 'paused', 'contract'] as const
 export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
 /**
  * Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold,
- * a link of a chain it wraps, an answer to a hook.
+ * a link of a chain it wraps, an answer to a hook, a slot or the board trigger.
  */
-export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold' | 'around' | 'hook'
+export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold' | 'around' | 'hook' | 'trigger'
 
 /**
  * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s
@@ -95,6 +99,9 @@ export type Deprecated = { since: string; use?: string; why?: string }
 /** One of an extension's verbs as the board shows it: its qualified name, scope and words. */
 export type ExtensionVerb = { name: string; scope: Scope; description?: string; words?: Words; deprecated?: Deprecated }
 
+/** One of an extension's slots as the board shows it: `/slots.js` says its rule in words and finds its next slot. */
+export type ExtensionSlot = { name: string; scope: Scope; when: When }
+
 /**
  * An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is
  * qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first.
@@ -112,6 +119,8 @@ export type ExtensionView = {
   verbs: ExtensionVerb[]
   /** Its manifest's client commands, by name: what renderers that import modules run. @since 1.84 */
   commands: ExtensionCommand[]
+  /** Its manifest's slots. @since 1.86 */
+  slots: ExtensionSlot[]
 }
 
 /**
@@ -324,6 +333,11 @@ export type StartCtx = {
     write(project: string, name: string, id: string, content: string, modifiedAt: number): Promise<Item>
     delete(project: string, name: string, id: string): Promise<void>
   }
+  /**
+   * Runs a command to its end from `cwd`: its env the tower's with the parent session scrubbed, its process group killed
+   * by pid at `timeoutMs` (60 s when left out) and at halt. Rejects when it can't start. @since 1.86
+   */
+  run(argv: string[], opts: { cwd: string; timeoutMs?: number; stdin?: string }): Promise<RunResult>
   /** Its own stores as the tower folds them, read-only: what folds get as `own`. @since 1.83 */
   own: {
     /** A stream's `reduce` state: a `project` stream's on that floor; its `init` before any fact. */
@@ -363,6 +377,24 @@ export type AroundHandler = (input: any, next: (input: unknown) => Promise<unkno
 export type AnswerHandler = (payload: any, ctx: CallCtx) => unknown
 
 /**
+ * A slot as its handler gets it: the slot's `name`, `at` (epoch ms), the floor of a `project`-scoped slot, and `key`,
+ * the subject a fold's slot is for.
+ */
+export type Slot = { name: string; at: number; project?: string; key?: string }
+
+/** What fires at a slot, called as the tower (`{t: 'tower', id: 'slot', via: 'loop'}`). */
+export type SlotHandler = (slot: Slot, ctx: CallCtx) => void | Promise<void>
+
+/** A call a trigger asks for: a verb by its qualified name, and its input. */
+export type TriggerCall = { verb: string; input?: unknown }
+
+/**
+ * The board trigger: the calls a change between two boards asks for, pure and synchronous. Both boards are frozen, and
+ * hold only the floors where its capability is on.
+ */
+export type BoardTrigger = (prev: Board, next: Board) => TriggerCall[]
+
+/**
  * What `start` returns: a handler for every verb and read the manifest declares, no more and no fewer, and `halt`, called
  * before the tower clears what ctx opened. A handler answers an `ApiError` (`{t: 'error', code, message}`) to refuse.
  */
@@ -382,6 +414,10 @@ export type Started = {
   around?: Record<string, AroundHandler>
   /** An answer per hook its manifest's `answers` names. @since 1.85 */
   answers?: Record<string, AnswerHandler>
+  /** Per slot its manifest declares, what fires at it. @since 1.86 */
+  slots?: Record<string, SlotHandler>
+  /** What a board change asks for, when its manifest declares `triggers.board`. @since 1.86 */
+  board?: BoardTrigger
 }
 
 /** The default export of an extension's server module. */
@@ -422,13 +458,14 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
     facts: { append: STORES },
     collections: { list: STORES, read: STORES, create: STORES, write: STORES, delete: STORES },
     own: { streams: STORES, collections: STORES, facts: STORES },
+    run: TRIGGERS,
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
   fold: { now: FOLDS, settings: FOLDS, board: FOLDS, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
 }
 
 /** The keys `start` may return. */
-export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds', 'around', 'answers'] as const
+export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds', 'around', 'answers', 'slots', 'board'] as const
 
 const sinceAt =
   (version: string) =>
@@ -439,6 +476,7 @@ const sinceCalls = sinceAt(CALLS)
 const stores = sinceAt(STORES)
 const folds = sinceAt(FOLDS)
 const around = sinceAt(AROUND)
+const triggers = sinceAt(TRIGGERS)
 
 const Name = z
   .string()
@@ -517,6 +555,41 @@ const Around = z.strictObject({
   before: around(z.array(Capability).optional().describe('The capabilities whose links it runs outside of: it sees the input before them and the reply after.')),
   after: around(z.array(Capability).optional().describe('The capabilities whose links it runs inside of.')),
 })
+const Cron = z.string().superRefine((cron, ctx) => {
+  const problem = cronProblem(cron)
+  if (problem) ctx.addIssue({ code: 'custom', message: problem })
+})
+const Period = z
+  .string()
+  .regex(/^\d+(s|m|h)$/)
+  .superRefine((every, ctx) => {
+    const problem = periodProblem(every)
+    if (problem) ctx.addIssue({ code: 'custom', message: problem })
+  })
+const When = z.union([
+  z.strictObject({
+    cron: triggers(z.array(Cron).min(1).describe('Crons in the subset the tower says in words: their slots are the union of theirs.')),
+    tz: triggers(z.string().refine(isZone, 'an IANA zone, like Europe/Lisbon').optional().describe("The zone the crons are read in; the tower machine's when left out.")),
+  }),
+  z.strictObject({
+    every: triggers(
+      Period.describe("A period aligned to the UTC clock: 5m fires at each multiple of 5 minutes since the epoch. The tower's 30 s loop bounds it: below 30s fires at most every 30 s."),
+    ),
+  }),
+])
+const SlotSpec = z.strictObject({
+  when: triggers(When.describe('Its slots: crons, or a period.')),
+  scope: triggers(Scope.optional().describe('`system`: one slot for the tower, the default; `project`: one per floor where it is on, the floor named.')),
+})
+const Check = z
+  .strictObject({
+    words: triggers(Words.describe('What it checks, as `tower doctor` prints it.')),
+    run: triggers(z.array(z.string()).min(1).optional().describe('A command run from its folder, env scrubbed, killed at 10 s: exit 0 passes.')),
+    read: triggers(ReadPath.optional().describe('One of its reads that takes no params: it passes when it answers. The tower must be up.')),
+    fix: triggers(z.string().optional().describe('What to do when it fails.')),
+  })
+  .refine((c) => (c.run === undefined) !== (c.read === undefined), { message: 'a check holds exactly one of run and read' })
+  .meta({ oneOf: [{ required: ['run'] }, { required: ['read'] }] })
 
 /** How others reach a store: a verb or read qualified by its capability, or why the domain has no such act. */
 export type Door = string | { none: string }
@@ -583,6 +656,14 @@ export const Manifest = z
     subjects: folds(z.record(Word, SubjectDecl).optional().describe('Its own subject kinds, `<provides>.<kind>`, that others contribute to: where they sit in its part.')),
     folds: folds(z.record(SubjectKind, FoldSpec).optional().describe('Per subject kind it folds: the x it makes and what it adds.')),
     commands: folds(z.record(Word, Command).optional().describe('Its client commands: a module\'s export run by renderers that import modules.')),
+    slots: triggers(z.record(Word, SlotSpec).optional().describe("Its time triggers: start returns slots.<name>, which the tower's loop calls at each slot due.")),
+    triggers: triggers(
+      z
+        .strictObject({ board: triggers(z.strictObject({}).optional().describe('start returns board(prev, next), called after each board build from the second on.')) })
+        .optional()
+        .describe('Its change triggers.'),
+    ),
+    checks: triggers(z.record(Word, Check).optional().describe('Lines `tower doctor` prints: a command, or one of its reads.')),
     views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
     regions: since(
       z

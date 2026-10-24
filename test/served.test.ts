@@ -44,13 +44,13 @@ function stylesheetNames(css: string): string[] {
   return [...new Set([...(css.match(/--[\w-]+(?=\s*:)/g) ?? []), ...(selectors.match(/\.[a-zA-Z][\w-]*/g) ?? [])])]
 }
 
-type SchemaNode = { properties?: Record<string, SchemaNode>; additionalProperties?: SchemaNode | boolean }
+type SchemaNode = { properties?: Record<string, SchemaNode>; additionalProperties?: SchemaNode | boolean; anyOf?: SchemaNode[] }
 
-/** Every key path of a JSON Schema, `*` for any key of a record: `views.*.*.module`. */
+/** Every key path of a JSON Schema, `*` for any key of a record, each branch of an `anyOf` at its place: `views.*.*.module`. */
 function keyPaths(node: SchemaNode, at: string[] = []): string[] {
   const own = Object.entries(node.properties ?? {}).flatMap(([key, child]) => [[...at, key].join('.'), ...keyPaths(child, [...at, key])])
   const any = typeof node.additionalProperties === 'object' ? keyPaths(node.additionalProperties, [...at, '*']) : []
-  return [...own, ...any]
+  return [...new Set([...own, ...any, ...(node.anyOf ?? []).flatMap((branch) => keyPaths(branch, at))])]
 }
 
 /** The leaf paths of an object: `start.tower.version`. */

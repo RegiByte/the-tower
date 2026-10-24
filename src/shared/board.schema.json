@@ -3198,7 +3198,8 @@
       "type": "object",
       "properties": {
         "when": {
-          "$ref": "#/definitions/When"
+          "$ref": "#/definitions/CronWhen",
+          "description": "Its slots, as crons."
         },
         "check": {
           "type": "string",
@@ -3238,7 +3239,7 @@
       "additionalProperties": false,
       "description": "A policy's header, its defaults filled in."
     },
-    "When": {
+    "CronWhen": {
       "type": "object",
       "properties": {
         "cron": {
@@ -3255,7 +3256,7 @@
         "cron"
       ],
       "additionalProperties": false,
-      "description": "A policy's slots: the union of its crons', read in `tz` (an IANA zone), else in the tower machine's zone."
+      "description": "Slots as crons: the union of theirs, read in `tz` (an IANA zone), else in the tower machine's zone."
     },
     "Hire": {
       "type": "object",
@@ -4261,6 +4262,13 @@
             "$ref": "#/definitions/ExtensionCommand"
           },
           "description": "Its manifest's client commands, by name: what renderers that import modules run."
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionSlot"
+          },
+          "description": "Its manifest's slots."
         }
       },
       "required": [
@@ -4272,7 +4280,8 @@
         "state",
         "problems",
         "verbs",
-        "commands"
+        "commands",
+        "slots"
       ],
       "additionalProperties": false,
       "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
@@ -4343,9 +4352,10 @@
         "read",
         "fold",
         "around",
-        "hook"
+        "hook",
+        "trigger"
       ],
-      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold, a link of a chain it wraps, an answer to a hook."
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold, a link of a chain it wraps, an answer to a hook, a slot or the board trigger."
     },
     "ProblemCode": {
       "type": "string",
@@ -4365,7 +4375,9 @@
         "shape",
         "deprecated",
         "slow",
-        "hook"
+        "hook",
+        "paused",
+        "contract"
       ]
     },
     "ExtensionVerb": {
@@ -4474,6 +4486,51 @@
       ],
       "additionalProperties": false,
       "description": "One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`, and `on`, the subject kinds every subject of which is offered it."
+    },
+    "ExtensionSlot": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/Scope"
+        },
+        "when": {
+          "$ref": "#/definitions/When"
+        }
+      },
+      "required": [
+        "name",
+        "scope",
+        "when"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's slots as the board shows it: `/slots.js` says its rule in words and finds its next slot."
+    },
+    "When": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CronWhen"
+        },
+        {
+          "$ref": "#/definitions/EveryWhen"
+        }
+      ],
+      "description": "A rule naming slots: crons, or a period."
+    },
+    "EveryWhen": {
+      "type": "object",
+      "properties": {
+        "every": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "every"
+      ],
+      "additionalProperties": false,
+      "description": "Slots as a period, `30s`, `5m` or `2h`, aligned to the UTC clock: `5m` is each multiple of 5 minutes since the epoch."
     },
     "Adds": {
       "type": "object",

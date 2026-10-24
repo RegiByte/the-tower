@@ -10,15 +10,15 @@ import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalS
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
+import { runProcess } from '../run.ts'
 import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
 import {
   nestedIn,
   qualifiedOf,
-  STARTED_KEYS,
   type CallCtx,
   type Caller,
   type Client,
@@ -197,65 +197,14 @@ export const extensions = defineResource({
 })
 export type ExtensionsResource = StartedResource<typeof extensions>
 
+/** How long a command `ctx.run` runs may take when it names no timeout. */
+const RUN_MS = 60_000
+
 /** How long `start` may take before the extension counts as failed. */
 const START_MS = 10_000
 
 /** `start` returned something other than what the manifest declares. */
 export class MismatchError extends Error {}
-
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
-
-/** Why the handlers `start` returned for a lane don't match the names the manifest declares: each one missing, each one extra. */
-const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers', declared: string[], given: unknown): string[] => {
-  if (given === undefined) return declared.length ? [`its manifest declares ${lane} ${declared.join(', ')}, and start returned no ${lane}`] : []
-  if (!isObject(given)) return [`start returned ${lane} that are no object of functions`]
-  const missing = declared.filter((name) => !Object.hasOwn(given, name) || typeof given[name] !== 'function')
-  const extra = Object.keys(given).filter((name) => !declared.includes(name))
-  return [
-    ...(missing.length ? [`its manifest declares ${lane} ${missing.join(', ')}, and start returned no function for each`] : []),
-    ...(extra.length ? [`start returned ${lane} ${extra.join(', ')}, which its manifest doesn't declare`] : []),
-  ]
-}
-
-/** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
-const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
-  isObject(lane) ? Object.keys(lane).filter((name) => !Object.hasOwn(declared ?? {}, name)) : []
-
-/**
- * Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb and read it declares, no
- * more, a fold for every subject kind it folds, no more, and a `parse` or `reduce` only for a collection or stream it declares.
- */
-const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
-  if (!isObject(started)) return `start returned ${JSON.stringify(started)}: it returns an object of what its manifest declares`
-  const undeclared = Object.keys(started).filter((key) => !(STARTED_KEYS as readonly string[]).includes(key))
-  if (undeclared.length) return `start returned ${undeclared.join(', ')}, which its manifest doesn't declare`
-  if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
-  const calls = [
-    ...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs),
-    ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads),
-    ...namesMismatch('around', Object.keys(manifest.around ?? {}), started.around),
-    ...namesMismatch('answers', Object.keys(manifest.answers ?? {}), started.answers),
-  ]
-  if (calls.length) return calls.join('; ')
-  const folds = isObject(started.folds) ? started.folds : {}
-  const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
-  if (unfolded.length && (started.folds === undefined || isObject(started.folds))) return `its manifest declares folds ${unfolded.join(', ')}, and start returned no function for each`
-  const lanes = [
-    { key: 'folds', declared: manifest.folds, what: 'folds', is: (f: unknown) => typeof f === 'function', shape: 'a function (subject, ctx)' },
-    { key: 'parse', declared: manifest.collections, what: 'collections', is: (f: unknown) => typeof f === 'function', shape: 'a function (text, item)' },
-    { key: 'reduce', declared: manifest.streams, what: 'streams', is: (r: unknown) => isObject(r) && 'init' in r && typeof r.step === 'function', shape: '{ init, step }' },
-  ]
-  for (const { key, declared, what, is, shape } of lanes) {
-    const lane = started[key]
-    if (lane === undefined) continue
-    if (!isObject(lane)) return `start returned a ${key} that is no object: one entry per name of its ${what}`
-    const extra = undeclaredIn(lane, declared)
-    if (extra.length) return `start returned a ${key} for ${extra.join(', ')}, which its manifest doesn't declare under ${what}`
-    const bad = Object.keys(lane).filter((name) => !is(lane[name]))
-    if (bad.length) return `start returned a ${key} for ${bad.join(', ')} that is not ${shape}`
-  }
-  return undefined
-}
 
 /**
  * The extension's `start`: its server module's default export, imported afresh for each hash; none without a server.
@@ -382,6 +331,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     log,
     signal: controller.signal,
     board: () => publisher.board(),
+    run: (argv, { cwd, timeoutMs = RUN_MS, stdin }) => runProcess(argv, { cwd, timeoutMs, stdin, signal: controller.signal }),
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
     ...stores.ctx,
   }

@@ -29,6 +29,8 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   deprecated: 'call what it names to use instead',
   slow: 'make its folds cheaper: fold from its reduced streams, never from files or the whole board',
   hook: "make the answer match the hook's answer schema; a throw's stack is in the tower's log",
+  paused: 'make its board trigger ask for fewer calls: a call that changes the board triggers it again',
+  contract: 'put back what its contract.json lists, or move its major and say what to use instead in its CHANGELOG.md',
 }
 
 /** An extension in a short line: `Pulse 1.0 · running`, its errors counted. */

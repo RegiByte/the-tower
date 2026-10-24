@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -79,6 +79,7 @@ export const NO_EXTENSIONS: Registry = { extensions: [], stores: [], chains: {},
 
 const error = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'error', code, message, ...(at && { path: at }) })
 const warn = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'warn', code, message, ...(at && { path: at }) })
+
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -191,6 +192,15 @@ const doorProblem = (manifest: Manifest, provides: string, door: string, to: str
   if (!named) return `${door} is a door that ${reads ? 'reads' : 'acts'}, and ${to} names no ${reads ? 'read' : 'verb'} of ${provides}'s manifest`
   return named.deprecated ? `${to} is deprecated since ${named.deprecated.since}: a door names what is current${named.deprecated.use ? `, ${named.deprecated.use}` : ''}` : undefined
 }
+
+/** What a manifest's checks break of the rules its schema can't say: a check's read is one of its reads, taking no params. */
+const checkProblems = (manifest: Manifest): LoadProblem[] =>
+  Object.entries(manifest.checks ?? {}).flatMap(([name, check]) => {
+    if (check.read === undefined) return []
+    const at = `checks.${name}.read`
+    if (!Object.hasOwn(manifest.reads ?? {}, check.read)) return [error('invalid', `${check.read} is no read of its manifest's: a check reads one of its own reads`, at)]
+    return paramsOf(check.read).length ? [error('invalid', `${check.read} takes params: a check reads one that takes none`, at)] : []
+  })
 
 /**
  * What a manifest's stores break of the rules its schema can't say: a collection is named `<provides>` or
@@ -432,7 +442,7 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   if (targets.length) return { found, claims, manifest, problems: targets }
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems]
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
@@ -638,6 +648,10 @@ export const PROBLEMS_SHOWN = 20
 const haltProblems = (outcome: Outcome | undefined): ExtensionProblem[] =>
   outcome?.halt ? [{ lane: 'halt', level: 'error', code: 'failed', message: outcome.halt, at: outcome.at, count: 1 }] : []
 
+/** A manifest's slots as the board shows them. */
+const slotsOf = (manifest: Manifest | undefined): ExtensionView['slots'] =>
+  Object.entries(manifest?.slots ?? {}).map(([name, slot]) => ({ name, scope: slot.scope ?? 'system', when: slot.when }))
+
 /** A manifest's verbs as the board shows them, by qualified name. */
 const verbsOf = (manifest: Manifest | undefined): ExtensionView['verbs'] =>
   Object.entries(manifest?.verbs ?? {}).map(([name, v]) => ({
@@ -769,6 +783,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       problems: [...(calls.get(id) ?? []), ...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(a.manifest),
       commands: commandsOf(a.manifest),
+      slots: slotsOf(a.manifest),
     }
   })
   const held = [...resolved.refused.values()].map(
@@ -782,6 +797,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       problems: [...haltProblems(outcomes.get(r.id)), ...stamp(r.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(r.manifest),
       commands: commandsOf(r.manifest),
+      slots: slotsOf(r.manifest),
     }),
   )
   const stores = resolved.order.map((id) => {
@@ -794,4 +810,61 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
   )
   const views = started.map((view) => (wrapping.problems.has(view.id) ? { ...view, problems: [...wrapping.problems.get(view.id)!, ...view.problems].slice(0, PROBLEMS_SHOWN) } : view))
   return { extensions: [...views, ...held].sort(shownOrder), stores, chains: wrapping.chains, answers: wrapping.answers }
+}
+
+
+/** Why the handlers `start` returned for a lane don't match the names the manifest declares: each one missing, each one extra. */
+const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers' | 'slots', declared: string[], given: unknown): string[] => {
+  if (given === undefined) return declared.length ? [`its manifest declares ${lane} ${declared.join(', ')}, and start returned no ${lane}`] : []
+  if (!isObject(given)) return [`start returned ${lane} that are no object of functions`]
+  const missing = declared.filter((name) => !Object.hasOwn(given, name) || typeof given[name] !== 'function')
+  const extra = Object.keys(given).filter((name) => !declared.includes(name))
+  return [
+    ...(missing.length ? [`its manifest declares ${lane} ${missing.join(', ')}, and start returned no function for each`] : []),
+    ...(extra.length ? [`start returned ${lane} ${extra.join(', ')}, which its manifest doesn't declare`] : []),
+  ]
+}
+
+/** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
+const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
+  isObject(lane) ? Object.keys(lane).filter((name) => !Object.hasOwn(declared ?? {}, name)) : []
+
+/**
+ * Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb, read and slot it
+ * declares, no more, a board trigger exactly when it declares `triggers.board`, a fold for every subject kind it folds,
+ * no more, and a `parse` or `reduce` only for a collection or stream it declares.
+ */
+export const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
+  if (!isObject(started)) return `start returned ${JSON.stringify(started)}: it returns an object of what its manifest declares`
+  const undeclared = Object.keys(started).filter((key) => !(STARTED_KEYS as readonly string[]).includes(key))
+  if (undeclared.length) return `start returned ${undeclared.join(', ')}, which its manifest doesn't declare`
+  if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
+  const calls = [
+    ...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs),
+    ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads),
+    ...namesMismatch('around', Object.keys(manifest.around ?? {}), started.around),
+    ...namesMismatch('answers', Object.keys(manifest.answers ?? {}), started.answers),
+    ...namesMismatch('slots', Object.keys(manifest.slots ?? {}), started.slots),
+  ]
+  if (calls.length) return calls.join('; ')
+  if (manifest.triggers?.board && typeof started.board !== 'function') return 'its manifest declares triggers.board, and start returned no board function'
+  if (!manifest.triggers?.board && started.board !== undefined) return "start returned a board trigger, which its manifest doesn't declare: triggers.board"
+  const folds = isObject(started.folds) ? started.folds : {}
+  const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
+  if (unfolded.length && (started.folds === undefined || isObject(started.folds))) return `its manifest declares folds ${unfolded.join(', ')}, and start returned no function for each`
+  const lanes = [
+    { key: 'folds', declared: manifest.folds, what: 'folds', is: (f: unknown) => typeof f === 'function', shape: 'a function (subject, ctx)' },
+    { key: 'parse', declared: manifest.collections, what: 'collections', is: (f: unknown) => typeof f === 'function', shape: 'a function (text, item)' },
+    { key: 'reduce', declared: manifest.streams, what: 'streams', is: (r: unknown) => isObject(r) && 'init' in r && typeof r.step === 'function', shape: '{ init, step }' },
+  ]
+  for (const { key, declared, what, is, shape } of lanes) {
+    const lane = started[key]
+    if (lane === undefined) continue
+    if (!isObject(lane)) return `start returned a ${key} that is no object: one entry per name of its ${what}`
+    const extra = undeclaredIn(lane, declared)
+    if (extra.length) return `start returned a ${key} for ${extra.join(', ')}, which its manifest doesn't declare under ${what}`
+    const bad = Object.keys(lane).filter((name) => !is(lane[name]))
+    if (bad.length) return `start returned a ${key} for ${bad.join(', ')} that is not ${shape}`
+  }
+  return undefined
 }

@@ -248,6 +248,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
       { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
     ],
     commands: [{ name: 'listen', module: 'pulse.js', export: 'listen', words: { label: 'Listen', hint: 'reads the beat aloud' }, on: ['item.pulse'] }],
+    slots: [],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual(read.extensions, msg.board.extensions)
