@@ -34,7 +34,7 @@ import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewe
 import { tagOf } from '../shared/tags.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { appendFact } from '../streams.ts'
-import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
+import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
 import { chainCalls } from './chains.ts'
@@ -527,19 +527,26 @@ export const dispatch = defineResource({
       })
 
     /**
-     * A worktree whose work never landed, thrown away as the board showed it: its tips noted on its thread before anything
-     * goes, then each repo's worktree removed with force and its branch deleted, and the thread filed.
+     * A worktree whose work never landed, thrown away as the board showed it, in order: its tips read, `tower/discard.record`
+     * raised, its tips noted on its thread through `tower/review/append`, then each repo's worktree removed with force and
+     * its branch deleted, and the thread filed. A failed answer or a refused note stops it there, before anything is removed.
      */
-    const discardWorktree = ({ project, name, author, held }: RouteInput['worktree/discard']) =>
+    const discardWorktree = ({ project, name, author, held }: RouteInput['worktree/discard'], caller: Caller) =>
       onWorktrees(project, async (p) => {
         if (!isDeclared(project, REVIEWS)) return apiError('refused', `"${project}" keeps no review threads, where a discard notes what it threw away`)
         const tips = await discardable(p, project, name, occupants(), held)
-        const noted = appendReview({ project, checkout: name, author, anchors: [], body: discardNote(name, tips) })
-        if (noted.t === 'error') return noted
+        const within = nestedIn(caller, 'tower/worktree/discard')
+        const shown = tips.map(({ dir, branch, tip }) => ({ dir, branch, tip }))
+        const answers = await chains.raise('tower/discard.record', { project, name, author, tips: shown }, within)
+        const failed = answers.find((a) => !a.ok)
+        if (failed && !failed.ok) return apiError('refused', `${failed.cap} couldn't record the discard of "${name}", so nothing was noted or removed: ${failed.message}`)
+        const noted = await call('tower/review/append', { project, checkout: name, author, anchors: [], body: discardNote(name, tips) }, within)
+        if (noted.t === 'error') return { ...(noted as ApiError), message: `The discard of "${name}" wasn't noted on its thread, so nothing was removed: ${(noted as ApiError).message}` }
         const kept = await discard(name, tips)
         const thread = landedThreadId(name, new Date())
         renameItem(paths, project, REVIEWS, threadId(name), thread)
-        return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), thread, ...keptOf(kept) }
+        const x = Object.fromEntries(answers.flatMap((a) => (a.ok ? [[a.cap, a.answer]] : [])))
+        return { t: 'discarded', tips: shown, thread, ...keptOf(kept), ...(answers.length && { x }) }
       })
 
     const pruneKey = (p: Prune) => (p.t === 'reap' ? `reap ${p.id} ${p.pid}` : `kill ${p.id}`)
@@ -571,34 +578,47 @@ export const dispatch = defineResource({
     }
 
     /**
-     * Tidy as listed, or nothing when the list moved on: git's part (checked after its fetch), then the landed threads
-     * filed, the leftover processes ended, the idle workers killed and the old logs and stream months archived. A worker is checked again just before its kill,
-     * since the fetch takes seconds: one no longer listed, or whose kill fails, is skipped and named, and the rest goes on.
+     * Tidy as listed, or nothing when the list moved on: git's part checked after its fetch, then each entry applied, in
+     * order: worktrees removed and kept branches deleted, the landed threads filed, the leftover processes ended, the
+     * idle workers killed and the old logs and stream months archived. What another verb does is done through it, for
+     * the caller, so what wraps that verb sees it. A worker is checked again just before its kill, since the fetch takes
+     * seconds; an entry no longer listed, or whose verb refuses, is skipped and named, and the rest goes on.
      */
-    const tidyProject = (projectId: string, plan: TidyPlan) =>
+    const tidyProject = (projectId: string, plan: TidyPlan, caller: Caller) =>
       onWorktrees(projectId, async (project) => {
         const release = await system.observe()
         try {
           const callsign = callsignsOf(readConfig())
           const gone = movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign)
           if (gone.length) return apiError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
-          const git = plan.worktrees.length || plan.branches.length ? await tidy(project, projectId, occupants(), plan) : { removed: [], deleted: [], kept: [] }
+          if (plan.worktrees.length || plan.branches.length) await tidyable(project, projectId, occupants(), plan)
+          const step = (verb: string, input: object) => call(`tower/${verb}`, input, nestedIn(caller, 'tower/tidy'))
+          const skipped: string[] = []
+          /** Each entry whose verb answered, its branches kept named in `skipped`; each refused, named with why. */
+          const applied = async <T>(entries: T[], verb: string, input: (entry: T) => object, what: (entry: T) => string): Promise<T[]> => {
+            const done: T[] = []
+            for (const entry of entries) {
+              const answer = await step(verb, input(entry))
+              if (answer.t === 'error') skipped.push(`${what(entry)}: ${(answer as ApiError).message}`)
+              else done.push(entry)
+              skipped.push(...((answer as { kept?: string[] }).kept ?? []).map((why) => `branch ${why}`))
+            }
+            return done
+          }
+          const removed = await applied(plan.worktrees, 'worktree/remove', (name) => ({ project: projectId, name }), (name) => `worktree ${name}`)
+          const deleted = await applied(plan.branches, 'branch/delete', (name) => ({ project: projectId, name }), (name) => `branch ${name}`)
           const now = new Date()
           for (const checkout of plan.threads) renameItem(paths, projectId, REVIEWS, threadId(checkout), landedThreadId(checkout, now))
           const reaps = plan.prune.flatMap((p) => (p.t === 'reap' ? [p] : []))
-          const reaped = reap(system.running().filter((r) => reaps.some((p) => p.id === r.session && p.pid === r.pid)))
-          void system.refreshRunning()
+          const reaped = await applied(reaps, 'reap/process', ({ id, pid }) => ({ id, pid }), ({ pid }) => `process ${pid}`)
           const killed: string[] = []
-          const skipped = git.kept.map((why) => `branch ${why}`)
           for (const p of plan.prune) {
             if (p.t !== 'kill') continue
             if (movedOn({ ...plan, threads: [], prune: [p], logs: [], streams: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
               skipped.push(`worker ${callsign(p.id)}: no longer done with its purpose`)
               continue
             }
-            const answer = await host({ t: 'kill', id: p.id })
-            if (answer.t === 'error') skipped.push(`worker ${callsign(p.id)}: ${(answer as ApiError).message}`)
-            else killed.push(p.id)
+            killed.push(...(await applied([p.id], 'kill', (id) => ({ id }), (id) => `worker ${callsign(id)}`)))
           }
           for (const { id } of plan.logs) await archiveLog(paths, id)
           const streams: string[] = []
@@ -606,7 +626,7 @@ export const dispatch = defineResource({
             if (await archiveMonth(file)) streams.push(file)
             else skipped.push(`stream ${file}: archived by another floor's Tidy meanwhile`)
           }
-          return { t: 'tidied', ...git, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams }
+          return { t: 'tidied', removed, deleted, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams }
         } finally {
           release()
         }
@@ -752,7 +772,7 @@ export const dispatch = defineResource({
       'branch/recut': ({ project, name }) =>
         onWorktrees(project, async (p, config) => (await recutBranch(p, project, worktreesConfig(config, project).links, name), OK)),
       'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
-      tidy: ({ project, plan }) => tidyProject(project, plan),
+      tidy: ({ project, plan }, caller) => tidyProject(project, plan, caller),
       'review/append': appendReview,
       'policy/run': runPolicy,
       'policy/pass': passPolicy,

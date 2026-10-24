@@ -36,6 +36,8 @@ const written = z.object({ t: z.literal('written'), modifiedAt })
 
 const worktreeName = z.string().regex(WORKTREE_NAME)
 const worktree = { project: id, name: worktreeName }
+const discardedTip = z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })
+const discardRecorded = z.object({ note: z.string().optional().describe('What the answerer recorded, in words.') })
 const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
 const actor = (what: string) =>
   id.optional().describe(`The worker that makes the request, by session id: ${what} Left out, the user makes it.`)
@@ -264,9 +266,10 @@ export const VERBS = {
       ),
     reply: z.object({
       t: z.literal('discarded'),
-      tips: z.array(z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })).describe('What each repo held, now on no branch.'),
+      tips: z.array(discardedTip).describe('What each repo held, now on no branch.'),
       thread: z.string().describe('The filed thread, its note naming the tips.'),
       kept: z.array(z.string()).optional().describe("Each branch kept instead of deleted, with why (`<branch> in <dir>: kept, …`)."),
+      x: z.record(z.string(), discardRecorded).optional().describe("Each extension's answer to `tower/discard.record`, by capability."),
     }),
   },
   'branch/recut': {
@@ -451,8 +454,26 @@ export type Route = keyof Routes
 export type RouteInput = { [R in Route]: z.infer<Routes[R]['input']> }
 export const ROUTES: Routes = { ...VERBS, ...TRANSPORT }
 
+/**
+ * The core's composites: each verb that does what other core verbs do, with the verbs it calls through the dispatch to
+ * do it, its caller kept and itself in the caller's `within`, so what wraps one of them sees every act of it.
+ */
+export const COMPOSITES: Record<string, string[]> = {
+  'tower/tidy': ['tower/worktree/remove', 'tower/branch/delete', 'tower/reap/process', 'tower/kill'],
+  'tower/worktree/discard': ['tower/review/append'],
+  'tower/policy/run': ['tower/spawn'],
+}
+
 /** A point inside a core verb where extensions take part: what it is raised with, what each answer is, and what a failed answer does. */
 export type CoreHook = { payload: z.ZodType; answer: z.ZodType; failure: 'refuses' | 'reported'; description: string; since: string }
 
 /** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
-export const HOOKS: Record<string, CoreHook> = {}
+export const HOOKS: Record<string, CoreHook> = {
+  'discard.record': {
+    payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(discardedTip) }),
+    answer: discardRecorded,
+    failure: 'refuses',
+    description: "Raised by worktree/discard once each repo's tip is read, before anything is noted or removed: an answer that fails refuses the discard.",
+    since: '1.85',
+  },
+}

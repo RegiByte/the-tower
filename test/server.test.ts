@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -54,6 +54,7 @@ function seed(port: number) {
   git('commit', '-q', '-m', 'first')
   git('branch', 'feature')
   git('config', 'branch.feature.towerBase', 'main')
+  writeFileSync(path.join(HUB, '.git', 'info', 'exclude'), '.worktrees/\n')
   const header = { id: SESSION, project: 'lab', cwd: HUB, argv: ['bash'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
   const events = [
     [0.1, 'o', 'a session\r\n'],
@@ -345,6 +346,7 @@ test('server: an extension reaches only the core and what it declares', async ()
 test("server: a verb runs through the chain around it, the dependent's link outside its owner's, each link's input parsed again by the verb's schema", async () => {
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual([read.chains['chime/ring'], read.chains['tower/collection/create']], [['pulse', 'chime'], ['pulse']])
+  assert.deepEqual(read.composites['tower/spawn'], ['tower/policy/run'])
   const rung = await post('chime/ring', { times: 1 })
   assert.deepEqual(JSON.parse(rung.body), { rang: 2, caller: { t: 'user', via: 'http', within: [] }, trail: ['pulse', 'chime'] })
   const passedOn = await post('chime/ring', { times: 3 })
@@ -372,9 +374,27 @@ test("server: a hook's answers come back to its provider in fold order, each on 
   assert.deepEqual(heard[0], { cap: 'pulse', ok: true, answer: { heard: `pulse kept ${item}` } })
   assert.deepEqual([heard.length, heard[1].cap, heard[1].ok, heard[1].code], [2, 'tally', false, 'internal'])
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
-  assert.deepEqual(read.answers['pulse/beat.kept'], ['pulse', 'tally'])
+  assert.deepEqual([read.answers['pulse/beat.kept'], read.answers['tower/discard.record']], [['pulse', 'tally'], ['tally']])
   const tally = read.extensions.find((e) => e.id === 'tally')!
   assert.deepEqual(tally.problems.map((p) => [p.lane, p.code, p.path]), [['hook', 'hook', 'answers.pulse/beat.kept']])
+})
+
+test("server: worktree/discard raises tower/discard.record before anything goes: a refusal keeps the worktree, an answer comes back in the reply's x", async () => {
+  const discardIn = async (name: string) => {
+    const tree = path.join(HUB, '.worktrees', name)
+    git('worktree', 'add', '-q', '-b', `tower/${name}`, tree, 'main')
+    git('config', `branch.tower/${name}.towerBase`, 'main')
+    writeFileSync(path.join(tree, 'draft.md'), 'never landed')
+    const head = execFileSync('git', ['-C', tree, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    return { tree, reply: await post('worktree/discard', { project: 'lab', name, author: 'NEMO-92', held: [{ dir: HUB, head, dirty: 1 }] }) }
+  }
+  const kept = await discardIn('keep-this')
+  assert.deepEqual(JSON.parse(kept.reply.body), { t: 'error', code: 'refused', message: 'tally couldn\'t record the discard of "keep-this", so nothing was noted or removed: keep-this is one tally keeps' })
+  assert.ok(existsSync(kept.tree))
+  const gone = await discardIn('gone')
+  assert.equal(gone.reply.status, 200, gone.reply.body)
+  assert.deepEqual(JSON.parse(gone.reply.body).x, { tally: { note: 'tally counted 1 tip' } })
+  assert.ok(!existsSync(gone.tree))
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

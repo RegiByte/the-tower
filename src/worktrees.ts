@@ -793,10 +793,10 @@ export const deleteBranch = async (project: Project, projectId: string, name: st
 }
 
 /**
- * The named worktrees removed and kept branches deleted, after one fetch; refused before touching any when one of them
- * is no longer removable or absorbed.
+ * Refuses, after one fetch, when a named worktree is no longer removable or a named kept branch no longer absorbed:
+ * Tidy then touches none of them.
  */
-export const tidy = async (project: Project, projectId: string, occupants: Occupant[], named: { worktrees: string[]; branches: string[] }) => {
+export const tidyable = async (project: Project, projectId: string, occupants: Occupant[], named: { worktrees: string[]; branches: string[] }) => {
   const reads = await fetchedReads(project, true)
   const removable = floorWorktrees(projectId, reads, occupants, false).filter((w) => w.state === 'removable')
   const absorbed = floorBranches(projectId, reads).filter((b) => b.absorbed)
@@ -805,10 +805,6 @@ export const tidy = async (project: Project, projectId: string, occupants: Occup
     ...named.branches.filter((name) => !absorbed.some((b) => b.name === name)).map((name) => `branch ${name}`),
   ]
   if (gone.length) throw new WorktreeError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
-  const kept: string[] = []
-  for (const tree of removable.filter((w) => named.worktrees.includes(w.name))) kept.push(...(await removeTree(tree)))
-  for (const branch of absorbed.filter((b) => named.branches.includes(b.name))) kept.push(...(await deleteAbsorbed(branch.repos.map((r) => ({ ...r, branch: branch.name })))))
-  return { removed: named.worktrees, deleted: named.branches, kept }
 }
 
 /**

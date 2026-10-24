@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url'
 import { NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
-import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
+import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
 import {
   nestedIn,
@@ -47,6 +47,11 @@ const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] =>
   const topology = buildTopology(nodes, topologicalSort(nodes))
   return { ...topology, mermaid: toMermaid(topology) }
 }
+
+/** Each verb a core composite calls through the dispatch, with the composites that call it. */
+const compositesByVerb: Record<string, string[]> = Object.fromEntries(
+  [...new Set(Object.values(COMPOSITES).flat())].sort().map((verb) => [verb, Object.keys(COMPOSITES).filter((composite) => COMPOSITES[composite].includes(verb))]),
+)
 
 /** A started extension, as its resource holds it: its manifest, and its handlers, each run with a ctx for its caller. */
 export type Instance = {
@@ -108,7 +113,7 @@ export const extensions = defineResource({
     return {
       registry: () => shown,
       /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
-      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources), chains: shown.chains, answers: shown.answers }),
+      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources), chains: shown.chains, answers: shown.answers, composites: compositesByVerb }),
       /** The running extensions that fold, as the fold pass reads them, each one's floor settings read once per build. */
       folders: (): Folder[] => {
         const all = running()

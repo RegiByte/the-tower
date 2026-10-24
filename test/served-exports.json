@@ -313,6 +313,7 @@
       "bundled.policies",
       "bundled.quota",
       "bundled.reviews",
+      "hook.tower/discard.record",
       "problem.conflict",
       "problem.cycle",
       "problem.deprecated",
