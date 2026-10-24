@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { registry, resolve, type Found, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
+import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import type { Config } from '../src/shared/model.ts'
 
 const TOWER = '1.81'
@@ -130,4 +131,24 @@ test('the registry: bundled first then by id; a failed start fails it and skips 
   assert.deepEqual(views[1].problems.map((p) => [p.lane, p.code]), [['start', 'mismatch']])
   assert.deepEqual(views[2].problems.map((p) => [p.code, p.message]), [['skipped', 'github is not running: its problems first']])
   assert.deepEqual(views[3].problems.map((p) => [p.lane, p.code, p.at, p.count]), [['load', 'invalid', NOW, 1]])
+})
+
+test("a qualified name splits at its first /: the core's is tower, and the provider's own name keeps its slashes", () => {
+  assert.deepEqual(qualifiedOf('tower/collection/write'), { cap: 'tower', name: 'collection/write' })
+  assert.deepEqual(qualifiedOf('my-reviews/history/<project>'), { cap: 'my-reviews', name: 'history/<project>' })
+  assert.deepEqual(['spawn', '/spawn', 'pulse/', 'Pulse/ping', 'a/ping'].map(qualifiedOf), [undefined, undefined, undefined, undefined, undefined])
+})
+
+test("a call inside a handler keeps the handler's caller with its verb in within, and one past the depth is refused with its chain", () => {
+  const worker: Caller = { t: 'worker', id: 'w1', via: 'cli', within: [] }
+  assert.deepEqual(nestedIn(nestedIn(worker, 'pulse/ping'), 'chime/ring'), { t: 'worker', id: 'w1', via: 'cli', within: ['pulse/ping', 'chime/ring'] })
+  const deepest = Array.from({ length: MAX_DEPTH - 1 }, () => 'pulse/ping').reduce(nestedIn, worker)
+  assert.equal(tooDeep(deepest, 'pulse/ping'), undefined)
+  assert.match(tooDeep(nestedIn(deepest, 'pulse/ping'), 'chime/ring')!, /nested more than 8 calls deep: pulse\/ping → .* → chime\/ring$/)
+})
+
+test("a read's path matches its words and takes each param decoded", () => {
+  assert.deepEqual(matchRead('beats/<project>', 'beats/my%20lab'), { project: 'my lab' })
+  assert.deepEqual(matchRead('history', 'history'), {})
+  assert.deepEqual(['beats', 'beats/', 'beats/lab/more', 'beat/lab'].map((path) => matchRead('beats/<project>', path)), [undefined, undefined, undefined, undefined])
 })

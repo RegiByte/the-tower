@@ -8,8 +8,11 @@
 import { z } from 'zod'
 import type { Board } from '../bridge/board.ts'
 
-/** The minor every key, member and code below arrived in. */
+/** The minor the manifest's first keys, the start ctx and the load codes arrived in. */
 const SINCE = '1.81'
+
+/** The minor verbs and reads, the caller and the calls arrived in. */
+const CALLS = '1.82'
 
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -37,23 +40,36 @@ export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 export const LEGACY: Record<string, string> = {}
 
 /** Every problem an extension can have, by what it is. */
-export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet'] as const
+export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated'] as const
 export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
-/** Where a problem arose: reading the manifests, starting an extension, halting it. */
-export type ProblemLane = 'load' | 'start' | 'halt'
+/** Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read. */
+export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read'
 
 /**
- * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting; `warn`s leave it running.
- * `at`: epoch ms, when it was found. `count`: how many times. `path`: where in the manifest, `settings.every`.
+ * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s
+ * leave it running; `info` says how it runs (without an extension it wants). `at`: epoch ms, when it was last found.
+ * `count`: how many times. `path`: where in the manifest, `settings.every`.
  */
-export type ExtensionProblem = { lane: ProblemLane; level: 'error' | 'warn'; code: ProblemCode; message: string; at: number; count: number; path?: string }
+export type ExtensionProblem = { lane: ProblemLane; level: 'error' | 'warn' | 'info'; code: ProblemCode; message: string; at: number; count: number; path?: string }
 
 /**
  * `started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because
  * something it requires doesn't run; `off` in the config.
  */
 export type ExtensionState = 'started' | 'refused' | 'failed' | 'skipped' | 'off'
+
+/** `system`: a verb or read of the whole system; `project`: one floor's, refused on a floor where its capability is off. */
+export type Scope = 'system' | 'project'
+
+/** A name in words, as a menu or the CLI offers it. */
+export type Words = { label: string; hint?: string; destructive?: true }
+
+/** A name on its way out: since its provider's version `since`, with what to `use` instead, qualified, and `why`. */
+export type Deprecated = { since: string; use?: string; why?: string }
+
+/** One of an extension's verbs as the board shows it: its qualified name, scope and words. */
+export type ExtensionVerb = { name: string; scope: Scope; description?: string; words?: Words; deprecated?: Deprecated }
 
 /**
  * An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is
@@ -68,9 +84,70 @@ export type ExtensionView = {
   state: ExtensionState
   off?: string[]
   problems: ExtensionProblem[]
+  /** Its manifest's verbs, by qualified name. @since 1.82 */
+  verbs: ExtensionVerb[]
 }
 
-/** What `start` gets: who it is, its settings, timers and a log the tower clears and closes at halt, and the board. */
+/**
+ * Who a call is for, carried by every call. `t`: `user`, `worker` (`id` its session), `extension` (`id` its capability)
+ * or `tower` (`id` the lane: `slot`, `leave`); an open set, so a `t` a reader doesn't know is the strictest case it knows.
+ * `via`: how it arrived. `within`: the qualified verbs this call is a step of, outermost first. Over HTTP the caller is
+ * what the CLI's headers claim, not authenticated.
+ */
+export type Caller = {
+  t: 'user' | 'worker' | 'extension' | 'tower' | (string & {})
+  id?: string
+  via: 'http' | 'cli' | 'ctx' | 'loop' | (string & {})
+  within: string[]
+}
+
+/** The most calls one call may be nested in: a deeper one is refused, its chain named. */
+export const MAX_DEPTH = 8
+
+/** A qualified name split at its first `/`: the capability, the core's `tower`, and the provider's own name. */
+export const qualifiedOf = (name: string): { cap: string; name: string } | undefined => {
+  const at = name.indexOf('/')
+  const cap = name.slice(0, at)
+  return at > 0 && at < name.length - 1 && (cap === 'tower' || NAME.test(cap)) ? { cap, name: name.slice(at + 1) } : undefined
+}
+
+/** The caller of a call made inside the handler of `verb`: the handler's own, with `verb` appended to `within`. */
+export const nestedIn = (caller: Caller, verb: string): Caller => ({ ...caller, within: [...caller.within, verb] })
+
+/** Why `caller` may not call `verb`: the call would be nested more than `MAX_DEPTH` deep. */
+export const tooDeep = (caller: Caller, verb: string): string | undefined =>
+  caller.within.length >= MAX_DEPTH ? `${verb} would be nested more than ${MAX_DEPTH} calls deep: ${[...caller.within, verb].join(' → ')}` : undefined
+
+/** A read's name as the manifest writes it: words and `<param>`s joined by `/`, `beats/<project>`. */
+export const READ_PATH = /^[a-z][a-z0-9-]*(\/(<[a-z]+>|[a-z][a-z0-9-]*))*$/
+
+/** The params a read's name holds, in order: `project` of `beats/<project>`. */
+export const paramsOf = (read: string): string[] => [...read.matchAll(/<([a-z]+)>/g)].map((m) => m[1])
+
+/** The params of `read` in a request's path below its capability, decoded; `undefined` when the path isn't the read's. */
+export const matchRead = (read: string, path: string): Record<string, string> | undefined => {
+  const parts = read.split('/')
+  const got = path.split('/')
+  if (parts.length !== got.length) return undefined
+  const params: Record<string, string> = {}
+  for (const [i, part] of parts.entries()) {
+    const param = /^<([a-z]+)>$/.exec(part)?.[1]
+    if (param === undefined ? part !== got[i] : !got[i]) return undefined
+    if (param !== undefined) params[param] = decodeURIComponent(got[i])
+  }
+  return params
+}
+
+/**
+ * Another capability's verbs and reads as functions, made from its provider's manifest: `deps.chime.ring(input)` is
+ * `ctx.call('chime/ring', input)`, and `deps.chime.read['rings/<project>'](params, query)` is `ctx.read('chime/rings/<project>', …)`.
+ */
+export type Client = { read: Record<string, (params?: Record<string, string>, query?: Record<string, string>) => Promise<unknown>> } & Record<
+  string,
+  (input?: unknown) => Promise<unknown>
+>
+
+/** What `start` gets: who it is, its settings, timers and a log the tower clears and closes at halt, the board, and the calls. */
 export type StartCtx = {
   /** @since 1.81 */
   id: string
@@ -96,18 +173,58 @@ export type StartCtx = {
   signal: AbortSignal
   /** The board as it is now. @since 1.81 */
   board(): Board
+  /**
+   * Calls a verb through the tower's one dispatch by its qualified name: the core's (`tower/spawn`), its own, and those of
+   * what it requires or wants (`chime/ring`). Resolves to the verb's reply, or to an `ApiError` as a value. @since 1.82
+   */
+  call(verb: string, input?: unknown): Promise<unknown>
+  /** Reads by qualified name (`tower/conversations/<id>`, `chime/rings/<project>`) what `call` reaches. @since 1.82 */
+  read(read: string, params?: Record<string, string>, query?: Record<string, string>): Promise<unknown>
+  /** Each capability it requires, and each it wants (`undefined` while missing), as functions. @since 1.82 */
+  deps: Record<string, Client | undefined>
 }
 
-/** What `start` returns: one function per name the manifest declares, and `halt`, called before the tower clears what ctx opened. */
-export type Started = { halt?: () => void | Promise<void> }
+/** What a verb's or read's handler gets: the ctx, whose calls carry the handler's caller with its verb in `within`. */
+export type CallCtx = StartCtx & {
+  /** Who the call is for. @since 1.82 */
+  caller: Caller
+}
+
+/** A verb's handler: its input parsed by the manifest's schema, its reply checked against it. */
+export type VerbHandler = (input: any, ctx: CallCtx) => unknown
+
+/** A read's handler: its path's params, and its query parsed by the manifest's schema; its reply checked against it. */
+export type ReadHandler = (req: { params: Record<string, string>; query: any }, ctx: CallCtx) => unknown
+
+/**
+ * What `start` returns: a handler for every verb and read the manifest declares, no more and no fewer, and `halt`, called
+ * before the tower clears what ctx opened. A handler answers an `ApiError` (`{t: 'error', code, message}`) to refuse.
+ */
+export type Started = {
+  /** @since 1.82 */
+  verbs?: Record<string, VerbHandler>
+  /** @since 1.82 */
+  reads?: Record<string, ReadHandler>
+  halt?: () => void | Promise<void>
+}
 
 /** The default export of an extension's server module. */
 export type Start = (ctx: StartCtx) => Started | Promise<Started>
 
 /** Each ctx member by lane, with the minor it arrived in: the `ctx` list of `test/served-exports.json`. */
-type SinceOf<T> = { [K in keyof T]-?: T[K] extends (...args: never[]) => unknown ? string : T[K] extends object ? (T[K] extends AbortSignal ? string : SinceOf<T[K]>) : string }
+type SinceOf<T> = {
+  [K in keyof T]-?: T[K] extends (...args: never[]) => unknown
+    ? string
+    : T[K] extends AbortSignal | readonly unknown[]
+      ? string
+      : T[K] extends object
+        ? string extends keyof T[K]
+          ? string
+          : SinceOf<T[K]>
+        : string
+}
 
-export const CTX_SINCE: { start: SinceOf<StartCtx> } = {
+export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 'caller'>> } = {
   start: {
     id: SINCE,
     provides: SINCE,
@@ -121,13 +238,22 @@ export const CTX_SINCE: { start: SinceOf<StartCtx> } = {
     log: SINCE,
     signal: SINCE,
     board: SINCE,
+    call: CALLS,
+    read: CALLS,
+    deps: CALLS,
   },
+  call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
 }
 
-/** The keys `start` may return, beside the ones each lane's names bring. */
-export const STARTED_KEYS = ['halt'] as const
+/** The keys `start` may return. */
+export const STARTED_KEYS = ['halt', 'verbs', 'reads'] as const
 
-const since = <T extends z.ZodType>(schema: T) => schema.meta({ 'x-since': SINCE })
+const sinceAt =
+  (version: string) =>
+  <T extends z.ZodType>(schema: T) =>
+    schema.meta({ 'x-since': version })
+const since = sinceAt(SINCE)
+const sinceCalls = sinceAt(CALLS)
 
 const Name = z
   .string()
@@ -143,6 +269,29 @@ const Path = z
 const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12, as /schema serves the API\'s.')
 const SubjectKind = z.string().regex(/^(card|floor|board|conversation|item\.[a-z][a-z0-9.-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
+const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
+const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>')
+const Scope = z.enum(['system', 'project'])
+const Deprecated = z.strictObject({
+  since: sinceCalls(Version.describe("The provider's version it was deprecated in.")),
+  use: sinceCalls(z.string().optional().describe('What to use instead, qualified: chime/ring.')),
+  why: sinceCalls(z.string().optional()),
+})
+const Verb = z.strictObject({
+  input: sinceCalls(Schema.describe("The input's JSON Schema: a project-scoped verb's requires `project`, a string.")),
+  reply: sinceCalls(Schema),
+  scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its input's `project`.")),
+  description: sinceCalls(z.string().optional()),
+  words: sinceCalls(Words.optional()),
+  deprecated: sinceCalls(Deprecated.optional()),
+})
+const Read = z.strictObject({
+  query: sinceCalls(Schema.optional().describe("The query's JSON Schema; every value arrives as a string.")),
+  reply: sinceCalls(Schema),
+  scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its `<project>` param, or its query's `project`.")),
+  description: sinceCalls(z.string().optional()),
+  deprecated: sinceCalls(Deprecated.optional()),
+})
 const View = z.strictObject({ module: since(Path), export: since(z.string().optional()), subject: since(SubjectKind), words: since(Words.optional()) })
 
 export const Manifest = z
@@ -164,6 +313,8 @@ export const Manifest = z
     wants: since(z.record(Name, Version).optional().describe('Optional dependencies: it starts without one that is missing.')),
     settings: since(Schema.optional().describe('What the config may set, as JSON Schema; no settings are taken without it.')),
     server: since(Path.optional().describe("The module whose default export is `start`; none, no code.")),
+    verbs: sinceCalls(z.record(Word, Verb).optional().describe('Its verbs by name: POST /<capability>/<name>, ctx.call, tower x.')),
+    reads: sinceCalls(z.record(ReadPath, Read).optional().describe('Its reads by path: GET /<capability>/<path>, ctx.read.')),
     views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
     regions: since(
       z

@@ -6,7 +6,7 @@
  */
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { manifestOf, parseSettings, resolve, settingsSchema, type Found, type Resolved } from './bridge/extensions.ts'
+import { manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
 import { probesOf } from './bridge/probes.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
@@ -130,7 +130,7 @@ const settingsProblems = (at: string, found: Found | undefined, settings: unknow
   const manifest = found && manifestOf(found)
   if (!manifest) return []
   if (!manifest.settings) return [fail(at, `${manifest.id} takes no settings`)]
-  const schema = settingsSchema(manifest.settings)
+  const schema = zodOf(manifest.settings)
   if (typeof schema === 'string') return []
   const parsed = parseSettings(schema, settings, at)
   return parsed.ok ? [] : parsed.problems.map((p) => fail(p.path, p.message))

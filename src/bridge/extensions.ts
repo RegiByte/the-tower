@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, versionOf, type ExtensionView, type ExtensionProblem } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, versionOf, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 
 /** An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there is one. */
@@ -14,6 +14,12 @@ export type Found = { id: string; bundled: boolean; dir?: string; text?: string 
 
 /** A problem as loading finds it: the registry stamps when and how many times. */
 export type LoadProblem = Omit<ExtensionProblem, 'at' | 'count'>
+
+/** A verb of a manifest, its input and reply schemas as zod. */
+export type CompiledVerb = { spec: NonNullable<Manifest['verbs']>[string]; input: z.ZodType; reply: z.ZodType }
+
+/** A read of a manifest, its query and reply schemas as zod. */
+export type CompiledRead = { spec: NonNullable<Manifest['reads']>[string]; query?: z.ZodType; reply: z.ZodType }
 
 /** An extension that may start. `requires` and `wants`: the capabilities it starts after, the core aside. `off`: its floors off. */
 export type Accepted = {
@@ -28,6 +34,9 @@ export type Accepted = {
   schema?: z.ZodType
   requires: string[]
   wants: string[]
+  /** Its verbs and reads by name, as the manifest declares them. */
+  verbs: Map<string, CompiledVerb>
+  reads: Map<string, CompiledRead>
   /** Its capability and every one it requires, directly or not: it is off on a floor where any of them is. */
   chain: string[]
   off: string[]
@@ -63,8 +72,8 @@ const issuesOf = (issues: z.core.$ZodIssue[]): { path: string; message: string }
         : [{ path: issue.path.join('.'), message: issue.message }],
   )
 
-/** A manifest's settings schema as zod, or why it is none. */
-export const settingsSchema = (schema: Record<string, unknown>): z.ZodType | string => {
+/** A JSON Schema of a manifest as zod, or why it is none. */
+export const zodOf = (schema: Record<string, unknown>): z.ZodType | string => {
   try {
     return z.fromJSONSchema(schema as Parameters<typeof z.fromJSONSchema>[0])
   } catch (err) {
@@ -122,7 +131,58 @@ const underDeclared = (raw: unknown, required: string): LoadProblem[] =>
 /** The keys a manifest holds that the tower validates and doesn't read yet. */
 const NOT_YET = ['views', 'regions'] as const
 
-type Read = { found: Found; claims?: string; manifest?: Manifest; problems: LoadProblem[]; settings?: unknown; schema?: z.ZodType }
+type Read = {
+  found: Found
+  claims?: string
+  manifest?: Manifest
+  problems: LoadProblem[]
+  settings?: unknown
+  schema?: z.ZodType
+  verbs?: Map<string, CompiledVerb>
+  reads?: Map<string, CompiledRead>
+}
+
+/** Whether a JSON Schema takes an object that must hold `project`, a string. */
+const requiresProject = (schema: Record<string, unknown> | undefined): boolean => {
+  const properties = schema?.properties as Record<string, { type?: unknown }> | undefined
+  return schema?.type === 'object' && properties?.project?.type === 'string' && Array.isArray(schema.required) && schema.required.includes('project')
+}
+
+/**
+ * A manifest's verbs and reads with their schemas as zod, or each reason they can't be: a schema the tower can't read,
+ * a project-scoped one that names no floor, a verb named `read` (which `ctx.deps.<cap>.read` holds), and a name both
+ * a verb and a read, since a provider's names share one namespace.
+ */
+const compileCalls = (manifest: Manifest): { verbs: Map<string, CompiledVerb>; reads: Map<string, CompiledRead>; problems: LoadProblem[] } => {
+  const problems: LoadProblem[] = []
+  const compiled = (schema: Record<string, unknown>, at: string): z.ZodType | undefined => {
+    const zod = zodOf(schema)
+    if (typeof zod !== 'string') return zod
+    problems.push(error('invalid', `no JSON Schema the tower reads: ${zod}`, at))
+    return undefined
+  }
+  const verbs = new Map<string, CompiledVerb>()
+  for (const [name, spec] of Object.entries(manifest.verbs ?? {})) {
+    const at = `verbs.${name}`
+    if (spec.scope === 'project' && !requiresProject(spec.input)) problems.push(error('invalid', "a project-scoped verb's input requires project, a string: the floor it acts on", `${at}.input`))
+    if (name === 'read') problems.push(error('invalid', 'no verb is named read: ctx.deps.<capability>.read holds its reads', at))
+    if (Object.hasOwn(manifest.reads ?? {}, name)) problems.push(error('invalid', `${name} is a verb and a read: a provider's verbs and reads share one namespace`, at))
+    const input = compiled(spec.input, `${at}.input`)
+    const reply = compiled(spec.reply, `${at}.reply`)
+    if (input && reply) verbs.set(name, { spec, input, reply })
+  }
+  const reads = new Map<string, CompiledRead>()
+  for (const [name, spec] of Object.entries(manifest.reads ?? {})) {
+    const at = `reads.${name}`
+    if (spec.scope === 'project' && !paramsOf(name).includes('project') && !requiresProject(spec.query)) {
+      problems.push(error('invalid', 'a project-scoped read names its floor: a <project> param, or project, a string, required in its query', at))
+    }
+    const query = spec.query && compiled(spec.query, `${at}.query`)
+    const reply = compiled(spec.reply, `${at}.reply`)
+    if (reply && (!spec.query || query)) reads.set(name, { spec, ...(query && { query }), reply })
+  }
+  return { verbs, reads, problems }
+}
 
 /** One extension's config entry, manifest and settings, read in that order; the first that refuses it ends the read. */
 const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
@@ -147,16 +207,18 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   const manifest = parsed.data
   if (!found.bundled && (BUNDLED as readonly string[]).includes(manifest.id)) return { found, claims, manifest, problems: [error('invalid', `${manifest.id} is a bundled extension's id: give yours its own, with provides: "${manifest.id}" to replace it`, 'id')] }
   if (manifest.id !== found.id) return { found, claims, manifest, problems: [error('invalid', `id is "${manifest.id}", but ${found.bundled ? 'its folder' : 'the config'} names it "${found.id}": a copied folder keeps the id it was written with`, 'id')] }
-  const schema = manifest.settings && settingsSchema(manifest.settings)
+  const schema = manifest.settings && zodOf(manifest.settings)
   if (typeof schema === 'string') return { found, claims, manifest, problems: [error('invalid', `settings is no JSON Schema the tower reads: ${schema}`, 'settings')] }
   if (!schema && entry?.settings !== undefined) return { found, claims, manifest, problems: [error('invalid', `${at}.settings: ${found.id} takes no settings`)] }
   const settings = schema && parseSettings(schema, entry?.settings ?? {}, `${at}.settings`)
   if (settings && !settings.ok) return { found, claims, manifest, problems: settings.problems.map((p) => error('invalid', `${p.path}: ${p.message}`)) }
+  const calls = compileCalls(manifest)
+  if (calls.problems.length) return { found, claims, manifest, problems: calls.problems }
   const warnings = [
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads }
 }
 
 /** The capabilities `manifest` requires, the core aside. */
@@ -301,6 +363,14 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
       const manifest = r.manifest!
       const provides = capabilityOf(manifest)
       const chain = chainOf(provides, (cap) => requiresByCap.get(cap)!)
+      const wants = Object.entries(manifest.wants ?? {}).flatMap(([cap, version]) => (inRange(cap, version) && running(cap) ? [cap] : []))
+      const without = Object.entries(manifest.wants ?? {})
+        .filter(([cap]) => !wants.includes(cap))
+        .map(([cap, version]): LoadProblem => {
+          const provider = providers.get(cap)
+          const why = !provider ? 'which no extension provides' : !meets(provider.manifest!.version, version) ? `and ${provider.found.id} provides ${provider.manifest!.version}` : `and ${provider.found.id} doesn't run`
+          return { lane: 'load', level: 'info', code: 'unmet', message: `wants ${cap} ${version}, ${why}: it runs without it, ctx.deps.${cap} undefined`, path: `wants.${cap}` }
+        })
       return [
         r.found.id,
         {
@@ -313,10 +383,12 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           settings: r.settings,
           ...(r.schema && { schema: r.schema }),
           requires: requiredOf(manifest),
-          wants: Object.entries(manifest.wants ?? {}).flatMap(([cap, version]) => (inRange(cap, version) && running(cap) ? [cap] : [])),
+          wants,
+          verbs: r.verbs!,
+          reads: r.reads!,
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
-          problems: r.problems,
+          problems: [...r.problems, ...without],
         },
       ]
     }),
@@ -340,6 +412,25 @@ const PROBLEMS_SHOWN = 20
 const haltProblems = (outcome: Outcome | undefined): ExtensionProblem[] =>
   outcome?.halt ? [{ lane: 'halt', level: 'error', code: 'failed', message: outcome.halt, at: outcome.at, count: 1 }] : []
 
+/** A manifest's verbs as the board shows them, by qualified name. */
+const verbsOf = (manifest: Manifest | undefined): ExtensionView['verbs'] =>
+  Object.entries(manifest?.verbs ?? {}).map(([name, v]) => ({
+    name: `${capabilityOf(manifest!)}/${name}`,
+    scope: v.scope,
+    ...(v.description !== undefined && { description: v.description }),
+    ...(v.words && { words: v.words }),
+    ...(v.deprecated && { deprecated: v.deprecated }),
+  }))
+
+/**
+ * Problems of the calls an extension answered or made, newest first, kept by the tower as they happen: one already
+ * listed (the same lane, code, path and message) counts once more, dated by its latest.
+ */
+export const withProblem = (problems: ExtensionProblem[], problem: Omit<ExtensionProblem, 'count'>): ExtensionProblem[] => {
+  const same = problems.find((p) => p.lane === problem.lane && p.code === problem.code && p.path === problem.path && p.message === problem.message)
+  return [{ ...problem, count: (same?.count ?? 0) + 1 }, ...problems.filter((p) => p !== same)].slice(0, PROBLEMS_SHOWN)
+}
+
 /** Bundled first, then by id. */
 const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - Number(a.bundled) || a.id.localeCompare(b.id)
 
@@ -347,7 +438,7 @@ const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - N
  * Every extension as it stands: resolved, then started (`outcomes`, by id), each accepted one `skipped` when one it
  * requires isn't running. `now`: when its load problems are dated.
  */
-export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now: number): Registry => {
+export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now: number, calls: Map<string, ExtensionProblem[]> = new Map()): Registry => {
   const stamp = (problems: LoadProblem[], at: number): ExtensionProblem[] => problems.map((p) => ({ ...p, at, count: 1 }))
   const states = new Map<string, ExtensionView['state']>()
   const stateOfCap = (cap: string) => states.get([...resolved.accepted.values()].find((a) => a.provides === cap)!.id)
@@ -373,7 +464,8 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       bundled: a.bundled,
       state,
       ...(a.off.length && { off: a.off }),
-      problems: [...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
+      problems: [...(calls.get(id) ?? []), ...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
+      verbs: verbsOf(a.manifest),
     }
   })
   const held = [...resolved.refused.values()].map(
@@ -385,6 +477,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       bundled: r.bundled,
       state: r.state,
       problems: [...haltProblems(outcomes.get(r.id)), ...stamp(r.problems, now)].slice(0, PROBLEMS_SHOWN),
+      verbs: verbsOf(r.manifest),
     }),
   )
   return { extensions: [...started, ...held].sort(shownOrder) }

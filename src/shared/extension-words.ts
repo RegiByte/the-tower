@@ -9,6 +9,8 @@ export const EXTENSION_STATE_NAME: Record<ExtensionView['state'], string> = { st
 /** An extension's state coloured by how much it asks of you: one that should run and doesn't is broken. */
 export const EXTENSION_ATTENTION: Record<ExtensionView['state'], Attention> = { started: 'quiet', off: 'quiet', refused: 'broken', failed: 'broken', skipped: 'working' }
 
+const PROBLEM_LEVEL_NAME: Record<ExtensionProblem['level'], string> = { error: 'error', warn: 'warning', info: 'note' }
+
 /** What the user does about each problem. */
 export const PROBLEM_FIX: Record<ProblemCode, string> = {
   invalid: 'fix what it names, in its extension.json or its config entry; tower config check shows the config side',
@@ -22,6 +24,9 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   failed: "the tower's log has the error: fix it, then tower down tower and tower up tower",
   'under-declared': 'raise requires.tower to the newest key it uses',
   'not-yet': 'nothing: a later tower reads it',
+  threw: "the tower's log has the stack: fix the handler",
+  shape: 'make the handler answer what its reply schema says, or fix the schema',
+  deprecated: 'call what it names to use instead',
 }
 
 /** An extension in a short line: `Pulse 1.0 · running`, its errors counted. */
@@ -38,5 +43,5 @@ export const extensionTitle = (e: ExtensionView): string =>
   [
     `${e.id}${e.bundled ? ' (bundled)' : ''}, provides ${e.provides}: ${EXTENSION_STATE_NAME[e.state]}`,
     ...(e.off?.length ? [`off on ${e.off.join(', ')}`] : []),
-    ...e.problems.map((p) => `${p.level === 'error' ? 'error' : 'warning'}: ${problemLine(p)}`),
+    ...e.problems.map((p) => `${PROBLEM_LEVEL_NAME[p.level]}: ${problemLine(p)}`),
   ].join('\n')

@@ -178,7 +178,7 @@ const extensionVerdicts = async (tower: Daemon, answering: boolean, all: boolean
       ? { level: 'ok', what: `extension ${e.id}: ${extensionLine(e)}` }
       : { level: 'warn', what: `extension ${e.id}: ${extensionLine(e)}`, fix: 'the lines below say why, and what to do' },
     ...e.problems
-      .filter((p) => all || p.level === 'error')
+      .filter((p) => (all ? p.level !== 'info' : p.level === 'error'))
       .map((p): Verdict => ({ level: 'warn', what: `extension ${e.id}: ${problemLine(p)}`, fix: PROBLEM_FIX[p.code] })),
   ])
 }
