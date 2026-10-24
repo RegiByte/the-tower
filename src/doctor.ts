@@ -9,7 +9,11 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { daemons, startedPid, type Daemon, type Holder } from './machine.ts'
 import type { ProbeView } from './bridge/probes.ts'
-import type { ApiError } from './shared/api.ts'
+import { resolve, type Accepted } from './bridge/extensions.ts'
+import { discover } from './extensions.ts'
+import { runProcess } from './run.ts'
+import { API_VERSION, isApiError, type ApiError } from './shared/api.ts'
+import type { Check, RunResult } from './shared/extensions.ts'
 import { extensionLine, probeLine, PROBLEM_FIX, problemLine, span } from './shared/cards.ts'
 import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
@@ -183,6 +187,54 @@ const extensionVerdicts = async (tower: Daemon, answering: boolean, all: boolean
   ])
 }
 
+/** How long an extension's `run` check may take. */
+const CHECK_MS = 10_000
+
+/** Why a check's command failed, in a line: `exit 2: no token`, `timed out after 10 s`. */
+const ranWhy = (ran: RunResult): string => {
+  const why = ran.timedOut ? `timed out after ${CHECK_MS / 1000} s` : ran.exit === null ? `ended by ${ran.signal}` : `exit ${ran.exit}`
+  const said = ran.stderr.trim().split('\n').at(-1) || ran.stdout.trim().split('\n').at(-1)
+  return said ? `${why}: ${said}` : why
+}
+
+/** Why a check failed, or nothing when it passed: its command exits 0, or its read answers. */
+const checkFailure = async (a: Accepted, check: Check, tower: Daemon): Promise<string | undefined> => {
+  if (check.run) {
+    try {
+      const ran = await runProcess(check.run, { cwd: a.dir, timeoutMs: CHECK_MS })
+      return ran.exit === 0 ? undefined : ranWhy(ran)
+    } catch (err) {
+      return `could not start: ${(err as Error).message}`
+    }
+  }
+  const res = await fetch(`${tower.where}/${a.provides}/${check.read}`)
+  if (res.ok) return undefined
+  const answer = await res.json()
+  return isApiError(answer) ? `${answer.code}: ${answer.message}` : `the tower answers ${res.status}`
+}
+
+/**
+ * The checks the extensions declare, each a line: those of every extension the config resolves to, read from the
+ * folders as they are now. A `run` check works without the tower; a `read` check while the tower is down says so, and
+ * fails nothing.
+ */
+const checkVerdicts = async (config: Config, tower: Daemon, answering: boolean): Promise<Verdict[]> => {
+  const resolved = resolve(discover(config), config, API_VERSION)
+  const checks = resolved.order.flatMap((id) => {
+    const a = resolved.accepted.get(id)!
+    return Object.entries(a.manifest.checks ?? {}).map(([name, check]) => ({ a, name, check }))
+  })
+  return Promise.all(
+    checks.map(async ({ a, name, check }): Promise<Verdict> => {
+      const what = `check ${a.provides}/${name}: ${check.words.label}`
+      if (check.read && !answering) return { level: 'warn', what: `${what}: tower down`, fix: 'tower up: a read check asks the running tower' }
+      const failure = await checkFailure(a, check, tower)
+      if (failure === undefined) return { level: 'ok', what }
+      return { level: 'warn', what: `${what}: ${failure}`, ...(check.fix && { fix: check.fix }) }
+    }),
+  )
+}
+
 const readable = (paths: SystemPaths): Config | Error => {
   try {
     return readConfig(paths.config)
@@ -211,7 +263,8 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
 
 /**
  * Whether each daemon of this system runs, and whether something else holds its place: the tower's place is the config's
- * port. Then what the tower runs: the quota probe and the extensions, their warnings too with `all`.
+ * port. Then what the tower runs: the quota probe and the extensions, their warnings too with `all`, and the checks the
+ * extensions declare.
  */
 export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => {
   const config = readable(paths)
@@ -231,7 +284,12 @@ export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict
     }),
   )
   const tower = every.findIndex((d) => d.name === 'tower')
-  return [...verdicts.map((v) => v.verdict), await quotaProbe(every[tower], verdicts[tower].ours), ...(await extensionVerdicts(every[tower], verdicts[tower].ours, all))]
+  return [
+    ...verdicts.map((v) => v.verdict),
+    await quotaProbe(every[tower], verdicts[tower].ours),
+    ...(await extensionVerdicts(every[tower], verdicts[tower].ours, all)),
+    ...(await checkVerdicts(config, every[tower], verdicts[tower].ours)),
+  ]
 }
 
 export const doctor = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => [...(await readiness(paths)), ...(await running(paths, all))]

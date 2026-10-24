@@ -595,6 +595,8 @@ const Check = z
 export type Door = string | { none: string }
 export type Doors = { list: Door; read: Door; create: Door; edit: Door; delete: Door }
 export type Collection = z.infer<typeof Collection>
+/** A line `tower doctor` prints: a command run from the extension's folder, or one of its reads. */
+export type Check = z.infer<typeof Check>
 
 const SubjectDecl = z.strictObject({
   description: folds(z.string().optional()),
