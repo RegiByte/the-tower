@@ -53,8 +53,9 @@ and versioned without running anything, and a runtime where an extension's failu
 - **Reconciled on config change.** [`runExtensions`](ref:hub/src/tower/extensions.ts#runExtensions) resolves again
   when the config changes and hands braided's `reconcileSystem` the next resources, each memoized by a
   [hash](ref:hub/src/tower/extensions.ts#hashOf) of its id, manifest, settings, files and dependencies: what the edit
-  leaves unchanged keeps running, a changed one restarts with its dependents. Code edits are picked up by the next
-  restart of that extension.
+  leaves unchanged keeps running, a changed one restarts with its dependents, and the board is published again. A
+  restart imports the server module afresh, and only it: the modules it imports stay as Node first loaded them, so an
+  edit to one of those needs the tower restarted.
 - **Off by capability, per floor, derived.** `extensions.<id>.off` turns one off everywhere;
   `projects.<p>.capabilities.<cap>.off` turns a capability off on a floor, and with it every extension whose chain of
   requires holds it ([`offOn`](ref:hub/src/bridge/extensions.ts#offOn)). Per-floor off is a filter, never a restart,

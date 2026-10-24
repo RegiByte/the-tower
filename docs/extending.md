@@ -351,7 +351,8 @@ where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `po
 An extension is a folder holding `extension.json`, its manifest, and optionally the server module it names, whose
 default export is `start(ctx)`. The config adds one by its absolute folder ([config.md](config.md#extensions)); the
 tower reads every manifest before any code runs, refuses what can't load, and starts the rest beside its own pieces,
-restarting one when its config entry changes. `tower extensions` and `GET /extensions` say how each stands.
+restarting one when its config entry changes. A restart imports the server module afresh, but not the modules it
+imports: after editing one of those, restart the tower (`tower down tower`, then `tower up tower`). `tower extensions` and `GET /extensions` say how each stands.
 
 ```json
 {
