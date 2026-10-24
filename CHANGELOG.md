@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.57.0
+
+The new-worker form names Claude's real defaults, and the shared modules split by concern. No host restart, no
+config change, the renderer API at 1.79 (additive). Restart the tower (`tower down tower && tower up tower`), then
+reload the page; rebuild Tower 3D (`npm run tower3d`) if you use it.
+
+- The new-worker form shows the model and effort Claude would start on, as `opus 5.5 (default)` and `medium
+  (default)`, where it said only "Claude's default". The tower reads them from what workers actually ran on: the latest
+  turn of a worker launched without a model, and that model's latest effort (Claude keeps effort per model). A
+  `/model` pick, which Claude saves for every new session, shows from that session's next turn. One value for the
+  machine: a project whose own `.claude/settings.json` pins a model still shows the machine's. Before any worker has
+  run, the form reads as before. On the board as `claudeDefaults`.
+- `keepingViewedFileTop` (`/panels.js`): the Viewed box's scroll, its own function. `keepingFileTop`'s `viewed`
+  argument still works.
+- `cards.ts` and `panels.ts` are split into a module per concern; `/cards.js` and `/panels.js` serve exactly what
+  they did.
+
 ## v1.56.1
 
 Changes with the file tree. No host restart, no config change, the renderer API unchanged at 1.77. Reload the page;
