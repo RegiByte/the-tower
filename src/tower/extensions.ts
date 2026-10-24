@@ -28,6 +28,7 @@ import {
   type FoldCtx,
   type Manifest,
   type ProblemLane,
+  type Slot,
   type Start,
   type Started,
   type StartCtx,
@@ -70,6 +71,8 @@ export type Instance = {
   link(target: string, input: unknown, next: (input: unknown) => Promise<unknown>, caller: Caller): unknown
   /** Its answer to `hook`, qualified. */
   answer(hook: string, payload: unknown, caller: Caller): unknown
+  /** Fires a slot of its manifest's: the handler's calls are made as `caller`. */
+  slot(name: string, slot: Slot, caller: Caller): Promise<void>
   halt(): Promise<void>
 }
 
@@ -181,6 +184,12 @@ export const extensions = defineResource({
         const view = shown.extensions.find((e) => e.provides === cap)
         return view ? { t: 'down', why: EXTENSION_STATE_NAME[view.state] } : { t: 'none' }
       },
+      /** Every extension that runs now, and isn't halting. */
+      running: (): { a: Accepted; instance: Instance }[] =>
+        [...held.resolved.accepted.values()].flatMap((a) => {
+          const instance = held.system[resourceOf(a.provides)] as Instance | undefined
+          return instance && !instance.halting && !moving.has(a.provides) ? [{ a, instance }] : []
+        }),
       /** A problem a call found in extension `id`. */
       problem: (id: string, problem: Omit<ExtensionProblem, 'count'>) => {
         calls = new Map(calls).set(id, withProblem(calls.get(id) ?? [], problem))
@@ -362,6 +371,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
       link: (target, input, next, caller) => started.around![target](input, next, handlerCtx(caller, target)),
       answer: (hook, payload, caller) => started.answers![hook](payload, handlerCtx(caller, hook)),
+      slot: async (name, slot, caller) => started.slots![name](slot, { ...ctx, caller, ...callsOf(caller) }),
       halt: async () => {
         instance.halting = true
         try {
