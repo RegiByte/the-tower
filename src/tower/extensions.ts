@@ -202,8 +202,11 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     controller.abort()
   }
   const log = (message: string) => console.log(`${a.id}: ${message}`)
-  /** The manifests of what it requires, and of what it wants that runs: what `ctx.deps` is made from. */
-  const providers = new Map([...a.requires, ...a.wants].map((cap) => [cap, (deps[resourceOf(cap)] as Instance).manifest]))
+  /** The manifests of what it requires, and of what it wants that started (one that failed is no dependency): what `ctx.deps` is made from. */
+  const providers = new Map([...a.requires, ...a.wants].flatMap((cap) => {
+    const provider = deps[resourceOf(cap)] as Instance | undefined
+    return provider ? [[cap, provider.manifest] as const] : []
+  }))
 
   /** A qualified name it may call or read: the core's, its own, or one of a capability it declares and that runs. */
   const reachable = (name: string): { cap: string; name: string } | ApiError => {

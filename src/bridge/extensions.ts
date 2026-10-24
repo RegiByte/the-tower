@@ -448,7 +448,9 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
     const down = a.requires.filter((cap) => stateOfCap(cap) !== 'started')
     const state = down.length ? 'skipped' : outcome.error ? 'failed' : 'started'
     states.set(id, state)
+    const without = state === 'started' ? a.wants.filter((cap) => stateOfCap(cap) !== 'started') : []
     const startProblems: ExtensionProblem[] = [
+      ...without.map((cap) => ({ lane: 'start', level: 'info', code: 'unmet', message: `wants ${cap}, which didn't start: it runs without it, ctx.deps.${cap} undefined`, at: outcome.at, count: 1, path: `wants.${cap}` }) as const),
       ...haltProblems(outcome),
       ...(state === 'skipped'
         ? down.map((cap) => ({ lane: 'start', level: 'error', code: 'skipped', message: `${cap} is not running: its problems first`, at: outcome.at, count: 1 }) as const)
