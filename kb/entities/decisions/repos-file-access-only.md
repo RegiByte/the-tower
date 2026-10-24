@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-20",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/model.ts#sessionDirs"]
 }
 ---

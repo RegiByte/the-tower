@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/shared/terminal.ts#reportWheel", "hub/src/shared/term-view.ts", "hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/bridge/screen.ts#lastFrame"]
 }
 ---
