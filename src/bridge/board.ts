@@ -8,6 +8,7 @@ import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
 import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
+import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
 import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from './policies.ts'
 import { POLICIES } from '../shared/policies.ts'
@@ -319,6 +320,8 @@ export type Board = {
   hostUp: boolean
   /** The running host speaks another protocol than its clients: it predates their code, until it is restarted. */
   hostOutdated: boolean
+  /** The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them. */
+  claudeDefaults: ClaudeDefaults
   /** The releases outside the tested range that live workers run, each once. */
   claudeUntested: string[]
   shells: (Shell & { activity: string })[]
@@ -777,6 +780,7 @@ export const board = (view: SystemView): Board => {
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
+    claudeDefaults: claudeDefaults(sessions),
     claudeUntested: [...new Set(cards.filter((c) => c.live && c.claudeUntested).map((c) => c.claude!))],
     shells: (shells ?? []).map((shell) => ({ ...shell, activity: shellActivity(shell) })),
     termsUp: shells !== undefined,

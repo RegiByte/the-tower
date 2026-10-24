@@ -67,6 +67,8 @@ export type Facts = {
   /** The model and effort of the main loop's latest step: what Claude used, whatever was asked for. Haiku has no effort. */
   model?: string
   effort?: string
+  /** When the main loop last stepped (epoch ms): when `model` and `effort` were last seen. */
+  steppedAt?: number
   /** The release of Claude Code the session runs (`claude --version`), as the mod reports it on start. */
   claude?: string
   /** Claude's conversations this session held, in order: `/clear` moves it to a new one. */
@@ -325,7 +327,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
         const step = usage ? tokensOf(usage) : NO_TOKENS
         return { ...counted, subagentRuns: runOf(facts.subagentRuns, hook.agentId, (run) => ({ ...run, tokens: addTokens(run.tokens, step), endedAt: undefined, ended: undefined })) }
       }
-      const stepped = { ...counted, model: String(hook.model), effort: hook.effort as string | undefined }
+      const stepped = { ...counted, model: String(hook.model), effort: hook.effort as string | undefined, steppedAt: at }
       return answer?.trim() ? { ...stepped, says: [...facts.says, clip(answer.trim())].slice(-SAYS_KEPT) } : stepped
     }
     case 'turn.complete':

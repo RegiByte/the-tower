@@ -4,14 +4,16 @@
   "name": "Data model",
   "summary": "The shared types and pure builders: projects and config, the session header and log events, the host and terms protocols, and spawn/resume requests.",
   "in": "bridge",
-  "reviewed": "2026-10-20",
-  "refs": ["hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/launch.ts#launchFlags", "hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
 }
 ---
 `src/shared`. Every client builds host requests with [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest)
 and [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest): the Claude flags a session starts with
 (model, effort, the first prompt after `--`, `--resume`, `--name`) are composed here, never in the host, and
-the session id is minted here ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId))
+the session id is minted here ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId)). The launch's model and
+effort come last, after the config's `argv`, so [`launchFlags`](ref:hub/src/shared/launch.ts#launchFlags) reads back
+from a header's argv what the launch asked for, never what the config passes every session
 ([[host-owns-ptys]]). New sessions spawn at 120×40; the first viewer resizes them.
 
 [`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes) cuts a prompt into bracketed pastes small enough

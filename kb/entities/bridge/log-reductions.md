@@ -4,8 +4,8 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, policies and probes, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/bridge/defaults.ts#claudeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -29,7 +29,8 @@
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one place
   a bad event is caught: a step that throws leaves the facts as they were with `broken` and folds nothing after it
   ([[broken-logs]]). What it folds is the `Facts` type in `src/bridge/facts.ts`, field by field: state, size, context,
-  cost, rate limits, model and release, the current tool and what Claude said this turn (each clipped to a line), the
+  cost, rate limits, model and release (the main loop's latest step's model and effort, and when it
+  stepped), the current tool and what Claude said this turn (each clipped to a line), the
   [[conversation]]s, what the worker showed and kept, its pages, the timed facts [`stats`](ref:hub/src/bridge/stats.ts#stats)
   reduces over a window ([[stats]]), and the subagents it started, each followed by its `agentId` through its loop
   until its turn ends. The tower's own facts fold here too: `tower.prompt` makes a worker's typed prompt `peer`
@@ -63,7 +64,12 @@
   Code's registrations and the same `ps` output ([[agent-directory]]).
 - [`board`](ref:hub/src/bridge/board.ts#board): the whole system as one view for renderers: projects as floors of
   cards, who waits on you as waits ([[waiting-on-you]]), the verbs each card, conversation and floor offers
-  ([[board-verbs]]), each floor's review threads, gallery and hiring limits, the host's and Claude's versions, the
+  ([[board-verbs]]), each floor's review threads, gallery and hiring limits, the model and effort Claude starts a
+  new worker on when asked for neither ([`claudeDefaults`](ref:hub/src/bridge/defaults.ts#claudeDefaults): each the
+  latest main-loop step's among every session, archived included, whose launch flags did not ask for it, so a `/model`
+  pick Claude saves as the user's default shows from the next step; a resume keeps its transcript's model and tells
+  nothing, nor does a Claude that reports no effort. One value for the machine: a project whose own settings pin a
+  model shows the machine's default, Claude's precedence is not modelled), the host's and Claude's versions, the
   rate limits, `today` ([[stats]]) and shells. Its shape, field by field with their docs, is the board schema
   (`src/shared/board.schema.json`, `npm run schema:board`, served at `GET /schema`). The rate limits are the latest
   reading of any session's turn or any probe's read ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)),

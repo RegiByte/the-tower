@@ -195,6 +195,10 @@
           "type": "boolean",
           "description": "The running host speaks another protocol than its clients: it predates their code, until it is restarted."
         },
+        "claudeDefaults": {
+          "$ref": "#/definitions/ClaudeDefaults",
+          "description": "The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them."
+        },
         "claudeUntested": {
           "type": "array",
           "items": {
@@ -267,6 +271,7 @@
         "today",
         "hostUp",
         "hostOutdated",
+        "claudeDefaults",
         "claudeUntested",
         "shells",
         "termsUp"
@@ -4208,6 +4213,19 @@
       ],
       "additionalProperties": false,
       "description": "Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset (all of it in the reset's last day), and `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset."
+    },
+    "ClaudeDefaults": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "effort": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "What Claude runs a new worker on when the launch asks for no model or effort, as observed: settings files, env, plan and `/model` decide it. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
     },
     "BoardError": {
       "type": "object",

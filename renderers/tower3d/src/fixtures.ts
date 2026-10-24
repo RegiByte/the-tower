@@ -232,6 +232,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
     hostOutdated: false,
+    claudeDefaults: {},
     claudeUntested: [],
     shells: extra.shells ?? [],
     termsUp: true,

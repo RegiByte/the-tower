@@ -80,6 +80,17 @@ const launchArgs = ({ model, effort, prompt }: Launch, user: string | undefined,
 /** The prompt a session was started with, read back from its argv. */
 export const launchPrompt = (argv: string[]): string | undefined => (argv.at(-2) === '--' ? argv.at(-1) : undefined)
 
+/**
+ * The model and effort a session's launch asked for, read back from its argv: `launchArgs` puts them last, before the
+ * prompt. The config's `argv` comes first, so its flags are never read as the launch's. A resume asks for neither.
+ */
+export const launchFlags = (argv: string[]): Pick<Launch, 'model' | 'effort'> => {
+  const flags = launchPrompt(argv) === undefined ? argv : argv.slice(0, -2)
+  const effort = flags.at(-2) === '--effort' ? flags.at(-1) : undefined
+  const rest = effort === undefined ? flags : flags.slice(0, -2)
+  return { model: rest.at(-2) === '--model' ? rest.at(-1) : undefined, effort }
+}
+
 /** What a worker the host cut off mid-turn is told as it resumes (a card's `carry-on`). */
 export const CARRY_ON = 'You were cut off mid-turn: your session stopped before your turn ended. Carry on where you left off.'
 
