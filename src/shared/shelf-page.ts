@@ -55,6 +55,27 @@ export type Reads = {
   'collection/<project>/<collection>/<item>': string
   /** A file a worker showed (`card.shown`, its absolute path), anything beside or below an html one, or an image beside or below a markdown one. */
   'shown/<id>/<path>': string
+  /** The extensions the tower runs (none yet), and its resources as braided starts them: the order, the layers by depth, who depends on whom. */
+  extensions: { extensions: []; topology: Topology }
+}
+
+/** A resource the tower runs: what it depends on, what depends on it, and its depth (0 when it depends on nothing). */
+export type TopologyNode = { id: string; dependencies: string[]; dependents: string[]; depth: number }
+
+/** The tower's resources as braided orders them: started in `startupOrder`, halted in `shutdownOrder`; `mermaid` draws the graph. */
+export type Topology = {
+  layers: { depth: number; resources: TopologyNode[] }[]
+  /** Each resource's dependencies. */
+  graph: Record<string, string[]>
+  /** Each resource's dependents. */
+  dependents: Record<string, string[]>
+  depths: Record<string, number>
+  totalResources: number
+  maxDepth: number
+  startupOrder: string[]
+  shutdownOrder: string[]
+  /** The graph as a Mermaid flowchart, an edge from each dependency to its dependent. */
+  mermaid: string
 }
 
 /**

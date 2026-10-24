@@ -8,6 +8,8 @@
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
  *   GET  /schema        every verb's input and reply, and the error, as JSON Schema (src/shared/api.ts)
+ *   GET  /extensions    {extensions, topology}: the extensions running (none yet), and the tower's resources as braided orders them,
+ *                       with their graph as Mermaid text (src/tower/spine.ts)
  *   GET  /screen/<id>   SSE: a snapshot of the session's screen, then its output as the host logs it
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
@@ -137,8 +139,8 @@ type Deps = {
   'core:dispatch': StartedResource<typeof dispatch>
 }
 
-/** The server on the config's port as it is at start: it serves there until it is halted. */
-export const httpOf = () =>
+/** The server on the config's port as it is at start: it serves there until it is halted. `extensions` answers `GET /extensions`. */
+export const httpOf = (extensions: () => Reads['extensions']) =>
   defineResource({
     dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch'],
     start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, streamBoard }, 'core:dispatch': dispatch }: Deps) => {
@@ -688,7 +690,8 @@ export const httpOf = () =>
         streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
         plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
         apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
-              apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
+        apiRead('extensions', { path: /^\/extensions$/, serve: ({ res }) => json(res, extensions()) }),
+        apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
         apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
         apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
         apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),

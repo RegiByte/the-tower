@@ -10,10 +10,11 @@
  *   core:slots      the policies' runner, which acts through the verbs (src/policies.ts)
  *   core:http       the renderer API on the config's port (http.ts)
  */
-import { defineResource, type StartedResource } from 'braided'
+import { buildTopology, defineResource, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
 import { runPolicies } from '../policies.ts'
 import { runProbes } from '../probes.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
+import type { Reads } from '../shared/shelf-page.ts'
 import { readConfig, watchSystem } from '../system.ts'
 import type { Answer } from './answers.ts'
 import { dispatch } from './dispatch.ts'
@@ -63,6 +64,13 @@ export const slots = defineResource({
   halt: ({ stop }) => stop(),
 })
 
+/** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
+const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
+  const nodes = resources as Record<string, Resource>
+  const topology = buildTopology(nodes, topologicalSort(nodes))
+  return { ...topology, mermaid: toMermaid(topology) }
+}
+
 /** The tower's system: the core's resources by name. */
 export const tower = () => {
   const resources = {
@@ -72,7 +80,7 @@ export const tower = () => {
     'core:publisher': publisher,
     'core:dispatch': dispatch,
     'core:slots': slots,
-    'core:http': httpOf(),
+    'core:http': httpOf((): Reads['extensions'] => ({ extensions: [], topology: topologyOf(resources) })),
   }
   return resources
 }
