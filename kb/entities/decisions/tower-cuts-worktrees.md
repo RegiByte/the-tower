@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/cards.ts#spawnFormHtml", "hub/src/shared/cards.ts#defaultWhere"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidy", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/server.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -66,9 +66,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
 - **Lost refuses work.** Spawn and resume are refused with `lost` when any of the session's dirs is gone, not only
   its `cwd`; recut restores the folders from the branch.
 - **Where a worker starts.** Its own worktree, unless told otherwise: `worktrees.cutByDefault` (on by default) is the
-  board's `floor.cutByDefault`, and [`defaultWhere`](ref:hub/src/shared/cards.ts#defaultWhere) turns it into a new
+  board's `floor.cutByDefault`, and [`defaultWhere`](ref:hub/src/shared/spawn-form.ts#defaultWhere) turns it into a new
   worktree when the floor can cut, else the hub. Every start goes through one form,
-  [`spawnFormHtml`](ref:hub/src/shared/cards.ts#spawnFormHtml), whose defaults a quick hire sends too.
+  [`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml), whose defaults a quick hire sends too.
 - **Tidy is manual** ([`tidy`](ref:hub/src/worktrees.ts#tidy)): after a fetch, every `removable` name its list
   named is removed (refused, before anything, when one no longer is: [[tidy]]) without `--force` and its branch
   deleted where absorbed; an unmerged branch is kept and listed as a kept branch. Every branch delete (Tidy, `remove`,

@@ -19,7 +19,7 @@
     "hub/src/shared/drafts.ts#discard",
     "hub/src/shared/drafts.ts#restore",
     "hub/src/collections.ts#restoreItem",
-    "hub/src/shared/cards.ts#spawnFormHtml",
+    "hub/src/shared/spawn-form.ts#spawnFormHtml",
     "hub/renderers/page/worker.js#resumeSentHome",
     "hub/src/shared/spawn.ts#spawnHandlers",
     "hub/renderers/tower3d/src/main.ts#confirmed",
@@ -42,7 +42,7 @@ them.
   attributes naming what the control does ([`identityOf`](ref:hub/src/shared/press.ts#identityOf)), so a button a
   board redraw replaces, or the same call drawn elsewhere, is busy alike. A control that names nothing fails loudly,
   since it would mark every button of its tag.
-- The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/cards.ts#spawnFormHtml)) stays open while Start is busy,
+- The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml)) stays open while Start is busy,
   closes on a new worker and shows a refusal in its own alert line with the prompt still in place, so a prompt a
   worker already has is never kept as a draft. Starting is a state of its machine
   ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), and Start's `aria-busy` is drawn from it; a start

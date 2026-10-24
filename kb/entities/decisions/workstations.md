@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#plan",
@@ -48,7 +48,7 @@ defaults, and the new-worker form as the optional path.
   ([[desk-dressing]]), where you stand when you go to its desk ([`deskSpot`](ref:hub/renderers/tower3d/src/layout.ts#deskSpot)),
   and its collider, the box round its turned footprint ([`turned`](ref:hub/renderers/tower3d/src/layout.ts#turned)).
   The scene turns the desk's and the station's groups, so everything on them follows.
-- The hire uses the new-worker form's defaults ([`spawnDefaults`](ref:hub/src/shared/cards.ts#spawnDefaults),
+- The hire uses the new-worker form's defaults ([`spawnDefaults`](ref:hub/src/shared/spawn-form.ts#spawnDefaults),
   [`hire`](ref:hub/renderers/tower3d/src/main.ts#hire)): a worktree of its own when the floor cuts by default, else
   the main checkout, and you sit at the new worker's terminal as it walks in. A carried draft hires a worker on it
   ([[corkboard]]); the form is the way to pick an existing worktree ([[tower-cuts-worktrees]]).
