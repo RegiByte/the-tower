@@ -5,7 +5,7 @@
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/http.ts#sandboxed", "hub/src/tower/http.ts#handle", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#describeReads", "hub/src/tower/http.ts#describeStreams", "hub/src/tower/http.ts#route", "hub/src/tower/http.ts#readBody", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/tower/dispatch.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/http.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/http.ts#openMux", "hub/src/tower/publisher.ts#sendBoard", "hub/src/tower/http.ts#sse", "hub/src/tower/http.ts#run", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
+  "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/http.ts#sandboxed", "hub/src/tower/http.ts#handle", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#describeReads", "hub/src/tower/http.ts#describeStreams", "hub/src/tower/http.ts#route", "hub/src/tower/http.ts#readBody", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/tower/dispatch.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/http.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/http.ts#openMux", "hub/src/tower/publisher.ts#sendBoard", "hub/src/tower/http.ts#sse", "hub/src/tower/http.ts#run", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#clientFile", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/http.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
     { "to": "host-daemon", "verb": "calls", "carries": "spawn, write, resize, kill over control.sock" },
@@ -25,7 +25,8 @@ and the policies' runner ([`runPolicies`](ref:hub/src/policies.ts#runPolicies), 
 their own. SIGTERM (`tower down`) or SIGINT halts them in reverse: the server closes every connection, its streams
 stop with them and its screen mirrors are dropped. `GET /extensions` answers every extension and the resources'
 topology, and `GET /schema` serves an extension's manifest as `extension`. The board (floors of cards, rate limits, today's stats, extensions, shells) is
-derived by [`board`](ref:hub/src/bridge/board.ts#board) and pushed over SSE, debounced: it carries the present, and
+derived by [`board`](ref:hub/src/bridge/board.ts#board), with the running extensions' folds on it
+([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf): a fold that calls `ctx.board()` throws, since it holds the board), and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/http.ts#archive) ([[board-archive]]). A session screen is
 a stream ([`screenStream`](ref:hub/src/tower/http.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
 the host still runs the session, then the log's output as it is appended. A running session's screen is one
@@ -56,6 +57,8 @@ origin, as a shown URL, `tower.js` calls the routes itself; only a frame at an o
 one ([`home`](ref:hub/src/tower/http.ts#home)), and `GET /renderers` lists every one
 ([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)), built or not ([[renderers-in-config]]). A renderer that
 isn't built, or a config that can't be read, shows as an HTML page saying so: a reader of `/` is in a browser tab.
+A running extension's `client` folder is served the same way at [`/x/<cap>/`](ref:hub/src/tower/http.ts#clientFile),
+readable from any origin: its commands' modules, which renderers import ([[extensions]]).
 
 The routes are the renderer API ([[renderer-api]]); the tower page (`renderers/page/`) is one renderer over them, and reaches them only
 through [`/tower.js`](ref:hub/src/tower/tower.js) like any other: the board, commands (the calls of the board's `actions` where it

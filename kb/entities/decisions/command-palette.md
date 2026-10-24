@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The command palette: a new way in to what exists, its entries and ranking shared",
-  "summary": "⌘K opens a palette that goes to any worker, floor, shelf entry or draft, runs any global command or any verb the selected worker and the floors offer, and finds what the tower can teach. Entries and their ranking are pure shared code (/palette.js), a verb's words come from /verb-words.js, and a pick runs the same handler as the button or key it stands for: the palette takes no arguments and opens no form of its own.",
+  "summary": "⌘K opens a palette that goes to any worker, floor, shelf entry or draft, runs any global command, any verb the selected worker and the floors offer and anything extensions add to them, and finds what the tower can teach. Entries and their ranking are pure shared code (/palette.js), a verb's words come from /verb-words.js, and a pick runs the same handler as the button or key it stands for: the palette takes no arguments and opens no form of its own.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -22,8 +22,12 @@ same palette, and only the drawing is a renderer's.
 - Three kinds of entries ([`paletteEntries`](ref:hub/src/shared/palette.ts#paletteEntries)): **go to** (every worker
   on duty by callsign, task and floor; floors; shelf entries; drafts), **do** (the global keymap commands by their
   `label` with their chords; what the selected worker, its earlier conversations and its processes offer; every
-  floor's verbs) and **learn** (capabilities that name no command; one entry for the patterns users are discovering).
-  Each entry's `does` is a tagged message the renderer runs.
+  floor's verbs; what extensions add to the selected worker, the floors, the board and each floor's items, verbs and
+  client commands alike, each in its words from `board.extensions` ([`addedEntries`](ref:hub/src/shared/palette.ts#addedEntries)),
+  and the commands offered on no subject ([`unboundCommands`](ref:hub/src/shared/adds.ts#unboundCommands), [[extensions]]))
+  and **learn** (capabilities that name no command; one entry for the patterns users are discovering).
+  Each entry's `does` is a tagged message the renderer runs; an extension's is `added`, its subject's key and the
+  action, which a renderer that can't import modules leaves out when it is a command.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and

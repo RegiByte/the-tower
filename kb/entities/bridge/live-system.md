@@ -42,8 +42,8 @@ month files folded ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts), [[p
 `approvals` folded into its policy facts ([`policyFacts`](ref:hub/src/bridge/policies.ts#policyFacts), [[policies]]).
 An extension's stream is folded by its `reduce` once registered (`foldStream`), the system's or each project's, and
 again once a write settles: only facts past where it stood are stepped, from `init` again if the stream holds fewer
-([`foldOn`](ref:hub/src/system.ts#foldOn)); a step that throws stops the fold before that fact, and the state is
-frozen ([[extensions]]). A stream file at the same size, and a `reviews` or `policies` item at the same
+([`foldOn`](ref:hub/src/system.ts#foldOn)); a step that throws stops the fold before that fact, kept with why
+(`threw`, a `threw` problem on the extension at its next board), and the state is frozen ([[extensions]]). A stream file at the same size, and a `reviews` or `policies` item at the same
 `modifiedAt`, is not read again.
 
 **Config.** The config's directory is watched for the config file (an editor's save replaces it); a change signals,

@@ -395,10 +395,10 @@ export default start
 
 The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
 version of the newest key you use. `start` returns a handler for every verb and read the manifest declares, and
-nothing else, a `parse` per collection or a `reduce` per stream it declares, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
+nothing else, a `parse` per collection or a `reduce` per stream it declares, a fold per subject kind it folds, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
 floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
 calls, and its stores. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
-the served modules: removing one is a major. Folds and triggers are not extension points yet; they arrive as minors.
+the served modules: removing one is a major. Middleware, hooks and triggers are not extension points yet; they arrive as minors.
 
 **Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
 parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
@@ -429,6 +429,33 @@ tower folds of them: a stream's `reduce` state, a collection's items with their 
 its lineage, all read-only. A `reduce`'s `step` gets the state frozen and returns a new one; a step that throws stops
 the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
 said in the tower's log.
+
+**Folds and contributions** (API 1.84) put an extension on the board. A subject is anything the board shows that
+extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,
+`item.<collection>:<project>/<id>`, or `<cap>.<kind>:<key>` for an extension's own kinds, which it declares in
+`subjects` (`"thread": { "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`). `folds`
+declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
+on a floor, `lines` on a card, `asks`); `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
+over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board` and `own`, its stores as `ctx.own`
+reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
+folds in dependency order (card, conversations, items, floor, its own kinds, board), on floors where it is on, seeing
+only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
+an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}` or `{command,
+args}`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
+with its `cap`; its asks (`{key, subject, title, since, until?, sound: 'wait' | 'offer', actions}`) in `board.asks`,
+keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
+manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;
+an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold
+has its `ctx.board`.
+
+`client` names a folder served at `/x/<cap>/`, with CORS. A `command` is one of its modules' exports, with `words`;
+its `on` offers it on every subject of those kinds with no fold (`"on": ["item.drafts"]`), and one with no `on` is
+the palette's alone. A renderer draws a subject's actions and badges with `/cards.js`: name the subject
+(`cardSubject(card)`, `floorSubject(floor)`, `itemSubject(project, collection, item)`, `boardSubject(board)`), then
+`actionsOf(board, subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded`
+to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
+`{ tower, board, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out
+(`isCommand`). `tower whoami` prints a card's lines.
 
 ## Claude plugins
 

@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Extensions: a manifest that declares, code that implements, resolved before anything runs",
-  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x.",
+  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -117,12 +117,45 @@ and versioned without running anything, and a runtime where an extension's failu
   session's facts over its lineage as `SessionFact`s ([`sessionFacts`](ref:hub/src/bridge/stores.ts#sessionFacts)),
   all frozen. The spec gives folds `own` alone; handlers need the same state (a read answering from its stream), so
   ctx carries the accessors, and the folds' `FoldCtx.own` is built from them, never a second fold.
+- **Folds and contributions (1.84).** A subject is anything the board shows that extensions add to, keyed
+  `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, or
+  `<cap>.<kind>:<key>` for an extension's own kinds, declared in `subjects` (where their keyed entries sit in its part);
+  [`subjects.ts`](ref:hub/src/shared/subjects.ts) spells every key. A manifest's `folds` declare, per subject kind, the
+  `x` schema of its part and the `adds` it contributes (`actions`, `badges`, `tidy` on a floor, `lines` on a card,
+  `asks`); the loader refuses an own kind not declared, another's of a capability it doesn't declare, a subject list
+  that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's)
+  ([`compileFolds`](ref:hub/src/bridge/extensions.ts#compileFolds)), and `start` must return a fold per kind. The core's
+  board is built, then [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) runs, pure, over a frozen copy: each
+  running extension in resolved order folds card, conversations, items, floor, its own kinds, board, on floors where it
+  is on, each fold seeing the subject with only its own parts and its requires' and wants' (an undeclared read can't
+  hide in the order). A part is checked against the manifest ([`checkPart`](ref:hub/src/bridge/folds.ts#checkPart):
+  only what it declares, its `x` by its schema, a verb action naming a verb of a capability it declares, a command of
+  its own); its `x` lands at `subject.x[cap]`, its contributions at `board.adds[key]`, tagged with `cap`, its asks in
+  `board.asks` keyed `<cap>:<key>`, gone past `until`. A throw or a bad shape drops its part on that subject, and its
+  required dependents' there, as a `threw` or `shape` problem (lane `fold`, with the subject); over 50 ms of one board
+  is a `slow` warning; a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the
+  latest board's, derived on each build ([`extensions`](ref:hub/src/tower/extensions.ts#extensions)'s `folded`, each
+  dated by the first build that found it), never stored, so a failing fold can't make the board change on its own.
+  `FoldCtx.own` is read from what `StartCtx.own` reads ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)'s
+  `foldOwn`, lazily), never a second fold; `ctx.board()` inside a fold throws
+  ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf)).
+- **Commands and drawing.** A manifest's `client` folder is served at `/x/<cap>/` with CORS
+  ([`clientFile`](ref:hub/src/tower/http.ts#clientFile)); a `command` is one of its modules' exports, offered on every
+  subject of the kinds its `on` names with no fold, derived by the helpers rather than carried per subject, and one
+  with no `on` is the palette's alone. `ExtensionView.commands` says each. Every renderer draws through `/cards.js`:
+  [`actionsOf`](ref:hub/src/shared/adds.ts#actionsOf) (the core's, then `adds`, then the commands offered),
+  `badgesOf`, `actionWords` (a verb's words from its provider's `ExtensionView.verbs`), and
+  [`runCommand`](ref:hub/src/shared/adds.ts#runCommand), which imports the module and calls its export with
+  `{tower, board, subject, args}`. Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
+  prints a card's lines. The tower page draws a card's, a floor's and an item's badges and actions where it draws
+  their own ([`added.js`](ref:hub/renderers/page/added.js)), asks with the offers, and the palette lists them
+  ([[command-palette]]); Tower 3D draws a desk's badges and verbs, and leaves commands out, as the CLI does.
 - **Held by the contract test.** `test/served-exports.json` lists the manifest's key paths, each lane's ctx members
   ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes and names, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
-Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83). Folds and contributions,
-middleware and hooks, triggers, launch contributors and the bundled extensions arrive as additions to the manifest and
+Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
+contributions (1.84). Middleware and hooks, applying tidy entries, triggers, launch contributors and the bundled extensions arrive as additions to the manifest and
 ctx, each an API minor.
 
 **Alternatives considered.**
@@ -141,12 +174,18 @@ ctx, each an API minor.
   extension verb; the caller stays whoever started the chain.
 - *Core reads rewritten to return values for `ctx.read`*: every read would change for one caller; serving one into a
   response that collects its body reuses them as they are.
+- *Fold problems kept as call problems*: each build would re-find them and change the board, which builds again.
+- *Commands written per subject in `board.adds`*: every item of a kind would carry the same entry; the helpers derive
+  them from `ExtensionView.commands`.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
   trusted, and the guards catch mistakes, not malice.
 
 **Impact.** API 1.81: `board.extensions`, `GET /extensions` listing them, the `extension` schema, and three config
 keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the manifest's `verbs` and `reads`,
 `ExtensionView.verbs`, `POST` and `GET /<cap>/…`, `ctx.call`, `ctx.read`, `ctx.deps` and the caller, and `tower x`. API 1.83: the manifest's `collections`, `streams` and `facts`, ctx's `streams`, `facts`,
-`collections` and `own`, and a floor collection's `owner` and `doors` on the board.
+`collections` and `own`, and a floor collection's `owner` and `doors` on the board. API 1.84: the manifest's `client`, `subjects`, `folds` and
+`commands`, `Started.folds` and `FoldCtx`, `x` on cards, floors, items and the board, `board.adds`, `board.asks`,
+`ExtensionView.commands`, a problem's `subject`, the problem code `slow`, `GET /x/<cap>/<file>`, and the helpers in
+`/cards.js`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.
