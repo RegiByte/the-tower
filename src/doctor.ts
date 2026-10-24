@@ -10,11 +10,12 @@ import { promisify } from 'node:util'
 import { daemons, startedPid, type Daemon, type Holder } from './machine.ts'
 import type { ProbeView } from './bridge/probes.ts'
 import type { ApiError } from './shared/api.ts'
-import { probeLine, span } from './shared/cards.ts'
+import { extensionLine, probeLine, PROBLEM_FIX, problemLine, span } from './shared/cards.ts'
 import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
 import { ConfigError, editorArgv, towerPort, type Config } from './shared/model.ts'
 import type { SystemPaths } from './shared/paths.ts'
+import type { Reads } from './shared/shelf-page.ts'
 import { readConfig } from './system.ts'
 
 export type Verdict = { level: 'ok' | 'warn' | 'fail'; what: string; fix?: string }
@@ -163,6 +164,25 @@ const quotaProbe = async (tower: Daemon, answering: boolean): Promise<Verdict> =
   return { level: 'ok', what: line }
 }
 
+/**
+ * The extensions, read from the running tower that runs them: one line each, the ones not started with what to do, and
+ * a line per error problem with its fix; `all`, the warnings too.
+ */
+const extensionVerdicts = async (tower: Daemon, answering: boolean, all: boolean): Promise<Verdict[]> => {
+  if (!answering) return [{ level: 'warn', what: 'the extensions: unchecked while the tower is down', fix: 'tower up' }]
+  const res = await fetch(`${tower.where}/extensions`)
+  if (!res.ok) return [{ level: 'warn', what: `the extensions: the tower answers ${res.status}: ${((await res.json()) as ApiError).message}`, fix: 'a tower older than this checkout: tower down tower, then tower up tower' }]
+  const { extensions }: Reads['extensions'] = await res.json()
+  return extensions.flatMap((e): Verdict[] => [
+    e.state === 'started' || e.state === 'off'
+      ? { level: 'ok', what: `extension ${e.id}: ${extensionLine(e)}` }
+      : { level: 'warn', what: `extension ${e.id}: ${extensionLine(e)}`, fix: 'the lines below say why, and what to do' },
+    ...e.problems
+      .filter((p) => all || p.level === 'error')
+      .map((p): Verdict => ({ level: 'warn', what: `extension ${e.id}: ${problemLine(p)}`, fix: PROBLEM_FIX[p.code] })),
+  ])
+}
+
 const readable = (paths: SystemPaths): Config | Error => {
   try {
     return readConfig(paths.config)
@@ -189,8 +209,11 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
   ]
 }
 
-/** Whether each daemon of this system runs, and whether something else holds its place: the tower's place is the config's port. */
-export const running = async (paths: SystemPaths): Promise<Verdict[]> => {
+/**
+ * Whether each daemon of this system runs, and whether something else holds its place: the tower's place is the config's
+ * port. Then what the tower runs: the quota probe and the extensions, their warnings too with `all`.
+ */
+export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => {
   const config = readable(paths)
   if (config instanceof Error) return [{ level: 'warn', what: 'the daemons: unchecked until the config reads', fix: 'fix the config first' }]
   let port: number
@@ -200,18 +223,18 @@ export const running = async (paths: SystemPaths): Promise<Verdict[]> => {
     if (!(err instanceof ConfigError)) throw err
     return [{ level: 'warn', what: 'the daemons: unchecked until the config names a port', fix: 'fix the config first' }]
   }
-  const all = daemons(paths, port)
+  const every = daemons(paths, port)
   const verdicts = await Promise.all(
-    all.map(async (d) => {
+    every.map(async (d) => {
       const holder = await d.holder()
       return { verdict: daemon(d, holder, holder.t === 'nothing' ? await startedPid(d) : undefined), ours: holder.t === 'ours' }
     }),
   )
-  const tower = all.findIndex((d) => d.name === 'tower')
-  return [...verdicts.map((v) => v.verdict), await quotaProbe(all[tower], verdicts[tower].ours)]
+  const tower = every.findIndex((d) => d.name === 'tower')
+  return [...verdicts.map((v) => v.verdict), await quotaProbe(every[tower], verdicts[tower].ours), ...(await extensionVerdicts(every[tower], verdicts[tower].ours, all))]
 }
 
-export const doctor = async (paths: SystemPaths): Promise<Verdict[]> => [...(await readiness(paths)), ...(await running(paths))]
+export const doctor = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => [...(await readiness(paths)), ...(await running(paths, all))]
 
 const LABEL: Record<Verdict['level'], string> = { ok: 'ok  ', warn: 'warn', fail: 'FAIL' }
 

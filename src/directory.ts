@@ -22,8 +22,9 @@ import type { Replies } from './shared/api.ts'
 import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
 import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
-import type { BoardMsg } from './shared/shelf-page.ts'
-import { ago, sizeOf, awayHiresOf, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import type { ExtensionView } from './shared/extensions.ts'
+import type { BoardMsg, Reads } from './shared/shelf-page.ts'
+import { ago, sizeOf, awayHiresOf, extensionLine, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -255,6 +256,13 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
 /** A probe in one line: its short line, then its state and why its last read failed, when either adds to it. */
 const probeCliLine = (p: Board['probes'][number], now: number): string =>
   [probeLine(p, now), ...(p.state === 'off' || p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
+
+/** An extension: its line, where it is off, and each problem at its path. */
+const extensionCliLines = (e: ExtensionView): string[] => [
+  `${e.id}  ${extensionLine(e)}${e.provides === e.id ? '' : ` · provides ${e.provides}`}${e.bundled ? ' · bundled' : ''}`,
+  ...(e.off?.length ? [`  off on ${e.off.join(', ')}`] : []),
+  ...e.problems.map((p) => `  ${p.level === 'error' ? 'error' : 'warn '}  ${problemLine(p)}`),
+]
 
 const isUrl = (target: string) => /^https?:\/\//.test(target)
 
@@ -616,6 +624,10 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     }
     if (sub !== 'run' || !name) throw new CliError(usageLine('probes'))
     console.log(probedLine(name, await command<Replies['probe/run']>('probe/run', { name: name })))
+  },
+  extensions: async () => {
+    const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
+    console.log(read.extensions.length ? read.extensions.flatMap(extensionCliLines).join('\n') : 'The tower runs no extensions: the config adds them under extensions (docs/config.md).')
   },
   policies: async ([sub, tagOrId]) => {
     const board = await readBoard()

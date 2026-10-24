@@ -94,8 +94,9 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     const config = await init(paths.config, hub, repos)
     console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.\nThen ask any worker: "give me a tour of the tower".`)
   },
-  doctor: async () => {
-    const verdicts = await doctor(paths)
+  doctor: async ([all]) => {
+    if (all !== undefined && all !== '--all') throw new CliError(usageLine('doctor'))
+    const verdicts = await doctor(paths, all === '--all')
     console.log(verdictLines(verdicts).join('\n'))
     if (verdicts.some((v) => v.level === 'fail')) process.exitCode = 1
   },

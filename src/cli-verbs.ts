@@ -14,7 +14,7 @@ export type CliVerb = {
 
 export const CLI_VERBS = {
   init: { of: 'user', usage: 'init [hub] [repos...]', help: 'write a first config: one project, its hub here or at [hub], beside [repos]' },
-  doctor: { of: 'user', usage: 'doctor', help: 'check what the tower needs, with a fix for each failure; exits 1 on any' },
+  doctor: { of: 'user', usage: 'doctor [--all]', help: "check what the tower needs, with a fix for each failure; exits 1 on any. --all adds the extensions' warnings" },
   config: { of: 'user', usage: 'config check', help: 'check the config as the tower reads it, each problem at its key; exits 1 on any' },
   up: {
     of: 'user',
@@ -65,6 +65,11 @@ export const CLI_VERBS = {
     of: 'worker',
     usage: 'probes [run <name>]',
     help: 'each probe the tower runs: its state, last read, why it failed and when it reads next; `run` reads one now (refused while off, while a read is in flight or within a minute of the last)',
+  },
+  extensions: {
+    of: 'worker',
+    usage: 'extensions',
+    help: 'every extension the tower found, bundled first: its state, the floors it is off on, and each problem at its path',
   },
   policies: {
     of: 'worker',
