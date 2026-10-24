@@ -4,7 +4,8 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, board, type Policies, type SystemView } from '../bridge/board.ts'
+import { allCards, board, type Board, type Policies, type SystemView } from '../bridge/board.ts'
+import { foldBoard } from '../bridge/folds.ts'
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import { errorOf } from './answers.ts'
@@ -57,7 +58,22 @@ export const publisher = defineResource({
       now: Date.now(),
     })
 
-    const boardOf = () => board(viewOf())
+    /** Set while extensions fold: a fold reads the board it is handed, never builds one. */
+    let folding = false
+
+    /** The core's board, then every running extension's folds on it (`foldBoard`), and the extensions with what they found. */
+    const boardOf = (): Board => {
+      if (folding) throw new Error('ctx.board() was called inside a fold: a fold reads the board as its ctx.board')
+      const view = viewOf()
+      const core = board(view)
+      folding = true
+      try {
+        const folded = foldBoard({ board: core, folders: extensions.folders(), subjects: extensions.subjects(), now: view.now, clock: () => performance.now() })
+        return { ...folded.board, extensions: extensions.folded(folded.problems, view.now) }
+      } finally {
+        folding = false
+      }
+    }
 
     /** Every session's card, the ones the board leaves out included. */
     const everyCard = (now: number) => allCards({ ...viewOf(), now })

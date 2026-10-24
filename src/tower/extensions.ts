@@ -10,7 +10,8 @@ import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalS
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { NO_EXTENSIONS, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import { NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
 import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
@@ -22,6 +23,9 @@ import {
   type Caller,
   type Client,
   type ExtensionProblem,
+  type ExtensionView,
+  type Fold,
+  type FoldCtx,
   type Manifest,
   type ProblemLane,
   type Start,
@@ -51,6 +55,12 @@ export type Instance = {
   halting: boolean
   verb(name: string, input: unknown, caller: Caller): unknown
   read(name: string, req: { params: Record<string, string>; query: unknown }, caller: Caller): unknown
+  /** Its folds by subject kind, what each gets as `own` at a subject, and its settings on a floor. */
+  folds: Record<string, Fold>
+  foldOwn(at: OwnAt): FoldCtx['own']
+  settingsOf(project: string): unknown
+  /** Each of its stream folds stopped before a fact its step threw on, and why. */
+  threw(): { stream: string; project?: string; message: string }[]
   halt(): Promise<void>
 }
 
@@ -73,7 +83,20 @@ export const extensions = defineResource({
     /** The problems calls found, by extension id, newest first: kept until the extension starts again. */
     let calls = new Map<string, ExtensionProblem[]>()
     let shown: Registry = NO_EXTENSIONS
+    /** The problems the latest board's folds found, by extension id: each dated by the first build of a run that found it. */
+    let folded = new Map<string, ExtensionProblem[]>()
     const listeners = new Set<() => void>()
+    /** The running extensions, in resolved order, each with its instance. */
+    const running = () =>
+      held.resolved.order.flatMap((id) => {
+        const a = held.resolved.accepted.get(id)!
+        const instance = held.system[resourceOf(a.provides)] as Instance | undefined
+        const started = shown.extensions.find((e) => e.id === id)?.state === 'started'
+        return instance && started && !instance.halting && !moving.has(a.provides) ? [{ a, instance }] : []
+      })
+    /** Every extension as the registry shows it, the latest board's fold problems first. */
+    const views = (): ExtensionView[] =>
+      shown.extensions.map((e) => (folded.has(e.id) ? { ...e, problems: [...folded.get(e.id)!, ...e.problems].slice(0, PROBLEMS_SHOWN) } : e))
     const changed = () => {
       shown = registry(held.resolved, held.outcomes, held.at, calls)
       for (const listener of listeners) listener()
@@ -81,7 +104,54 @@ export const extensions = defineResource({
     return {
       registry: () => shown,
       /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
-      read: (): Reads['extensions'] => ({ extensions: shown.extensions, topology: topologyOf(held.resources) }),
+      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources) }),
+      /** The running extensions that fold, as the fold pass reads them, each one's floor settings read once per build. */
+      folders: (): Folder[] => {
+        const all = running()
+        const verbsOf = (cap: string) => new Set(Object.keys(all.find(({ a }) => a.provides === cap)?.a.manifest.verbs ?? {}))
+        return all
+          .filter(({ instance }) => Object.keys(instance.folds).length)
+          .map(({ a, instance }) => {
+            const settings = new Map<string, unknown>()
+            return {
+              id: a.id,
+              cap: a.provides,
+              requires: a.requires,
+              wants: a.wants,
+              off: a.off,
+              specs: a.folds,
+              folds: instance.folds,
+              commands: Object.keys(a.manifest.commands ?? {}),
+              verbs: new Map([a.provides, ...a.requires, ...a.wants].map((cap) => [cap, verbsOf(cap)])),
+              settings: (project) => {
+                if (project === undefined) return a.settings
+                if (!settings.has(project)) settings.set(project, instance.settingsOf(project))
+                return settings.get(project)
+              },
+              own: instance.foldOwn,
+            }
+          })
+      },
+      /** Where each running extension's own subject kinds sit, by kind, `<cap>.<kind>`. */
+      subjects: (): Map<string, SubjectDecl> =>
+        new Map(running().flatMap(({ a }) => Object.entries(a.manifest.subjects ?? {}).map(([kind, decl]) => [`${a.provides}.${kind}`, decl] as const))),
+      /**
+       * Every extension as the board shows it once a build's folds found `problems` (`now`, when), with each stream fold
+       * stopped by a throwing step: a problem found by the build before keeps its date, and none of it notifies a change.
+       */
+      folded: (problems: FoldProblem[], now: number): ExtensionView[] => {
+        const reduces = running().flatMap(({ a, instance }) =>
+          instance.threw().map(({ stream, project, message }): FoldProblem => ({ id: a.id, problem: { lane: 'fold', level: 'error', code: 'threw', message: project ? `on ${project}, ${message}` : message, path: `streams.${stream}` } })),
+        )
+        const same = (p: ExtensionProblem, q: FoldProblem['problem']) => p.code === q.code && p.path === q.path && p.subject === q.subject && (p.code === 'slow' || p.message === q.message)
+        folded = new Map(
+          [...Map.groupBy([...problems, ...reduces], (p) => p.id)].map(([id, found]) => [
+            id,
+            found.map(({ problem }) => ({ ...problem, at: folded.get(id)?.find((p) => same(p, problem))?.at ?? now, count: 1 })),
+          ]),
+        )
+        return views()
+      },
       /** The capabilities a reconcile is about to start or restart: until the next `set`, a call to one is unavailable. */
       moving: (caps: Set<string>) => void (moving = caps),
       /** What a reconcile ended with; the call problems of the extensions it `started` are dropped. */
@@ -144,7 +214,7 @@ const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefin
 
 /**
  * Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb and read it declares, no
- * more, and a `parse` or `reduce` only for a collection or stream it declares.
+ * more, a fold for every subject kind it folds, no more, and a `parse` or `reduce` only for a collection or stream it declares.
  */
 const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
   if (!isObject(started)) return `start returned ${JSON.stringify(started)}: it returns an object of what its manifest declares`
@@ -153,7 +223,11 @@ const mismatchOf = (started: unknown, manifest: Manifest): string | undefined =>
   if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
   const calls = [...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs), ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads)]
   if (calls.length) return calls.join('; ')
+  const folds = isObject(started.folds) ? started.folds : {}
+  const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
+  if (unfolded.length && (started.folds === undefined || isObject(started.folds))) return `its manifest declares folds ${unfolded.join(', ')}, and start returned no function for each`
   const lanes = [
+    { key: 'folds', declared: manifest.folds, what: 'folds', is: (f: unknown) => typeof f === 'function', shape: 'a function (subject, ctx)' },
     { key: 'parse', declared: manifest.collections, what: 'collections', is: (f: unknown) => typeof f === 'function', shape: 'a function (text, item)' },
     { key: 'reduce', declared: manifest.streams, what: 'streams', is: (r: unknown) => isObject(r) && 'init' in r && typeof r.step === 'function', shape: '{ init, step }' },
   ]
@@ -312,6 +386,10 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     const instance: Instance = {
       manifest: a.manifest,
       halting: false,
+      folds: started.folds ?? {},
+      foldOwn: stores.foldOwn,
+      settingsOf: ctx.settingsOf,
+      threw: stores.threw,
       verb: (name, input, caller) => started.verbs![name](input, handlerCtx(caller, `${a.provides}/${name}`)),
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
       halt: async () => {

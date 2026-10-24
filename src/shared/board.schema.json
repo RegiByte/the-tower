@@ -191,6 +191,25 @@
           },
           "description": "Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`)."
         },
+        "adds": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Adds"
+          },
+          "description": "What extensions' folds added to each subject, by its key (`card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability: `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's."
+        },
+        "asks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BoardAsk"
+          },
+          "description": "What extensions' folds ask of the user, oldest first: in the attention order beside `waiting`."
+        },
+        "x": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Each extension's own part of the board, by capability, as its board fold made it."
+        },
         "today": {
           "$ref": "#/definitions/Today",
           "description": "Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change."
@@ -276,6 +295,8 @@
         "rateLimits",
         "probes",
         "extensions",
+        "adds",
+        "asks",
         "today",
         "hostUp",
         "hostOutdated",
@@ -398,6 +419,11 @@
           "items": {
             "$ref": "#/definitions/FloorAction"
           }
+        },
+        "x": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Each extension's own part of it, by capability, as its floor fold made it."
         },
         "name": {
           "type": "string"
@@ -746,6 +772,11 @@
             "$ref": "#/definitions/CardAction"
           },
           "description": "What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart."
+        },
+        "x": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Each extension's own part of it, by capability, as its card fold made it (decision `extensions`)."
         }
       },
       "required": [
@@ -2099,6 +2130,11 @@
         },
         "keptBy": {
           "$ref": "#/definitions/KeptBy"
+        },
+        "x": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "The part of the extension that declares its collection, as its item fold made it."
         },
         "id": {
           "type": "string"
@@ -4218,6 +4254,13 @@
             "$ref": "#/definitions/ExtensionVerb"
           },
           "description": "Its manifest's verbs, by qualified name."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionCommand"
+          },
+          "description": "Its manifest's client commands, by name: what renderers that import modules run."
         }
       },
       "required": [
@@ -4228,7 +4271,8 @@
         "bundled",
         "state",
         "problems",
-        "verbs"
+        "verbs",
+        "commands"
       ],
       "additionalProperties": false,
       "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
@@ -4272,6 +4316,10 @@
         },
         "path": {
           "type": "string"
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject a fold failed on, by its key: `card:<id>`."
         }
       },
       "required": [
@@ -4292,9 +4340,10 @@
         "start",
         "halt",
         "verb",
-        "read"
+        "read",
+        "fold"
       ],
-      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read."
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold."
     },
     "ProblemCode": {
       "type": "string",
@@ -4312,7 +4361,8 @@
         "not-yet",
         "threw",
         "shape",
-        "deprecated"
+        "deprecated",
+        "slow"
       ]
     },
     "ExtensionVerb": {
@@ -4387,6 +4437,232 @@
       ],
       "additionalProperties": false,
       "description": "A name on its way out: since its provider's version `since`, with what to `use` instead, qualified, and `why`."
+    },
+    "ExtensionCommand": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "export": {
+          "type": "string"
+        },
+        "words": {
+          "$ref": "#/definitions/Words"
+        },
+        "on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "deprecated": {
+          "$ref": "#/definitions/Deprecated"
+        }
+      },
+      "required": [
+        "name",
+        "module",
+        "export",
+        "words"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`, and `on`, the subject kinds every subject of which is offered it."
+    },
+    "Adds": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedAction"
+          }
+        },
+        "badges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedBadge"
+          }
+        },
+        "tidy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedTidy"
+          }
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedLine"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker."
+    },
+    "AddedAction": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cap": {
+              "type": "string"
+            },
+            "verb": {
+              "type": "string"
+            },
+            "call": {}
+          },
+          "required": [
+            "call",
+            "cap",
+            "verb"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cap": {
+              "type": "string"
+            },
+            "command": {
+              "type": "string"
+            },
+            "args": {}
+          },
+          "required": [
+            "cap",
+            "command"
+          ]
+        }
+      ]
+    },
+    "AddedBadge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "tone": {
+          "$ref": "#/definitions/BadgeTone"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cap",
+        "label"
+      ]
+    },
+    "BadgeTone": {
+      "type": "string",
+      "enum": [
+        "quiet",
+        "working",
+        "needs",
+        "offered",
+        "ready",
+        "broken"
+      ]
+    },
+    "AddedTidy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cap",
+        "key",
+        "label"
+      ]
+    },
+    "AddedLine": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "cap": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "cap"
+      ],
+      "additionalProperties": false
+    },
+    "BoardAsk": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedAction"
+          }
+        },
+        "key": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "since": {
+          "type": "number"
+        },
+        "until": {
+          "type": "number"
+        },
+        "sound": {
+          "type": "string",
+          "enum": [
+            "wait",
+            "offer"
+          ]
+        }
+      },
+      "required": [
+        "actions",
+        "cap",
+        "key",
+        "since",
+        "sound",
+        "subject",
+        "title"
+      ],
+      "description": "An ask as the board carries it: its `key` qualified by its capability, `<cap>:<key>`, and its actions tagged."
     },
     "Today": {
       "type": "object",

@@ -229,6 +229,8 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     rateLimitsAt: extra.rateLimitsAt,
     probes: extra.probes ?? [],
     extensions: [],
+    adds: {},
+    asks: [],
     ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,

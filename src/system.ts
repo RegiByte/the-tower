@@ -13,6 +13,7 @@ import { probeFacts, readingsOf, type ProbeFacts, type ProbeReading, type Stream
 import { APPROVALS_STREAM, policyFacts, RUNS_STREAM, type PolicyFacts, type PolicyFile } from './bridge/policies.ts'
 import { hashOf, parsePolicy } from './bridge/policy-file.ts'
 import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.ts'
+import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
 import { readItem, scanCollections } from './collections.ts'
@@ -169,17 +170,9 @@ const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams:
 /** A stream folded as its facts arrive: `system`'s one, or each project's. */
 export type StreamFold = { stream: string; scope: 'system' | 'project'; init: unknown; step: (state: unknown, fact: StreamFact) => unknown; label: string }
 
-/** Where a fold stands on one stream: its state after `count` facts. */
-type Folded = { state: unknown; count: number }
+/** Where a fold stands on one stream: its state after `count` facts, and why the fact after them threw, while it does. */
+type Folded = { state: unknown; count: number; threw?: string }
 
-/** A value made read-only all the way down: a fold's state is shared by every reader. */
-export const frozen = <T>(value: T): T => {
-  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
-    Object.freeze(value)
-    for (const inner of Object.values(value)) frozen(inner)
-  }
-  return value
-}
 
 /**
  * The fold of one stream from where it stood: a stream only grows, so only facts past `count` are stepped; one that
@@ -195,8 +188,9 @@ const foldOn = (fold: StreamFold, facts: StreamFact[], held: Folded | undefined)
       count++
     } catch (err) {
       const frozenState = err instanceof TypeError && Object.isFrozen(state) && typeof state === 'object' && state !== null
-      console.error(`${fold.label}: a fact of ${fold.stream} threw in its reduce, and the fold stops before it${frozenState ? ' (step gets a frozen state: it returns a new one)' : ''}:`, err)
-      break
+      const why = `a fact of ${fold.stream} threw in its reduce, and the fold stops before it${frozenState ? ' (step gets a frozen state: it returns a new one)' : ''}`
+      console.error(`${fold.label}: ${why}:`, err)
+      return { state, count, threw: `${why}: ${(err as Error).message}` }
     }
   }
   return { state, count }
@@ -224,9 +218,9 @@ export type System = {
   streamMonths: () => StreamMonth[]
   /**
    * Folds a stream as its facts arrive until `stop`: `state` is the system's, or a project's, frozen; `init` before any
-   * fact. A fold that moves is a change.
+   * fact; `threw`, each fold stopped before a fact its step threw on, and why. A fold that moves is a change.
    */
-  foldStream: (fold: StreamFold) => { state: (project?: string) => unknown; stop: () => void }
+  foldStream: (fold: StreamFold) => { state: (project?: string) => unknown; threw: () => { project?: string; message: string }[]; stop: () => void }
   /** `undefined` while no host is running. */
   live: () => HostLive | undefined
   running: () => Resource[]
@@ -578,6 +572,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       refold(fold)
       return {
         state: (project) => (folds.get(fold)?.at.get(project ?? '')?.state ?? frozen(fold.init)),
+        threw: () => [...(folds.get(fold)?.at ?? [])].flatMap(([key, { threw }]) => (threw === undefined ? [] : [{ ...(key && { project: key }), message: threw }])),
         stop: () => void folds.delete(fold),
       }
     },

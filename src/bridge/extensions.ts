@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import type { Query } from '../shared/api.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -23,6 +23,9 @@ export type CompiledVerb = { spec: NonNullable<Manifest['verbs']>[string]; input
 
 /** A read of a manifest, its query and reply schemas as zod. */
 export type CompiledRead = { spec: NonNullable<Manifest['reads']>[string]; query?: z.ZodType; reply: z.ZodType }
+
+/** A fold a manifest declares: the zod of the `x` it makes, and what it adds. */
+export type CompiledFold = { x?: z.ZodType; adds: Add[] }
 
 /** An extension that may start. `requires` and `wants`: the capabilities it starts after, the core aside. `off`: its floors off. */
 export type Accepted = {
@@ -42,6 +45,8 @@ export type Accepted = {
   /** Its verbs and reads by name, as the manifest declares them. */
   verbs: Map<string, CompiledVerb>
   reads: Map<string, CompiledRead>
+  /** Its folds by subject kind, as the manifest declares them. */
+  folds: Map<string, CompiledFold>
   /** Its capability and every one it requires, directly or not: it is off on a floor where any of them is. */
   chain: string[]
   off: string[]
@@ -202,6 +207,68 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
   ]
 }
 
+/** The subject kinds the core folds: an extension's own are `<capability>.<kind>`. */
+const CORE_KINDS = ['card', 'conversation', 'floor', 'board']
+
+/** An extension's own subject kind split, `reviews.thread` into its capability and kind; `undefined` for the core's and items. */
+export const ownKindOf = (kind: string): { cap: string; kind: string } | undefined => {
+  if (CORE_KINDS.includes(kind) || kind.startsWith('item.')) return undefined
+  const at = kind.indexOf('.')
+  return { cap: kind.slice(0, at), kind: kind.slice(at + 1) }
+}
+
+/** The kinds whose subjects get their own part `x`: the rest sit in an owner's part, or are a card's conversations. */
+const holdsX = (kind: string, collections: Manifest['collections']): boolean =>
+  ['card', 'floor', 'board'].includes(kind) || (kind.startsWith('item.') && Object.hasOwn(collections ?? {}, kind.slice('item.'.length)))
+
+/** Whether a JSON Schema holds an array at `list` whose entries require `key`. */
+const listsKeyed = (schema: Record<string, unknown> | undefined, list: string): boolean => {
+  const array = (schema?.properties as Record<string, { type?: unknown; items?: { properties?: Record<string, unknown>; required?: unknown } }> | undefined)?.[list]
+  return array?.type === 'array' && Object.hasOwn(array.items?.properties ?? {}, 'key') && Array.isArray(array.items?.required) && array.items.required.includes('key')
+}
+
+/**
+ * Its folds with their `x` schemas as zod, or each rule they break: an own kind is `<provides>.<kind>` and declared in
+ * `subjects`, another's is of a capability it requires or wants; a subject's `list` is an array of keyed entries in the
+ * `x` of the fold at its `in`; `x` only on a card, a floor, the board, or an item of a collection it declares; `tidy`
+ * only on a floor and `lines` only on a card; a command's `on` names kinds as a fold does, and commands need `client`.
+ */
+const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string, CompiledFold>; problems: LoadProblem[] } => {
+  const problems: LoadProblem[] = []
+  const declares = (cap: string) => Object.hasOwn(manifest.requires, cap) || Object.hasOwn(manifest.wants ?? {}, cap)
+  const kindProblem = (kind: string, at: string) => {
+    const own = ownKindOf(kind)
+    if (!own) return
+    if (own.cap === provides) {
+      if (!Object.hasOwn(manifest.subjects ?? {}, own.kind)) problems.push(error('invalid', `${kind} is ${provides}'s own kind, and subjects declares no ${own.kind}`, at))
+    } else if (!declares(own.cap)) problems.push(error('invalid', `${kind} is a subject kind of ${own.cap}: declare requires.${own.cap}, or wants.${own.cap}`, at))
+  }
+  const folds = new Map<string, CompiledFold>()
+  for (const [kind, spec] of Object.entries(manifest.folds ?? {})) {
+    const at = `folds.${kind}`
+    kindProblem(kind, at)
+    const adds = spec.adds ?? []
+    if (adds.includes('tidy') && kind !== 'floor') problems.push(error('invalid', 'tidy entries are a floor\'s', `${at}.adds`))
+    if (adds.includes('lines') && kind !== 'card') problems.push(error('invalid', 'lines are a card\'s: tower whoami prints them', `${at}.adds`))
+    if (spec.x && !holdsX(kind, manifest.collections)) {
+      problems.push(
+        error('invalid', kind.startsWith('item.') ? `an item's x is its collection's: ${provides} declares no collection ${kind.slice('item.'.length)}` : `a ${kind} holds no x of its own: its fold adds only`, `${at}.x`),
+      )
+    }
+    const x = spec.x && zodOf(spec.x)
+    if (typeof x === 'string') problems.push(error('invalid', `no JSON Schema the tower reads: ${x}`, `${at}.x`))
+    else folds.set(kind, { ...(x && { x }), adds })
+  }
+  for (const [kind, subject] of Object.entries(manifest.subjects ?? {})) {
+    if (!listsKeyed(manifest.folds?.[subject.in]?.x, subject.list)) {
+      problems.push(error('invalid', `folds.${subject.in}.x holds no array ${subject.list} whose entries require key: where ${provides}.${kind}'s subjects sit`, `subjects.${kind}.list`))
+    }
+  }
+  for (const [name, command] of Object.entries(manifest.commands ?? {})) for (const kind of command.on ?? []) kindProblem(kind, `commands.${name}.on`)
+  if (manifest.commands && !manifest.client) problems.push(error('invalid', 'commands are modules of its client folder: declare client', 'commands'))
+  return { folds, problems }
+}
+
 /** The stores' schemas as zod, or each that the tower can't read as a problem at its path. */
 const storeSchemas = (manifest: Manifest): { schemas: StoreSchemas; problems: LoadProblem[] } => {
   const problems: LoadProblem[] = []
@@ -231,6 +298,7 @@ type Read = {
   verbs?: Map<string, CompiledVerb>
   reads?: Map<string, CompiledRead>
   schemas?: StoreSchemas
+  folds?: Map<string, CompiledFold>
 }
 
 /** Whether a JSON Schema takes an object that must hold `project`, a string. */
@@ -306,13 +374,14 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   const calls = compileCalls(manifest)
   if (calls.problems.length) return { found, claims, manifest, problems: calls.problems }
   const stores = storeSchemas(manifest)
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems]
+  const folds = compileFolds(manifest, capabilityOf(manifest))
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, schemas: stores.schemas }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, schemas: stores.schemas, folds: folds.folds }
 }
 
 /** The capabilities `manifest` requires, the core aside. */
@@ -477,6 +546,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           wants,
           verbs: r.verbs!,
           reads: r.reads!,
+          folds: r.folds!,
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
           problems: [...r.problems, ...without],
@@ -497,7 +567,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
 }
 
 /** The most problems an extension shows. */
-const PROBLEMS_SHOWN = 20
+export const PROBLEMS_SHOWN = 20
 
 /** A halt that threw: the tower cleared what ctx opened all the same. */
 const haltProblems = (outcome: Outcome | undefined): ExtensionProblem[] =>
@@ -521,6 +591,17 @@ export const withProblem = (problems: ExtensionProblem[], problem: Omit<Extensio
   const same = problems.find((p) => p.lane === problem.lane && p.code === problem.code && p.path === problem.path && p.message === problem.message)
   return [{ ...problem, count: (same?.count ?? 0) + 1 }, ...problems.filter((p) => p !== same)].slice(0, PROBLEMS_SHOWN)
 }
+
+/** A manifest's client commands as the board shows them. */
+const commandsOf = (manifest: Manifest | undefined): ExtensionView['commands'] =>
+  Object.entries(manifest?.commands ?? {}).map(([name, c]) => ({
+    name,
+    module: c.module,
+    export: c.export,
+    words: c.words,
+    ...(c.on && { on: c.on }),
+    ...(c.deprecated && { deprecated: c.deprecated }),
+  }))
 
 /** Bundled first, then by id. */
 const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - Number(a.bundled) || a.id.localeCompare(b.id)
@@ -559,6 +640,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       ...(a.off.length && { off: a.off }),
       problems: [...(calls.get(id) ?? []), ...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(a.manifest),
+      commands: commandsOf(a.manifest),
     }
   })
   const held = [...resolved.refused.values()].map(
@@ -571,6 +653,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       state: r.state,
       problems: [...haltProblems(outcomes.get(r.id)), ...stamp(r.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(r.manifest),
+      commands: commandsOf(r.manifest),
     }),
   )
   const stores = resolved.order.map((id) => {

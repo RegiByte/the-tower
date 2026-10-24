@@ -20,6 +20,9 @@ const CALLS = '1.82'
 /** The minor stores arrived in: collections, streams and session facts. */
 const STORES = '1.83'
 
+/** The minor folds and contributions arrived in: subjects, folds, client commands and their files. */
+const FOLDS = '1.84'
+
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
 
@@ -46,18 +49,28 @@ export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 export const LEGACY: Record<string, string> = {}
 
 /** Every problem an extension can have, by what it is. */
-export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated'] as const
+export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow'] as const
 export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
-/** Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read. */
-export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read'
+/** Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold. */
+export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold'
 
 /**
  * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s
  * leave it running; `info` says how it runs (without an extension it wants). `at`: epoch ms, when it was last found.
  * `count`: how many times. `path`: where in the manifest, `settings.every`.
  */
-export type ExtensionProblem = { lane: ProblemLane; level: 'error' | 'warn' | 'info'; code: ProblemCode; message: string; at: number; count: number; path?: string }
+export type ExtensionProblem = {
+  lane: ProblemLane
+  level: 'error' | 'warn' | 'info'
+  code: ProblemCode
+  message: string
+  at: number
+  count: number
+  path?: string
+  /** The subject a fold failed on, by its key: `card:<id>`. @since 1.84 */
+  subject?: string
+}
 
 /**
  * `started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because
@@ -92,7 +105,77 @@ export type ExtensionView = {
   problems: ExtensionProblem[]
   /** Its manifest's verbs, by qualified name. @since 1.82 */
   verbs: ExtensionVerb[]
+  /** Its manifest's client commands, by name: what renderers that import modules run. @since 1.84 */
+  commands: ExtensionCommand[]
 }
+
+/**
+ * One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`,
+ * and `on`, the subject kinds every subject of which is offered it.
+ */
+export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; deprecated?: Deprecated }
+
+/** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. */
+export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks'] as const
+export type Add = (typeof ADDS)[number]
+
+/** How a badge reads, as a card's attention does. */
+export const BADGE_TONES = ['quiet', 'working', 'needs', 'offered', 'ready', 'broken'] as const
+export type BadgeTone = (typeof BADGE_TONES)[number]
+
+/** A verb offered on a subject with its input (`call`), qualified: `pulse/ping`. Its words are its provider's. */
+export type VerbAction = { verb: string; call: unknown }
+
+/** One of the extension's own client commands offered on a subject, by name, with what it is handed as `args`. */
+export type CommandAction = { command: string; args?: unknown }
+
+export type Action = VerbAction | CommandAction
+
+/** A word shown beside a subject: `href` a page it links to. */
+export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: string }
+
+/** Something a floor's Tidy would do for an extension, by `key`: listed with the core's, applied by its owner. */
+export type TidyEntry = { key: string; label: string; hint?: string }
+
+/**
+ * Something asking for the user, in the attention order beside the waits. `key`: this ask alone, as `Wait.key` names a
+ * wait. `subject`: the subject key it is about. `since`, `until`: epoch ms; it is gone past `until`. `sound`: it rings
+ * as a wait does, or as an offer.
+ */
+export type Ask = { key: string; subject: string; title: string; since: number; until?: number; sound: 'wait' | 'offer'; actions: Action[] }
+
+/** What one fold returns for one subject: its own part `x`, and what it adds to the subject and the board. */
+export type Part = { x?: unknown; actions?: Action[]; badges?: Badge[]; tidy?: TidyEntry[]; lines?: string[]; asks?: Ask[] }
+
+/** A contribution as the board carries it: tagged with the capability that made it. */
+export type Added<T> = T & { cap: string }
+
+export type AddedAction = (VerbAction | CommandAction) & { cap: string }
+export type AddedBadge = Badge & { cap: string }
+export type AddedTidy = TidyEntry & { cap: string }
+export type AddedLine = { text: string; cap: string }
+
+/** What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker. */
+export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[] }
+
+/** An ask as the board carries it: its `key` qualified by its capability, `<cap>:<key>`, and its actions tagged. */
+export type BoardAsk = Omit<Ask, 'actions'> & { cap: string; actions: AddedAction[] }
+
+/**
+ * What a fold gets beside its subject: `board`, the core's, frozen; `settings`, the floor's (the system's for the
+ * board's and a subject on no floor); `own`, its stores on the subject's floor, as `StartCtx.own` reads them: each
+ * stream's reduce state (a project stream's on that floor; system streams alone for the board), each collection's
+ * parsed items (none for the board), and on a card its facts over the worker's lineage.
+ */
+export type FoldCtx = {
+  now: number
+  settings: unknown
+  board: Board
+  own: { streams: Record<string, unknown>; collections: Record<string, ParsedItem[]>; facts?: SessionFact[] }
+}
+
+/** A fold of one subject kind: pure and synchronous, over frozen inputs. */
+export type Fold = (subject: any, ctx: FoldCtx) => Part
 
 /** An item of a collection, as `ctx.collections` lists it. `modifiedAt`: its version, epoch ms. */
 export type Item = { id: string; tag: string; size: number; modifiedAt: number }
@@ -262,6 +345,8 @@ export type Started = {
   parse?: Record<string, (text: string, item: Item) => unknown>
   /** Per stream, its fold. @since 1.83 */
   reduce?: Record<string, Reduce>
+  /** Per subject kind its manifest folds, its fold. @since 1.84 */
+  folds?: Record<string, Fold>
 }
 
 /** The default export of an extension's server module. */
@@ -280,7 +365,7 @@ type SinceOf<T> = {
         : string
 }
 
-export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 'caller'>> } = {
+export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 'caller'>>; fold: SinceOf<Omit<FoldCtx, 'board'>> & { board: string } } = {
   start: {
     id: SINCE,
     provides: SINCE,
@@ -303,10 +388,11 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
     own: { streams: STORES, collections: STORES, facts: STORES },
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
+  fold: { now: FOLDS, settings: FOLDS, board: FOLDS, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
 }
 
 /** The keys `start` may return. */
-export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce'] as const
+export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds'] as const
 
 const sinceAt =
   (version: string) =>
@@ -315,6 +401,7 @@ const sinceAt =
 const since = sinceAt(SINCE)
 const sinceCalls = sinceAt(CALLS)
 const stores = sinceAt(STORES)
+const folds = sinceAt(FOLDS)
 
 const Name = z
   .string()
@@ -388,6 +475,23 @@ export type Door = string | { none: string }
 export type Doors = { list: Door; read: Door; create: Door; edit: Door; delete: Door }
 export type Collection = z.infer<typeof Collection>
 
+const SubjectDecl = z.strictObject({
+  description: folds(z.string().optional()),
+  in: folds(z.enum(['board', 'floor', 'card']).describe('Where its subjects sit: in its own part of the board, a floor or a card.')),
+  list: folds(z.string().min(1).describe('The array in its own x at `in` whose entries are the subjects; each has a `key`.')),
+})
+const FoldSpec = z.strictObject({
+  x: folds(Schema.optional().describe("Its own part's JSON Schema, at subject.x.<capability>: on a card, a floor, the board, or an item of a collection it declares.")),
+  adds: folds(z.array(z.enum(ADDS)).refine((adds) => new Set(adds).size === adds.length, { message: 'each add once' }).optional().describe('What it contributes beside its part.')),
+})
+const Command = z.strictObject({
+  module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
+  export: folds(z.string().min(1)),
+  words: folds(Words),
+  on: folds(z.array(SubjectKind).optional().describe('The subject kinds every subject of which is offered it, with no fold.')),
+  deprecated: folds(Deprecated.optional()),
+})
+
 const View = z.strictObject({ module: since(Path), export: since(z.string().optional()), subject: since(SubjectKind), words: since(Words.optional()) })
 
 export const Manifest = z
@@ -414,6 +518,10 @@ export const Manifest = z
     collections: stores(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
     streams: stores(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
     facts: stores(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
+    client: folds(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),
+    subjects: folds(z.record(Word, SubjectDecl).optional().describe('Its own subject kinds, `<provides>.<kind>`, that others contribute to: where they sit in its part.')),
+    folds: folds(z.record(SubjectKind, FoldSpec).optional().describe('Per subject kind it folds: the x it makes and what it adds.')),
+    commands: folds(z.record(Word, Command).optional().describe('Its client commands: a module\'s export run by renderers that import modules.')),
     views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
     regions: since(
       z

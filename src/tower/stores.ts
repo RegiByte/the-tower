@@ -10,13 +10,14 @@ import type { Accepted } from '../bridge/extensions.ts'
 import { continuations, lineage } from '../bridge/chains.ts'
 import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
 import { streamFacts } from '../bridge/streams.ts'
+import { frozen } from '../bridge/frozen.ts'
 import { createItem, deleteItem, itemsIn, readItem, writeItem } from '../collections.ts'
 import { hostRequest } from '../machine.ts'
-import type { Item, ParsedItem, StartCtx, Started, StreamAt, StreamFact } from '../shared/extensions.ts'
+import type { FoldCtx, Item, ParsedItem, StartCtx, Started, StreamAt, StreamFact } from '../shared/extensions.ts'
+import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
-import { frozen } from '../system.ts'
 import { logBytes, logFilesIn } from '../tail.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
@@ -181,9 +182,37 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       for (const [name, reduce] of Object.entries(started.reduce ?? {}))
         folds.set(name, live.foldStream({ stream: `${provides}.${name}`, scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
     },
+    /**
+     * What a fold gets as `own` at a subject, from what `own` reads: a stream's state on the floor (system streams alone
+     * without one), the floor's collections, and the lineage's facts on a card. Each is read only when the fold reads it.
+     */
+    foldOwn: ({ project, lineage }: OwnAt): FoldCtx['own'] =>
+      lazily({
+        streams: () =>
+          Object.fromEntries(
+            [...folds]
+              .filter(([name]) => project !== undefined || manifest.streams![name].scope === 'system')
+              .map(([name, fold]) => [name, fold.state(manifest.streams![name].scope === 'project' ? project : undefined)]),
+          ),
+        collections: () => (project === undefined ? {} : Object.fromEntries(Object.keys(manifest.collections ?? {}).map((name) => [name, ctx.own.collections(project, name)]))),
+        ...(lineage && { facts: () => sessionFacts(provides, lineage.flatMap((id) => live.session(id) ?? [])) }),
+      }),
+    /** Each stream fold stopped before a fact its step threw on, and why. */
+    threw: () => [...folds].flatMap(([name, fold]) => fold.threw().map((t) => ({ stream: name, ...t }))),
     stop: () => {
       for (const fold of folds.values()) fold.stop()
       folds.clear()
     },
   }
+}
+
+/** An object whose every member is read once, when first read. */
+const lazily = <T extends Record<string, unknown>>(getters: { [K in keyof T]: () => T[K] }): T => {
+  const out = {} as T
+  for (const [key, get] of Object.entries(getters) as [keyof T, () => T[keyof T]][]) {
+    let value: T[keyof T]
+    let read = false
+    Object.defineProperty(out, key, { enumerable: true, get: () => (read ? value : ((read = true), (value = get()))) })
+  }
+  return out
 }

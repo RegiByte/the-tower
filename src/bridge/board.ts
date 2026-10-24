@@ -47,7 +47,7 @@ import {
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
-import type { Doors, ExtensionView } from '../shared/extensions.ts'
+import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
 import { floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, filedThreadOf, floorThreads, type CheckoutState, type FloorThread } from './reviews.ts'
 import { deliveries, type Delivery } from './messages.ts'
@@ -208,6 +208,8 @@ export type Card = {
   calls: CardCalls
   /** What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart. */
   actions: CardAction[]
+  /** Each extension's own part of it, by capability, as its card fold made it (decision `extensions`). @since 1.84 */
+  x?: Record<string, unknown>
 }
 
 /** A session of a worker's lineage, and when it started (epoch ms). */
@@ -225,7 +227,12 @@ export type HiredBy = { session: string; callsign: string; project: string }
 export type KeptBy = { session: string; callsign: string; conversation?: string }
 
 /** `tag`: what the item is called on screen and by workers (`tagOf`). */
-export type FloorItem = Pick<CollectionItem, 'id' | 'size' | 'modifiedAt'> & { tag: string; keptBy?: KeptBy }
+export type FloorItem = Pick<CollectionItem, 'id' | 'size' | 'modifiedAt'> & {
+  tag: string
+  keptBy?: KeptBy
+  /** The part of the extension that declares its collection, as its item fold made it. @since 1.84 */
+  x?: Record<string, unknown>
+}
 
 /**
  * One of a floor's collections, every project's and its own, with the files it holds in id order. `dir`: where they
@@ -270,6 +277,8 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   verbs: FloorVerb[]
   calls: FloorCalls
   actions: FloorAction[]
+  /** Each extension's own part of it, by capability, as its floor fold made it. @since 1.84 */
+  x?: Record<string, unknown>
 }
 
 /**
@@ -324,6 +333,16 @@ export type Board = {
   extraUsage?: ExtraUsage
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
   extensions: ExtensionView[]
+  /**
+   * What extensions' folds added to each subject, by its key (`card:<id>`, `floor:<project>`, `board`,
+   * `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability:
+   * `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's. @since 1.84
+   */
+  adds: Record<string, Adds>
+  /** What extensions' folds ask of the user, oldest first: in the attention order beside `waiting`. @since 1.84 */
+  asks: BoardAsk[]
+  /** Each extension's own part of the board, by capability, as its board fold made it. @since 1.84 */
+  x?: Record<string, unknown>
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
   today: Today
   hostUp: boolean
@@ -793,6 +812,8 @@ export const board = (view: SystemView): Board => {
     ...extraUsageOf([...probes.values()]),
     probes: probesOf(config).map((p) => ({ ...probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits))), ...probeOffers(p.name, p.off) })),
     extensions,
+    adds: {},
+    asks: [],
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,

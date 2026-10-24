@@ -24,9 +24,10 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   failed: "the tower's log has the error: fix it, then tower down tower and tower up tower",
   'under-declared': 'raise requires.tower to the newest key it uses',
   'not-yet': 'nothing: a later tower reads it',
-  threw: "the tower's log has the stack: fix the handler",
-  shape: 'make the handler answer what its reply schema says, or fix the schema',
+  threw: "the tower's log has the stack: fix the handler, the fold or the reduce",
+  shape: 'make the handler answer what its reply schema says, and a fold return what its manifest declares, or fix the schema',
   deprecated: 'call what it names to use instead',
+  slow: 'make its folds cheaper: fold from its reduced streams, never from files or the whole board',
 }
 
 /** An extension in a short line: `Pulse 1.0 · running`, its errors counted. */
@@ -36,7 +37,7 @@ export const extensionLine = (e: ExtensionView): string => {
 }
 
 /** A problem in a line: `invalid at settings.every: …`. */
-export const problemLine = (p: ExtensionProblem): string => `${p.code}${p.path ? ` at ${p.path}` : ''}: ${p.message}`
+export const problemLine = (p: ExtensionProblem): string => `${p.code}${p.path ? ` at ${p.path}` : ''}${p.subject ? ` on ${p.subject}` : ''}: ${p.message}`
 
 /** An extension in full: who it is, what it provides, where it is off, and every problem. */
 export const extensionTitle = (e: ExtensionView): string =>
