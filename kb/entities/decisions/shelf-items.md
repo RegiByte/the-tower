@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shared/model.ts#shelfItem", "hub/src/shared/shelf.ts#shelfKind", "hub/src/shared/shelf.ts#shelfPage", "hub/src/shared/shelf.ts#shelfSource", "hub/src/shelf.ts#shelfFiles", "hub/src/shelf.ts#shelfServes", "hub/src/tower/server.ts#shelfFile", "hub/src/tower/server.ts#run"]
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shared/model.ts#shelfItem", "hub/src/shared/shelf-words.ts#shelfKind", "hub/src/shared/shelf-words.ts#shelfPage", "hub/src/shared/shelf-words.ts#shelfSource", "hub/src/shelf.ts#shelfFiles", "hub/src/shelf.ts#shelfServes", "hub/src/tower/server.ts#shelfFile", "hub/src/tower/server.ts#run"]
 }
 ---
 **Problem.** A page a worker made for the shelf had two homes, both wrong. An `html` entry's path is relative to the
@@ -30,11 +30,11 @@ shelf only needs to point at one.
   alone: nothing beside it. `/run/<project>/<n>` runs an HTML item on its own as it does an `html` entry's page
   ([`run`](ref:hub/src/tower/server.ts#run)). A collection the project doesn't keep, an item it doesn't hold, or a
   name that isn't `<collection>/<id>` answers `not_found` saying which.
-- *Kinds, shared.* Renderers draw an entry by [`shelfKind`](ref:hub/src/shared/shelf.ts#shelfKind): an item ending
+- *Kinds, shared.* Renderers draw an entry by [`shelfKind`](ref:hub/src/shared/shelf-words.ts#shelfKind): an item ending
   in `.md` is `md` (the tower page's reader, a bookcase in Tower 3D), any other `html` (framed with the relay, a TV).
   A framed page shows whatever the browser shows for the file's type, so an image or a video item needs nothing
-  more. [`shelfPage`](ref:hub/src/shared/shelf.ts#shelfPage) names the file a framed entry opens and
-  [`shelfSource`](ref:hub/src/shared/shelf.ts#shelfSource) where an entry comes from, for both renderers.
+  more. [`shelfPage`](ref:hub/src/shared/shelf-words.ts#shelfPage) names the file a framed entry opens and
+  [`shelfSource`](ref:hub/src/shared/shelf-words.ts#shelfSource) where an entry comes from, for both renderers.
 - *Live.* The file is read on every request, so an item edited in place shows on the next load.
 
 **Alternatives considered.**

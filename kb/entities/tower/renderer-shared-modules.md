@@ -15,7 +15,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 ([[renderer-is-disposable]]):
 
 - `cards.ts`, gathering a module per concern (`status-words.ts`, `waits.ts`, `rings.ts`, `crews.ts`, `past.ts`,
-  `tidy.ts`, `duty.ts`, `limits.ts`, `health.ts`, `shelf.ts`, `worktree-words.ts`, `checkouts.ts`, …), served as one:
+  `tidy.ts`, `duty.ts`, `limits.ts`, `health.ts`, `shelf-words.ts`, `worktree-words.ts`, `checkouts.ts`, …), served as one:
   words about cards (status words and glyphs, the status counts' and the host lamp's words, what a live
   region says as waits begin), the spawn form and its request, round-robin through waits, dismissals and the ring
   setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
