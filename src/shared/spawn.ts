@@ -113,7 +113,7 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
     field('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
     field('callsign').setCustomValidity(refused)
     dialog.querySelector('[data-callsign-why]')!.textContent = refused
-    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v)
+    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().claudeDefaults)
     return v
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
@@ -131,7 +131,7 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
     execute: {
       show: ({ project, text, draft }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft, defaults: io.board().claudeDefaults })
         prompt().value = text
         sync()
         dialog.showModal()
