@@ -54,6 +54,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `probes` | Readings the tower takes on its own, by name: see [Probes](#probes). | `quota`, on |
 | `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a stream's month file (a probe's, or a floor's policy runs and approvals). | never |
 | `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
+| `extensions` | The extensions the tower runs beside the bundled ones, and the bundled ones' overrides, by id: see [Extensions](#extensions). | the bundled ones |
 
 ## Probes
 
@@ -90,6 +91,29 @@ Each project is a floor. Its sessions start in the hub; the repos are the other 
 | `collections` | Collections only this floor has, beside every floor's. An id declared in both is an error. | none |
 | `plugins` | Absolute plugin directories this floor's sessions load, beside every session's. | none |
 | `worktrees`, `hiring`, `brief` | As at the top level, for this floor. | the top level's |
+| `extensions` | Each extension's `settings` on this floor, by id, shallow-merged over the system's and parsed by its manifest's settings schema. Settings for an id that provides nothing running here are a warning. | none |
+| `capabilities` | Capabilities turned off on this floor, by name: `{ "github": { "off": true } }`. Whichever extension provides one, it is off here, and so is every extension that requires it. `tower`, the core, is never off. | all on |
+
+## Extensions
+
+An extension is a folder holding `extension.json`, its manifest, and optionally the server module the manifest names,
+which the tower starts beside its own pieces. Bundled ones live in the checkout's `extensions/<id>/` and are on unless
+turned off; the config adds others by id. `tower extensions` lists each with its state and problems, `tower doctor`
+says what keeps one from starting, and `GET /schema` serves the manifest's JSON Schema as `extension`. An edit here is
+taken without a restart: an extension the edit leaves unchanged keeps running, and a changed one restarts with what
+depends on it.
+
+| Key | Takes | Unset |
+|---|---|---|
+| `path` | The absolute folder holding a new extension's `extension.json`, whose `id` must be the key. Read only for an id no bundled extension has. | required for a new id |
+| `off` | `true` turns it off everywhere: what requires its capability doesn't start. | `false` |
+| `settings` | Its settings, parsed by its manifest's `settings` schema, defaults filled in; an extension without one takes none. | its schema's defaults |
+
+```json
+"extensions": {
+  "roles": { "path": "/abs/path/to/tower-roles", "settings": { "default": "builder" } }
+}
+```
 
 ## Shelf
 
