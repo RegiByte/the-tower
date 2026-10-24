@@ -16,7 +16,24 @@ export type Project = {
   brief?: BriefConfig
   /** Absolute plugin directories this project's sessions load, beside the ones every session loads. */
   plugins?: string[]
+  /** Each extension's settings on this floor, by id, shallow-merged over the system's (`ExtensionConfig`). */
+  extensions?: Record<string, FloorExtensionConfig>
+  /** Capabilities turned off on this floor, whichever extension provides them; `tower`, the core, never is. */
+  capabilities?: Record<string, CapabilityConfig>
 }
+
+/**
+ * An extension the system runs (decision `extensions`), by id: a bundled one's fields overridden, or a new one in the
+ * absolute folder `path`, which holds its `extension.json`. `off` turns it off everywhere; `settings` are parsed by its
+ * manifest's settings schema.
+ */
+export type ExtensionConfig = { path?: string; off?: boolean; settings?: Record<string, unknown> }
+
+/** An extension's settings on one floor. */
+export type FloorExtensionConfig = { settings?: Record<string, unknown> }
+
+/** A capability on one floor: `off` turns it off there, and every extension that requires it. */
+export type CapabilityConfig = { off?: boolean }
 
 /**
  * A kind of files a project keeps in the system root, `collections/<project>/<collection>/<item>`: the tower lists,
@@ -273,6 +290,8 @@ export type Config = {
   renderer?: string
   /** Chords that replace the keymap's defaults, by command id (`src/shared/keymap.ts`); null unbinds a command. */
   keys?: Record<string, string | string[] | null>
+  /** The extensions the system runs beside the bundled ones, and the bundled ones' overrides, by id. */
+  extensions?: Record<string, ExtensionConfig>
 }
 
 /** Every key of `T`, from a list the typecheck holds to it: a key of `T` missing from the list, or one `T` lacks, fails it. */
@@ -282,10 +301,10 @@ const keysOf =
     keys as readonly string[]
 
 /** The keys the tower reads at the config's top level. */
-export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'keys'])
+export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'keys', 'extensions'])
 
 /** The keys the tower reads in a project. */
-export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins'])
+export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities'])
 
 /** The keys the tower reads in each object below the top level and a project's, by the type it is. */
 export const COLLECTION_KEYS = keysOf<CollectionType>()(['label', 'description'])
@@ -297,6 +316,9 @@ export const PROBE_KEYS = keysOf<ProbeConfig>()(['reads', 'every', 'off'])
 export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
 export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings'])
+export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings'])
+export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
+export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
 
 /**
  * A renderer: `root`, the absolute directory of its built files, all served below `/r/<name>/`; `entry`, its page in

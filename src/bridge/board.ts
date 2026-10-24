@@ -236,7 +236,7 @@ export type FloorCollection = { id: string; label: string; description?: string;
  * kept branches in its repos. `bases`: the origin branches a cut can start from, the default first; empty when a dir
  * isn't a git repo with an origin.
  */
-export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief'> & {
+export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities'> & {
   id: string
   /** The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`. */
   cards: Card[]
@@ -737,7 +737,7 @@ export const board = (view: SystemView): Board => {
     user: { name: userName(config) },
     keys: configuredKeys(config),
     config: paths.config,
-    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, ...project }]) => {
+    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, ...project }]) => {
       const { read, worktrees, branches } = floorGit(config, id, project, repos, occupants)
       const bases = commonBases(read ?? [])
       const floorCards = cards.filter((c) => c.project === id)
