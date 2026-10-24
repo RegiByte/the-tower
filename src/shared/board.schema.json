@@ -2017,6 +2017,12 @@
         "description": {
           "type": "string"
         },
+        "owner": {
+          "type": "string"
+        },
+        "doors": {
+          "$ref": "#/definitions/Doors"
+        },
         "dir": {
           "type": "string"
         },
@@ -2034,7 +2040,55 @@
         "items"
       ],
       "additionalProperties": false,
-      "description": "One of a floor's collections, every project's and its own, with the files it holds in id order. `dir`: where they are on disk, an item's file being `<dir>/<id>`. `description`: what it is for, as the config says."
+      "description": "A floor's collection. `owner`: the capability that alone writes it, an extension's (decision `extensions`): the generic writes are refused there. `doors`: how others list, read, create, edit and delete its items, as its extension declares them, each a verb or read, or why the domain has none."
+    },
+    "Doors": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "$ref": "#/definitions/Door"
+        },
+        "read": {
+          "$ref": "#/definitions/Door"
+        },
+        "create": {
+          "$ref": "#/definitions/Door"
+        },
+        "edit": {
+          "$ref": "#/definitions/Door"
+        },
+        "delete": {
+          "$ref": "#/definitions/Door"
+        }
+      },
+      "required": [
+        "list",
+        "read",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "additionalProperties": false
+    },
+    "Door": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "none": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "none"
+          ],
+          "additionalProperties": false
+        }
+      ],
+      "description": "How others reach a store: a verb or read qualified by its capability, or why the domain has no such act."
     },
     "FloorItem": {
       "type": "object",

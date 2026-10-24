@@ -251,6 +251,16 @@ test('server: an extension the config adds is started as x:<cap>, after the core
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)
 })
 
+test("server: an extension's owned collection joins its floor, and refuses the generic writes, naming its create door", async () => {
+  const msg = (await firstEvent('/board')) as BoardMsg
+  assert.ok('board' in msg)
+  const pulse = msg.board.floors.find((f) => f.id === 'lab')!.collections.find((c) => c.id === 'pulse')!
+  assert.deepEqual([pulse.label, pulse.owner, pulse.doors?.create], ['Beats', 'pulse', { none: 'A beat is made only by pulse.' }])
+  const refused = await post('collection/create', { project: 'lab', collection: 'pulse', name: 'by hand', ext: 'md', content: '1' })
+  assert.deepEqual(JSON.parse(refused.body), { t: 'error', code: 'refused', message: 'pulse owns pulse: only pulse writes it (A beat is made only by pulse.)' })
+  assert.equal(errorCode(await get('/collection/lab/pulse/none.md')), 'not_found')
+})
+
 test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {
   const asWorker = await post('pulse/ping', { project: 'lab', times: 2 }, { 'tower-session': SESSION, 'tower-client': 'cli' })
   assert.equal(asWorker.status, 200, asWorker.body)

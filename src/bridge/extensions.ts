@@ -6,8 +6,11 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, versionOf, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import type { Query } from '../shared/api.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
+import type { Reads } from '../shared/shelf-page.ts'
+import { offOn, type ExtensionStores } from './stores.ts'
 
 /** An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there is one. */
 export type Found = { id: string; bundled: boolean; dir?: string; text?: string }
@@ -32,6 +35,8 @@ export type Accepted = {
   /** The system's settings parsed by `schema`, with its defaults. */
   settings: unknown
   schema?: z.ZodType
+  /** Its stores' schemas as zod. */
+  schemas: StoreSchemas
   requires: string[]
   wants: string[]
   /** Its verbs and reads by name, as the manifest declares them. */
@@ -43,6 +48,9 @@ export type Accepted = {
   problems: LoadProblem[]
 }
 
+/** A manifest's store schemas as zod: each session fact's by name, each stream's codes by stream. */
+export type StoreSchemas = { facts: Map<string, z.ZodType>; streams: Map<string, Map<string, z.ZodType>> }
+
 /** An extension that may not start, and why. */
 export type Refusal = { id: string; bundled: boolean; state: 'refused' | 'skipped' | 'off'; manifest?: Manifest; problems: LoadProblem[] }
 
@@ -52,10 +60,10 @@ export type Resolved = { order: string[]; accepted: Map<string, Accepted>; refus
 /** How an accepted extension's last start went, and its last halt when that threw. `at`: epoch ms. */
 export type Outcome = { at: number; error?: { code: 'failed' | 'mismatch'; message: string }; halt?: string }
 
-/** What the board and `GET /extensions` show of every extension. */
-export type Registry = { extensions: ExtensionView[] }
+/** What the board and `GET /extensions` show of every extension, and the stores of those the tower accepted. */
+export type Registry = { extensions: ExtensionView[]; stores: ExtensionStores[] }
 
-export const NO_EXTENSIONS: Registry = { extensions: [] }
+export const NO_EXTENSIONS: Registry = { extensions: [], stores: [] }
 
 const error = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'error', code, message, ...(at && { path: at }) })
 const warn = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'warn', code, message, ...(at && { path: at }) })
@@ -131,6 +139,78 @@ const underDeclared = (raw: unknown, required: string): LoadProblem[] =>
 /** The keys a manifest holds that the tower validates and doesn't read yet. */
 const NOT_YET = ['views', 'regions'] as const
 
+/** The core's reads by name, the board among them: what a door may name of the core's. */
+const CORE_READS: string[] = Object.keys({
+  board: true,
+  'conversations/<id>': true,
+  'archive/<project>': true,
+  'changes/<id>': true,
+  'reviews/<project>': true,
+  stats: true,
+  'probe/<name>': true,
+  'runs/<project>': true,
+  landing: true,
+  renderers: true,
+  origins: true,
+  patterns: true,
+  'shelf/<project>/<n>': true,
+  'shelf/<project>/<n>/<file>': true,
+  'collection/<project>/<collection>/<item>': true,
+  'shown/<id>/<path>': true,
+  extensions: true,
+} satisfies Record<keyof Reads | Query | 'board', true>)
+
+/** Why a door can't be one: it names no verb or read of its store's owner, or no read of the core's, or a deprecated one. */
+const doorProblem = (manifest: Manifest, provides: string, door: string): string | undefined => {
+  const { cap, name } = qualifiedOf(door)!
+  if (cap === 'tower') return CORE_READS.includes(name) ? undefined : `${door} is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)`
+  if (cap !== provides) return `${door} is ${cap}'s: a door names a verb or read of ${provides} or of the core (tower/…)`
+  const named = manifest.verbs?.[name] ?? manifest.reads?.[name]
+  if (!named) return `${door} names no verb or read of ${provides}'s manifest`
+  return named.deprecated ? `${door} is deprecated since ${named.deprecated.since}: a door names what is current${named.deprecated.use ? `, ${named.deprecated.use}` : ''}` : undefined
+}
+
+/**
+ * What a manifest's stores break of the rules its schema can't say: a collection is named `<provides>` or
+ * `<provides>.<name>`, and a door names a verb or read of the store's owner that isn't deprecated, or a read of the core's.
+ */
+const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] => {
+  const doorsAt = (doors: Record<string, unknown> | undefined, at: string) =>
+    Object.entries(doors ?? {}).flatMap(([door, to]) => (typeof to === 'string' ? [{ at: `${at}.doors.${door}`, to }] : []))
+  const doors = [
+    ...Object.entries(manifest.collections ?? {}).flatMap(([name, c]) => doorsAt(c.doors, `collections.${name}`)),
+    ...Object.entries(manifest.streams ?? {}).flatMap(([name, s]) => doorsAt(s.doors, `streams.${name}`)),
+  ]
+  return [
+    ...Object.keys(manifest.collections ?? {})
+      .filter((name) => name !== provides && !name.startsWith(`${provides}.`))
+      .map((name) => error('invalid', `collection ${name} is named by the capability: ${provides}, or ${provides}.<name>`, `collections.${name}`)),
+    ...doors.flatMap(({ at, to }) => {
+      const problem = doorProblem(manifest, provides, to)
+      return problem ? [error('invalid', problem, at)] : []
+    }),
+  ]
+}
+
+/** The stores' schemas as zod, or each that the tower can't read as a problem at its path. */
+const storeSchemas = (manifest: Manifest): { schemas: StoreSchemas; problems: LoadProblem[] } => {
+  const problems: LoadProblem[] = []
+  const compiled = (schema: Record<string, unknown>, at: string): [z.ZodType] | [] => {
+    const zod = zodOf(schema)
+    if (typeof zod !== 'string') return [zod]
+    problems.push(error('invalid', `${at} is no JSON Schema the tower reads: ${zod}`, at))
+    return []
+  }
+  const facts = new Map(Object.entries(manifest.facts ?? {}).flatMap(([name, f]) => compiled(f.schema, `facts.${name}.schema`).map((zod) => [name, zod] as const)))
+  const streams = new Map(
+    Object.entries(manifest.streams ?? {}).map(([name, s]) => [
+      name,
+      new Map(Object.entries(s.facts).flatMap(([code, f]) => compiled(f.schema, `streams.${name}.facts.${code}.schema`).map((zod) => [code, zod] as const))),
+    ]),
+  )
+  return { schemas: { facts, streams }, problems }
+}
+
 type Read = {
   found: Found
   claims?: string
@@ -140,6 +220,7 @@ type Read = {
   schema?: z.ZodType
   verbs?: Map<string, CompiledVerb>
   reads?: Map<string, CompiledRead>
+  schemas?: StoreSchemas
 }
 
 /** Whether a JSON Schema takes an object that must hold `project`, a string. */
@@ -214,11 +295,14 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   if (settings && !settings.ok) return { found, claims, manifest, problems: settings.problems.map((p) => error('invalid', `${p.path}: ${p.message}`)) }
   const calls = compileCalls(manifest)
   if (calls.problems.length) return { found, claims, manifest, problems: calls.problems }
+  const stores = storeSchemas(manifest)
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems]
+  if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, schemas: stores.schemas }
 }
 
 /** The capabilities `manifest` requires, the core aside. */
@@ -262,10 +346,6 @@ const cyclesOf = (nodes: string[], edges: Map<string, string[]>): Set<string>[] 
   for (const node of nodes) if (!index.has(node)) visit(node)
   return found
 }
-
-/** Whether an extension is off on a floor: a capability of its `chain` is off there. */
-export const offOn = (config: Config, project: string, chain: string[]): boolean =>
-  chain.some((cap) => config.projects[project]?.capabilities?.[cap]?.off === true)
 
 /** `cap` and every capability it requires, directly or not. */
 const chainOf = (cap: string, requires: (cap: string) => string[]): string[] => [...new Set([cap, ...requires(cap).flatMap((needed) => chainOf(needed, requires))])]
@@ -382,6 +462,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           provides,
           settings: r.settings,
           ...(r.schema && { schema: r.schema }),
+          schemas: r.schemas!,
           requires: requiredOf(manifest),
           wants,
           verbs: r.verbs!,
@@ -482,5 +563,9 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
       verbs: verbsOf(r.manifest),
     }),
   )
-  return { extensions: [...started, ...held].sort(shownOrder) }
+  const stores = resolved.order.map((id) => {
+    const { provides, chain, manifest } = resolved.accepted.get(id)!
+    return { provides, chain, collections: manifest.collections ?? {} }
+  })
+  return { extensions: [...started, ...held].sort(shownOrder), stores }
 }

@@ -104,7 +104,8 @@ import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
-import { DispatchResource, isDeclaredIn, policyFactsIn } from './dispatch.ts'
+import { DispatchResource, policyFactsIn } from './dispatch.ts'
+import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -561,7 +562,7 @@ export const httpServer = defineResource({
       serveFile(res, file, sandboxed(file))
     }
 
-    const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
+    const isDeclared = (project: string, collection: string) => collectionOn(readConfig(), project, collection, extensions.registry().stores) !== undefined
 
     const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
       if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)

@@ -52,6 +52,7 @@ export const publisher = defineResource({
       streams: system.streamMonths(),
       policies: policiesNow(),
       extensions: extensions.registry().extensions,
+      stores: extensions.registry().stores,
       paths,
       now: Date.now(),
     })

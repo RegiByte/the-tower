@@ -5,7 +5,8 @@
  * `internal` naming the extension, and the extension a problem.
  */
 import { z } from 'zod'
-import { offOn, type Accepted, type CompiledRead, type CompiledVerb } from '../bridge/extensions.ts'
+import type { Accepted, CompiledRead, CompiledVerb } from '../bridge/extensions.ts'
+import { offOn } from '../bridge/stores.ts'
 import { apiError, isApiError, type ApiError } from '../shared/api.ts'
 import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'

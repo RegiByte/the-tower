@@ -47,7 +47,8 @@ import {
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
-import type { ExtensionView } from '../shared/extensions.ts'
+import type { Doors, ExtensionView } from '../shared/extensions.ts'
+import { floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, filedThreadOf, floorThreads, type CheckoutState, type FloorThread } from './reviews.ts'
 import { deliveries, type Delivery } from './messages.ts'
 import { commonBases, floorBranches, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
@@ -230,7 +231,12 @@ export type FloorItem = Pick<CollectionItem, 'id' | 'size' | 'modifiedAt'> & { t
  * One of a floor's collections, every project's and its own, with the files it holds in id order. `dir`: where they
  * are on disk, an item's file being `<dir>/<id>`. `description`: what it is for, as the config says.
  */
-export type FloorCollection = { id: string; label: string; description?: string; dir: string; items: FloorItem[] }
+/**
+ * A floor's collection. `owner`: the capability that alone writes it, an extension's (decision `extensions`): the
+ * generic writes are refused there. `doors`: how others list, read, create, edit and delete its items, as its extension
+ * declares them, each a verb or read, or why the domain has none.
+ */
+export type FloorCollection = { id: string; label: string; description?: string; owner?: string; doors?: Doors; dir: string; items: FloorItem[] }
 
 /**
  * A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and
@@ -547,11 +553,13 @@ const withCrews = (cards: Card[]): Card[] => {
 const hirersOf = (sessions: Session[], nameOf: (s: Session) => string): Map<string, HiredBy> =>
   new Map(sessions.flatMap((session) => session.facts.hired.map((id) => [id, { session: session.header.id, callsign: nameOf(session), project: session.header.project }] as const)))
 
-const collectionsOf = (config: Config, projectId: string, root: string, items: CollectionItem[], keptBy: Map<string, KeptBy>): FloorCollection[] =>
-  Object.entries(projectCollections(config, projectId)).map(([id, { label, description }]) => ({
+const collectionsOf = (collections: Record<string, FloorCollectionType>, projectId: string, root: string, items: CollectionItem[], keptBy: Map<string, KeptBy>): FloorCollection[] =>
+  Object.entries(collections).map(([id, { label, description, owner, doors }]) => ({
     id,
     label,
     description,
+    ...(owner && { owner }),
+    ...(doors && { doors }),
     dir: `${root}/${projectId}/${id}`,
     items: items
       .filter((i) => i.project === projectId && i.collection === id)
@@ -719,12 +727,14 @@ export type SystemView = {
   policies: Policies
   /** Every extension as it stands (`src/bridge/extensions.ts`). */
   extensions: ExtensionView[]
+  /** The stores of the extensions the tower accepted: their collections join the floors they are on. */
+  stores: ExtensionStores[]
   paths: Pick<SystemPaths, 'config' | 'collections'>
   now: number
 }
 
 export const board = (view: SystemView): Board => {
-  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, extensions, paths, now } = view
+  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, extensions, stores, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(view)
@@ -762,7 +772,7 @@ export const board = (view: SystemView): Board => {
         ...project,
         cards: present,
         archived: floorCards.length - present.length,
-        collections: collectionsOf(config, id, paths.collections, items, keptBy),
+        collections: collectionsOf(floorCollections(config, id, stores), id, paths.collections, items, keptBy),
         worktrees,
         branches,
         threads: floorThreadsNow,

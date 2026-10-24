@@ -17,6 +17,7 @@ import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, sl
 import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
+import { collectionOn, ownedRefusal, type FloorCollectionType } from '../bridge/stores.ts'
 import { discardNote } from '../bridge/worktrees.ts'
 import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
@@ -487,9 +488,18 @@ export const dispatch = defineResource({
       return OK
     }
 
-    /** Changes only inside a collection the config declares for the project. */
+    /** Acts only on a collection the floor keeps, declared by the config or by an extension on there. */
+    const onFloor = (project: string, collection: string, act: (on: FloorCollectionType) => Answer) => {
+      const on = collectionOn(readConfig(), project, collection, holder.registry().stores)
+      return on ? act(on) : apiError('not_found', `"${project}" has no collection "${collection}"`)
+    }
+
+    /** A generic write: only to a collection no extension owns. */
     const inCollection = (project: string, collection: string, change: () => Answer) =>
-      isDeclared(project, collection) ? change() : apiError('not_found', `"${project}" has no collection "${collection}"`)
+      onFloor(project, collection, (on) => {
+        const refused = ownedRefusal(collection, on)
+        return refused ? apiError('refused', refused) : change()
+      })
 
     const toItem = (project: string, collection: string, id: string, change: (file: string) => Answer) =>
       inCollection(project, collection, () => {
@@ -502,7 +512,7 @@ export const dispatch = defineResource({
      * so appends from the page and from every worker never interleave.
      */
     const appendReview = ({ project, checkout, author, re, anchors, body }: RouteInput['review/append']): Answer =>
-      inCollection(project, REVIEWS, () => {
+      onFloor(project, REVIEWS, () => {
         if (!body.trim() && !anchors.length) return apiError('invalid', 'A note needs a body or an anchor')
         const problem = bodyProblem(body) ?? anchors.flatMap((a) => (a.from > a.to ? [`${a.repo}:${a.path}: line ${a.from} comes after ${a.to}`] : []))[0]
         if (problem) return apiError('invalid', problem)

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { registry, resolve, type Found, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
+import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
+import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
 import type { Config } from '../src/shared/model.ts'
 
 const TOWER = '1.81'
@@ -151,4 +153,82 @@ test("a read's path matches its words and takes each param decoded", () => {
   assert.deepEqual(matchRead('beats/<project>', 'beats/my%20lab'), { project: 'my lab' })
   assert.deepEqual(matchRead('history', 'history'), {})
   assert.deepEqual(['beats', 'beats/', 'beats/lab/more', 'beat/lab'].map((path) => matchRead('beats/<project>', path)), [undefined, undefined, undefined, undefined])
+})
+
+const DOORS = { list: 'tower/board', read: 'tower/collection/<project>/<collection>/<item>', create: 'pulse/keep', edit: { none: 'a beat is never rewritten' }, delete: { none: 'beats are kept' } }
+
+/** A verb `keep` for the doors to name, and a deprecated `stamp`. */
+const KEEP = {
+  keep: { input: { type: 'object' }, reply: { type: 'object' }, scope: 'system' },
+  stamp: { input: { type: 'object' }, reply: { type: 'object' }, scope: 'system', deprecated: { since: '1.0', use: 'pulse/keep' } },
+}
+
+test("stores break their loader rules at their paths: a collection named apart from the capability, an owned one without doors, a door of another's, a code that is no letter", () => {
+  const r = resolved([
+    ext('named', { collections: { notes: { label: 'Notes', description: 'd' } } }),
+    ext('doorless', { collections: { doorless: { label: 'D', description: 'd', owned: true } } }),
+    ext('borrow', { collections: { borrow: { label: 'B', description: 'd', owned: true, doors: { ...DOORS, create: 'reviews/append' } } } }),
+    ext('coded', { streams: { beats: { scope: 'system', facts: { bb: { schema: {} } } } } }),
+  ])
+  const problem = (id: string) => [r.refused.get(id)!.problems[0].path, r.refused.get(id)!.problems[0].message]
+  assert.deepEqual(problem('named'), ['collections.notes', 'collection notes is named by the capability: named, or named.<name>'])
+  assert.deepEqual(problem('doorless'), ['collections.doorless.doors', 'an owned collection declares its doors: list, read, create, edit, delete'])
+  assert.deepEqual(problem('borrow'), ['collections.borrow.doors.create', "reviews/append is reviews's: a door names a verb or read of borrow or of the core (tower/…)"])
+  assert.equal(problem('coded')[0], 'streams.beats.facts.bb')
+})
+
+test("a door names a verb or read its owner declares and hasn't deprecated, or a read of the core's", () => {
+  const owned = (doors: object) => ({ verbs: KEEP, collections: { pulse: { label: 'B', description: 'd', owned: true, doors: { ...DOORS, ...doors } } } })
+  const message = (doors: object) => {
+    const r = resolved([ext('pulse', owned(doors))])
+    return r.refused.get('pulse')?.problems.map((p) => [p.path, p.message])
+  }
+  assert.equal(message({}), undefined)
+  assert.deepEqual(message({ create: 'pulse/make' }), [['collections.pulse.doors.create', "pulse/make names no verb or read of pulse's manifest"]])
+  assert.deepEqual(message({ create: 'pulse/stamp' }), [['collections.pulse.doors.create', 'pulse/stamp is deprecated since 1.0: a door names what is current, pulse/keep']])
+  assert.deepEqual(message({ list: 'tower/spawn' }), [['collections.pulse.doors.list', "tower/spawn is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)"]])
+})
+
+test('a manifest within the rules is accepted with its stores, each schema read as zod; requiring a tower before stores warns', () => {
+  const r = resolved([
+    ext('pulse', {
+      verbs: KEEP,
+      collections: { pulse: { label: 'Beats', description: 'd', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'd' } },
+      streams: { beats: { scope: 'project', facts: { b: { schema: { type: 'object', properties: { n: { type: 'integer' } }, required: ['n'] } } } } },
+      facts: { beat: { schema: { type: 'integer' } } },
+    }),
+  ])
+  const pulse = r.accepted.get('pulse')!
+  assert.deepEqual(pulse.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs'], ['under-declared', 'collections']])
+  assert.equal(pulse.schemas.streams.get('beats')!.get('b')!.safeParse({ n: 'x' }).success, false)
+  assert.equal(pulse.schemas.facts.get('beat')!.safeParse(3).success, true)
+  assert.deepEqual(registry(r, new Map([['pulse', { at: NOW }]]), NOW).stores.map((s) => [s.provides, Object.keys(s.collections)]), [['pulse', ['pulse', 'pulse.notes']]])
+})
+
+test("a floor's collections: the config's, then an extension's where it is on, the config's words over its own; off, only the config's stay, open", () => {
+  const stores = [{ provides: 'pulse', chain: ['pulse'], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
+  const c = config({
+    collections: { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } },
+    projects: { app: { name: 'App', hub: '/app', repos: [] }, site: { name: 'Site', hub: '/site', repos: [], capabilities: { pulse: { off: true } } } },
+  })
+  const app = floorCollections(c, 'app', stores)
+  assert.deepEqual(Object.keys(app), ['drafts', 'pulse', 'pulse.notes'])
+  assert.deepEqual(app.pulse, { label: 'Our beats', description: 'Its beats', owner: 'pulse', doors: DOORS })
+  assert.deepEqual(app['pulse.notes'], { label: 'Notes', description: 'Its notes' })
+  assert.deepEqual(floorCollections(c, 'site', stores), { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } })
+  assert.equal(ownedRefusal('pulse', app.pulse), 'pulse owns pulse: use pulse/keep')
+  assert.equal(ownedRefusal('pulse', { ...app.pulse, doors: { ...DOORS, create: { none: 'beats come from its clock' } } }), 'pulse owns pulse: only pulse writes it (beats come from its clock)')
+  assert.equal(ownedRefusal('pulse.notes', app['pulse.notes']), undefined)
+})
+
+test("a capability's session facts over a lineage: in order, each session once, its own only; tower.x.<cap>.<name> splits at the capability's end", () => {
+  assert.deepEqual(extensionFactOf('tower.x.pulse.beat.count'), { cap: 'pulse', name: 'beat.count' })
+  assert.equal(extensionFactOf('tower.show'), undefined)
+  const session = (id: string, facts: Session['facts']['extensionFacts']) => ({ header: { id }, facts: { extensionFacts: facts } }) as unknown as Session
+  const first = session('s1', [[1, 'pulse', 'beat', 1], [2, 'roles', 'role', 'fixer']])
+  const then = session('s2', [[3, 'pulse', 'beat', 2]])
+  assert.deepEqual(sessionFacts('pulse', [first, then, then]), [
+    { name: 'beat', value: 1, at: 1, session: 's1' },
+    { name: 'beat', value: 2, at: 3, session: 's2' },
+  ])
 })

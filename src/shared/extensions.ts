@@ -14,6 +14,9 @@ const SINCE = '1.81'
 /** The minor verbs and reads, the caller and the calls arrived in. */
 const CALLS = '1.82'
 
+/** The minor stores arrived in: collections, streams and session facts. */
+const STORES = '1.83'
+
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
 
@@ -147,6 +150,12 @@ export type Client = { read: Record<string, (params?: Record<string, string>, qu
   (input?: unknown) => Promise<unknown>
 >
 
+/**
+ * A session fact `tower.x.<cap>.<name>` as an extension reads it: `name`, the part after `tower.x.<cap>.`; `at`, epoch
+ * ms; `session`, the session that logged it.
+ */
+export type SessionFact = { name: string; value: unknown; at: number; session: string }
+
 /** What `start` gets: who it is, its settings, timers and a log the tower clears and closes at halt, the board, and the calls. */
 export type StartCtx = {
   /** @since 1.81 */
@@ -254,6 +263,7 @@ const sinceAt =
     schema.meta({ 'x-since': version })
 const since = sinceAt(SINCE)
 const sinceCalls = sinceAt(CALLS)
+const stores = sinceAt(STORES)
 
 const Name = z
   .string()
@@ -292,6 +302,41 @@ const Read = z.strictObject({
   description: sinceCalls(z.string().optional()),
   deprecated: sinceCalls(Deprecated.optional()),
 })
+/** A verb or read by its provider's capability, the core as `tower`: `reviews/append`, `tower/collection/<project>/<collection>/<item>`. */
+const Qualified = z
+  .string()
+  .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*(\/(<[a-z]+>|[a-z][a-z0-9.-]{0,47}))+$/, 'a verb or read qualified by its capability: reviews/append, tower/board')
+const Door = z.union([
+  Qualified.describe('The verb or read others reach the store by.'),
+  z.strictObject({ none: stores(z.string().min(1).describe('Why the domain has no such act.')) }),
+])
+const Doors = z.strictObject({ list: stores(Door), read: stores(Door), create: stores(Door), edit: stores(Door), delete: stores(Door) })
+const Collection = z
+  .strictObject({
+    label: stores(z.string()),
+    description: stores(z.string()),
+    owned: stores(z.boolean().optional().describe('Only its owner writes it: the generic writes are refused, naming the create door.')),
+    doors: stores(Doors.optional().describe('How others reach it: each a verb or read, or why the domain has none. An owned collection declares all five.')),
+  })
+  .refine((c) => !c.owned || c.doors !== undefined, { message: 'an owned collection declares its doors: list, read, create, edit, delete', path: ['doors'] })
+  .meta({ if: { properties: { owned: { const: true } }, required: ['owned'] }, then: { required: ['doors'] } })
+const Stream = z.strictObject({
+  scope: stores(z.enum(['system', 'project']).describe("`system`: the tower's one stream; `project`: one per floor.")),
+  description: stores(z.string().optional()),
+  facts: stores(
+    z
+      .record(z.string().regex(/^[a-z]$/, 'a fact code is one lowercase letter'), z.strictObject({ schema: stores(Schema), description: stores(z.string().optional()) }))
+      .describe('Its fact codes, each with the JSON Schema its facts hold to.'),
+  ),
+  doors: stores(z.strictObject({ read: stores(Door), append: stores(Door) }).optional().describe('How others read it and append to it, through its owner.')),
+})
+const Fact = z.strictObject({ schema: stores(Schema), description: stores(z.string().optional()) })
+
+/** How others reach a store: a verb or read qualified by its capability, or why the domain has no such act. */
+export type Door = string | { none: string }
+export type Doors = { list: Door; read: Door; create: Door; edit: Door; delete: Door }
+export type Collection = z.infer<typeof Collection>
+
 const View = z.strictObject({ module: since(Path), export: since(z.string().optional()), subject: since(SubjectKind), words: since(Words.optional()) })
 
 export const Manifest = z
@@ -315,6 +360,9 @@ export const Manifest = z
     server: since(Path.optional().describe("The module whose default export is `start`; none, no code.")),
     verbs: sinceCalls(z.record(Word, Verb).optional().describe('Its verbs by name: POST /<capability>/<name>, ctx.call, tower x.')),
     reads: sinceCalls(z.record(ReadPath, Read).optional().describe('Its reads by path: GET /<capability>/<path>, ctx.read.')),
+    collections: stores(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
+    streams: stores(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
+    facts: stores(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
     views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
     regions: since(
       z

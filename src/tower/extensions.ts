@@ -10,7 +10,7 @@ import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalS
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { NO_EXTENSIONS, offOn, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import { NO_EXTENSIONS, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import { discover, newestIn } from '../extensions.ts'
 import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
@@ -34,6 +34,7 @@ import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, TowerResources, TowerSystem } from './spine.ts'
+import { offOn } from '../bridge/stores.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
 const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {

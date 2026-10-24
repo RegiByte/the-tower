@@ -2,8 +2,8 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs, pings through chime and reads its beat: the fixture the server test boots.",
-  "requires": { "tower": "1.82", "chime": "1.0" },
+  "description": "Logs a line at its interval while it runs, pings through chime reads its beat and keeps its beats: the fixture the server test boots.",
+  "requires": { "tower": "1.83", "chime": "1.0" },
   "server": "server.ts",
   "settings": {
     "type": "object",
@@ -42,5 +42,29 @@
       "scope": "project",
       "description": "How often it beats on the floor."
     }
+  },
+  "collections": {
+    "pulse": {
+      "label": "Beats",
+      "description": "One file per beat, written only by pulse.",
+      "owned": true,
+      "doors": {
+        "list": "tower/board",
+        "read": "tower/collection/<project>/<collection>/<item>",
+        "create": { "none": "A beat is made only by pulse." },
+        "edit": { "none": "A beat is never rewritten." },
+        "delete": { "none": "Beats are kept." }
+      }
+    }
+  },
+  "streams": {
+    "beats": {
+      "scope": "project",
+      "description": "Each beat, as it was kept.",
+      "facts": { "b": { "schema": { "type": "object", "additionalProperties": false, "required": ["item"], "properties": { "item": { "type": "string" } } } } }
+    }
+  },
+  "facts": {
+    "beat": { "description": "A beat a session took.", "schema": { "type": "integer", "minimum": 1 } }
   }
 }

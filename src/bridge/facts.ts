@@ -142,6 +142,8 @@ export type Facts = {
   sent: [at: number, to: string, digest: number][]
   /** The messages it received from other Claude sessions: when (epoch ms), and the digest of the text as sent. */
   received: [at: number, digest: number][]
+  /** The extensions' session facts (`tower.x.<cap>.<name>`), oldest first: when (epoch ms), the capability, the name and the value. */
+  extensionFacts: [at: number, cap: string, name: string, value: unknown][]
   /** The first event the fold couldn't follow: the error it threw, the event's time and code. Nothing after it is folded. */
   broken?: Broken
 }
@@ -160,8 +162,19 @@ export type Session = { header: SessionHeader; facts: Facts }
 export const initialFacts = (header: SessionHeader): Facts => ({
   state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
   spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], subagentRuns: [], limitReadings: {},
-  pages: [], sent: [], received: [],
+  pages: [], sent: [], received: [], extensionFacts: [],
 })
+
+/** What an extension's session facts are named under: `tower.x.<cap>.<name>`, the capability never holding a dot. */
+export const EXTENSION_FACTS = 'tower.x.'
+
+/** A `tower.x.*` fact's capability and name: `undefined` for any other event. */
+export const extensionFactOf = (event: string): { cap: string; name: string } | undefined => {
+  if (!event.startsWith(EXTENSION_FACTS)) return undefined
+  const rest = event.slice(EXTENSION_FACTS.length)
+  const dot = rest.indexOf('.')
+  return dot > 0 ? { cap: rest.slice(0, dot), name: rest.slice(dot + 1) } : undefined
+}
 
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
@@ -362,8 +375,10 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, killedBy: String(hook.by) }
     case LEAVE:
       return { ...facts, leaveAt: t }
-    default:
-      return facts
+    default: {
+      const fact = extensionFactOf(String(hook.hook_event_name))
+      return fact ? { ...facts, extensionFacts: [...facts.extensionFacts, [at, fact.cap, fact.name, hook.value]] } : facts
+    }
   }
 }
 
