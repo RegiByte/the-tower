@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.58.0
+
+The host logs what extensions will need, and the tower process becomes a system of resources. It asks a **host
+restart** (protocol 3): `tower down`, then `tower up`, which ends every session and shell; all can be resumed. No
+config change, the renderer API 1.79 → 1.80 (additive). Until the host restarts, a newer tower shows the host as
+outdated; spawns and resumes still work.
+
+- **host restart** Each session's header names its `runtime` (`claude`; a header without it is Claude's). A spawn may
+  carry `tower.*` facts, logged right after the header and before the session's first event; nothing sends them yet,
+  and the tower refuses a spawn with facts while the host is older. A worker ended by a signal it didn't catch, as by
+  `kill -9` or a crash, is now stranded (resume, carry on or let go), where before it read as an ordinary end.
+- The tower process is a system of resources (braided 0.3.1), started in dependency order and halted cleanly on
+  `tower down`; a resource that fails to start fails the boot clearly.
+- `GET /extensions` answers the extensions the tower runs (none yet) and the topology of its resources, Mermaid
+  included; `/schema` lists it. Nothing else changes for a renderer.
+
 ## v1.57.0
 
 The new-worker form names Claude's real defaults, and the shared modules split by concern. No host restart, no
