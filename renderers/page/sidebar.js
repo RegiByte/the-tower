@@ -1,4 +1,4 @@
-import { ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededOffers, heededWaits, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, extraUsageLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededOffers, heededWaits, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
@@ -390,6 +390,10 @@ export async function sidebar(deps) {
     board().probes.map((p) => `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}${
       can(p, 'run') ? `<button class="probe-run" data-probe-run="${esc(p.name)}" data-tip="read it now: at most once a minute">read now</button>` : ''}</small>`).join('')
 
+  /** Each extension the tower found, after the probes: its line, its state's colour on the lamp, and in full on hover. */
+  const extensionsHtml = () =>
+    board().extensions.map((e) => `<small class="extension ${EXTENSION_ATTENTION[e.state]}" data-tip="${esc(extensionTitle(e))}"><span class="lamp"></span>${esc(extensionLine(e))}</small>`).join('')
+
   /** Extra usage while it is on, as the probe last read it. @param {number} now */
   const extraHtml = (now) => {
     const e = board().extraUsage
@@ -402,10 +406,10 @@ export async function sidebar(deps) {
    * @param {number} now
    */
   const limitsHtml = (now) => {
-    if (!board().rateLimits.length) return `<small>no rate-limit reading yet</small>${extraHtml(now)}${probesHtml(now)}`
+    if (!board().rateLimits.length) return `<small>no rate-limit reading yet</small>${extraHtml(now)}${probesHtml(now)}${extensionsHtml()}`
     const age = now - /** @type {number} */ (board().rateLimitsAt)
     return `${board().rateLimits.map((r) => limitHtml(r, now)).join('')}
-    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(board()))}">as of ${span(age)} ago</small>${extraHtml(now)}${probesHtml(now)}`
+    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(board()))}">as of ${span(age)} ago</small>${extraHtml(now)}${probesHtml(now)}${extensionsHtml()}`
   }
 
   /** The limit closest to running out: the one with the most used. @param {RateLimit[]} limits */
