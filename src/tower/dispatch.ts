@@ -2,36 +2,36 @@
  * The verbs: every command's handler, each composed over the config, the live system and the board, and the state
  * verbs keep while they run (hires and resumes taken in turn, workers departing). `mux/*` belong to the HTTP server.
  */
+import { defineResource, type StartedResource } from 'braided'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
-import { carriesOn, heldBy, heldCallsigns, resumeName, runsAs } from '../bridge/chains.ts'
-import { HIRED, KEYED_BY, KILLED_BY, LET_GO, leavesNow, PROMPTED_BY, type Session } from '../bridge/facts.ts'
-import { hostRequest, revealInFinder, reap, runEditor, submitText, termsRequest } from '../machine.ts'
-import { createItem, deleteItem, itemPath, renameItem, itemVersion, putItem, readItem, restoreItem, writeItem } from '../collections.ts'
-import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
-import { discardNote } from '../bridge/worktrees.ts'
-import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
-import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
-import { callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, worktreeName, worktreesConfig, type Config, type EditorAction, type Project } from '../shared/model.ts'
-import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
-import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
-import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
-import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../bridge/policies.ts'
-import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
-import { POLICIES, ruleWords, slotsBetween } from '../shared/policies.ts'
-import { tagOf } from '../shared/tags.ts'
-import { appendFact } from '../streams.ts'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
+import { carriesOn, heldBy, heldCallsigns, resumeName, runsAs } from '../bridge/chains.ts'
+import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
+import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../bridge/policies.ts'
+import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
+import { discardNote } from '../bridge/worktrees.ts'
+import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
+import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
 import { apiError, ROUTES, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
+import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal } from '../shared/cards.ts'
-import { defineResource, type StartedResource } from 'braided'
+import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
+import { callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, worktreeName, worktreesConfig, type Config, type EditorAction, type Project } from '../shared/model.ts'
+import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
+import { POLICIES, ruleWords, slotsBetween } from '../shared/policies.ts'
+import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
+import { tagOf } from '../shared/tags.ts'
+import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
+import { appendFact } from '../streams.ts'
+import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { OK, type Answer } from './answers.ts'
-import { PUBLISH_DEBOUNCE_MS, type publisher } from './publisher.ts'
-import type { config, probes, system } from './spine.ts'
+import { PUBLISH_DEBOUNCE_MS, PublisherResource } from './publisher.ts'
+import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
 
 /** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
 const TRACK_TIMEOUT_MS = 5000
@@ -43,13 +43,13 @@ export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
 export const isDeclaredIn = (config: Config, project: string, collection: string): boolean =>
   Object.hasOwn(config.projects, project) && Object.hasOwn(projectCollections(config, project), collection)
 
-export const policyFactsIn = (live: StartedResource<typeof system>, project: string) => live.policyFacts().get(project) ?? NO_POLICY_FACTS
+export const policyFactsIn = (live: SystemResource, project: string) => live.policyFacts().get(project) ?? NO_POLICY_FACTS
 
 type Deps = {
-  'core:config': StartedResource<typeof config>
-  'core:system': StartedResource<typeof system>
-  'core:publisher': StartedResource<typeof publisher>
-  'core:probes': StartedResource<typeof probes>
+  'core:config': ConfigResource
+  'core:system': SystemResource
+  'core:publisher': PublisherResource
+  'core:probes': ProbesResource
 }
 
 export const dispatch = defineResource({
@@ -760,3 +760,4 @@ export const dispatch = defineResource({
   },
   halt: ({ stop }) => stop(),
 })
+export type DispatchResource = StartedResource<typeof dispatch>

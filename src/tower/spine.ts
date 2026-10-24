@@ -10,16 +10,16 @@
  *   core:slots      the policies' runner, which acts through the verbs (src/policies.ts)
  *   core:http       the renderer API on the config's port (http.ts)
  */
-import { buildTopology, defineResource, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
+import { buildTopology, defineResource, StartedSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
 import { runPolicies } from '../policies.ts'
 import { runProbes } from '../probes.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import { readConfig, watchSystem } from '../system.ts'
 import type { Answer } from './answers.ts'
-import { dispatch } from './dispatch.ts'
+import { dispatch, type DispatchResource } from './dispatch.ts'
 import { httpOf } from './http.ts'
-import { publisher } from './publisher.ts'
+import { publisher, PublisherResource } from './publisher.ts'
 
 /** The config is read again on every call: the user edits it at any time, and every read sees the edit. */
 export const config = defineResource({
@@ -29,10 +29,11 @@ export const config = defineResource({
   },
   halt: () => {},
 })
+export type ConfigResource = StartedResource<typeof config>
 
 export const system = defineResource({
   dependencies: ['core:config'],
-  start: async ({ 'core:config': { paths } }: { 'core:config': StartedResource<typeof config> }) => {
+  start: async ({ 'core:config': { paths } }: { 'core:config': ConfigResource }) => {
     const listeners = new Set<() => void>()
     const live = await watchSystem(paths, () => {
       for (const listener of listeners) listener()
@@ -46,23 +47,26 @@ export const system = defineResource({
   },
   halt: (live) => live.stop(),
 })
+export type SystemResource = StartedResource<typeof system>
 
 export const probes = defineResource({
   dependencies: ['core:config', 'core:system'],
-  start: ({ 'core:config': { paths, read }, 'core:system': live }: { 'core:config': StartedResource<typeof config>; 'core:system': StartedResource<typeof system> }) =>
+  start: ({ 'core:config': { paths, read }, 'core:system': live }: { 'core:config': ConfigResource; 'core:system': SystemResource }) =>
     runProbes(paths, read, live.sessions, live.probes),
   halt: ({ stop }) => stop(),
 })
+export type ProbesResource = StartedResource<typeof probes>
 
 export const slots = defineResource({
   dependencies: ['core:dispatch', 'core:publisher'],
-  start: ({ 'core:dispatch': { handlers }, 'core:publisher': { board } }: { 'core:dispatch': StartedResource<typeof dispatch>; 'core:publisher': StartedResource<typeof publisher> }) =>
+  start: ({ 'core:dispatch': { handlers }, 'core:publisher': { board } }: { 'core:dispatch': DispatchResource; 'core:publisher': PublisherResource }) =>
     runPolicies(board, {
       run: (input) => handlers['policy/run'](input) as Promise<Answer>,
       pass: (input) => handlers['policy/pass'](input) as Promise<Answer>,
     }),
   halt: ({ stop }) => stop(),
 })
+export type SlotsResource = StartedResource<typeof slots>
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
 const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
@@ -84,3 +88,4 @@ export const tower = () => {
   }
   return resources
 }
+export type TowerSystem = StartedSystem<ReturnType<typeof tower>>

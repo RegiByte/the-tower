@@ -8,13 +8,13 @@ import { allCards, board, type Policies, type SystemView } from '../bridge/board
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import { errorOf } from './answers.ts'
-import type { config, system } from './spine.ts'
+import type { ConfigResource, SystemResource } from './spine.ts'
 
 export const PUBLISH_DEBOUNCE_MS = 150
 /** Time alone moves the board: a worker goes quiet long enough to look stuck. */
 const CLOCK_PUBLISH_MS = 60_000
 
-type Deps = { 'core:config': StartedResource<typeof config>; 'core:system': StartedResource<typeof system> }
+type Deps = { 'core:config': ConfigResource; 'core:system': SystemResource }
 
 export const publisher = defineResource({
   dependencies: ['core:config', 'core:system'],
@@ -124,3 +124,4 @@ export const publisher = defineResource({
   },
   halt: ({ stop }) => stop(),
 })
+export type PublisherResource = StartedResource<typeof publisher>

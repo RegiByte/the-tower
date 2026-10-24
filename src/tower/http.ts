@@ -66,44 +66,44 @@
  * Every command's body, up to 8 MiB, is parsed by its schema in src/shared/api.ts. A failure, of a command or a read, answers
  * `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
  */
+import { defineResource } from 'braided'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
-import { briefOf } from '../bridge/turns.ts'
-import { withLiveness } from '../bridge/status.ts'
-import { isLive } from '../bridge/verbs.ts'
-import { originUrl } from '../machine.ts'
-import { changesIn } from '../changes.ts'
-import { readLanded } from '../landed.ts'
-import { itemPath } from '../collections.ts'
-import { reviewHistory } from '../bridge/reviews.ts'
-import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
-import { landingOf, WorktreeError } from '../worktrees.ts'
-import { attachShell } from '../shared/client.ts'
-import type { ShellStream } from '../shared/terms.ts'
-import { probeView } from '../bridge/probes.ts'
-import { runsRead } from '../bridge/policies.ts'
-import { everyEvent, logFileOf, readLog } from '../tail.ts'
-import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
-import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
-import { archiveOf } from '../bridge/board.ts'
-import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
-import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
-import { API_VERSION, ApiError as ApiErrorSchema, apiError, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Query, type Route, type RouteInput } from '../shared/api.ts'
 import { z } from 'zod'
-import boardSchema from '../shared/board.schema.json' with { type: 'json' }
-import { designCss, fonts } from '../shared/design.ts'
-import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
+import { archiveOf } from '../bridge/board.ts'
+import { runsRead } from '../bridge/policies.ts'
+import { probeView } from '../bridge/probes.ts'
+import { reviewHistory } from '../bridge/reviews.ts'
+import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
+import { withLiveness } from '../bridge/status.ts'
+import { briefOf } from '../bridge/turns.ts'
+import { isLive } from '../bridge/verbs.ts'
+import { changesIn } from '../changes.ts'
+import { itemPath } from '../collections.ts'
+import { readLanded } from '../landed.ts'
+import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
-import { bundled, MODULES, towerClient } from './served.ts'
 import { readPatterns } from '../patterns.ts'
-import { lastFrames, screenMirrors } from './screens.ts'
-import { defineResource, type StartedResource } from 'braided'
+import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Query, type Route, type RouteInput } from '../shared/api.ts'
+import boardSchema from '../shared/board.schema.json' with { type: 'json' }
+import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
+import { attachShell } from '../shared/client.ts'
+import { designCss, fonts } from '../shared/design.ts'
+import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
+import type { ShellStream } from '../shared/terms.ts'
+import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
+import { everyEvent, logFileOf, readLog } from '../tail.ts'
+import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
-import { isDeclaredIn, policyFactsIn, type dispatch } from './dispatch.ts'
-import type { publisher } from './publisher.ts'
-import type { config, system } from './spine.ts'
+import { DispatchResource, isDeclaredIn, policyFactsIn } from './dispatch.ts'
+import type { PublisherResource } from './publisher.ts'
+import { lastFrames, screenMirrors } from './screens.ts'
+import { bundled, MODULES, towerClient } from './served.ts'
+import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
 const problemPage = (title: string, detail: string, fix: string): string => `<!doctype html>
@@ -133,10 +133,10 @@ p { margin: var(--sp-l) 0 0; color: var(--muted); }
 `
 
 type Deps = {
-  'core:config': StartedResource<typeof config>
-  'core:system': StartedResource<typeof system>
-  'core:publisher': StartedResource<typeof publisher>
-  'core:dispatch': StartedResource<typeof dispatch>
+  'core:config': ConfigResource
+  'core:system': SystemResource
+  'core:publisher': PublisherResource
+  'core:dispatch': DispatchResource
 }
 
 /** The server on the config's port as it is at start: it serves there until it is halted. `extensions` answers `GET /extensions`. */
