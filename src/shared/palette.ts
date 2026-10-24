@@ -7,7 +7,7 @@
 import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
 import type { Capability } from './capabilities.ts'
-import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, heededWaits, unboundCommands, type Heed } from './cards.ts'
+import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added } from './extensions.ts'
 import type { Subject } from './subjects.ts'
 import { DRAFTS } from './drafts.ts'
@@ -209,8 +209,16 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     ...capabilities.filter((k) => !k.command).map((k): Entry => ({ id: `learn:${k.id}`, group: 'Learn', label: k.text, keywords: [k.id], learn: true, does: { t: 'learn', id: k.id } })),
     { id: PATTERNS_ENTRY, group: 'Learn', label: 'Patterns users are discovering', hint: 'What users found doing with the tower, as short stories.', keywords: ['stories', 'tips'], learn: true, does: { t: 'patterns' } },
   ]
+  const itemEntries = (f: Floor) =>
+    f.collections.flatMap((c) =>
+      c.items.flatMap((item) => {
+        const subject = itemSubject(f.id, c.id, item)
+        return addedEntries(board, subject, addedActions(board, subject), c.label, { project: f.id }).map((e) => ({ ...e, label: `${e.label}: ${item.tag}`, keywords: [...e.keywords, item.tag, f.name] }))
+      }),
+    )
   const extensions = [
     ...board.floors.flatMap((f) => addedEntries(board, floorSubject(f), addedActions(board, floorSubject(f)), f.name, { project: f.id })),
+    ...board.floors.flatMap(itemEntries),
     ...addedEntries(board, boardSubject(board), [...addedActions(board, boardSubject(board)), ...unboundCommands(board)], 'Extensions', {}),
   ]
   return [
