@@ -44,3 +44,11 @@ test('claudeDefaults: a flag asked for, a resume, or no step yet tells nothing; 
   assert.deepEqual(recorded('trust-dialog'), NONE)
   assert.deepEqual(claudeDefaults([launchedAs('tool-turn', [], 1)]), { model: 'claude-haiku-4-5-20251001', effort: undefined })
 })
+
+test('claudeDefaults: a spawn that asked for haiku does not erase the effort default', () => {
+  const plain = launchedAs('compact-auto', [], 1)
+  const haiku = launchedAs('compact-manual', ['--model', 'haiku'], 2)
+  haiku.facts.model = 'claude-haiku-4-5-20251001'
+  haiku.facts.effort = undefined
+  assert.deepEqual(claudeDefaults([plain, haiku]), { model: 'claude-haiku-5-5', effort: 'medium' })
+})
