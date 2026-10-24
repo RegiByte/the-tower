@@ -27,19 +27,23 @@ test('claudeDefaults: the latest step of the spawns that asked for neither tells
   assert.deepEqual(claudeDefaults([plain, picked]), { model: 'claude-opus-5-5', effort: 'high' })
 })
 
-test('claudeDefaults: a spawn that asked for an effort still tells the model, and one that asked for a model the effort', () => {
+test('claudeDefaults: a spawn that asked for an effort still tells the model; the effort is told only on the default model', () => {
   const plain = launchedAs('compact-auto', [], 1)
   const effortAsked = launchedAs('compact-manual', ['--effort', 'high'], 2)
   effortAsked.facts.model = 'claude-opus-5-5'
-  assert.deepEqual(claudeDefaults([plain, effortAsked]), { model: 'claude-opus-5-5', effort: 'medium' })
-  const modelAsked = launchedAs('compact-manual', ['--model', 'sonnet'], 2)
-  modelAsked.facts.effort = 'low'
-  assert.deepEqual(claudeDefaults([plain, modelAsked]), { model: 'claude-haiku-5-5', effort: 'low' })
+  assert.deepEqual(claudeDefaults([plain, effortAsked]), { model: 'claude-opus-5-5', effort: undefined })
+  const otherModel = launchedAs('compact-manual', ['--model', 'sonnet'], 2)
+  otherModel.facts.model = 'claude-sonnet-5-5'
+  otherModel.facts.effort = 'low'
+  assert.deepEqual(claudeDefaults([plain, otherModel]), { model: 'claude-haiku-5-5', effort: 'medium' })
+  const defaultModel = launchedAs('compact-manual', ['--model', 'haiku'], 2)
+  defaultModel.facts.effort = 'low'
+  assert.deepEqual(claudeDefaults([plain, defaultModel]), { model: 'claude-haiku-5-5', effort: 'low' })
 })
 
 test('claudeDefaults: a flag asked for, a resume, or no step yet tells nothing; a step with no effort leaves it unknown', () => {
   const recorded = (name: string) => claudeDefaults([fixture(name)].map((log) => ({ header: log.header, facts: factsOf(log) })))
-  assert.deepEqual(recorded('compact-auto'), { model: undefined, effort: 'medium' })
+  assert.deepEqual(recorded('compact-auto'), NONE)
   assert.deepEqual(recorded('resumed'), NONE)
   assert.deepEqual(recorded('trust-dialog'), NONE)
   assert.deepEqual(claudeDefaults([launchedAs('tool-turn', [], 1)]), { model: 'claude-haiku-4-5-20251001', effort: undefined })

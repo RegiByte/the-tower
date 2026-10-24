@@ -65,11 +65,12 @@
 - [`board`](ref:hub/src/bridge/board.ts#board): the whole system as one view for renderers: projects as floors of
   cards, who waits on you as waits ([[waiting-on-you]]), the verbs each card, conversation and floor offers
   ([[board-verbs]]), each floor's review threads, gallery and hiring limits, the model and effort Claude starts a
-  new worker on when asked for neither ([`claudeDefaults`](ref:hub/src/bridge/defaults.ts#claudeDefaults): each the
-  latest main-loop step's among every session, archived included, whose launch flags did not ask for it, so a `/model`
-  pick Claude saves as the user's default shows from the next step; a resume keeps its transcript's model and tells
-  nothing, nor does a step with no effort on a model the launch asked for (haiku has none). One value for the machine: a project whose own settings pin a
-  model shows the machine's default, Claude's precedence is not modelled), the host's and Claude's versions, the
+  new worker on when asked for neither ([`claudeDefaults`](ref:hub/src/bridge/defaults.ts#claudeDefaults): the model
+  the latest main-loop step's among every session, archived included, whose launch flags asked for none, so a `/model`
+  pick Claude saves as the user's default shows from the next step; the effort, which Claude saves per model, the
+  latest step's on that model among the sessions that asked for no effort, so a session on another model says nothing
+  of it; a resume keeps its transcript's model and tells nothing. One value for the machine: a project whose own
+  settings pin a model shows the machine's default, Claude's precedence is not modelled), the host's and Claude's versions, the
   rate limits, `today` ([[stats]]) and shells. Its shape, field by field with their docs, is the board schema
   (`src/shared/board.schema.json`, `npm run schema:board`, served at `GET /schema`). The rate limits are the latest
   reading of any session's turn or any probe's read ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)),
