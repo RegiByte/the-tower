@@ -5,6 +5,7 @@ import { shownPane, shownKey } from './kit.js'
 /**
  * @import { Board, Card, CardShown, Floor, Wait } from '../../src/bridge/board.ts'
  * @import { Offer } from '../../src/bridge/policies.ts'
+ * @import { BoardAsk } from '../../src/shared/extensions.ts'
  * @import { Sound } from '../../src/shared/cards.ts'
  * @import { Pane } from './view.js'
  */
@@ -17,16 +18,17 @@ import { shownPane, shownKey } from './kit.js'
  *   floorOf: (project: string) => Floor | undefined,
  *   board: () => Board,
  *   openPolicies: (project: string) => void,
+ *   goToSubject: (key: string) => void,
  * }} AlertingDeps
  */
 
 /**
- * What reaches the viewer away from the page: a notification for a wait, an offer or a showing, each opening what
+ * What reaches the viewer away from the page: a notification for a wait, an ask, an offer or a showing, each opening what
  * it is about when clicked, and the sounds, played on one audio context.
  * @param {AlertingDeps} deps
  */
 export function alerting(deps) {
-  const { callsign, select, showPane, floorOf, board, openPolicies } = deps
+  const { callsign, select, showPane, floorOf, board, openPolicies, goToSubject } = deps
   /**
    * One notification per wait or offer that begins (`/attend.js`), closed once it is over or dismissed.
    * @type {Map<string, Notification>}
@@ -67,6 +69,13 @@ export function alerting(deps) {
     return n
   }
 
+  /** @param {BoardAsk} a */
+  function showAskAlert(a) {
+    const n = new Notification(a.title, { body: `${a.cap} asks`, tag: a.key, requireInteraction: a.sound === 'wait' })
+    n.onclick = () => (window.focus(), goToSubject(a.subject), n.close())
+    return n
+  }
+
   /** @param {Card} c @param {Wait} w */
   function showAlert(c, w) {
     const n = new Notification(`${callsign(c.id)} · ${statusName(c)}`, {
@@ -76,5 +85,5 @@ export function alerting(deps) {
     return n
   }
 
-  return { alerts, playSound, showShownAlert, showOfferAlert, showAlert }
+  return { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert }
 }

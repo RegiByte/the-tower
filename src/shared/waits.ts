@@ -1,5 +1,6 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
 import type { Offer } from '../bridge/policies.ts'
+import type { BoardAsk } from './extensions.ts'
 import { dutyOrder, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'
 
@@ -49,17 +50,22 @@ export const heededWaits = (board: Board, heed: Pick<Heed, 'dismissed'>) => boar
 /** The offers a viewer hasn't dismissed, oldest first. A dismissed offer stays open, and stays acceptable, until its policy's next slot. */
 export const heededOffers = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.offers.filter((o) => !heed.dismissed.has(o.key))
 
-/** What asks for you: a worker's wait, or a policy's slot offered (`board.offers`), which has no worker yet. */
-export type Attended = Wait | Offer
+/** The asks of extensions a viewer hasn't dismissed, oldest first. */
+export const heededAsks = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.asks.filter((a) => !heed.dismissed.has(a.key))
+
+/** What asks for you: a worker's wait, an extension's ask (`board.asks`), or a policy's slot offered (`board.offers`), which has no worker yet. */
+export type Attended = Wait | BoardAsk | Offer
 
 export const isOffer = (a: Attended): a is Offer => 'policy' in a
 
-/** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, then the offers. */
-export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededOffers(board, heed)]
+export const isAsk = (a: Attended): a is BoardAsk => 'cap' in a
 
-/** The dismissed keys to store once `key` (a wait's or an offer's) is dismissed too: those of waits and offers that are over drop out. */
+/** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, the extensions' asks, then the offers. */
+export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededAsks(board, heed), ...heededOffers(board, heed)]
+
+/** The dismissed keys to store once `key` (a wait's, an ask's or an offer's) is dismissed too: those that are over drop out. */
 export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: string) =>
-  [...board.waiting, ...board.offers].map((a) => a.key).filter((k) => k === key || dismissed.has(k))
+  [...board.waiting, ...board.asks, ...board.offers].map((a) => a.key).filter((k) => k === key || dismissed.has(k))
 
 /**
  * The waits that began and the waits that ended between two boards. On the first board a renderer sees nothing begins
@@ -69,6 +75,12 @@ export const transitions = (prev: Board | undefined, next: Board): { began: Wait
 
 /** The offers that opened and the offers that closed between two boards, as `transitions` reads waits. */
 export const offerTransitions = (prev: Board | undefined, next: Board): { began: Offer[]; ended: Offer[] } => (prev ? keyed(prev.offers, next.offers) : { began: [], ended: [] })
+
+/** The asks that began and the asks that ended between two boards, as `transitions` reads waits. */
+export const askTransitions = (prev: Board | undefined, next: Board): { began: BoardAsk[]; ended: BoardAsk[] } => (prev ? keyed(prev.asks, next.asks) : { began: [], ended: [] })
+
+/** Whether `a` is about the worker `id`: its wait, or an ask about its card. */
+export const isAbout = (a: Attended, id: string | undefined) => id !== undefined && (isAsk(a) ? a.subject === `card:${id}` : !isOffer(a) && a.id === id)
 
 const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
   const before = new Set(prev.map((a) => a.key))
@@ -85,11 +97,11 @@ export const nextWait = <T extends { key: string; id?: string }>(waits: T[], vis
   nextIn(waits, visited, (w) => w.id !== undefined && w.id === here)
 
 /**
- * `nextWait` over `attentionOrder` from where the viewer is: the worker `here.id`, or the floor `here.policies` whose
- * policies are open, whose offers count as visited as a worker's own wait does.
+ * `nextWait` over `attentionOrder` from where the viewer is: the worker `here.id`, whose waits and the asks about it
+ * count as visited, or the floor `here.policies` whose policies are open, whose offers count as visited the same way.
  */
 export const nextAttended = (attended: Attended[], visited: ReadonlySet<string>, here: { id?: string; policies?: string }) =>
-  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : here.id !== undefined && a.id === here.id))
+  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : isAbout(a, here.id)))
 
 const nextIn = <T extends { key: string }>(waits: T[], visited: ReadonlySet<string>, heres: (w: T) => boolean): { to?: T; visited: Set<string> } => {
   const at = waits.filter(heres).map((w) => w.key)
@@ -114,3 +126,8 @@ export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worke
 export const offersBeganLine = (began: Offer[]) => began.map((o) => `${o.title ?? o.tag} is offered: a slot to start.`).join(' ')
 
 export const DISMISS_OFFER_TITLE = 'dismiss this offer: out of your way, still open until its next slot'
+
+/** What a renderer's polite live region says as `began` asks begin (`askTransitions`): one sentence per ask, empty for none. */
+export const asksBeganLine = (began: BoardAsk[]) => began.map((a) => `${a.title}, asked by ${a.cap}.`).join(' ')
+
+export const DISMISS_ASK_TITLE = 'dismiss this ask: out of your way while it stands'

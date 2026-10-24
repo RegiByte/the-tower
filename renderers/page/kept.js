@@ -1,5 +1,5 @@
 import { documentCss } from '/design.js'
-import { esc, span, plural } from '/cards.js'
+import { esc, itemSubject, span, plural } from '/cards.js'
 import { ICON } from '/icons.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptTitles, readsText } from '/items.js'
 import { drawPanel, failedHtml, fileButtonsHtml, policiesHtml, policyDoneLine } from '/panels.js'
@@ -8,6 +8,7 @@ import { HOME } from './view.js'
 import { $, closeHomeHtml, repaint, toast, told } from './kit.js'
 import { pressing } from '/press.js'
 import { DRAFTS } from '/drafts.js'
+import { addsHtml } from './added.js'
 
 /**
  * @import { Board, Floor, FloorCollection, FloorItem } from '../../src/bridge/board.ts'
@@ -120,7 +121,7 @@ export function keptViews(deps) {
     const back = c.id === POLICIES ? `<button class="icon-btn" data-policies="${esc(f.id)}" aria-label="back to the policies" data-tip="back to the floor's policies">${ICON.back}</button>` : ''
     repaint($('item-head'), `${back}<span class="label">${esc(c.label)}</span><button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(file)} · click to copy the tag">${esc(item.tag)}</button>${fileButtonsHtml(file)}
     <span class="dim">${esc(f.name)} · ${esc(keptTitle(f.id, c.id, item))}${by} · changed ${span(Date.now() - item.modifiedAt)} ago</span>
-    <span class="actions"><a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">${ICON.remote} new tab</a>
+    <span class="actions">${addsHtml(board(), itemSubject(f.id, c.id, item))}<a href="/${esc(itemPath(f.id, c.id, item.id))}" target="_blank" rel="noreferrer" data-tip="open it on its own">${ICON.remote} new tab</a>
       <button class="danger" data-item-act="delete">Delete</button>
       ${closeHomeHtml(board().keys)}</span>`)
     if (itemDrawn !== item.modifiedAt) showItemBody(c, item)

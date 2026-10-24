@@ -1,5 +1,5 @@
 import { documentCss } from '/design.js'
-import { sentHome, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
+import { cardSubject, sentHome, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
 import { keepShownTabs, fileSpansHtml } from '/panels.js'
 import { toolHtml, when, $, fillOf, keyedTip, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
@@ -7,6 +7,7 @@ import { shownFrom } from '/brief.js'
 import { documentHtml } from '/markdown.js'
 import { pressing } from '/press.js'
 import { verbLabel } from '/verb-words.js'
+import { addedActionsHtml, badgesHtml } from './added.js'
 
 /**
  * @import { Board, Card, CardResource, CardShown, Floor } from '../../src/bridge/board.ts'
@@ -64,7 +65,7 @@ export async function worker(deps) {
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
     repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}${badgesHtml(board(), cardSubject(c))}
     <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, /** @type {Floor} */ (floorOf(c.project)))))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
@@ -73,6 +74,7 @@ export async function worker(deps) {
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="bar-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`)
     repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
+    ${addedActionsHtml(board(), cardSubject(c))}
     ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
     ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', verbLabel('card', 'review'), verbLabel('card', 'review')) : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">${verbLabel('card', 'review')}</button>`}
     ${letGoHtml(c, verbLabel('card', 'let-go'))}

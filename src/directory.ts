@@ -24,7 +24,7 @@ import { shortHash } from './bridge/policies.ts'
 import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, sizeOf, awayHiresOf, extensionLine, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, linesOf, sizeOf, awayHiresOf, extensionLine, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -145,6 +145,7 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     card.peer ? `Other Claude sessions message you as "${card.peer}".` : 'Your Claude session name is not known to the tower yet.',
     ...(card.hiredBy ? [`${hirerWords(card)} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
     ...(card.run ? runLines(floor, card.run) : []),
+    ...linesOf(board, card.id),
     ...(card.worktree ? worktreeLines(floor, card.worktree) : [`You work in ${card.cwd}.`]),
     `The floor's hub is ${floor.hub}${floor.repos?.length ? `, with repos ${floor.repos.map(base).join(', ')}` : ''}.`,
     `The tower answers at ${towerAt()}: the user's page, and the API (\`tower api\` lists it).`,

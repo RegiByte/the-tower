@@ -1,4 +1,4 @@
-import { ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { actionWords, heededAsks, isAsk, projectOfKey, runAdded, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
 import { POLICIES } from '/policies.js'
@@ -37,6 +37,7 @@ import { AUTOSAVE_MS, DRAFTS } from '/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
+import { asksHtml } from './added.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -44,6 +45,7 @@ import { palette } from './palette.js'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
  * @import { BoardError } from '../../src/shared/shelf-page.ts'
+ * @import { Action, Added } from '../../src/shared/extensions.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
@@ -93,15 +95,15 @@ function render() {
   /** @param {Attention} a */
   const count = (a) => duty.filter((c) => c.attention === a).length
   const waiting = heededWaits(board(), heed()).length
-  const offered = heededOffers(board(), heed()).length
+  const offered = heededOffers(board(), heed()).length + heededAsks(board(), heed()).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
   paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
-    (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("policies' slots offered and not yet started, that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
+    (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("policies' slots offered and not yet started, and what extensions ask of you, that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
     /** @type {Attention[]} */ (['needs', 'ready', 'working', 'quiet', 'broken'])
       .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = lostAt() ? 'unknown' : hostState(board())
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
-  $('notes').innerHTML = claudeUntestedHtml(board()) ?? ''
+  $('notes').innerHTML = `${claudeUntestedHtml(board()) ?? ''}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
   paintKeys()
   paintLimits()
   const floors = $('floors')
@@ -222,12 +224,12 @@ const page = loop({
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
     announce: ({ text }) => announce(text),
     notify: ({ attended: a }) => {
-      if (Notification.permission === 'granted') alerts.set(a.key, isOffer(a) ? showOfferAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
+      if (Notification.permission === 'granted') alerts.set(a.key, isOffer(a) ? showOfferAlert(a) : isAsk(a) ? showAskAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
     },
     unnotify: ({ key }) => (alerts.get(key)?.close(), alerts.delete(key)),
     sound: ({ sound }) => playSound(SOUNDS[sound]),
     keep: ({ field, value }) => tower.store.set(VIEWER_KEYS[field], value),
-    'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : moveTo(to.id)),
+    'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : isAsk(to) ? goToSubject(to.subject) : moveTo(to.id)),
     toast: ({ message }) => toast(message),
     'save-draft': () => void saveNow(),
     leave: ({ view: v }) => {
@@ -283,7 +285,7 @@ const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, dr
 
 const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings() })
 
-const { alerts, playSound, showShownAlert, showOfferAlert, showAlert } = alerting({ callsign, select, showPane: (pane) => showPane(pane), floorOf, board, openPolicies })
+const { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert } = alerting({ callsign, select, showPane: (pane) => showPane(pane), floorOf, board, openPolicies, goToSubject: (key) => goToSubject(key) })
 
 const { drawSettings } = settingsPane({ page, viewer, playSound })
 
@@ -323,6 +325,7 @@ function doPick(does, row) {
   if (does.t === 'command') return void run(does.id, new KeyboardEvent('keydown'))
   if (does.t === 'patterns') return void showPatterns()
   if (does.t === 'learn') return learnPick(does.id)
+  if (does.t === 'added') return void runAddedAt(row, does)
   if (does.t === 'go') {
     const to = does.target
     if (to.t === 'worker') return moveTo(to.id)
@@ -426,6 +429,26 @@ async function rereadViewer() {
 function dismissWait(key) {
   page.dispatch({ type: 'dismiss', key })
   render()
+}
+
+/** What an ask is about: its worker, else its floor. @param {string} key */
+function goToSubject(key) {
+  if (key.startsWith('card:')) return moveTo(key.slice('card:'.length))
+  const project = projectOfKey(board(), key)
+  if (project) goToFloor(project)
+}
+
+/**
+ * Runs an action an extension added, asked first when its words say it destroys: its verb called, or its command run
+ * on its subject as the board holds it now.
+ * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
+ */
+async function runAddedAt(el, { subject: key, action }) {
+  const subject = subjectAt(board(), key)
+  if (!subject) return toast('That is no longer on the board')
+  const words = actionWords(board(), action)
+  if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
+  await told(pressing(el, () => runAdded(board(), action, subject)))
 }
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. @param {string} id */
@@ -625,6 +648,8 @@ document.addEventListener('click', async (e) => {
   if (range) return (keepViewer('statsRange', range), sideView.dispatch({ type: 'range', range }))
   if (target.closest('[data-stats-read]')) return sideView.dispatch({ type: 'retry' })
   if (target.closest('[data-keys]')) return showKeys()
+  const added = target.closest('[data-added]')
+  if (added) return runAddedAt(added, JSON.parse(/** @type {string} */ (added.dataset.added)))
   const dismissed = target.closest('[data-dismiss]')?.dataset.dismiss
   if (dismissed) return dismissWait(dismissed)
   const offerDismissed = target.closest('[data-offer-dismiss]')?.dataset.offerDismiss

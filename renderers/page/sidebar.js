@@ -1,4 +1,4 @@
-import { ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededOffers, heededWaits, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededOffers, heededWaits, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
@@ -9,6 +9,7 @@ import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
 import { DRAFTS, draftsOf } from '/drafts.js'
 import { verbLabel } from '/verb-words.js'
+import { addsHtml, asksHtml, badgesHtml } from './added.js'
 
 /**
  * @import { Board, Card, Floor, FloorCollection, FloorItem, Unresumable } from '../../src/bridge/board.ts'
@@ -80,6 +81,7 @@ export async function sidebar(deps) {
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c)].filter(Boolean).join(' · ')))}</div>` : ''}
     ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.project, c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
     <div class="line">${lineOf(c)}</div>
+    ${badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : ''}
     ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
   </div>`
@@ -318,6 +320,8 @@ export async function sidebar(deps) {
   const floorWaits = (f) => heededWaits(board(), heed()).filter((w) => f.cards.some((c) => c.id === w.id))
   /** @param {Floor} f */
   const floorOffers = (f) => heededOffers(board(), heed()).filter((o) => o.project === f.id)
+  /** The asks about the floor or a subject on it that this viewer heeds. @param {Floor} f */
+  const floorAsks = (f) => heededAsks(board(), heed()).filter((a) => projectOfKey(board(), a.subject) === f.id)
 
   /** @param {Floor} f */
   const holdsSelected = (f) => selected() !== undefined && selected() !== foldedOver && findCard(selected())?.project === f.id
@@ -342,14 +346,14 @@ export async function sidebar(deps) {
   /** A folded floor's counts: its waits on you (ringed, lamp of the loudest), its offers, and its workers on duty by the loudest. @param {Floor} f */
   const floorSummaryHtml = (f) => {
     const waits = floorWaits(f).map((w) => /** @type {Card} */ (f.cards.find((c) => c.id === w.id)))
-    const offers = floorOffers(f).length
+    const offers = floorOffers(f).length + floorAsks(f).length
     const duty = f.cards.filter(onDuty)
     const tone = loudest(duty)
     /** @param {string} cls @param {number} n @param {string} words */
     const count = (cls, n, words) => `<span class="chip ${cls}" data-tip="${esc(words)}"><span class="lamp"></span><b>${n}</b><span class="sr-only"> ${esc(words)}</span></span>`
     return `<span class="summary">${[
       waits.length && count(`waits some ${loudest(waits)}`, waits.length, WAITING_NAME),
-      offers && count('offered some', offers, 'offered'),
+      offers && count('offered some', offers, 'offered or asked'),
       duty.length && count(/** @type {Attention} */ (tone), duty.length, `${noun(duty.length, 'worker')} on duty, the loudest: ${ATTENTION_NAME[/** @type {Attention} */ (tone)]}`),
     ].filter(Boolean).join('')}</span>`
   }
@@ -367,10 +371,18 @@ export async function sidebar(deps) {
   </section>`
   }
 
+  /** What extensions add to the floor: its badges and actions in a row. @param {Floor} f */
+  const floorAddsHtml = (f) => {
+    const adds = addsHtml(board(), floorSubject(f))
+    return adds ? `<div class="adds">${adds}</div>` : ''
+  }
+
   /** @param {Floor} f @param {Card[]} heads */
   const floorBodyHtml = (f, heads) => `
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
+    ${floorAddsHtml(f)}
+    ${asksHtml(board(), floorAsks(f), pageNow())}
     ${offersHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
     ${traysHtml(f)}`

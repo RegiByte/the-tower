@@ -7,7 +7,9 @@
 import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
 import type { Capability } from './capabilities.ts'
-import { commandName, gistLine, heededWaits, type Heed } from './cards.ts'
+import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, heededWaits, unboundCommands, type Heed } from './cards.ts'
+import type { Action, Added } from './extensions.ts'
+import type { Subject } from './subjects.ts'
 import { DRAFTS } from './drafts.ts'
 import { COMMANDS, type CommandId } from './keymap.ts'
 import { VERB_WORDS, verbId, type VerbId } from './verb-words.ts'
@@ -24,8 +26,15 @@ export type ActionPick =
   | { t: 'action'; subject: 'conversation'; verb: ConversationVerb; id: string; conversation: string }
   | { t: 'action'; subject: 'resource'; verb: ResourceVerb; id: string; pid: number }
 
-/** What picking an entry does: a keymap command, a verb a thing on the board offers, going somewhere, the patterns sheet, or a capability shown. */
-export type Pick = { t: 'command'; id: CommandId } | ActionPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
+/** An action an extension added, on the subject `subject` names: its verb called, or its command run (decision `extensions`). */
+export type AddedPick = { t: 'added'; subject: string; action: Added<Action> }
+
+/**
+ * What picking an entry does: a keymap command, a verb a thing on the board offers, an extension's action, going
+ * somewhere, the patterns sheet, or a capability shown. A renderer that can't import modules leaves out the entries
+ * whose action is a command (`isCommand`).
+ */
+export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
 
 /**
  * One line of the palette. `chords`: the keymap's chords that do the same, as `board.keys` writes them. `card` and
@@ -142,6 +151,14 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
   return [...verbs, ...earlier, ...processes]
 }
 
+/** What extensions offer on `subject`, each an entry in `group`, about the worker `card` and the floor `project` when it has them. */
+const addedEntries = (board: Board, subject: Subject, actions: Added<Action>[], group: string, about: { card?: string; project?: string }): Entry[] =>
+  actions.map((action) => {
+    const words = actionWords(board, action)
+    const name = 'verb' in action ? action.verb : `${action.cap}/${action.command}`
+    return { id: `added:${subject.key}:${name}`, group, label: words.label, hint: words.hint, keywords: [action.cap, name, group], destructive: words.destructive, ...about, does: { t: 'added', subject: subject.key, action } }
+  })
+
 const floorEntries = (f: Floor): Entry[] =>
   f.actions.filter((a) => !UNLISTED.has(verbId('floor', a.verb))).map((a) => {
     const words = VERB_WORDS[verbId('floor', a.verb)]
@@ -177,7 +194,7 @@ const workerEntry = (f: Floor, c: Card): Entry => ({
 export const paletteEntries = (ctx: PaletteContext): Entry[] => {
   const { board, capabilities } = ctx
   const c = cardOf(board, ctx.selected)
-  const actions = c ? cardEntries(board, capabilities, c) : []
+  const actions = c ? [...cardEntries(board, capabilities, c), ...addedEntries(board, cardSubject(c), addedActions(board, cardSubject(c)), c.callsign, { card: c.id, project: c.project })] : []
   const ranAsCommand = new Set(actions.flatMap((e) => (e.does.t === 'command' ? [e.does.id] : [])))
   const commands = COMMANDS.filter((k) => listedCommand(k.id, k.scope) && !ranAsCommand.has(k.id) && (c || !PANE_COMMANDS.has(k.id))).map((k): Entry => ({
     id: `command:${k.id}`,
@@ -192,9 +209,14 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     ...capabilities.filter((k) => !k.command).map((k): Entry => ({ id: `learn:${k.id}`, group: 'Learn', label: k.text, keywords: [k.id], learn: true, does: { t: 'learn', id: k.id } })),
     { id: PATTERNS_ENTRY, group: 'Learn', label: 'Patterns users are discovering', hint: 'What users found doing with the tower, as short stories.', keywords: ['stories', 'tips'], learn: true, does: { t: 'patterns' } },
   ]
+  const extensions = [
+    ...board.floors.flatMap((f) => addedEntries(board, floorSubject(f), addedActions(board, floorSubject(f)), f.name, { project: f.id })),
+    ...addedEntries(board, boardSubject(board), [...addedActions(board, boardSubject(board)), ...unboundCommands(board)], 'Extensions', {}),
+  ]
   return [
     ...actions,
     ...board.floors.flatMap(floorEntries),
+    ...extensions,
     ...commands,
     ...board.floors.flatMap((f) => f.cards.filter((w) => w.onDuty).map((w) => workerEntry(f, w))),
     ...board.floors.flatMap((f) => placeEntries(f, ctx.draftTitle)),
@@ -261,11 +283,11 @@ export const entryScore = (e: Entry, query: string, r: Ranking): number => {
 export type PaletteGroup = { group: string; entries: Entry[] }
 
 /**
- * The catalog's sections in order, below the opening groups: workers to go to, the commands, the floors' verbs, then
- * the places (floors, shelf entries, drafts), and Learn last. Going to a worker is what the palette is opened for most;
+ * The catalog's sections in order, below the opening groups: workers to go to, the commands, the floors' verbs and what
+ * extensions offer, then the places (floors, shelf entries, drafts), and Learn last. Going to a worker is what the palette is opened for most;
  * commands are the same on every floor; places come after what can be done.
  */
-const SECTIONS = ['go:worker', 'command', 'action', 'go:floor', 'go:shelf', 'go:draft', 'learn']
+const SECTIONS = ['go:worker', 'command', 'action', 'added', 'go:floor', 'go:shelf', 'go:draft', 'learn']
 
 const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
 

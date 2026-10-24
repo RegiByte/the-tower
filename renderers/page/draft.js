@@ -1,10 +1,11 @@
-import { can, offeredCall, esc, statusName } from '/cards.js'
+import { can, itemSubject, offeredCall, esc, statusName } from '/cards.js'
+import { addsHtml } from './added.js'
 import { ICON } from '/icons.js'
 import { fileButtonsHtml } from '/panels.js'
 import { HOME } from './view.js'
 import { lineOf, $, byStart, closeHomeHtml, toast, told } from './kit.js'
 import { commandOf } from '/keymap.js'
-import { DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { DRAFTS, DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
 
 /**
  * @import { Board, Card, Floor, FloorCollection } from '../../src/bridge/board.ts'
@@ -74,7 +75,7 @@ export function draft(deps) {
     const tag = item ? `<button class="tag" data-copy="${esc(item.tag)}" data-tip="${esc(`${/** @type {FloorCollection} */ (draftsOf(f)).dir}/${item.id}`)} · click to copy the tag">${esc(item.tag)}</button>` : ''
     const file = item && fileButtonsHtml(`${/** @type {FloorCollection} */ (draftsOf(f)).dir}/${item.id}`)
     $('draft-head').innerHTML = `<span class="label">Draft</span>${tag}${file ?? ''}<span class="dim">${esc(f.name)} · ${DRAFT_STATE[draftState(d)]}${by}</span>
-    <span class="actions"><small class="dim">⌘⏎ new session</small>
+    <span class="actions">${item ? addsHtml(board(), itemSubject(d.project, DRAFTS, item)) : ''}<small class="dim">⌘⏎ new session</small>
       ${heldWhy('spawn') ? heldHtml('spawn', 'Start session', 'Start session', 'primary') : can(f, 'spawn') ? '<button class="primary" data-draft-act="send" data-tip="start a new session on this prompt">Start session</button>' : ''}
       ${targets().length ? '<button data-draft-act="transfer" data-tip="type this prompt into a running worker">Send to worker…</button>' : ''}
       <button class="danger" data-draft-act="delete">Delete</button>

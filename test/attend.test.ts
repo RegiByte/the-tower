@@ -7,7 +7,7 @@ import { attendNext, attendStep, attending, chooseRing, dismiss, eyeStep, remind
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })
 const offer = { key: 'nightly:1', project: 'p', policy: 'nightly', tag: 'quiet-owl', slot: 0, since: 0, until: 1 } as Offer
 const boardOf = (waiting: Wait[], offers: Offer[] = []) =>
-  ({ waiting, offers, floors: [{ cards: ['A', 'B'].map((id) => ({ id, callsign: `${id}-01` })) }] }) as unknown as Board
+  ({ waiting, offers, asks: [], floors: [{ cards: ['A', 'B'].map((id) => ({ id, callsign: `${id}-01` })) }] }) as unknown as Board
 const kinds = (effects: (AttendEffect | AttendOut)[]) => effects.map((e) => (e.type === 'sound' ? `sound:${e.sound}` : e.type))
 
 test('attend: the first board is silent, a wait that begins is said, notified and rung, and one that ends closes', () => {

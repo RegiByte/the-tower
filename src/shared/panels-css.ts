@@ -8,8 +8,14 @@ import { highlightCss } from './highlight.ts'
  * showings' tabs in a `.shown-tabs` strip that scrolls sideways, faded at an edge past which more hide, an `.activity`
  * line down to 8em and its `.moves`. A `.shown-tab` is never wider than the strip; its first child is its `.shown-name`,
  * capped at 16em, the selected one's never under 6em beside its controls.
+ *
+ * Also an extension's `.badge` beside a subject, toned by an attention class (`.ready`, `.needs`, …), and a row of a
+ * subject's `.badges`.
  */
 export const panelsCss = `
+.badge { display: inline-flex; align-items: center; flex: none; max-width: 16em; padding: 0 var(--sp-xs); border: 1px solid var(--c); border-radius: var(--radius); color: var(--c-text, var(--ink)); font-size: var(--fs-xs); font-weight: 700; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
+.badges { display: flex; flex-wrap: wrap; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
 .tab-row { display: flex; align-items: center; }
 .tab-row > *, .tab-row > .tab-set > *, .shown-tabs > * { flex: none; }
 .tab-row > .tab-set { display: contents; }

@@ -1,10 +1,10 @@
 import type { Board } from '../bridge/board.ts'
-import { REMIND_MS, attentionOrder, dismissing, findCard, offerTransitions, offersBeganLine, ringingSound, transitions, waitsBeganLine, type Attended, type Ring, type Sound } from './cards.ts'
+import { REMIND_MS, askTransitions, asksBeganLine, attentionOrder, dismissing, findCard, isAbout, offerTransitions, offersBeganLine, ringingSound, transitions, waitsBeganLine, type Attended, type Ring, type Sound } from './cards.ts'
 import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
 import type { Viewer } from './viewer.ts'
 
 /**
- * What a viewer is told about what asks for them (the board's waits and offers): a wait or an offer that begins is
+ * What a viewer is told about what asks for them (the board's waits, extensions' asks and offers): one that begins is
  * said, notified and rung, unless the viewer dismissed it or watches its worker; with `remind`, what they heed rings
  * again every `REMIND_MS` while the tower answers. A dismissal is out of their way until the worker's next wait, and
  * closes its notification. The machine is `attendHandlers`, one pure handler per event on `/loop.js`; a renderer's own
@@ -87,15 +87,16 @@ export const attendHandlers: Handlers<Attending, AttendEvent, AttendEffect> = {
   /** The waits and offers that began are said, notified and rung but for the watched worker's; those that ended close. */
   board: (a, { board }) => {
     const waits = transitions(a.board, board)
+    const asks = askTransitions(a.board, board)
     const offers = offerTransitions(a.board, board)
     const next = { ...a, board }
     const heeded = heeds(a)
     const watched = watchedIn(a)
-    const text = [waitsBeganLine(waits.began.filter(heeded), (id) => findCard(board, id)!.callsign), offersBeganLine(offers.began.filter(heeded))].filter(Boolean).join(' ')
-    const began = [...waits.began.filter((w) => heeded(w) && w.id !== watched), ...offers.began.filter(heeded)]
+    const text = [waitsBeganLine(waits.began.filter(heeded), (id) => findCard(board, id)!.callsign), asksBeganLine(asks.began.filter(heeded)), offersBeganLine(offers.began.filter(heeded))].filter(Boolean).join(' ')
+    const began = [...waits.began.filter((w) => heeded(w) && w.id !== watched), ...asks.began.filter((x) => heeded(x) && !isAbout(x, watched)), ...offers.began.filter(heeded)]
     return [
       into(next),
-      ...[...waits.ended, ...offers.ended].map((x): AttendEffect => ({ type: 'unnotify', key: x.key })),
+      ...[...waits.ended, ...asks.ended, ...offers.ended].map((x): AttendEffect => ({ type: 'unnotify', key: x.key })),
       ...(text ? [{ type: 'announce' as const, text }] : []),
       ...began.map((attended): AttendEffect => ({ type: 'notify', attended })),
       ...rung(next, ringingSound(began, watched)),
