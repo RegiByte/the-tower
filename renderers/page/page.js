@@ -63,7 +63,7 @@ document.head.append(Object.assign(document.createElement('style'), { textConten
 watchTips(document)
 
 /** The board drawn until the first arrives: one with nothing on it. */
-const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], rateLimits: [], probes: [], extensions: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
+const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, rateLimits: [], probes: [], extensions: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
 /** The board drawn, as the page's machine holds it. */
 const board = () => page.state().board ?? BLANK
 /** Whether a board has arrived. */
