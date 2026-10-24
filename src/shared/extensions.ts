@@ -230,7 +230,10 @@ export type StartCtx = {
   }
 }
 
-/** A stream's fold: `step` takes each fact in order, from `init`. */
+/**
+ * A stream's fold: `step` takes each fact in order, from `init`. The state it gets is frozen, shared by every reader:
+ * it returns a new one.
+ */
 export type Reduce = { init: unknown; step(state: any, fact: StreamFact): unknown }
 
 /** What a verb's or read's handler gets: the ctx, whose calls carry the handler's caller with its verb in `within`. */

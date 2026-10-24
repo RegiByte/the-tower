@@ -426,7 +426,9 @@ each with a `scope` and its fact codes (one letter each, with a schema); only th
 are session facts logged as `tower.x.<cap>.<name>`. `ctx.streams.append`, `ctx.facts.append` and `ctx.collections`
 write them, each checked by its schema; `ctx.streams.read` reads a stream over a window; `ctx.own` reads what the
 tower folds of them: a stream's `reduce` state, a collection's items with their `parse`, and a session's facts over
-its lineage, all read-only.
+its lineage, all read-only. A `reduce`'s `step` gets the state frozen and returns a new one; a step that throws stops
+the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
+said in the tower's log.
 
 ## Claude plugins
 

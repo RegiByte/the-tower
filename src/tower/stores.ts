@@ -71,6 +71,16 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     return { id, tag: tagOf(id), size: found.size, modifiedAt: found.modifiedAt }
   }
 
+  /** An item's parse, frozen; one that throws costs that item only, its `parsed` undefined until its file changes. */
+  const parsedOf = (parseOne: NonNullable<Started['parse']>[string], text: string, item: Item, key: string): unknown => {
+    try {
+      return frozen(parseOne(text, item))
+    } catch (err) {
+      console.error(`${a.id}: ${key} threw in its collection's parse, and is held unparsed until it changes:`, err)
+      return undefined
+    }
+  }
+
   const ctx: StoresCtx = {
     streams: {
       append: async (name, at, code, fact) => {
@@ -149,7 +159,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
             if (held?.modifiedAt === modifiedAt) return [{ ...item, parsed: held.parsed }]
             const text = readItem(paths, project, name, id)
             if (text === undefined) return []
-            const parsed = frozen(parseOne(text, item))
+            const parsed = parsedOf(parseOne, text, item, key)
             parsedBy.set(key, { modifiedAt, parsed })
             return [{ ...item, parsed }]
           })

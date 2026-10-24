@@ -111,7 +111,9 @@ and versioned without running anything, and a runtime where an extension's failu
   appends, each fact checked by its code's schema. ctx gains `streams` (append, read over a window), `facts` (logged
   through the host's `fact`, [[let-go]]), `collections` (its own, on floors where it is on) and `own`
   ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)): each `reduce` folded by [[live-system]] as its stream grows,
-  only new facts stepped ([`foldOn`](ref:hub/src/system.ts#foldOn)), each `parse` cached by the item's version, and a
+  only new facts stepped from a frozen state, a step that throws stopping the fold before its fact
+  ([`foldOn`](ref:hub/src/system.ts#foldOn)), each `parse` cached by the item's version, one that throws costing that
+  item only, and a
   session's facts over its lineage as `SessionFact`s ([`sessionFacts`](ref:hub/src/bridge/stores.ts#sessionFacts)),
   all frozen. The spec gives folds `own` alone; handlers need the same state (a read answering from its stream), so
   ctx carries the accessors, and the folds' `FoldCtx.own` is built from them, never a second fold.

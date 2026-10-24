@@ -194,7 +194,8 @@ const foldOn = (fold: StreamFold, facts: StreamFact[], held: Folded | undefined)
       state = frozen(fold.step(state, fact))
       count++
     } catch (err) {
-      console.error(`${fold.label}: a fact of ${fold.stream} threw in its reduce, and the fold stops before it:`, err)
+      const frozenState = err instanceof TypeError && Object.isFrozen(state) && typeof state === 'object' && state !== null
+      console.error(`${fold.label}: a fact of ${fold.stream} threw in its reduce, and the fold stops before it${frozenState ? ' (step gets a frozen state: it returns a new one)' : ''}:`, err)
       break
     }
   }
