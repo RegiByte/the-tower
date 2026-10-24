@@ -10,7 +10,7 @@
  *   core:slots      the policies' runner, which acts through the verbs (src/policies.ts)
  *   core:http       the renderer API on the config's port (http.ts)
  */
-import { buildTopology, defineResource, StartedSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
+import { buildTopology, defineResource, type StartedSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
 import { runPolicies } from '../policies.ts'
 import { runProbes } from '../probes.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
@@ -19,7 +19,7 @@ import { readConfig, watchSystem } from '../system.ts'
 import type { Answer } from './answers.ts'
 import { dispatch, type DispatchResource } from './dispatch.ts'
 import { httpOf } from './http.ts'
-import { publisher, PublisherResource } from './publisher.ts'
+import { publisher, type PublisherResource } from './publisher.ts'
 
 /** The config is read again on every call: the user edits it at any time, and every read sees the edit. */
 export const config = defineResource({

@@ -30,7 +30,7 @@ import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { appendFact } from '../streams.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { OK, type Answer } from './answers.ts'
-import { PUBLISH_DEBOUNCE_MS, PublisherResource } from './publisher.ts'
+import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
 
 /** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
