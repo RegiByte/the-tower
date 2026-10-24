@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/renderers/tower3d/src/layout.ts#wallFor",
     "hub/renderers/tower3d/src/layout.ts#HANG",
