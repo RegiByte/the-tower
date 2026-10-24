@@ -345,6 +345,8 @@ Workers add with `tower keep <collection>`. Two ids mean something to the core: 
 `review/append`; and `policies`, standing work the tower runs at its slots: the board carries each floor's
 `policies` (parsed, with where each stands) and `board.offers`, `/policies.js` says rules and slots in words and
 where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `policy/approve` write its facts.
+An [extension](#extensions) may declare collections of its own; one it owns carries `owner` and `doors` on the board,
+and refuses the generic writes, naming the verb to use instead.
 
 ## Extensions
 
@@ -393,10 +395,10 @@ export default start
 
 The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
 version of the newest key you use. `start` returns a handler for every verb and read the manifest declares, and
-nothing else, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
-floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, and
-its calls. The manifest's keys, the ctx members and the problem codes are part of the contract, held like the served
-modules: removing one is a major. Stores, folds and triggers are not extension points yet; they arrive as minors.
+nothing else, a `parse` per collection or a `reduce` per stream it declares, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
+floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
+calls, and its stores. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
+the served modules: removing one is a major. Folds and triggers are not extension points yet; they arrive as minors.
 
 **Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
 parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
@@ -414,6 +416,17 @@ anything else is refused until declared. `ctx.deps.<capability>` holds the same 
 A handler's second argument is its `ctx` with the `caller` (`{t, id?, via, within}`: the user, a worker, the tower, or
 the extension itself from its `start` and timers), and the calls it makes carry that caller one step deeper, its verb
 added to `within`; past 8 deep a call is refused.
+
+**Stores** (API 1.83) are declared in the manifest and named by the capability. `collections` join the floors the
+extension is on, each named `<cap>` or `<cap>.<name>`; one marked `owned` declares five `doors` (`list`, `read`,
+`create`, `edit`, `delete`, each a verb or read of its own manifest, not deprecated, or a read of the core's such as
+`tower/board`, or `{ "none": "<why the domain has no such act>" }`), and the generic writes (`collection/*`, `tower
+keep`) are refused there, naming its create door. `streams` live at `streams/{system|projects/<p>}/<cap>.<name>/`,
+each with a `scope` and its fact codes (one letter each, with a schema); only the extension appends to them. `facts`
+are session facts logged as `tower.x.<cap>.<name>`. `ctx.streams.append`, `ctx.facts.append` and `ctx.collections`
+write them, each checked by its schema; `ctx.streams.read` reads a stream over a window; `ctx.own` reads what the
+tower folds of them: a stream's `reduce` state, a collection's items with their `parse`, and a session's facts over
+its lineage, all read-only.
 
 ## Claude plugins
 

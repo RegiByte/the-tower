@@ -19,11 +19,13 @@
 - `streams/system/<stream>/YYYY-MM.jsonl` and `streams/projects/<project>/<stream>/YYYY-MM.jsonl`: facts the tower
   observes that belong to no session, one file per UTC month, written only by the tower
   ([`systemStreamsPath`](ref:hub/src/shared/paths.ts#systemStreamsPath)): the quota probe's reads
-  (`probe.quota`, [[probes]]), and a project's policies' `runs` and `approvals` ([[policies]]). Logs like the
-  session logs, not a fourth kind of state ([[logs-are-facts]]).
+  (`probe.quota`, [[probes]]), a project's policies' `runs` and `approvals` ([[policies]]), and an extension's
+  streams, `<cap>.<name>`, appended only through its ctx ([[extensions]]). Logs like the session logs, not a fourth
+  kind of state ([[logs-are-facts]]).
 - `collections/<project>/<collection>/<item>`: each project's [[collections]], any format, written by the tower
   ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are staging files, never
-  items. A `reviews` thread is written only by the tower's `review/append` ([[review-threads]]).
+  items. A `reviews` thread is written only by the tower's `review/append` ([[review-threads]]); a collection an
+  extension owns, only by that extension ([[extensions]]).
 - `cache/`: computed and kept to skip computing it again, never authoritative, safe to delete:
   `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]).
 - `control.sock`, `hooks.sock` ([[host-daemon]]) and `terms.sock` ([[terms-daemon]]).

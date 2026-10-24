@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/extensions.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -24,7 +24,7 @@ and versioned without running anything, and a runtime where an extension's failu
 - **The manifest declares, the code implements.** A folder holds `extension.json`, parsed by
   [`Manifest`](ref:hub/src/shared/extensions.ts#Manifest), and optionally a `server` module whose default export is
   `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`): a handler
-  for each of its verbs and reads, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
+  for each of its verbs and reads, a `parse` or `reduce` only for a collection or stream it declares, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
   are free, and `views` and `regions` are validated against their reserved shapes and not read (`not-yet`). Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
@@ -89,7 +89,7 @@ and versioned without running anything, and a runtime where an extension's failu
   edit to one of those needs the tower restarted.
 - **Off by capability, per floor, derived.** `extensions.<id>.off` turns one off everywhere;
   `projects.<p>.capabilities.<cap>.off` turns a capability off on a floor, and with it every extension whose chain of
-  requires holds it ([`offOn`](ref:hub/src/bridge/extensions.ts#offOn)). Per-floor off is a filter, never a restart,
+  requires holds it ([`offOn`](ref:hub/src/bridge/stores.ts#offOn)). Per-floor off is a filter, never a restart,
   and `capabilities.tower` is refused. Settings are keyed by id, a floor's shallow-merged over the system's
   ([`floorExtensions`](ref:hub/src/config-check.ts#floorExtensions) checks both against the manifest).
 - **Seen everywhere.** The [`registry`](ref:hub/src/bridge/extensions.ts#registry), derived from what was resolved
@@ -98,11 +98,27 @@ and versioned without running anything, and a runtime where an extension's failu
   `board.extensions` ([`ExtensionView`](ref:hub/src/shared/extensions.ts#ExtensionView), bundled first, then by id),
   `GET /extensions` with braided's topology, `tower extensions`, and `tower doctor`'s lines, each with a fix
   ([`extensionVerdicts`](ref:hub/src/doctor.ts#extensionVerdicts)); the tower page draws it beside the probes.
+- **Stores (1.83).** A manifest declares `collections`, `streams` and session `facts`, each named by its capability:
+  a collection `<cap>` or `<cap>.<name>`, a stream at `streams/{system|projects/<p>}/<cap>.<name>/`, a fact
+  `tower.x.<cap>.<name>`. The loader refuses a collection named apart from its capability, an owned one without all
+  five doors, a door that names no verb or read of its owner's manifest, a deprecated one, another capability's, or
+  anything of the core's but a read (`tower/board`, `tower/collection/<project>/<collection>/<item>`), a stream
+  fact code that is not one letter, and any schema the tower can't read. An accepted extension's collections join
+  the floors it is on ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections), [[collections]]); an
+  owned one refuses the generic writes, naming its create door
+  ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)). A stream is always its extension's: only its ctx
+  appends, each fact checked by its code's schema. ctx gains `streams` (append, read over a window), `facts` (logged
+  through the host's `fact`, [[let-go]]), `collections` (its own, on floors where it is on) and `own`
+  ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)): each `reduce` folded by [[live-system]] as its stream grows,
+  only new facts stepped ([`foldOn`](ref:hub/src/system.ts#foldOn)), each `parse` cached by the item's version, and a
+  session's facts over its lineage as `SessionFact`s ([`sessionFacts`](ref:hub/src/bridge/stores.ts#sessionFacts)),
+  all frozen. The spec gives folds `own` alone; handlers need the same state (a read answering from its stream), so
+  ctx carries the accessors, and the folds' `FoldCtx.own` is built from them, never a second fold.
 - **Held by the contract test.** `test/served-exports.json` lists the manifest's key paths, each lane's ctx members
   ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes and names, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
-Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82). Stores, folds and contributions,
+Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83). Folds and contributions,
 middleware and hooks, triggers, launch contributors and the bundled extensions arrive as additions to the manifest and
 ctx, each an API minor.
 
@@ -127,6 +143,7 @@ ctx, each an API minor.
 
 **Impact.** API 1.81: `board.extensions`, `GET /extensions` listing them, the `extension` schema, and three config
 keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the manifest's `verbs` and `reads`,
-`ExtensionView.verbs`, `POST` and `GET /<cap>/…`, `ctx.call`, `ctx.read`, `ctx.deps` and the caller, and `tower x`.
+`ExtensionView.verbs`, `POST` and `GET /<cap>/…`, `ctx.call`, `ctx.read`, `ctx.deps` and the caller, and `tower x`. API 1.83: the manifest's `collections`, `streams` and `facts`, ctx's `streams`, `facts`,
+`collections` and `own`, and a floor collection's `owner` and `doors` on the board.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

@@ -19,7 +19,9 @@
     "hub/src/shared/protocol.ts#promptPastes",
     "hub/src/machine.ts#submitText",
     "hub/src/shared/shelf-page.ts",
-    "hub/src/shared/titles.ts"
+    "hub/src/shared/titles.ts",
+    "hub/src/bridge/stores.ts#floorCollections",
+    "hub/src/bridge/stores.ts#ownedRefusal"
   ]
 }
 ---
@@ -63,6 +65,14 @@ primitives every renderer can reach.
   [`submitText`](ref:hub/src/machine.ts#submitText) types the text as the user would, over one host connection:
   bracketed pastes small enough to land as typed text ([`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes),
   whose comment says why), then Enter as its own write once the host has written the last paste.
+- An extension may declare collections too, named by its capability ([[extensions]]): they join the floors it is on
+  ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections)). A config entry of the same name is no
+  conflict: its `label` and `description` win, since they are what workers read. One the extension declares `owned`
+  is written only through its owner's verbs: `collection/create`, `write`, `restore` and `delete` (and so `tower
+  keep`) answer `refused`, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)),
+  while its reads stay open, since a read breaks no invariant. The board carries its `owner` and `doors`. On a floor
+  where the extension is off, a collection the config also declares is a plain open one, and one only the extension
+  declares is gone.
 - Two collections have a meaning in the core: `reviews`, the review threads, written only by appending through
   `review/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
   in the project's streams, never beside the file ([[policies]]).
