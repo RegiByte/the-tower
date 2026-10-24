@@ -8,11 +8,10 @@
  */
 import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type StartedSystem, type SystemConfig } from 'braided'
 import { createHash } from 'node:crypto'
-import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
+import { importFresh } from '../fresh-imports.ts'
 import { runProcess } from '../run.ts'
 import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
@@ -110,8 +109,13 @@ export const extensions = defineResource({
     /** Every extension as the registry shows it, the latest board's fold problems first. */
     const views = (): ExtensionView[] =>
       shown.extensions.map((e) => (folded.has(e.id) ? { ...e, problems: [...folded.get(e.id)!, ...e.problems].slice(0, PROBLEMS_SHOWN) } : e))
+    /** What restarts an extension: the extensions' runner, once it runs. */
+    let restarter: ((id: string) => Promise<ExtensionView | undefined>) | undefined
+    /** The extensions of the capabilities moving that run now: they are restarting. */
+    const restarting = () =>
+      new Set([...held.resolved.accepted.values()].filter((a) => moving.has(a.provides) && held.system[resourceOf(a.provides)]).map((a) => a.id))
     const changed = () => {
-      shown = registry(held.resolved, held.outcomes, held.at, calls)
+      shown = registry(held.resolved, held.outcomes, held.at, calls, restarting())
       for (const listener of listeners) listener()
     }
     return {
@@ -166,7 +170,20 @@ export const extensions = defineResource({
         return views()
       },
       /** The capabilities a reconcile is about to start or restart: until the next `set`, a call to one is unavailable. */
-      moving: (caps: Set<string>) => void (moving = caps),
+      moving: (caps: Set<string>) => {
+        moving = caps
+        changed()
+      },
+      /** The extensions' runner restarts an extension through `restart`. */
+      restartWith: (restart: (id: string) => Promise<ExtensionView | undefined>) => void (restarter = restart),
+      /**
+       * Reads extension `id`'s folder again and restarts it, its dependents with it: its state once that reconcile ends;
+       * `undefined` when the tower finds no extension `id`.
+       */
+      restart: (id: string): Promise<ExtensionView | undefined> => {
+        if (!restarter) throw new Error('the extensions are not running yet')
+        return restarter(id)
+      },
       /** What a reconcile ended with; the call problems of the extensions it `started` are dropped. */
       set: (next: Held, started: string[]) => {
         held = next
@@ -186,11 +203,7 @@ export const extensions = defineResource({
         return view ? { t: 'down', why: EXTENSION_STATE_NAME[view.state] } : { t: 'none' }
       },
       /** Every extension that runs now, and isn't halting. */
-      running: (): { a: Accepted; instance: Instance }[] =>
-        [...held.resolved.accepted.values()].flatMap((a) => {
-          const instance = held.system[resourceOf(a.provides)] as Instance | undefined
-          return instance && !instance.halting && !moving.has(a.provides) ? [{ a, instance }] : []
-        }),
+      running: (): { a: Accepted; instance: Instance }[] => running(),
       /** A problem a call found in extension `id`. */
       problem: (id: string, problem: Omit<ExtensionProblem, 'count'>) => {
         calls = new Map(calls).set(id, withProblem(calls.get(id) ?? [], problem))
@@ -217,14 +230,14 @@ const START_MS = 10_000
 export class MismatchError extends Error {}
 
 /**
- * The extension's `start`: its server module's default export, imported afresh for each hash; none without a server.
- * Only the module itself is imported afresh: the modules it imports are Node's, cached as first loaded until the tower restarts.
+ * The extension's `start`: its server module's default export, imported afresh for each hash with every module it
+ * imports inside its folder; none without a server.
  */
 const startOf = async (a: Accepted, hash: string): Promise<Start> => {
   if (!a.manifest.server) return () => ({})
-  const module = await import(`${pathToFileURL(path.join(a.dir, a.manifest.server)).href}?v=${hash}`)
+  const module = await importFresh(a.dir, a.manifest.server, hash)
   if (typeof module.default !== 'function') throw new MismatchError(`${a.manifest.server} has no default export: its start`)
-  return module.default
+  return module.default as Start
 }
 
 /** `promise`, or a rejection once `ms` pass first; what it settles to after that goes to `late`. */
@@ -403,10 +416,13 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
   }
 }
 
-/** What a resource starts from: its id, manifest, settings, files and dependencies. The same hash, the same resource. */
-const hashOf = (a: Accepted): string =>
+/**
+ * What a resource starts from: its id, manifest, settings, files, dependencies and how many times it was restarted on
+ * request. The same hash, the same resource.
+ */
+const hashOf = (a: Accepted, restarts: number): string =>
   createHash('sha256')
-    .update(JSON.stringify([a.id, a.text, a.settings, newestIn(a.dir), [...a.requires].sort(), [...a.wants].sort()]))
+    .update(JSON.stringify([a.id, a.text, a.settings, newestIn(a.dir), [...a.requires].sort(), [...a.wants].sort(), restarts]))
     .digest('hex')
     .slice(0, 16)
 
@@ -418,8 +434,8 @@ const extensionResource = (a: Accepted, hash: string) =>
   })
 
 /** Each accepted extension's resource by `x:<cap>`: the one in `memo` when its hash is unchanged, else a new one. */
-const resourcesOf = (accepted: Accepted[], memo: Map<string, Resource>) => {
-  const hashed = accepted.map((a) => ({ a, hash: hashOf(a) }))
+const resourcesOf = (accepted: Accepted[], memo: Map<string, Resource>, restarts: Map<string, number>) => {
+  const hashed = accepted.map((a) => ({ a, hash: hashOf(a, restarts.get(a.id) ?? 0) }))
   const next = new Map(hashed.map(({ a, hash }) => [hash, memo.get(hash) ?? (extensionResource(a, hash) as Resource)]))
   return { memo: next, resources: Object.fromEntries(hashed.map(({ a, hash }) => [resourceOf(a.provides), next.get(hash)!])) }
 }
@@ -428,8 +444,9 @@ const resourcesOf = (accepted: Accepted[], memo: Map<string, Resource>) => {
 const errorOf = (err: Error): Outcome['error'] => ({ code: err instanceof MismatchError ? 'mismatch' : 'failed', message: err.message })
 
 /**
- * The extensions run beside the started core: reconciled now, and again whenever the config changes, one reconcile at a
- * time. `stop` waits for the one under way and hands back the system as it stands, to be halted.
+ * The extensions run beside the started core: reconciled now, again whenever the config changes, and when one is
+ * restarted on request (its folder read again), one reconcile at a time. `stop` waits for the one under way and hands
+ * back the system as it stands, to be halted.
  */
 export const runExtensions = async (core: TowerResources, started: TowerSystem) => {
   const { 'core:config': config, 'core:system': live, 'core:extensions': holder } = started
@@ -440,6 +457,8 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
   /** Which extension each capability's resource last ran. */
   let idOf = new Map<string, string>()
   let seen: string | undefined
+  /** How many times each extension was restarted on request, by id. */
+  const restarts = new Map<string, number>()
   holder.set({ resolved: NO_RESOLVED, outcomes, at: Date.now(), resources, system }, [])
 
   const reconcile = async () => {
@@ -455,7 +474,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     seen = text
     const resolved = resolve(discover(now), now, API_VERSION)
     const accepted = resolved.order.map((id) => resolved.accepted.get(id)!)
-    const next = resourcesOf(accepted, memo)
+    const next = resourcesOf(accepted, memo, restarts)
     const nextResources = { ...core, ...next.resources }
     holder.moving(new Set(accepted.map((a) => a.provides).filter((cap) => (nextResources as SystemConfig)[resourceOf(cap)] !== (resources as SystemConfig)[resourceOf(cap)])))
     const result = await reconcileSystem(resources, system, nextResources)
@@ -491,6 +510,14 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     }, PUBLISH_DEBOUNCE_MS)
   })
   await enqueue()
+
+  holder.restartWith(async (id) => {
+    if (!discover(config.read()).some((found) => found.id === id)) return undefined
+    restarts.set(id, (restarts.get(id) ?? 0) + 1)
+    seen = undefined
+    await enqueue()
+    return holder.registry().extensions.find((e) => e.id === id)
+  })
 
   return {
     stop: async () => {

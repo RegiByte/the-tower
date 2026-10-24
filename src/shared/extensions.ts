@@ -83,9 +83,9 @@ export type ExtensionProblem = {
 
 /**
  * `started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because
- * something it requires doesn't run; `off` in the config.
+ * something it requires doesn't run; `off` in the config; `restarting` while it is restarted, its calls unavailable.
  */
-export type ExtensionState = 'started' | 'refused' | 'failed' | 'skipped' | 'off'
+export type ExtensionState = 'started' | 'refused' | 'failed' | 'skipped' | 'off' | 'restarting'
 
 /** `system`: a verb or read of the whole system; `project`: one floor's, refused on a floor where its capability is off. */
 export type Scope = 'system' | 'project'

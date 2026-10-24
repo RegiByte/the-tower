@@ -4293,9 +4293,10 @@
         "refused",
         "failed",
         "skipped",
-        "off"
+        "off",
+        "restarting"
       ],
-      "description": "`started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because something it requires doesn't run; `off` in the config."
+      "description": "`started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because something it requires doesn't run; `off` in the config; `restarting` while it is restarted, its calls unavailable."
     },
     "ExtensionProblem": {
       "type": "object",

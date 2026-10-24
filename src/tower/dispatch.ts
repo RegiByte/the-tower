@@ -757,6 +757,10 @@ export const dispatch = defineResource({
         if ('t' in ran) return ran
         return { t: 'probed', at: ran.at, ms: ran.read.ms, ok: ran.read.ok, ...(!ran.read.ok && { error: ran.read.error }) }
       },
+      'extension/restart': async ({ id }) => {
+        const view = await holder.restart(id)
+        return view ? { t: 'restarted', state: view.state } : apiError('not_found', `No extension "${id}": \`tower extensions\` lists them`)
+      },
       reap: ({ id }) => reapSession(id),
       'reap/process': ({ id, pid }) => reapProcess(id, pid),
       open: ({ dir }) => openDir(dir),

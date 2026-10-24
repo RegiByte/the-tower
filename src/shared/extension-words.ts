@@ -4,10 +4,10 @@ import { plural } from './format.ts'
 
 /** The extensions the tower found, in words: each one's state, its problems, and what fixes each. */
 
-export const EXTENSION_STATE_NAME: Record<ExtensionView['state'], string> = { started: 'running', refused: 'refused', failed: 'failed to start', skipped: 'not started', off: 'off' }
+export const EXTENSION_STATE_NAME: Record<ExtensionView['state'], string> = { started: 'running', refused: 'refused', failed: 'failed to start', skipped: 'not started', off: 'off', restarting: 'restarting' }
 
 /** An extension's state coloured by how much it asks of you: one that should run and doesn't is broken. */
-export const EXTENSION_ATTENTION: Record<ExtensionView['state'], Attention> = { started: 'quiet', off: 'quiet', refused: 'broken', failed: 'broken', skipped: 'working' }
+export const EXTENSION_ATTENTION: Record<ExtensionView['state'], Attention> = { started: 'quiet', off: 'quiet', refused: 'broken', failed: 'broken', skipped: 'working', restarting: 'working' }
 
 const PROBLEM_LEVEL_NAME: Record<ExtensionProblem['level'], string> = { error: 'error', warn: 'warning', info: 'note' }
 

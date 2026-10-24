@@ -68,8 +68,8 @@ export const CLI_VERBS = {
   },
   extensions: {
     of: 'worker',
-    usage: 'extensions',
-    help: 'every extension the tower found, bundled first: its state, the floors it is off on, and each problem at its path',
+    usage: 'extensions [restart <id>]',
+    help: "every extension the tower found, bundled first: its state, the floors it is off on, its slots and each problem at its path; `restart` reads an extension's folder again and restarts it, with what depends on it",
   },
   policies: {
     of: 'worker',

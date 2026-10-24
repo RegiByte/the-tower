@@ -21,10 +21,11 @@ import type { Shown } from './bridge/facts.ts'
 import { callerHeaders, type Replies } from './shared/api.ts'
 import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
-import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
+import { checkFound, heldWords, standingWords } from './shared/policies.ts'
+import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, linesOf, sizeOf, awayHiresOf, extensionLine, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -262,6 +263,10 @@ const probeCliLine = (p: Board['probes'][number], now: number): string =>
 const extensionCliLines = (e: ExtensionView): string[] => [
   `${e.id}  ${extensionLine(e)}${e.provides === e.id ? '' : ` · provides ${e.provides}`}${e.bundled ? ' · bundled' : ''}`,
   ...(e.off?.length ? [`  off on ${e.off.join(', ')}`] : []),
+  ...e.slots.map((s) => {
+    const next = nextSlot(s.when, now)
+    return `  slot ${s.name}  ${ruleWords(s.when)}${s.scope === 'project' ? ', on each floor' : ''}${next === undefined ? '' : ` · next ${slotWords(next, 'cron' in s.when ? s.when.tz : undefined, now)}`}`
+  }),
   ...e.problems.map((p) => `  ${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`),
 ]
 
@@ -636,9 +641,15 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (sub !== 'run' || !name) throw new CliError(usageLine('probes'))
     console.log(probedLine(name, await command<Replies['probe/run']>('probe/run', { name: name })))
   },
-  extensions: async () => {
-    const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
-    console.log(read.extensions.length ? read.extensions.flatMap(extensionCliLines).join('\n') : 'The tower runs no extensions: the config adds them under extensions (docs/config.md).')
+  extensions: async ([sub, arg, ...rest]) => {
+    if (!sub) {
+      const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
+      console.log(read.extensions.length ? read.extensions.flatMap(extensionCliLines).join('\n') : 'The tower runs no extensions: the config adds them under extensions (docs/config.md).')
+      return
+    }
+    if (sub !== 'restart' || !arg || rest.length) throw new CliError(usageLine('extensions'))
+    const { state } = await command<Replies['extension/restart']>('extension/restart', { id: arg })
+    console.log(state === 'started' ? `${arg} restarted.` : `${arg} is ${EXTENSION_STATE_NAME[state]}: \`tower extensions\` says why.`)
   },
   x: async ([cap, verb, input, ...rest]) => {
     if (!cap) {

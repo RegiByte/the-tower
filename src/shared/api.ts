@@ -166,6 +166,15 @@ export const VERBS = {
       error: z.string().optional().describe('Why the read has no answer.'),
     }),
   },
+  'extension/restart': {
+    input: z.object({ id }).describe(
+      "Read the extension's folder again and restart it, with every extension that depends on it: its code is imported afresh, each module of its folder. Meanwhile calls to it answer `unavailable`.",
+    ),
+    reply: z.object({
+      t: z.literal('restarted'),
+      state: z.enum(['started', 'refused', 'failed', 'skipped', 'off', 'restarting']).describe('Its state once the restart ended: `GET /extensions` says why it is not `started`.'),
+    }),
+  },
   reap: { input: z.object({ id }).describe('End what the session left running.'), reply: ok },
   'reap/process': { input: z.object({ id, pid: z.int().positive() }).describe('End one process the session left running.'), reply: ok },
   open: { input: z.object({ dir: id }).describe("Open a project directory in a new window of the user's editor (the config's `editor.window`)."), reply: ok },

@@ -750,9 +750,15 @@ const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - N
 
 /**
  * Every extension as it stands: resolved, then started (`outcomes`, by id), each accepted one `skipped` when one it
- * requires isn't running. `now`: when its load problems are dated.
+ * requires isn't running, and `restarting` while a reconcile restarts it. `now`: when its load problems are dated.
  */
-export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now: number, calls: Map<string, ExtensionProblem[]> = new Map()): Registry => {
+export const registry = (
+  resolved: Resolved,
+  outcomes: Map<string, Outcome>,
+  now: number,
+  calls: Map<string, ExtensionProblem[]> = new Map(),
+  restarting: Set<string> = new Set(),
+): Registry => {
   const stamp = (problems: LoadProblem[], at: number): ExtensionProblem[] => problems.map((p) => ({ ...p, at, count: 1 }))
   const states = new Map<string, ExtensionView['state']>()
   const stateOfCap = (cap: string) => states.get([...resolved.accepted.values()].find((a) => a.provides === cap)!.id)
@@ -760,7 +766,7 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
     const a = resolved.accepted.get(id)!
     const outcome = outcomes.get(id)!
     const down = a.requires.filter((cap) => stateOfCap(cap) !== 'started')
-    const state = down.length ? 'skipped' : outcome.error ? 'failed' : 'started'
+    const state = restarting.has(id) ? 'restarting' : down.length ? 'skipped' : outcome.error ? 'failed' : 'started'
     states.set(id, state)
     const without = state === 'started' ? a.wants.filter((cap) => stateOfCap(cap) !== 'started') : []
     const startProblems: ExtensionProblem[] = [
