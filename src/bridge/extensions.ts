@@ -12,8 +12,58 @@ import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import { offOn, type ExtensionStores } from './stores.ts'
 
-/** An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there is one. */
-export type Found = { id: string; bundled: boolean; dir?: string; text?: string }
+/**
+ * An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there
+ * is one; `contract`: its `contract.json`, when there is one.
+ */
+export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string }
+
+/** What `contract.json` holds: the names of a capability's contract at a major, which leave only when the major moves. */
+export type Contract = { provides: string; major: number; names: string[] }
+
+const ContractFile = z.strictObject({ provides: z.string(), major: z.int().nonnegative(), names: z.array(z.string()) })
+
+/**
+ * The names of a manifest's contract, each by its kind: `verbs.<name>`, `reads.<path>`, `facts.<name>`,
+ * `streams.<name>.<code>` and `collections.<name>`.
+ */
+export const contractNames = (manifest: Manifest): string[] => [
+  ...Object.keys(manifest.verbs ?? {}).map((name) => `verbs.${name}`),
+  ...Object.keys(manifest.reads ?? {}).map((name) => `reads.${name}`),
+  ...Object.keys(manifest.facts ?? {}).map((name) => `facts.${name}`),
+  ...Object.entries(manifest.streams ?? {}).flatMap(([name, stream]) => Object.keys(stream.facts).map((code) => `streams.${name}.${code}`)),
+  ...Object.keys(manifest.collections ?? {}).map((name) => `collections.${name}`),
+]
+
+/** A manifest's contract as `tower extensions freeze` writes it. */
+export const contractOf = (manifest: Manifest): Contract => ({ provides: capabilityOf(manifest), major: versionOf(manifest.version)[0], names: contractNames(manifest) })
+
+/** A `contract.json` as a contract, or why it is none. */
+export const parseContract = (text: string): Contract | string => {
+  try {
+    const parsed = ContractFile.safeParse(JSON.parse(text))
+    return parsed.success ? parsed.data : z.prettifyError(parsed.error)
+  } catch (err) {
+    return (err as Error).message
+  }
+}
+
+/** The names `contract` holds that `manifest` lacks, while its major is the contract's: none at another major. */
+export const goneFrom = (contract: Contract, manifest: Manifest): string[] => {
+  if (versionOf(manifest.version)[0] !== contract.major) return []
+  const names = contractNames(manifest)
+  return contract.names.filter((name) => !names.includes(name))
+}
+
+/** Why an extension's own `contract.json` doesn't hold: unreadable, or a name gone at its major. An error when bundled, else a warning. */
+const ownContractProblems = (found: Found, manifest: Manifest): LoadProblem[] => {
+  if (found.contract === undefined) return []
+  const level = found.bundled ? error : warn
+  const contract = parseContract(found.contract)
+  if (typeof contract === 'string') return [level('contract', `contract.json is no contract: ${contract}`)]
+  const gone = goneFrom(contract, manifest)
+  return gone.length ? [level('contract', `${gone.join(', ')} ${gone.length === 1 ? 'is' : 'are'} in contract.json at ${contract.provides} ${contract.major}.x and gone from its manifest: put ${gone.length === 1 ? 'it' : 'them'} back, or move its major and say what to use instead`)] : []
+}
 
 /** A problem as loading finds it: the registry stamps when and how many times. */
 export type LoadProblem = Omit<ExtensionProblem, 'at' | 'count'>
@@ -305,7 +355,7 @@ const storeSchemas = (manifest: Manifest): { schemas: StoreSchemas; problems: Lo
   return { schemas: { facts, streams }, problems }
 }
 
-type Read = {
+export type Read = {
   found: Found
   claims?: string
   manifest?: Manifest
@@ -409,7 +459,7 @@ const targetProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
   })
 
 /** One extension's config entry, manifest and settings, read in that order; the first that refuses it ends the read. */
-const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
+export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
   const at = `extensions.${found.id}`
   if (!found.bundled && typeof entry?.path !== 'string') return { found, problems: [error('invalid', `${at} names no bundled extension, so it takes path: the absolute folder holding its extension.json`)] }
   if (!found.bundled && !path.isAbsolute(entry!.path!)) return { found, problems: [error('invalid', `${at}.path takes an absolute folder, not ${JSON.stringify(entry!.path)}`)] }
@@ -445,10 +495,23 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
+    ...ownContractProblems(found, manifest),
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
   ]
   return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds }
+}
+
+/**
+ * Why a user's extension can't replace a bundled one: the bundled `contract.json` holds a name at the major it claims
+ * that its manifest lacks, so dependents would meet half a capability.
+ */
+export const replacementProblem = (manifest: Manifest, found: Found, bundled: Found | undefined): LoadProblem | undefined => {
+  if (found.bundled || bundled?.contract === undefined) return undefined
+  const contract = parseContract(bundled.contract)
+  if (typeof contract === 'string') return undefined
+  const gone = goneFrom(contract, manifest)
+  return gone.length ? error('contract', `${found.id} provides ${contract.provides} ${manifest.version} but has no ${gone.join(', ')}, which ${contract.provides} ${contract.major}.x holds`) : undefined
 }
 
 /** The capabilities `manifest` requires, the core aside. */
@@ -532,6 +595,11 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
       : `${others.join(' and ')} all provide ${cap}: turn all but one off with extensions.<id>.off`
     if (kept) providers.set(cap, kept)
     for (const r of claimants) if (r !== kept) refuse(r, 'refused', [...r.problems, error('conflict', message)])
+  }
+
+  for (const [cap, r] of providers) {
+    const problem = replacementProblem(r.manifest!, r.found, reads.find((b) => b.found.bundled && b.found.id === cap)?.found)
+    if (problem) refuse(r, 'refused', [...r.problems, problem])
   }
 
   const claimed = new Set(parsed.flatMap((r) => (r.claims ? [r.claims] : [])))
