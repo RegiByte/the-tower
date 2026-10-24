@@ -397,18 +397,26 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
    * screen the tower relays. A reader that fails is started again on the next read.
    */
   let reader: Worker | undefined
+  /** Once stopped, no read starts a reader again. */
+  let stopped = false
   const readRepos = async (dirs: string[]): Promise<PromiseSettledResult<RepoRead>[]> => {
     if (!reader) {
       reader = new Worker(new URL('./repo-reader.ts', import.meta.url))
       reader.unref()
     }
-    const reply = once(reader, 'message')
+    const ended = new AbortController()
+    const exited = once(reader, 'exit', { signal: ended.signal }).then(([code]) => {
+      throw new Error(`the git reader exited (${code}) before it answered`)
+    })
+    const reply = Promise.race([once(reader, 'message', { signal: ended.signal }), exited])
     reader.postMessage(dirs)
     try {
       return (await reply)[0]
     } catch (err) {
       reader = undefined
       throw err
+    } finally {
+      ended.abort()
     }
   }
 
@@ -424,6 +432,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       if (err instanceof ConfigError) return
       throw err
     }
+    if (stopped) return
     const dirs = [...new Set(Object.values(config.projects).flatMap(projectDirs))]
     const next = new Map<string, RepoRead>()
     for (const [i, read] of (await readRepos(dirs)).entries()) {
@@ -523,6 +532,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     refreshRepos,
     observe,
     stop: async () => {
+      stopped = true
       for (const watcher of watchers) watcher.close()
       for (const stopTail of tails.values()) stopTail()
       tails.clear()
@@ -530,7 +540,9 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       ;[rescanTimer, streamsTimer, policyStreamsTimer].forEach(clearTimeout)
       for (const done of [...awaited.values()]) done()
       for (const done of [...waiters.values()]) done()
-      await reader?.terminate()
+      const ending = reader
+      reader = undefined
+      await ending?.terminate()
     },
   }
 }
