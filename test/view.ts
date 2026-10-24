@@ -16,6 +16,7 @@ export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemVi
   probes: new Map(),
   streams: [],
   policies: NO_POLICIES,
+  extensions: [],
   paths: { config: '/config.json', collections: '/c' },
   now: 0,
   ...over,

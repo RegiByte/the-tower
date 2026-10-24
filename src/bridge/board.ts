@@ -47,6 +47,7 @@ import {
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
+import type { ExtensionView } from '../shared/extensions.ts'
 import { checkoutState, filedThreadOf, floorThreads, type CheckoutState, type FloorThread } from './reviews.ts'
 import { deliveries, type Delivery } from './messages.ts'
 import { commonBases, floorBranches, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
@@ -315,6 +316,8 @@ export type Board = {
   probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
   /** The account's extra usage, as the probes' newest answer that had it said. */
   extraUsage?: ExtraUsage
+  /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
+  extensions: ExtensionView[]
   /** Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change. */
   today: Today
   hostUp: boolean
@@ -714,12 +717,14 @@ export type SystemView = {
   probes: Map<string, ProbeFacts>
   streams: StreamMonth[]
   policies: Policies
+  /** Every extension as it stands (`src/bridge/extensions.ts`). */
+  extensions: ExtensionView[]
   paths: Pick<SystemPaths, 'config' | 'collections'>
   now: number
 }
 
 export const board = (view: SystemView): Board => {
-  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, paths, now } = view
+  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, extensions, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(view)
@@ -777,6 +782,7 @@ export const board = (view: SystemView): Board => {
     ...limits,
     ...extraUsageOf([...probes.values()]),
     probes: probesOf(config).map((p) => ({ ...probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits))), ...probeOffers(p.name, p.off) })),
+    extensions,
     today: today(sessions, [...probes.values()], now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,

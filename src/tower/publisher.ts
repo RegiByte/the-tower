@@ -8,17 +8,18 @@ import { allCards, board, type Policies, type SystemView } from '../bridge/board
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import { errorOf } from './answers.ts'
+import type { ExtensionsResource } from './extensions.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 export const PUBLISH_DEBOUNCE_MS = 150
 /** Time alone moves the board: a worker goes quiet long enough to look stuck. */
 const CLOCK_PUBLISH_MS = 60_000
 
-type Deps = { 'core:config': ConfigResource; 'core:system': SystemResource }
+type Deps = { 'core:config': ConfigResource; 'core:system': SystemResource; 'core:extensions': ExtensionsResource }
 
 export const publisher = defineResource({
-  dependencies: ['core:config', 'core:system'],
-  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system }: Deps) => {
+  dependencies: ['core:config', 'core:system', 'core:extensions'],
+  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:extensions': extensions }: Deps) => {
     const boardClients = new Set<http.ServerResponse>()
     /** The board every client holds. */
     let published = ''
@@ -50,6 +51,7 @@ export const publisher = defineResource({
       probes: system.probes(),
       streams: system.streamMonths(),
       policies: policiesNow(),
+      extensions: extensions.registry().extensions,
       paths,
       now: Date.now(),
     })

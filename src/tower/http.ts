@@ -7,9 +7,10 @@
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
- *   GET  /schema        every verb's input and reply, and the error, as JSON Schema (src/shared/api.ts)
- *   GET  /extensions    {extensions, topology}: the extensions running (none yet), and the tower's resources as braided orders them,
- *                       with their graph as Mermaid text (src/tower/spine.ts)
+ *   GET  /schema        every verb's input and reply, the error and an extension's manifest, as JSON Schema
+ *                       (src/shared/api.ts, src/shared/extensions.ts)
+ *   GET  /extensions    {extensions, topology}: every extension the tower found, as the board shows them, and the tower's resources as braided orders them,
+ *                       with their graph as Mermaid text (src/tower/extensions.ts)
  *   GET  /screen/<id>   SSE: a snapshot of the session's screen, then its output as the host logs it
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
@@ -92,6 +93,7 @@ import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
+import { MANIFEST_SCHEMA } from '../shared/extensions.ts'
 import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
@@ -100,6 +102,7 @@ import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource, isDeclaredIn, policyFactsIn } from './dispatch.ts'
+import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
 import { bundled, MODULES, towerClient } from './served.ts'
@@ -137,686 +140,687 @@ type Deps = {
   'core:system': SystemResource
   'core:publisher': PublisherResource
   'core:dispatch': DispatchResource
+  'core:extensions': ExtensionsResource
 }
 
-/** The server on the config's port as it is at start: it serves there until it is halted. `extensions` answers `GET /extensions`. */
-export const httpOf = (extensions: () => Reads['extensions']) =>
-  defineResource({
-    dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch'],
-    start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, streamBoard }, 'core:dispatch': dispatch }: Deps) => {
-      const PORT = towerPort(readConfig())
+/** The server on the config's port as it is at start: it serves there until it is halted. */
+export const httpServer = defineResource({
+  dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:extensions'],
+  start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
+    const PORT = towerPort(readConfig())
 
-      const STATIC: Record<string, [file: string, type: string]> = {
-        '/xterm.js': [path.join(packageDir('@xterm/xterm'), 'lib', 'xterm.js'), 'text/javascript'],
-        '/xterm.css': [path.join(packageDir('@xterm/xterm'), 'css', 'xterm.css'), 'text/css'],
-        '/addon-fit.js': [path.join(packageDir('@xterm/addon-fit'), 'lib', 'addon-fit.js'), 'text/javascript'],
-        '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
+    const STATIC: Record<string, [file: string, type: string]> = {
+      '/xterm.js': [path.join(packageDir('@xterm/xterm'), 'lib', 'xterm.js'), 'text/javascript'],
+      '/xterm.css': [path.join(packageDir('@xterm/xterm'), 'css', 'xterm.css'), 'text/css'],
+      '/addon-fit.js': [path.join(packageDir('@xterm/addon-fit'), 'lib', 'addon-fit.js'), 'text/javascript'],
+      '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
+    }
+
+    /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
+    const ANY_ORIGIN = { 'access-control-allow-origin': '*' }
+
+    function design(res: http.ServerResponse, url: string) {
+      if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...ANY_ORIGIN }).end(designCss())
+      if (MODULES[url]) {
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(bundled(url).text)
       }
+      const font = fonts.find((f) => url === `/fonts/${f.file}`)
+      if (!font) return fail(res, 'not_found', `No face at "${url}"`)
+      res
+        .writeHead(200, { 'content-type': 'font/woff2', 'cache-control': 'max-age=86400', ...ANY_ORIGIN })
+        .end(readFileSync(fontFile(font)))
+    }
 
-      /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
-      const ANY_ORIGIN = { 'access-control-allow-origin': '*' }
+    /**
+     * A shelved page runs its own scripts at an origin of its own, opened in a frame or a tab alike: it can't reach the
+     * tower's routes as the tower.
+     */
+    const SHELF_SANDBOX = 'sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock'
 
-      function design(res: http.ServerResponse, url: string) {
-        if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...ANY_ORIGIN }).end(designCss())
-        if (MODULES[url]) {
-          return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(bundled(url).text)
-        }
-        const font = fonts.find((f) => url === `/fonts/${f.file}`)
-        if (!font) return fail(res, 'not_found', `No face at "${url}"`)
-        res
-          .writeHead(200, { 'content-type': 'font/woff2', 'cache-control': 'max-age=86400', ...ANY_ORIGIN })
-          .end(readFileSync(fontFile(font)))
+    const FILE_TYPES: Record<string, string> = {
+      '.html': 'text/html; charset=utf-8',
+      '.md': 'text/markdown; charset=utf-8',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+      '.mjs': 'text/javascript',
+      '.map': 'application/json',
+      '.wasm': 'application/wasm',
+      '.woff2': 'font/woff2',
+      '.ico': 'image/x-icon',
+      '.json': 'application/json',
+      '.svg': 'image/svg+xml',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.txt': 'text/plain; charset=utf-8',
+    }
+
+    /**
+     * A served file's guard against running as the tower: the CSP sandbox, or for a video, which runs no script and which
+     * Chrome won't play as a sandboxed document, a type the browser may not second-guess.
+     */
+    const sandboxed = (file: string): http.OutgoingHttpHeaders =>
+      path.extname(file) === '.mp4' || path.extname(file) === '.webm' ? { 'x-content-type-options': 'nosniff' } : { 'content-security-policy': SHELF_SANDBOX }
+
+    /**
+     * A viewer that stops reading (a suspended tab, a frozen web view) is closed once it has read nothing of what waits
+     * for it this long, or once this much waits: a stream's bytes can't be skipped, and its client reconnects and starts
+     * again from a snapshot. A burst (every monitor's snapshot on one connection) can wait for a moment, well under both.
+     */
+    const STALL_MS = 30_000
+    const MAX_BEHIND = 64 * 1024 * 1024
+
+    /** Each stream response with writes waiting, and the timer that closes it unless they drain first. */
+    const stalls = new Map<http.ServerResponse, NodeJS.Timeout>()
+
+    const unstall = (res: http.ServerResponse) => {
+      clearTimeout(stalls.get(res))
+      stalls.delete(res)
+    }
+
+    const sse = (res: http.ServerResponse, data: unknown) => {
+      if (res.writableEnded || res.destroyed) return
+      res.write(`data: ${JSON.stringify(data)}\n\n`)
+      if (res.writableLength > MAX_BEHIND) return void res.destroy()
+      if (!res.writableNeedDrain || stalls.has(res)) return
+      stalls.set(res, setTimeout(() => res.destroy(), STALL_MS))
+      res.once('drain', () => unstall(res))
+    }
+
+    function archive(res: http.ServerResponse, project: string) {
+      if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
+      const now = Date.now()
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(everyCard(now), project, now)))
+    }
+
+    function conversations(res: http.ServerResponse, id: string) {
+      const session = system.session(id)
+      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      const config = readConfig()
+      const { pairs } = briefConfig(config, session.header.project)
+      const logs = new Map<string, SessionLog>()
+      const logOf = (sessionId: string) => logs.get(sessionId) ?? logs.set(sessionId, readLog(logFileOf(paths, sessionId), everyEvent).log).get(sessionId)!
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logOf, pairs, callsignsOf(config))))
+    }
+
+    async function changes(res: http.ServerResponse, id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>) {
+      const session = system.session(id)
+      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      const { project, cwd } = session.header
+      const config = readConfig()
+      if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
+      // Read before the status is written: a git failure then answers as an error the panel draws, not an empty 200.
+      const repos = await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(repos))
+    }
+
+    const DAY_MS = 86_400_000
+    const BUCKET_MS = { hour: 3_600_000, day: DAY_MS }
+    /** About three months of hours: a series longer than any chart draws. */
+    const MAX_BUCKETS = 2400
+
+    /** By default, the day `to` falls in and the six whole local days before it. */
+    /** What landing changed on a branch of a project, read from git now. */
+    async function landingRead(res: http.ServerResponse, query: z.output<typeof QUERIES.landing>) {
+      const project = readConfig().projects[query.project]
+      if (!project) return fail(res, 'not_found', `No project "${query.project}"`)
+      try {
+        const landing = await landingOf(project, query.branch)
+        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(landing))
+      } catch (err) {
+        if (!(err instanceof WorktreeError)) throw err
+        fail(res, err.code, err.message)
       }
+    }
 
-      /**
-       * A shelved page runs its own scripts at an origin of its own, opened in a frame or a tab alike: it can't reach the
-       * tower's routes as the tower.
-       */
-      const SHELF_SANDBOX = 'sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock'
+    function probeRead(res: http.ServerResponse, name: string, { last }: z.output<(typeof QUERIES)['probe/<name>']>) {
+      const { probes } = boardOf()
+      const status = probes.find((p) => p.name === name)
+      if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), last)))
+    }
 
-      const FILE_TYPES: Record<string, string> = {
-        '.html': 'text/html; charset=utf-8',
-        '.md': 'text/markdown; charset=utf-8',
-        '.css': 'text/css',
-        '.js': 'text/javascript',
-        '.mjs': 'text/javascript',
-        '.map': 'application/json',
-        '.wasm': 'application/wasm',
-        '.woff2': 'font/woff2',
-        '.ico': 'image/x-icon',
-        '.json': 'application/json',
-        '.svg': 'image/svg+xml',
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-        '.mp4': 'video/mp4',
-        '.webm': 'video/webm',
-        '.txt': 'text/plain; charset=utf-8',
-      }
+    function runsOfPolicy(res: http.ServerResponse, project: string, { policy, limit }: z.output<(typeof QUERIES)['runs/<project>']>) {
+      if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
+      const facts = policyFactsIn(system, project)
+      const hash = system.policies().find((p) => p.project === project && p.id === policy)?.hash
+      if (hash === undefined && !facts.runs.some(([, r]) => r.policy === policy)) return fail(res, 'not_found', `${project} has no policy "${policy}", and no runs of one`)
+      const answerOf = (id: string) => system.session(id)?.facts.conversations.findLast((c) => c.answer !== undefined)?.answer
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(runsRead(policy, hash, facts, everyCard(Date.now()), answerOf, limit)))
+    }
 
-      /**
-       * A served file's guard against running as the tower: the CSP sandbox, or for a video, which runs no script and which
-       * Chrome won't play as a sandboxed document, a type the browser may not second-guess.
-       */
-      const sandboxed = (file: string): http.OutgoingHttpHeaders =>
-        path.extname(file) === '.mp4' || path.extname(file) === '.webm' ? { 'x-content-type-options': 'nosniff' } : { 'content-security-policy': SHELF_SANDBOX }
+    async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIES.stats>) {
+      const now = Date.now()
+      const { to = now, bucket, project } = query
+      const from = query.from ?? bucketStart(bucketStart(to, 'day') - 6 * DAY_MS + DAY_MS / 2, 'day')
+      if (from >= to) return fail(res, 'invalid', '`from` must come before `to`')
+      if ((to - from) / BUCKET_MS[bucket] > MAX_BUCKETS) return fail(res, 'invalid', `At most ${MAX_BUCKETS} ${bucket}s: narrow the window or take days`)
+      const sessions = system.sessions()
+      const scoped = sessions.filter((s) => project === undefined || s.header.project === project)
+      const projects = Object.entries(readConfig().projects).filter(([id]) => project === undefined || id === project)
+      const dirs = [...new Set(projects.flatMap(([, p]) => projectDirs(p)))]
+      const reads = await Promise.all(dirs.map((dir) => readLanded(dir, from, to)))
+      const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
+      const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
+      const probes = [...system.probes().values()]
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
+    }
 
-      /**
-       * A viewer that stops reading (a suspended tab, a frozen web view) is closed once it has read nothing of what waits
-       * for it this long, or once this much waits: a stream's bytes can't be skipped, and its client reconnects and starts
-       * again from a snapshot. A burst (every monitor's snapshot on one connection) can wait for a moment, well under both.
-       */
-      const STALL_MS = 30_000
-      const MAX_BEHIND = 64 * 1024 * 1024
+    async function origins(res: http.ServerResponse) {
+      const dirs = Object.values(readConfig().projects).flatMap(projectDirs)
+      const urls = await Promise.all(
+        dirs.map(async (dir) => {
+          try {
+            return [dir, await originUrl(dir)]
+          } catch (err) {
+            console.error(`origin of ${dir}:`, (err as Error).message)
+            return [dir, undefined]
+          }
+        }),
+      )
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(Object.fromEntries(urls.filter(([, url]) => url))))
+    }
 
-      /** Each stream response with writes waiting, and the timer that closes it unless they drain first. */
-      const stalls = new Map<http.ServerResponse, NodeJS.Timeout>()
+    type Stop = () => void
 
-      const unstall = (res: http.ServerResponse) => {
-        clearTimeout(stalls.get(res))
-        stalls.delete(res)
-      }
+    /** How long a watched screen's mirror outlives its last viewer: a reconnect or a switch back finds it built. */
+    const MIRROR_GRACE_MS = 30_000
 
-      const sse = (res: http.ServerResponse, data: unknown) => {
-        if (res.writableEnded || res.destroyed) return
-        res.write(`data: ${JSON.stringify(data)}\n\n`)
-        if (res.writableLength > MAX_BEHIND) return void res.destroy()
-        if (!res.writableNeedDrain || stalls.has(res)) return
-        stalls.set(res, setTimeout(() => res.destroy(), STALL_MS))
-        res.once('drain', () => unstall(res))
-      }
+    const mirrors = screenMirrors((id) => logFileOf(paths, id), MIRROR_GRACE_MS)
 
-      function archive(res: http.ServerResponse, project: string) {
-        if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-        const now = Date.now()
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(everyCard(now), project, now)))
-      }
+    /** How many ended sessions' last frames are kept; a frame is a few KB. */
+    const LAST_FRAMES_KEPT = 500
 
-      function conversations(res: http.ServerResponse, id: string) {
-        const session = system.session(id)
-        if (!session) return fail(res, 'not_found', `No session "${id}"`)
-        const config = readConfig()
-        const { pairs } = briefConfig(config, session.header.project)
-        const logs = new Map<string, SessionLog>()
-        const logOf = (sessionId: string) => logs.get(sessionId) ?? logs.set(sessionId, readLog(logFileOf(paths, sessionId), everyEvent).log).get(sessionId)!
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logOf, pairs, callsignsOf(config))))
-      }
+    const lastFrameOf = lastFrames((id) => logFileOf(paths, id), LAST_FRAMES_KEPT)
 
-      async function changes(res: http.ServerResponse, id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>) {
-        const session = system.session(id)
-        if (!session) return fail(res, 'not_found', `No session "${id}"`)
-        const { project, cwd } = session.header
-        const config = readConfig()
-        if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-        // Read before the status is written: a git failure then answers as an error the panel draws, not an empty 200.
-        const repos = await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(repos))
-      }
-
-      const DAY_MS = 86_400_000
-      const BUCKET_MS = { hour: 3_600_000, day: DAY_MS }
-      /** About three months of hours: a series longer than any chart draws. */
-      const MAX_BUCKETS = 2400
-
-      /** By default, the day `to` falls in and the six whole local days before it. */
-      /** What landing changed on a branch of a project, read from git now. */
-      async function landingRead(res: http.ServerResponse, query: z.output<typeof QUERIES.landing>) {
-        const project = readConfig().projects[query.project]
-        if (!project) return fail(res, 'not_found', `No project "${query.project}"`)
-        try {
-          const landing = await landingOf(project, query.branch)
-          res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(landing))
-        } catch (err) {
-          if (!(err instanceof WorktreeError)) throw err
-          fail(res, err.code, err.message)
-        }
-      }
-
-      function probeRead(res: http.ServerResponse, name: string, { last }: z.output<(typeof QUERIES)['probe/<name>']>) {
-        const { probes } = boardOf()
-        const status = probes.find((p) => p.name === name)
-        if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), last)))
-      }
-
-      function runsOfPolicy(res: http.ServerResponse, project: string, { policy, limit }: z.output<(typeof QUERIES)['runs/<project>']>) {
-        if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-        const facts = policyFactsIn(system, project)
-        const hash = system.policies().find((p) => p.project === project && p.id === policy)?.hash
-        if (hash === undefined && !facts.runs.some(([, r]) => r.policy === policy)) return fail(res, 'not_found', `${project} has no policy "${policy}", and no runs of one`)
-        const answerOf = (id: string) => system.session(id)?.facts.conversations.findLast((c) => c.answer !== undefined)?.answer
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(runsRead(policy, hash, facts, everyCard(Date.now()), answerOf, limit)))
-      }
-
-      async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIES.stats>) {
-        const now = Date.now()
-        const { to = now, bucket, project } = query
-        const from = query.from ?? bucketStart(bucketStart(to, 'day') - 6 * DAY_MS + DAY_MS / 2, 'day')
-        if (from >= to) return fail(res, 'invalid', '`from` must come before `to`')
-        if ((to - from) / BUCKET_MS[bucket] > MAX_BUCKETS) return fail(res, 'invalid', `At most ${MAX_BUCKETS} ${bucket}s: narrow the window or take days`)
-        const sessions = system.sessions()
-        const scoped = sessions.filter((s) => project === undefined || s.header.project === project)
-        const projects = Object.entries(readConfig().projects).filter(([id]) => project === undefined || id === project)
-        const dirs = [...new Set(projects.flatMap(([, p]) => projectDirs(p)))]
-        const reads = await Promise.all(dirs.map((dir) => readLanded(dir, from, to)))
-        const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
-        const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
-        const probes = [...system.probes().values()]
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
-      }
-
-      async function origins(res: http.ServerResponse) {
-        const dirs = Object.values(readConfig().projects).flatMap(projectDirs)
-        const urls = await Promise.all(
-          dirs.map(async (dir) => {
-            try {
-              return [dir, await originUrl(dir)]
-            } catch (err) {
-              console.error(`origin of ${dir}:`, (err as Error).message)
-              return [dir, undefined]
-            }
-          }),
-        )
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(Object.fromEntries(urls.filter(([, url]) => url))))
-      }
-
-      type Stop = () => void
-
-      /** How long a watched screen's mirror outlives its last viewer: a reconnect or a switch back finds it built. */
-      const MIRROR_GRACE_MS = 30_000
-
-      const mirrors = screenMirrors((id) => logFileOf(paths, id), MIRROR_GRACE_MS)
-
-      /** How many ended sessions' last frames are kept; a frame is a few KB. */
-      const LAST_FRAMES_KEPT = 500
-
-      const lastFrameOf = lastFrames((id) => logFileOf(paths, id), LAST_FRAMES_KEPT)
-
-      /**
-       * A snapshot of the session's screen, then its output as the host logs it; a session no longer running has only
-       * its snapshot, its last frame. `undefined` for a session nobody logged.
-       */
-      async function screenStream(id: string, send: (msg: ScreenMsg) => void): Promise<Stop | undefined> {
-        const session = system.session(id)
-        if (!session) return
-        const { facts } = session
-        const running = isLive(withLiveness(facts.state, id, system.live()?.ids ?? new Set()).status)
-        const sendSnapshot = (data: string, exited: boolean) => send({ t: 'snapshot', data, cols: facts.cols, rows: facts.rows, exited })
-        if (running) {
-          const stop = await mirrors.watch(id, {
-            snapshot: (data) => sendSnapshot(data, false),
-            event: (event) => {
-              if (event[1] === 'o') send({ t: 'o', data: event[2] })
-              if (event[1] === 'r') send({ t: 'r', size: event[2] })
-              if (event[1] === 'x') send({ t: 'x', exitCode: event[2].exitCode })
-            },
-          })
-          if (stop) return stop
-        }
-        sendSnapshot(await lastFrameOf.frame(id), !running)
-        return () => {}
-      }
-
-      /** How many terminals are open on each session. */
-      const terminals = new Map<string, number>()
-
-      /** A session's screen stream, opened by an interactive terminal: its snapshot says how many others are open. */
-      async function terminalStream(id: string, send: (msg: TerminalMsg) => void): Promise<Stop | undefined> {
-        const others = terminals.get(id) ?? 0
-        terminals.set(id, others + 1)
-        let open = true
-        const close = () => {
-          if (!open) return
-          open = false
-          if (terminals.get(id) === 1) terminals.delete(id)
-          else terminals.set(id, terminals.get(id)! - 1)
-        }
-        const stop = await screenStream(id, (msg) => send(msg.t === 'snapshot' ? { ...msg, terminals: others } : msg)).catch((err) => {
-          close()
-          throw err
+    /**
+     * A snapshot of the session's screen, then its output as the host logs it; a session no longer running has only
+     * its snapshot, its last frame. `undefined` for a session nobody logged.
+     */
+    async function screenStream(id: string, send: (msg: ScreenMsg) => void): Promise<Stop | undefined> {
+      const session = system.session(id)
+      if (!session) return
+      const { facts } = session
+      const running = isLive(withLiveness(facts.state, id, system.live()?.ids ?? new Set()).status)
+      const sendSnapshot = (data: string, exited: boolean) => send({ t: 'snapshot', data, cols: facts.cols, rows: facts.rows, exited })
+      if (running) {
+        const stop = await mirrors.watch(id, {
+          snapshot: (data) => sendSnapshot(data, false),
+          event: (event) => {
+            if (event[1] === 'o') send({ t: 'o', data: event[2] })
+            if (event[1] === 'r') send({ t: 'r', size: event[2] })
+            if (event[1] === 'x') send({ t: 'x', exitCode: event[2].exitCode })
+          },
         })
-        if (!stop) {
-          close()
-          return
+        if (stop) return stop
+      }
+      sendSnapshot(await lastFrameOf.frame(id), !running)
+      return () => {}
+    }
+
+    /** How many terminals are open on each session. */
+    const terminals = new Map<string, number>()
+
+    /** A session's screen stream, opened by an interactive terminal: its snapshot says how many others are open. */
+    async function terminalStream(id: string, send: (msg: TerminalMsg) => void): Promise<Stop | undefined> {
+      const others = terminals.get(id) ?? 0
+      terminals.set(id, others + 1)
+      let open = true
+      const close = () => {
+        if (!open) return
+        open = false
+        if (terminals.get(id) === 1) terminals.delete(id)
+        else terminals.set(id, terminals.get(id)! - 1)
+      }
+      const stop = await screenStream(id, (msg) => send(msg.t === 'snapshot' ? { ...msg, terminals: others } : msg)).catch((err) => {
+        close()
+        throw err
+      })
+      if (!stop) {
+        close()
+        return
+      }
+      return () => {
+        stop()
+        close()
+      }
+    }
+
+    const shellStream = (id: string, send: (msg: ShellStream) => void): Stop => attachShell(paths.terms, id, send)
+
+    const openSse = (res: http.ServerResponse) =>
+      res.on('close', () => unstall(res)).writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
+
+    async function streamScreen(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
+      if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
+      openSse(res)
+      let gone = false
+      let stop: Stop | undefined
+      req.on('close', () => ((gone = true), stop?.()))
+      stop = await screenStream(id, (msg) => sse(res, msg))
+      if (gone) stop?.()
+    }
+
+    function streamShell(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
+      openSse(res)
+      const stop = shellStream(id, (msg) => {
+        sse(res, msg)
+        if (msg.t === 'x' || msg.t === 'error') res.end()
+      })
+      req.on('close', stop)
+    }
+
+    /**
+     * Streams multiplexed onto one SSE connection per client: a browser holds at most six connections to a host, and
+     * every live screen would otherwise take one. The client opens `GET /mux`, learns its id from the first message,
+     * then adds and drops streams by `POST /mux/watch {mux, key, path}` and `/mux/unwatch {mux, key}`. Each event
+     * arrives as `{key, data}`, `data` being a message of the stream at `path` (src/shared/shelf-page.ts `Streams`).
+     */
+    type Mux = { res: http.ServerResponse; streams: Map<string, Promise<Stop | undefined>> }
+    const muxes = new Map<string, Mux>()
+
+    function openMux(req: http.IncomingMessage, res: http.ServerResponse) {
+      const id = randomUUID()
+      const mux: Mux = { res, streams: new Map() }
+      muxes.set(id, mux)
+      openSse(res)
+      sse(res, { t: 'mux', id })
+      req.on('close', () => {
+        muxes.delete(id)
+        for (const stream of mux.streams.values()) void stream.then((stop) => stop?.())
+      })
+    }
+
+    const streamAt = (path: string, send: (msg: ScreenMsg | TerminalMsg | ShellStream) => void): Promise<Stop | undefined> => {
+      const screen = /^screen\/([\w-]+)$/.exec(path)?.[1]
+      if (screen) return screenStream(screen, send)
+      const terminal = /^terminal\/([\w-]+)$/.exec(path)?.[1]
+      if (terminal) return terminalStream(terminal, send)
+      const shell = /^shell\/([\w-]+)$/.exec(path)?.[1]
+      return Promise.resolve(shell ? shellStream(shell, send) : undefined)
+    }
+
+    async function muxWatch({ mux: muxId, key, path }: RouteInput['mux/watch']): Promise<Answer> {
+      const mux = muxes.get(muxId)
+      if (!mux) return apiError('not_found', `No mux "${muxId}"`)
+      void mux.streams.get(key)?.then((stop) => stop?.())
+      const stream = streamAt(path, (data) => sse(mux.res, { key, data }))
+      /** A stream that fails to open answers its watch with the failure, and the mux holds it as one with nothing to stop. */
+      mux.streams.set(key, stream.catch(() => undefined))
+      if (!(await stream)) return apiError('not_found', `Nothing streams at "${path}"`)
+      return OK
+    }
+
+    function muxUnwatch({ mux: muxId, key }: RouteInput['mux/unwatch']): Answer {
+      const mux = muxes.get(muxId)
+      void mux?.streams.get(key)?.then((stop) => stop?.())
+      mux?.streams.delete(key)
+      return OK
+    }
+
+    function shelf(res: http.ServerResponse, projectId: string, n: number, file: string | undefined) {
+      const project = readConfig().projects[projectId]
+      const entry = project?.shelf?.[n]
+      if (!entry) return fail(res, 'not_found', `"${projectId}" has no shelf entry ${n}`)
+      if (file === undefined) {
+        const files = shelfFiles(project, entry).filter((f) => !('message' in shelfFile(projectId, project, entry, f)))
+        return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(files))
+      }
+      if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
+      const found = shelfFile(projectId, project, entry, file)
+      if ('message' in found) return fail(res, 'not_found', found.message)
+      serveFile(res, found.file, sandboxed(file))
+    }
+
+    /** A file an entry serves, on disk: under the hub, or an `item` entry's in its collection, which must hold it. */
+    function shelfFile(projectId: string, project: Project, entry: ShelfEntry, file: string): { file: string } | { message: string } {
+      if (!('item' in entry)) return { file: path.join(project.hub, file) }
+      const { collection, id } = shelfItem(entry)
+      if (!entry.item.includes('/') || !ITEM_ID.test(id)) return { message: `The shelf entry names "${entry.item}": an item is named "<collection>/<id>", the id its file name` }
+      if (!isDeclared(projectId, collection)) return { message: `The shelf entry names "${entry.item}", and "${projectId}" keeps no collection "${collection}"` }
+      const found = itemPath(paths, projectId, collection, id)
+      return existsSync(found) ? { file: found } : { message: `The shelf entry names "${entry.item}", and ${projectId}/${collection} holds no item "${id}"` }
+    }
+
+    const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page)
+
+    /** A page opened in a browser tab, read with the config: a config it can't read shows as a page saying so. */
+    function withConfig(res: http.ServerResponse, serve: (config: Config) => void) {
+      try {
+        serve(readConfig())
+      } catch (err) {
+        if (!(err instanceof ConfigError)) throw err
+        htmlPage(res, ERROR_STATUS.config, problemPage('The config needs a fix', err.message, `Fix <code>${esc(paths.config)}</code> and reload this page.`))
+      }
+    }
+
+    /** `/`: the configured renderer, at its own URL, so its files resolve below its root. */
+    const home = (res: http.ServerResponse, query: string) =>
+      withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config)).name}/${query}` }).end())
+
+    /** A declared renderer: trusted like the tower page, at the tower's origin, so `/tower.js` calls the routes directly. */
+    const rendered = (res: http.ServerResponse, name: string, file: string | undefined, query: string) =>
+      withConfig(res, (config) => {
+        const renderers = renderersOf(config)
+        const renderer = renderers.find((r) => r.name === name)
+        const built = renderers.filter((r) => r.available).map((r) => `<a href="/r/${esc(r.name)}/">${esc(r.name)}</a>`).join(', ')
+        if (!renderer) return htmlPage(res, ERROR_STATUS.not_found, problemPage(`No renderer "${name}"`, `The renderers are ${renderers.map((r) => r.name).join(', ')}`, `Declare it in <code>renderers</code> in <code>${esc(paths.config)}</code>, or open one that is built: ${built}.`))
+        if (file === undefined) return res.writeHead(302, { location: `/r/${name}/${query}` }).end()
+        if (!renderer.available) {
+          const entry = path.join(renderer.root, renderer.entry)
+          return htmlPage(res, ERROR_STATUS.unavailable, problemPage(`${name} isn't built`, `${entry} doesn't exist`, `Build the renderer into its root and reload this page, or open one that is built: ${built}.`))
         }
-        return () => {
-          stop()
-          close()
-        }
-      }
+        const full = rendererFile(renderer, file || renderer.entry)
+        if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `The renderer "${name}" serves no "${file}"`)
+        serveFile(res, full, ANY_ORIGIN)
+      })
 
-      const shellStream = (id: string, send: (msg: ShellStream) => void): Stop => attachShell(paths.terms, id, send)
+    /** Every renderer, and the one `/` opens. */
+    function renderersRead(res: http.ServerResponse) {
+      const config = readConfig()
+      const renderers = renderersOf(config)
+      const read: Reads['renderers'] = { default: defaultRenderer(config, renderers).name, renderers }
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(read))
+    }
 
-      const openSse = (res: http.ServerResponse) =>
-        res.on('close', () => unstall(res)).writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
-
-      async function streamScreen(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
-        if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
-        openSse(res)
-        let gone = false
-        let stop: Stop | undefined
-        req.on('close', () => ((gone = true), stop?.()))
-        stop = await screenStream(id, (msg) => sse(res, msg))
-        if (gone) stop?.()
-      }
-
-      function streamShell(id: string, req: http.IncomingMessage, res: http.ServerResponse) {
-        openSse(res)
-        const stop = shellStream(id, (msg) => {
-          sse(res, msg)
-          if (msg.t === 'x' || msg.t === 'error') res.end()
-        })
-        req.on('close', stop)
-      }
-
-      /**
-       * Streams multiplexed onto one SSE connection per client: a browser holds at most six connections to a host, and
-       * every live screen would otherwise take one. The client opens `GET /mux`, learns its id from the first message,
-       * then adds and drops streams by `POST /mux/watch {mux, key, path}` and `/mux/unwatch {mux, key}`. Each event
-       * arrives as `{key, data}`, `data` being a message of the stream at `path` (src/shared/shelf-page.ts `Streams`).
-       */
-      type Mux = { res: http.ServerResponse; streams: Map<string, Promise<Stop | undefined>> }
-      const muxes = new Map<string, Mux>()
-
-      function openMux(req: http.IncomingMessage, res: http.ServerResponse) {
-        const id = randomUUID()
-        const mux: Mux = { res, streams: new Map() }
-        muxes.set(id, mux)
-        openSse(res)
-        sse(res, { t: 'mux', id })
-        req.on('close', () => {
-          muxes.delete(id)
-          for (const stream of mux.streams.values()) void stream.then((stop) => stop?.())
-        })
-      }
-
-      const streamAt = (path: string, send: (msg: ScreenMsg | TerminalMsg | ShellStream) => void): Promise<Stop | undefined> => {
-        const screen = /^screen\/([\w-]+)$/.exec(path)?.[1]
-        if (screen) return screenStream(screen, send)
-        const terminal = /^terminal\/([\w-]+)$/.exec(path)?.[1]
-        if (terminal) return terminalStream(terminal, send)
-        const shell = /^shell\/([\w-]+)$/.exec(path)?.[1]
-        return Promise.resolve(shell ? shellStream(shell, send) : undefined)
-      }
-
-      async function muxWatch({ mux: muxId, key, path }: RouteInput['mux/watch']): Promise<Answer> {
-        const mux = muxes.get(muxId)
-        if (!mux) return apiError('not_found', `No mux "${muxId}"`)
-        void mux.streams.get(key)?.then((stop) => stop?.())
-        const stream = streamAt(path, (data) => sse(mux.res, { key, data }))
-        /** A stream that fails to open answers its watch with the failure, and the mux holds it as one with nothing to stop. */
-        mux.streams.set(key, stream.catch(() => undefined))
-        if (!(await stream)) return apiError('not_found', `Nothing streams at "${path}"`)
-        return OK
-      }
-
-      function muxUnwatch({ mux: muxId, key }: RouteInput['mux/unwatch']): Answer {
-        const mux = muxes.get(muxId)
-        void mux?.streams.get(key)?.then((stop) => stop?.())
-        mux?.streams.delete(key)
-        return OK
-      }
-
-      function shelf(res: http.ServerResponse, projectId: string, n: number, file: string | undefined) {
-        const project = readConfig().projects[projectId]
+    /** An `html` or `item` entry's page run as a renderer of its own: at the tower's origin, so `/tower.js` calls the routes directly. */
+    const run = (res: http.ServerResponse, projectId: string, n: number, file: string | undefined, query: string) =>
+      withConfig(res, (config) => {
+        const project = config.projects[projectId]
         const entry = project?.shelf?.[n]
-        if (!entry) return fail(res, 'not_found', `"${projectId}" has no shelf entry ${n}`)
-        if (file === undefined) {
-          const files = shelfFiles(project, entry).filter((f) => !('message' in shelfFile(projectId, project, entry, f)))
-          return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(files))
-        }
+        if (!entry || shelfKind(entry) !== 'html') return fail(res, 'not_found', `"${projectId}" has no html or item shelf entry ${n}`)
+        if (file === undefined) return res.writeHead(302, { location: `/run/${projectId}/${n}/${shelfPage(entry)}${query}` }).end()
         if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
         const found = shelfFile(projectId, project, entry, file)
         if ('message' in found) return fail(res, 'not_found', found.message)
-        serveFile(res, found.file, sandboxed(file))
-      }
-
-      /** A file an entry serves, on disk: under the hub, or an `item` entry's in its collection, which must hold it. */
-      function shelfFile(projectId: string, project: Project, entry: ShelfEntry, file: string): { file: string } | { message: string } {
-        if (!('item' in entry)) return { file: path.join(project.hub, file) }
-        const { collection, id } = shelfItem(entry)
-        if (!entry.item.includes('/') || !ITEM_ID.test(id)) return { message: `The shelf entry names "${entry.item}": an item is named "<collection>/<id>", the id its file name` }
-        if (!isDeclared(projectId, collection)) return { message: `The shelf entry names "${entry.item}", and "${projectId}" keeps no collection "${collection}"` }
-        const found = itemPath(paths, projectId, collection, id)
-        return existsSync(found) ? { file: found } : { message: `The shelf entry names "${entry.item}", and ${projectId}/${collection} holds no item "${id}"` }
-      }
-
-      const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page)
-
-      /** A page opened in a browser tab, read with the config: a config it can't read shows as a page saying so. */
-      function withConfig(res: http.ServerResponse, serve: (config: Config) => void) {
-        try {
-          serve(readConfig())
-        } catch (err) {
-          if (!(err instanceof ConfigError)) throw err
-          htmlPage(res, ERROR_STATUS.config, problemPage('The config needs a fix', err.message, `Fix <code>${esc(paths.config)}</code> and reload this page.`))
-        }
-      }
-
-      /** `/`: the configured renderer, at its own URL, so its files resolve below its root. */
-      const home = (res: http.ServerResponse, query: string) =>
-        withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config)).name}/${query}` }).end())
-
-      /** A declared renderer: trusted like the tower page, at the tower's origin, so `/tower.js` calls the routes directly. */
-      const rendered = (res: http.ServerResponse, name: string, file: string | undefined, query: string) =>
-        withConfig(res, (config) => {
-          const renderers = renderersOf(config)
-          const renderer = renderers.find((r) => r.name === name)
-          const built = renderers.filter((r) => r.available).map((r) => `<a href="/r/${esc(r.name)}/">${esc(r.name)}</a>`).join(', ')
-          if (!renderer) return htmlPage(res, ERROR_STATUS.not_found, problemPage(`No renderer "${name}"`, `The renderers are ${renderers.map((r) => r.name).join(', ')}`, `Declare it in <code>renderers</code> in <code>${esc(paths.config)}</code>, or open one that is built: ${built}.`))
-          if (file === undefined) return res.writeHead(302, { location: `/r/${name}/${query}` }).end()
-          if (!renderer.available) {
-            const entry = path.join(renderer.root, renderer.entry)
-            return htmlPage(res, ERROR_STATUS.unavailable, problemPage(`${name} isn't built`, `${entry} doesn't exist`, `Build the renderer into its root and reload this page, or open one that is built: ${built}.`))
-          }
-          const full = rendererFile(renderer, file || renderer.entry)
-          if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `The renderer "${name}" serves no "${file}"`)
-          serveFile(res, full, ANY_ORIGIN)
-        })
-
-      /** Every renderer, and the one `/` opens. */
-      function renderersRead(res: http.ServerResponse) {
-        const config = readConfig()
-        const renderers = renderersOf(config)
-        const read: Reads['renderers'] = { default: defaultRenderer(config, renderers).name, renderers }
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(read))
-      }
-
-      /** An `html` or `item` entry's page run as a renderer of its own: at the tower's origin, so `/tower.js` calls the routes directly. */
-      const run = (res: http.ServerResponse, projectId: string, n: number, file: string | undefined, query: string) =>
-        withConfig(res, (config) => {
-          const project = config.projects[projectId]
-          const entry = project?.shelf?.[n]
-          if (!entry || shelfKind(entry) !== 'html') return fail(res, 'not_found', `"${projectId}" has no html or item shelf entry ${n}`)
-          if (file === undefined) return res.writeHead(302, { location: `/run/${projectId}/${n}/${shelfPage(entry)}${query}` }).end()
-          if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
-          const found = shelfFile(projectId, project, entry, file)
-          if ('message' in found) return fail(res, 'not_found', found.message)
-          serveFile(res, found.file, {})
-        })
-
-      /** A collection's file, sandboxed like a shelf's: an html item opened by its URL runs at an origin of its own. */
-      function collectionItem(res: http.ServerResponse, project: string, collection: string, id: string) {
-        if (!isDeclared(project, collection)) return fail(res, 'not_found', `"${project}" has no collection "${collection}"`)
-        if (!ITEM_ID.test(id)) return fail(res, 'invalid', `"${id}" is not an item id`)
-        const file = itemPath(paths, project, collection, id)
-        if (!existsSync(file)) return fail(res, 'not_found', `${project}/${collection} holds no item "${id}"`)
-        serveFile(res, file, sandboxed(file))
-      }
-
-      /** A file a worker showed, sandboxed like a shelf's. */
-      function shownFile(res: http.ServerResponse, id: string, file: string) {
-        const session = system.session(id)
-        if (!session) return fail(res, 'not_found', `No session "${id}"`)
-        if (!shownServes(session.facts.shown, file)) return fail(res, 'not_found', `${id} showed no "${file}"`)
-        if (!existsSync(file)) return fail(res, 'not_found', `"${file}" is gone`)
-        serveFile(res, file, sandboxed(file))
-      }
-
-      const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
-
-      const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
-        if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
-        res
-          .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...headers })
-          .end(readFileSync(file))
-      }
-
-      /** Every verb: the dispatch's, and the mux's, which hold this server's connections. */
-      const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { ...dispatch.handlers, 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
-
-      /**
-       * The largest command body read. The largest real requests are a `collection/write` of a self-contained html item
-       * and a `review/append` carrying a diff, tens of KB; this leaves room for one with its images inlined.
-       */
-      const MAX_BODY = 8 * 1024 * 1024
-
-      /** A command's body, or `undefined` once it passes `MAX_BODY`: the rest is left unread. */
-      const readBody = (req: http.IncomingMessage): Promise<string | undefined> =>
-        new Promise((resolve) => {
-          if (Number(req.headers['content-length']) > MAX_BODY) return resolve(undefined)
-          const chunks: Buffer[] = []
-          let size = 0
-          const onData = (chunk: Buffer) => {
-            size += chunk.length
-            if (size <= MAX_BODY) return void chunks.push(chunk)
-            req.off('data', onData).pause()
-            resolve(undefined)
-          }
-          req.on('data', onData)
-          req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-        })
-
-      const send = (res: http.ServerResponse, answer: Answer) =>
-        res.writeHead(answer.t === 'error' ? ERROR_STATUS[(answer as ApiError).code] : 200, { 'content-type': 'application/json' }).end(JSON.stringify(answer))
-
-      const fail = (res: http.ServerResponse, code: ErrorCode, message: string) => send(res, apiError(code, message))
-
-      const isRoute = (name: string): name is Route => Object.hasOwn(ROUTES, name)
-
-      const parseJson = (text: string): { json: unknown } | undefined => {
-        try {
-          return { json: JSON.parse(text) }
-        } catch {
-          return undefined
-        }
-      }
-
-      /** Every command: its body parsed by the verb's schema, handled, and its reply checked against the verb's. */
-      async function command(req: http.IncomingMessage, res: http.ServerResponse, route: string) {
-        if (!isRoute(route)) return fail(res, 'not_found', `No verb "${route}"`)
-        const text = await readBody(req)
-        if (text === undefined) {
-          res.setHeader('connection', 'close')
-          return fail(res, 'invalid', `The body is over ${MAX_BODY / 1024 / 1024} MiB`)
-        }
-        const body = parseJson(text)
-        if (!body) return fail(res, 'invalid', 'The body is not JSON')
-        const input = ROUTES[route].input.safeParse(body.json)
-        if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
-        const answer = await (HANDLERS[route] as (input: unknown) => Answer | Promise<Answer>)(input.data)
-        send(res, answer.t === 'error' ? answer : ROUTES[route].reply.parse(answer))
-      }
-
-      const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
-
-      /**
-       * Any page open in the browser can reach the tower: through DNS rebinding, under a foreign Host, or with a
-       * cross-site POST, which browsers send without a preflight but always mark with its Origin. A GET passes on its Host
-       * alone: no read changes the system (what it writes is `cache/`), and a page at another origin can't read the answer.
-       */
-      const isFromTower = (req: http.IncomingMessage): boolean =>
-        TOWER_HOSTS.has(req.headers.host ?? '') && (req.method !== 'POST' || req.headers.origin === `http://${req.headers.host}`)
-
-      type Served<Q extends z.ZodType> = {
-        req: http.IncomingMessage
-        res: http.ServerResponse
-        /** The path's named groups, decoded; an optional group that didn't match is `undefined`. */
-        params: Record<string, string | undefined>
-        query: z.output<Q>
-        /** The url's query string with its `?`, or `''`: what a redirect carries on. */
-        search: string
-      }
-
-      /** Every read the API declares: the keys of `Reads` and of `QUERIES`. */
-      type ReadName = keyof Reads | Query
-
-      /** A read's query schema in `QUERIES`, or none for a read that takes no query. */
-      type QueryOf<N extends ReadName> = N extends Query ? (typeof QUERIES)[N] : z.ZodUnknown
-
-      /** What a GET route that is no API read is: a page the tower serves, a stream, or the API's own description. */
-      type Kind = 'page' | 'stream' | 'schema'
-
-      /**
-       * A GET route: `path` matched against the pathname, its named groups the params; the query string parsed by the
-       * read's schema in `QUERIES` before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route
-       * that declares none. An entry is the API read it `read`s, a name of `Reads` or `QUERIES`, or says its `kind`.
-       */
-      type StreamDoc = { description: string; read?: string; message?: object }
-
-      type ReadRoute = {
-        path: RegExp
-        query?: z.ZodType
-        stream?: StreamDoc
-        serve(served: Served<z.ZodType>): unknown
-      }
-
-      type Read = ReadRoute & ({ read: ReadName } | { kind: Kind })
-
-      type ReadEntry<Q extends z.ZodType> = { path: RegExp; serve(served: Served<Q>): unknown }
-
-      const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): ReadRoute & { read: N } => ({
-        ...entry,
-        read: name,
-        query: name in QUERIES ? QUERIES[name as Query] : undefined,
+        serveFile(res, found.file, {})
       })
 
-      const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: Kind } => ({ ...entry, kind })
+    /** A collection's file, sandboxed like a shelf's: an html item opened by its URL runs at an origin of its own. */
+    function collectionItem(res: http.ServerResponse, project: string, collection: string, id: string) {
+      if (!isDeclared(project, collection)) return fail(res, 'not_found', `"${project}" has no collection "${collection}"`)
+      if (!ITEM_ID.test(id)) return fail(res, 'invalid', `"${id}" is not an item id`)
+      const file = itemPath(paths, project, collection, id)
+      if (!existsSync(file)) return fail(res, 'not_found', `${project}/${collection} holds no item "${id}"`)
+      serveFile(res, file, sandboxed(file))
+    }
 
-      const streamRead = (stream: StreamDoc, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: 'stream' } => ({ ...plain('stream', entry), kind: 'stream', stream })
+    /** A file a worker showed, sandboxed like a shelf's. */
+    function shownFile(res: http.ServerResponse, id: string, file: string) {
+      const session = system.session(id)
+      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      if (!shownServes(session.facts.shown, file)) return fail(res, 'not_found', `${id} showed no "${file}"`)
+      if (!existsSync(file)) return fail(res, 'not_found', `"${file}" is gone`)
+      serveFile(res, file, sandboxed(file))
+    }
 
-      const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
+    const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
 
-      /** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
-      const READS = [
-        plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
-        streamRead({
-          description: 'The whole system as one view, again whenever it changes.',
-          read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
-          message: boardSchema,
-        }, { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
-        streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
-        plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
-        apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
-        apiRead('extensions', { path: /^\/extensions$/, serve: ({ res }) => json(res, extensions()) }),
-        apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
-        apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
-        apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
-        apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
-        apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
-        apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
-        plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
-        plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
-        apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
-        apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
-        apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
-        apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
-        apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
-        apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),
-        apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
-        plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
-        plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
-        apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.path!) }),
-      ] as const satisfies readonly Read[]
+    const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
+      if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
+      res
+        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...headers })
+        .end(readFileSync(file))
+    }
 
-      /** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
-      const pathOf = (path: RegExp) =>
-        path.source
-          .replace(/^\^|\$$/g, '')
-          .replace(/\(\?:\\\/\(\?<(\w+)>[^()]*\)\)\?/g, '[/{$1}]')
-          .replace(/\(\?<(\w+)>[^()]*\)/g, '{$1}')
-          .replaceAll('\\/', '/')
+    /** Every verb: the dispatch's, and the mux's, which hold this server's connections. */
+    const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { ...dispatch.handlers, 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
 
-      const keyOf = (entry: Read) => ('read' in entry ? entry.read : pathOf(entry.path).slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/')
+    /**
+     * The largest command body read. The largest real requests are a `collection/write` of a self-contained html item
+     * and a `review/append` carrying a diff, tens of KB; this leaves room for one with its images inlined.
+     */
+    const MAX_BODY = 8 * 1024 * 1024
 
-      /** The streams: each declared on its `READS` entry, and the one only `/mux` reaches. */
-      const describeStreams = (reads: readonly Read[]): Record<string, StreamDoc> => ({
-        ...Object.fromEntries(reads.flatMap((entry) => (entry.stream ? [[keyOf(entry), entry.stream]] : []))),
-        'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
-      })
-
-      /** Every entry of `READS` as `{ path, kind, query? }`, keyed by its API read or, for a route that is none, by its path. */
-      const describeReads = (reads: readonly Read[]) =>
-        Object.fromEntries(
-          reads.map((entry) => {
-            const path = pathOf(entry.path)
-            const kind = 'read' in entry ? 'json' : entry.kind
-            return [keyOf(entry), { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
-          }),
-        )
-
-      /** The contract for renderers in any language. */
-      const apiSchema: string = JSON.stringify({
-        v: API_VERSION,
-        verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
-        reads: describeReads(READS),
-        streams: describeStreams(READS),
-        error: z.toJSONSchema(ApiErrorSchema),
-      })
-
-      type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
-
-      /** Types only when every read the API declares has an entry in `READS`; otherwise the missing reads are the type. */
-      const everyReadServed: Exclude<ReadName, ServedReads> extends never ? true : Exclude<ReadName, ServedReads> = true
-      void everyReadServed
-
-      /** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
-      function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
-        for (const entry of READS) {
-          const match = entry.path.exec(pathname)
-          if (!match) continue
-          const params = Object.fromEntries(Object.entries(match.groups ?? {}).map(([name, value]) => [name, value === undefined ? undefined : decodeURIComponent(value)]))
-          const query = (entry.query ?? z.unknown()).safeParse(Object.fromEntries(new URLSearchParams(search)))
-          if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
-          return entry.serve({ req, res, params, query: query.data, search })
+    /** A command's body, or `undefined` once it passes `MAX_BODY`: the rest is left unread. */
+    const readBody = (req: http.IncomingMessage): Promise<string | undefined> =>
+      new Promise((resolve) => {
+        if (Number(req.headers['content-length']) > MAX_BODY) return resolve(undefined)
+        const chunks: Buffer[] = []
+        let size = 0
+        const onData = (chunk: Buffer) => {
+          size += chunk.length
+          if (size <= MAX_BODY) return void chunks.push(chunk)
+          req.off('data', onData).pause()
+          resolve(undefined)
         }
-        fail(res, 'not_found', `Nothing at "${pathname}"`)
+        req.on('data', onData)
+        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+      })
+
+    const send = (res: http.ServerResponse, answer: Answer) =>
+      res.writeHead(answer.t === 'error' ? ERROR_STATUS[(answer as ApiError).code] : 200, { 'content-type': 'application/json' }).end(JSON.stringify(answer))
+
+    const fail = (res: http.ServerResponse, code: ErrorCode, message: string) => send(res, apiError(code, message))
+
+    const isRoute = (name: string): name is Route => Object.hasOwn(ROUTES, name)
+
+    const parseJson = (text: string): { json: unknown } | undefined => {
+      try {
+        return { json: JSON.parse(text) }
+      } catch {
+        return undefined
       }
+    }
 
-      async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
-        if (!isFromTower(req)) {
-          res.writeHead(403).end()
-          return
-        }
-        const url = req.url ?? '/'
-        try {
-          decodeURIComponent(url.split('?')[0])
-        } catch {
-          return fail(res, 'invalid', 'The path has a malformed % escape')
-        }
-        const asset = STATIC[url]
-        if (req.method === 'GET' && asset) {
-          res.writeHead(200, { 'content-type': asset[1] }).end(readFileSync(asset[0]))
-          return
-        }
-        if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript' }).end(towerClient())
-        if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
-        const [pathname, search] = url.split('?')
-        if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)
-        if (req.method === 'POST') return command(req, res, pathname.slice(1))
-        fail(res, 'not_found', `Nothing at "${pathname}"`)
+    /** Every command: its body parsed by the verb's schema, handled, and its reply checked against the verb's. */
+    async function command(req: http.IncomingMessage, res: http.ServerResponse, route: string) {
+      if (!isRoute(route)) return fail(res, 'not_found', `No verb "${route}"`)
+      const text = await readBody(req)
+      if (text === undefined) {
+        res.setHeader('connection', 'close')
+        return fail(res, 'invalid', `The body is over ${MAX_BODY / 1024 / 1024} MiB`)
       }
+      const body = parseJson(text)
+      if (!body) return fail(res, 'invalid', 'The body is not JSON')
+      const input = ROUTES[route].input.safeParse(body.json)
+      if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
+      const answer = await (HANDLERS[route] as (input: unknown) => Answer | Promise<Answer>)(input.data)
+      send(res, answer.t === 'error' ? answer : ROUTES[route].reply.parse(answer))
+    }
 
-      /** An error thrown inside an async request handler would otherwise end the whole tower. */
-      const server = http.createServer((req, res) => {
-        handle(req, res).catch((err: Error) => {
-          console.error(`${req.method} ${req.url}:`, err)
-          if (res.headersSent) res.end()
-          else send(res, errorOf(err))
-        })
-      })
+    const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
 
-      await new Promise<void>((resolve, reject) => {
-        server.once('error', reject)
-        server.listen(PORT, '127.0.0.1', () => {
-          server.off('error', reject)
-          resolve()
-        })
-      })
+    /**
+     * Any page open in the browser can reach the tower: through DNS rebinding, under a foreign Host, or with a
+     * cross-site POST, which browsers send without a preflight but always mark with its Origin. A GET passes on its Host
+     * alone: no read changes the system (what it writes is `cache/`), and a page at another origin can't read the answer.
+     */
+    const isFromTower = (req: http.IncomingMessage): boolean =>
+      TOWER_HOSTS.has(req.headers.host ?? '') && (req.method !== 'POST' || req.headers.origin === `http://${req.headers.host}`)
 
-      /** Every connection closed, its streams stopped with it, and every screen mirror dropped. */
-      const stop = async () => {
-        const closed = new Promise<void>((resolve) => server.close(() => resolve()))
-        server.closeAllConnections()
-        for (const timer of stalls.values()) clearTimeout(timer)
-        stalls.clear()
-        await mirrors.stop()
-        await closed
+    type Served<Q extends z.ZodType> = {
+      req: http.IncomingMessage
+      res: http.ServerResponse
+      /** The path's named groups, decoded; an optional group that didn't match is `undefined`. */
+      params: Record<string, string | undefined>
+      query: z.output<Q>
+      /** The url's query string with its `?`, or `''`: what a redirect carries on. */
+      search: string
+    }
+
+    /** Every read the API declares: the keys of `Reads` and of `QUERIES`. */
+    type ReadName = keyof Reads | Query
+
+    /** A read's query schema in `QUERIES`, or none for a read that takes no query. */
+    type QueryOf<N extends ReadName> = N extends Query ? (typeof QUERIES)[N] : z.ZodUnknown
+
+    /** What a GET route that is no API read is: a page the tower serves, a stream, or the API's own description. */
+    type Kind = 'page' | 'stream' | 'schema'
+
+    /**
+     * A GET route: `path` matched against the pathname, its named groups the params; the query string parsed by the
+     * read's schema in `QUERIES` before `serve` runs, refused as `invalid` when it doesn't parse, and ignored by a route
+     * that declares none. An entry is the API read it `read`s, a name of `Reads` or `QUERIES`, or says its `kind`.
+     */
+    type StreamDoc = { description: string; read?: string; message?: object }
+
+    type ReadRoute = {
+      path: RegExp
+      query?: z.ZodType
+      stream?: StreamDoc
+      serve(served: Served<z.ZodType>): unknown
+    }
+
+    type Read = ReadRoute & ({ read: ReadName } | { kind: Kind })
+
+    type ReadEntry<Q extends z.ZodType> = { path: RegExp; serve(served: Served<Q>): unknown }
+
+    const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): ReadRoute & { read: N } => ({
+      ...entry,
+      read: name,
+      query: name in QUERIES ? QUERIES[name as Query] : undefined,
+    })
+
+    const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: Kind } => ({ ...entry, kind })
+
+    const streamRead = (stream: StreamDoc, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: 'stream' } => ({ ...plain('stream', entry), kind: 'stream', stream })
+
+    const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
+
+    /** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
+    const READS = [
+      plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
+      streamRead({
+        description: 'The whole system as one view, again whenever it changes.',
+        read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+        message: boardSchema,
+      }, { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
+      streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
+      plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
+      apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
+      apiRead('extensions', { path: /^\/extensions$/, serve: ({ res }) => json(res, extensions.read()) }),
+      apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
+      apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
+      apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
+      apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
+      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
+      apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
+      plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
+      plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
+      apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
+      apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
+      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
+      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
+      apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
+      apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),
+      apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
+      plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
+      plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
+      apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.path!) }),
+    ] as const satisfies readonly Read[]
+
+    /** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
+    const pathOf = (path: RegExp) =>
+      path.source
+        .replace(/^\^|\$$/g, '')
+        .replace(/\(\?:\\\/\(\?<(\w+)>[^()]*\)\)\?/g, '[/{$1}]')
+        .replace(/\(\?<(\w+)>[^()]*\)/g, '{$1}')
+        .replaceAll('\\/', '/')
+
+    const keyOf = (entry: Read) => ('read' in entry ? entry.read : pathOf(entry.path).slice(1).replace(/\{(\w+)\}/g, '<$1>') || '/')
+
+    /** The streams: each declared on its `READS` entry, and the one only `/mux` reaches. */
+    const describeStreams = (reads: readonly Read[]): Record<string, StreamDoc> => ({
+      ...Object.fromEntries(reads.flatMap((entry) => (entry.stream ? [[keyOf(entry), entry.stream]] : []))),
+      'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
+    })
+
+    /** Every entry of `READS` as `{ path, kind, query? }`, keyed by its API read or, for a route that is none, by its path. */
+    const describeReads = (reads: readonly Read[]) =>
+      Object.fromEntries(
+        reads.map((entry) => {
+          const path = pathOf(entry.path)
+          const kind = 'read' in entry ? 'json' : entry.kind
+          return [keyOf(entry), { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
+        }),
+      )
+
+    /** The contract for renderers in any language. */
+    const apiSchema: string = JSON.stringify({
+      v: API_VERSION,
+      verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
+      reads: describeReads(READS),
+      streams: describeStreams(READS),
+      error: z.toJSONSchema(ApiErrorSchema),
+      extension: MANIFEST_SCHEMA,
+    })
+
+    type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
+
+    /** Types only when every read the API declares has an entry in `READS`; otherwise the missing reads are the type. */
+    const everyReadServed: Exclude<ReadName, ServedReads> extends never ? true : Exclude<ReadName, ServedReads> = true
+    void everyReadServed
+
+    /** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
+    function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
+      for (const entry of READS) {
+        const match = entry.path.exec(pathname)
+        if (!match) continue
+        const params = Object.fromEntries(Object.entries(match.groups ?? {}).map(([name, value]) => [name, value === undefined ? undefined : decodeURIComponent(value)]))
+        const query = (entry.query ?? z.unknown()).safeParse(Object.fromEntries(new URLSearchParams(search)))
+        if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
+        return entry.serve({ req, res, params, query: query.data, search })
       }
+      fail(res, 'not_found', `Nothing at "${pathname}"`)
+    }
 
-      return { port: PORT, stop }
-    },
-    halt: ({ stop }) => stop(),
-  })
+    async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
+      if (!isFromTower(req)) {
+        res.writeHead(403).end()
+        return
+      }
+      const url = req.url ?? '/'
+      try {
+        decodeURIComponent(url.split('?')[0])
+      } catch {
+        return fail(res, 'invalid', 'The path has a malformed % escape')
+      }
+      const asset = STATIC[url]
+      if (req.method === 'GET' && asset) {
+        res.writeHead(200, { 'content-type': asset[1] }).end(readFileSync(asset[0]))
+        return
+      }
+      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript' }).end(towerClient())
+      if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
+      const [pathname, search] = url.split('?')
+      if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)
+      if (req.method === 'POST') return command(req, res, pathname.slice(1))
+      fail(res, 'not_found', `Nothing at "${pathname}"`)
+    }
+
+    /** An error thrown inside an async request handler would otherwise end the whole tower. */
+    const server = http.createServer((req, res) => {
+      handle(req, res).catch((err: Error) => {
+        console.error(`${req.method} ${req.url}:`, err)
+        if (res.headersSent) res.end()
+        else send(res, errorOf(err))
+      })
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(PORT, '127.0.0.1', () => {
+        server.off('error', reject)
+        resolve()
+      })
+    })
+
+    /** Every connection closed, its streams stopped with it, and every screen mirror dropped. */
+    const stop = async () => {
+      const closed = new Promise<void>((resolve) => server.close(() => resolve()))
+      server.closeAllConnections()
+      for (const timer of stalls.values()) clearTimeout(timer)
+      stalls.clear()
+      await mirrors.stop()
+      await closed
+    }
+
+    return { port: PORT, stop }
+  },
+  halt: ({ stop }) => stop(),
+})

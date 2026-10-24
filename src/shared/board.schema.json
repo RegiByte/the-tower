@@ -184,6 +184,13 @@
           "$ref": "#/definitions/ExtraUsage",
           "description": "The account's extra usage, as the probes' newest answer that had it said."
         },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionView"
+          },
+          "description": "Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`)."
+        },
         "today": {
           "$ref": "#/definitions/Today",
           "description": "Today so far, every project's: it moves with the facts the board moves with, so it is as of the last change."
@@ -268,6 +275,7 @@
         "archiveAt",
         "rateLimits",
         "probes",
+        "extensions",
         "today",
         "hostUp",
         "hostOutdated",
@@ -4116,6 +4124,128 @@
       ],
       "additionalProperties": false,
       "description": "Extra usage: credits spent past the plan's limits, up to a monthly limit, in `currency` units, as read `at` (epoch ms). `reached`: the monthly limit is spent."
+    },
+    "ExtensionView": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "provides": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "bundled": {
+          "type": "boolean"
+        },
+        "state": {
+          "$ref": "#/definitions/ExtensionState"
+        },
+        "off": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionProblem"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "provides",
+        "version",
+        "title",
+        "bundled",
+        "state",
+        "problems"
+      ],
+      "additionalProperties": false,
+      "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
+    },
+    "ExtensionState": {
+      "type": "string",
+      "enum": [
+        "started",
+        "refused",
+        "failed",
+        "skipped",
+        "off"
+      ],
+      "description": "`started`; `refused` at load (its manifest, its versions, its dependencies); `failed` at start; `skipped` because something it requires doesn't run; `off` in the config."
+    },
+    "ExtensionProblem": {
+      "type": "object",
+      "properties": {
+        "lane": {
+          "$ref": "#/definitions/ProblemLane"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn"
+          ]
+        },
+        "code": {
+          "$ref": "#/definitions/ProblemCode"
+        },
+        "message": {
+          "type": "string"
+        },
+        "at": {
+          "type": "number"
+        },
+        "count": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "lane",
+        "level",
+        "code",
+        "message",
+        "at",
+        "count"
+      ],
+      "additionalProperties": false,
+      "description": "Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting; `warn`s leave it running. `at`: epoch ms, when it was found. `count`: how many times. `path`: where in the manifest, `settings.every`."
+    },
+    "ProblemLane": {
+      "type": "string",
+      "enum": [
+        "load",
+        "start",
+        "halt"
+      ],
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it."
+    },
+    "ProblemCode": {
+      "type": "string",
+      "enum": [
+        "invalid",
+        "mismatch",
+        "too-new",
+        "too-old",
+        "unmet",
+        "cycle",
+        "conflict",
+        "skipped",
+        "failed",
+        "under-declared",
+        "not-yet"
+      ]
     },
     "Today": {
       "type": "object",

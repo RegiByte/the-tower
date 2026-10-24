@@ -1,0 +1,13 @@
+{
+  "id": "pulse",
+  "version": "1.0",
+  "title": "Pulse",
+  "description": "Logs a line at its interval while it runs: the fixture the server test boots.",
+  "requires": { "tower": "1.81" },
+  "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": { "every": { "type": "integer", "minimum": 1000, "default": 60000 }, "line": { "type": "string" } }
+  }
+}

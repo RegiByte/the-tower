@@ -16,6 +16,7 @@ import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
 import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
 import { parseThread } from '../src/shared/reviews.ts'
+import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
@@ -24,6 +25,7 @@ const HUB = path.join(ROOT, 'lab')
 const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
+const PULSE = path.join(REPO, 'test', 'fixtures', 'extensions', 'pulse')
 
 const BOOT_MS = 15_000
 
@@ -66,6 +68,7 @@ function writeConfig(port: number) {
     port,
     probes: { quota: { off: true } },
     renderers: { plain: { root: RENDERER } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } } },
     projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
@@ -186,7 +189,8 @@ test('server: every read answers', async () => {
   const isArray = (body: string) => Array.isArray(json(body))
   const has = (...keys: string[]) => (body: string) => keys.every((key) => Object.hasOwn(json(body) as object, key))
   const reads: [path: string, type: string, shape?: (body: string) => boolean][] = [
-    ['/schema', 'application/json', (body) => has('v', 'verbs', 'reads', 'streams', 'error')(body) && (json(body) as { reads: Record<string, { path: string }> }).reads['changes/<id>']?.path === '/changes/{id}'],
+    ['/schema', 'application/json', (body) => has('v', 'verbs', 'reads', 'streams', 'error', 'extension')(body) && (json(body) as { reads: Record<string, { path: string }> }).reads['changes/<id>']?.path === '/changes/{id}'],
+    ['/extensions', 'application/json', has('extensions', 'topology')],
     ['/renderers', 'application/json', has('default', 'renderers')],
     ['/origins', 'application/json', has()],
     [`/conversations/${SESSION}`, 'application/json', isArray],
@@ -220,6 +224,17 @@ test('server: every read answers', async () => {
   assert.ok(await firstEvent(`/screen/${SESSION}`))
   assert.equal(((await firstEvent('/shell/none')) as { t: string }).t, 'error')
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
+})
+
+test('server: an extension the config adds is started as x:<cap>, after the core, and shown on the board and at GET /extensions', async () => {
+  const msg = (await firstEvent('/board')) as BoardMsg
+  assert.ok('board' in msg)
+  assert.deepEqual(msg.board.extensions, [{ id: 'pulse', provides: 'pulse', version: '1.0', title: 'Pulse', bundled: false, state: 'started', problems: [] }])
+  const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
+  assert.deepEqual(read.extensions, msg.board.extensions)
+  assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch'])
+  assert.equal(read.topology.startupOrder.at(-1), 'x:pulse')
+  assert.match(read.topology.mermaid, /\["x:pulse"\]/)
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

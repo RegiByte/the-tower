@@ -5,11 +5,12 @@ import { test } from 'node:test'
 import vm from 'node:vm'
 import { API_VERSION } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
+import { BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
 import { bundled, MODULES, towerClient } from '../src/tower/served.ts'
 
 /**
- * Holds what the tower serves to `test/served-exports.json`: a removal without a major, or any other difference from the
- * list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now; commit it.
+ * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
+ * major, or any other difference from the list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now; commit it.
  */
 
 /** What renderers may build on, by URL, as of the API major it was written at. */
@@ -43,11 +44,30 @@ function stylesheetNames(css: string): string[] {
   return [...new Set([...(css.match(/--[\w-]+(?=\s*:)/g) ?? []), ...(selectors.match(/\.[a-zA-Z][\w-]*/g) ?? [])])]
 }
 
-/** Every name served now: each module's exports, `/tower.js`'s members, `/design.css`'s custom properties and classes. */
+type SchemaNode = { properties?: Record<string, SchemaNode>; additionalProperties?: SchemaNode | boolean }
+
+/** Every key path of a JSON Schema, `*` for any key of a record: `views.*.*.module`. */
+function keyPaths(node: SchemaNode, at: string[] = []): string[] {
+  const own = Object.entries(node.properties ?? {}).flatMap(([key, child]) => [[...at, key].join('.'), ...keyPaths(child, [...at, key])])
+  const any = typeof node.additionalProperties === 'object' ? keyPaths(node.additionalProperties, [...at, '*']) : []
+  return [...own, ...any]
+}
+
+/** The leaf paths of an object: `start.tower.version`. */
+const leafPaths = (value: object, at: string[] = []): string[] =>
+  Object.entries(value).flatMap(([key, inner]) => (typeof inner === 'object' ? leafPaths(inner, [...at, key]) : [[...at, key].join('.')]))
+
+/**
+ * Every name served now: each module's exports, `/tower.js`'s members, `/design.css`'s custom properties and classes,
+ * and what extensions build on: the manifest's key paths, each lane's ctx members, and the core's problem codes and names.
+ */
 function servedNow(): Record<string, string[]> {
   const served: Record<string, string[]> = {
     '/tower.js': towerMembers(),
     '/design.css': stylesheetNames(designCss()),
+    'extension.json': keyPaths(MANIFEST_SCHEMA as SchemaNode),
+    ctx: leafPaths(CTX_SINCE),
+    core: [...PROBLEM_CODES.map((code) => `problem.${code}`), ...RESERVED.map((name) => `reserved.${name}`), ...BUNDLED.map((name) => `bundled.${name}`)],
   }
   for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports
   return Object.fromEntries(Object.entries(served).map(([url, names]) => [url, [...names].sort()]))

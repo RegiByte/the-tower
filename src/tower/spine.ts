@@ -9,16 +9,19 @@
  *   core:dispatch   every verb's handler (dispatch.ts)
  *   core:slots      the policies' runner, which acts through the verbs (src/policies.ts)
  *   core:http       the renderer API on the config's port (http.ts)
+ *   core:extensions what the board and `GET /extensions` show of the extensions (extensions.ts)
+ *
+ * and one resource per extension the config and the checkout declare, `x:<cap>`, beside them (extensions.ts).
  */
-import { buildTopology, defineResource, type StartedSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type SystemConfig } from 'braided'
+import { defineResource, type StartedSystem, type StartedResource } from 'braided'
 import { runPolicies } from '../policies.ts'
 import { runProbes } from '../probes.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
-import type { Reads } from '../shared/shelf-page.ts'
 import { readConfig, watchSystem } from '../system.ts'
 import type { Answer } from './answers.ts'
 import { dispatch, type DispatchResource } from './dispatch.ts'
-import { httpOf } from './http.ts'
+import { extensions } from './extensions.ts'
+import { httpServer } from './http.ts'
 import { publisher, type PublisherResource } from './publisher.ts'
 
 /** The config is read again on every call: the user edits it at any time, and every read sees the edit. */
@@ -68,24 +71,16 @@ export const slots = defineResource({
 })
 export type SlotsResource = StartedResource<typeof slots>
 
-/** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
-const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
-  const nodes = resources as Record<string, Resource>
-  const topology = buildTopology(nodes, topologicalSort(nodes))
-  return { ...topology, mermaid: toMermaid(topology) }
-}
-
 /** The tower's system: the core's resources by name. */
-export const tower = () => {
-  const resources = {
-    'core:config': config,
-    'core:system': system,
-    'core:probes': probes,
-    'core:publisher': publisher,
-    'core:dispatch': dispatch,
-    'core:slots': slots,
-    'core:http': httpOf((): Reads['extensions'] => ({ extensions: [], topology: topologyOf(resources) })),
-  }
-  return resources
-}
-export type TowerSystem = StartedSystem<ReturnType<typeof tower>>
+export const tower = () => ({
+  'core:config': config,
+  'core:system': system,
+  'core:probes': probes,
+  'core:extensions': extensions,
+  'core:publisher': publisher,
+  'core:dispatch': dispatch,
+  'core:slots': slots,
+  'core:http': httpServer,
+})
+export type TowerResources = ReturnType<typeof tower>
+export type TowerSystem = StartedSystem<TowerResources>

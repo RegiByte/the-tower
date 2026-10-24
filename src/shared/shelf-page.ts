@@ -15,6 +15,7 @@ import type { ReviewHistory } from '../bridge/reviews.ts'
 import type { RepoChanges } from '../changes.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.ts'
 import type { Scheme } from './design.ts'
+import type { ExtensionView } from './extensions.ts'
 import type { Pattern } from './capabilities.ts'
 import type { Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
@@ -55,8 +56,11 @@ export type Reads = {
   'collection/<project>/<collection>/<item>': string
   /** A file a worker showed (`card.shown`, its absolute path), anything beside or below an html one, or an image beside or below a markdown one. */
   'shown/<id>/<path>': string
-  /** The extensions the tower runs (none yet), and its resources as braided starts them: the order, the layers by depth, who depends on whom. */
-  extensions: { extensions: []; topology: Topology }
+  /**
+   * Every extension the tower found, as `board.extensions` shows them, and its resources as braided starts them, each
+   * extension's as `x:<cap>`: the order, the layers by depth, who depends on whom.
+   */
+  extensions: { extensions: ExtensionView[]; topology: Topology }
 }
 
 /** A resource the tower runs: what it depends on, what depends on it, and its depth (0 when it depends on nothing). */
