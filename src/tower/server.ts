@@ -700,7 +700,10 @@ async function daemon(ask: () => Promise<FromHost | FromTerms>): Promise<Answer>
   }
 }
 
+/** A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the session would start without them. */
 async function host(msg: ToHost): Promise<Answer> {
+  const refused = msg.t === 'spawn' && msg.facts?.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined
+  if (refused) return refused
   const answer = await daemon(() => hostRequest(paths, msg))
   void system.refreshLive()
   return answer
@@ -718,15 +721,21 @@ const withSession = (id: string, act: () => Answer | Promise<Answer>) =>
 /** The host protocol that first takes `fact`. */
 const FACT_PROTOCOL = 2
 
-/** Why the running host can't append a `tower.*` fact, so a verb that needs one refuses before it does anything. */
-const factRefused = (doing: string): ApiError | undefined => {
+/** The host protocol that first logs a spawn's `facts`. */
+const SPAWN_FACTS_PROTOCOL = 3
+
+/** Why the running host, older than protocol `needs`, can't do something, so a verb that needs it refuses before it does anything. */
+const olderHost = (needs: number, doing: string): ApiError | undefined => {
   const live = system.live()
   if (!live) return undefined
   const protocol = live.protocol ?? 0
-  return protocol < FACT_PROTOCOL
-    ? apiError('unavailable', `The running host is too old to ${doing} (protocol ${protocol}, this tower needs ${FACT_PROTOCOL}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
+  return protocol < needs
+    ? apiError('unavailable', `The running host is too old to ${doing} (protocol ${protocol}, this tower needs ${needs}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
     : undefined
 }
+
+/** Why the running host can't append a `tower.*` fact. */
+const factRefused = (doing: string) => olderHost(FACT_PROTOCOL, doing)
 
 /** Only a card that offers `let-go` is let go: stranded, on duty, its latest conversation not yet resumed. */
 const letGo = (id: string) =>

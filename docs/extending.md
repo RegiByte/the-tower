@@ -364,9 +364,10 @@ a script does with curl. `tower` alone, or an unknown verb, lists every verb.
 
 ## The logs
 
-`~/.tower/sessions/<id>.jsonl` is everything that happened in a session: a header line (the session), then
-`[t, code, data]` events, `t` in seconds since it started: `o` output, `i` input, `r` resize, `h` a hook or mod event,
-`x` its exit. An archived log is `<id>.jsonl.gz`, the same lines gzipped. Read them with anything:
+`~/.tower/sessions/<id>.jsonl` is everything that happened in a session: a header line (the session, and its `runtime`,
+`claude`, absent from the logs of older hosts), then `[t, code, data]` events, `t` in seconds since it started: `o`
+output, `i` input, `r` resize, `h` a hook or mod event, `x` its exit (`exitCode`, and `signal` when a signal it
+didn't catch ended it). An archived log is `<id>.jsonl.gz`, the same lines gzipped. Read them with anything:
 
 ```sh
 tail -n +2 ~/.tower/sessions/<id>.jsonl | jq -c 'select(.[1] == "h") | .[2].hook_event_name'

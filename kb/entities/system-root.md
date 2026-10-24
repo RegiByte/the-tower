@@ -4,16 +4,17 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts", "hub/src/shared/paths.ts#configPath"]
 }
 ---
 `~/.tower/` by default; `TOWER_CONFIG` names another config, and its directory becomes the root
 ([`configPath`](ref:hub/src/shared/paths.ts#configPath)). Next to the config live:
 
-- `sessions/<id>.jsonl`: one log per session, written by the host. A header line ([[session]]'s `SessionHeader`),
-  then `[t, code, data]` events, `t` in seconds since `startedAt`: `o` output, `i` input, `r` resize, `h` a hook or
-  mod event (named by `hook_event_name`), `x` exit (`hostStopped` when the host's own stop ended it).
+- `sessions/<id>.jsonl`: one log per session, written by the host. A header line ([[session]]'s `SessionHeader`,
+  its `runtime` absent from an older host's logs, which are Claude's), then `[t, code, data]` events, `t` in seconds
+  since `startedAt`: `o` output, `i` input, `r` resize, `h` a hook or mod event (named by `hook_event_name`), `x` exit
+  (`signal` when one it didn't catch ended it, `hostStopped` when the host's own stop did).
   `<id>.jsonl.gz` is a log Tidy archived, read as the plain log ([[log-retention]]).
 - `streams/system/<stream>/YYYY-MM.jsonl` and `streams/projects/<project>/<stream>/YYYY-MM.jsonl`: facts the tower
   observes that belong to no session, one file per UTC month, written only by the tower

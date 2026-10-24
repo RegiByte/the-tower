@@ -319,9 +319,14 @@ export const projectCollections = (config: Config, projectId: string): Record<st
 export const projectPlugins = (config: Config, projectId: string): string[] => [...(config.plugins ?? []), ...(config.projects[projectId].plugins ?? [])]
 
 /** First line of a session log: everything known about the session when it started. */
+/** The agent runtime a session runs, fixed for its life and its whole resume chain. */
+export type Runtime = 'claude'
+
 export type SessionHeader = {
   id: string
   project: string
+  /** Absent in a log written before runtimes were logged: Claude's. */
+  runtime?: Runtime
   cwd: string
   argv: string[]
   startedAt: number
@@ -350,7 +355,10 @@ export type LogEvent =
   | [t: number, code: 'i', input: string]
   | [t: number, code: 'r', size: `${number}x${number}`]
   | [t: number, code: 'h', hook: ClaudeHookInput | ModEvent]
-  /** `hostStopped`: the session ended because the host stopped, not by its own or a user's doing. */
-  | [t: number, code: 'x', exit: { exitCode: number; hostStopped?: true }]
+  /**
+   * `signal`: the signal that ended the process, when one did and it didn't catch it (a caught one exits 128 plus its
+   * number). `hostStopped`: the session ended because the host stopped, not by its own or a user's doing.
+   */
+  | [t: number, code: 'x', exit: { exitCode: number; signal?: number; hostStopped?: true }]
 
 export type SessionLog = { header: SessionHeader; events: LogEvent[] }
