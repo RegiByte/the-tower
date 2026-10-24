@@ -19,6 +19,7 @@
     "hub/src/shared/changes-lines.ts#watchPickDrag",
     "hub/src/shared/panel-kit.ts#keepingFocus",
     "hub/src/shared/changes-panel.ts#keepingFileTop",
+    "hub/src/shared/changes-panel.ts#keepingViewedFileTop",
     "hub/src/shared/file-acts.ts#fileCall",
     "hub/src/shared/panels-css.ts#panelsCss",
     "hub/src/shared/changes-panel.ts#rowCode",
@@ -65,7 +66,9 @@ are the same view in every renderer; only where they sit, their state and a few 
   would drop a text selection.
 - *A fold keeps the reader's place.* Folding or marking viewed a file the reader is inside redraws through
   [`keepingFileTop`](ref:hub/src/shared/changes-panel.ts#keepingFileTop), which scrolls the file back to its header so the
-  next file follows it; with the file tree drawn, marking a file viewed always brings it to the top.
+  next file follows it; marking a file viewed redraws through
+  [`keepingViewedFileTop`](ref:hub/src/shared/changes-panel.ts#keepingViewedFileTop), which with the file tree drawn
+  always brings the file to the top.
 - *Line picks* stop at the edge of the first line's hunk (`picked`, `spanned`): an anchor is a span of the file's
   lines, and a range over a gap would claim lines its quote doesn't hold. The drag is DOM wiring, shared as
   [`watchPickDrag`](ref:hub/src/shared/changes-lines.ts#watchPickDrag); the renderer keeps the pick and a `picking` flag,

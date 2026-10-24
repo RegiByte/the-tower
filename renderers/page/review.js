@@ -1,6 +1,6 @@
 import { threadCheckoutOf, can, offeredCall, sendTarget, workerIn, plural } from '/cards.js'
 import { THE_USER, REVIEWS, sendText, threadId, unseenBy } from '/reviews.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, cardThread, threadViewOf } from '/panels.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, cardThread, threadViewOf } from '/panels.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
 import { $, toast, told } from './kit.js'
@@ -107,7 +107,7 @@ export function review(deps) {
     const [repo, f] = fileAt(key)
     changeReads.dispatch({ type: 'mark', id: /** @type {string} */ (selected()), repo, marks: marksToggled(read().viewed, repo, f) })
     folds.delete(key)
-    keepingFileTop($('changes'), key, render, true)
+    keepingViewedFileTop($('changes'), key, render)
   }
 
   /** @param {string} key */

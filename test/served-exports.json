@@ -490,6 +490,7 @@
       "keepShownTabs",
       "keepingFileTop",
       "keepingFocus",
+      "keepingViewedFileTop",
       "livePick",
       "liveScope",
       "markRanges",

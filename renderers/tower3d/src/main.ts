@@ -10,7 +10,7 @@ import { changesSection, faceInstalled, markdownSection, prefSections, settingsC
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
 import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
@@ -2213,7 +2213,7 @@ function toggleViewed(id: string, read: ChangesRead, key: string) {
   const [repo, f] = changedFiles(read.repos).find(([r, f]) => fileKey(r, f) === key)!
   markViewed(id, repo, marksToggled(read.viewed, repo, f))
   s.folds.delete(key)
-  keepingFileTop($('desk-changes'), key, renderPanel, true)
+  keepingViewedFileTop($('desk-changes'), key, renderPanel)
 }
 
 const dropPick = () => ((s.pick = undefined), (s.pickText = ''))

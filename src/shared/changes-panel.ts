@@ -299,17 +299,33 @@ const noteBoxHtml = (v: ReadView, cols = 3) => `<tr class="note-row"><td colspan
     <div class="actions"><button class="primary" data-pick-add>Add note</button><button data-pick-cancel>Cancel</button><span class="hint">drag across line numbers or ⇧-click one to extend, within a hunk</span></div>
   </div></td></tr>`
 
-/**
- * Runs `write`, which folds or unfolds the file `key` in the Changes panel `el` (its Viewed box, its caret), and, when the
- * reader was inside that file's diff (its header stuck to the top), scrolls the file back to its header: the next file
- * follows it, where the scroll alone would leave the reader as far down as the fold took away. A Viewed box (`viewed`)
- * ticked while the file tree is drawn beside the diffs always scrolls the file to the top.
- */
-export function keepingFileTop(el: HTMLElement, key: string, write: () => void, viewed = false) {
+/** Whether the reader is inside a file's diff: its section scrolled above its header, which stays stuck to the top. */
+const readingInside = (file: Element) =>
+  file.getBoundingClientRect().top < file.querySelector('header')!.getBoundingClientRect().top - file.clientTop - 0.5
+
+/** Runs `write`, then scrolls the file `key` in `el` back to its header when `back` said so of the file before it. */
+function scrollingFileTop(el: HTMLElement, key: string, write: () => void, back: (file: Element) => boolean) {
   const at = `[data-file="${CSS.escape(key)}"]`
   const file = el.querySelector(at)
-  const inside = file && ((viewed && el.querySelector('.changes-tree')) ||
-    file.getBoundingClientRect().top < file.querySelector('header')!.getBoundingClientRect().top - file.clientTop - 0.5)
+  const inside = file && back(file)
   write()
   if (inside) el.querySelector(at)?.scrollIntoView({ block: 'start' })
 }
+
+/**
+ * Runs `write`, which folds or unfolds the file `key` in the Changes panel `el` (its caret), and, when the reader was
+ * inside that file's diff, scrolls the file back to its header: the next file follows it, where the scroll alone would
+ * leave the reader as far down as the fold took away. `viewed` is `keepingViewedFileTop`'s call, kept for renderers
+ * written against API 1.77.
+ */
+export function keepingFileTop(el: HTMLElement, key: string, write: () => void, viewed = false) {
+  if (viewed) return keepingViewedFileTop(el, key, write)
+  scrollingFileTop(el, key, write, readingInside)
+}
+
+/**
+ * `keepingFileTop` for a Viewed box ticked, which folds the file: while the file tree is drawn beside the diffs, the
+ * file always comes to the top, the next one right after it.
+ */
+export const keepingViewedFileTop = (el: HTMLElement, key: string, write: () => void) =>
+  scrollingFileTop(el, key, write, (file) => !!el.querySelector('.changes-tree') || readingInside(file))

@@ -22,7 +22,8 @@
  *   data-file="<key>"          a file's section, by `fileKey`
  *   data-fold="<key>"          fold or unfold a file, for this viewer only (the file header; its caret is the button a keyboard reaches)
  *   data-viewed="<key>"        mark the file's version viewed, or not: `marksToggled` gives the repo's marks to keep
- *                              (either redraw goes through `keepingFileTop`, so a reader deep in a long file lands on the next)
+ *                              (the redraw goes through `keepingViewedFileTop`, a fold's through `keepingFileTop`, so a reader deep in a
+ *                              long file lands on the next)
  *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend), or drag across lines (`watchPickDrag`,
  *                              `spanned`); also where an anchor scrolls to
  *   data-pick-text             the note being written under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
@@ -71,7 +72,7 @@ export {
   pickAnchor, anchorWhere, notedLines, anchorSpot, spotSelector, anchorOf, type LinePick, type Row, type SplitRow,
 } from './changes-lines.ts'
 export {
-  CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, changesHtml, keepingFileTop, type ChangesView, type DiffLayout,
+  CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, changesHtml, keepingFileTop, keepingViewedFileTop, type ChangesView, type DiffLayout,
 } from './changes-panel.ts'
 export {
   threadItemFiles, threadFiles, cardThread, floorThread, threadSlot, threadWant, heldThread, threadFailure, readThread, threadViewOf, reviewsHtml,
