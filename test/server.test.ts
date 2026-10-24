@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -25,9 +25,12 @@ const HUB = path.join(ROOT, 'lab')
 const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
-const PULSE = path.join(REPO, 'test', 'fixtures', 'extensions', 'pulse')
-const CHIME = path.join(REPO, 'test', 'fixtures', 'extensions', 'chime')
-const TALLY = path.join(REPO, 'test', 'fixtures', 'extensions', 'tally')
+const FIXTURES = path.join(REPO, 'test', 'fixtures', 'extensions')
+/** The extensions run from copies in the root, so a test edits their code. */
+const EXTENSIONS = path.join(ROOT, 'extensions')
+const PULSE = path.join(EXTENSIONS, 'pulse')
+const CHIME = path.join(EXTENSIONS, 'chime')
+const TALLY = path.join(EXTENSIONS, 'tally')
 
 const BOOT_MS = 15_000
 
@@ -49,6 +52,8 @@ function seed(port: number) {
   writeFileSync(path.join(RENDERER, 'index.html'), '<!doctype html><title>renderer</title>')
   writeFileSync(path.join(RENDERER, '.secret'), 'hidden')
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', 'nightly.md'), POLICY)
+  cpSync(FIXTURES, EXTENSIONS, { recursive: true })
+  writeFileSync(path.join(EXTENSIONS, 'package.json'), JSON.stringify({ type: 'module' }))
   execFileSync('git', ['init', '-q', '-b', 'main', HUB])
   git('add', '.')
   git('commit', '-q', '-m', 'first')
@@ -248,7 +253,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
       { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
     ],
     commands: [{ name: 'listen', module: 'pulse.js', export: 'listen', words: { label: 'Listen', hint: 'reads the beat aloud' }, on: ['item.pulse'] }],
-    slots: [],
+    slots: [{ name: 'hour', scope: 'system', when: { every: '1h' } }],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual(read.extensions, msg.board.extensions)
@@ -332,7 +337,7 @@ test("server: an extension's verb is called for the caller the CLI's headers cla
 test("server: an extension's read answers by its path, and its deprecated verb says so in RFC 9745's headers", async () => {
   const beats = await get('/pulse/beats/lab')
   assert.equal(beats.status, 200, beats.body)
-  assert.deepEqual(JSON.parse(beats.body), { project: 'lab', every: 3_600_000 })
+  assert.deepEqual(JSON.parse(beats.body), { project: 'lab', every: 3_600_000, word: 'beat' })
   const pong = await post('pulse/pong', {})
   assert.deepEqual([pong.status, JSON.parse(pong.body), pong.headers.deprecation, pong.headers.link], [200, { pong: true }, '@0', '</pulse/ping>; rel="successor-version"'])
   const schema = JSON.parse((await get('/schema')).body)
@@ -408,6 +413,14 @@ test("server: tidy hands each extension its listed entries through tower/tidy.ap
   assert.deepEqual(JSON.parse(tidied.body).x, { pulse: { done: ['echo'], skipped: [] } })
   const gone = await post('tidy', { project: 'lab', plan: { ...plan, x: { pulse: ['gone'] } } })
   assert.deepEqual(JSON.parse(gone.body), { t: 'error', code: 'refused', message: "Tidy's list moved on: pulse's gone no longer qualifies" })
+})
+
+test('server: extension/restart reads an extension again, a module its server imports included, and an unknown one is not found', async () => {
+  writeFileSync(path.join(PULSE, 'words.ts'), "export const word = 'thump'\n")
+  assert.equal(JSON.parse((await get('/pulse/beats/lab')).body).word, 'beat', 'an edit waits for a restart')
+  assert.deepEqual(await command('extension/restart', { id: 'pulse' }), { t: 'restarted', state: 'started' })
+  assert.equal(JSON.parse((await get('/pulse/beats/lab')).body).word, 'thump')
+  assert.equal(errorCode(await post('extension/restart', { id: 'nowhere' })), 'not_found')
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

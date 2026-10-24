@@ -1,5 +1,6 @@
 import type { Card, Floor } from '../../../../src/bridge/board.ts'
 import type { Start } from '../../../../src/shared/extensions.ts'
+import { word } from './words.ts'
 
 type Beats = { count: number; items: string[] }
 
@@ -23,7 +24,7 @@ const start: Start = (ctx) => {
       },
     },
     reads: {
-      'beats/<project>': ({ params }) => ({ project: params.project, every }),
+      'beats/<project>': ({ params }) => ({ project: params.project, every, word }),
       'kept/<project>': ({ params, query }: { params: Record<string, string>; query: { session?: string } }) => ({
         beats: ctx.own.streams('beats', params.project),
         items: ctx.own.collections(params.project, 'pulse').map((i) => i.parsed),
@@ -60,6 +61,8 @@ const start: Start = (ctx) => {
       'pulse/beat.kept': ({ item }: { item: string }) => ({ heard: `pulse kept ${item}` }),
       'tower/tidy.apply': ({ keys }: { keys: string[] }) => ({ done: keys, skipped: [] }),
     },
+    slots: { hour: ({ at }) => ctx.log(`${line ?? 'pulse'} at ${new Date(at).toISOString()}`) },
+    board: (prev, next) => next.waiting.filter((w) => !prev.waiting.some((p) => p.key === w.key)).map(() => ({ verb: 'chime/ring', input: {} })),
     halt: () => ctx.log('halted'),
   }
 }
