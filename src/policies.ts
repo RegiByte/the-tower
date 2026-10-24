@@ -3,11 +3,11 @@
  * the checks it asks for are run here, then each run or pass goes through the public verbs, as any other runner's
  * would. It holds only the checks' results until their slots are past.
  */
-import { spawn } from 'node:child_process'
 import type { Board, Floor } from './bridge/board.ts'
 import type { CheckResult } from './bridge/policies.ts'
 import type { RouteInput } from './shared/api.ts'
-import { withoutParentSession } from './shared/env.ts'
+import { runProcess } from './run.ts'
+import type { RunResult } from './shared/extensions.ts'
 import { checkKey, decide, ON_TIME_MS, type Action } from './shared/policies.ts'
 
 const TICK_MS = 30_000
@@ -18,34 +18,26 @@ const STDERR_MAX = 500
 type Reply = { t: string; message?: string }
 
 /**
- * A check: its line run with `sh -c` from the floor's hub, its env the tower's with the parent session scrubbed, and
- * its process group killed by its pid if it has not exited within the timeout. Its stdout is kept when it finds work,
- * the end of its stderr when it fails.
+ * A check: its line run with `sh -c` from the floor's hub (`runProcess`: env scrubbed, killed by pid past its timeout).
+ * Its stdout is kept when it finds work, the end of its stderr when it fails.
  */
-export const runCheck = (line: string, cwd: string): Promise<CheckResult> =>
-  new Promise((resolve) => {
-    const started = Date.now()
-    const child = spawn('sh', ['-c', line], { cwd, env: withoutParentSession(process.env), stdio: ['ignore', 'pipe', 'pipe'], detached: true })
-    let out = ''
-    let err = ''
-    let timedOut = false
-    const timer = setTimeout(() => {
-      timedOut = true
-      process.kill(-child.pid!, 'SIGKILL')
-    }, CHECK_TIMEOUT_MS)
-    child.stdout.on('data', (chunk) => (out = (out + chunk).slice(0, OUT_MAX)))
-    child.stderr.on('data', (chunk) => (err = (err + chunk).slice(-STDERR_MAX)))
-    child.on('error', (e) => (clearTimeout(timer), resolve({ ms: Date.now() - started, error: `could not start: ${e.message}` })))
-    child.on('close', (code, signal) => {
-      clearTimeout(timer)
-      const ms = Date.now() - started
-      const stderr = err.trim() ? { stderr: err.trim() } : {}
-      if (timedOut) return resolve({ ms, error: `timed out after ${CHECK_TIMEOUT_MS / 1000}s`, ...stderr })
-      if (code === null) return resolve({ ms, error: `ended by ${signal}`, ...stderr })
-      if (code === 0) return resolve({ exit: 0, ms, ...(out.trim() && { out: out.trim() }) })
-      resolve({ exit: code, ms, ...(code === 1 ? {} : stderr) })
-    })
-  })
+export const runCheck = async (line: string, cwd: string): Promise<CheckResult> => {
+  const started = Date.now()
+  let ran: RunResult
+  try {
+    ran = await runProcess(['sh', '-c', line], { cwd, timeoutMs: CHECK_TIMEOUT_MS })
+  } catch (err) {
+    return { ms: Date.now() - started, error: `could not start: ${(err as Error).message}` }
+  }
+  const { exit, signal, ms, timedOut } = ran
+  const out = ran.stdout.slice(0, OUT_MAX).trim()
+  const err = ran.stderr.slice(-STDERR_MAX).trim()
+  const stderr = err ? { stderr: err } : {}
+  if (timedOut) return { ms, error: `timed out after ${CHECK_TIMEOUT_MS / 1000}s`, ...stderr }
+  if (exit === null) return { ms, error: `ended by ${signal}`, ...stderr }
+  if (exit === 0) return { exit: 0, ms, ...(out && { out }) }
+  return { exit, ms, ...(exit === 1 ? {} : stderr) }
+}
 
 /**
  * Runs the tower's runner until stopped. `run` and `pass` are the verbs `policy/run` and `policy/pass`; a

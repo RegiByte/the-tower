@@ -259,6 +259,12 @@ export type SessionFact = { name: string; value: unknown; at: number; session: s
  */
 export type Answered<A = unknown> = { cap: string; ok: true; answer: A } | { cap: string; ok: false; code: string; message: string }
 
+/**
+ * A command `ctx.run` ran to its end: `exit` its code, `null` when a signal ended it (`signal`); `timedOut` when the
+ * tower killed it at its timeout. Each stream is kept up to 64 KiB, stdout's beginning and stderr's end.
+ */
+export type RunResult = { exit: number | null; signal?: string; stdout: string; stderr: string; ms: number; timedOut: boolean }
+
 /** Where a stream is: a `project` stream's facts are each floor's own; a `system` stream's are the tower's. */
 export type StreamAt = { project?: string }
 
