@@ -4,7 +4,7 @@
   "name": "Absorbed",
   "summary": "The tower's meaning of merged: a branch whose changes are already in its base, because merging it would change nothing (merge-tree of base and branch equals the base's tree) or each of its commits landed there as an equal patch (`git patch-id`, a rebased or cherry-picked copy).",
   "in": "tower",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/worktrees.ts#landing", "hub/src/worktrees.ts#marksOf", "hub/src/worktrees.ts#againstOf", "hub/src/worktrees.ts#exposureOf", "hub/src/worktrees.ts#deleteAbsorbed", "hub/src/worktrees.ts#deleteLanded"]
 }
 ---

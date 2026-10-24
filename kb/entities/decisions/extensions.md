@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Extensions: a manifest that declares, code that implements, resolved before anything runs",
-  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js.",
+  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js. Since 1.85 every call runs through the chain of links extensions wrap around its verb, and a provider raises its hooks for others to answer, the core's discard.record among them.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -24,7 +24,8 @@ and versioned without running anything, and a runtime where an extension's failu
 - **The manifest declares, the code implements.** A folder holds `extension.json`, parsed by
   [`Manifest`](ref:hub/src/shared/extensions.ts#Manifest), and optionally a `server` module whose default export is
   `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`): a handler
-  for each of its verbs and reads, a `parse` or `reduce` only for a collection or stream it declares, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
+  for each of its verbs and reads, a `parse` or `reduce` only for a collection or stream it declares, a link per
+  `around` entry, an answer per `answers` entry, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
   are free, and `views` and `regions` are validated against their reserved shapes and not read (`not-yet`). Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
@@ -73,8 +74,12 @@ and versioned without running anything, and a runtime where an extension's failu
   handler keeps that handler's caller and appends its verb to `within`; only an extension's own `start` and timers
   call as `{t: 'extension'}`, the policies' runner as `{t: 'tower', id: 'slot'}`. A call nested more than 8 deep is
   `refused`, its chain named ([`tooDeep`](ref:hub/src/shared/extensions.ts#tooDeep)). A composite that does what
-  another verb does calls it through the dispatch: `policy/run` spawns through `tower/spawn` with `within:
-  ['tower/policy/run']`, and a hire is a `tower/spawn` call already.
+  another verb does calls it through the dispatch, for its caller, itself appended to `within`
+  ([`COMPOSITES`](ref:hub/src/shared/api.ts#COMPOSITES), listed per verb at `GET /extensions`): `policy/run` spawns
+  through `tower/spawn`, Tidy removes, deletes, reaps and kills through `tower/worktree/remove`,
+  `tower/branch/delete`, `tower/reap/process` and `tower/kill` (an entry refused is skipped and named in its reply),
+  and `worktree/discard` notes through `tower/review/append` (refused, it stops before anything is removed); a hire is
+  a `tower/spawn` call already. Filing threads and archiving logs have no verb of their own, so Tidy does them itself.
 - **Deprecation counts against the user of a name.** A deprecated verb or read answers HTTP with RFC 9745's
   `Deprecation` (`@0`: a manifest names the version, not a date) and a `Link` to its `use`
   ([`deprecate`](ref:hub/src/tower/http.ts#deprecate)); an extension that calls one gets a `deprecated` warning.
@@ -151,13 +156,35 @@ and versioned without running anything, and a runtime where an extension's failu
   prints a card's lines. The tower page draws a card's, a floor's and an item's badges and actions where it draws
   their own ([`added.js`](ref:hub/renderers/page/added.js)), asks with the offers, and the palette lists them
   ([[command-palette]]); Tower 3D draws a desk's badges and verbs, and leaves commands out, as the CLI does.
+- **Middleware (1.85).** A manifest's `around` wraps verbs and hooks by qualified name, each the core's, its own, or
+  of a capability it requires or wants, and existing there: the core's and its own checked as it is read
+  ([`targetProblems`](ref:hub/src/bridge/extensions.ts#targetProblems)), another's against its provider as they
+  resolve (`unmet`). The registry orders each target's links among the started extensions
+  ([`chainOrder`](ref:hub/src/bridge/extensions.ts#chainOrder), pure): declared `before` and `after` first, then a
+  capability inside every capability that depends on it, directly or not, so the owner is innermost, then by
+  capability name, outside first; the links in a cycle of `before` and `after` are left out, each a `cycle` problem at
+  `around.<target>`, and the target runs without them. `GET /extensions` shows `chains`. The dispatch runs every call
+  through its target's chain ([`chainCalls`](ref:hub/src/tower/chains.ts#chainCalls)): with links, the input is parsed
+  first, `next` parses what a link passes on again (`invalid`, naming the link), each link's answer is checked against
+  the reply schema, a throw is `internal`; each a problem on the link's extension, lane `around`. A link may answer
+  without `next`. A link that is restarting fails the call (`unavailable`): a link may be a guard, so it never fails
+  open. A link off on the input's `project` is passed over.
+- **Hooks (1.85).** A provider declares `hooks` (`payload`, `answer`, `failure`), sharing one namespace with its verbs
+  and reads, and raises its own with `ctx.raise(name, payload)`; the core's are
+  [`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `tower/discard.record` raised by `worktree/discard` once the tips are
+  read and before anything is noted or removed, `refuses`. Answerers list a hook in `answers`; each answers in fold
+  order (the resolve order), on its own, inside the hook's chain, as `{cap, ok, answer}` or `{cap, ok: false, code,
+  message}`. One that throws or answers off the schema is `internal` and a `hook` problem on it; an `ApiError` it
+  answers is a refusal, no problem. An answerer off on the payload's `project` is not asked. `/schema` lists every
+  hook under `hooks`, the core's with its `x-since`; `GET /extensions` lists each hook's `answers`. The provider applies
+  its hook's `failure` to the answers it gets back; the core's `refuses` stops the discard and names the answerer.
 - **Held by the contract test.** `test/served-exports.json` lists the manifest's key paths, each lane's ctx members
-  ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes and names, so removing one
+  ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes, names and hooks, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
 Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
-contributions (1.84). Middleware and hooks, applying tidy entries, triggers, launch contributors and the bundled extensions arrive as additions to the manifest and
-ctx, each an API minor.
+contributions (1.84), then middleware and hooks (1.85). Applying tidy entries, triggers, launch contributors and the
+bundled extensions arrive as additions to the manifest and ctx, each an API minor.
 
 **Alternatives considered.**
 
@@ -178,6 +205,10 @@ ctx, each an API minor.
 - *Fold problems kept as call problems*: each build would re-find them and change the board, which builds again.
 - *Commands written per subject in `board.adds`*: every item of a kind would carry the same entry; the helpers derive
   them from `ExtensionView.commands`.
+- *A link off its target's schema passed over, or a chain run with a restarting link left out*: a link may be the
+  guard, and a guard that fails open is no guard.
+- *Answers that see each other's*: an answerer that needs to see or change the others' wraps the hook with `around`;
+  answers stay independent, so one failing costs only itself.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
   trusted, and the guards catch mistakes, not malice.
 
@@ -188,5 +219,9 @@ keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the ma
 `commands`, `Started.folds` and `FoldCtx`, `x` on cards, floors, items and the board, `board.adds`, `board.asks`,
 `ExtensionView.commands`, a problem's `subject`, the problem code `slow`, `GET /x/<cap>/<file>`, and the helpers in
 `/cards.js`.
+API 1.85: the manifest's
+`around`, `hooks` and `answers`, ctx's `raise`, the problem lanes `around` and `hook` and the code `hook`, `/schema`'s
+`hooks`, `GET /extensions`' `chains`, `answers` and `composites`, the hook `tower/discard.record`, and
+`worktree/discard`'s reply `x`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

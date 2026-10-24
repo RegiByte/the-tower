@@ -14,6 +14,7 @@
     "hub/src/bridge/worktrees.ts#discardNote",
     "hub/src/bridge/verbs.ts#worktreeOffers",
     "hub/src/tower/dispatch.ts#discardWorktree",
+    "hub/src/shared/api.ts#HOOKS",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/worktree-words.ts#discardAsk",
     "hub/src/shared/worktree-words.ts#discardedLine"
@@ -36,9 +37,13 @@ thread ([[review-threads]]).
   when any repo's head or uncommitted count differs from `held`, and gives each repo's tip: its HEAD, or a
   [`snapshot`](ref:hub/src/worktrees.ts#snapshot) with its uncommitted files committed on top (on no branch), with
   every unpushed commit named.
-- [`discardWorktree`](ref:hub/src/tower/dispatch.ts#discardWorktree) appends
-  [`discardNote`](ref:hub/src/bridge/worktrees.ts#discardNote) to the thread first (each repo's branch, full tip,
-  unpushed commits, and `git branch <name> <tip>`), then [`discard`](ref:hub/src/worktrees.ts#discard) removes each
+- [`discardWorktree`](ref:hub/src/tower/dispatch.ts#discardWorktree) raises the core's hook `tower/discard.record`
+  ([`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `{project, name, author, tips}`) for extensions to record what goes:
+  an answer that fails refuses the discard before anything is noted or removed, and the answers come back in the
+  reply's `x`, by capability ([[extensions]]). It then appends
+  [`discardNote`](ref:hub/src/bridge/worktrees.ts#discardNote) to the thread through `tower/review/append`, for its
+  caller (each repo's branch, full tip, unpushed commits, and `git branch <name> <tip>`), a refused note stopping it
+  there too, then [`discard`](ref:hub/src/worktrees.ts#discard) removes each
   worktree with `--force` and deletes its branch while it is still at the head the read judged, and only one the
   tower cut (one that moved since, or one checked out there by hand, is kept, named in the reply's `kept`; the note
   says which it keeps), then the thread is filed as Tidy files a landed one. The reply names

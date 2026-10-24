@@ -221,7 +221,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
   `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/runs/<project>`
   (`?policy&limit`: a policy's runs, newest first, each with its worker as it is now), `/landing?project&branch` (what
-  landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`), `/extensions` (the extensions the tower runs, none yet, and its resources as braided orders them: layers, start and halt order, dependents, and the graph as Mermaid text). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
+  landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`), `/extensions` (the extensions the tower runs, none yet, and its resources as braided orders them: layers, start and halt order, dependents, and the graph as Mermaid text; the chain around each verb or hook, each hook's answerers, and the verbs the core's composites call). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
   weekly limit as last read in the window (`weekly`), and the points of it used outside the tower in the window (`outside`: claude.ai, the desktop app, another machine, as the quota probe saw it climb while no session worked; the budget's `outside` is this week's, and what 1% buys leaves it out). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
@@ -395,10 +395,11 @@ export default start
 
 The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
 version of the newest key you use. `start` returns a handler for every verb and read the manifest declares, and
-nothing else, a `parse` per collection or a `reduce` per stream it declares, a fold per subject kind it folds, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
+nothing else, a `parse` per collection or a `reduce` per stream it declares, a fold per subject kind it folds, a link
+per `around` and an answer per `answers` entry, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
 floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
-calls, and its stores. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
-the served modules: removing one is a major. Middleware, hooks and triggers are not extension points yet; they arrive as minors.
+calls, its stores, and `raise`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
+the served modules: removing one is a major. Triggers are not extension points yet; they arrive as minors.
 
 **Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
 parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
@@ -457,6 +458,28 @@ the palette's alone. A renderer draws a subject's actions and badges with `/card
 to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
 `{ tower, board, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out
 (`isCommand`). `tower whoami` prints a card's lines.
+**Middleware and hooks** (API 1.85). `around` wraps verbs and hooks, by qualified name (`"tower/spawn": {}`,
+`"chime/ring": { "after": ["audit"] }`), each one the core's, its own, or of a capability it `requires` or `wants`; its
+code is `around[<name>](input, next, ctx)`, which calls `next` with the input to pass on or answers without calling
+it. Every call runs through the chain around its verb, whoever makes it: outermost first, each declared `before`
+(outside those capabilities' links) and `after` holding first, then a capability inside every capability that
+depends on it, so the verb's owner is innermost, then by capability name. What a link passes on is parsed again by the
+verb's schema, and what it answers is checked against the verb's reply; a link that throws, or passes on or answers
+what the verb doesn't take, fails the call (`internal` or `invalid`, naming the link) and lists a problem on its
+extension: a link may be a guard, so it is never passed over. Links in a cycle of `before` and `after` are left out,
+each with a `cycle` problem. A link off on the input's floor is passed over. The core's verbs that do what other verbs
+do (Tidy, `worktree/discard`, `policy/run`) call those verbs through the same dispatch, for the same caller, so a link
+on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuses, a discard stops where it is refused.
+`GET /extensions` lists each `chains` (outermost first), `answers` and `composites`.
+
+`hooks` are points an extension raises inside its own verbs, each a `payload` and an `answer` schema and a `failure`
+(`refuses` or `reported`): `ctx.raise('<name>', payload)` answers each answerer's answer in fold order, each on its
+own, as `{cap, ok: true, answer}` or `{cap, ok: false, code, message}`, and the raising verb does what its `failure`
+says with a failed one. An extension answers a hook by listing it in `answers` (`"tower/discard.record": {}`) with a
+function `answers[<name>](payload, ctx)`; one that throws or answers off the schema is a failed answer and a `hook`
+problem. The core raises `tower/discard.record` (`{project, name, author, tips}` → `{note?}`, `refuses`) in
+`worktree/discard` before anything is noted or removed; the answers come back in the reply's `x`, by capability. Each
+hook's schemas are listed at `/schema`, under `hooks`.
 
 ## Claude plugins
 

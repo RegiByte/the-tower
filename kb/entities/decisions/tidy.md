@@ -20,7 +20,8 @@
     "hub/src/bridge/verbs.ts#floorOffers",
     "hub/src/tower/dispatch.ts#tidyProject",
     "hub/src/tower/dispatch.ts#movedOn",
-    "hub/src/worktrees.ts#tidy",
+    "hub/src/worktrees.ts#tidyable",
+    "hub/src/shared/api.ts#COMPOSITES",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/tidy.ts#tidyLine",
     "hub/src/shared/tidy.ts#tidyRows",
@@ -78,12 +79,15 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   ([`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)).
 - [`tidyProject`](ref:hub/src/tower/dispatch.ts#tidyProject) checks the plan against the floor as read now
   ([`movedOn`](ref:hub/src/tower/dispatch.ts#movedOn): processes, workers, threads, logs, stream months) and git's part
-  after its fetch ([`tidy`](ref:hub/src/worktrees.ts#tidy)), and answers `refused` before touching anything when an
-  item no longer qualifies. It applies only what is listed, in order: worktrees and branches, threads filed, processes
-  reaped (SIGTERM), workers killed through the host, old logs and stream months archived. Each worker is checked again
-  just before its kill, since git's fetch takes seconds: one typed into meanwhile, or whose kill fails, is left alive
-  and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done. A branch
-  that moved since git's read is kept the same way ([[tower-cuts-worktrees]]).
+  after its fetch ([`tidyable`](ref:hub/src/worktrees.ts#tidyable)), and answers `refused` before touching anything when an
+  item no longer qualifies. It applies only what is listed, in order: worktrees removed and branches deleted, threads
+  filed, processes reaped (SIGTERM), workers killed, old logs and stream months archived. What another verb does it
+  does through that verb, by the dispatch, for its caller with `tower/tidy` in `within`
+  ([`COMPOSITES`](ref:hub/src/shared/api.ts#COMPOSITES): `worktree/remove`, `branch/delete`, `reap/process`, `kill`),
+  so whatever an extension wraps around one of them sees Tidy's acts too ([[extensions]]). Each worker is checked again
+  just before its kill, since git's fetch takes seconds: one typed into meanwhile, and any entry its verb refuses (a
+  kill that fails, a guard), is left and named in the reply's `skipped`, and the rest goes on, so a reply always says
+  everything that was done. A branch that moved since git's read is kept the same way ([[tower-cuts-worktrees]]).
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
   applies only it (one worker, one process, one worktree, one branch, one thread; the old logs as one row), applied
   and refused by the same checks as the whole.
@@ -110,6 +114,7 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   duty is already on the board.
 - *Per-item verbs only* (`worktree/remove`, `branch/delete`, `reap/process`, `kill`): no verb files a landed thread or
   archives a log on its own, and each checks its own conditions, not the ones Tidy listed by. A row's call is Tidy's
-  own, so a row does exactly what the whole would do to it.
+  own, so a row does exactly what the whole would do to it. Tidy checks its conditions first, then calls those verbs
+  for each entry, so their own checks and whatever wraps them run as well.
 
 **Impact.** The board carries `floor.tidy` and `Card.stuck`. Shells from the terms daemon are never listed.

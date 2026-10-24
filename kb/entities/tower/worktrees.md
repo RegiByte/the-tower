@@ -4,8 +4,8 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-10-21",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidy", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
 }
 ---
 `src/worktrees.ts` is the only code that changes the tower's worktrees and branches. The tower server calls it; what
@@ -29,7 +29,8 @@ as old as the last fetch.
   [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch.
 - **One worktree or branch.** The `/worktree/*` and `/branch/*` verbs: recut a lost worktree or a [[kept-branch]],
   prune a lost one, remove one that is removable or carried, delete a kept branch once absorbed or carried.
-- **Tidy and discard.** [`tidy`](ref:hub/src/worktrees.ts#tidy) applies the floor's Tidy list ([[tidy]]). Work that
+- **Tidy and discard.** [`tidyable`](ref:hub/src/worktrees.ts#tidyable) refuses a Tidy whose worktrees or branches
+  no longer qualify after a fetch; Tidy then applies its list through the verbs above ([[tidy]]). Work that
   never landed goes only through [`discardable`](ref:hub/src/worktrees.ts#discardable), then
   [`discard`](ref:hub/src/worktrees.ts#discard), the one call that forces ([[discard]]).
 - **Changes.** [`changesIn`](ref:hub/src/changes.ts#changesIn) serves `/changes/<id>`: per repo of a session, the diff
