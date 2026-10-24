@@ -359,9 +359,20 @@ imports: after editing one of those, restart the tower (`tower down tower`, then
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "requires": { "tower": "1.81" },
+  "requires": { "tower": "1.82", "chime": "1.0" },
   "server": "server.ts",
-  "settings": { "type": "object", "properties": { "every": { "type": "integer", "default": 60000 } } }
+  "settings": { "type": "object", "properties": { "every": { "type": "integer", "default": 60000 } } },
+  "verbs": {
+    "ping": {
+      "input": { "type": "object", "required": ["project"], "properties": { "project": { "type": "string" } } },
+      "reply": { "type": "object" },
+      "scope": "project",
+      "words": { "label": "Ping", "hint": "rings chime for the floor" }
+    }
+  },
+  "reads": {
+    "beats/<project>": { "reply": { "type": "object" }, "scope": "project" }
+  }
 }
 ```
 
@@ -369,18 +380,40 @@ imports: after editing one of those, restart the tower (`tower down tower`, then
 import type { Start } from '<tower>/src/shared/extensions.ts'
 
 const start: Start = (ctx) => {
-  ctx.every((ctx.settings as { every: number }).every, () => ctx.log('pulse'))
-  return { halt: () => ctx.log('halted') }
+  const { every } = ctx.settings as { every: number }
+  ctx.every(every, () => ctx.log('pulse'))
+  return {
+    verbs: { ping: async ({ project }, call) => ({ project, chimed: await call.deps.chime!.ring({}) }) },
+    reads: { 'beats/<project>': ({ params }) => ({ project: params.project, every }) },
+    halt: () => ctx.log('halted'),
+  }
 }
 export default start
 ```
 
 The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
-version of the newest key you use. `start` returns what the manifest declares and nothing else; today that is `halt`
-alone. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a floor (`on`),
-timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, and the `board`. The manifest's
-keys, the ctx members and the problem codes are part of the contract, held like the served modules: removing one is a
-major. Verbs, reads, stores, folds and triggers are not extension points yet; they arrive as minors.
+version of the newest key you use. `start` returns a handler for every verb and read the manifest declares, and
+nothing else, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
+floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, and
+its calls. The manifest's keys, the ctx members and the problem codes are part of the contract, held like the served
+modules: removing one is a major. Stores, folds and triggers are not extension points yet; they arrive as minors.
+
+**Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
+parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
+`<param>`s from the path, its query values strings), and both are listed at `/schema`. A `project`-scoped verb's input
+requires `project`, a project-scoped read names it as a `<project>` param or in its query, and either is refused on a
+floor where the capability is off. A handler that throws, or answers off its reply schema, fails that call as
+`internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
+verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
+`tower x` lists every running extension's verbs, and `tower x <capability> <verb> '<json>'` calls one.
+
+**Calls.** `ctx.call('tower/spawn', input)` and `ctx.read('tower/conversations/<id>', params, query)` take qualified
+names, the core's under `tower/`, and reach the core, the extension itself, and what it `requires` or `wants`;
+anything else is refused until declared. `ctx.deps.<capability>` holds the same calls as functions, one per verb and
+`read[<path>]` per read, `undefined` while a wanted one doesn't run. Each answers the reply, or an error as a value.
+A handler's second argument is its `ctx` with the `caller` (`{t, id?, via, within}`: the user, a worker, the tower, or
+the extension itself from its `start` and timers), and the calls it makes carry that caller one step deeper, its verb
+added to `within`; past 8 deep a call is refused.
 
 ## Claude plugins
 
@@ -396,8 +429,9 @@ reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next s
 
 `tower` is on the PATH of every session the tower runs (`npm link` puts it on yours). The user's verbs start and stop
 the system and drive sessions (`up`, `down`, `spawn`, `submit`, `kill`, `ls`…); the workers' verbs read the board and
-act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `note`, `api`…). It is a client of the same API: what it does,
-a script does with curl. `tower` alone, or an unknown verb, lists every verb.
+act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `note`, `api`…), and `tower x` calls the extensions' verbs. It
+is a client of the same API: what it does, a script does with curl, and it claims its caller in headers
+(`tower-client: cli`, and a worker's `tower-session`), which a request without them is the user's. `tower` alone, or an unknown verb, lists every verb.
 
 ## The logs
 

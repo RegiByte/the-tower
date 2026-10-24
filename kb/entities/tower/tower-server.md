@@ -64,7 +64,10 @@ offers them), reads and streams. It relays a framed shelf page's requests to the
 Every command goes through [`command`](ref:hub/src/tower/http.ts#command): the body, read up to 8 MiB
 ([`readBody`](ref:hub/src/tower/http.ts#readBody), refused past it as `invalid` with the rest left unread), is parsed by the verb's
 schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
-[`HANDLERS`](ref:hub/src/tower/dispatch.ts#HANDLERS), and the reply checked against the verb's reply schema. Handlers
+[`HANDLERS`](ref:hub/src/tower/dispatch.ts#HANDLERS) with the caller the request claims, and the reply checked against
+the verb's reply schema, all through the dispatch's [`call`](ref:hub/src/tower/dispatch.ts#call), by which an
+extension's `POST /<cap>/<verb>` is answered too; a path no entry of `READS` matches is an extension's read when its
+first segment is a running capability ([[extensions]]). Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused` (`not_found` when the terms daemon
 holds no such shell), one that doesn't answer `unavailable`. Every GET but the served files (`/tower.js`, the
 design, the modules, the vendored scripts) is an entry of [`READS`](ref:hub/src/tower/http.ts#READS): a pattern

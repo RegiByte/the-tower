@@ -32,16 +32,18 @@ lifecycle inside a renderer; the spine covers resources with one inside the proc
 - `core:system` ([`system`](ref:hub/src/tower/spine.ts#system)): [`watchSystem`](ref:hub/src/system.ts#watchSystem)
   with `onChange(listener)`, so the publisher and the dispatch each hear changes and stop hearing them as they halt.
 - `core:probes`, `core:slots` ([`probes`](ref:hub/src/tower/spine.ts#probes), [`slots`](ref:hub/src/tower/spine.ts#slots)):
-  the probes' and the policies' runners, the slots acting through the dispatch's `policy/run` and `policy/pass`.
+  the probes' and the policies' runners, the slots acting through the dispatch's `tower/policy/run` and
+  `tower/policy/pass`, called as `{t: 'tower', id: 'slot'}`.
 - `core:publisher` ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)): the board derived from the config and
   the system, its SSE clients and the minute's clock.
-- `core:dispatch` ([`dispatch`](ref:hub/src/tower/dispatch.ts#dispatch)): every verb's handler but the mux's, and the
-  state verbs keep while they run (hires and resumes in turn, workers departing).
+- `core:dispatch` ([`dispatch`](ref:hub/src/tower/dispatch.ts#dispatch)): `call`, every verb but the mux's by its
+  qualified name, the core's and the extensions' (which it finds through `core:extensions`), and the state verbs keep
+  while they run (hires and resumes in turn, workers departing).
 - `core:http` ([`httpServer`](ref:hub/src/tower/http.ts#httpServer)): the routes, the streams and the mux, with the
   connection state they hold; its halt closes every connection and drops the screen mirrors
   ([`screenMirrors`](ref:hub/src/tower/screens.ts#screenMirrors)).
 - `core:extensions`: what the publisher and the server show of the extensions, the registry and the resources it
-  covers, set after each reconcile. Each extension is a resource `x:<cap>` after the core's, memoized by a hash of what
+  covers, set after each reconcile, and what runs, which the dispatch calls. Each extension is a resource `x:<cap>` after the core's, memoized by a hash of what
   it starts from, so a config edit reconciles the system (braided's `reconcileSystem`) and restarts only what changed.
 - `GET /extensions` answers every extension and the topology read from the resources' dependencies
   ([`topologyOf`](ref:hub/src/tower/extensions.ts#topologyOf)) with its Mermaid text ([[renderer-api-contract]]).

@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Extensions: a manifest that declares, code that implements, resolved before anything runs",
-  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor.",
+  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/extensions.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/extensions.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -23,8 +23,8 @@ and versioned without running anything, and a runtime where an extension's failu
 
 - **The manifest declares, the code implements.** A folder holds `extension.json`, parsed by
   [`Manifest`](ref:hub/src/shared/extensions.ts#Manifest), and optionally a `server` module whose default export is
-  `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`); with no
-  lanes yet, that is `halt` alone. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
+  `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`): a handler
+  for each of its verbs and reads, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
   are free, and `views` and `regions` are validated against their reserved shapes and not read (`not-yet`). Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
@@ -44,12 +44,43 @@ and versioned without running anything, and a runtime where an extension's failu
   `skipped` for whatever requires something refused, until nothing changes. Only an acyclic, fully met graph reaches
   braided, whose sort would otherwise throw for the whole system.
 - **Resources beside the core.** Each accepted extension is a braided resource `x:<cap>` after `core:config`,
-  `core:system`, `core:publisher` and `core:dispatch` and its requires' providers, its wants' optional
-  ([[spine]]). Its start imports the server module afresh for its hash, builds ctx
+  `core:system`, `core:publisher`, `core:dispatch`, `core:http` and `core:extensions` and its requires' providers, its
+  wants' optional ([[spine]]). Its start imports the server module afresh for its hash, builds ctx
   ([`StartCtx`](ref:hub/src/shared/extensions.ts#StartCtx): who it is, its settings and a floor's, whether it is on
-  there, timers, a log, a signal and the board), and fails past 10 s; its halt calls the extension's, then clears the
+  there, timers, a log, a signal, the board, and its calls), and fails past 10 s; its halt calls the extension's, then clears the
   timers and aborts the signal ([`startExtension`](ref:hub/src/tower/extensions.ts#startExtension)). A failed start
   fails that extension alone and skips what requires it.
+- **Verbs and reads, by qualified name.** A manifest's `verbs` (`input`, `reply`, `scope`, `words`, `deprecated`) and
+  `reads` (by path, `beats/<project>`: `query`, `reply`, `scope`) have their schemas turned into zod at resolve, so an
+  extension's input is parsed as the core's is; the loader refuses a schema it can't read, a project-scoped verb whose
+  input doesn't require `project`, a project-scoped read naming no floor, a verb named `read`, and a name both a verb
+  and a read ([`compileCalls`](ref:hub/src/bridge/extensions.ts#compileCalls)). Every name another extension addresses
+  is qualified, the core's as `tower/<verb>` ([`qualifiedOf`](ref:hub/src/shared/extensions.ts#qualifiedOf)), and
+  [`call`](ref:hub/src/tower/dispatch.ts#call) is the one dispatch for both: `POST /<cap>/<verb>` and `GET
+  /<cap>/<read>` reach the provider looked up at call time ([`extensionCalls`](ref:hub/src/tower/calls.ts#extensionCalls)),
+  `unavailable` while it starts, restarts or doesn't run, `refused` on a floor where it is off, its reply checked
+  against its schema. A throw or a reply off its schema answers `internal` naming the extension, and lists a `threw`
+  or `shape` problem on it; a handler answers an `ApiError` to refuse. `/schema` lists each running extension's verbs
+  and reads beside the core's, and `ExtensionView.verbs` each verb in words.
+- **ctx calls what it declares.** `ctx.call` and `ctx.read` take qualified names and reach the core, the extension
+  itself, and the capabilities it requires or wants (`refused`, "declare requires.X", otherwise); a core read is served
+  as over HTTP and taken back as its JSON ([`read`](ref:hub/src/tower/http.ts#read)). `ctx.deps.<cap>` holds one
+  function per verb and per read of each declared provider's manifest, `undefined` while a wanted one is missing, which
+  `GET /extensions` notes on the extension (an `info` problem, `unmet` at `wants.<cap>`).
+- **A caller on every call.** [`Caller`](ref:hub/src/shared/extensions.ts#Caller) is `{t, id?, via, within}`. Over
+  HTTP it is what the CLI's headers claim ([`callerOf`](ref:hub/src/tower/http.ts#callerOf): `tower-session` names a
+  worker, none is the user), not authenticated; the API's `by` fields stay as they were. A call made inside any
+  handler keeps that handler's caller and appends its verb to `within`; only an extension's own `start` and timers
+  call as `{t: 'extension'}`, the policies' runner as `{t: 'tower', id: 'slot'}`. A call nested more than 8 deep is
+  `refused`, its chain named ([`tooDeep`](ref:hub/src/shared/extensions.ts#tooDeep)). A composite that does what
+  another verb does calls it through the dispatch: `policy/run` spawns through `tower/spawn` with `within:
+  ['tower/policy/run']`, and a hire is a `tower/spawn` call already.
+- **Deprecation counts against the user of a name.** A deprecated verb or read answers HTTP with RFC 9745's
+  `Deprecation` (`@0`: a manifest names the version, not a date) and a `Link` to its `use`
+  ([`deprecate`](ref:hub/src/tower/http.ts#deprecate)); an extension that calls one gets a `deprecated` warning.
+- **`tower x`.** Every word after `tower` stays the core's; `tower x <cap> <verb> [input]` calls an extension's verb,
+  and `tower x` alone lists every running one's verbs in their words
+  ([`extensionVerbLines`](ref:hub/src/directory.ts#extensionVerbLines)).
 - **Reconciled on config change.** [`runExtensions`](ref:hub/src/tower/extensions.ts#runExtensions) resolves again
   when the config changes and hands braided's `reconcileSystem` the next resources, each memoized by a
   [hash](ref:hub/src/tower/extensions.ts#hashOf) of its id, manifest, settings, files and dependencies: what the edit
@@ -71,7 +102,7 @@ and versioned without running anything, and a runtime where an extension's failu
   ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes and names, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
-This is the mechanism's first lane: load, resolve, start, see. Verbs and reads, folds and contributions, stores,
+Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82). Stores, folds and contributions,
 middleware and hooks, triggers, launch contributors and the bundled extensions arrive as additions to the manifest and
 ctx, each an API minor.
 
@@ -85,9 +116,17 @@ ctx, each an API minor.
 - *Stores and names keyed by id*: a replacement would start empty and answer under another name.
 - *Starting extensions straight in braided*: one bad manifest (a cycle, a missing dependency) would stop the tower.
 - *Restarting on file change*: every save restarts a live extension and its dependents; a watch mode can come later.
+- *`ctx.call` reaching any capability*: an undeclared dependency would escape ordering, version checks and the
+  `skipped` closure.
+- *A caller that becomes the extension inside its handler*: a worker could launder a call past a guard through any
+  extension verb; the caller stays whoever started the chain.
+- *Core reads rewritten to return values for `ctx.read`*: every read would change for one caller; serving one into a
+  response that collects its body reuses them as they are.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
   trusted, and the guards catch mistakes, not malice.
 
 **Impact.** API 1.81: `board.extensions`, `GET /extensions` listing them, the `extension` schema, and three config
-keys (`extensions`, a floor's `extensions` and `capabilities`). No host change. No extension ships yet: the bundled
+keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the manifest's `verbs` and `reads`,
+`ExtensionView.verbs`, `POST` and `GET /<cap>/…`, `ctx.call`, `ctx.read`, `ctx.deps` and the caller, and `tower x`.
+No host change. No extension ships yet: the bundled
 ones move in one at a time.

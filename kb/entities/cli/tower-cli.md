@@ -5,7 +5,7 @@
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
+  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/shared/api.ts#callerHeaders", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
@@ -38,6 +38,12 @@ start no session themselves: they ask the running tower (`POST /spawn`, `POST /r
 which composes the launch, holds callsigns and conversations and queues resumes ([[resume]]); with no tower running
 they fail with the fix `tower up` ([`towerCommand`](ref:hub/src/cli.ts#towerCommand)). `resume` reads the source's
 log only for its latest saved conversation.
+
+Every request the command makes of the tower claims its caller in headers ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)):
+`tower-client: cli`, and `tower-session` with the session's `TOWER_SESSION_ID` when a worker runs it, which the tower
+reads as the call's caller, not authenticated ([[extensions]]). Every word after `tower` is the core's; an extension's
+verbs are reached under one of them, `tower x <capability> <verb> [input]`, and `tower x` alone lists every running
+extension's verbs in their words.
 
 `submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`. `kill` takes
 a session id or a running worker's callsign. Run by a worker (`TOWER_SESSION_ID` set), each first has the host append

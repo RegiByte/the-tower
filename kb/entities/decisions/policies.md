@@ -73,7 +73,7 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   the worker's id, `start` auto | offer | hand, `by`, the check) and `s` (a pass: offered, no-work, held,
   check-failed, with the check); `approvals/` holds `a` (a hash approved, `by`). The tower is the one writer
   ([`appendFact`](ref:hub/src/streams.ts#appendFact)), through one verb each:
-  [`policy/run`](ref:hub/src/tower/dispatch.ts#runPolicy) (parses the file now, spawns on `hire` and the prose,
+  [`policy/run`](ref:hub/src/tower/dispatch.ts#runPolicy) (parses the file now, spawns on `hire` and the prose through `tower/spawn`,
   appends `r`, kills the worker if the append fails; refuses an invalid policy, another runner's, a slot already
   run, runs past `live`; needs no approval, since the caller consents, except `start: auto`, refused unless the hash read now is approved),
   [`policy/pass`](ref:hub/src/tower/dispatch.ts#passPolicy) (refused once the slot has a fact) and

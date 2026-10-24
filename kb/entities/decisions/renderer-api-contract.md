@@ -23,7 +23,8 @@ went wrong, and know which changes can break it.
   as zod schemas; `Verbs` and the replies are `z.infer` of them, so the types can't drift from what is checked. zod
   runs in the tower only: the host and the terms daemon keep their own small protocols.
 - **One dispatch.** Every `POST /<verb>` is parsed, handled and answered in one place
-  ([`command`](ref:hub/src/tower/http.ts#command)); a body that doesn't parse is refused before any handler runs.
+  ([`command`](ref:hub/src/tower/http.ts#command), through the dispatch's `call`, which an extension's `POST
+  /<cap>/<verb>` goes through too, [[extensions]]); a body that doesn't parse is refused before any handler runs.
   `mux/watch` and `mux/unwatch` are transport: parsed the same way, but not verbs. Every GET read is an entry of one
   table ([`READS`](ref:hub/src/tower/http.ts#READS)), matched on its pathname, its query parsed by its schema in
   `QUERIES` before its handler runs.
