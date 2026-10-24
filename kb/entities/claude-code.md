@@ -4,7 +4,7 @@
   "name": "Claude Code",
   "summary": "The Claude Code TUI, run in a real PTY per session, with its classic hooks and mods API.",
   "in": "tower",
-  "reviewed": "2026-10-21",
+  "reviewed": "2026-10-24",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/bridge/status.ts#isCompactionStart", "hub/test/fixtures/"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "classic hook input JSON (SessionStart, UserPromptSubmit, PreToolUse, Stop, ...), declared by the tower mod, via curl POST /hooks/<id> on hooks.sock" },

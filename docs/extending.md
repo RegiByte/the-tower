@@ -2,8 +2,8 @@
 
 The tower keeps its whole state outside its code: the config (what you want), the session logs (what happened) and
 the collections (files kept for later). Its API does the work, and the modules it serves are a convenience on top.
-So there is no plugin API. You extend the tower by editing the config, by writing clients of the API (a renderer, a
-shelf page, a script), and by reading its files.
+So there is no plugin API into a renderer. You extend the tower by editing the config, by writing clients of the API (a
+renderer, a shelf page, a script), by reading its files, and, for what must run inside the tower, by an extension.
 
 This guide is for you and your workers alike. A worker asked to customize the tower or build a renderer reads it
 first.
@@ -18,6 +18,7 @@ first.
 | [The API](#the-api) | anything a renderer, a script or a cron job does | verbs, reads and streams, versioned `major.minor`, `/schema` |
 | [Served modules](#served-modules) | what the tower's own renderers draw alike, for yours to import | the API's version: removing an export is a major |
 | [Collections](#collections) | your own kinds of files, kept per floor | files; what they mean is yours |
+| [Extensions](#extensions) | code the tower starts and stops beside its own pieces | `extension.json`, versioned with the API, `extension` at `/schema` |
 | [Claude plugins](#claude-plugins) | your commands and skills in every session the tower starts | config `plugins` |
 | [The `tower` command](#the-tower-command) | the system from a shell, for you and your workers | `tower` with no verb lists them |
 | [The logs](#the-logs) | everything that happened, to read | JSONL, written only by the host |
@@ -344,6 +345,41 @@ Workers add with `tower keep <collection>`. Two ids mean something to the core: 
 `review/append`; and `policies`, standing work the tower runs at its slots: the board carries each floor's
 `policies` (parsed, with where each stands) and `board.offers`, `/policies.js` says rules and slots in words and
 where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `policy/approve` write its facts.
+
+## Extensions
+
+An extension is a folder holding `extension.json`, its manifest, and optionally the server module it names, whose
+default export is `start(ctx)`. The config adds one by its absolute folder ([config.md](config.md#extensions)); the
+tower reads every manifest before any code runs, refuses what can't load, and starts the rest beside its own pieces,
+restarting one when its config entry changes. `tower extensions` and `GET /extensions` say how each stands.
+
+```json
+{
+  "id": "pulse",
+  "version": "1.0",
+  "title": "Pulse",
+  "requires": { "tower": "1.81" },
+  "server": "server.ts",
+  "settings": { "type": "object", "properties": { "every": { "type": "integer", "default": 60000 } } }
+}
+```
+
+```ts
+import type { Start } from '<tower>/src/shared/extensions.ts'
+
+const start: Start = (ctx) => {
+  ctx.every((ctx.settings as { every: number }).every, () => ctx.log('pulse'))
+  return { halt: () => ctx.log('halted') }
+}
+export default start
+```
+
+The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
+version of the newest key you use. `start` returns what the manifest declares and nothing else; today that is `halt`
+alone. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a floor (`on`),
+timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, and the `board`. The manifest's
+keys, the ctx members and the problem codes are part of the contract, held like the served modules: removing one is a
+major. Verbs, reads, stores, folds and triggers are not extension points yet; they arrive as minors.
 
 ## Claude plugins
 

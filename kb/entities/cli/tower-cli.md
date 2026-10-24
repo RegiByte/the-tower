@@ -49,7 +49,8 @@ tower, never the host ([[releases]]). `app` builds the Mac app from this checkou
 
 `tower config check` reads the config as the tower does
 ([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, then the shape of each
-project, shelf entry, collection and worktrees setting, each problem at its key path. A value the tower can't take is a
+project, shelf entry, collection and worktrees setting, and each extension's folder and settings, the system's and a
+floor's, parsed by its manifest's settings schema ([[extensions]]), each problem at its key path. A value the tower can't take is a
 `fail` (exit 1); a key it doesn't know, at any depth, is a `warn`. The known keys (`CONFIG_KEYS`, `PROJECT_KEYS` and
 each nested object's, in `src/shared/model.ts`) are held to their types by the typecheck. `tower doctor` sums up the
 same check. Every key is documented in `docs/config.md`, whose path the check prints.

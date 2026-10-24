@@ -27,7 +27,8 @@ command should reach a running tower with a worker to spawn.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing. Each check is `ok`, `warn`
   (the tower runs with less: no editor command, a Claude newer than tested
   ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)) or one it cannot place, not signed in, a daemon not
-  running yet, the quota probe failing or overdue as the running tower reports it ([[probes]])) or `fail` (it can't
+  running yet, the quota probe failing or overdue as the running tower reports it ([[probes]]), an extension not
+  started or a problem of one, each with its fix, its warnings only under `--all` ([[extensions]])) or `fail` (it can't
   run: not macOS, Node below 24, no `claude` or `curl`, `git` missing or older than 2.38 (the landing check runs
   `merge-tree --write-tree`), a Claude older than tested, a system root that isn't writable, a config that doesn't read
   or that `tower config check` fails ([[tower-cli]]), a daemon's place held by something else or its pid running

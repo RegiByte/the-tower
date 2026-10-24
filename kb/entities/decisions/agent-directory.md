@@ -29,7 +29,7 @@ name belongs to which callsign, floor or task.
   the workers' entries of the command's one table, [`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS) ([[tower-cli]]:
   `tower --help`, `tower <verb> --help`, and listed when a verb is unknown), each run by its handler in
   [`WORKER_RUNS`](ref:hub/src/directory.ts#WORKER_RUNS); AGENTS.md and [[tower-mod]] name them, and each verb's decision says what it does
-  ([[review-threads]], [[reviewer]], [[crews]], [[leave]], [[let-go]], [[hiring-limits]], [[policies]], [[probes]],
+  ([[review-threads]], [[reviewer]], [[crews]], [[leave]], [[let-go]], [[hiring-limits]], [[policies]], [[probes]], [[extensions]],
   [[open-files]], [[agent-show]], [[workers-edit-kept-items]]). `tower whoami` says who the worker is, its floor, its
   shelf and collections and the config's path; `tower agents [--all]` and `tower agent <CALLSIGN>` read the running
   tower's `/board` and `/conversations/<id>` through the [[renderer-api]]. The directory folds no logs.

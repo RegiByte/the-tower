@@ -30,7 +30,7 @@ sequenceDiagram
   M->>T: the same with the tower's port, tower.log, tower.pid
   O->>M: tower down [host|terms|tower...]
   M->>T: SIGTERM the pid in tower.pid, if it still runs src/tower/server.ts, then wait for it to exit
-  T->>T: halt its resources in reverse (connections closed, ticks and watchers stopped), then exit
+  T->>T: halt its resources in reverse (its extensions first, connections closed, ticks and watchers stopped), then exit
   M->>S: the same with terms.pid
   M->>H: the same with host.pid
 ```
@@ -53,4 +53,7 @@ sequenceDiagram
   (`npm run host`, `npm run tower`): `tower down` refuses it, stops the others and exits 1
   ([`bringAllDown`](ref:hub/src/machine.ts#bringAllDown)). Stopping the host ends every session (`hostStopped`,
   resumable); stopping terms ends every shell.
+- The tower answers on its port once its core has started, and says `tower up` in its log once its extensions have
+  too ([[extensions]]): `tower up` may return while an extension is still starting, and `tower extensions` says how
+  each stands. An extension that fails to start fails alone.
 - `npm run setup` ends with the same bring-up ([[setup]]), and the sandbox brings its own system up and down through it.

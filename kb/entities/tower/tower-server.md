@@ -17,12 +17,14 @@
 }
 ---
 `tower up` starts it detached with the daemons ([[bring-up]]), `npm run tower` in the foreground, on the
-config's `port`, read when it starts ([[port-in-config]]). The process is seven braided resources ([[spine]]): this
-server is `core:http`, over `core:dispatch` (the verbs' handlers), `core:publisher` (the board and its clients),
-`core:system`, `core:config`, and beside it the probes ([`runProbes`](ref:hub/src/probes.ts#runProbes), [[probes]])
+config's `port`, read when it starts ([[port-in-config]]). The process is eight braided resources and one per
+extension ([[spine]], [[extensions]]): this server is `core:http`, over `core:dispatch` (the verbs' handlers),
+`core:publisher` (the board and its clients), `core:extensions` (what the extensions show), `core:system`,
+`core:config`, and beside it the probes ([`runProbes`](ref:hub/src/probes.ts#runProbes), [[probes]])
 and the policies' runner ([`runPolicies`](ref:hub/src/policies.ts#runPolicies), [[policies]]), each on a tick of
 their own. SIGTERM (`tower down`) or SIGINT halts them in reverse: the server closes every connection, its streams
-stop with them and its screen mirrors are dropped. `GET /extensions` answers the resources' topology. The board (floors of cards, rate limits, today's stats, shells) is
+stop with them and its screen mirrors are dropped. `GET /extensions` answers every extension and the resources'
+topology, and `GET /schema` serves an extension's manifest as `extension`. The board (floors of cards, rate limits, today's stats, extensions, shells) is
 derived by [`board`](ref:hub/src/bridge/board.ts#board) and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/http.ts#archive) ([[board-archive]]). A session screen is
 a stream ([`screenStream`](ref:hub/src/tower/http.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
