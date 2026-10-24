@@ -92,6 +92,7 @@ export const publisher = defineResource({
     }
 
     const unsubscribe = system.onChange(schedulePublish)
+    const unheard = extensions.onChange(schedulePublish)
     const clock = setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
     /** A board client observes the machine while it holds the board, so its first board already says what runs. */
@@ -116,6 +117,7 @@ export const publisher = defineResource({
     /** No more boards: the clock and the debounce cleared, and every client's stream ended. */
     const stop = () => {
       unsubscribe()
+      unheard()
       clearInterval(clock)
       clearTimeout(publishTimer)
       for (const res of boardClients) res.end()

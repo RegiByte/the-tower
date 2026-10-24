@@ -28,11 +28,20 @@ const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] =>
 export const extensions = defineResource({
   start: () => {
     let current: { registry: Registry; resources: SystemConfig } = { registry: NO_EXTENSIONS, resources: {} }
+    const listeners = new Set<() => void>()
     return {
       registry: () => current.registry,
       /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
       read: (): Reads['extensions'] => ({ extensions: current.registry.extensions, topology: topologyOf(current.resources) }),
-      set: (next: typeof current) => void (current = next),
+      set: (next: typeof current) => {
+        current = next
+        for (const listener of listeners) listener()
+      },
+      /** Calls `listener` after each `set`, until the returned function is called. */
+      onChange: (listener: () => void) => {
+        listeners.add(listener)
+        return () => void listeners.delete(listener)
+      },
     }
   },
   halt: () => {},
@@ -59,7 +68,10 @@ const mismatchOf = (started: unknown): string | undefined => {
   return undefined
 }
 
-/** The extension's `start`: its server module's default export, imported afresh for each hash; none without a server. */
+/**
+ * The extension's `start`: its server module's default export, imported afresh for each hash; none without a server.
+ * Only the module itself is imported afresh: the modules it imports are Node's, cached as first loaded until the tower restarts.
+ */
 const startOf = async (a: Accepted, hash: string): Promise<Start> => {
   if (!a.manifest.server) return () => ({})
   const module = await import(`${pathToFileURL(path.join(a.dir, a.manifest.server)).href}?v=${hash}`)
@@ -182,6 +194,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
   /** Which extension each capability's resource last ran. */
   let idOf = new Map<string, string>()
   let seen: string | undefined
+  holder.set({ registry: NO_EXTENSIONS, resources })
 
   const reconcile = async () => {
     let now: Config
