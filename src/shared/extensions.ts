@@ -90,7 +90,7 @@ export type ExtensionView = {
 
 /**
  * Who a call is for, carried by every call. `t`: `user`, `worker` (`id` its session), `extension` (`id` its capability)
- * or `tower` (`id` the lane: `slot`, `leave`); an open set, so a `t` a reader doesn't know is the strictest case it knows.
+ * or `tower` (`id` the lane: `slot`); an open set, so a `t` a reader doesn't know is the strictest case it knows.
  * `via`: how it arrived. `within`: the qualified verbs this call is a step of, outermost first. Over HTTP the caller is
  * what the CLI's headers claim, not authenticated.
  */
