@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -17,7 +17,7 @@
     "hub/src/shared/reviews.ts#reviewPrompt",
     "hub/src/shared/reviews.ts#reviewedIn",
     "hub/src/shared/launch.ts#launchPrompt",
-    "hub/src/shared/cards.ts#pairLine",
+    "hub/src/shared/worker-details.ts#pairLine",
     "hub/src/mod/skills/review/SKILL.md",
     "hub/src/directory.ts",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
@@ -86,7 +86,7 @@ and how its findings reach the author.
 - *The pair is derived.* A worker whose first prompt is `reviewPrompt` reviews that callsign:
   [`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn) over the prompt read back from the first session's argv
   ([`launchPrompt`](ref:hub/src/shared/launch.ts#launchPrompt)) gives `card.reviews`, and the fork's git record gives
-  `card.worktree.from`. Both renderers draw [`pairLine`](ref:hub/src/shared/cards.ts#pairLine) ("reviews MARCO-87")
+  `card.worktree.from`. Both renderers draw [`pairLine`](ref:hub/src/shared/worker-details.ts#pairLine) ("reviews MARCO-87")
   beside the branch, Tower 3D on the desk's name tag. Nothing is stored.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots

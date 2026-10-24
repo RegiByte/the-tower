@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/cards.ts#can", "hub/src/shared/cards.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/reviews.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/server.ts#resume", "hub/src/tower/server.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) depends on rules over its status, its
@@ -52,11 +52,11 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   the renderer and have no call. `verbs` and `calls` say the same apart, derived from `actions`
   ([`offered`](ref:hub/src/bridge/verbs.ts#offered)); a policy and an offer carry `calls` beside theirs, and no `verbs`
   ([`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)).
-- Renderers and the core ask whether a verb is offered ([`can`](ref:hub/src/shared/cards.ts#can), over `actions`) and
-  take its call from the same list ([`callOf`](ref:hub/src/shared/cards.ts#callOf), none once the board stopped offering
-  it; a press takes it through [`offeredCall`](ref:hub/src/shared/cards.ts#offeredCall), which throws once the board moved
+- Renderers and the core ask whether a verb is offered ([`can`](ref:hub/src/shared/offered.ts#can), over `actions`) and
+  take its call from the same list ([`callOf`](ref:hub/src/shared/offered.ts#callOf), none once the board stopped offering
+  it; a press takes it through [`offeredCall`](ref:hub/src/shared/offered.ts#offeredCall), which throws once the board moved
   on). An absent verb is not drawn, except a verb whose daemon is down, drawn disabled with
-  [`whyNot`](ref:hub/src/shared/cards.ts#whyNot)'s sentence as its tip: a control never vanishes without saying why.
+  [`whyNot`](ref:hub/src/shared/health.ts#whyNot)'s sentence as its tip: a control never vanishes without saying why.
   Monitors and screens read `live`, a fact, not a verb.
 - What a verb is called is shared too: [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed
   `<subject>/<verb>` since one name means different things on different subjects (`card/resume`, `branch/recut`),

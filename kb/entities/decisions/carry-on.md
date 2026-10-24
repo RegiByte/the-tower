@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/facts.ts#stepAfter",
     "hub/src/bridge/facts.ts#killedOutside",
@@ -17,10 +17,10 @@
     "hub/src/shared/launch.ts#CARRY_ON",
     "hub/src/shared/launch.ts#resumeRequest",
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/shared/cards.ts#statusName",
-    "hub/src/shared/cards.ts#CARRY_ON_MEANS",
-    "hub/src/shared/cards.ts#resumeAllAsk",
-    "hub/src/shared/cards.ts#resumeStranded",
+    "hub/src/shared/status-words.ts#statusName",
+    "hub/src/shared/duty.ts#CARRY_ON_MEANS",
+    "hub/src/shared/duty.ts#resumeAllAsk",
+    "hub/src/shared/duty.ts#resumeStranded",
     "hub/src/cli.ts",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts",
@@ -61,11 +61,11 @@ storing, and the capability belongs in the core, where every renderer and worker
   turn ended. Carry on where you left off." It names no cause: a host stop, a crash, a `down` without an `up` and a
   kill from outside all cut off.
 - **Everywhere resume is.** The status reads "stopped mid-turn" or "lost mid-turn"
-  ([`statusName`](ref:hub/src/shared/cards.ts#statusName)); a sidebar card, short of room, says "stranded"
-  ([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) with the full status on hover. No renderer draws carry on on a card: a stranded card offers resume and let go, and the
+  ([`statusName`](ref:hub/src/shared/status-words.ts#statusName)); a sidebar card, short of room, says "stranded"
+  ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) with the full status on hover. No renderer draws carry on on a card: a stranded card offers resume and let go, and the
   floor's "resume all N stranded" carries on the cut-off ones and resumes the rest, its ask naming which and saying
-  what carrying on does ([`CARRY_ON_MEANS`](ref:hub/src/shared/cards.ts#CARRY_ON_MEANS)) ([`resumeAllAsk`](ref:hub/src/shared/cards.ts#resumeAllAsk),
-  [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded)); `tower resume <id> --carry-on` from the CLI.
+  what carrying on does ([`CARRY_ON_MEANS`](ref:hub/src/shared/duty.ts#CARRY_ON_MEANS)) ([`resumeAllAsk`](ref:hub/src/shared/duty.ts#resumeAllAsk),
+  [`resumeStranded`](ref:hub/src/shared/duty.ts#resumeStranded)); `tower resume <id> --carry-on` from the CLI.
 - `test/fixtures/host-stopped-mid-turn.jsonl` and `host-stopped-done.jsonl` are sandbox sessions the sandbox host
   stopped, one mid-tool-call and one after its `Stop`.
 

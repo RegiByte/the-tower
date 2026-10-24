@@ -6,21 +6,21 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/blocked.ts#blockedBy",
     "hub/src/bridge/status.ts#nextState",
     "hub/src/tail.ts#factEvents",
     "hub/src/bridge/board.ts#waitingOrder",
     "hub/src/bridge/life.ts#attentionOf",
-    "hub/src/shared/cards.ts#loudest",
-    "hub/src/shared/cards.ts#transitions",
-    "hub/src/shared/cards.ts#nextWait",
-    "hub/src/shared/cards.ts#heededWaits",
-    "hub/src/shared/cards.ts#SOUNDS",
-    "hub/src/shared/cards.ts#attentionOrder",
-    "hub/src/shared/cards.ts#offerTransitions",
-    "hub/src/shared/cards.ts#ringingSound",
+    "hub/src/shared/status-words.ts#loudest",
+    "hub/src/shared/waits.ts#transitions",
+    "hub/src/shared/waits.ts#nextWait",
+    "hub/src/shared/waits.ts#heededWaits",
+    "hub/src/shared/rings.ts#SOUNDS",
+    "hub/src/shared/waits.ts#attentionOrder",
+    "hub/src/shared/waits.ts#offerTransitions",
+    "hub/src/shared/rings.ts#ringingSound",
     "hub/src/shared/attend.ts#attendHandlers",
     "hub/src/shared/attend.ts#attendNext",
     "hub/src/shared/attend.ts#watching",
@@ -49,19 +49,19 @@ only by typing, one chime covered a question and an answer alike, and every wait
   wait is on are in [[waiting-on-you]].
 - Attention ([`attentionOf`](ref:hub/src/bridge/life.ts#attentionOf)): `needs` a screen or a question, `ready` an
   unread answer, `broken` a failure. The colour says what the worker holds, `waiting` whether it is yours; a count or a
-  lamp takes its loudest card's ([`loudest`](ref:hub/src/shared/cards.ts#loudest)), so red marks only what needs you
+  lamp takes its loudest card's ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)), so red marks only what needs you
   ([[design-system]]).
 - A policy's offered slot (`board.offers`, [[policies]]) asks for you before any worker exists, so it is not a wait:
-  [`attentionOrder`](ref:hub/src/shared/cards.ts#attentionOrder) is the heeded waits, then the heeded offers. N on an
+  [`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder) is the heeded waits, then the heeded offers. N on an
   offer opens its floor's policies. An auto policy that lost its approval is a change of state, not a request: it
   never rings and isn't in the list.
 - `/cards.js` holds the pieces: what began and ended between two boards
-  ([`transitions`](ref:hub/src/shared/cards.ts#transitions),
-  [`offerTransitions`](ref:hub/src/shared/cards.ts#offerTransitions), silent on the first board), round-robin N
-  ([`nextWait`](ref:hub/src/shared/cards.ts#nextWait)), the heeded waits
-  ([`heededWaits`](ref:hub/src/shared/cards.ts#heededWaits)), and a score each for a question, an answer and an offer
-  ([`SOUNDS`](ref:hub/src/shared/cards.ts#SOUNDS), picked by
-  [`ringingSound`](ref:hub/src/shared/cards.ts#ringingSound)). Dismissals and the ring setting are per viewer, fields of
+  ([`transitions`](ref:hub/src/shared/waits.ts#transitions),
+  [`offerTransitions`](ref:hub/src/shared/waits.ts#offerTransitions), silent on the first board), round-robin N
+  ([`nextWait`](ref:hub/src/shared/waits.ts#nextWait)), the heeded waits
+  ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits)), and a score each for a question, an answer and an offer
+  ([`SOUNDS`](ref:hub/src/shared/rings.ts#SOUNDS), picked by
+  [`ringingSound`](ref:hub/src/shared/rings.ts#ringingSound)). Dismissals and the ring setting are per viewer, fields of
   the viewer's record in `tower.store` ([`VIEWER_KEYS`](ref:hub/src/shared/viewer.ts#VIEWER_KEYS),
   [[renderer-shared-modules]]); a dismissed offer stays acceptable in the policies panel.
 - `/attend.js` is one machine, [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), that every renderer's

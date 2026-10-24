@@ -4,8 +4,8 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/worker.js#worker", "hub/renderers/page/review.js#review", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/cards.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/worker.js#worker", "hub/renderers/page/review.js#review", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panels.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/panels.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -27,11 +27,11 @@ none archived) it welcomes the user instead: a floor and a worker in a line each
 first worker, and the tour to ask it for ([`skyline`](ref:hub/renderers/page/skyline.js#skyline)).
 
 The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
-([`statusWord`](ref:hub/src/shared/cards.ts#statusWord)) and time in state, and a worker's running subagents as
-satellites under it ([`satellitesOf`](ref:hub/src/shared/cards.ts#satellitesOf)). The rate limits fold into one chip
+([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, and a worker's running subagents as
+satellites under it ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The rate limits fold into one chip
 naming the tightest limit, whose popover holds the meters and the probes ([[probes]]). A floor folds to its sign, which
 then carries its waits on you, its offers and its workers on duty lamped by their loudest attention
-([`loudest`](ref:hub/src/shared/cards.ts#loudest)); which floors a viewer opened or folded is view state in
+([`loudest`](ref:hub/src/shared/status-words.ts#loudest)); which floors a viewer opened or folded is view state in
 `tower.store`, and a floor never chosen is open while a worker on it needs you.
 
 Every collection a floor declares has a tray under its workers ([[collection-trays]]), an item opened in the main
@@ -63,6 +63,6 @@ The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't 
 terminal is `inert` while another pane lies over it, and redraws give focus back to the control that had it
 ([`keepingFocus`](ref:hub/src/shared/panels.ts#keepingFocus)). Presses that ask the tower something stay busy until
 the reply, and toasts stack, some with an action ([[press-feedback]]); the toast stack is a polite live region, and
-another says a line for each wait that begins ([`waitsBeganLine`](ref:hub/src/shared/cards.ts#waitsBeganLine)).
+another says a line for each wait that begins ([`waitsBeganLine`](ref:hub/src/shared/waits.ts#waitsBeganLine)).
 Landmarks, headings, named dialogs and an `aria-label` on every glyph button carry the rest. It holds at 200% zoom
 and at the largest text size: narrow, the sidebar becomes a rail ([[design-system]]).

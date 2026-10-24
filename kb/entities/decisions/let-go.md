@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",
@@ -19,8 +19,8 @@
     "hub/src/bridge/seats.ts#leftAt",
     "hub/src/system.ts#watchSystem",
     "hub/src/tower/server.ts#letGo",
-    "hub/src/shared/cards.ts#strandedOf",
-    "hub/src/shared/cards.ts#resumeStranded",
+    "hub/src/shared/duty.ts#strandedOf",
+    "hub/src/shared/duty.ts#resumeStranded",
     "hub/renderers/tower3d/src/main.ts#letWorkerGo",
     "hub/renderers/tower3d/src/acts.ts#HELD",
     "hub/src/cli-verbs.ts#CLI_VERBS",
@@ -56,7 +56,7 @@ socket appends only for sessions the host runs, and a stranded session is run by
 - The live system stops tailing a log at its exit, its break or this fact. A broken session folds nothing past its
   break but this fact ([`afterBreak`](ref:hub/src/tail.ts#afterBreak)), so it can be let go too.
 - "Resume all" on a floor is composed in the renderer from the stranded cards' calls
-  ([`strandedOf`](ref:hub/src/shared/cards.ts#strandedOf), [`resumeStranded`](ref:hub/src/shared/cards.ts#resumeStranded),
+  ([`strandedOf`](ref:hub/src/shared/duty.ts#strandedOf), [`resumeStranded`](ref:hub/src/shared/duty.ts#resumeStranded),
   a worker cut off mid-turn carried on: [[carry-on]]), asked first with the list. Every renderer asks in the same
   words (`letGoAsk`, `resumeAllAsk`).
 

@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/cards.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -33,7 +33,7 @@ same palette, and only the drawing is a renderer's.
   show only when it matches them, capped; patterns are one entry that opens a sheet of `GET /patterns`.
 - The empty query is the whole catalog: a curious user wants to scroll through everything they can do before they
   know what to search for. Contextual groups come first (the selected worker's own verbs, who waits on you in
-  `board.waiting`'s order with dismissals left out, as ⌥J walks them ([`heededWaits`](ref:hub/src/shared/cards.ts#heededWaits)),
+  `board.waiting`'s order with dismissals left out, as ⌥J walks them ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits)),
   and recent picks), then every other entry once, in sections
   ([`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette)): workers, commands, verbs, floors, shelf, drafts,
   Learn last. Going to a worker is what the palette is opened for most; places come after what can be done; Learn is

@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -22,9 +22,9 @@
     "hub/src/tower/server.ts#movedOn",
     "hub/src/worktrees.ts#tidy",
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/shared/cards.ts#tidyLine",
-    "hub/src/shared/cards.ts#tidyRows",
-    "hub/src/shared/cards.ts#editedRows",
+    "hub/src/shared/tidy.ts#tidyLine",
+    "hub/src/shared/tidy.ts#tidyRows",
+    "hub/src/shared/worktree-words.ts#editedRows",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
     "hub/renderers/tower3d/src/cards.ts#landedRow",
     "hub/test/prunable.test.ts",
@@ -84,16 +84,16 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, or whose kill fails, is left alive
   and named in the reply's `skipped`, and the rest goes on, so a reply always says everything that was done. A branch
   that moved since git's read is kept the same way ([[tower-cuts-worktrees]]).
-- Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows) gives each row the call that
+- Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
   applies only it (one worker, one process, one worktree, one branch, one thread; the old logs as one row), applied
   and refused by the same checks as the whole.
 - *Never in bulk*: a [[carried]] copy may hold less than the branch did (the lander dropped a hunk), so a worktree
   landed edited is never in the plan and `tidy` refuses it.
-  [`editedRows`](ref:hub/src/shared/cards.ts#editedRows) lists each such worktree and kept branch with its own
+  [`editedRows`](ref:hub/src/shared/worktree-words.ts#editedRows) lists each such worktree and kept branch with its own
   `remove` or `delete` call and its `landing` read, drawn under the plan. A finished hire whose worktree is carried
   still counts as landed for its kill; its worktree then waits for its own press.
-- Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/cards.ts#tidyLine),
-  [`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)), and confirm the whole list or a row before it runs; Tower 3D's
+- Renderers draw the shared words ([`tidyLine`](ref:hub/src/shared/tidy.ts#tidyLine),
+  [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows)), and confirm the whole list or a row before it runs; Tower 3D's
   Running board carries it too ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning),
   [[verb-prompts]]).
 

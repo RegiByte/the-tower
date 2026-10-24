@@ -6,8 +6,8 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/cards.ts#whyNot", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/health.ts#whyNot", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
 }
 ---
 **Problem.** Each object in Tower 3D did one thing on E. Everything else (brief, resume, reap, kill, spawn, a
@@ -29,7 +29,7 @@ appear in a corner, each on its own button, consequential ones are held, and the
   releasing early cancels. The hold is the confirmation.
 - The mouse path: the wheel marks a verb and a click runs it.
 - A verb that needs a daemon stays listed while the daemon is down or the tower is lost, faded, with why under it
-  ([`heldWhy`](ref:hub/renderers/tower3d/src/acts.ts#heldWhy) over [`whyNot`](ref:hub/src/shared/cards.ts#whyNot));
+  ([`heldWhy`](ref:hub/renderers/tower3d/src/acts.ts#heldWhy) over [`whyNot`](ref:hub/src/shared/health.ts#whyNot));
   its key says why in a toast and runs nothing. The panels draw those verbs' buttons inert, as the tower page does.
 - A stopped worker offers resume first, then a read-only look at its last screen, then its brief.
 - An aimed verb's key comes before a global one ([`onKey`](ref:hub/renderers/tower3d/src/main.ts#onKey)); the global

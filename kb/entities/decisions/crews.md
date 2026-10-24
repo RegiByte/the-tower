@@ -6,30 +6,30 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeActions",
-    "hub/src/shared/cards.ts#hiresOf",
-    "hub/src/shared/cards.ts#crewOf",
-    "hub/src/shared/cards.ts#crewTree",
-    "hub/src/shared/cards.ts#awayHiresOf",
-    "hub/src/shared/cards.ts#goneHome",
-    "hub/src/shared/cards.ts#crewFold",
-    "hub/src/shared/cards.ts#workerNamed",
-    "hub/src/shared/cards.ts#dutyOrder",
+    "hub/src/shared/crews.ts#hiresOf",
+    "hub/src/shared/crews.ts#crewOf",
+    "hub/src/shared/crews.ts#crewTree",
+    "hub/src/shared/crews.ts#awayHiresOf",
+    "hub/src/shared/crews.ts#goneHome",
+    "hub/src/shared/crews.ts#crewFold",
+    "hub/src/shared/crews.ts#workerNamed",
+    "hub/src/shared/crews.ts#dutyOrder",
     "hub/src/directory.ts#crewRows", "hub/src/directory.ts#floorLines",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/src/shared/cards.ts#sentHome",
-    "hub/src/shared/cards.ts#sendHomeAsk",
-    "hub/src/shared/cards.ts#pastCrews",
-    "hub/src/shared/cards.ts#pastMatching",
-    "hub/src/shared/cards.ts#pastSize",
-    "hub/src/shared/cards.ts#pastOf",
+    "hub/src/shared/crews.ts#sentHome",
+    "hub/src/shared/duty.ts#sendHomeAsk",
+    "hub/src/shared/past.ts#pastCrews",
+    "hub/src/shared/past.ts#pastMatching",
+    "hub/src/shared/past.ts#pastSize",
+    "hub/src/shared/past.ts#pastOf",
     "hub/renderers/tower3d/src/ui.ts#archiveListHtml",
     "hub/test/past.test.ts"
   ],
@@ -55,7 +55,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   else of its hirer, carried on through resumes ([`carriedOn`](ref:hub/src/bridge/board.ts#carriedOn): `hiredBy.session`
   is where the hire was made, and the hirer may have been resumed since). A reviewer the user started has no hirer and
   still nests under its author: it works for that worker. A fork is a new worker with neither, so it heads its own crew.
-- *Folds every renderer shares* (`src/shared/cards.ts`): `hiresOf` (who reports to a worker, by start), `crewOf`
+- *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by start), `crewOf`
   (everyone under it, each before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads
   a crew, everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,
   walks the same tree. `goneHome` (off duty, nobody on duty under it) and `crewFold` (a worker's hires split into those
@@ -77,16 +77,16 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   `send-home` are derived over every floor's cards and `crewTree` runs per floor, so the hire heads a crew on its own
   floor, its card saying "hired by X (floor)", while `tower agents` links it under its hirer in one line,
   `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`), folded by
-  [`awayHiresOf`](ref:hub/src/shared/cards.ts#awayHiresOf): the tower page draws each such hire still on duty as a
+  [`awayHiresOf`](ref:hub/src/shared/crews.ts#awayHiresOf): the tower page draws each such hire still on duty as a
   link row in its hirer's crew, painted in its floor's colour, that opens the hire's card on its floor. Tower 3D draws
   no link. Tower 3D sends a worker home with its crew and draws no crew tree on duty; a crew of three on duty gathers in a meeting room
   until its lead goes home ([[whereabouts]]).
-- *The archive by crew.* [`pastCrews`](ref:hub/src/shared/cards.ts#pastCrews) groups `pastOf`'s cards (the board's
+- *The archive by crew.* [`pastCrews`](ref:hub/src/shared/past.ts#pastCrews) groups `pastOf`'s cards (the board's
   off-duty ones and the archive read, [[board-archive]], so a crew split between them stays whole) into the same tree:
   archived cards carry `reportsTo` because `withCrews` runs over every card before the past ones are picked. A worker
   heads a crew when it reports to no past worker; its hires follow in the order they were hired (a resumed hire by its
   first life's start), each leading its own sub-crew; crews go by their latest start, the newest first. A worker's
-  earlier lives follow its latest one and its crew at the same depth. [`pastMatching`](ref:hub/src/shared/cards.ts#pastMatching)
+  earlier lives follow its latest one and its crew at the same depth. [`pastMatching`](ref:hub/src/shared/past.ts#pastMatching)
   filters by words: a worker that does not match leaves its place to its crew, so an indent always means "reports to
   the worker it hangs from". Both renderers draw it; Tower 3D's filing cabinet's drawers stay by day.
 

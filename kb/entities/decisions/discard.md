@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/worktrees.ts#discardable",
     "hub/src/worktrees.ts#discard",
@@ -15,8 +15,8 @@
     "hub/src/bridge/verbs.ts#worktreeOffers",
     "hub/src/tower/server.ts#discardWorktree",
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/shared/cards.ts#discardAsk",
-    "hub/src/shared/cards.ts#discardedLine"
+    "hub/src/shared/worktree-words.ts#discardAsk",
+    "hub/src/shared/worktree-words.ts#discardedLine"
   ]
 }
 ---
@@ -42,9 +42,9 @@ thread ([[review-threads]]).
   worktree with `--force` and deletes its branch while it is still at the head the read judged, and only one the
   tower cut (one that moved since, or one checked out there by hand, is kept, named in the reply's `kept`; the note
   says which it keeps), then the thread is filed as Tidy files a landed one. The reply names
-  each tip and the filed thread ([`discardedLine`](ref:hub/src/shared/cards.ts#discardedLine)).
+  each tip and the filed thread ([`discardedLine`](ref:hub/src/shared/worktree-words.ts#discardedLine)).
 - Renderers draw it as a destructive press, asked first with
-  [`discardAsk`](ref:hub/src/shared/cards.ts#discardAsk), naming what goes ([[press-feedback]]).
+  [`discardAsk`](ref:hub/src/shared/worktree-words.ts#discardAsk), naming what goes ([[press-feedback]]).
 
 **Alternatives considered.**
 - *A digest of the status as the guard*: the count misses one file swapped for another, but the worktree has no

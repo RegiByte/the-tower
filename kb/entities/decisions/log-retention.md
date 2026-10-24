@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/retention.ts#oldLogs",
     "hub/src/bridge/retention.ts#LogFile",
@@ -24,7 +24,7 @@
     "hub/src/archive.ts#archiveLog",
     "hub/src/system.ts#watchSystem",
     "hub/src/tower/server.ts#tidyProject",
-    "hub/src/shared/cards.ts#tidyRows",
+    "hub/src/shared/tidy.ts#tidyRows",
     "hub/test/checkpoints.test.ts"
   ],
   "links": [
@@ -50,7 +50,7 @@ times over: compressing keeps every fact readable and gives back most of the spa
   it exited or was lost. `retention.days` ([`RetentionConfig`](ref:hub/src/shared/model.ts#RetentionConfig)) is
   top level; unset, nothing is offered.
 - *Offered by Tidy* ([[tidy]]): the floor's [`TidyPlan`](ref:hub/src/bridge/board.ts#TidyPlan) gains `logs`, each
-  `{id, bytes}`, drawn as one row ([`tidyRows`](ref:hub/src/shared/cards.ts#tidyRows)), since a floor can hold
+  `{id, bytes}`, drawn as one row ([`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows)), since a floor can hold
   hundreds. Applied and refused like the rest of the plan. Never automatic: a change to the system root is the user's
   press.
 - *Archiving* ([`archiveLog`](ref:hub/src/archive.ts#archiveLog)): fold the log first, so its checkpoint reaches

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/probes.ts#due",
     "hub/src/bridge/probes.ts#waitOf",
@@ -19,8 +19,8 @@
     "hub/src/bridge/probes.ts#ProbeStatus",
     "hub/src/bridge/probes.ts#probeView",
     "hub/src/tower/server.ts#probeRead",
-    "hub/src/shared/cards.ts#probeLine",
-    "hub/src/shared/cards.ts#probeTitle",
+    "hub/src/shared/limits.ts#probeLine",
+    "hub/src/shared/limits.ts#probeTitle",
     "hub/src/directory.ts#probeCliLine",
     "hub/src/doctor.ts#quotaProbe",
     "hub/src/probes.ts#runProbes",
@@ -98,7 +98,7 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   last read, or later while a session's newer reading holds it (`held`). Times, never "due now": the board changes
   only with facts, and a renderer reads them against its clock. The tower's read in flight is not on it.
 - *Where it shows.* Renderers draw each probe under the limits from the same words
-  ([`probeLine`](ref:hub/src/shared/cards.ts#probeLine), [`probeTitle`](ref:hub/src/shared/cards.ts#probeTitle) in
+  ([`probeLine`](ref:hub/src/shared/limits.ts#probeLine), [`probeTitle`](ref:hub/src/shared/limits.ts#probeTitle) in
   `/cards.js`). `GET /probe/<name>?last`
   ([`probeRead`](ref:hub/src/tower/server.ts#probeRead), [`probeView`](ref:hub/src/bridge/probes.ts#probeView);
   `tower.probe`) answers the status and its latest reads, newest first, each answer as it came. `tower probes`

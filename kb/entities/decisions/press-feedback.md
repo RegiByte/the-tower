@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/shared/press.ts#pressing",
     "hub/renderers/page/dialogs.js#dialogs",
@@ -24,7 +24,7 @@
     "hub/src/shared/spawn.ts#spawnHandlers",
     "hub/renderers/tower3d/src/main.ts#confirmed",
     "hub/renderers/tower3d/src/ui.ts#askingButton",
-    "hub/src/shared/cards.ts#sendHomeAsk"
+    "hub/src/shared/duty.ts#sendHomeAsk"
   ]
 }
 ---
@@ -53,7 +53,7 @@ them.
   that time out, pause while the pointer or focus is on them, and may carry one action that closes its toast and
   runs. A toast told again while it shows ([`sameToast`](ref:hub/src/shared/toasts.ts#sameToast)) moves to the end
   and counts the times. Tower 3D draws its toasts through it too.
-- Send home still asks, saying what it costs ([`sendHomeAsk`](ref:hub/src/shared/cards.ts#sendHomeAsk)): a turn in
+- Send home still asks, saying what it costs ([`sendHomeAsk`](ref:hub/src/shared/duty.ts#sendHomeAsk)): a turn in
   flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `resume` call, read when
   pressed from the board or its floor's archive ([[board-archive]]), so no renderer builds a call.
 - Deleting a draft is done at once, and its toast offers Undo. `discard` answers the id and text it deleted, and

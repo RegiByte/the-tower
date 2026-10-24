@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/bridge/reviews.ts#checkoutState",
     "hub/src/bridge/reviews.ts#filedThreadOf",
@@ -28,12 +28,12 @@
     "hub/src/worktrees.ts#cut",
     "hub/src/worktrees.ts#ownCommits",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/src/shared/cards.ts#sendTargets",
-    "hub/src/shared/cards.ts#sendTarget",
+    "hub/src/shared/checkouts.ts#sendTargets",
+    "hub/src/shared/checkouts.ts#sendTarget",
     "hub/src/shared/panels.ts#threadViewOf",
     "hub/src/shared/panels.ts#cardThread",
     "hub/src/shared/panels.ts#floorThread",
-    "hub/src/shared/cards.ts#threadCheckoutOf",
+    "hub/src/shared/checkouts.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
     "hub/renderers/tower3d/src/layout.ts#pigeonholeFor",
@@ -88,7 +88,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   work landed. A worktree Tidy removed is landed through the thread it filed after the card started
   ([`filedThreadOf`](ref:hub/src/bridge/reviews.ts#filedThreadOf)). Each card carries `checkoutState` and
   `threadState` (they differ only for a reviewer, whose thread is its author's,
-  [`threadCheckoutOf`](ref:hub/src/shared/cards.ts#threadCheckoutOf)); `note` and `review` are offered
+  [`threadCheckoutOf`](ref:hub/src/shared/checkouts.ts#threadCheckoutOf)); `note` and `review` are offered
   ([[board-verbs]]), and `card.unseen` counted, only while the work is live. `review/append` still takes any checkout.
 - *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once its work
   has landed and `main`'s once every main checkout is level with its upstream and no worker runs there
@@ -117,9 +117,9 @@ its reader; [`floorThread`](ref:hub/src/shared/panels.ts#floorThread) a thread o
 floor's list of threads), read as the worker on duty in its checkout, else nobody.
 [`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf) builds the panel's view from that place, the board and
 what the viewer holds (the thread as read, the reader's Changes, its Send pick, the note it answers): anchors are
-looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref:hub/src/shared/cards.ts#sendTargets)
+looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref:hub/src/shared/checkouts.ts#sendTargets)
 (the workers at their composer in the checkout, most recently active first, then the floor's others) and
-[`sendTarget`](ref:hub/src/shared/cards.ts#sendTarget), and a settled thread draws read only, under a line saying it
+[`sendTarget`](ref:hub/src/shared/checkouts.ts#sendTarget), and a settled thread draws read only, under a line saying it
 landed or was removed. Renderers sign the user's notes with `board.user.name` ([[the-user]]); bodies are drawn
 through `markdownHtml`, raw HTML escaped ([[markdown-safe]]). The tower page draws it as a Reviews tab beside
 Changes, where picking lines starts a note; Tower 3D as papers on a worker's desk, a pigeonhole per floor (beside the nook under the loft's

@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/shared/prefs.ts",
     "hub/src/shared/prefs.ts#PREFS_DEFAULT",
@@ -24,10 +24,10 @@
     "hub/src/shared/tips.ts#watchTips",
     "hub/src/shared/tips.ts#placeNear",
     "hub/src/shared/tips.ts#placeOnOpen",
-    "hub/src/shared/cards.ts#ATTENTION_MEANS",
-    "hub/src/shared/cards.ts#statusLegendHtml",
-    "hub/src/shared/cards.ts#hostState",
-    "hub/src/shared/cards.ts#HOST_MEANS",
+    "hub/src/shared/status-words.ts#ATTENTION_MEANS",
+    "hub/src/shared/status-words.ts#statusLegendHtml",
+    "hub/src/shared/health.ts#hostState",
+    "hub/src/shared/health.ts#HOST_MEANS",
     "hub/src/shared/terminal.ts",
     "hub/src/shared/terminal.ts#fitSize",
     "hub/src/shared/terminal.ts#cellOf",
@@ -105,9 +105,9 @@ they are written once in shared code and a next renderer gets them by importing 
   no visible name carries an `aria-label`. `title` stays only where no tip can show: an `<iframe>`'s accessible name,
   a native `<option>` ([`scopeHtml`](ref:hub/src/shared/panels.ts#scopeHtml)) and a markdown link's title in framed
   documents that run no `watchTips`. The status counts' and host lamp's words live in `/cards.js`
-  ([`ATTENTION_MEANS`](ref:hub/src/shared/cards.ts#ATTENTION_MEANS),
-  [`statusLegendHtml`](ref:hub/src/shared/cards.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/cards.ts#hostState),
-  [`HOST_MEANS`](ref:hub/src/shared/cards.ts#HOST_MEANS)), read by their tooltips and the `?` sheet alike.
+  ([`ATTENTION_MEANS`](ref:hub/src/shared/status-words.ts#ATTENTION_MEANS),
+  [`statusLegendHtml`](ref:hub/src/shared/status-words.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/health.ts#hostState),
+  [`HOST_MEANS`](ref:hub/src/shared/health.ts#HOST_MEANS)), read by their tooltips and the `?` sheet alike.
 
 **Alternatives considered.**
 - *Appearance in the config*: follows the user to another browser, but it is a viewer's preference. Config defaults

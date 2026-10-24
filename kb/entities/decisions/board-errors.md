@@ -6,15 +6,15 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-23",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/tower/server.ts#currentBoard",
     "hub/src/tower/server.ts#errorOf",
     "hub/src/tower/server.ts#problemPage", "hub/src/tower/server.ts#withConfig",
     "hub/src/shared/shelf-page.ts#BoardMsg",
     "hub/src/shared/shelf-page.ts#BoardError",
-    "hub/src/shared/cards.ts#boardErrorTitle",
-    "hub/src/shared/cards.ts#HostState",
+    "hub/src/shared/health.ts#boardErrorTitle",
+    "hub/src/shared/health.ts#HostState",
     "hub/src/shared/api.ts#ERROR_CODES",
     "hub/src/shared/model.ts#ConfigError",
     "hub/src/system.ts#readConfig",
@@ -43,12 +43,12 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   whose handler throws.
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. Renderers show it over the last board they
-  drew, headed by [`boardErrorTitle`](ref:hub/src/shared/cards.ts#boardErrorTitle) (Tower 3D, before its first board,
+  drew, headed by [`boardErrorTitle`](ref:hub/src/shared/health.ts#boardErrorTitle) (Tower 3D, before its first board,
   on its loading screen, [[tower3d-start]]); the tower page relays it to a framed page.
 - **A lost tower is a board error too.** When `/board` drops, `tower.js` tells `onBoardError` an error of code
   `disconnected` ([`BoardError`](ref:hub/src/shared/shelf-page.ts#BoardError): told by the client, never sent by the
   tower) and reopens the stream itself when the browser gives up on it. While it lasts, the tower page dims the board,
-  reads the host as `unknown` ([`HostState`](ref:hub/src/shared/cards.ts#HostState)) and stops its times at the
+  reads the host as `unknown` ([`HostState`](ref:hub/src/shared/health.ts#HostState)) and stops its times at the
   moment it was lost.
 - **Recovery without a reload.** [`watchSystem`](ref:hub/src/system.ts#watchSystem) watches the config's directory
   for the config file (editors replace it on save, which a watch on the file itself would lose), so a fix publishes

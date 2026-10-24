@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-23",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/cards.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/server.ts#rendered", "hub/src/tower/server.ts#home", "hub/src/tower/server.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
 }
 ---
 **Problem.** A renderer living only on a project's shelf reaches the user only if their config puts a path into
@@ -37,7 +37,7 @@ update of the core never touches it.
   undeclared name's lists the declared ones.
 - *Discovery.* `GET /renderers` ([`renderersRead`](ref:hub/src/tower/server.ts#renderersRead)), computed per request:
   the default and each renderer with its root, entry, `available` and `settings`. The tower page and Tower 3D list
-  them with [`renderersHtml`](ref:hub/src/shared/cards.ts#renderersHtml).
+  them with [`renderersHtml`](ref:hub/src/shared/shelf.ts#renderersHtml).
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with
   `await tower.renderer()` ([`tower.js`](ref:hub/src/tower/tower.js)), which takes its name from its `/r/<name>/` path,
   framed or not; null for any other page. Tower 3D reads `settings.cats`, its cats' names

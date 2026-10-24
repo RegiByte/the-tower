@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-10-22",
+  "reviewed": "2026-10-24",
   "refs": [
     "hub/src/directory.ts",
     "hub/src/bridge/facts.ts#LEAVE",
@@ -14,7 +14,7 @@
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/board.ts#Card",
     "hub/src/tower/server.ts#sendLeaversHome",
-    "hub/src/shared/cards.ts#statusName",
+    "hub/src/shared/status-words.ts#statusName",
     "hub/src/mod/skills/handbook/SKILL.md"
   ],
   "links": [
