@@ -15,7 +15,7 @@ import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
-import { boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, sentHome, shownHref, shownKey, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { cardSubject, runAdded, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, sentHome, shownHref, shownKey, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
 import { hueOf } from './avatar.ts'
@@ -442,7 +442,7 @@ function renderPanel() {
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
     if (!c) return unfocus()
-    $('desk-head').innerHTML = deskHeadHtml(c, cardsOf(board), board.floors.find((f) => f.id === c.project), isArmed, held, tower.framed)
+    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), isArmed, held, tower.framed)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
     keepShownTabs($('desk-tabs').parentElement!, c.id)
     if (s.deskTab === 'reviews') drawThread($('desk-reviews'), cardThread(c))
@@ -2468,6 +2468,7 @@ $('desk-head').addEventListener('click', (e) => {
   if (what === 'kill') return confirmed(`kill ${c.id}`) && pressing(button!, () => sendHome(c))
   if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
   if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
+  if (what === 'added') return pressing(button!, () => tried(() => runAdded(board, JSON.parse(button!.dataset.added!), cardSubject(c))))
 })
 
 $('doc-head').addEventListener('click', (e) => {
