@@ -1,6 +1,7 @@
 /**
  * The board's publisher: the board derived from the config and the live system, and the clients of `GET /board`, each
- * sent the newest board whenever the system changes, and once a minute, since time alone moves the board.
+ * sent the newest board whenever the system changes, and once a minute, since time alone moves the board. While anyone
+ * listens (`onBoard`: the extensions' board triggers), each board that differs from the last is also handed to them, frozen.
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
@@ -8,6 +9,7 @@ import { allCards, board, type Board, type Policies, type SystemView } from '../
 import { foldBoard } from '../bridge/folds.ts'
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
+import { frozen } from '../bridge/frozen.ts'
 import { errorOf } from './answers.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
@@ -22,19 +24,23 @@ export const publisher = defineResource({
   dependencies: ['core:config', 'core:system', 'core:extensions'],
   start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:extensions': extensions }: Deps) => {
     const boardClients = new Set<http.ServerResponse>()
-    /** The board every client holds. */
+    const boardListeners = new Set<(board: Board) => void>()
+    /** The board every client and listener holds. */
     let published = ''
 
-    /** The board, or why the tower can't build it; a failure of the tower's own also goes to its log. */
-    const currentBoard = (): string => {
+    /** The board as a message, and the board when the tower could build it; a failure of the tower's own also goes to its log. */
+    const built = (): { text: string; board?: Board } => {
       try {
-        return JSON.stringify({ v: API_VERSION, board: boardOf() } satisfies BoardMsg)
+        const board = boardOf()
+        return { text: JSON.stringify({ v: API_VERSION, board } satisfies BoardMsg), board }
       } catch (err) {
         const { code, message } = errorOf(err)
         if (code === 'internal') console.error('board:', err)
-        return JSON.stringify({ v: API_VERSION, error: { code, message } } satisfies BoardMsg)
+        return { text: JSON.stringify({ v: API_VERSION, error: { code, message } } satisfies BoardMsg) }
       }
     }
+
+    const currentBoard = (): string => built().text
 
     const policiesNow = (): Policies => ({ files: system.policies(), facts: system.policyFacts() })
 
@@ -79,11 +85,14 @@ export const publisher = defineResource({
     const everyCard = (now: number) => allCards({ ...viewOf(), now })
 
     const publish = () => {
-      if (!boardClients.size) return
-      const next = currentBoard()
-      if (next === published) return
-      published = next
+      if (!boardClients.size && !boardListeners.size) return
+      const next = built()
+      if (next.text === published) return
+      published = next.text
       for (const res of boardClients) sendBoard(res)
+      if (!next.board) return
+      const board = frozen(next.board)
+      for (const listener of boardListeners) listener(board)
     }
 
     /** Board clients still reading a board sent earlier: each is sent the newest once it has, the ones between skipped. */
@@ -125,7 +134,7 @@ export const publisher = defineResource({
       await observing
       if (gone) return
       const current = currentBoard()
-      if (!boardClients.size) published = current
+      if (!boardClients.size && !boardListeners.size) published = current
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
       res.write(`data: ${current}\n\n`)
       boardClients.add(res)
@@ -139,9 +148,18 @@ export const publisher = defineResource({
       clearTimeout(publishTimer)
       for (const res of boardClients) res.end()
       boardClients.clear()
+      boardListeners.clear()
     }
 
-    return { board: boardOf, everyCard, streamBoard, stop }
+    /** Calls `listener` with the board now, then with each board built that differs from the last, until the returned function is called. */
+    const onBoard = (listener: (board: Board) => void) => {
+      const now = built()
+      if (now.board) listener(frozen(now.board))
+      boardListeners.add(listener)
+      return () => void boardListeners.delete(listener)
+    }
+
+    return { board: boardOf, everyCard, streamBoard, onBoard, stop }
   },
   halt: ({ stop }) => stop(),
 })

@@ -40,6 +40,7 @@ import type { HttpResource } from './http.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, SystemResource, TowerResources, TowerSystem } from './spine.ts'
 import { storesOf } from './stores.ts'
+import { BOARD_CALLER, runBoardTrigger } from './triggers.ts'
 import { offOn } from '../bridge/stores.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
@@ -268,7 +269,9 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
   const timers = new Set<NodeJS.Timeout>()
   const on = (project: string) => !offOn(config.read(), project, a.chain)
   const stores = storesOf(a, config, live, on)
+  let unheard = () => {}
   const dispose = () => {
+    unheard()
     for (const timer of timers) clearInterval(timer)
     timers.clear()
     stores.stop()
@@ -360,6 +363,18 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       throw new MismatchError(mismatch)
     }
     stores.attach(started)
+    if (started.board) {
+      unheard = publisher.onBoard(
+        runBoardTrigger(started.board, {
+          off: () => {
+            const now = config.read()
+            return new Set(Object.keys(now.projects).filter((project) => offOn(now, project, a.chain)))
+          },
+          call: callsOf(BOARD_CALLER).call,
+          problem: (problem) => holder.problem(a.id, { ...problem, lane: 'trigger', at: Date.now(), path: 'triggers.board' }),
+        }),
+      )
+    }
     const instance: Instance = {
       manifest: a.manifest,
       halting: false,
