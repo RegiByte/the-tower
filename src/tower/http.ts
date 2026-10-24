@@ -4,6 +4,7 @@
  *   GET  /              the renderer the config picks (`renderer`, `page` unless set): a redirect to it at `/r/<name>/`
  *   GET  /r/<name>/[<file>]   a renderer the core or the config declares: its entry, or any file below its root but hidden ones, at the
  *                       tower's origin; an HTML page saying why when it isn't declared or built or the config can't be read
+ *   GET  /x/<cap>/<file>   a file of a running extension's client folder, its commands' modules, with CORS as a renderer's
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
@@ -90,7 +91,7 @@ import { readLanded } from '../landed.ts'
 import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
-import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
+import { defaultRenderer, fileBelow, rendererFile, renderersOf } from '../renderers.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
@@ -523,6 +524,16 @@ export const httpServer = defineResource({
         serveFile(res, full, ANY_ORIGIN)
       })
 
+    /** A file of a running extension's client folder: its commands' modules, served with CORS as a renderer's files are. */
+    function clientFile(res: http.ServerResponse, cap: string, file: string) {
+      const live = extensions.live(cap)
+      if (live.t !== 'up' || !live.a.manifest.client) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
+      const { a } = live
+      const full = fileBelow(path.join(a.dir, a.manifest.client!), file)
+      if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
+      serveFile(res, full, ANY_ORIGIN)
+    }
+
     /** Every renderer, and the one `/` opens. */
     function renderersRead(res: http.ServerResponse) {
       const config = readConfig()
@@ -741,6 +752,7 @@ export const httpServer = defineResource({
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
       plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
+      plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!) }),
       apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.path!) }),
     ] as const satisfies readonly Read[]
 

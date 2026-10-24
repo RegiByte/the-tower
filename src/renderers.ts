@@ -40,8 +40,11 @@ export const defaultRenderer = (config: Config, renderers: Renderer[]): Renderer
 }
 
 /** The file `/r/<name>/<file>` serves: anything below the renderer's root and not hidden there, `undefined` for any other path. */
-export const rendererFile = (renderer: Renderer, file: string): string | undefined => {
-  const full = path.join(renderer.root, file)
-  const rel = path.relative(renderer.root, full)
-  return rel.startsWith('..') || path.isAbsolute(rel) || hiddenBelow(renderer.root, full) ? undefined : full
+export const rendererFile = (renderer: Renderer, file: string): string | undefined => fileBelow(renderer.root, file)
+
+/** `file` as a path below `root`, none of it hidden; `undefined` when it leaves `root` or passes through a hidden name. */
+export const fileBelow = (root: string, file: string): string | undefined => {
+  const full = path.join(root, file)
+  const rel = path.relative(root, full)
+  return rel.startsWith('..') || path.isAbsolute(rel) || hiddenBelow(root, full) ? undefined : full
 }
