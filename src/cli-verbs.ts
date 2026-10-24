@@ -128,6 +128,11 @@ export const CLI_VERBS = {
     help: "take a stranded worker (stopped, killed or lost) off duty, still resumable (its card's `let-go`)",
   },
   api: { of: 'worker', usage: 'api [name]', help: "the API's verbs and reads, one line each, or one in full as JSON Schema" },
+  x: {
+    of: 'worker',
+    usage: 'x [<capability> <verb> [input]]',
+    help: "call an extension's verb with [input] as JSON ({} when left out) and print its reply; alone, every running extension's verbs with their words",
+  },
 } satisfies Record<string, CliVerb>
 
 export type VerbName = keyof typeof CLI_VERBS

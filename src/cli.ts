@@ -23,6 +23,7 @@ import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
 import { callsignsOf, towerPort, towerUrl, type Config, type SessionLog } from './shared/model.ts'
+import { callerHeaders } from './shared/api.ts'
 import { readConfig } from './system.ts'
 import { span } from './shared/cards.ts'
 import { CARRY_ON } from './shared/launch.ts'
@@ -80,7 +81,7 @@ const print = (reply: FromHost) => {
 /** A verb asked of the tower, which builds every session's launch and holds its callsigns and conversations. */
 const towerCommand = async (verb: 'spawn' | 'resume', body: unknown): Promise<FromHost> => {
   const tower = towerUrl(readConfig(paths.config))
-  const res = await fetch(`${tower}/${verb}`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json' }, body: JSON.stringify(body) }).catch((err) => {
+  const res = await fetch(`${tower}/${verb}`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json', ...callerHeaders(process.env.TOWER_SESSION_ID) }, body: JSON.stringify(body) }).catch((err) => {
     if (err.cause?.code === 'ECONNREFUSED') throw new CliError(`The tower is not running: no tower answers at ${tower}`, 'tower up')
     throw err
   })

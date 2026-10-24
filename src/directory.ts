@@ -18,7 +18,7 @@ import path from 'node:path'
 import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/board.ts'
 import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
-import type { Replies } from './shared/api.ts'
+import { callerHeaders, type Replies } from './shared/api.ts'
 import type { PolicyView, RunRead } from './bridge/policies.ts'
 import { shortHash } from './bridge/policies.ts'
 import { checkFound, heldWords, slotWords, standingWords } from './shared/policies.ts'
@@ -50,7 +50,7 @@ const readStdin = async (): Promise<string> => {
 }
 
 const towerGet = (route: string): Promise<Response> =>
-  fetch(`${towerAt()}${route}`).catch((err) => {
+  fetch(`${towerAt()}${route}`, { headers: callerHeaders(me) }).catch((err) => {
     throw new CliError(`No tower answers at ${towerAt()} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
   })
 
@@ -261,7 +261,17 @@ const probeCliLine = (p: Board['probes'][number], now: number): string =>
 const extensionCliLines = (e: ExtensionView): string[] => [
   `${e.id}  ${extensionLine(e)}${e.provides === e.id ? '' : ` · provides ${e.provides}`}${e.bundled ? ' · bundled' : ''}`,
   ...(e.off?.length ? [`  off on ${e.off.join(', ')}`] : []),
-  ...e.problems.map((p) => `  ${p.level === 'error' ? 'error' : 'warn '}  ${problemLine(p)}`),
+  ...e.problems.map((p) => `  ${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`),
+]
+
+/** An extension's verbs, each as `tower x` calls it, in its words. */
+const extensionVerbLines = (e: ExtensionView): string[] => [
+  `${e.provides}  ${extensionLine(e)}`,
+  ...e.verbs.map((v) => {
+    const words = v.words ? `${v.words.label}${v.words.hint ? `: ${v.words.hint}` : ''}` : (v.description ?? '')
+    const deprecated = v.deprecated ? ` · deprecated since ${v.deprecated.since}${v.deprecated.use ? `: use ${v.deprecated.use}` : ''}` : ''
+    return `  tower x ${v.name.replace('/', ' ')}  ${words}${v.scope === 'project' ? ' (its input names the project)' : ''}${deprecated}`
+  }),
 ]
 
 const isUrl = (target: string) => /^https?:\/\//.test(target)
@@ -282,7 +292,7 @@ type Failure = { t: 'error'; code: string; message: string }
 
 /** POSTs are taken only from the tower's own origin. */
 const ask = async <T>(verb: string, body: unknown): Promise<T | Failure> => {
-  const res = await fetch(`${towerAt()}/${verb}`, { method: 'POST', headers: { origin: towerAt(), 'content-type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await fetch(`${towerAt()}/${verb}`, { method: 'POST', headers: { origin: towerAt(), 'content-type': 'application/json', ...callerHeaders(me) }, body: JSON.stringify(body) })
   return (await res.json()) as T | Failure
 }
 
@@ -628,6 +638,22 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   extensions: async () => {
     const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
     console.log(read.extensions.length ? read.extensions.flatMap(extensionCliLines).join('\n') : 'The tower runs no extensions: the config adds them under extensions (docs/config.md).')
+  },
+  x: async ([cap, verb, input, ...rest]) => {
+    if (!cap) {
+      const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
+      const calling = read.extensions.filter((e) => e.state === 'started' && e.verbs.length)
+      console.log(calling.length ? calling.flatMap(extensionVerbLines).join('\n') : 'No running extension has verbs: `tower extensions` lists every extension and its state.')
+      return
+    }
+    if (!verb || rest.length) throw new CliError(usageLine('x'))
+    let body: unknown
+    try {
+      body = input === undefined ? {} : JSON.parse(input)
+    } catch {
+      throw new CliError(`The input is no JSON: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
+    }
+    console.log(JSON.stringify(await command(`${cap}/${verb}`, body), null, 2))
   },
   policies: async ([sub, tagOrId]) => {
     const board = await readBoard()
