@@ -26,6 +26,7 @@ const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
 const PULSE = path.join(REPO, 'test', 'fixtures', 'extensions', 'pulse')
+const CHIME = path.join(REPO, 'test', 'fixtures', 'extensions', 'chime')
 
 const BOOT_MS = 15_000
 
@@ -68,7 +69,7 @@ function writeConfig(port: number) {
     port,
     probes: { quota: { off: true } },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME } },
     projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
@@ -133,14 +134,14 @@ after(async () => {
   rmSync(ROOT, { recursive: true, force: true })
 })
 
-type Reply = { status: number; type: string; body: string }
+type Reply = { status: number; type: string; body: string; headers: http.IncomingHttpHeaders }
 
 const request = (pathname: string, options: http.RequestOptions = {}, body?: Buffer | string): Promise<Reply> =>
   new Promise((resolve, reject) => {
     const req = http.request(`${base}${pathname}`, options, (res) => {
       let text = ''
       res.setEncoding('utf8').on('data', (chunk) => (text += chunk))
-      res.on('end', () => resolve({ status: res.statusCode!, type: String(res.headers['content-type']), body: text }))
+      res.on('end', () => resolve({ status: res.statusCode!, type: String(res.headers['content-type']), body: text, headers: res.headers }))
     })
     req.on('error', reject)
     req.end(body)
@@ -148,8 +149,8 @@ const request = (pathname: string, options: http.RequestOptions = {}, body?: Buf
 
 const get = (pathname: string) => request(pathname)
 
-const post = (verb: string, input: unknown) =>
-  request(`/${verb}`, { method: 'POST', headers: { origin: base, 'content-type': 'application/json' } }, JSON.stringify(input))
+const post = (verb: string, input: unknown, headers: http.OutgoingHttpHeaders = {}) =>
+  request(`/${verb}`, { method: 'POST', headers: { origin: base, 'content-type': 'application/json', ...headers } }, JSON.stringify(input))
 
 /** A verb's reply, checked against the verb's reply schema. */
 async function command<V extends Verb>(verb: V, input: unknown): Promise<Replies[V]> {
@@ -226,15 +227,57 @@ test('server: every read answers', async () => {
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
 })
 
-test('server: an extension the config adds is started as x:<cap>, after the core, and shown on the board and at GET /extensions', async () => {
+test('server: an extension the config adds is started as x:<cap>, after the core and what it requires, and shown on the board and at GET /extensions', async () => {
   const msg = (await firstEvent('/board')) as BoardMsg
   assert.ok('board' in msg)
-  assert.deepEqual(msg.board.extensions, [{ id: 'pulse', provides: 'pulse', version: '1.0', title: 'Pulse', bundled: false, state: 'started', problems: [] }])
+  const pulse = msg.board.extensions.find((e) => e.id === 'pulse')
+  assert.deepEqual(pulse, {
+    id: 'pulse',
+    provides: 'pulse',
+    version: '1.0',
+    title: 'Pulse',
+    bundled: false,
+    state: 'started',
+    problems: [],
+    verbs: [
+      { name: 'pulse/ping', scope: 'project', words: { label: 'Ping', hint: 'rings chime for the floor' } },
+      { name: 'pulse/pong', scope: 'system', deprecated: { since: '1.0', use: 'pulse/ping', why: 'a ping names its floor' } },
+    ],
+  })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual(read.extensions, msg.board.extensions)
-  assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch'])
+  assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions', 'x:chime'])
   assert.equal(read.topology.startupOrder.at(-1), 'x:pulse')
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)
+})
+
+test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {
+  const asWorker = await post('pulse/ping', { project: 'lab', times: 2 }, { 'tower-session': SESSION, 'tower-client': 'cli' })
+  assert.equal(asWorker.status, 200, asWorker.body)
+  assert.deepEqual(JSON.parse(asWorker.body), { project: 'lab', chimed: { rang: 2, caller: { t: 'worker', id: SESSION, via: 'cli', within: ['pulse/ping'] } } })
+  const asUser = JSON.parse((await post('pulse/ping', { project: 'lab' })).body)
+  assert.deepEqual(asUser.chimed, { rang: 1, caller: { t: 'user', via: 'http', within: ['pulse/ping'] } })
+  assert.equal(errorCode(await post('pulse/ping', { times: 1 })), 'invalid')
+  assert.equal(errorCode(await post('pulse/ping', { project: 'nowhere' })), 'not_found')
+  assert.equal(errorCode(await post('pulse/nothing', {})), 'not_found')
+})
+
+test("server: an extension's read answers by its path, and its deprecated verb says so in RFC 9745's headers", async () => {
+  const beats = await get('/pulse/beats/lab')
+  assert.equal(beats.status, 200, beats.body)
+  assert.deepEqual(JSON.parse(beats.body), { project: 'lab', every: 3_600_000 })
+  const pong = await post('pulse/pong', {})
+  assert.deepEqual([pong.status, JSON.parse(pong.body), pong.headers.deprecation, pong.headers.link], [200, { pong: true }, '@0', '</pulse/ping>; rel="successor-version"'])
+  const schema = JSON.parse((await get('/schema')).body)
+  assert.equal(schema.verbs['pulse/ping'].scope, 'project')
+  assert.equal(schema.reads['pulse/beats/<project>'].path, '/pulse/beats/{project}')
+})
+
+test('server: an extension reaches only the core and what it declares', async () => {
+  const undeclared = await post('chime/ask', { verb: 'pulse/pong' })
+  assert.equal(errorCode(undeclared), 'refused')
+  assert.match(JSON.parse(undeclared.body).message, /declare requires\.pulse/)
+  assert.equal(errorCode(await post('chime/ask', { verb: 'tower/nothing' })), 'not_found')
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

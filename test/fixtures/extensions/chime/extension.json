@@ -1,0 +1,26 @@
+{
+  "id": "chime",
+  "version": "1.0",
+  "title": "Chime",
+  "description": "Rings and says who called, and calls any verb it is asked to: the dependency the server test's pulse calls.",
+  "requires": { "tower": "1.82" },
+  "server": "server.ts",
+  "verbs": {
+    "ring": {
+      "input": { "type": "object", "additionalProperties": false, "properties": { "times": { "type": "integer", "minimum": 1, "default": 1 } } },
+      "reply": {
+        "type": "object",
+        "required": ["rang", "caller"],
+        "properties": { "rang": { "type": "integer" }, "caller": { "type": "object" } }
+      },
+      "scope": "system",
+      "words": { "label": "Ring", "hint": "rings, and says who called" }
+    },
+    "ask": {
+      "input": { "type": "object", "required": ["verb"], "properties": { "verb": { "type": "string" } } },
+      "reply": { "type": "object" },
+      "scope": "system",
+      "description": "Calls a verb by its qualified name with no input, and answers what it answered."
+    }
+  }
+}

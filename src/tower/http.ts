@@ -7,8 +7,8 @@
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
- *   GET  /schema        every verb's input and reply, the error and an extension's manifest, as JSON Schema
- *                       (src/shared/api.ts, src/shared/extensions.ts)
+ *   GET  /schema        every verb's input and reply, the core's and each running extension's, every read, the error and an
+ *                       extension's manifest, as JSON Schema (src/shared/api.ts, src/shared/extensions.ts)
  *   GET  /extensions    {extensions, topology}: every extension the tower found, as the board shows them, and the tower's resources as braided orders them,
  *                       with their graph as Mermaid text (src/tower/extensions.ts)
  *   GET  /screen/<id>   SSE: a snapshot of the session's screen, then its output as the host logs it
@@ -63,11 +63,14 @@
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
+ *   POST /<capability>/<verb>   an extension's verb;  GET /<capability>/<read>  an extension's read (src/tower/calls.ts)
  *
- * Every command's body, up to 8 MiB, is parsed by its schema in src/shared/api.ts. A failure, of a command or a read, answers
- * `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
+ * Every command's body, up to 8 MiB, is parsed by its schema in src/shared/api.ts, or an extension's manifest, through
+ * the dispatch, for the caller the `tower` command's headers claim (`CALLER_HEADERS`), the user when they claim none. A
+ * deprecated verb or read answers with RFC 9745's `Deprecation` header, and a `Link` to what to use instead. A failure,
+ * of a command or a read, answers `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
  */
-import { defineResource } from 'braided'
+import { defineResource, type StartedResource } from 'braided'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
@@ -88,12 +91,12 @@ import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, ERROR_STATUS, ITEM_ID, QUERIES, ROUTES, VERBS, type ApiError, type ErrorCode, type Query, type Route, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
-import { MANIFEST_SCHEMA } from '../shared/extensions.ts'
+import { MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated } from '../shared/extensions.ts'
 import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
@@ -567,8 +570,8 @@ export const httpServer = defineResource({
         .end(readFileSync(file))
     }
 
-    /** Every verb: the dispatch's, and the mux's, which hold this server's connections. */
-    const HANDLERS: { [R in Route]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { ...dispatch.handlers, 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
+    /** The mux's verbs, which hold this server's connections: every other verb is the dispatch's. */
+    const MUX: { [R in keyof typeof TRANSPORT]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
 
     /**
      * The largest command body read. The largest real requests are a `collection/write` of a self-contained html item
@@ -592,12 +595,30 @@ export const httpServer = defineResource({
         req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
       })
 
-    const send = (res: http.ServerResponse, answer: Answer) =>
-      res.writeHead(answer.t === 'error' ? ERROR_STATUS[(answer as ApiError).code] : 200, { 'content-type': 'application/json' }).end(JSON.stringify(answer))
+    const send = (res: http.ServerResponse, answer: unknown) =>
+      res.writeHead(isApiError(answer) ? ERROR_STATUS[answer.code] : 200, { 'content-type': 'application/json' }).end(JSON.stringify(answer))
 
     const fail = (res: http.ServerResponse, code: ErrorCode, message: string) => send(res, apiError(code, message))
 
-    const isRoute = (name: string): name is Route => Object.hasOwn(ROUTES, name)
+    const isMux = (name: string): name is keyof typeof TRANSPORT => Object.hasOwn(TRANSPORT, name)
+
+    /** The caller a request claims: a worker by the `tower` command's session header, else the user. */
+    const callerOf = (req: http.IncomingMessage): Caller => {
+      const session = req.headers[CALLER_HEADERS.session]
+      const via = req.headers[CALLER_HEADERS.client] === 'cli' ? 'cli' : 'http'
+      return typeof session === 'string' && session ? { t: 'worker', id: session, via, within: [] } : { t: 'user', via, within: [] }
+    }
+
+    /**
+     * A deprecated verb's or read's answer says so (RFC 9745): `Deprecation` dated `@0`, since a manifest names the version
+     * it was deprecated in and no date, and a `Link` to what to use instead.
+     */
+    const deprecate = (res: http.ServerResponse, deprecated: Deprecated | undefined) => {
+      if (!deprecated) return
+      res.setHeader('deprecation', '@0')
+      const use = deprecated.use && qualifiedOf(deprecated.use)
+      if (use) res.setHeader('link', `</${use.cap === 'tower' ? use.name : deprecated.use}>; rel="successor-version"`)
+    }
 
     const parseJson = (text: string): { json: unknown } | undefined => {
       try {
@@ -607,9 +628,14 @@ export const httpServer = defineResource({
       }
     }
 
-    /** Every command: its body parsed by the verb's schema, handled, and its reply checked against the verb's. */
+    /**
+     * Every command: the mux's handled here, every other verb through the dispatch, the core's as `tower/<verb>`, which
+     * parses its body and checks its reply.
+     */
     async function command(req: http.IncomingMessage, res: http.ServerResponse, route: string) {
-      if (!isRoute(route)) return fail(res, 'not_found', `No verb "${route}"`)
+      const core = Object.hasOwn(VERBS, route)
+      const q = qualifiedOf(route)
+      if (!core && !isMux(route) && (!q || q.cap === 'tower')) return fail(res, 'not_found', `No verb "${route}"`)
       const text = await readBody(req)
       if (text === undefined) {
         res.setHeader('connection', 'close')
@@ -617,10 +643,13 @@ export const httpServer = defineResource({
       }
       const body = parseJson(text)
       if (!body) return fail(res, 'invalid', 'The body is not JSON')
-      const input = ROUTES[route].input.safeParse(body.json)
-      if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
-      const answer = await (HANDLERS[route] as (input: unknown) => Answer | Promise<Answer>)(input.data)
-      send(res, answer.t === 'error' ? answer : ROUTES[route].reply.parse(answer))
+      if (isMux(route)) {
+        const input = TRANSPORT[route].input.safeParse(body.json)
+        if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
+        return send(res, await (MUX[route] as (input: unknown) => Answer | Promise<Answer>)(input.data))
+      }
+      if (!core) deprecate(res, dispatch.deprecationOf(q!.cap, q!.name))
+      send(res, await dispatch.call(core ? `tower/${route}` : route, body.json, callerOf(req)))
     }
 
     const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
@@ -691,7 +720,7 @@ export const httpServer = defineResource({
         message: boardSchema,
       }, { path: /^\/board$/, serve: ({ req, res }) => streamBoard(req, res) }),
       streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
-      plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema) }),
+      plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
       apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
       apiRead('extensions', { path: /^\/extensions$/, serve: ({ res }) => json(res, extensions.read()) }),
       apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
@@ -740,15 +769,45 @@ export const httpServer = defineResource({
         }),
       )
 
-    /** The contract for renderers in any language. */
-    const apiSchema: string = JSON.stringify({
-      v: API_VERSION,
-      verbs: Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }])),
-      reads: describeReads(READS),
-      streams: describeStreams(READS),
-      error: z.toJSONSchema(ApiErrorSchema),
-      extension: MANIFEST_SCHEMA,
+    const coreVerbs = Object.fromEntries(Object.entries(VERBS).map(([verb, { input, reply }]) => [verb, { input: z.toJSONSchema(input, { io: 'input' }), reply: z.toJSONSchema(reply) }]))
+    const coreReads = describeReads(READS)
+    const streams = describeStreams(READS)
+    const error = z.toJSONSchema(ApiErrorSchema)
+
+    /** What a manifest says of a verb or read beside its schemas: its scope and words, and that it is on its way out. */
+    const declared = ({ scope, description, deprecated }: { scope: string; description?: string; deprecated?: Deprecated }) => ({
+      scope,
+      ...(description !== undefined && { description }),
+      ...(deprecated && { deprecated }),
     })
+
+    /** The contract for renderers in any language: the core's verbs and reads, and each running extension's by qualified name. */
+    const apiSchema = (): string => {
+      const accepted = extensions.accepted()
+      return JSON.stringify({
+        v: API_VERSION,
+        verbs: {
+          ...coreVerbs,
+          ...Object.fromEntries(
+            accepted.flatMap((a) => Object.entries(a.manifest.verbs ?? {}).map(([name, v]) => [`${a.provides}/${name}`, { input: v.input, reply: v.reply, ...declared(v), ...(v.words && { words: v.words }) }])),
+          ),
+        },
+        reads: {
+          ...coreReads,
+          ...Object.fromEntries(
+            accepted.flatMap((a) =>
+              Object.entries(a.manifest.reads ?? {}).map(([name, r]) => [
+                `${a.provides}/${name}`,
+                { path: `/${a.provides}/${name.replace(/<(\w+)>/g, '{$1}')}`, kind: 'json', ...(r.query && { query: r.query }), reply: r.reply, ...declared(r) },
+              ]),
+            ),
+          ),
+        },
+        streams,
+        error,
+        extension: MANIFEST_SCHEMA,
+      })
+    }
 
     type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
 
@@ -756,8 +815,11 @@ export const httpServer = defineResource({
     const everyReadServed: Exclude<ReadName, ServedReads> extends never ? true : Exclude<ReadName, ServedReads> = true
     void everyReadServed
 
-    /** The first of `READS` whose path matches the pathname, its params decoded and its query parsed. */
-    function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
+    /**
+     * The first of `READS` whose path matches the pathname, its params decoded and its query parsed; else the read of the
+     * extension whose capability the path's first segment names.
+     */
+    async function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
       for (const entry of READS) {
         const match = entry.path.exec(pathname)
         if (!match) continue
@@ -766,7 +828,36 @@ export const httpServer = defineResource({
         if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
         return entry.serve({ req, res, params, query: query.data, search })
       }
-      fail(res, 'not_found', `Nothing at "${pathname}"`)
+      const [, cap, ...rest] = pathname.split('/')
+      const found = rest.length ? dispatch.readAt(cap, rest.join('/')) : undefined
+      if (!found) return fail(res, 'not_found', `Nothing at "${pathname}"`)
+      if ('t' in found) return send(res, found)
+      deprecate(res, dispatch.deprecationOf(cap, found.name))
+      send(res, await dispatch.read(cap, found.name, found.params, Object.fromEntries(new URLSearchParams(search)), callerOf(req)))
+    }
+
+    /**
+     * A core read by its name in `READS` (`conversations/<id>`), for an extension's `ctx.read`: served as over HTTP, its
+     * body taken back as JSON (an `ApiError` when it failed), or as text for a file.
+     */
+    const read = (name: string, params: Record<string, string>, query: Record<string, string>, caller: Caller): Promise<unknown> => {
+      const deep = tooDeep(caller, `tower/${name}`)
+      if (deep) return Promise.resolve(apiError('refused', deep))
+      const entry = READS.find((e): e is Extract<(typeof READS)[number], { read: ReadName }> => 'read' in e && e.read === name)
+      if (!entry) return Promise.resolve(apiError('not_found', `The core has no read "${name}": \`tower api\` lists them`))
+      const parsed = (entry.query ?? z.unknown()).safeParse(query)
+      if (!parsed.success) return Promise.resolve(apiError('invalid', z.prettifyError(parsed.error)))
+      return new Promise((resolve) => {
+        let json = false
+        const taken = {
+          headersSent: false,
+          setHeader: () => taken,
+          writeHead: (_status: number, headers?: http.OutgoingHttpHeaders) => ((json = String(headers?.['content-type'] ?? '').startsWith('application/json')), taken),
+          end: (body?: string | Buffer) => resolve(json ? JSON.parse(String(body)) : String(body ?? '')),
+        }
+        const served = { req: undefined as unknown as http.IncomingMessage, res: taken as unknown as http.ServerResponse, params, query: parsed.data, search: '' }
+        Promise.resolve((entry.serve as (served: Served<z.ZodType>) => unknown)(served)).catch((err) => resolve(errorOf(err)))
+      })
     }
 
     async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -820,7 +911,8 @@ export const httpServer = defineResource({
       await closed
     }
 
-    return { port: PORT, stop }
+    return { port: PORT, read, stop }
   },
   halt: ({ stop }) => stop(),
 })
+export type HttpResource = StartedResource<typeof httpServer>

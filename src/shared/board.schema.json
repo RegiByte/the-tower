@@ -4157,6 +4157,13 @@
           "items": {
             "$ref": "#/definitions/ExtensionProblem"
           }
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionVerb"
+          },
+          "description": "Its manifest's verbs, by qualified name."
         }
       },
       "required": [
@@ -4166,7 +4173,8 @@
         "title",
         "bundled",
         "state",
-        "problems"
+        "problems",
+        "verbs"
       ],
       "additionalProperties": false,
       "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
@@ -4192,7 +4200,8 @@
           "type": "string",
           "enum": [
             "error",
-            "warn"
+            "warn",
+            "info"
           ]
         },
         "code": {
@@ -4220,16 +4229,18 @@
         "count"
       ],
       "additionalProperties": false,
-      "description": "Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting; `warn`s leave it running. `at`: epoch ms, when it was found. `count`: how many times. `path`: where in the manifest, `settings.every`."
+      "description": "Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s leave it running; `info` says how it runs (without an extension it wants). `at`: epoch ms, when it was last found. `count`: how many times. `path`: where in the manifest, `settings.every`."
     },
     "ProblemLane": {
       "type": "string",
       "enum": [
         "load",
         "start",
-        "halt"
+        "halt",
+        "verb",
+        "read"
       ],
-      "description": "Where a problem arose: reading the manifests, starting an extension, halting it."
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read."
     },
     "ProblemCode": {
       "type": "string",
@@ -4244,8 +4255,84 @@
         "skipped",
         "failed",
         "under-declared",
-        "not-yet"
+        "not-yet",
+        "threw",
+        "shape",
+        "deprecated"
       ]
+    },
+    "ExtensionVerb": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/Scope"
+        },
+        "description": {
+          "type": "string"
+        },
+        "words": {
+          "$ref": "#/definitions/Words"
+        },
+        "deprecated": {
+          "$ref": "#/definitions/Deprecated"
+        }
+      },
+      "required": [
+        "name",
+        "scope"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's verbs as the board shows it: its qualified name, scope and words."
+    },
+    "Scope": {
+      "type": "string",
+      "enum": [
+        "system",
+        "project"
+      ],
+      "description": "`system`: a verb or read of the whole system; `project`: one floor's, refused on a floor where its capability is off."
+    },
+    "Words": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "destructive": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false,
+      "description": "A name in words, as a menu or the CLI offers it."
+    },
+    "Deprecated": {
+      "type": "object",
+      "properties": {
+        "since": {
+          "type": "string"
+        },
+        "use": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "since"
+      ],
+      "additionalProperties": false,
+      "description": "A name on its way out: since its provider's version `since`, with what to `use` instead, qualified, and `why`."
     },
     "Today": {
       "type": "object",

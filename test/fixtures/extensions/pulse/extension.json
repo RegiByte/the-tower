@@ -2,12 +2,45 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs: the fixture the server test boots.",
-  "requires": { "tower": "1.81" },
+  "description": "Logs a line at its interval while it runs, pings through chime and reads its beat: the fixture the server test boots.",
+  "requires": { "tower": "1.82", "chime": "1.0" },
   "server": "server.ts",
   "settings": {
     "type": "object",
     "additionalProperties": false,
     "properties": { "every": { "type": "integer", "minimum": 1000, "default": 60000 }, "line": { "type": "string" } }
+  },
+  "verbs": {
+    "ping": {
+      "input": {
+        "type": "object",
+        "required": ["project"],
+        "properties": { "project": { "type": "string" }, "times": { "type": "integer", "minimum": 1 } }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["project", "chimed"],
+        "properties": { "project": { "type": "string" }, "chimed": { "type": "object" } }
+      },
+      "scope": "project",
+      "words": { "label": "Ping", "hint": "rings chime for the floor" }
+    },
+    "pong": {
+      "input": { "type": "object" },
+      "reply": { "type": "object", "required": ["pong"], "properties": { "pong": { "const": true } } },
+      "scope": "system",
+      "deprecated": { "since": "1.0", "use": "pulse/ping", "why": "a ping names its floor" }
+    }
+  },
+  "reads": {
+    "beats/<project>": {
+      "reply": {
+        "type": "object",
+        "required": ["project", "every"],
+        "properties": { "project": { "type": "string" }, "every": { "type": "integer" } }
+      },
+      "scope": "project",
+      "description": "How often it beats on the floor."
+    }
   }
 }

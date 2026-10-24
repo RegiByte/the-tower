@@ -2,19 +2,36 @@
  * The extensions in the tower's system (decision `extensions`): one braided resource per accepted extension, `x:<cap>`,
  * started after the core and what it requires, and reconciled whenever the config changes. A resource is memoized by a
  * hash of what it starts from, so an extension the edit leaves unchanged keeps running and a changed one restarts with
- * its dependents. `core:extensions` holds what the board and `GET /extensions` show of them: the registry, recomputed
- * after each reconcile, and the resources it was computed over.
+ * its dependents. `core:extensions` holds what the board and `GET /extensions` show of them (the registry, recomputed
+ * after each reconcile and as calls find problems, and the resources it was computed over) and what runs now, which
+ * the dispatch reaches each extension's verbs and reads through (`calls.ts`).
  */
 import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type StartedSystem, type SystemConfig } from 'braided'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { NO_EXTENSIONS, offOn, registry, resolve, type Accepted, type Outcome, type Registry } from '../bridge/extensions.ts'
+import { NO_EXTENSIONS, offOn, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import { discover, newestIn } from '../extensions.ts'
-import { API_VERSION } from '../shared/api.ts'
-import { STARTED_KEYS, type Start, type Started, type StartCtx } from '../shared/extensions.ts'
+import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
+import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
+import {
+  nestedIn,
+  qualifiedOf,
+  STARTED_KEYS,
+  type CallCtx,
+  type Caller,
+  type Client,
+  type ExtensionProblem,
+  type Manifest,
+  type ProblemLane,
+  type Start,
+  type Started,
+  type StartCtx,
+} from '../shared/extensions.ts'
 import { ConfigError, type Config } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
+import type { DispatchResource } from './dispatch.ts'
+import type { HttpResource } from './http.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, TowerResources, TowerSystem } from './spine.ts'
 
@@ -25,19 +42,70 @@ const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] =>
   return { ...topology, mermaid: toMermaid(topology) }
 }
 
+/** A started extension, as its resource holds it: its manifest, and its handlers, each run with a ctx for its caller. */
+export type Instance = {
+  manifest: Manifest
+  /** Set once its halt begins: a call then answers that it is restarting. */
+  halting: boolean
+  verb(name: string, input: unknown, caller: Caller): unknown
+  read(name: string, req: { params: Record<string, string>; query: unknown }, caller: Caller): unknown
+  halt(): Promise<void>
+}
+
+/** A capability as a call finds it: provided by nobody, provided and not running, being started or restarted, or running. */
+export type Live = { t: 'none' } | { t: 'down'; why: string } | { t: 'moving'; why: 'starting' | 'restarting' } | { t: 'up'; a: Accepted; instance: Instance }
+
+/** What the registry is computed over, and what runs: the latest resolve, how each start went (`at`, when), the resources and their instances. */
+type Held = { resolved: Resolved; outcomes: Map<string, Outcome>; at: number; resources: SystemConfig; system: Record<string, unknown> }
+
+const NO_RESOLVED: Resolved = { order: [], accepted: new Map(), refused: new Map() }
+
+/** The resource an extension's capability is started as. */
+export const resourceOf = (cap: string) => `x:${cap}`
+
 export const extensions = defineResource({
   start: () => {
-    let current: { registry: Registry; resources: SystemConfig } = { registry: NO_EXTENSIONS, resources: {} }
+    let held: Held = { resolved: NO_RESOLVED, outcomes: new Map(), at: 0, resources: {}, system: {} }
+    /** The capabilities the reconcile under way starts or restarts. */
+    let moving = new Set<string>()
+    /** The problems calls found, by extension id, newest first: kept until the extension starts again. */
+    let calls = new Map<string, ExtensionProblem[]>()
+    let shown: Registry = NO_EXTENSIONS
     const listeners = new Set<() => void>()
+    const changed = () => {
+      shown = registry(held.resolved, held.outcomes, held.at, calls)
+      for (const listener of listeners) listener()
+    }
     return {
-      registry: () => current.registry,
+      registry: () => shown,
       /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
-      read: (): Reads['extensions'] => ({ extensions: current.registry.extensions, topology: topologyOf(current.resources) }),
-      set: (next: typeof current) => {
-        current = next
-        for (const listener of listeners) listener()
+      read: (): Reads['extensions'] => ({ extensions: shown.extensions, topology: topologyOf(held.resources) }),
+      /** The capabilities a reconcile is about to start or restart: until the next `set`, a call to one is unavailable. */
+      moving: (caps: Set<string>) => void (moving = caps),
+      /** What a reconcile ended with; the call problems of the extensions it `started` are dropped. */
+      set: (next: Held, started: string[]) => {
+        held = next
+        moving = new Set()
+        calls = new Map([...calls].filter(([id]) => !started.includes(id)))
+        changed()
       },
-      /** Calls `listener` after each `set`, until the returned function is called. */
+      /** The extensions the latest reconcile accepted: what `/schema` lists. */
+      accepted: (): Accepted[] => [...held.resolved.accepted.values()],
+      /** A capability as a call finds it now. */
+      live: (cap: string): Live => {
+        const instance = held.system[resourceOf(cap)] as Instance | undefined
+        if (moving.has(cap) || instance?.halting) return { t: 'moving', why: instance ? 'restarting' : 'starting' }
+        const a = [...held.resolved.accepted.values()].find((accepted) => accepted.provides === cap)
+        if (a && instance) return { t: 'up', a, instance }
+        const view = shown.extensions.find((e) => e.provides === cap)
+        return view ? { t: 'down', why: EXTENSION_STATE_NAME[view.state] } : { t: 'none' }
+      },
+      /** A problem a call found in extension `id`. */
+      problem: (id: string, problem: Omit<ExtensionProblem, 'count'>) => {
+        calls = new Map(calls).set(id, withProblem(calls.get(id) ?? [], problem))
+        changed()
+      },
+      /** Calls `listener` after each `set` and each problem, until the returned function is called. */
       onChange: (listener: () => void) => {
         listeners.add(listener)
         return () => void listeners.delete(listener)
@@ -48,9 +116,6 @@ export const extensions = defineResource({
 })
 export type ExtensionsResource = StartedResource<typeof extensions>
 
-/** The resource an extension's capability is started as. */
-export const resourceOf = (cap: string) => `x:${cap}`
-
 /** How long `start` may take before the extension counts as failed. */
 const START_MS = 10_000
 
@@ -59,13 +124,26 @@ export class MismatchError extends Error {}
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/** Why what `start` returned doesn't match the manifest, if it doesn't: with no lanes yet, only `halt` may come back. */
-const mismatchOf = (started: unknown): string | undefined => {
+/** Why the handlers `start` returned for a lane don't match the names the manifest declares: each one missing, each one extra. */
+const namesMismatch = (lane: 'verbs' | 'reads', declared: string[], given: unknown): string[] => {
+  if (given === undefined) return declared.length ? [`its manifest declares ${lane} ${declared.join(', ')}, and start returned no ${lane}`] : []
+  if (!isObject(given)) return [`start returned ${lane} that are no object of functions`]
+  const missing = declared.filter((name) => !Object.hasOwn(given, name) || typeof given[name] !== 'function')
+  const extra = Object.keys(given).filter((name) => !declared.includes(name))
+  return [
+    ...(missing.length ? [`its manifest declares ${lane} ${missing.join(', ')}, and start returned no function for each`] : []),
+    ...(extra.length ? [`start returned ${lane} ${extra.join(', ')}, which its manifest doesn't declare`] : []),
+  ]
+}
+
+/** Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb and read it declares, no more. */
+const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
   if (!isObject(started)) return `start returned ${JSON.stringify(started)}: it returns an object of what its manifest declares`
   const undeclared = Object.keys(started).filter((key) => !(STARTED_KEYS as readonly string[]).includes(key))
   if (undeclared.length) return `start returned ${undeclared.join(', ')}, which its manifest doesn't declare`
   if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
-  return undefined
+  const lanes = [...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs), ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads)]
+  return lanes.length ? lanes.join('; ') : undefined
 }
 
 /**
@@ -93,14 +171,29 @@ const within = <T>(ms: number, promise: Promise<T>, late: (value: T) => void): P
     )
   })
 
-type Deps = { 'core:config': ConfigResource; 'core:publisher': PublisherResource } & Record<string, unknown>
+type Deps = {
+  'core:config': ConfigResource
+  'core:publisher': PublisherResource
+  'core:dispatch': DispatchResource
+  'core:http': HttpResource
+  'core:extensions': ExtensionsResource
+} & Record<string, unknown>
 
-/** What every extension starts after: the core's pieces its ctx reaches now, and the dispatch its calls will go through. */
-const CORE_DEPS = ['core:config', 'core:system', 'core:publisher', 'core:dispatch']
+/** What every extension starts after: the core's pieces its ctx reaches, the dispatch its calls go through, and the server its core reads are read from. */
+const CORE_DEPS = ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions']
 
-/** Starts an extension: its ctx built, its `start` called and checked; what ctx opened is cleared at halt, or as a start fails. */
-async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<{ halt: () => Promise<void> }> {
-  const { 'core:config': config, 'core:publisher': publisher } = deps
+/** A capability's verbs and reads as functions over `call` and `read`, named as its provider's manifest names them. */
+const clientOf = (cap: string, manifest: Manifest, call: StartCtx['call'], read: StartCtx['read']): Client =>
+  Object.assign(Object.fromEntries(Object.keys(manifest.verbs ?? {}).map((verb) => [verb, (input?: unknown) => call(`${cap}/${verb}`, input)])), {
+    read: Object.fromEntries(Object.keys(manifest.reads ?? {}).map((name) => [name, (params?: Record<string, string>, query?: Record<string, string>) => read(`${cap}/${name}`, params, query)])),
+  }) as Client
+
+/**
+ * Starts an extension: its ctx built, its `start` called and checked; what ctx opened is cleared at halt, or as a start
+ * fails. Its instance answers each call with a ctx of its own, whose calls carry that call's caller one step deeper.
+ */
+async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<Instance> {
+  const { 'core:config': config, 'core:publisher': publisher, 'core:dispatch': dispatch, 'core:http': http, 'core:extensions': holder } = deps
   const controller = new AbortController()
   const timers = new Set<NodeJS.Timeout>()
   const dispose = () => {
@@ -109,6 +202,45 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<{ 
     controller.abort()
   }
   const log = (message: string) => console.log(`${a.id}: ${message}`)
+  /** The manifests of what it requires, and of what it wants that runs: what `ctx.deps` is made from. */
+  const providers = new Map([...a.requires, ...a.wants].map((cap) => [cap, (deps[resourceOf(cap)] as Instance).manifest]))
+
+  /** A qualified name it may call or read: the core's, its own, or one of a capability it declares and that runs. */
+  const reachable = (name: string): { cap: string; name: string } | ApiError => {
+    const q = qualifiedOf(name)
+    if (!q) return apiError('invalid', `"${name}" is no qualified name: <capability>/<name>, the core's tower/<name>`)
+    if (q.cap === 'tower' || q.cap === a.provides || providers.has(q.cap)) return q
+    if (Object.hasOwn(a.manifest.wants ?? {}, q.cap)) return apiError('unavailable', `${a.id} wants ${q.cap}, which doesn't run now: ctx.deps.${q.cap} is undefined`)
+    return apiError('refused', `${a.id} reaches ${name} without declaring ${q.cap}: declare requires.${q.cap}, or wants.${q.cap}, in its manifest`)
+  }
+
+  /** A call of a deprecated verb or read counts against the extension that makes it, as a warning. */
+  const noteDeprecated = (q: { cap: string; name: string }, lane: ProblemLane) => {
+    const deprecated = q.cap === 'tower' ? undefined : dispatch.deprecationOf(q.cap, q.name)
+    if (!deprecated) return
+    const message = `${a.provides} calls ${q.cap}/${q.name}, deprecated since ${q.cap} ${deprecated.since}${deprecated.use ? `: use ${deprecated.use}` : ''}`
+    holder.problem(a.id, { lane, level: 'warn', code: 'deprecated', message, at: Date.now() })
+  }
+
+  /** `call`, `read` and `deps` for calls made as `caller`. */
+  const callsOf = (caller: Caller): Pick<StartCtx, 'call' | 'read' | 'deps'> => {
+    const call: StartCtx['call'] = async (verb, input = {}) => {
+      const q = reachable(verb)
+      if ('t' in q) return q
+      noteDeprecated(q, 'verb')
+      return dispatch.call(verb, input, caller)
+    }
+    const read: StartCtx['read'] = async (name, params = {}, query = {}) => {
+      const q = reachable(name)
+      if ('t' in q) return q
+      noteDeprecated(q, 'read')
+      return q.cap === 'tower' ? http.read(q.name, params, query, caller) : dispatch.read(q.cap, q.name, params, query, caller)
+    }
+    const wanted = Object.keys(a.manifest.wants ?? {}).map((cap): [string, Client | undefined] => [cap, undefined])
+    const deps = Object.fromEntries([...wanted, ...[...providers].map(([cap, manifest]): [string, Client] => [cap, clientOf(cap, manifest, call, read)])])
+    return { call, read, deps }
+  }
+
   const ctx: StartCtx = {
     id: a.id,
     provides: a.provides,
@@ -128,7 +260,10 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<{ 
     log,
     signal: controller.signal,
     board: () => publisher.board(),
+    ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
   }
+  /** The ctx a handler of `qualified` gets: its caller, and calls made one step deeper. */
+  const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, ...callsOf(nestedIn(caller, qualified)) })
   /** What a start returned, halted: it started something, and won't run. */
   const haltLate = (started: Started) =>
     void Promise.resolve()
@@ -137,13 +272,18 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<{ 
   try {
     const start = await startOf(a, hash)
     const started = await within(START_MS, Promise.resolve().then(() => start(ctx)), haltLate)
-    const mismatch = mismatchOf(started)
+    const mismatch = mismatchOf(started, a.manifest)
     if (mismatch) {
       haltLate(started)
       throw new MismatchError(mismatch)
     }
-    return {
+    const instance: Instance = {
+      manifest: a.manifest,
+      halting: false,
+      verb: (name, input, caller) => started.verbs![name](input, handlerCtx(caller, `${a.provides}/${name}`)),
+      read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
       halt: async () => {
+        instance.halting = true
         try {
           await started.halt?.()
         } finally {
@@ -151,6 +291,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<{ 
         }
       },
     }
+    return instance
   } catch (err) {
     dispose()
     throw err
@@ -168,7 +309,7 @@ const extensionResource = (a: Accepted, hash: string) =>
   defineResource({
     dependencies: { required: [...CORE_DEPS, ...a.requires.map(resourceOf)], optional: a.wants.map(resourceOf) },
     start: (deps: Deps) => startExtension(a, hash, deps),
-    halt: ({ halt }) => halt(),
+    halt: (instance) => instance.halt(),
   })
 
 /** Each accepted extension's resource by `x:<cap>`: the one in `memo` when its hash is unchanged, else a new one. */
@@ -194,7 +335,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
   /** Which extension each capability's resource last ran. */
   let idOf = new Map<string, string>()
   let seen: string | undefined
-  holder.set({ registry: NO_EXTENSIONS, resources })
+  holder.set({ resolved: NO_RESOLVED, outcomes, at: Date.now(), resources, system }, [])
 
   const reconcile = async () => {
     let now: Config
@@ -211,6 +352,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     const accepted = resolved.order.map((id) => resolved.accepted.get(id)!)
     const next = resourcesOf(accepted, memo)
     const nextResources = { ...core, ...next.resources }
+    holder.moving(new Set(accepted.map((a) => a.provides).filter((cap) => (nextResources as SystemConfig)[resourceOf(cap)] !== (resources as SystemConfig)[resourceOf(cap)])))
     const result = await reconcileSystem(resources, system, nextResources)
     const at = Date.now()
     const nextIdOf = new Map(accepted.map((a) => [resourceOf(a.provides), a.id]))
@@ -230,7 +372,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     memo = next.memo
     outcomes = nextOutcomes
     idOf = nextIdOf
-    holder.set({ registry: registry(resolved, outcomes, at), resources })
+    holder.set({ resolved, outcomes, at, resources, system: system as Record<string, unknown> }, result.started.flatMap((rid) => (nextIdOf.has(rid) ? [nextIdOf.get(rid)!] : [])))
   }
 
   let queue = Promise.resolve()

@@ -1,8 +1,12 @@
 /**
  * The verbs: every command's handler, each composed over the config, the live system and the board, and the state
  * verbs keep while they run (hires and resumes taken in turn, workers departing). `mux/*` belong to the HTTP server.
+ * Every verb is called through `call`, the one dispatch, by its qualified name (`tower/spawn`, `chime/ring`), with its
+ * caller: the core's here, an extension's through `calls.ts`. A composite that does what another verb does calls it
+ * through `call` too, with its own verb in the caller's `within`, so whatever guards a verb sees every act of it.
  */
 import { defineResource, type StartedResource } from 'braided'
+import { z } from 'zod'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
@@ -16,10 +20,11 @@ import type { Resource } from '../bridge/resources.ts'
 import { discardNote } from '../bridge/worktrees.ts'
 import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
-import { apiError, ROUTES, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
+import { apiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
+import { nestedIn, qualifiedOf, tooDeep, type Caller } from '../shared/extensions.ts'
 import { callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, worktreeName, worktreesConfig, type Config, type EditorAction, type Project } from '../shared/model.ts'
 import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
 import { POLICIES, ruleWords, slotsBetween } from '../shared/policies.ts'
@@ -29,7 +34,9 @@ import { tagOf } from '../shared/tags.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { appendFact } from '../streams.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
-import { OK, type Answer } from './answers.ts'
+import { errorOf, OK, type Answer } from './answers.ts'
+import { extensionCalls } from './calls.ts'
+import type { ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
 
@@ -50,11 +57,14 @@ type Deps = {
   'core:system': SystemResource
   'core:publisher': PublisherResource
   'core:probes': ProbesResource
+  'core:extensions': ExtensionsResource
 }
 
+const isVerb = (name: string): name is Verb => Object.hasOwn(VERBS, name)
+
 export const dispatch = defineResource({
-  dependencies: ['core:config', 'core:system', 'core:publisher', 'core:probes'],
-  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:probes': probeRunner }: Deps) => {
+  dependencies: ['core:config', 'core:system', 'core:publisher', 'core:probes', 'core:extensions'],
+  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:probes': probeRunner, 'core:extensions': holder }: Deps) => {
     const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
 
     const policyFactsOf = (project: string) => policyFactsIn(system, project)
@@ -164,7 +174,7 @@ export const dispatch = defineResource({
         }
         void (async () => {
           for (const [verb, body] of calls) {
-            const answer = await HANDLERS[verb](ROUTES[verb].input.parse({ ...body, by: c.id }))
+            const answer = await call(`tower/${verb}`, { ...body, by: c.id }, { t: 'worker', id: c.id, via: 'loop', within: [] })
             if (answer.t === 'error') console.error(`${c.callsign} asked to go home, and killing ${body.id} failed: ${(answer as ApiError).message}`)
           }
         })()
@@ -619,10 +629,10 @@ export const dispatch = defineResource({
     const onPolicy = (project: string, policy: string, act: () => Promise<Answer>) => inTurn(`policy ${project}/${policy}`, act)
 
     /**
-     * A run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and the run fact appended. A
-     * worker whose fact can't be appended is killed, so no run goes uncounted.
+     * A run of a policy: its file parsed now, a worker spawned on its prose with its `hire` through `tower/spawn`, and the
+     * run fact appended. A worker whose fact can't be appended is killed, so no run goes uncounted.
      */
-    const runPolicy = (input: RouteInput['policy/run']) => {
+    const runPolicy = (input: RouteInput['policy/run'], caller: Caller) => {
       const { project, policy, by, check } = input
       const [slot, startFact] =
         input.start === 'hand' ? [undefined, { start: 'hand', slot: null } as const] : [input.slot, { start: input.start, slot: slotName(input.slot) } as const]
@@ -639,8 +649,7 @@ export const dispatch = defineResource({
           await system.refreshLive()
           const live = liveRuns(policy, policyFactsOf(project), everyCard(Date.now()))
           if (live.length >= header.live) return apiError('limited', `${live.map((c) => c.callsign).join(', ')} still run${live.length === 1 ? 's' : ''}: ${tagOf(policy)} runs at most ${header.live} at once (its \`live\`)`)
-          const launch = { model: header.hire.model, effort: header.hire.effort, prompt }
-          const answer = header.hire.cut ? await spawnCut(project, header.hire.cut, undefined, launch) : await spawnIn(project, header.hire.cwd, undefined, launch)
+          const answer = await call('tower/spawn', { project, ...header.hire, prompt }, nestedIn(caller, 'tower/policy/run'))
           if (answer.t !== 'spawned') return answer
           const { id } = answer as Replies['spawn']
           const fact: RunFact = { policy, hash: file.hash, id, ...(by && { by }), ...(check && { check }), ...startFact }
@@ -684,7 +693,7 @@ export const dispatch = defineResource({
         }),
       )
 
-    const HANDLERS: { [R in Verb]: (input: RouteInput[R]) => Answer | Promise<Answer> } = {
+    const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
       spawn: ({ project, cwd, cut, callsign, model, effort, prompt, by, hire }) => {
         const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, { model, effort, prompt }) : spawnIn(project, cwd, callsign, { model, effort, prompt })), prompt, by)
         return hire ? hired(project, by!, prompt, spawning) : spawning()
@@ -739,6 +748,40 @@ export const dispatch = defineResource({
       'policy/approve': approvePolicy,
     }
 
+    /** A core verb: its input parsed by its schema, handled with its caller, and its reply checked against its schema. */
+    const callCore = async (verb: string, input: unknown, caller: Caller): Promise<Answer> => {
+      if (!isVerb(verb)) return apiError('not_found', `No verb "${verb}"`)
+      const parsed = ROUTES[verb].input.safeParse(input)
+      if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
+      const answer = await (HANDLERS[verb] as (input: unknown, caller: Caller) => Answer | Promise<Answer>)(parsed.data, caller)
+      return answer.t === 'error' ? answer : ROUTES[verb].reply.parse(answer)
+    }
+
+    const extension = extensionCalls(holder, readConfig)
+
+    /**
+     * The one dispatch: a verb by its qualified name, the core's as `tower/<verb>`, called for `caller`, refused when it
+     * would be nested more than `MAX_DEPTH` deep. Every failure answers as an `ApiError`, a throw as `internal`.
+     */
+    async function call(name: string, input: unknown, caller: Caller): Promise<Answer> {
+      const q = qualifiedOf(name)
+      if (!q) return apiError('not_found', `No verb "${name}": a verb is named <capability>/<verb>, the core's tower/<verb>`)
+      const deep = tooDeep(caller, name)
+      if (deep) return apiError('refused', deep)
+      try {
+        return q.cap === 'tower' ? await callCore(q.name, input, caller) : ((await extension.verb(q.cap, q.name, input, caller)) as Answer)
+      } catch (err) {
+        console.error(`${name}:`, err)
+        return errorOf(err)
+      }
+    }
+
+    /** An extension's read by its qualified name, for `caller`, refused as a call is when nested too deep. */
+    const read = async (cap: string, name: string, params: Record<string, string>, query: Record<string, string>, caller: Caller): Promise<unknown> => {
+      const deep = tooDeep(caller, `${cap}/${name}`)
+      return deep ? apiError('refused', deep) : extension.read(cap, name, params, query, caller)
+    }
+
     let leaveTimer: NodeJS.Timeout | undefined
     const scheduleLeaves = () => {
       leaveTimer ??= setTimeout(() => {
@@ -756,7 +799,7 @@ export const dispatch = defineResource({
       clearTimeout(leaveTimer)
     }
 
-    return { handlers: HANDLERS, stop }
+    return { call, read, readAt: extension.readAt, deprecationOf: extension.deprecationOf, stop }
   },
   halt: ({ stop }) => stop(),
 })

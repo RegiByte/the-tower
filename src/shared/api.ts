@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.81'
+export const API_VERSION = '1.82'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -426,6 +426,18 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
 }
 
 export const apiError = (code: ErrorCode, message: string): ApiError => ({ t: 'error', code, message })
+
+/** Whether a reply is an `ApiError`: what an extension's handler answers to refuse. */
+export const isApiError = (reply: unknown): reply is ApiError => ApiError.safeParse(reply).success
+
+/**
+ * The headers the `tower` command claims its caller with: `tower-client: cli` on every request, and `tower-session`, its
+ * `TOWER_SESSION_ID`, when a worker runs it. A request without them is the user's, over HTTP.
+ */
+export const CALLER_HEADERS = { client: 'tower-client', session: 'tower-session' } as const
+
+/** The headers the `tower` command sends, run by the session `session` (its `TOWER_SESSION_ID`) or by the user. */
+export const callerHeaders = (session: string | undefined): Record<string, string> => ({ [CALLER_HEADERS.client]: 'cli', ...(session && { [CALLER_HEADERS.session]: session }) })
 
 export type Verb = keyof typeof VERBS
 export type Verbs = { [V in Verb]: z.input<(typeof VERBS)[V]['input']> }

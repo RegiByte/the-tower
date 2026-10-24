@@ -18,7 +18,7 @@ import { runPolicies } from '../policies.ts'
 import { runProbes } from '../probes.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import { readConfig, watchSystem } from '../system.ts'
-import type { Answer } from './answers.ts'
+import type { Caller } from '../shared/extensions.ts'
 import { dispatch, type DispatchResource } from './dispatch.ts'
 import { extensions } from './extensions.ts'
 import { httpServer } from './http.ts'
@@ -60,12 +60,15 @@ export const probes = defineResource({
 })
 export type ProbesResource = StartedResource<typeof probes>
 
+/** Who the policies' runner calls for: the tower, at a slot. */
+const SLOT_CALLER: Caller = { t: 'tower', id: 'slot', via: 'loop', within: [] }
+
 export const slots = defineResource({
   dependencies: ['core:dispatch', 'core:publisher'],
-  start: ({ 'core:dispatch': { handlers }, 'core:publisher': { board } }: { 'core:dispatch': DispatchResource; 'core:publisher': PublisherResource }) =>
+  start: ({ 'core:dispatch': { call }, 'core:publisher': { board } }: { 'core:dispatch': DispatchResource; 'core:publisher': PublisherResource }) =>
     runPolicies(board, {
-      run: (input) => handlers['policy/run'](input) as Promise<Answer>,
-      pass: (input) => handlers['policy/pass'](input) as Promise<Answer>,
+      run: (input) => call('tower/policy/run', input, SLOT_CALLER),
+      pass: (input) => call('tower/policy/pass', input, SLOT_CALLER),
     }),
   halt: ({ stop }) => stop(),
 })
