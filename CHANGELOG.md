@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.59.0
+
+The tower finds, resolves, starts and shows extensions: the first of the extension mechanism's lanes, with no
+extension using it yet. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config change
+(three new optional keys), the renderer API 1.80 → 1.81 (additive).
+
+- **Extensions, loaded and seen.** An extension is a folder holding an `extension.json` and, optionally, a server
+  module: bundled ones in the checkout's `extensions/` (none yet), the user's named by the config's `extensions`. Each
+  manifest is strict (an unknown key refuses it, at its path) and resolved before any code runs: invalid, too new or
+  too old, unmet, in a cycle or in conflict, it is refused and its dependents skipped, each with a reason. The rest
+  start as resources of the tower's system and restart on their own when a config edit changes them.
+- **Config:** `extensions` (by id: `path`, `off`, `settings`), and per floor `projects.<p>.extensions.<id>.settings`
+  and `projects.<p>.capabilities.<cap>.off`. `tower config check` reads each extension's settings against its
+  manifest. `docs/config.md` has them.
+- `board.extensions`, `GET /extensions` (the registry and the topology), `tower extensions` and `tower doctor` say
+  what each extension is doing and why; the tower page draws them beside the probes. `/schema` serves the manifest's
+  JSON Schema as `extension`, every key marked with the version it arrived in.
+- braided 0.3.2: the topology's Mermaid and DOT quote every resource id.
+
 ## v1.58.0
 
 The host logs what extensions will need, and the tower process becomes a system of resources. It asks a **host
