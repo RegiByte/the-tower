@@ -32,7 +32,7 @@
     "hub/src/shared/markdown.ts#fenceText",
     "hub/src/shared/highlight.ts#fenceLang",
     "hub/src/shared/highlight.ts#highlightCss",
-    "hub/src/shared/panels.ts#reviewsHtml",
+    "hub/src/shared/reviews-panel.ts#reviewsHtml",
     "hub/src/shared/model.ts#briefConfig",
     "hub/src/tower/server.ts#conversations",
     "hub/src/directory.ts#threadLines",
@@ -95,7 +95,7 @@ renderer can draw the brief alike, inline.
   ([`fenceLang`](ref:hub/src/shared/highlight.ts#fenceLang), [`fenceText`](ref:hub/src/shared/markdown.ts#fenceText),
   [`markdownCss`](ref:hub/src/shared/markdown.ts#markdownCss), [`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss));
   a review note's body is drawn the same way in the shared Reviews panel
-  ([`reviewsHtml`](ref:hub/src/shared/panels.ts#reviewsHtml)).
+  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml)).
 - *Inline in every renderer.* The tower page draws it in its Brief pane, Tower 3D in its desk's
   [Logbook](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml) ([[logbook]]), and `tower agent` prints the current
   session's conversations in full ([`threadLines`](ref:hub/src/directory.ts#threadLines)) and one line per earlier

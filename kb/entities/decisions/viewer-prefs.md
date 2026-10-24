@@ -34,7 +34,7 @@
     "hub/src/shared/design.ts#reduced",
     "hub/src/shared/design.ts#designCss",
     "hub/src/shared/shelf-page.ts",
-    "hub/src/shared/panels.ts#scopeHtml",
+    "hub/src/shared/changes-panel.ts#scopeHtml",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/shared/term-view.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
@@ -103,7 +103,7 @@ they are written once in shared code and a next renderer gets them by importing 
   button the same way.
 - *Every explanation through it*: renderers and shared views say what a control does with `data-tip`, a control with
   no visible name carries an `aria-label`. `title` stays only where no tip can show: an `<iframe>`'s accessible name,
-  a native `<option>` ([`scopeHtml`](ref:hub/src/shared/panels.ts#scopeHtml)) and a markdown link's title in framed
+  a native `<option>` ([`scopeHtml`](ref:hub/src/shared/changes-panel.ts#scopeHtml)) and a markdown link's title in framed
   documents that run no `watchTips`. The status counts' and host lamp's words live in `/cards.js`
   ([`ATTENTION_MEANS`](ref:hub/src/shared/status-words.ts#ATTENTION_MEANS),
   [`statusLegendHtml`](ref:hub/src/shared/status-words.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/health.ts#hostState),

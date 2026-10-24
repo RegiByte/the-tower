@@ -15,10 +15,10 @@
     "hub/src/machine.ts#runEditor",
     "hub/src/shared/model.ts#editorArgv",
     "hub/src/tower/server.ts#inEditor",
-    "hub/src/shared/panels.ts#fileButtonsHtml",
-    "hub/src/shared/panels.ts#fileSpansHtml",
-    "hub/src/shared/panels.ts#fileCall",
-    "hub/src/shared/panels.ts#threadFiles",
+    "hub/src/shared/file-acts.ts#fileButtonsHtml",
+    "hub/src/shared/file-acts.ts#fileSpansHtml",
+    "hub/src/shared/file-acts.ts#fileCall",
+    "hub/src/shared/reviews-panel.ts#threadFiles",
     "hub/src/bridge/board.ts#Board",
     "hub/src/cli-verbs.ts#CLI_VERBS",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
@@ -59,14 +59,14 @@ for the user.
   a named path that isn't there is `lost`.
 - *The board names the config* (`board.config`, its path): the system root is its directory, which no renderer
   could reach before.
-- *Buttons drawn once.* [`fileButtonsHtml`](ref:hub/src/shared/panels.ts#fileButtonsHtml) draws a quiet Finder and
+- *Buttons drawn once.* [`fileButtonsHtml`](ref:hub/src/shared/file-acts.ts#fileButtonsHtml) draws a quiet Finder and
   editor pair as `data-reveal` / `data-edit` (`data-line`) buttons, each named for its file ("reveal main.md in
-  Finder"), in the Tab order; [`fileSpansHtml`](ref:hub/src/shared/panels.ts#fileSpansHtml) draws the same pair as
+  Finder"), in the Tab order; [`fileSpansHtml`](ref:hub/src/shared/file-acts.ts#fileSpansHtml) draws the same pair as
   `role=button` spans for the one place a button may not sit, inside another button;
-  [`fileCall`](ref:hub/src/shared/panels.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
+  [`fileCall`](ref:hub/src/shared/file-acts.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
   capturing click listener on the document, so a button inside a file header or an anchor never also folds the
   file or jumps to Changes. The shared panels draw them on changed files, a thread's file and each note's anchor (the
-  editor at its first line, the anchor's repo found by [`threadFiles`](ref:hub/src/shared/panels.ts#threadFiles)), and
+  editor at its first line, the anchor's repo found by [`threadFiles`](ref:hub/src/shared/reviews-panel.ts#threadFiles)), and
   each renderer wherever else it names a file: a showing, a draft, the config ([[shared-panels]], [[corkboard]]).
 - *The CLI*: `tower reveal <path>` and `tower edit <path> [line]` ([[agent-directory]]).
 

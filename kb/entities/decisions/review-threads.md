@@ -30,15 +30,15 @@
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/shared/checkouts.ts#sendTargets",
     "hub/src/shared/checkouts.ts#sendTarget",
-    "hub/src/shared/panels.ts#threadViewOf",
-    "hub/src/shared/panels.ts#cardThread",
-    "hub/src/shared/panels.ts#floorThread",
+    "hub/src/shared/reviews-panel.ts#threadViewOf",
+    "hub/src/shared/reviews-panel.ts#cardThread",
+    "hub/src/shared/reviews-panel.ts#floorThread",
     "hub/src/shared/checkouts.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
     "hub/renderers/tower3d/src/layout.ts#pigeonholeFor",
     "hub/renderers/tower3d/src/desk.ts#dressPapers",
-    "hub/src/shared/panels.ts#reviewsHtml",
+    "hub/src/shared/reviews-panel.ts#reviewsHtml",
     "hub/test/reviews.test.ts"
   ],
   "links": [
@@ -112,10 +112,10 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
 **The thread view model** (this is its one home). Every renderer draws a thread through the shared Reviews panel
 ([[shared-panels]]), and what it shows is built in shared code. New is relative to whose view is open: author and
 reviewer iterate on one thread, so in the reviewer's view the author's notes since the reviewer's last are new,
-and the reverse. [`cardThread`](ref:hub/src/shared/panels.ts#cardThread) gives a card's thread with that worker as
-its reader; [`floorThread`](ref:hub/src/shared/panels.ts#floorThread) a thread opened where no worker's view is (a
+and the reverse. [`cardThread`](ref:hub/src/shared/reviews-panel.ts#cardThread) gives a card's thread with that worker as
+its reader; [`floorThread`](ref:hub/src/shared/reviews-panel.ts#floorThread) a thread opened where no worker's view is (a
 floor's list of threads), read as the worker on duty in its checkout, else nobody.
-[`threadViewOf`](ref:hub/src/shared/panels.ts#threadViewOf) builds the panel's view from that place, the board and
+[`threadViewOf`](ref:hub/src/shared/reviews-panel.ts#threadViewOf) builds the panel's view from that place, the board and
 what the viewer holds (the thread as read, the reader's Changes, its Send pick, the note it answers): anchors are
 looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref:hub/src/shared/checkouts.ts#sendTargets)
 (the workers at their composer in the checkout, most recently active first, then the floor's others) and

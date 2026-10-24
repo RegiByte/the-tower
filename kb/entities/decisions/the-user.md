@@ -15,8 +15,8 @@
     "hub/src/shared/launch.ts#towerBrief",
     "hub/src/shared/reviews.ts#THE_USER",
     "hub/src/shared/reviews.ts#sendText",
-    "hub/src/shared/panels.ts#ThreadView",
-    "hub/src/shared/panels.ts#ChangesView",
+    "hub/src/shared/reviews-panel.ts#ThreadView",
+    "hub/src/shared/changes-panel.ts#ChangesView",
     "hub/src/directory.ts#agent",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/src/mod/skills/review/SKILL.md",
@@ -33,7 +33,7 @@ tower got agents that talked about someone else.
 - `config.user.name` ([`UserConfig`](ref:hub/src/shared/model.ts#UserConfig)) signs the notes renderers write for the
   user, `user` when unset ([`userName`](ref:hub/src/shared/model.ts#userName)). The board carries it as
   `board.user.name`, so a renderer written from scratch signs the same way. The Changes and Reviews panels take it as
-  `user` ([`ThreadView`](ref:hub/src/shared/panels.ts#ThreadView)), label their composers with it and mark notes signed
+  `user` ([`ThreadView`](ref:hub/src/shared/reviews-panel.ts#ThreadView)), label their composers with it and mark notes signed
   with it as the viewer's own.
 - The brief says the name once, "the user (Ana)", only when the config gives one, so a worker knows whose notes
   `## Ana · …` are.

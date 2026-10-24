@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-23",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/panels.ts#viewedKey", "hub/src/shared/panels.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/panels.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/panels.ts#changesHtml", "hub/src/shared/panels.ts#splitRows", "hub/src/shared/panels.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/panels.ts#changesHandlers", "hub/src/shared/panels.ts#readChanges"],
+  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/server.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#changesHtml", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -32,11 +32,11 @@ request, never kept:
   modified or renamed file carries `before`, the unchanged lines above it cut from the file's new side
   ([`withBefore`](ref:hub/src/bridge/diff.ts#withBefore)), read under caps; a file past them goes without. A hunk takes
   the whole side's colours only where what it carries in from above is a comment, or a string or fence that closes
-  within it ([`readsWhole`](ref:hub/src/shared/panels.ts#readsWhole)): highlight.js misreads some code and never closes
+  within it ([`readsWhole`](ref:hub/src/shared/changes-panel.ts#readsWhole)): highlight.js misreads some code and never closes
   what it opened, which would colour every hunk below.
 - **When.** Only while a worker's Changes or Reviews are open: on open, on a poll (`CHANGES_POLL_MS`), and when the
   worker's status leaves `working`. Claude edits through scripts as often as through its edit tools, so no tool event
-  is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/panels.ts#changesHandlers),
+  is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers),
   a machine on `/loop.js` that a renderer tells, on each draw, whose Changes are open (held reads,
   [[renderer-shared-modules]]).
 - **Viewed.** Each file carries a hash of its diff. A mark is `(path → hash)` per repo dir, kept with `tower.store`
@@ -45,12 +45,12 @@ request, never kept:
 - **Scopes.** All since the base is the whole of the work; a reviewer often wants a slice. The read takes a `scope`:
   `all`, `uncommitted` (the working tree since `HEAD`) or a commit's hash (that commit against its first parent), and
   each repo carries its `commits` since the base; a hash that isn't one of them shows nothing, so no ref but those
-  reaches git. A scope that no longer exists falls back to All ([`liveScope`](ref:hub/src/shared/panels.ts#liveScope)).
-  Each scope keeps its own marks ([`viewedKey`](ref:hub/src/shared/panels.ts#viewedKey)), since a file's diff differs
+  reaches git. A scope that no longer exists falls back to All ([`liveScope`](ref:hub/src/shared/changes-reads.ts#liveScope)).
+  Each scope keeps its own marks ([`viewedKey`](ref:hub/src/shared/changes-reads.ts#viewedKey)), since a file's diff differs
   between them. Notes anchor to the working tree's line numbers, so a commit's scope picks no lines.
-- **Layouts.** Unified or split ([`splitRows`](ref:hub/src/shared/panels.ts#splitRows) lays rows side by side as
+- **Layouts.** Unified or split ([`splitRows`](ref:hub/src/shared/changes-lines.ts#splitRows) lays rows side by side as
   indexes into the unified rows, so picking, the note box and anchors are the unified ones), and a tree of the changed
-  files beside the diffs ([`treeHtml`](ref:hub/src/shared/panels.ts#treeHtml)), both the viewer's choices kept in
+  files beside the diffs ([`treeHtml`](ref:hub/src/shared/changes-panel.ts#treeHtml)), both the viewer's choices kept in
   `tower.store`.
 - **Words.** An edited line has the words it changed marked: [`wordRanges`](ref:hub/src/shared/words.ts#wordRanges)
   diffs a removed line and the added line beside it by code token, bounded since it runs on the page's thread.
