@@ -34,6 +34,8 @@ import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
 import { configPath } from './shared/paths.ts'
 import { readConfig } from './system.ts'
 import { CliError } from './cli-error.ts'
+import { checkFolder, freezeFolder } from './extension-check.ts'
+import { plural } from './shared/format.ts'
 import { usageLine, type Run, type VerbOf } from './cli-verbs.ts'
 import { SHELF_KINDS } from './shelf.ts'
 
@@ -647,7 +649,25 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       console.log(read.extensions.length ? read.extensions.flatMap(extensionCliLines).join('\n') : 'The tower runs no extensions: the config adds them under extensions (docs/config.md).')
       return
     }
-    if (sub !== 'restart' || !arg || rest.length) throw new CliError(usageLine('extensions'))
+    if (!['restart', 'check', 'freeze'].includes(sub) || !arg || rest.length) throw new CliError(usageLine('extensions'))
+    if (sub === 'freeze') {
+      const frozen = freezeFolder(path.resolve(arg))
+      console.log(`Wrote ${frozen.file}: ${frozen.names} names of ${frozen.provides} at major ${frozen.major}.`)
+      return
+    }
+    if (sub === 'check') {
+      const views = await fetch(`${towerAt()}/extensions`).then(
+        async (res): Promise<Reads['extensions']['extensions']> => ((await res.json()) as Reads['extensions']).extensions,
+        () => undefined,
+      )
+      const { id, problems } = await checkFolder(path.resolve(arg), readConfig(configPath()), views)
+      for (const p of problems) console.log(`${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`)
+      if (!views) console.log(`note   not resolved against a running tower: none answers at ${towerAt()}`)
+      const errors = problems.filter((p) => p.level === 'error').length
+      if (errors) throw new CliError(`${id} would not load: ${plural(errors, 'error')}`)
+      console.log(`${id} checks out.`)
+      return
+    }
     const { state } = await command<Replies['extension/restart']>('extension/restart', { id: arg })
     console.log(state === 'started' ? `${arg} restarted.` : `${arg} is ${EXTENSION_STATE_NAME[state]}: \`tower extensions\` says why.`)
   },

@@ -40,7 +40,7 @@ export const extensionLine = (e: ExtensionView): string => {
 }
 
 /** A problem in a line: `invalid at settings.every: …`. */
-export const problemLine = (p: ExtensionProblem): string => `${p.code}${p.path ? ` at ${p.path}` : ''}${p.subject ? ` on ${p.subject}` : ''}: ${p.message}`
+export const problemLine = (p: Pick<ExtensionProblem, 'code' | 'path' | 'subject' | 'message'>): string => `${p.code}${p.path ? ` at ${p.path}` : ''}${p.subject ? ` on ${p.subject}` : ''}: ${p.message}`
 
 /** An extension in full: who it is, what it provides, where it is off, and every problem. */
 export const extensionTitle = (e: ExtensionView): string =>
