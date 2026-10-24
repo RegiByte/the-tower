@@ -7,6 +7,9 @@
  */
 import { z } from 'zod'
 import type { Board } from '../bridge/board.ts'
+import type { StreamFact } from '../bridge/streams.ts'
+
+export type { StreamFact }
 
 /** The minor the manifest's first keys, the start ctx and the load codes arrived in. */
 const SINCE = '1.81'
@@ -91,6 +94,12 @@ export type ExtensionView = {
   verbs: ExtensionVerb[]
 }
 
+/** An item of a collection, as `ctx.collections` lists it. `modifiedAt`: its version, epoch ms. */
+export type Item = { id: string; tag: string; size: number; modifiedAt: number }
+
+/** An item with what its collection's `parse` made of it; `undefined` without a `parse`. */
+export type ParsedItem = Item & { parsed: unknown }
+
 /**
  * Who a call is for, carried by every call. `t`: `user`, `worker` (`id` its session), `extension` (`id` its capability)
  * or `tower` (`id` the lane: `slot`); an open set, so a `t` a reader doesn't know is the strictest case it knows.
@@ -156,6 +165,9 @@ export type Client = { read: Record<string, (params?: Record<string, string>, qu
  */
 export type SessionFact = { name: string; value: unknown; at: number; session: string }
 
+/** Where a stream is: a `project` stream's facts are each floor's own; a `system` stream's are the tower's. */
+export type StreamAt = { project?: string }
+
 /** What `start` gets: who it is, its settings, timers and a log the tower clears and closes at halt, the board, and the calls. */
 export type StartCtx = {
   /** @since 1.81 */
@@ -191,7 +203,35 @@ export type StartCtx = {
   read(read: string, params?: Record<string, string>, query?: Record<string, string>): Promise<unknown>
   /** Each capability it requires, and each it wants (`undefined` while missing), as functions. @since 1.82 */
   deps: Record<string, Client | undefined>
+  /** Its own streams, each fact checked against its code's schema; a stream's months are read in a window of epoch ms. @since 1.83 */
+  streams: {
+    append(stream: string, at: StreamAt, code: string, fact: unknown): Promise<void>
+    read(stream: string, at: StreamAt, window?: { from?: number; to?: number }): AsyncIterable<StreamFact>
+  }
+  /** Logs `tower.x.<cap>.<name>` in a session's log, its value checked against the fact's schema. @since 1.83 */
+  facts: { append(session: string, name: string, value: unknown): Promise<void> }
+  /** Its own collections, on floors where it is on: the only writer of those it owns. @since 1.83 */
+  collections: {
+    list(project: string, name: string): Item[]
+    read(project: string, name: string, id: string): Promise<string>
+    create(project: string, name: string, item: { name: string; ext: string; content: string }): Promise<Item>
+    /** Refused when the item changed since `modifiedAt`. */
+    write(project: string, name: string, id: string, content: string, modifiedAt: number): Promise<Item>
+    delete(project: string, name: string, id: string): Promise<void>
+  }
+  /** Its own stores as the tower folds them, read-only: what folds get as `own`. @since 1.83 */
+  own: {
+    /** A stream's `reduce` state: a `project` stream's on that floor; its `init` before any fact. */
+    streams(name: string, project?: string): unknown
+    /** A collection's items on a floor, each with its `parse` result, parsed again only when its file changes. */
+    collections(project: string, name: string): ParsedItem[]
+    /** Its facts in the session's lineage, oldest first, each once. */
+    facts(session: string): SessionFact[]
+  }
 }
+
+/** A stream's fold: `step` takes each fact in order, from `init`. */
+export type Reduce = { init: unknown; step(state: any, fact: StreamFact): unknown }
 
 /** What a verb's or read's handler gets: the ctx, whose calls carry the handler's caller with its verb in `within`. */
 export type CallCtx = StartCtx & {
@@ -215,6 +255,10 @@ export type Started = {
   /** @since 1.82 */
   reads?: Record<string, ReadHandler>
   halt?: () => void | Promise<void>
+  /** Per collection, what an item's text means, cached by its version. @since 1.83 */
+  parse?: Record<string, (text: string, item: Item) => unknown>
+  /** Per stream, its fold. @since 1.83 */
+  reduce?: Record<string, Reduce>
 }
 
 /** The default export of an extension's server module. */
@@ -250,12 +294,16 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
     call: CALLS,
     read: CALLS,
     deps: CALLS,
+    streams: { append: STORES, read: STORES },
+    facts: { append: STORES },
+    collections: { list: STORES, read: STORES, create: STORES, write: STORES, delete: STORES },
+    own: { streams: STORES, collections: STORES, facts: STORES },
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
 }
 
 /** The keys `start` may return. */
-export const STARTED_KEYS = ['halt', 'verbs', 'reads'] as const
+export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce'] as const
 
 const sinceAt =
   (version: string) =>

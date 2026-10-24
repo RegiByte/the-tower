@@ -21,16 +21,16 @@ const visible = (dir: string): string[] => (existsSync(dir) ? readdirSync(dir).f
  * of their own as they save: one gone between the listing and its stat is skipped.
  */
 export const scanCollections = (paths: SystemPaths): CollectionItem[] =>
-  visible(paths.collections).flatMap((project) =>
-    visible(path.join(paths.collections, project)).flatMap((collection) =>
-      visible(path.join(paths.collections, project, collection))
-        .sort()
-        .flatMap((id) => {
-          const stat = statSync(path.join(paths.collections, project, collection, id), { throwIfNoEntry: false })
-          return stat ? [{ project, collection, id, size: stat.size, modifiedAt: versionOf(stat) }] : []
-        }),
-    ),
-  )
+  visible(paths.collections).flatMap((project) => visible(path.join(paths.collections, project)).flatMap((collection) => itemsIn(paths, project, collection)))
+
+/** One collection's items on disk, in id order: none while it has no directory. */
+export const itemsIn = (paths: SystemPaths, project: string, collection: string): CollectionItem[] =>
+  visible(path.join(paths.collections, project, collection))
+    .sort()
+    .flatMap((id) => {
+      const stat = statSync(path.join(paths.collections, project, collection, id), { throwIfNoEntry: false })
+      return stat ? [{ project, collection, id, size: stat.size, modifiedAt: versionOf(stat) }] : []
+    })
 
 /** An item's file. Ids are plain file names: no directories, no dot files. */
 export const itemPath = (paths: SystemPaths, project: string, collection: string, id: string): string => {

@@ -59,6 +59,9 @@ export const sessionLogPath = (paths: SystemPaths, id: string): string => path.j
 /** The directory of the system's streams, one directory each. */
 export const systemStreamsPath = (paths: SystemPaths): string => path.join(paths.streams, 'system')
 
+/** The directory of a system stream. */
+export const systemStreamPath = (paths: SystemPaths, stream: string): string => path.join(systemStreamsPath(paths), stream)
+
 /** The directory of every project's streams: `<project>/<stream>/`, one directory each. */
 export const projectsStreamsPath = (paths: SystemPaths): string => path.join(paths.streams, 'projects')
 

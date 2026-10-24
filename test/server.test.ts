@@ -57,6 +57,7 @@ function seed(port: number) {
   const events = [
     [0.1, 'o', 'a session\r\n'],
     [0.2, 'h', { hook_event_name: 'tower.show', kind: 'file', target: SHOWN }],
+    [0.25, 'h', { hook_event_name: 'tower.x.pulse.beat', value: 1 }],
     [0.3, 'x', { exitCode: 0 }],
   ]
   writeFileSync(path.join(ROOT, 'sessions', `${SESSION}.jsonl`), [header, ...events].map((line) => JSON.stringify(line)).join('\n') + '\n')
@@ -242,6 +243,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     verbs: [
       { name: 'pulse/ping', scope: 'project', words: { label: 'Ping', hint: 'rings chime for the floor' } },
       { name: 'pulse/pong', scope: 'system', deprecated: { since: '1.0', use: 'pulse/ping', why: 'a ping names its floor' } },
+      { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
     ],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
@@ -255,10 +257,30 @@ test("server: an extension's owned collection joins its floor, and refuses the g
   const msg = (await firstEvent('/board')) as BoardMsg
   assert.ok('board' in msg)
   const pulse = msg.board.floors.find((f) => f.id === 'lab')!.collections.find((c) => c.id === 'pulse')!
-  assert.deepEqual([pulse.label, pulse.owner, pulse.doors?.create], ['Beats', 'pulse', { none: 'A beat is made only by pulse.' }])
+  assert.deepEqual([pulse.label, pulse.owner, pulse.doors?.create], ['Beats', 'pulse', 'pulse/beat'])
   const refused = await post('collection/create', { project: 'lab', collection: 'pulse', name: 'by hand', ext: 'md', content: '1' })
-  assert.deepEqual(JSON.parse(refused.body), { t: 'error', code: 'refused', message: 'pulse owns pulse: only pulse writes it (A beat is made only by pulse.)' })
+  assert.deepEqual(JSON.parse(refused.body), { t: 'error', code: 'refused', message: 'pulse owns pulse: use pulse/beat' })
   assert.equal(errorCode(await get('/collection/lab/pulse/none.md')), 'not_found')
+})
+
+/** What `read` answers once `holds` is true of it, read again every 50 ms: the tower folds a write once it settles. */
+async function settled<T>(read: () => Promise<T>, holds: (value: T) => boolean): Promise<T> {
+  for (let tries = 0; ; tries++) {
+    const value = await read()
+    if (holds(value) || tries === 40) return value
+    await new Promise((done) => setTimeout(done, 50))
+  }
+}
+
+test("server: an extension writes its owned collection and its stream through its verb, and its read answers with what the tower folds of them and a session's facts", async () => {
+  const beat = await post('pulse/beat', { project: 'lab' })
+  assert.equal(beat.status, 200, beat.body)
+  const { item } = JSON.parse(beat.body)
+  assert.equal((await get(`/collection/lab/pulse/${item}`)).body, 'beat 1\n')
+  type Kept = { beats: { count: number; items: string[] }; items: unknown[]; facts: { name: string; value: unknown; session: string }[] }
+  const kept = await settled(async (): Promise<Kept> => JSON.parse((await get(`/pulse/kept/lab?session=${SESSION}`)).body), (k) => k.beats.count === 1 && k.items.length === 1)
+  assert.deepEqual([kept.beats, kept.items], [{ count: 1, items: [item] }, [{ beat: 'beat 1' }]])
+  assert.deepEqual(kept.facts.map(({ name, value, session }) => ({ name, value, session })), [{ name: 'beat', value: 1, session: SESSION }])
 })
 
 test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {

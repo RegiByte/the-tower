@@ -2,7 +2,7 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs, pings through chime reads its beat and keeps its beats: the fixture the server test boots.",
+  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, and keeps its beats: the fixture the server test boots.",
   "requires": { "tower": "1.83", "chime": "1.0" },
   "server": "server.ts",
   "settings": {
@@ -30,6 +30,17 @@
       "reply": { "type": "object", "required": ["pong"], "properties": { "pong": { "const": true } } },
       "scope": "system",
       "deprecated": { "since": "1.0", "use": "pulse/ping", "why": "a ping names its floor" }
+    },
+    "beat": {
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project"],
+        "properties": { "project": { "type": "string" }, "session": { "type": "string" } }
+      },
+      "reply": { "type": "object", "required": ["item"], "properties": { "item": { "type": "string" } } },
+      "scope": "project",
+      "words": { "label": "Beat", "hint": "keeps a beat on the floor, and as a fact of the session when one is named" }
     }
   },
   "reads": {
@@ -41,6 +52,16 @@
       },
       "scope": "project",
       "description": "How often it beats on the floor."
+    },
+    "kept/<project>": {
+      "query": { "type": "object", "additionalProperties": false, "properties": { "session": { "type": "string" } } },
+      "reply": {
+        "type": "object",
+        "required": ["beats", "items", "facts"],
+        "properties": { "beats": { "type": "object" }, "items": { "type": "array" }, "facts": { "type": "array" } }
+      },
+      "scope": "project",
+      "description": "What it keeps on the floor as the tower folds it: its beats stream reduced, its items parsed, and a session's beat facts."
     }
   },
   "collections": {
@@ -49,9 +70,9 @@
       "description": "One file per beat, written only by pulse.",
       "owned": true,
       "doors": {
-        "list": "tower/board",
+        "list": "pulse/kept/<project>",
         "read": "tower/collection/<project>/<collection>/<item>",
-        "create": { "none": "A beat is made only by pulse." },
+        "create": "pulse/beat",
         "edit": { "none": "A beat is never rewritten." },
         "delete": { "none": "Beats are kept." }
       }

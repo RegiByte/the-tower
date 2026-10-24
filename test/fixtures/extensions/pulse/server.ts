@@ -1,5 +1,7 @@
 import type { Start } from '../../../../src/shared/extensions.ts'
 
+type Beats = { count: number; items: string[] }
+
 const start: Start = (ctx) => {
   const { every, line } = ctx.settings as { every: number; line?: string }
   ctx.every(every, () => ctx.log(line ?? 'pulse'))
@@ -7,10 +9,23 @@ const start: Start = (ctx) => {
     verbs: {
       ping: async ({ project, times }: { project: string; times?: number }, call) => ({ project, chimed: await call.deps.chime!.ring({ times }) }),
       pong: () => ({ pong: true }),
+      beat: async ({ project, session }: { project: string; session?: string }) => {
+        const item = await ctx.collections.create(project, 'pulse', { name: 'beat', ext: 'md', content: `beat ${ctx.collections.list(project, 'pulse').length + 1}\n` })
+        await ctx.streams.append('beats', { project }, 'b', { item: item.id })
+        if (session) await ctx.facts.append(session, 'beat', 1)
+        return { item: item.id }
+      },
     },
     reads: {
       'beats/<project>': ({ params }) => ({ project: params.project, every }),
+      'kept/<project>': ({ params, query }: { params: Record<string, string>; query: { session?: string } }) => ({
+        beats: ctx.own.streams('beats', params.project),
+        items: ctx.own.collections(params.project, 'pulse').map((i) => i.parsed),
+        facts: query.session ? ctx.own.facts(query.session) : [],
+      }),
     },
+    parse: { pulse: (text) => ({ beat: text.trim() }) },
+    reduce: { beats: { init: { count: 0, items: [] }, step: (state: Beats, [, , fact]) => ({ count: state.count + 1, items: [...state.items, (fact as { item: string }).item] }) } },
     halt: () => ctx.log('halted'),
   }
 }

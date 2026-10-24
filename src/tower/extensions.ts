@@ -33,7 +33,8 @@ import type { Reads } from '../shared/shelf-page.ts'
 import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
-import type { ConfigResource, TowerResources, TowerSystem } from './spine.ts'
+import type { ConfigResource, SystemResource, TowerResources, TowerSystem } from './spine.ts'
+import { storesOf } from './stores.ts'
 import { offOn } from '../bridge/stores.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
@@ -137,14 +138,35 @@ const namesMismatch = (lane: 'verbs' | 'reads', declared: string[], given: unkno
   ]
 }
 
-/** Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb and read it declares, no more. */
+/** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
+const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
+  isObject(lane) ? Object.keys(lane).filter((name) => !Object.hasOwn(declared ?? {}, name)) : []
+
+/**
+ * Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb and read it declares, no
+ * more, and a `parse` or `reduce` only for a collection or stream it declares.
+ */
 const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
   if (!isObject(started)) return `start returned ${JSON.stringify(started)}: it returns an object of what its manifest declares`
   const undeclared = Object.keys(started).filter((key) => !(STARTED_KEYS as readonly string[]).includes(key))
   if (undeclared.length) return `start returned ${undeclared.join(', ')}, which its manifest doesn't declare`
   if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
-  const lanes = [...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs), ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads)]
-  return lanes.length ? lanes.join('; ') : undefined
+  const calls = [...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs), ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads)]
+  if (calls.length) return calls.join('; ')
+  const lanes = [
+    { key: 'parse', declared: manifest.collections, what: 'collections', is: (f: unknown) => typeof f === 'function', shape: 'a function (text, item)' },
+    { key: 'reduce', declared: manifest.streams, what: 'streams', is: (r: unknown) => isObject(r) && 'init' in r && typeof r.step === 'function', shape: '{ init, step }' },
+  ]
+  for (const { key, declared, what, is, shape } of lanes) {
+    const lane = started[key]
+    if (lane === undefined) continue
+    if (!isObject(lane)) return `start returned a ${key} that is no object: one entry per name of its ${what}`
+    const extra = undeclaredIn(lane, declared)
+    if (extra.length) return `start returned a ${key} for ${extra.join(', ')}, which its manifest doesn't declare under ${what}`
+    const bad = Object.keys(lane).filter((name) => !is(lane[name]))
+    if (bad.length) return `start returned a ${key} for ${bad.join(', ')} that is not ${shape}`
+  }
+  return undefined
 }
 
 /**
@@ -178,6 +200,7 @@ type Deps = {
   'core:dispatch': DispatchResource
   'core:http': HttpResource
   'core:extensions': ExtensionsResource
+  'core:system': SystemResource
 } & Record<string, unknown>
 
 /** What every extension starts after: the core's pieces its ctx reaches, the dispatch its calls go through, and the server its core reads are read from. */
@@ -194,12 +217,15 @@ const clientOf = (cap: string, manifest: Manifest, call: StartCtx['call'], read:
  * fails. Its instance answers each call with a ctx of its own, whose calls carry that call's caller one step deeper.
  */
 async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<Instance> {
-  const { 'core:config': config, 'core:publisher': publisher, 'core:dispatch': dispatch, 'core:http': http, 'core:extensions': holder } = deps
+  const { 'core:config': config, 'core:publisher': publisher, 'core:dispatch': dispatch, 'core:http': http, 'core:extensions': holder, 'core:system': live } = deps
   const controller = new AbortController()
   const timers = new Set<NodeJS.Timeout>()
+  const on = (project: string) => !offOn(config.read(), project, a.chain)
+  const stores = storesOf(a, config, live, on)
   const dispose = () => {
     for (const timer of timers) clearInterval(timer)
     timers.clear()
+    stores.stop()
     controller.abort()
   }
   const log = (message: string) => console.log(`${a.id}: ${message}`)
@@ -256,7 +282,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       const now = config.read()
       return a.schema?.parse({ ...now.extensions?.[a.id]?.settings, ...now.projects[project]?.extensions?.[a.id]?.settings })
     },
-    on: (project) => !offOn(config.read(), project, a.chain),
+    on,
     every: (ms, fn) =>
       void timers.add(
         setInterval(() => void Promise.resolve().then(fn).catch((err) => console.error(`${a.id}: every ${ms} ms:`, err)), ms),
@@ -265,6 +291,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     signal: controller.signal,
     board: () => publisher.board(),
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
+    ...stores.ctx,
   }
   /** The ctx a handler of `qualified` gets: its caller, and calls made one step deeper. */
   const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, ...callsOf(nestedIn(caller, qualified)) })
@@ -281,6 +308,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       haltLate(started)
       throw new MismatchError(mismatch)
     }
+    stores.attach(started)
     const instance: Instance = {
       manifest: a.manifest,
       halting: false,

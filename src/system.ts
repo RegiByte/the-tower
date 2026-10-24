@@ -166,6 +166,41 @@ const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams:
   return { streams, files }
 }
 
+/** A stream folded as its facts arrive: `system`'s one, or each project's. */
+export type StreamFold = { stream: string; scope: 'system' | 'project'; init: unknown; step: (state: unknown, fact: StreamFact) => unknown; label: string }
+
+/** Where a fold stands on one stream: its state after `count` facts. */
+type Folded = { state: unknown; count: number }
+
+/** A value made read-only all the way down: a fold's state is shared by every reader. */
+export const frozen = <T>(value: T): T => {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value)
+    for (const inner of Object.values(value)) frozen(inner)
+  }
+  return value
+}
+
+/**
+ * The fold of one stream from where it stood: a stream only grows, so only facts past `count` are stepped; one that
+ * holds fewer facts (a month removed by hand) is folded again from `init`. A step that throws stops the fold before
+ * that fact, to be tried again when the stream grows.
+ */
+const foldOn = (fold: StreamFold, facts: StreamFact[], held: Folded | undefined): Folded => {
+  const from = held && facts.length >= held.count ? held : { state: frozen(fold.init), count: 0 }
+  let { state, count } = from
+  for (const fact of facts.slice(count)) {
+    try {
+      state = frozen(fold.step(state, fact))
+      count++
+    } catch (err) {
+      console.error(`${fold.label}: a fact of ${fold.stream} threw in its reduce, and the fold stops before it:`, err)
+      break
+    }
+  }
+  return { state, count }
+}
+
 export type System = {
   /** Newest first. */
   sessions: () => Session[]
@@ -186,6 +221,11 @@ export type System = {
   probeReads: (name: string) => ProbeReading[]
   /** Every stream's month files on disk, by path under `streams/`. */
   streamMonths: () => StreamMonth[]
+  /**
+   * Folds a stream as its facts arrive until `stop`: `state` is the system's, or a project's, frozen; `init` before any
+   * fact. A fold that moves is a change.
+   */
+  foldStream: (fold: StreamFold) => { state: (project?: string) => unknown; stop: () => void }
   /** `undefined` while no host is running. */
   live: () => HostLive | undefined
   running: () => Resource[]
@@ -246,6 +286,36 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let shells: Shell[] | undefined
   let repos = new Map<string, RepoRead>()
   const awaited = new Map<string, () => void>()
+  /** Each stream fold: its files as read, and where it stands, by project (`''` for the system's). */
+  const folds = new Map<StreamFold, { files: Map<string, HeldFacts>; at: Map<string, Folded> }>()
+
+  /** Folds `fold` on to what its stream holds now; whether it moved. */
+  const refold = (fold: StreamFold): boolean => {
+    const held = folds.get(fold)!
+    const files = new Map<string, HeldFacts>()
+    const dirs: [string, string][] =
+      fold.scope === 'system'
+        ? [['', path.join(systemStreamsPath(paths), fold.stream)]]
+        : readdirSync(projectsStreamsPath(paths)).map((project) => [project, path.join(projectsStreamsPath(paths), project, fold.stream)])
+    let moved = false
+    const at = new Map(
+      dirs.flatMap(([key, dir]) => {
+        if (!existsSync(dir)) return []
+        const before = held.at.get(key)
+        const next = foldOn(fold, streamIn(dir, held.files, files), before)
+        moved ||= next.count !== before?.count || next.state !== before?.state
+        return [[key, next] as const]
+      }),
+    )
+    folds.set(fold, { files, at })
+    return moved
+  }
+
+  const refoldAll = (scope: StreamFold['scope']) => {
+    let moved = false
+    for (const fold of folds.keys()) if (fold.scope === scope) moved = refold(fold) || moved
+    if (moved) onChange()
+  }
 
   /**
    * Folds the log so far, from its checkpoint on, then keeps folding what the host appends while the session runs, until
@@ -350,7 +420,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   }
   const scheduleStreams = () => {
-    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams())), RESCAN_DEBOUNCE_MS)
+    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams(), refoldAll('system'))), RESCAN_DEBOUNCE_MS)
   }
 
   /** A policy's fact appends a line: its project's streams are folded again once the write settles. */
@@ -364,7 +434,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   }
   const schedulePolicyStreams = () => {
-    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams())), RESCAN_DEBOUNCE_MS)
+    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams(), refoldAll('project'))), RESCAN_DEBOUNCE_MS)
   }
 
   /** Every read below that fails keeps its last read, and the failure goes to the tower's log: the next poll reads again. */
@@ -502,6 +572,14 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     policies: () => policyFiles,
     policyFacts: () => policies,
     probes: () => probes,
+    foldStream: (fold) => {
+      folds.set(fold, { files: new Map(), at: new Map() })
+      refold(fold)
+      return {
+        state: (project) => (folds.get(fold)?.at.get(project ?? '')?.state ?? frozen(fold.init)),
+        stop: () => void folds.delete(fold),
+      }
+    },
     probeReads: (name) => probeStreams.get(name) ?? [],
     streamMonths: () =>
       [...streamFiles, ...policyStreamFiles].map(([file, { bytes }]) => ({ file: path.relative(paths.streams, file), archived: isArchived(file), bytes })),
