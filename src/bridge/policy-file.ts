@@ -5,17 +5,9 @@
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { SPAWN_FIELDS } from '../shared/api.ts'
-import { cronProblem, type PolicyHeader, type Problem } from '../shared/policies.ts'
+import type { PolicyHeader, Problem } from '../shared/policies.ts'
+import { cronProblem, isZone } from '../shared/slots.ts'
 import type { Parsed } from './policies.ts'
-
-const isZone = (tz: string): boolean => {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: tz })
-    return true
-  } catch {
-    return false
-  }
-}
 
 const Cron = z.string().superRefine((cron, ctx) => {
   const problem = cronProblem(cron)

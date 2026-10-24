@@ -35,6 +35,7 @@ export const MODULES: Record<string, string> = {
   '/press.js': path.join(SHARED, 'press.ts'),
   '/toasts.js': path.join(SHARED, 'toasts.ts'),
   '/policies.js': path.join(SHARED, 'policies.ts'),
+  '/slots.js': path.join(SHARED, 'slots.ts'),
   '/loop.js': path.join(SHARED, 'loop.ts'),
   '/reads.js': path.join(SHARED, 'reads.ts'),
   '/viewer.js': path.join(SHARED, 'viewer.ts'),

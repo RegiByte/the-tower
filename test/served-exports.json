@@ -952,6 +952,23 @@
       "standingWords",
       "zoneCity"
     ],
+    "/slots.js": [
+      "ON_TIME_MS",
+      "cronFields",
+      "cronProblem",
+      "dueSlot",
+      "isCron",
+      "isZone",
+      "listed",
+      "nextSlot",
+      "onTimeSlot",
+      "periodMs",
+      "periodProblem",
+      "ruleWords",
+      "slotWords",
+      "slotsBetween",
+      "zoneCity"
+    ],
     "/loop.js": [
       "loop",
       "timers"

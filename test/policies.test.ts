@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName, type PolicyFile, type PolicyView } from '../src/bridge/policies.ts'
 import { hashOf, parsePolicy } from '../src/bridge/policy-file.ts'
-import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing, type When } from '../src/shared/policies.ts'
+import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing } from '../src/shared/policies.ts'
+import type { When } from '../src/shared/slots.ts'
 
 const MIN = 60_000
 const policyText = (header: string, prose = 'Do the work.') => `# Bug hunt\n\n\`\`\`json\n${header}\n\`\`\`\n\n${prose}\n`
