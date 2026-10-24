@@ -101,8 +101,9 @@ and versioned without running anything, and a runtime where an extension's failu
 - **Stores (1.83).** A manifest declares `collections`, `streams` and session `facts`, each named by its capability:
   a collection `<cap>` or `<cap>.<name>`, a stream at `streams/{system|projects/<p>}/<cap>.<name>/`, a fact
   `tower.x.<cap>.<name>`. The loader refuses a collection named apart from its capability, an owned one without all
-  five doors, a door that names no verb or read of its owner's manifest, a deprecated one, another capability's, or
-  anything of the core's but a read (`tower/board`, `tower/collection/<project>/<collection>/<item>`), a stream
+  five doors, a door that reads (`list`, `read`) naming anything but a read of its owner's or of the core's
+  (`tower/board`, `tower/collection/<project>/<collection>/<item>`), a door that acts (`create`, `edit`, `delete`, a
+  stream's `append`) naming anything but a verb of its owner's, a deprecated one, a stream
   fact code that is not one letter, and any schema the tower can't read. An accepted extension's collections join
   the floors it is on ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections), [[collections]]); an
   owned one refuses the generic writes, naming its create door

@@ -160,23 +160,33 @@ const CORE_READS: string[] = Object.keys({
   extensions: true,
 } satisfies Record<keyof Reads | Query | 'board', true>)
 
-/** Why a door can't be one: it names no verb or read of its store's owner, or no read of the core's, or a deprecated one. */
-const doorProblem = (manifest: Manifest, provides: string, door: string): string | undefined => {
-  const { cap, name } = qualifiedOf(door)!
-  if (cap === 'tower') return CORE_READS.includes(name) ? undefined : `${door} is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)`
-  if (cap !== provides) return `${door} is ${cap}'s: a door names a verb or read of ${provides} or of the core (tower/…)`
-  const named = manifest.verbs?.[name] ?? manifest.reads?.[name]
-  if (!named) return `${door} names no verb or read of ${provides}'s manifest`
-  return named.deprecated ? `${door} is deprecated since ${named.deprecated.since}: a door names what is current${named.deprecated.use ? `, ${named.deprecated.use}` : ''}` : undefined
+/** The doors that read a store: each names a read. The rest act on it: each names a verb of its owner's. */
+const READ_DOORS = ['list', 'read']
+
+/**
+ * Why a door can't be one: a door that reads names a read of its owner's or of the core's, a door that acts names a
+ * verb of its owner's, and neither names a deprecated one.
+ */
+const doorProblem = (manifest: Manifest, provides: string, door: string, to: string): string | undefined => {
+  const { cap, name } = qualifiedOf(to)!
+  const reads = READ_DOORS.includes(door)
+  if (cap === 'tower') {
+    if (!reads) return `${door} is a door that acts, and ${to} is the core's: it names a verb of ${provides}'s, the one writer of the store`
+    return CORE_READS.includes(name) ? undefined : `${to} is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)`
+  }
+  if (cap !== provides) return `${to} is ${cap}'s: a door names a verb or read of ${provides} or of the core (tower/…)`
+  const named = reads ? manifest.reads?.[name] : manifest.verbs?.[name]
+  if (!named) return `${door} is a door that ${reads ? 'reads' : 'acts'}, and ${to} names no ${reads ? 'read' : 'verb'} of ${provides}'s manifest`
+  return named.deprecated ? `${to} is deprecated since ${named.deprecated.since}: a door names what is current${named.deprecated.use ? `, ${named.deprecated.use}` : ''}` : undefined
 }
 
 /**
  * What a manifest's stores break of the rules its schema can't say: a collection is named `<provides>` or
- * `<provides>.<name>`, and a door names a verb or read of the store's owner that isn't deprecated, or a read of the core's.
+ * `<provides>.<name>`, and a door names a current read (of the owner's or the core's) to read, or a verb of the owner's to act.
  */
 const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] => {
   const doorsAt = (doors: Record<string, unknown> | undefined, at: string) =>
-    Object.entries(doors ?? {}).flatMap(([door, to]) => (typeof to === 'string' ? [{ at: `${at}.doors.${door}`, to }] : []))
+    Object.entries(doors ?? {}).flatMap(([door, to]) => (typeof to === 'string' ? [{ door, at: `${at}.doors.${door}`, to }] : []))
   const doors = [
     ...Object.entries(manifest.collections ?? {}).flatMap(([name, c]) => doorsAt(c.doors, `collections.${name}`)),
     ...Object.entries(manifest.streams ?? {}).flatMap(([name, s]) => doorsAt(s.doors, `streams.${name}`)),
@@ -185,8 +195,8 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
     ...Object.keys(manifest.collections ?? {})
       .filter((name) => name !== provides && !name.startsWith(`${provides}.`))
       .map((name) => error('invalid', `collection ${name} is named by the capability: ${provides}, or ${provides}.<name>`, `collections.${name}`)),
-    ...doors.flatMap(({ at, to }) => {
-      const problem = doorProblem(manifest, provides, to)
+    ...doors.flatMap(({ door, at, to }) => {
+      const problem = doorProblem(manifest, provides, door, to)
       return problem ? [error('invalid', problem, at)] : []
     }),
   ]

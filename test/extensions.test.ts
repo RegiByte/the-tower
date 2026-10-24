@@ -177,14 +177,18 @@ test("stores break their loader rules at their paths: a collection named apart f
   assert.equal(problem('coded')[0], 'streams.beats.facts.bb')
 })
 
-test("a door names a verb or read its owner declares and hasn't deprecated, or a read of the core's", () => {
-  const owned = (doors: object) => ({ verbs: KEEP, collections: { pulse: { label: 'B', description: 'd', owned: true, doors: { ...DOORS, ...doors } } } })
+test("a door that reads names a read of its owner's or the core's, a door that acts a verb of its owner's, neither deprecated", () => {
+  const owned = (doors: object) => ({ verbs: KEEP, reads: { 'kept/<project>': { reply: { type: 'object' }, scope: 'project' } }, collections: { pulse: { label: 'B', description: 'd', owned: true, doors: { ...DOORS, ...doors } } } })
   const message = (doors: object) => {
     const r = resolved([ext('pulse', owned(doors))])
     return r.refused.get('pulse')?.problems.map((p) => [p.path, p.message])
   }
   assert.equal(message({}), undefined)
-  assert.deepEqual(message({ create: 'pulse/make' }), [['collections.pulse.doors.create', "pulse/make names no verb or read of pulse's manifest"]])
+  assert.equal(message({ list: 'pulse/kept/<project>' }), undefined)
+  assert.deepEqual(message({ create: 'pulse/make' }), [['collections.pulse.doors.create', "create is a door that acts, and pulse/make names no verb of pulse's manifest"]])
+  assert.deepEqual(message({ edit: 'pulse/kept/<project>' }), [['collections.pulse.doors.edit', "edit is a door that acts, and pulse/kept/<project> names no verb of pulse's manifest"]])
+  assert.deepEqual(message({ read: 'pulse/keep' }), [['collections.pulse.doors.read', "read is a door that reads, and pulse/keep names no read of pulse's manifest"]])
+  assert.deepEqual(message({ create: 'tower/board' }), [['collections.pulse.doors.create', "create is a door that acts, and tower/board is the core's: it names a verb of pulse's, the one writer of the store"]])
   assert.deepEqual(message({ create: 'pulse/stamp' }), [['collections.pulse.doors.create', 'pulse/stamp is deprecated since 1.0: a door names what is current, pulse/keep']])
   assert.deepEqual(message({ list: 'tower/spawn' }), [['collections.pulse.doors.list', "tower/spawn is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)"]])
 })
