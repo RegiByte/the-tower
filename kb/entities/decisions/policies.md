@@ -8,10 +8,11 @@
   "date": "2026-10-13",
   "reviewed": "2026-10-24",
   "refs": [
-    "hub/src/shared/policies.ts#cronFields",
-    "hub/src/shared/policies.ts#ruleWords",
-    "hub/src/shared/policies.ts#slotWords",
-    "hub/src/shared/policies.ts#slotsBetween",
+    "hub/src/shared/slots.ts#cronFields",
+    "hub/src/shared/slots.ts#ruleWords",
+    "hub/src/shared/slots.ts#slotWords",
+    "hub/src/shared/slots.ts#slotsBetween",
+    "hub/src/slots.ts#runSlots",
     "hub/src/shared/policies.ts#standing",
     "hub/src/shared/policies.ts#standingWords",
     "hub/src/shared/policies.ts#decide",
@@ -25,7 +26,7 @@
     "hub/src/bridge/policies.ts#runsRead",
     "hub/src/bridge/streams.ts#streamFacts",
     "hub/src/streams.ts#appendFact",
-    "hub/src/policies.ts#runPolicies",
+    "hub/src/policies.ts#policySlots",
     "hub/src/policies.ts#runCheck",
     "hub/src/tower/dispatch.ts#runPolicy",
     "hub/src/tower/dispatch.ts#passPolicy",
@@ -63,10 +64,10 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   failing closed on a constraint this tower doesn't know; a runner's own data goes under `x`; no version key. Parsing
   is total ([`parsePolicy`](ref:hub/src/bridge/policy-file.ts#parsePolicy)): an invalid policy is still on the
   board, its problems at their paths. The hash is the file's bytes ([`hashOf`](ref:hub/src/bridge/policy-file.ts#hashOf)).
-- *Crons the tower can say.* Only a subset ([`cronFields`](ref:hub/src/shared/policies.ts#cronFields)), so every
-  display reads [`ruleWords`](ref:hub/src/shared/policies.ts#ruleWords) ("weekdays at 09:30 and 15:00 (New York)")
-  and [`slotWords`](ref:hub/src/shared/policies.ts#slotWords); day of month and day of week never both, and never a bare `*` minute (every minute is too often for standing work). Slots over
-  croner ([`slotsBetween`](ref:hub/src/shared/policies.ts#slotsBetween)), in `tz` or the machine's zone: a
+- *Crons the tower can say.* Only a subset ([`cronFields`](ref:hub/src/shared/slots.ts#cronFields)), so every
+  display reads [`ruleWords`](ref:hub/src/shared/slots.ts#ruleWords) ("weekdays at 09:30 and 15:00 (New York)")
+  and [`slotWords`](ref:hub/src/shared/slots.ts#slotWords); day of month and day of week never both, and never a bare `*` minute (every minute is too often for standing work). Slots over
+  croner ([`slotsBetween`](ref:hub/src/shared/slots.ts#slotsBetween)), in `tz` or the machine's zone: a
   spring-forward time is skipped, a repeated one runs once. On time means within 5 minutes; a later slot is missed,
   and nothing records it.
 - *One fact per slot seen.* `streams/projects/<project>/runs/` holds `r` (a run: policy, hash, slot or `null` by hand,
@@ -92,8 +93,10 @@ approval, live counts, the reason a slot did nothing) can be derived ([[logs-are
   with no slot or at one; a check exited or errored: unions, so each reader narrows), and
   [`decide`](ref:hub/src/shared/policies.ts#decide) what a runner does with a due slot, from the board alone: held
   while live is full; the check first; run when `auto` and approved; else offered. The tower's
-  [`runPolicies`](ref:hub/src/policies.ts#runPolicies) calls it every 30 s per floor, runs the checks
-  ([`runCheck`](ref:hub/src/policies.ts#runCheck): `sh -c` from the hub, the parent session scrubbed
+  [`policySlots`](ref:hub/src/policies.ts#policySlots), a source of the core's slot loop
+  ([`runSlots`](ref:hub/src/slots.ts#runSlots), which fires the extensions' slots beside it, [[extensions]]), calls it
+  every 30 s per floor, runs the checks
+  ([`runCheck`](ref:hub/src/policies.ts#runCheck): `sh -c` from the hub through the core's runner, the parent session scrubbed
   ([[env-scrub]]), its process group killed by its pid at 60 s; exit 0 work, 1 none, else failed) and carries the
   rest out through the verbs, as any other runner could. It acts only on policies naming no `runner`.
 - *Where it shows.* [`standingWords`](ref:hub/src/shared/policies.ts#standingWords) is the one sentence of where a

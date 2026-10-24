@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -23,9 +23,10 @@ and versioned without running anything, and a runtime where an extension's failu
 
 - **The manifest declares, the code implements.** A folder holds `extension.json`, parsed by
   [`Manifest`](ref:hub/src/shared/extensions.ts#Manifest), and optionally a `server` module whose default export is
-  `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`): a handler
-  for each of its verbs and reads, a `parse` or `reduce` only for a collection or stream it declares, a link per
-  `around` entry, an answer per `answers` entry, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
+  `start(ctx)`. What `start` returns must match what the manifest declares, no more and no fewer (`mismatch`,
+  [`mismatchOf`](ref:hub/src/bridge/extensions.ts#mismatchOf)): a handler for each of its verbs, reads and slots, a
+  board trigger exactly when it declares one, a `parse` or `reduce` only for a collection or stream it declares, a
+  link per `around` entry, an answer per `answers` entry, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
   are free, and `views` and `regions` are validated against their reserved shapes and not read (`not-yet`). Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
@@ -90,8 +91,12 @@ and versioned without running anything, and a runtime where an extension's failu
   when the config changes and hands braided's `reconcileSystem` the next resources, each memoized by a
   [hash](ref:hub/src/tower/extensions.ts#hashOf) of its id, manifest, settings, files and dependencies: what the edit
   leaves unchanged keeps running, a changed one restarts with its dependents, and the board is published again. A
-  restart imports the server module afresh, and only it: the modules it imports stay as Node first loaded them, so an
-  edit to one of those needs the tower restarted.
+  code edit waits for a restart on request: `extension/restart` (`tower extensions restart <id>`) counts one more
+  restart into the extension's hash, so its resource is new and braided restarts it with its dependents, its state
+  `restarting` and its calls `unavailable` meanwhile. Node never evicts a module, so each start imports its server
+  module under `?v=<hash>`, and a resolve hook carries that version to every module it imports inside its folder,
+  `node_modules` aside ([`importFresh`](ref:hub/src/fresh-imports.ts#importFresh)): the folder's whole graph loads
+  again, what lies outside it stays one instance, and each old graph stays in memory until the tower restarts.
 - **Off by capability, per floor, derived.** `extensions.<id>.off` turns one off everywhere;
   `projects.<p>.capabilities.<cap>.off` turns a capability off on a floor, and with it every extension whose chain of
   requires holds it ([`offOn`](ref:hub/src/bridge/stores.ts#offOn)). Per-floor off is a filter, never a restart,
@@ -179,13 +184,40 @@ and versioned without running anything, and a runtime where an extension's failu
   answers is a refusal, no problem. An answerer off on the payload's `project` is not asked. `/schema` lists every
   hook under `hooks`, the core's with its `x-since`; `GET /extensions` lists each hook's `answers`. The provider applies
   its hook's `failure` to the answers it gets back; the core's `refuses` stops the discard and names the answerer.
+- **Triggers and checks (1.86).** A manifest's `slots` name a rule each, `When` in
+  [`slots.ts`](ref:hub/src/shared/slots.ts), the core's time trigger moved out of policies: crons the tower says in
+  words, or `every`, a period aligned to the UTC clock so restarts never shift it. The policies' 30 s loop became the
+  tower's slot loop ([`runSlots`](ref:hub/src/slots.ts#runSlots)) with the policies and the extensions' manifests as its
+  sources; a slot fires once, the latest at or before now within 5 minutes, per floor when scoped `project`, called as
+  `{t: 'tower', id: 'slot'}` ([`extensionSlots`](ref:hub/src/slots.ts#extensionSlots)). Fired is in memory only: no
+  slot facts, so an extension that needs exactly once keeps its own. `triggers.board` makes `start` return
+  `board(prev, next)`, pure: the publisher hands each board that differs from the last to its listeners, frozen
+  ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)); the trigger is first called on the second, off floors
+  dropped from both boards and a floor that appears taken as already there
+  ([`triggerBoards`](ref:hub/src/bridge/triggers.ts#triggerBoards)), its calls made as `{t: 'tower', id: 'board'}` to
+  what its ctx reaches, and paused 5 minutes past 30 calls a minute
+  ([`runBoardTrigger`](ref:hub/src/tower/triggers.ts#runBoardTrigger)). A throw or a failed call is a problem in the
+  `trigger` lane. `checks` are declared only: `tower doctor` runs each `run` from the folder and each `read` (its own,
+  taking no params) against the tower, saying "tower down" while it is
+  ([`checkVerdicts`](ref:hub/src/doctor.ts#checkVerdicts)). `ctx.run` and every command the tower waits on run through
+  [`runProcess`](ref:hub/src/run.ts#runProcess): env scrubbed ([[env-scrub]]), a process group killed by pid at the
+  timeout or at halt.
+- **The author's loop and the contract file.** `tower extensions check <dir>`
+  ([`checkFolder`](ref:hub/src/extension-check.ts#checkFolder)) reads a folder as the tower would, resolves it
+  against the running tower's registry, and starts it in a throwaway process with a ctx that reaches nothing to report
+  `mismatch`. `tower extensions freeze <dir>` ([`freezeFolder`](ref:hub/src/extension-check.ts#freezeFolder)) writes
+  `contract.json`, the names dependents build on at its major
+  ([`contractOf`](ref:hub/src/bridge/extensions.ts#contractOf): verbs, reads, facts, stream codes, collections). At
+  load, a name gone from it at the same major is `contract`, an error for a bundled extension and a warning for a
+  user's; a user's extension replacing a bundled capability that lacks a name of the bundled `contract.json` at its
+  major is refused ([`replacementProblem`](ref:hub/src/bridge/extensions.ts#replacementProblem)).
 - **Held by the contract test.** `test/served-exports.json` lists the manifest's key paths, each lane's ctx members
   ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes, names and hooks, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
 Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
-contributions (1.84), then middleware and hooks (1.85). Triggers, launch contributors and the
-bundled extensions arrive as additions to the manifest and ctx, each an API minor.
+contributions (1.84), then middleware and hooks (1.85), then triggers, checks and restart (1.86). Launch
+contributors and the bundled extensions arrive as additions to the manifest and ctx, each an API minor.
 
 **Alternatives considered.**
 
@@ -211,7 +243,11 @@ bundled extensions arrive as additions to the manifest and ctx, each an API mino
 - *Answers that see each other's*: an answerer that needs to see or change the others' wraps the hook with `around`;
   answers stay independent, so one failing costs only itself.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
-  trusted, and the guards catch mistakes, not malice.
+  trusted, and the guards catch mistakes, not malice. It was also the other way to reload a folder's code; the resolve
+  hook does it in the tower's process.
+- *Slot facts kept by the core*: stored state for every extension's every slot, when only some need exactly once.
+- *A board trigger as an event stream*: builds are debounced, so it could never see every transition anyway; comparing
+  states says what it can honestly say.
 
 **Impact.** API 1.81: `board.extensions`, `GET /extensions` listing them, the `extension` schema, and three config
 keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the manifest's `verbs` and `reads`,
@@ -224,5 +260,8 @@ API 1.85: the manifest's
 `around`, `hooks` and `answers`, ctx's `raise`, the problem lanes `around` and `hook` and the code `hook`, `/schema`'s
 `hooks`, `GET /extensions`' `chains`, `answers` and `composites`, the hooks `tower/discard.record` and
 `tower/tidy.apply`, `worktree/discard`'s and `tidy`'s reply `x`, and `tidy`'s `plan.x`.
+API 1.86: the manifest's `slots`,
+`triggers` and `checks`, `Started.slots` and `board`, `ctx.run`, `ExtensionView.slots` and the state `restarting`, the
+problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots.js`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

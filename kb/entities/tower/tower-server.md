@@ -21,7 +21,7 @@ config's `port`, read when it starts ([[port-in-config]]). The process is eight 
 extension ([[spine]], [[extensions]]): this server is `core:http`, over `core:dispatch` (the verbs' handlers),
 `core:publisher` (the board and its clients), `core:extensions` (what the extensions show), `core:system`,
 `core:config`, and beside it the probes ([`runProbes`](ref:hub/src/probes.ts#runProbes), [[probes]])
-and the policies' runner ([`runPolicies`](ref:hub/src/policies.ts#runPolicies), [[policies]]), each on a tick of
+and the slot loop ([`runSlots`](ref:hub/src/slots.ts#runSlots): the policies' runner, [[policies]], and the extensions' slots), each on a tick of
 their own. SIGTERM (`tower down`) or SIGINT halts them in reverse: the server closes every connection, its streams
 stop with them and its screen mirrors are dropped. `GET /extensions` answers every extension and the resources'
 topology, and `GET /schema` serves an extension's manifest as `extension`. The board (floors of cards, rate limits, today's stats, extensions, shells) is

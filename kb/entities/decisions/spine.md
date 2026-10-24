@@ -32,10 +32,12 @@ lifecycle inside a renderer; the spine covers resources with one inside the proc
 - `core:system` ([`system`](ref:hub/src/tower/spine.ts#system)): [`watchSystem`](ref:hub/src/system.ts#watchSystem)
   with `onChange(listener)`, so the publisher and the dispatch each hear changes and stop hearing them as they halt.
 - `core:probes`, `core:slots` ([`probes`](ref:hub/src/tower/spine.ts#probes), [`slots`](ref:hub/src/tower/spine.ts#slots)):
-  the probes' and the policies' runners, the slots acting through the dispatch's `tower/policy/run` and
-  `tower/policy/pass`, called as `{t: 'tower', id: 'slot'}`.
+  the probes' runner and the slot loop, whose sources are the policies, acting through the dispatch's
+  `tower/policy/run` and `tower/policy/pass`, and the running extensions' manifest slots, read from
+  `core:extensions`, all called as `{t: 'tower', id: 'slot'}`.
 - `core:publisher` ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)): the board derived from the config and
-  the system, its SSE clients and the minute's clock.
+  the system, its SSE clients and the minute's clock, and the listeners each changed board is handed to, frozen (the
+  extensions' board triggers).
 - `core:dispatch` ([`dispatch`](ref:hub/src/tower/dispatch.ts#dispatch)): `call`, every verb but the mux's by its
   qualified name, the core's and the extensions' (which it finds through `core:extensions`), and the state verbs keep
   while they run (hires and resumes in turn, workers departing).

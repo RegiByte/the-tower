@@ -300,6 +300,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
 | `/policies.js` | what renderers say and decide about policies: a rule and its slots in words (`ruleWords`, `slotWords`), where a policy stands (`standing`, `standingWords`), and the cron checks a policy file's header gets (`cronProblem`) |
+| `/slots.js` | the core's time trigger: a rule (`When`: crons, or `every`, a period aligned to the UTC clock) in words (`ruleWords`), its slots (`slotsBetween`, `nextSlot`, `onTimeSlot`, `dueSlot`), a slot in words (`slotWords`), and why a cron or a period is none (`cronProblem`, `periodProblem`) |
 | `/loop.js` | a machine as data: `loop` runs a map of handlers, `(state, event) -> effects`, the next state among them, through your executors of the rest; `timers()` executes timer effects, each carrying the event it fires |
 | `/reads.js` | reads a viewer holds (`Held`): the last read held until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held; the steps, and `heldHandlers` and `reading` to run them on `loop`. `/panels.js` runs them for review threads (`threadWant`, `heldThread`, `readThread`) and a worker's Changes (`changesHandlers`, `readChanges`) |
 | `/term-view.js` | a terminal a viewer has open on a PTY, as a machine on `loop`: `termHandlers` its steps (opening, watching, owning, exited), and `mountTermView(host, { Terminal, FitAddon }, io)` running it in xterm.js on a `terminal/<id>`, `screen/<id>` or `shell/<id>` stream. The PTY has one size: a terminal opened while nobody else views it takes the size (a shell's always), a resize from anyone else hands it back and the view follows at a font that fits, typing takes it again, and a pane or font change fits the PTY only while this viewer holds it |
@@ -353,15 +354,17 @@ and refuses the generic writes, naming the verb to use instead.
 An extension is a folder holding `extension.json`, its manifest, and optionally the server module it names, whose
 default export is `start(ctx)`. The config adds one by its absolute folder ([config.md](config.md#extensions)); the
 tower reads every manifest before any code runs, refuses what can't load, and starts the rest beside its own pieces,
-restarting one when its config entry changes. A restart imports the server module afresh, but not the modules it
-imports: after editing one of those, restart the tower (`tower down tower`, then `tower up tower`). `tower extensions` and `GET /extensions` say how each stands.
+restarting one when its config entry changes. Code edits wait for `tower extensions restart <id>` (`extension/restart`):
+it reads the folder again and restarts the extension with what depends on it, importing its server module and every
+module it imports inside the folder afresh (its `node_modules` aside); meanwhile its calls answer `unavailable` and its
+state is `restarting`. `tower extensions` and `GET /extensions` say how each stands.
 
 ```json
 {
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "requires": { "tower": "1.82", "chime": "1.0" },
+  "requires": { "tower": "1.84", "chime": "1.0" },
   "server": "server.ts",
   "settings": { "type": "object", "properties": { "every": { "type": "integer", "default": 60000 } } },
   "verbs": {
@@ -398,8 +401,8 @@ version of the newest key you use. `start` returns a handler for every verb and 
 nothing else, a `parse` per collection or a `reduce` per stream it declares, a fold per subject kind it folds, a link
 per `around` and an answer per `answers` entry, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
 floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
-calls, its stores, and `raise`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
-the served modules: removing one is a major. Triggers are not extension points yet; they arrive as minors.
+calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
+the served modules: removing one is a major.
 
 **Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
 parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
@@ -484,6 +487,28 @@ each capability in the plan's `x` alone, with the keys of the floor's tidy entri
 (`board.adds['floor:<project>'].tidy`) that the plan carries: an entry no longer listed refuses the whole Tidy, and
 each answer, or why there is none, is the reply's `x.<cap>`. Each
 hook's schemas are listed at `/schema`, under `hooks`.
+**Slots, triggers and checks** (API 1.86). `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
+at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,
+or `{ "every": "5m" }`, a period aligned to the UTC clock (`30s`, `5m`, `2h`). The tower's 30 s loop fires a slot once,
+the latest at or before now, while it is within 5 minutes; a `project`-scoped slot fires once per floor where the
+capability is on. Fired is kept in memory only: a slot missed while the tower was down stays missed, and one fired just
+before a restart may fire again, so an extension that needs exactly once keeps its own facts. `triggers.board: {}`
+makes `start` return `board(prev, next)`, pure and synchronous, which answers the calls a board change asks for,
+`[{ verb, input }]`, made as the tower (`{t: 'tower', id: 'board', via: 'loop'}`) to what its `ctx.call` reaches. It is
+first called on the second board after it starts, and both boards hold only the floors where it is on, a floor that
+appears taken as already there, so a restart or a floor turned on replays nothing. Past 30 calls a minute it pauses for
+5 minutes. A throw, or a call that fails, is a problem of the extension's. `checks.<name>: { "words", "run" | "read",
+"fix"? }` are lines of `tower doctor`: a command run from the folder (env scrubbed, killed at 10 s; exit 0 passes), or
+one of its own reads taking no params, which says "tower down" while the tower is. `ctx.run(argv, { cwd, timeoutMs?,
+stdin? })` runs a command the same way, killed at its timeout (60 s) and at halt. `/slots.js` says a rule in words and
+finds its next slot (`ruleWords`, `nextSlot`, `slotWords`); the board lists each extension's `slots`.
+
+**The author's loop.** `tower extensions check <dir>` reads a folder as the tower would, resolves it against the
+running tower's extensions, and starts it in a throwaway process whose ctx reaches nothing, to say whether `start`
+returns what the manifest declares. `tower extensions freeze <dir>` writes its `contract.json`: its verbs, reads, facts,
+stream codes and collections at its major. At load, a name listed there and gone from the manifest at the same major
+is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
+every name of the bundled one's `contract.json` at the major it claims, or it is refused.
 
 ## Claude plugins
 
