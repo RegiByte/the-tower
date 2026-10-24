@@ -52,13 +52,19 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     return checked.success ? checked.data : failed('shape', `its reply doesn't match its schema: ${z.prettifyError(checked.error)}`)
   }
 
-  /** A verb of `cap`, its input parsed and its floor checked, answered by the provider's handler. */
-  const verb = async (cap: string, name: string, input: unknown, caller: Caller): Promise<Reply> => {
+  /** A verb of `cap` as its running provider declares it, or why a call can't reach it now. */
+  const verbOf = (cap: string, name: string): (CompiledVerb & { a: Accepted; instance: Instance }) | ApiError => {
     const found = reach(holder, cap)
     if ('t' in found) return found
-    const { a, instance } = found
-    const compiled: CompiledVerb | undefined = a.verbs.get(name)
-    if (!compiled) return apiError('not_found', `${cap} has no verb "${name}"`)
+    const compiled = found.a.verbs.get(name)
+    return compiled ? { ...compiled, ...found } : apiError('not_found', `${cap} has no verb "${name}"`)
+  }
+
+  /** A verb of `cap`, its input parsed and its floor checked, answered by the provider's handler. */
+  const verb = async (cap: string, name: string, input: unknown, caller: Caller): Promise<Reply> => {
+    const compiled = verbOf(cap, name)
+    if ('t' in compiled) return compiled
+    const { a, instance } = compiled
     const parsed = compiled.input.safeParse(input)
     if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
     const refused = compiled.spec.scope === 'project' ? floorRefusal(readConfig(), a, (parsed.data as { project: string }).project) : undefined
@@ -103,5 +109,5 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     return live.a.verbs.get(name)?.spec.deprecated ?? live.a.reads.get(name)?.spec.deprecated
   }
 
-  return { verb, read, readAt, deprecationOf }
+  return { verb, verbOf, read, readAt, deprecationOf }
 }

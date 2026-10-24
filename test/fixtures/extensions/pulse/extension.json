@@ -2,8 +2,8 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, keeps its beats, and shows them on the board: the fixture the server test boots.",
-  "requires": { "tower": "1.84", "chime": "1.0" },
+  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, keeps its beats and tells its hook's answerers of each, shows them on the board, and wraps chime's ring and the core's collection/create: the fixture the server test boots.",
+  "requires": { "tower": "1.85", "chime": "1.0" },
   "server": "server.ts",
   "client": "client",
   "settings": {
@@ -39,7 +39,7 @@
         "required": ["project"],
         "properties": { "project": { "type": "string" }, "session": { "type": "string" } }
       },
-      "reply": { "type": "object", "required": ["item"], "properties": { "item": { "type": "string" } } },
+      "reply": { "type": "object", "required": ["item", "heard"], "properties": { "item": { "type": "string" }, "heard": { "type": "array" } } },
       "scope": "project",
       "words": { "label": "Beat", "hint": "keeps a beat on the floor, and as a fact of the session when one is named" }
     }
@@ -86,6 +86,21 @@
       "facts": { "b": { "schema": { "type": "object", "additionalProperties": false, "required": ["item"], "properties": { "item": { "type": "string" } } } } }
     }
   },
+  "hooks": {
+    "beat.kept": {
+      "description": "A beat was kept on the floor.",
+      "payload": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project", "item"],
+        "properties": { "project": { "type": "string" }, "item": { "type": "string" } }
+      },
+      "answer": { "type": "object", "required": ["heard"], "properties": { "heard": { "type": "string" } } },
+      "failure": "reported"
+    }
+  },
+  "answers": { "pulse/beat.kept": {} },
+  "around": { "chime/ring": {}, "tower/collection/create": {} },
   "facts": {
     "beat": { "description": "A beat a session took.", "schema": { "type": "integer", "minimum": 1 } }
   },

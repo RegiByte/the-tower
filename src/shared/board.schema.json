@@ -4341,9 +4341,11 @@
         "halt",
         "verb",
         "read",
-        "fold"
+        "fold",
+        "around",
+        "hook"
       ],
-      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold."
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold, a link of a chain it wraps, an answer to a hook."
     },
     "ProblemCode": {
       "type": "string",
@@ -4362,7 +4364,8 @@
         "threw",
         "shape",
         "deprecated",
-        "slow"
+        "slow",
+        "hook"
       ]
     },
     "ExtensionVerb": {

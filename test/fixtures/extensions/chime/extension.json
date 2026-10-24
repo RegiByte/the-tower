@@ -2,8 +2,8 @@
   "id": "chime",
   "version": "1.0",
   "title": "Chime",
-  "description": "Rings and says who called, and calls any verb it is asked to: the dependency the server test's pulse calls.",
-  "requires": { "tower": "1.82" },
+  "description": "Rings and says who called, wraps its own ring, and calls any verb it is asked to: the dependency the server test's pulse calls.",
+  "requires": { "tower": "1.85" },
   "server": "server.ts",
   "verbs": {
     "ring": {
@@ -11,7 +11,11 @@
       "reply": {
         "type": "object",
         "required": ["rang", "caller"],
-        "properties": { "rang": { "type": "integer" }, "caller": { "type": "object" } }
+        "properties": {
+          "rang": { "type": "integer" },
+          "caller": { "type": "object" },
+          "trail": { "type": "array", "items": { "type": "string" }, "description": "The links it came back out through, outermost first." }
+        }
       },
       "scope": "system",
       "words": { "label": "Ring", "hint": "rings, and says who called" }
@@ -22,5 +26,6 @@
       "scope": "system",
       "description": "Calls a verb by its qualified name with no input, and answers what it answered."
     }
-  }
+  },
+  "around": { "chime/ring": {} }
 }

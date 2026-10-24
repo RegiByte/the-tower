@@ -8,10 +8,11 @@
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
- *   GET  /schema        every verb's input and reply, the core's and each running extension's, every read, the error and an
- *                       extension's manifest, as JSON Schema (src/shared/api.ts, src/shared/extensions.ts)
- *   GET  /extensions    {extensions, topology}: every extension the tower found, as the board shows them, and the tower's resources as braided orders them,
- *                       with their graph as Mermaid text (src/tower/extensions.ts)
+ *   GET  /schema        every verb's input and reply and every hook's payload and answer, the core's and each running extension's,
+ *                       every read, the error and an extension's manifest, as JSON Schema (src/shared/api.ts, src/shared/extensions.ts)
+ *   GET  /extensions    {extensions, topology, chains, answers, composites}: every extension the tower found, as the board shows them, the tower's
+ *                       resources as braided orders them, with their graph as Mermaid text, the chain around each verb or hook, each hook's
+ *                       answerers and what the core's composites call (src/tower/extensions.ts)
  *   GET  /screen/<id>   SSE: a snapshot of the session's screen, then its output as the host logs it
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
@@ -92,7 +93,7 @@ import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, fileBelow, rendererFile, renderersOf } from '../renderers.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
@@ -786,6 +787,9 @@ export const httpServer = defineResource({
     const coreReads = describeReads(READS)
     const streams = describeStreams(READS)
     const error = z.toJSONSchema(ApiErrorSchema)
+    const coreHooks = Object.fromEntries(
+      Object.entries(HOOKS).map(([name, { payload, answer, failure, description, since }]) => [`tower/${name}`, { payload: z.toJSONSchema(payload), answer: z.toJSONSchema(answer), failure, description, 'x-since': since }]),
+    )
 
     /** What a manifest says of a verb or read beside its schemas: its scope and words, and that it is on its way out. */
     const declared = ({ scope, description, deprecated }: { scope: string; description?: string; deprecated?: Deprecated }) => ({
@@ -815,6 +819,10 @@ export const httpServer = defineResource({
               ]),
             ),
           ),
+        },
+        hooks: {
+          ...coreHooks,
+          ...Object.fromEntries(accepted.flatMap((a) => Object.entries(a.manifest.hooks ?? {}).map(([name, hook]) => [`${a.provides}/${name}`, hook]))),
         },
         streams,
         error,

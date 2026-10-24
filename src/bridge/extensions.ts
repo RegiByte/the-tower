@@ -7,7 +7,7 @@
 import path from 'node:path'
 import { z } from 'zod'
 import { BUNDLED, capabilityOf, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
-import type { Query } from '../shared/api.ts'
+import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import { offOn, type ExtensionStores } from './stores.ts'
@@ -26,6 +26,8 @@ export type CompiledRead = { spec: NonNullable<Manifest['reads']>[string]; query
 
 /** A fold a manifest declares: the zod of the `x` it makes, and what it adds. */
 export type CompiledFold = { x?: z.ZodType; adds: Add[] }
+/** A hook of a manifest, its payload and answer schemas as zod. */
+export type CompiledHook = { spec: NonNullable<Manifest['hooks']>[string]; payload: z.ZodType; answer: z.ZodType }
 
 /** An extension that may start. `requires` and `wants`: the capabilities it starts after, the core aside. `off`: its floors off. */
 export type Accepted = {
@@ -47,6 +49,7 @@ export type Accepted = {
   reads: Map<string, CompiledRead>
   /** Its folds by subject kind, as the manifest declares them. */
   folds: Map<string, CompiledFold>
+  hooks: Map<string, CompiledHook>
   /** Its capability and every one it requires, directly or not: it is off on a floor where any of them is. */
   chain: string[]
   off: string[]
@@ -65,10 +68,14 @@ export type Resolved = { order: string[]; accepted: Map<string, Accepted>; refus
 /** How an accepted extension's last start went, and its last halt when that threw. `at`: epoch ms. */
 export type Outcome = { at: number; error?: { code: 'failed' | 'mismatch'; message: string }; halt?: string }
 
-/** What the board and `GET /extensions` show of every extension, and the stores of those the tower accepted. */
-export type Registry = { extensions: ExtensionView[]; stores: ExtensionStores[] }
+/**
+ * What the board and `GET /extensions` show of every extension, the stores of those the tower accepted, and of those
+ * that started: the chain around each verb or hook they wrap, its capabilities outermost first, and each hook's
+ * answerers in fold order.
+ */
+export type Registry = { extensions: ExtensionView[]; stores: ExtensionStores[]; chains: Record<string, string[]>; answers: Record<string, string[]> }
 
-export const NO_EXTENSIONS: Registry = { extensions: [], stores: [] }
+export const NO_EXTENSIONS: Registry = { extensions: [], stores: [], chains: {}, answers: {} }
 
 const error = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'error', code, message, ...(at && { path: at }) })
 const warn = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'warn', code, message, ...(at && { path: at }) })
@@ -297,6 +304,7 @@ type Read = {
   schema?: z.ZodType
   verbs?: Map<string, CompiledVerb>
   reads?: Map<string, CompiledRead>
+  hooks?: Map<string, CompiledHook>
   schemas?: StoreSchemas
   folds?: Map<string, CompiledFold>
 }
@@ -308,11 +316,11 @@ const requiresProject = (schema: Record<string, unknown> | undefined): boolean =
 }
 
 /**
- * A manifest's verbs and reads with their schemas as zod, or each reason they can't be: a schema the tower can't read,
- * a project-scoped one that names no floor, a verb named `read` (which `ctx.deps.<cap>.read` holds), and a name both
- * a verb and a read, since a provider's names share one namespace.
+ * A manifest's verbs, reads and hooks with their schemas as zod, or each reason they can't be: a schema the tower can't
+ * read, a project-scoped one that names no floor, a verb named `read` (which `ctx.deps.<cap>.read` holds), and a name
+ * two of them share, since a provider's names share one namespace.
  */
-const compileCalls = (manifest: Manifest): { verbs: Map<string, CompiledVerb>; reads: Map<string, CompiledRead>; problems: LoadProblem[] } => {
+const compileCalls = (manifest: Manifest): { verbs: Map<string, CompiledVerb>; reads: Map<string, CompiledRead>; hooks: Map<string, CompiledHook>; problems: LoadProblem[] } => {
   const problems: LoadProblem[] = []
   const compiled = (schema: Record<string, unknown>, at: string): z.ZodType | undefined => {
     const zod = zodOf(schema)
@@ -340,8 +348,55 @@ const compileCalls = (manifest: Manifest): { verbs: Map<string, CompiledVerb>; r
     const reply = compiled(spec.reply, `${at}.reply`)
     if (reply && (!spec.query || query)) reads.set(name, { spec, ...(query && { query }), reply })
   }
-  return { verbs, reads, problems }
+  const hooks = new Map<string, CompiledHook>()
+  for (const [name, spec] of Object.entries(manifest.hooks ?? {})) {
+    const at = `hooks.${name}`
+    const shared = [Object.hasOwn(manifest.verbs ?? {}, name) && 'a verb', Object.hasOwn(manifest.reads ?? {}, name) && 'a read'].filter(Boolean)
+    if (shared.length) problems.push(error('invalid', `${name} is a hook and ${shared.join(' and ')}: a provider's verbs, reads and hooks share one namespace`, at))
+    const payload = compiled(spec.payload, `${at}.payload`)
+    const answer = compiled(spec.answer, `${at}.answer`)
+    if (payload && answer) hooks.set(name, { spec, payload, answer })
+  }
+  return { verbs, reads, hooks, problems }
 }
+
+/** The lanes that name other capabilities' verbs and hooks: `around` wraps a verb or a hook, `answers` answers a hook. */
+const TARGET_LANES = ['around', 'answers'] as const
+type TargetLane = (typeof TARGET_LANES)[number]
+
+/** Each verb or hook a manifest wraps or answers, by lane, split into its capability and name. */
+const targetsOf = (manifest: Manifest) =>
+  TARGET_LANES.flatMap((lane) => Object.keys(manifest[lane] ?? {}).map((target) => ({ lane, target, ...qualifiedOf(target)! })))
+
+/** Why `name` is no target of `lane` in a provider that declares `verbs` and `hooks`. */
+const missingTarget = (lane: TargetLane, cap: string, name: string, verbs: string[], hooks: string[]): string | undefined => {
+  if (lane === 'answers') return hooks.includes(name) ? undefined : `${cap} has no hook ${name}: answers names a hook`
+  return verbs.includes(name) || hooks.includes(name) ? undefined : `${cap} has no verb or hook ${name}`
+}
+
+/** The core's verbs and hooks by name, as a target names them after `tower/`. */
+const CORE_VERBS = Object.keys(VERBS)
+const CORE_HOOKS = Object.keys(HOOKS)
+
+/**
+ * What a manifest's `around` and `answers` break of the rules its schema can't say: each target is the core's, its own,
+ * or of a capability it requires or wants, and the core's and its own exist. Another capability's are checked against
+ * its provider as the extensions resolve.
+ */
+const targetProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
+  targetsOf(manifest).flatMap(({ lane, target, cap, name }) => {
+    const at = `${lane}.${target}`
+    if (cap === 'tower') {
+      const missing = missingTarget(lane, cap, name, CORE_VERBS, CORE_HOOKS)
+      return missing ? [error('invalid', missing, at)] : []
+    }
+    if (cap === provides) {
+      const missing = missingTarget(lane, cap, name, Object.keys(manifest.verbs ?? {}), Object.keys(manifest.hooks ?? {}))
+      return missing ? [error('invalid', missing, at)] : []
+    }
+    if (Object.hasOwn(manifest.requires, cap) || Object.hasOwn(manifest.wants ?? {}, cap)) return []
+    return [error('invalid', `${target} is ${cap}'s: declare requires.${cap} or wants.${cap} to ${lane === 'around' ? 'wrap' : 'answer'} it`, at)]
+  })
 
 /** One extension's config entry, manifest and settings, read in that order; the first that refuses it ends the read. */
 const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
@@ -373,6 +428,8 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
   if (settings && !settings.ok) return { found, claims, manifest, problems: settings.problems.map((p) => error('invalid', `${p.path}: ${p.message}`)) }
   const calls = compileCalls(manifest)
   if (calls.problems.length) return { found, claims, manifest, problems: calls.problems }
+  const targets = targetProblems(manifest, capabilityOf(manifest))
+  if (targets.length) return { found, claims, manifest, problems: targets }
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems]
@@ -381,7 +438,7 @@ const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, schemas: stores.schemas, folds: folds.folds }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds }
 }
 
 /** The capabilities `manifest` requires, the core aside. */
@@ -486,7 +543,14 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
       }
       return meets(provider.manifest!.version, version) ? [] : [error('unmet', `requires ${cap} ${version}; ${provider.found.id} provides ${provider.manifest!.version}`, `requires.${cap}`)]
     })
-    if (unmet.length) refuse(r, 'refused', [...r.problems, ...unmet])
+    const missing = targetsOf(r.manifest!).flatMap(({ lane, target, cap, name }): LoadProblem[] => {
+      const provider = providers.get(cap)
+      const range = r.manifest!.requires[cap] ?? r.manifest!.wants?.[cap]
+      if (cap === 'tower' || cap === capabilityOf(r.manifest!) || !provider || !meets(provider.manifest!.version, range!)) return []
+      const why = missingTarget(lane, `${cap} ${provider.manifest!.version}`, name, Object.keys(provider.manifest!.verbs ?? {}), Object.keys(provider.manifest!.hooks ?? {}))
+      return why ? [error('unmet', why, `${lane}.${target}`)] : []
+    })
+    if (unmet.length || missing.length) refuse(r, 'refused', [...r.problems, ...unmet, ...missing])
   }
 
   const remaining = () => candidates.filter((r) => !refused.has(r.found.id))
@@ -547,6 +611,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           verbs: r.verbs!,
           reads: r.reads!,
           folds: r.folds!,
+          hooks: r.hooks!,
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
           problems: [...r.problems, ...without],
@@ -602,6 +667,69 @@ const commandsOf = (manifest: Manifest | undefined): ExtensionView['commands'] =
     ...(c.on && { on: c.on }),
     ...(c.deprecated && { deprecated: c.deprecated }),
   }))
+/** A link of a chain as ordering reads it: its capability, and the capabilities its manifest says it runs before and after. */
+export type Link = { cap: string; before: string[]; after: string[] }
+
+/**
+ * The links around one verb or hook, outermost first: each declared `before` and `after` between them holds first;
+ * then a capability runs inside every capability that depends on it (`dependsOn(a, b)`: `a` requires or wants `b`,
+ * directly or not), so the owner, on whom every other link depends, is innermost; ties go to the earlier capability
+ * name, outside. The links in a cycle of `before` and `after` are left out, each cycle named as its capabilities in order.
+ */
+export const chainOrder = (links: Link[], dependsOn: (a: string, b: string) => boolean): { order: string[]; cycles: string[] } => {
+  const caps = links.map((l) => l.cap).sort()
+  const inner = new Map(caps.map((cap) => [cap, [] as string[]]))
+  for (const { cap, before, after } of links) {
+    for (const b of before) if (inner.has(b)) inner.get(cap)!.push(b)
+    for (const a of after) if (inner.has(a)) inner.get(a)!.push(cap)
+  }
+  const cyclic = cyclesOf(caps, inner)
+  const left = new Set(cyclic.flatMap((cycle) => [...cycle]))
+  const order: string[] = []
+  const remaining = caps.filter((cap) => !left.has(cap))
+  while (remaining.length) {
+    const free = remaining.filter((cap) => !remaining.some((other) => inner.get(other)!.includes(cap)))
+    const outermost = free.filter((cap) => !remaining.some((other) => other !== cap && dependsOn(other, cap)))
+    const next = (outermost.length ? outermost : free)[0]
+    order.push(next)
+    remaining.splice(remaining.indexOf(next), 1)
+  }
+  return { order, cycles: cyclic.map((cycle) => cycleThrough([...cycle].sort()[0], inner, cycle)) }
+}
+
+/**
+ * The chains and answerers of the started extensions, and a `cycle` problem on each link a chain leaves out, by id.
+ * `started`: in fold order.
+ */
+const wrappingOf = (started: Accepted[], now: number) => {
+  const byCap = new Map(started.map((a) => [a.provides, a]))
+  const reach = (cap: string, seen = new Set<string>()): Set<string> => {
+    for (const next of [...(byCap.get(cap)?.requires ?? []), ...(byCap.get(cap)?.wants ?? [])]) if (!seen.has(next)) reach(next, seen.add(next))
+    return seen
+  }
+  const depends = new Map(started.map((a) => [a.provides, reach(a.provides)]))
+  const targets = (lane: TargetLane) => [...new Set(started.flatMap((a) => Object.keys(a.manifest[lane] ?? {})))].sort()
+  const problems = new Map<string, ExtensionProblem[]>()
+  const chains = Object.fromEntries(
+    targets('around').map((target) => {
+      const links = started.flatMap((a) => {
+        const around = a.manifest.around?.[target]
+        return around ? [{ cap: a.provides, before: around.before ?? [], after: around.after ?? [] }] : []
+      })
+      const { order, cycles } = chainOrder(links, (a, b) => depends.get(a)!.has(b))
+      for (const cycle of cycles) {
+        for (const cap of new Set(cycle.split(' → '))) {
+          const id = byCap.get(cap)!.id
+          const message = `its link around ${target} is in a cycle of before and after (${cycle}): ${target} runs without it`
+          problems.set(id, [...(problems.get(id) ?? []), { lane: 'around', level: 'error', code: 'cycle', message, at: now, count: 1, path: `around.${target}` }])
+        }
+      }
+      return [target, order]
+    }),
+  )
+  const answers = Object.fromEntries(targets('answers').map((hook) => [hook, started.filter((a) => Object.hasOwn(a.manifest.answers ?? {}, hook)).map((a) => a.provides)]))
+  return { chains, answers, problems }
+}
 
 /** Bundled first, then by id. */
 const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - Number(a.bundled) || a.id.localeCompare(b.id)
@@ -660,5 +788,10 @@ export const registry = (resolved: Resolved, outcomes: Map<string, Outcome>, now
     const { provides, chain, manifest } = resolved.accepted.get(id)!
     return { provides, chain, collections: manifest.collections ?? {} }
   })
-  return { extensions: [...started, ...held].sort(shownOrder), stores }
+  const wrapping = wrappingOf(
+    resolved.order.filter((id) => states.get(id) === 'started').map((id) => resolved.accepted.get(id)!),
+    now,
+  )
+  const views = started.map((view) => (wrapping.problems.has(view.id) ? { ...view, problems: [...wrapping.problems.get(view.id)!, ...view.problems].slice(0, PROBLEMS_SHOWN) } : view))
+  return { extensions: [...views, ...held].sort(shownOrder), stores, chains: wrapping.chains, answers: wrapping.answers }
 }

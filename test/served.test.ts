@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import vm from 'node:vm'
-import { API_VERSION } from '../src/shared/api.ts'
+import { API_VERSION, HOOKS } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
 import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
 import { bundled, MODULES, towerClient } from '../src/tower/served.ts'
@@ -60,7 +60,7 @@ const leafPaths = (value: object, at: string[] = []): string[] =>
 /**
  * Every name served now: each module's exports, `/tower.js`'s members, `/design.css`'s custom properties and classes,
  * and what extensions build on: the manifest's key paths, each lane's ctx members, and the core's problem codes, names,
- * adds and badge tones.
+ * adds, badge tones and hooks.
  */
 function servedNow(): Record<string, string[]> {
   const served: Record<string, string[]> = {
@@ -74,6 +74,7 @@ function servedNow(): Record<string, string[]> {
       ...BUNDLED.map((name) => `bundled.${name}`),
       ...ADDS.map((add) => `adds.${add}`),
       ...BADGE_TONES.map((tone) => `tone.${tone}`),
+      ...Object.keys(HOOKS).map((name) => `hook.tower/${name}`),
     ],
   }
   for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports

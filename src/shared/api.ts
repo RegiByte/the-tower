@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.84'
+export const API_VERSION = '1.85'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -450,3 +450,9 @@ type Routes = typeof VERBS & typeof TRANSPORT
 export type Route = keyof Routes
 export type RouteInput = { [R in Route]: z.infer<Routes[R]['input']> }
 export const ROUTES: Routes = { ...VERBS, ...TRANSPORT }
+
+/** A point inside a core verb where extensions take part: what it is raised with, what each answer is, and what a failed answer does. */
+export type CoreHook = { payload: z.ZodType; answer: z.ZodType; failure: 'refuses' | 'reported'; description: string; since: string }
+
+/** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
+export const HOOKS: Record<string, CoreHook> = {}

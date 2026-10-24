@@ -37,6 +37,7 @@ import { appendFact } from '../streams.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidy, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
+import { chainCalls } from './chains.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
@@ -768,10 +769,23 @@ export const dispatch = defineResource({
     }
 
     const extension = extensionCalls(holder, readConfig)
+    const chains = chainCalls(holder, readConfig)
+
+    /** A verb by its qualified name, through the chain around it: the core's, or a running extension's. */
+    const wrapped = async (name: string, q: { cap: string; name: string }, input: unknown, caller: Caller): Promise<Answer> => {
+      if (q.cap === 'tower') {
+        if (!isVerb(q.name)) return apiError('not_found', `No verb "${q.name}"`)
+        return (await chains.wrap(name, ROUTES[q.name], input, caller, (value) => callCore(q.name, value, caller))).reply as Answer
+      }
+      const verb = extension.verbOf(q.cap, q.name)
+      if ('t' in verb) return verb
+      return (await chains.wrap(name, verb, input, caller, (value) => extension.verb(q.cap, q.name, value, caller))).reply as Answer
+    }
 
     /**
-     * The one dispatch: a verb by its qualified name, the core's as `tower/<verb>`, called for `caller`, refused when it
-     * would be nested more than `MAX_DEPTH` deep. Every failure answers as an `ApiError`, a throw as `internal`.
+     * The one dispatch: a verb by its qualified name, the core's as `tower/<verb>`, called for `caller` through the chain
+     * around it, refused when it would be nested more than `MAX_DEPTH` deep. Every failure answers as an `ApiError`, a
+     * throw as `internal`.
      */
     async function call(name: string, input: unknown, caller: Caller): Promise<Answer> {
       const q = qualifiedOf(name)
@@ -779,7 +793,7 @@ export const dispatch = defineResource({
       const deep = tooDeep(caller, name)
       if (deep) return apiError('refused', deep)
       try {
-        return q.cap === 'tower' ? await callCore(q.name, input, caller) : ((await extension.verb(q.cap, q.name, input, caller)) as Answer)
+        return await wrapped(name, q, input, caller)
       } catch (err) {
         console.error(`${name}:`, err)
         return errorOf(err)
@@ -809,7 +823,7 @@ export const dispatch = defineResource({
       clearTimeout(leaveTimer)
     }
 
-    return { call, read, readAt: extension.readAt, deprecationOf: extension.deprecationOf, stop }
+    return { call, read, raise: chains.raise, readAt: extension.readAt, deprecationOf: extension.deprecationOf, stop }
   },
   halt: ({ stop }) => stop(),
 })

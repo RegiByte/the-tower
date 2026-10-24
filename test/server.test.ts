@@ -27,6 +27,7 @@ const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
 const PULSE = path.join(REPO, 'test', 'fixtures', 'extensions', 'pulse')
 const CHIME = path.join(REPO, 'test', 'fixtures', 'extensions', 'chime')
+const TALLY = path.join(REPO, 'test', 'fixtures', 'extensions', 'tally')
 
 const BOOT_MS = 15_000
 
@@ -70,7 +71,7 @@ function writeConfig(port: number) {
     port,
     probes: { quota: { off: true } },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY } },
     projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
@@ -250,7 +251,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual(read.extensions, msg.board.extensions)
   assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions', 'x:chime'])
-  assert.equal(read.topology.startupOrder.at(-1), 'x:pulse')
+  assert.equal(read.topology.startupOrder.at(-1), 'x:tally')
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)
 })
 
@@ -315,9 +316,9 @@ test("server: an extension's folds put its part on the board's subjects, its bad
 test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {
   const asWorker = await post('pulse/ping', { project: 'lab', times: 2 }, { 'tower-session': SESSION, 'tower-client': 'cli' })
   assert.equal(asWorker.status, 200, asWorker.body)
-  assert.deepEqual(JSON.parse(asWorker.body), { project: 'lab', chimed: { rang: 2, caller: { t: 'worker', id: SESSION, via: 'cli', within: ['pulse/ping'] } } })
+  assert.deepEqual(JSON.parse(asWorker.body), { project: 'lab', chimed: { rang: 4, caller: { t: 'worker', id: SESSION, via: 'cli', within: ['pulse/ping'] }, trail: ['pulse', 'chime'] } })
   const asUser = JSON.parse((await post('pulse/ping', { project: 'lab' })).body)
-  assert.deepEqual(asUser.chimed, { rang: 1, caller: { t: 'user', via: 'http', within: ['pulse/ping'] } })
+  assert.deepEqual(asUser.chimed, { rang: 2, caller: { t: 'user', via: 'http', within: ['pulse/ping'] }, trail: ['pulse', 'chime'] })
   assert.equal(errorCode(await post('pulse/ping', { times: 1 })), 'invalid')
   assert.equal(errorCode(await post('pulse/ping', { project: 'nowhere' })), 'not_found')
   assert.equal(errorCode(await post('pulse/nothing', {})), 'not_found')
@@ -339,6 +340,41 @@ test('server: an extension reaches only the core and what it declares', async ()
   assert.equal(errorCode(undeclared), 'refused')
   assert.match(JSON.parse(undeclared.body).message, /declare requires\.pulse/)
   assert.equal(errorCode(await post('chime/ask', { verb: 'tower/nothing' })), 'not_found')
+})
+
+test("server: a verb runs through the chain around it, the dependent's link outside its owner's, each link's input parsed again by the verb's schema", async () => {
+  const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
+  assert.deepEqual([read.chains['chime/ring'], read.chains['tower/collection/create']], [['pulse', 'chime'], ['pulse']])
+  const rung = await post('chime/ring', { times: 1 })
+  assert.deepEqual(JSON.parse(rung.body), { rang: 2, caller: { t: 'user', via: 'http', within: [] }, trail: ['pulse', 'chime'] })
+  const passedOn = await post('chime/ring', { times: 3 })
+  assert.equal(errorCode(passedOn), 'invalid')
+  assert.match(JSON.parse(passedOn.body).message, /^pulse's link around chime\/ring passed on an input chime\/ring doesn't take/)
+})
+
+test("server: a link may answer for the verb, and one that throws fails the call closed, a problem on its extension", async () => {
+  const kept = await post('collection/create', { project: 'lab', collection: 'drafts', name: 'shh', ext: 'md', content: 'a secret' })
+  assert.deepEqual(JSON.parse(kept.body), { t: 'error', code: 'refused', message: 'pulse keeps secrets out of collections' })
+  const broken = await post('collection/create', { project: 'lab', collection: 'drafts', name: 'boom', ext: 'md', content: '' })
+  assert.deepEqual(JSON.parse(broken.body), { t: 'error', code: 'internal', message: "pulse's link around tower/collection/create threw: a guard that breaks" })
+  const msg = (await firstEvent('/board')) as BoardMsg
+  assert.ok('board' in msg)
+  const drafts = msg.board.floors.find((f) => f.id === 'lab')!.collections.find((c) => c.id === 'drafts')!
+  assert.ok(!drafts.items.some((i) => i.id.includes('boom') || i.id.includes('shh')))
+  const problem = msg.board.extensions.find((e) => e.id === 'pulse')!.problems.find((p) => p.lane === 'around')
+  assert.deepEqual([problem?.code, problem?.path], ['threw', 'around.tower/collection/create'])
+})
+
+test("server: a hook's answers come back to its provider in fold order, each on its own, one off its schema failed and a problem on its answerer", async () => {
+  const beat = await post('pulse/beat', { project: 'lab' })
+  assert.equal(beat.status, 200, beat.body)
+  const { item, heard } = JSON.parse(beat.body)
+  assert.deepEqual(heard[0], { cap: 'pulse', ok: true, answer: { heard: `pulse kept ${item}` } })
+  assert.deepEqual([heard.length, heard[1].cap, heard[1].ok, heard[1].code], [2, 'tally', false, 'internal'])
+  const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
+  assert.deepEqual(read.answers['pulse/beat.kept'], ['pulse', 'tally'])
+  const tally = read.extensions.find((e) => e.id === 'tally')!
+  assert.deepEqual(tally.problems.map((p) => [p.lane, p.code, p.path]), [['hook', 'hook', 'answers.pulse/beat.kept']])
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

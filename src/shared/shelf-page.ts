@@ -58,9 +58,11 @@ export type Reads = {
   'shown/<id>/<path>': string
   /**
    * Every extension the tower found, as `board.extensions` shows them, and its resources as braided starts them, each
-   * extension's as `x:<cap>`: the order, the layers by depth, who depends on whom.
+   * extension's as `x:<cap>`: the order, the layers by depth, who depends on whom. `chains`: the capabilities whose
+   * links wrap each verb or hook, outermost first; `answers`: each hook's answerers, in the order they answer.
+   * `chains` and `answers` @since 1.84
    */
-  extensions: { extensions: ExtensionView[]; topology: Topology }
+  extensions: { extensions: ExtensionView[]; topology: Topology; chains: Record<string, string[]>; answers: Record<string, string[]> }
 }
 
 /** A resource the tower runs: what it depends on, what depends on it, and its depth (0 when it depends on nothing). */

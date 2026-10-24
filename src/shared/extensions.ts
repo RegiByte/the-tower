@@ -22,6 +22,8 @@ const STORES = '1.83'
 
 /** The minor folds and contributions arrived in: subjects, folds, client commands and their files. */
 const FOLDS = '1.84'
+/** The minor middleware and hooks arrived in: `around`, `hooks`, `answers` and `ctx.raise`. */
+const AROUND = '1.85'
 
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -49,11 +51,14 @@ export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 export const LEGACY: Record<string, string> = {}
 
 /** Every problem an extension can have, by what it is. */
-export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow'] as const
+export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook'] as const
 export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
-/** Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold. */
-export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold'
+/**
+ * Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold,
+ * a link of a chain it wraps, an answer to a hook.
+ */
+export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold' | 'around' | 'hook'
 
 /**
  * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s
@@ -248,6 +253,12 @@ export type Client = { read: Record<string, (params?: Record<string, string>, qu
  */
 export type SessionFact = { name: string; value: unknown; at: number; session: string }
 
+/**
+ * One answer to a hook, by the capability that gave it: its answer, checked against the hook's `answer` schema, or why
+ * there is none (an `ApiError` it chose, `internal` when it threw or answered off the schema, `unavailable` while it restarts).
+ */
+export type Answered<A = unknown> = { cap: string; ok: true; answer: A } | { cap: string; ok: false; code: string; message: string }
+
 /** Where a stream is: a `project` stream's facts are each floor's own; a `system` stream's are the tower's. */
 export type StreamAt = { project?: string }
 
@@ -286,6 +297,11 @@ export type StartCtx = {
   read(read: string, params?: Record<string, string>, query?: Record<string, string>): Promise<unknown>
   /** Each capability it requires, and each it wants (`undefined` while missing), as functions. @since 1.82 */
   deps: Record<string, Client | undefined>
+  /**
+   * Raises one of its own hooks by name: the payload checked against its schema, then each answerer's answer, in fold
+   * order, each on its own. What a failed answer does to the call raising it is the hook's `failure`. @since 1.85
+   */
+  raise(hook: string, payload: unknown): Promise<Answered[]>
   /** Its own streams, each fact checked against its code's schema; a stream's months are read in a window of epoch ms. @since 1.83 */
   streams: {
     append(stream: string, at: StreamAt, code: string, fact: unknown): Promise<void>
@@ -332,6 +348,15 @@ export type VerbHandler = (input: any, ctx: CallCtx) => unknown
 export type ReadHandler = (req: { params: Record<string, string>; query: any }, ctx: CallCtx) => unknown
 
 /**
+ * A link of the chain around a verb or hook: it calls `next` with the input to pass on (parsed again by the target's
+ * schema), or answers without calling it. What it answers is checked against the target's reply; a throw fails the call.
+ */
+export type AroundHandler = (input: any, next: (input: unknown) => Promise<unknown>, ctx: CallCtx) => unknown
+
+/** An answer to a hook: the payload, as its schema parsed it; what it returns is checked against the hook's `answer`. */
+export type AnswerHandler = (payload: any, ctx: CallCtx) => unknown
+
+/**
  * What `start` returns: a handler for every verb and read the manifest declares, no more and no fewer, and `halt`, called
  * before the tower clears what ctx opened. A handler answers an `ApiError` (`{t: 'error', code, message}`) to refuse.
  */
@@ -347,6 +372,10 @@ export type Started = {
   reduce?: Record<string, Reduce>
   /** Per subject kind its manifest folds, its fold. @since 1.84 */
   folds?: Record<string, Fold>
+  /** A link per verb or hook its manifest's `around` names. @since 1.85 */
+  around?: Record<string, AroundHandler>
+  /** An answer per hook its manifest's `answers` names. @since 1.85 */
+  answers?: Record<string, AnswerHandler>
 }
 
 /** The default export of an extension's server module. */
@@ -382,6 +411,7 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
     call: CALLS,
     read: CALLS,
     deps: CALLS,
+    raise: AROUND,
     streams: { append: STORES, read: STORES },
     facts: { append: STORES },
     collections: { list: STORES, read: STORES, create: STORES, write: STORES, delete: STORES },
@@ -392,7 +422,7 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
 }
 
 /** The keys `start` may return. */
-export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds'] as const
+export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds', 'around', 'answers'] as const
 
 const sinceAt =
   (version: string) =>
@@ -402,6 +432,7 @@ const since = sinceAt(SINCE)
 const sinceCalls = sinceAt(CALLS)
 const stores = sinceAt(STORES)
 const folds = sinceAt(FOLDS)
+const around = sinceAt(AROUND)
 
 const Name = z
   .string()
@@ -469,6 +500,17 @@ const Stream = z.strictObject({
   doors: stores(z.strictObject({ read: stores(Door), append: stores(Door) }).optional().describe('How others read it and append to it, through its owner.')),
 })
 const Fact = z.strictObject({ schema: stores(Schema), description: stores(z.string().optional()) })
+const Hook = z.strictObject({
+  payload: around(Schema.describe('What the provider raises it with.')),
+  answer: around(Schema.describe('What each answerer answers.')),
+  failure: around(z.enum(['refuses', 'reported']).describe('What a failed answer does to the call that raised the hook: refuses it, or is named in its reply.')),
+  description: around(z.string().optional()),
+  deprecated: around(Deprecated.optional()),
+})
+const Around = z.strictObject({
+  before: around(z.array(Capability).optional().describe('The capabilities whose links it runs outside of: it sees the input before them and the reply after.')),
+  after: around(z.array(Capability).optional().describe('The capabilities whose links it runs inside of.')),
+})
 
 /** How others reach a store: a verb or read qualified by its capability, or why the domain has no such act. */
 export type Door = string | { none: string }
@@ -515,6 +557,19 @@ export const Manifest = z
     server: since(Path.optional().describe("The module whose default export is `start`; none, no code.")),
     verbs: sinceCalls(z.record(Word, Verb).optional().describe('Its verbs by name: POST /<capability>/<name>, ctx.call, tower x.')),
     reads: sinceCalls(z.record(ReadPath, Read).optional().describe('Its reads by path: GET /<capability>/<path>, ctx.read.')),
+    hooks: around(z.record(Word, Hook).optional().describe('Its own hooks, raised inside its verbs with ctx.raise: a hook shares one namespace with its verbs and reads.')),
+    answers: around(
+      z
+        .record(Qualified, z.strictObject({}))
+        .optional()
+        .describe("The hooks it answers, qualified: tower/discard.record. Each one's capability is its own, the core's or one it requires or wants."),
+    ),
+    around: around(
+      z
+        .record(Qualified, Around)
+        .optional()
+        .describe("The verbs and hooks it wraps, qualified: tower/spawn, chime/ring. Each one's capability is its own, the core's or one it requires or wants."),
+    ),
     collections: stores(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
     streams: stores(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
     facts: stores(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),

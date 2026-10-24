@@ -3,6 +3,10 @@ import type { Start } from '../../../../src/shared/extensions.ts'
 
 type Beats = { count: number; items: string[] }
 
+type Rung = { rang: number; caller: object; trail?: string[] }
+
+const refused = (reply: unknown): boolean => (reply as { t?: string }).t === 'error'
+
 const start: Start = (ctx) => {
   const { every, line } = ctx.settings as { every: number; line?: string }
   const startedAt = Date.now()
@@ -15,7 +19,7 @@ const start: Start = (ctx) => {
         const item = await ctx.collections.create(project, 'pulse', { name: 'beat', ext: 'md', content: `beat ${ctx.collections.list(project, 'pulse').length + 1}\n` })
         await ctx.streams.append('beats', { project }, 'b', { item: item.id })
         if (session) await ctx.facts.append(session, 'beat', 1)
-        return { item: item.id }
+        return { item: item.id, heard: await ctx.raise('beat.kept', { project, item: item.id }) }
       },
     },
     reads: {
@@ -39,6 +43,19 @@ const start: Start = (ctx) => {
         asks: [{ key: `beat-${floor.id}`, subject: `floor:${floor.id}`, title: `Keep a beat on ${floor.name}`, since: startedAt, sound: 'offer', actions: [{ verb: 'pulse/beat', call: { project: floor.id } }] }],
       }),
     },
+    around: {
+      'chime/ring': async ({ times }: { times: number }, next) => {
+        if (times === 3) return next({ times: 0 })
+        const rung = (await next({ times: times * 2 })) as Rung
+        return refused(rung) ? rung : { ...rung, trail: ['pulse', ...(rung.trail ?? [])] }
+      },
+      'tower/collection/create': async (input: { name?: string; content: string }, next) => {
+        if (input.name === 'boom') throw new Error('a guard that breaks')
+        if (input.content.includes('secret')) return { t: 'error', code: 'refused', message: 'pulse keeps secrets out of collections' }
+        return next(input)
+      },
+    },
+    answers: { 'pulse/beat.kept': ({ item }: { item: string }) => ({ heard: `pulse kept ${item}` }) },
     halt: () => ctx.log('halted'),
   }
 }

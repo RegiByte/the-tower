@@ -1,0 +1,9 @@
+{
+  "id": "tally",
+  "version": "1.0",
+  "title": "Tally",
+  "description": "Answers pulse's beats off their schema: the second answerer the server test's hooks have.",
+  "requires": { "tower": "1.85", "pulse": "1.0" },
+  "server": "server.ts",
+  "answers": { "pulse/beat.kept": {} }
+}

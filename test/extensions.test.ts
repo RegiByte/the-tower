@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { registry, resolve, type Found, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
+import { chainOrder, registry, resolve, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
 import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
@@ -235,4 +235,32 @@ test("a capability's session facts over a lineage: in order, each session once, 
     { name: 'beat', value: 1, at: 1, session: 's1' },
     { name: 'beat', value: 2, at: 3, session: 's2' },
   ])
+})
+
+const link = (cap: string, order: { before?: string[]; after?: string[] } = {}): Link => ({ cap, before: order.before ?? [], after: order.after ?? [] })
+
+/** `a` depends on `b` when `b` is in `a`'s list, directly or through another's. */
+const dependsIn = (deps: Record<string, string[]>) => {
+  const reach = (a: string, b: string): boolean => (deps[a] ?? []).some((d) => d === b || reach(d, b))
+  return reach
+}
+
+test('a chain runs a capability inside every capability that depends on it, directly or not, so the owner is innermost; ties go to the earlier name, outside', () => {
+  const deps = dependsIn({ audit: ['reviews'], redact: ['audit'], lint: ['reviews'] })
+  assert.deepEqual(chainOrder([link('reviews'), link('audit'), link('redact'), link('lint')], deps).order, ['lint', 'redact', 'audit', 'reviews'])
+  assert.deepEqual(chainOrder([link('zeta'), link('alpha'), link('mid')], () => false).order, ['alpha', 'mid', 'zeta'])
+})
+
+test('declared before and after come first, over the dependency rule and the names', () => {
+  const deps = dependsIn({ audit: ['reviews'], redact: ['reviews'] })
+  assert.deepEqual(chainOrder([link('reviews'), link('audit', { after: ['redact'] }), link('redact')], deps).order, ['redact', 'audit', 'reviews'])
+  assert.deepEqual(chainOrder([link('reviews', { before: ['audit'] }), link('audit')], deps).order, ['reviews', 'audit'])
+  assert.deepEqual(chainOrder([link('b', { after: ['c'] }), link('a', { after: ['b'] }), link('c')], () => false).order, ['c', 'b', 'a'])
+  assert.deepEqual(chainOrder([link('a', { before: ['gone'] }), link('b')], () => false).order, ['a', 'b'])
+})
+
+test('a cycle of before and after leaves out every link in it, named in order; the rest of the chain runs', () => {
+  const { order, cycles } = chainOrder([link('a', { before: ['b'] }), link('b', { before: ['a'] }), link('c'), link('d', { before: ['d'] })], () => false)
+  assert.deepEqual(order, ['c'])
+  assert.deepEqual(cycles.sort(), ['a → b → a', 'd → d'])
 })

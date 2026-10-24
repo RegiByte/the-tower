@@ -61,6 +61,10 @@ export type Instance = {
   settingsOf(project: string): unknown
   /** Each of its stream folds stopped before a fact its step threw on, and why. */
   threw(): { stream: string; project?: string; message: string }[]
+  /** Its link around `target`, a qualified verb or hook. */
+  link(target: string, input: unknown, next: (input: unknown) => Promise<unknown>, caller: Caller): unknown
+  /** Its answer to `hook`, qualified. */
+  answer(hook: string, payload: unknown, caller: Caller): unknown
   halt(): Promise<void>
 }
 
@@ -104,7 +108,7 @@ export const extensions = defineResource({
     return {
       registry: () => shown,
       /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
-      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources) }),
+      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources), chains: shown.chains, answers: shown.answers }),
       /** The running extensions that fold, as the fold pass reads them, each one's floor settings read once per build. */
       folders: (): Folder[] => {
         const all = running()
@@ -197,7 +201,7 @@ export class MismatchError extends Error {}
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /** Why the handlers `start` returned for a lane don't match the names the manifest declares: each one missing, each one extra. */
-const namesMismatch = (lane: 'verbs' | 'reads', declared: string[], given: unknown): string[] => {
+const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers', declared: string[], given: unknown): string[] => {
   if (given === undefined) return declared.length ? [`its manifest declares ${lane} ${declared.join(', ')}, and start returned no ${lane}`] : []
   if (!isObject(given)) return [`start returned ${lane} that are no object of functions`]
   const missing = declared.filter((name) => !Object.hasOwn(given, name) || typeof given[name] !== 'function')
@@ -221,7 +225,12 @@ const mismatchOf = (started: unknown, manifest: Manifest): string | undefined =>
   const undeclared = Object.keys(started).filter((key) => !(STARTED_KEYS as readonly string[]).includes(key))
   if (undeclared.length) return `start returned ${undeclared.join(', ')}, which its manifest doesn't declare`
   if (started.halt !== undefined && typeof started.halt !== 'function') return 'start returned a halt that is no function'
-  const calls = [...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs), ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads)]
+  const calls = [
+    ...namesMismatch('verbs', Object.keys(manifest.verbs ?? {}), started.verbs),
+    ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads),
+    ...namesMismatch('around', Object.keys(manifest.around ?? {}), started.around),
+    ...namesMismatch('answers', Object.keys(manifest.answers ?? {}), started.answers),
+  ]
   if (calls.length) return calls.join('; ')
   const folds = isObject(started.folds) ? started.folds : {}
   const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
@@ -326,8 +335,8 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     holder.problem(a.id, { lane, level: 'warn', code: 'deprecated', message, at: Date.now() })
   }
 
-  /** `call`, `read` and `deps` for calls made as `caller`. */
-  const callsOf = (caller: Caller): Pick<StartCtx, 'call' | 'read' | 'deps'> => {
+  /** `call`, `read`, `deps` and `raise` for calls made as `caller`. */
+  const callsOf = (caller: Caller): Pick<StartCtx, 'call' | 'read' | 'deps' | 'raise'> => {
     const call: StartCtx['call'] = async (verb, input = {}) => {
       const q = reachable(verb)
       if ('t' in q) return q
@@ -342,7 +351,11 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     }
     const wanted = Object.keys(a.manifest.wants ?? {}).map((cap): [string, Client | undefined] => [cap, undefined])
     const deps = Object.fromEntries([...wanted, ...[...providers].map(([cap, manifest]): [string, Client] => [cap, clientOf(cap, manifest, call, read)])])
-    return { call, read, deps }
+    const raise: StartCtx['raise'] = async (hook, payload) => {
+      if (!a.hooks.has(hook)) throw new Error(`${a.provides} has no hook ${hook}: ctx.raise raises its own, by the name its manifest's hooks give it`)
+      return dispatch.raise(`${a.provides}/${hook}`, payload, caller)
+    }
+    return { call, read, deps, raise }
   }
 
   const ctx: StartCtx = {
@@ -392,6 +405,8 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       threw: stores.threw,
       verb: (name, input, caller) => started.verbs![name](input, handlerCtx(caller, `${a.provides}/${name}`)),
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
+      link: (target, input, next, caller) => started.around![target](input, next, handlerCtx(caller, target)),
+      answer: (hook, payload, caller) => started.answers![hook](payload, handlerCtx(caller, hook)),
       halt: async () => {
         instance.halting = true
         try {

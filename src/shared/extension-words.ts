@@ -18,7 +18,7 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   'too-new': 'tower update',
   'too-old': "read the CHANGELOG's notes for extensions at this major, then raise requires.tower",
   unmet: 'add an extension that provides what it requires, or turn it off: extensions.<id>.off',
-  cycle: 'drop one requires or wants of the cycle',
+  cycle: 'drop one requires or wants of the cycle, or one before or after of a chain',
   conflict: 'turn all providers but one off: extensions.<id>.off',
   skipped: 'fix what it requires first',
   failed: "the tower's log has the error: fix it, then tower down tower and tower up tower",
@@ -28,6 +28,7 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   shape: 'make the handler answer what its reply schema says, and a fold return what its manifest declares, or fix the schema',
   deprecated: 'call what it names to use instead',
   slow: 'make its folds cheaper: fold from its reduced streams, never from files or the whole board',
+  hook: "make the answer match the hook's answer schema; a throw's stack is in the tower's log",
 }
 
 /** An extension in a short line: `Pulse 1.0 · running`, its errors counted. */
