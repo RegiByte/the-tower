@@ -25,6 +25,7 @@
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts",
     "hub/test/fixtures/host-stopped-mid-turn.jsonl",
+    "hub/src/host/main.ts#spawnSession",
     "hub/test/board.test.ts"
   ]
 }
@@ -44,7 +45,9 @@ storing, and the capability belongs in the core, where every renderer and worker
   ([`killedOutside`](ref:hub/src/bridge/facts.ts#killedOutside)): Claude exits 128 plus the number of a signal it
   catches (143 for SIGTERM, raising `SessionEnd` with reason `other`, which moves no status), and the host's own kill
   is SIGHUP, 129, so any other code above 128 is a signal nobody in the tower sent. node-pty reports a signal the
-  process didn't catch (SIGKILL) as code 0 with a signal the host doesn't log: such a kill reads as an end.
+  process didn't catch (SIGKILL) as code 0 with that signal, which the host logs as the `x`'s `signal`: any but
+  SIGHUP (the host's kill, uncaught) strands it too. An older host's `x` holds no `signal`, and such a kill there
+  reads as an end.
 - **Derived.** The fold keeps `exitedFrom`, the status a session was in when its `x` arrived
   ([`stepAfter`](ref:hub/src/bridge/facts.ts#stepAfter)); no hook lands between the host's kill and the `x`, as
   real logs show. A lost session (no `x`) keeps its last status in its facts. The card's `cutOff` is stranded, not
@@ -83,8 +86,10 @@ storing, and the capability belongs in the core, where every renderer and worker
 - Storing that a session was cut off. It is computed from the log.
 - *The host logs the signal beside the exit code.* It would catch SIGKILL too, but a host change ends every running
   session; Claude's own exit code already tells SIGTERM, the default of `kill` and `pkill`, from the host's SIGHUP.
+  Adopted on 2026-10-24, batched into the one host restart that also brought the header's `runtime` and a spawn's
+  facts (`HOST_PROTOCOL` 3): the exit code still tells a caught signal, the logged `signal` an uncaught one.
 - *Any exit the tower didn't ask for strands the worker.* Claude's ordinary exits (a crash, `/exit`) aren't told
   apart yet; signals only, until they are.
 
 **Impact.** A board field (`cutOff`), a card verb (`carry-on`) and `resume`'s `prompt`: API minor. No host change, no
-config change. The sandbox's sessions submit the prompt a resume passes.
+config change (the logged `signal` came later, with a host change of its own). The sandbox's sessions submit the prompt a resume passes.

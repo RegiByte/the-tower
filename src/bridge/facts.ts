@@ -86,6 +86,8 @@ export type Facts = {
   hostStopped?: boolean
   /** The code the session's process exited with. */
   exitCode?: number
+  /** The signal that ended the session's process, when it didn't catch it. */
+  signal?: number
   /** The status the session was in when it exited: a turn the exit cut short reads `working` or `needs_input`. */
   exitedFrom?: Status
   /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
@@ -183,10 +185,12 @@ export const KILLED_BY = 'tower.kill'
 const SIGHUP = 1
 
 /**
- * Whether a session was killed by a signal the host didn't send (`pkill`, `kill <pid>`): Claude exits 128 plus the
- * number of a signal it catches, 143 for SIGTERM, and the host's own kill reads 129.
+ * Whether a session was killed by a signal the host didn't send (`pkill`, `kill <pid>`, `kill -9`): Claude exits 128
+ * plus the number of a signal it catches, 143 for SIGTERM, and the host logs one it didn't catch (SIGKILL) as `signal`.
+ * The host's own kill is SIGHUP, read as 129 or signal 1.
  */
-export const killedOutside = (exitCode: number | undefined) => exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP
+export const killedOutside = (exitCode: number | undefined, signal: number | undefined) =>
+  signal !== undefined ? signal !== SIGHUP : exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP
 
 /** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
 export const HIRED = 'tower.hire'
@@ -377,7 +381,7 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
     conversations: conversationsAfter(facts.conversations, event),
   }
   if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0] } : next
-  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, exitedFrom: facts.state.status }
+  if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, signal: event[2].signal, exitedFrom: facts.state.status }
   if (event[1] === 'r') {
     const [cols, rows] = event[2].split('x').map(Number)
     return { ...next, cols, rows }

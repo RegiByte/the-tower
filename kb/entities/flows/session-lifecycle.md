@@ -24,10 +24,10 @@ sequenceDiagram
   opt cut: a new worktree
     T->>T: git fetch, worktree add in every repo (src/worktrees.ts)
   end
-  T->>H: spawn {id, project, cwd, args} (composed by spawnRequest)
+  T->>H: spawn {id, project, cwd, args, facts?} (composed by spawnRequest)
   H->>R: read config.json, sessionDirs(project, cwd)
   H->>C: pty.spawn(argv + --plugin-dir (tower-mod, with the hooks) + args (--settings: the other session dirs, the fullscreen TUI))
-  H->>R: sessions/<id>.jsonl header
+  H->>R: sessions/<id>.jsonl header {runtime: claude}, then the spawn's tower.* facts as h events
   H-->>T: spawned <id>
   loop while it runs
     C->>H: PTY output
@@ -43,7 +43,7 @@ sequenceDiagram
     L-->>T: onChange, board published
   end
   C-->>H: process exits
-  H->>R: x event {exitCode, hostStopped?}
+  H->>R: x event {exitCode, signal?, hostStopped?}
 ```
 
 - **Triggers.** The `spawn` verb, from a renderer's spawn dialog or `tower spawn`. The tower draws the session id
@@ -62,7 +62,8 @@ sequenceDiagram
   events ([`snapshot`](ref:hub/src/bridge/screen.ts#snapshot)), then streams appended output. The log is read for
   those and `x` alone ([`screenEvents`](ref:hub/src/tail.ts#screenEvents)): no other line is parsed.
 - **End.** The PTY exits by itself, by `kill`, because the host stopped (`hostStopped`), or by a signal from
-  outside the tower (`exitCode` above 128, other than the host's SIGHUP 129). A session with no `x` whose host is
+  outside the tower (`exitCode` above 128 for one Claude caught, or a logged `signal` for one it didn't, other than
+  the host's SIGHUP, 129 or signal 1). A session with no `x` whose host is
   gone shows as `lost`. Lost, stopped with the host or killed from outside, it is stranded: on duty until resumed or
   let go ([[carry-on]], [[let-go]]). Any way it ended, it can be resumed: a resume is a new session
   continuing the same Claude conversation.

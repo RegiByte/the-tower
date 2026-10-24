@@ -409,7 +409,7 @@ const card = (
       state: { ...state, since: enteredAt },
       endedFrom: facts.exitedFrom ?? facts.state.status,
       hostStopped: facts.hostStopped === true,
-      killedOutside: killedOutside(facts.exitCode),
+      killedOutside: killedOutside(facts.exitCode, facts.signal),
       broken: facts.broken !== undefined,
       typedAt,
       heardAt,

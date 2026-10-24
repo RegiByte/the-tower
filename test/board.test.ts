@@ -222,13 +222,15 @@ test('carry on: a worker the host stopped mid-turn is cut off, and offers a resu
   assert.deepEqual([letGo.cutOff, letGo.verbs], [true, ['resume', 'brief']])
 })
 
-test('a worker killed by a signal from outside the tower is stranded like one the host stopped; one the tower killed has ended', () => {
+test('a worker killed by a signal from outside the tower, caught or not, is stranded like one the host stopped; one the tower killed has ended', () => {
   const midTurn = homed(fixture('host-stopped-mid-turn'))
-  const exitingWith = (exitCode: number) => ({ ...midTurn, events: midTurn.events.map((e) => (e[1] === 'x' ? ([e[0], 'x', { exitCode }] as SessionLog['events'][number]) : e)) })
-  const [killed, sentHome] = cardsOf([exitingWith(143), exitingWith(129)])
-  assert.deepEqual([killed.stranded, killed.cutOff, killed.onDuty, statusName(killed)], [true, true, true, 'stopped mid-turn, resumable'])
-  assert.deepEqual(killed.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
-  assert.deepEqual([sentHome.stranded, sentHome.onDuty], [false, false])
+  const exitingWith = (exit: { exitCode: number; signal?: number }) => ({ ...midTurn, events: midTurn.events.map((e) => (e[1] === 'x' ? ([e[0], 'x', exit] as SessionLog['events'][number]) : e)) })
+  const [killed, killedHard, sentHome, sentHomeHard] = cardsOf([exitingWith({ exitCode: 143 }), exitingWith({ exitCode: 0, signal: 9 }), exitingWith({ exitCode: 129 }), exitingWith({ exitCode: 0, signal: 1 })])
+  for (const card of [killed, killedHard]) {
+    assert.deepEqual([card.stranded, card.cutOff, card.onDuty, statusName(card)], [true, true, true, 'stopped mid-turn, resumable'])
+    assert.deepEqual(card.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  }
+  for (const card of [sentHome, sentHomeHard]) assert.deepEqual([card.stranded, card.onDuty], [false, false])
 })
 
 test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs", () => {
