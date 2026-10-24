@@ -187,7 +187,8 @@ const SIGHUP = 1
 /**
  * Whether a session was killed by a signal the host didn't send (`pkill`, `kill <pid>`, `kill -9`): Claude exits 128
  * plus the number of a signal it catches, 143 for SIGTERM, and the host logs one it didn't catch (SIGKILL) as `signal`.
- * The host's own kill is SIGHUP, read as 129 or signal 1.
+ * The host's own kill is SIGHUP, read as 129 or signal 1. A crash on a signal (SIGSEGV, SIGABRT) reads the same: the
+ * worker didn't end by its own or the tower's doing, and stays resumable.
  */
 export const killedOutside = (exitCode: number | undefined, signal: number | undefined) =>
   signal !== undefined ? signal !== SIGHUP : exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP

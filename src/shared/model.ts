@@ -318,10 +318,10 @@ export const projectCollections = (config: Config, projectId: string): Record<st
 /** The plugin directories a project's sessions load: every session's, then its own. */
 export const projectPlugins = (config: Config, projectId: string): string[] => [...(config.plugins ?? []), ...(config.projects[projectId].plugins ?? [])]
 
-/** First line of a session log: everything known about the session when it started. */
 /** The agent runtime a session runs, fixed for its life and its whole resume chain. */
 export type Runtime = 'claude'
 
+/** First line of a session log: everything known about the session when it started. */
 export type SessionHeader = {
   id: string
   project: string
