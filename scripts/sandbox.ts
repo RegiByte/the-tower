@@ -54,18 +54,20 @@ process.env.PATH = `${path.join(REPO, 'src', 'mod', 'bin')}${path.delimiter}${pr
 
 /**
  * A session that prints a line, reports the newest tested Claude release and one saved conversation with a prompt and an answer as Claude's hooks and mod
- * would (or continues the one `--resume` names, on the prompt after `--` when one is given), and waits to be killed,
+ * would (or continues the one `--resume` names, on the prompt after `--` when one is given), its step on the model and
+ * effort its flags ask for (`claude-<model>-9-9`, else the made-up defaults `claude-opus-9-9` and `medium`), and waits to be killed,
  * exiting 143 on SIGTERM as Claude does: Claude's flags land in `$@`.
  */
 const SESSION = String.raw`post() { curl -sS -m 2 --unix-socket "$TOWER_HOOKS_SOCKET" -H 'content-type: application/json' --data-binary "$1" "http://host/hooks/$TOWER_SESSION_ID" >/dev/null; }
-conv=$(uuidgen | tr A-Z a-z); source=startup; prompt='Say hello from the sandbox.'
-while [ $# -gt 0 ]; do [ "$1" = --resume ] && conv=$2 && source=resume; [ "$1" = -- ] && prompt=$2; shift; done
+conv=$(uuidgen | tr A-Z a-z); source=startup; prompt='Say hello from the sandbox.'; model=claude-opus-9-9; effort=medium
+while [ $# -gt 0 ]; do [ "$1" = --resume ] && conv=$2 && source=resume; [ "$1" = --model ] && model=claude-$2-9-9; [ "$1" = --effort ] && effort=$2; [ "$1" = -- ] && prompt=$2; shift; done
 prompt=$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "$prompt")
 printf "sandbox session %s in %s\n" "$$" "$PWD"
 post '{"hook_event_name":"tower.claude","version":"${CLAUDE_TESTED.highest}"}'
 post '{"hook_event_name":"SessionStart","source":"'$source'","session_id":"'$conv'"}'
 post '{"hook_event_name":"UserPromptSubmit","session_id":"'$conv'","prompt":'"$prompt"'}'
 post '{"hook_event_name":"prompt.submit","origin":{"kind":"composer"},"text":'"$prompt"'}'
+post '{"hook_event_name":"turn.step","model":"'$model'","effort":"'$effort'","result":{}}'
 post '{"hook_event_name":"turn.complete","answer":"Hello from the sandbox, session '$$'.\n\n- a list\n- of things"}'
 trap 'exit 143' TERM
 while :; do sleep 3600 & wait; done`
