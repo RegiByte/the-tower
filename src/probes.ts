@@ -59,7 +59,7 @@ const append = (paths: SystemPaths, probe: string, at: number, read: ProbeRead) 
   appendFact(path.join(systemStreamsPath(paths), streamName(probe)), streamName(probe), at, 'p', read)
 
 /**
- * Runs the probes until the process ends. The one read in flight and when the last one started are all it holds:
+ * Runs the probes until stopped. The one read in flight and when the last one started are all it holds:
  * whatever the config or a stream says, reads start at least `FLOOR_MS` apart. `readNow` reads a probe at once.
  */
 export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions: () => Session[], probes: () => Map<string, ProbeFacts>) => {
@@ -87,7 +87,7 @@ export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions
     const probe = probesOf(config).find((p) => due(p, facts.get(p.name) ?? NO_READS, measured, now))
     if (probe) await read(probe, config, now)
   }
-  setInterval(() => void tick().catch((err) => console.error('probes:', err)), TICK_MS)
+  const ticks = setInterval(() => void tick().catch((err) => console.error('probes:', err)), TICK_MS)
 
   /** The probe named, read now: refused while it is off, while a read is in flight, or within the floor of the last start. */
   const readNow = async (name: string): Promise<{ at: number; read: ProbeRead } | ApiError> => {
@@ -100,5 +100,7 @@ export const runProbes = (paths: SystemPaths, readConfig: () => Config, sessions
     if (now - lastStart < FLOOR_MS) return apiError('refused', `Reads start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((lastStart + FLOOR_MS - now) / 1000)}s`)
     return { at: now, read: await read(probe, config, now) }
   }
-  return { readNow }
+  /** No more ticks: a read in flight finishes and is appended. */
+  const stop = () => clearInterval(ticks)
+  return { readNow, stop }
 }

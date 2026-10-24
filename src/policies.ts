@@ -48,7 +48,7 @@ export const runCheck = (line: string, cwd: string): Promise<CheckResult> =>
   })
 
 /**
- * Runs the tower's runner until the process ends. `run` and `pass` are the verbs `policy/run` and `policy/pass`; a
+ * Runs the tower's runner until stopped. `run` and `pass` are the verbs `policy/run` and `policy/pass`; a
  * refusal goes to the tower's log, and the slot is decided again at the next tick while it is on time.
  */
 export const runPolicies = (
@@ -85,5 +85,7 @@ export const runPolicies = (
       ticking = false
     }
   }
-  setInterval(() => void tick().catch((err) => console.error('policies:', err)), TICK_MS)
+  const ticks = setInterval(() => void tick().catch((err) => console.error('policies:', err)), TICK_MS)
+  /** No more ticks: a tick in flight finishes its floors. */
+  return { stop: () => clearInterval(ticks) }
 }

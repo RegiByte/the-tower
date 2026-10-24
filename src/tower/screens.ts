@@ -9,7 +9,7 @@ export type ScreenViewer = { snapshot: (data: string) => void; event: (event: Lo
 type Viewer = ScreenViewer & { held?: LogEvent[] }
 
 /** A mirror, its viewers, its tail, and how to take it off the watched screens once it is dropped. */
-type Watched = { mirror: Mirror; viewers: Set<Viewer>; stopTail: () => void; forget: () => void; ended: boolean; idle?: NodeJS.Timeout }
+type Watched = { mirror: Mirror; viewers: Set<Viewer>; stopTail: () => void; forget: () => void; ended: boolean; dropped: boolean; idle?: NodeJS.Timeout }
 
 /**
  * The screens of running sessions that someone watches, one mirror each, shared by every viewer of the session: the
@@ -21,6 +21,8 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
   const watched = new Map<string, Promise<Watched | undefined>>()
 
   const drop = (w: Watched) => {
+    if (w.dropped) return
+    w.dropped = true
     clearTimeout(w.idle)
     w.stopTail()
     w.mirror.dispose()
@@ -32,7 +34,7 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
     const logPath = logPathOf(id)
     const { log, offset } = readLog(logPath, screenEvents)
     if (log.events.some((event) => event[1] === 'x')) return undefined
-    const w: Watched = { mirror: await mirrorOf(log), viewers: new Set(), stopTail: () => {}, forget, ended: false }
+    const w: Watched = { mirror: await mirrorOf(log), viewers: new Set(), stopTail: () => {}, forget, ended: false, dropped: false }
     w.stopTail = tailLog(logPath, offset, screenEvents, (event) => {
       w.mirror.draw(event)
       for (const viewer of w.viewers) {
@@ -78,13 +80,18 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
       if (!watching) return
       watching = false
       w.viewers.delete(v)
-      if (w.viewers.size) return
+      if (w.viewers.size || w.dropped) return
       if (w.ended) drop(w)
       else w.idle = setTimeout(() => drop(w), graceMs)
     }
   }
 
-  return { watch }
+  /** Drops every mirror, watched or not: their tails stop and their grace ends now. */
+  const stop = async () => {
+    for (const w of await Promise.all([...watched.values()].map((entry) => entry.catch(() => undefined)))) if (w) drop(w)
+  }
+
+  return { watch, stop }
 }
 
 /**

@@ -4,7 +4,7 @@
  * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch, type FSWatcher } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
@@ -212,6 +212,8 @@ export type System = {
    * observing, they are not read at all. Resolves once they are current: the first observer after none reads them now.
    */
   observe: () => Promise<() => void>
+  /** Stops watching: every watcher closed, every tail stopped, every poll and timer cleared, the git reader ended. */
+  stop: () => Promise<void>
 }
 
 /**
@@ -219,11 +221,13 @@ export type System = {
  * the shells, the processes, git, or the config file.
  */
 export const watchSystem = async (paths: SystemPaths, notify: () => void): Promise<System> => {
-  const waiters = new Set<() => void>()
+  /** Each `until` waiting: its check, and how it is done. */
+  const waiters = new Map<() => void, () => void>()
   const onChange = () => {
     notify()
-    for (const check of waiters) check()
+    for (const check of waiters.keys()) check()
   }
+  const watchers: FSWatcher[] = []
   const sessions = new Map<string, Session>()
   const logs = new Map<string, LogFile>()
   /** Each tailed log's stop, by session id, until its session exits or its log is archived. */
@@ -453,7 +457,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   }
 
   trackNew()
-  watchedOrExit(
+  const watching = (watcher: FSWatcher, what: string) => watchers.push(watchedOrExit(watcher, what))
+  watching(
     watch(
       paths.sessions,
       logged('sessions', (_: string, file: string | null) => {
@@ -467,18 +472,17 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)
   policyFiles = policyFilesIn(paths, items, policyFiles)
-  watchedOrExit(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
+  watching(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
   mkdirSync(systemStreamsPath(paths), { recursive: true })
   rescanStreams()
-  watchedOrExit(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
+  watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
   mkdirSync(projectsStreamsPath(paths), { recursive: true })
   rescanPolicyStreams()
-  watchedOrExit(watch(projectsStreamsPath(paths), { recursive: true }, schedulePolicyStreams), projectsStreamsPath(paths))
-  watchedOrExit(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
+  watching(watch(projectsStreamsPath(paths), { recursive: true }, schedulePolicyStreams), projectsStreamsPath(paths))
+  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
   await refreshShells()
-  setInterval(refreshLive, LIVE_POLL_MS)
-  setInterval(refreshShells, LIVE_POLL_MS)
+  const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS)]
 
   return {
     sessions: () => [...sessions.values()].sort((a, b) => b.header.startedAt - a.header.startedAt),
@@ -511,12 +515,22 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         const done = () => (waiters.delete(check), clearTimeout(timer), resolve())
         const check = () => holds() && done()
         const timer = setTimeout(done, ms)
-        waiters.add(check)
+        waiters.set(check, done)
         check()
       }),
     refreshRunning,
     refreshShells,
     refreshRepos,
     observe,
+    stop: async () => {
+      for (const watcher of watchers) watcher.close()
+      for (const stopTail of tails.values()) stopTail()
+      tails.clear()
+      ;[...livePolls, ...machinePolls].forEach(clearInterval)
+      ;[rescanTimer, streamsTimer, policyStreamsTimer].forEach(clearTimeout)
+      for (const done of [...awaited.values()]) done()
+      for (const done of [...waiters.values()]) done()
+      await reader?.terminate()
+    },
   }
 }
