@@ -1,9 +1,11 @@
+import type { Card, Floor } from '../../../../src/bridge/board.ts'
 import type { Start } from '../../../../src/shared/extensions.ts'
 
 type Beats = { count: number; items: string[] }
 
 const start: Start = (ctx) => {
   const { every, line } = ctx.settings as { every: number; line?: string }
+  const startedAt = Date.now()
   ctx.every(every, () => ctx.log(line ?? 'pulse'))
   return {
     verbs: {
@@ -26,6 +28,17 @@ const start: Start = (ctx) => {
     },
     parse: { pulse: (text) => ({ beat: text.trim() }) },
     reduce: { beats: { init: { count: 0, items: [] }, step: (state: Beats, [, , fact]) => ({ count: state.count + 1, items: [...state.items, (fact as { item: string }).item] }) } },
+    folds: {
+      card: (card: Card, { own }) => {
+        const beats = (own.facts ?? []).length
+        return beats ? { x: { beats }, badges: [{ label: `${beats} beat${beats === 1 ? '' : 's'}`, tone: 'ready' }], lines: [`You took ${beats} beat${beats === 1 ? '' : 's'}: \`tower x pulse beat\` keeps another.`] } : {}
+      },
+      floor: (floor: Floor, { own }) => ({
+        x: { beats: (own.streams.beats as Beats).count },
+        actions: [{ verb: 'pulse/ping', call: { project: floor.id } }],
+        asks: [{ key: `beat-${floor.id}`, subject: `floor:${floor.id}`, title: `Keep a beat on ${floor.name}`, since: startedAt, sound: 'offer', actions: [{ verb: 'pulse/beat', call: { project: floor.id } }] }],
+      }),
+    },
     halt: () => ctx.log('halted'),
   }
 }

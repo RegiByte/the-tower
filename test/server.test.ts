@@ -245,6 +245,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
       { name: 'pulse/pong', scope: 'system', deprecated: { since: '1.0', use: 'pulse/ping', why: 'a ping names its floor' } },
       { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
     ],
+    commands: [{ name: 'listen', module: 'pulse.js', export: 'listen', words: { label: 'Listen', hint: 'reads the beat aloud' }, on: ['item.pulse'] }],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual(read.extensions, msg.board.extensions)
@@ -281,6 +282,34 @@ test("server: an extension writes its owned collection and its stream through it
   const kept = await settled(async (): Promise<Kept> => JSON.parse((await get(`/pulse/kept/lab?session=${SESSION}`)).body), (k) => k.beats.count === 1 && k.items.length === 1)
   assert.deepEqual([kept.beats, kept.items], [{ count: 1, items: [item] }, [{ beat: 'beat 1' }]])
   assert.deepEqual(kept.facts.map(({ name, value, session }) => ({ name, value, session })), [{ name: 'beat', value: 1, session: SESSION }])
+})
+
+test("server: an extension's folds put its part on the board's subjects, its badges, lines and actions in adds and its ask in asks; its client files are served", async () => {
+  const board = await settled(
+    async () => {
+      const msg = (await firstEvent('/board')) as BoardMsg
+      assert.ok('board' in msg)
+      return msg.board
+    },
+    (b) => (b.floors.find((f) => f.id === 'lab')!.x?.pulse as { beats: number } | undefined)?.beats === 1,
+  )
+  const lab = board.floors.find((f) => f.id === 'lab')!
+  const card = lab.cards.find((c) => c.id === SESSION)!
+  assert.deepEqual([lab.x, card.x], [{ pulse: { beats: 1 } }, { pulse: { beats: 1 } }])
+  assert.deepEqual(board.adds[`card:${SESSION}`], {
+    badges: [{ label: '1 beat', tone: 'ready', cap: 'pulse' }],
+    lines: [{ text: 'You took 1 beat: `tower x pulse beat` keeps another.', cap: 'pulse' }],
+  })
+  assert.deepEqual(board.adds['floor:lab'], { actions: [{ verb: 'pulse/ping', call: { project: 'lab' }, cap: 'pulse' }] })
+  assert.deepEqual(
+    board.asks.map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
+    [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],
+  )
+  const client = await get('/x/pulse/pulse.js')
+  assert.deepEqual([client.status, client.type, client.headers['access-control-allow-origin']], [200, 'text/javascript', '*'])
+  assert.match(client.body, /export async function listen/)
+  assert.equal(errorCode(await get('/x/pulse/missing.js')), 'not_found')
+  assert.equal(errorCode(await get('/x/chime/pulse.js')), 'not_found')
 })
 
 test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {

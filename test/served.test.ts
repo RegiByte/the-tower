@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import vm from 'node:vm'
 import { API_VERSION } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
-import { BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
+import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
 import { bundled, MODULES, towerClient } from '../src/tower/served.ts'
 
 /**
@@ -59,7 +59,8 @@ const leafPaths = (value: object, at: string[] = []): string[] =>
 
 /**
  * Every name served now: each module's exports, `/tower.js`'s members, `/design.css`'s custom properties and classes,
- * and what extensions build on: the manifest's key paths, each lane's ctx members, and the core's problem codes and names.
+ * and what extensions build on: the manifest's key paths, each lane's ctx members, and the core's problem codes, names,
+ * adds and badge tones.
  */
 function servedNow(): Record<string, string[]> {
   const served: Record<string, string[]> = {
@@ -67,7 +68,13 @@ function servedNow(): Record<string, string[]> {
     '/design.css': stylesheetNames(designCss()),
     'extension.json': keyPaths(MANIFEST_SCHEMA as SchemaNode),
     ctx: leafPaths(CTX_SINCE),
-    core: [...PROBLEM_CODES.map((code) => `problem.${code}`), ...RESERVED.map((name) => `reserved.${name}`), ...BUNDLED.map((name) => `bundled.${name}`)],
+    core: [
+      ...PROBLEM_CODES.map((code) => `problem.${code}`),
+      ...RESERVED.map((name) => `reserved.${name}`),
+      ...BUNDLED.map((name) => `bundled.${name}`),
+      ...ADDS.map((add) => `adds.${add}`),
+      ...BADGE_TONES.map((tone) => `tone.${tone}`),
+    ],
   }
   for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports
   return Object.fromEntries(Object.entries(served).map(([url, names]) => [url, [...names].sort()]))

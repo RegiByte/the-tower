@@ -2,9 +2,10 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, and keeps its beats: the fixture the server test boots.",
-  "requires": { "tower": "1.83", "chime": "1.0" },
+  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, keeps its beats, and shows them on the board: the fixture the server test boots.",
+  "requires": { "tower": "1.84", "chime": "1.0" },
   "server": "server.ts",
+  "client": "client",
   "settings": {
     "type": "object",
     "additionalProperties": false,
@@ -87,5 +88,23 @@
   },
   "facts": {
     "beat": { "description": "A beat a session took.", "schema": { "type": "integer", "minimum": 1 } }
+  },
+  "folds": {
+    "card": {
+      "x": { "type": "object", "additionalProperties": false, "required": ["beats"], "properties": { "beats": { "type": "integer", "minimum": 0 } } },
+      "adds": ["badges", "lines"]
+    },
+    "floor": {
+      "x": { "type": "object", "additionalProperties": false, "required": ["beats"], "properties": { "beats": { "type": "integer", "minimum": 0 } } },
+      "adds": ["actions", "asks"]
+    }
+  },
+  "commands": {
+    "listen": {
+      "module": "pulse.js",
+      "export": "listen",
+      "words": { "label": "Listen", "hint": "reads the beat aloud" },
+      "on": ["item.pulse"]
+    }
   }
 }
