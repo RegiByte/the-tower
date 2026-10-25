@@ -264,7 +264,10 @@ export type LaunchRequest = {
 export type LaunchParts = {
   systemPrompt?: string[]
   prompt?: string[]
-  /** Placed in Claude's `--settings`, so logged with the session's argv in its log's header, for good: no place for secrets. */
+  /**
+   * Placed in Claude's `--settings`, so logged with the session's argv in its log's header, for good: no place for
+   * secrets. A key the config's `env` sets refuses the launch.
+   */
   env?: Record<string, string>
   defaults?: { model?: string; effort?: string }
   args?: Partial<Record<Runtime, string[]>>

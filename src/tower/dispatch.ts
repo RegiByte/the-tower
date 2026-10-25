@@ -13,7 +13,7 @@ import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Exemption, type Session } from '../bridge/facts.ts'
-import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
+import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../bridge/policies.ts'
 import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
 import type { Prune } from '../bridge/prunable.ts'
@@ -437,7 +437,7 @@ export const dispatch = defineResource({
         if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
         holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })
       }
-      const merged = mergeParts(kind, runtime, contributions, takenFlags(runtime, readConfig().argv))
+      const merged = mergeParts(kind, runtime, contributions, { flags: takenFlags(runtime, readConfig().argv), env: takenEnv(readConfig().env) })
       if (merged.t === 'merged') return merged
       for (const cap of merged.caps) holder.problem(launchers.find((l) => l.cap === cap)!.id, { lane: 'launch', level: 'error', code: 'conflict', message: merged.message, at: Date.now() })
       return apiError('refused', merged.message)

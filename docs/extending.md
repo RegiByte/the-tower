@@ -531,8 +531,8 @@ its log's header keeps for good, so contributed env is no place for secrets),
 `--flag` or `--flag=value`, placed before the tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`,
 `defaults`, `exempt` and `reportsTo` count on a spawn only. A flag the tower passes (`--name`, `--settings`,
 `--add-dir`, `--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
-passes, and a flag, env key, `defaults` member or `reportsTo` two extensions both give, refuses the launch, naming
-both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
+passes, an env key the config's `env` sets, and a flag, env key, `defaults` member or `reportsTo` two extensions both
+give, refuses the launch, naming both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
 carries its fields, and otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
 `reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
 starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin

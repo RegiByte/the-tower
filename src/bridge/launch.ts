@@ -1,7 +1,8 @@
 /**
  * What launch contributors add to a session, merged (decision `extensions`): each contributor's parts read as a runtime
  * places them, then joined in fold order. Text parts are concatenated; a flag, an env key, a `defaults` member or a
- * `reportsTo` given twice, or a flag the core or the config's `argv` passes, refuses the launch, naming both sides.
+ * `reportsTo` given twice, a flag the core or the config's `argv` passes, or an env key the config's `env` sets, refuses
+ * the launch, naming both sides.
  */
 import { z } from 'zod'
 import type { LaunchParts } from '../shared/extensions.ts'
@@ -35,14 +36,20 @@ export const placeable = (returned: unknown): { ok: true; parts: LaunchParts } |
 /** One contributor's parts, by the capability that gave them. */
 export type Contribution = { cap: string; parts: LaunchParts }
 
-/** A flag something already passes, and who: the tower, or the config's argv at an index. */
-export type Taken = { flag: string; by: string }
+/** A flag or an env key something already sets, and who: the tower, or the config at a key. */
+export type Taken = { name: string; by: string }
+
+/** What no contributor may set: `flags`, by name; `env`, by key. */
+export type TakenParts = { flags: Taken[]; env: Taken[] }
 
 /** The flags no contributor may pass on `runtime`: the core's, and those the config's `argv` passes. */
 export const takenFlags = (runtime: Runtime, argv: string[]): Taken[] => [
-  ...CORE_FLAGS[runtime].map((flag) => ({ flag, by: 'the tower' })),
-  ...argv.flatMap((arg, i) => (i > 0 && arg.startsWith('-') ? [{ flag: flagName(arg), by: `the config's argv[${i}] (${arg})` }] : [])),
+  ...CORE_FLAGS[runtime].map((name) => ({ name, by: 'the tower' })),
+  ...argv.flatMap((arg, i) => (i > 0 && arg.startsWith('-') ? [{ name: flagName(arg), by: `the config's argv[${i}] (${arg})` }] : [])),
 ]
+
+/** The env keys no contributor may set: those the config's `env` sets, which a contributed one would override in silence. */
+export const takenEnv = (env: Record<string, string> | undefined): Taken[] => Object.keys(env ?? {}).map((name) => ({ name, by: `the config's env.${name}` }))
 
 /** A crew edge as a contributor gives it: the callsign the new worker reports to. */
 export type ReportsTo = { callsign: string; by: string }
@@ -68,7 +75,7 @@ const twice = (seen: Map<string, string>, cap: string, names: string[]): [string
 }
 
 /** Contributions merged in fold order for a launch of `kind` on `runtime`, or the first conflict among them. */
-export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], runtime: Runtime, contributions: Contribution[], taken: Taken[]): Merged | Conflict => {
+export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], runtime: Runtime, contributions: Contribution[], taken: TakenParts): Merged | Conflict => {
   const merged: Merged = { t: 'merged', contributed: { systemPrompt: [], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [] }
   const flags = new Map<string, string>()
   const envs = new Map<string, string>()
@@ -77,11 +84,13 @@ export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], run
   for (const { cap, parts: given } of contributions) {
     const parts = spawnOnly(given, kind)
     const args = parts.args?.[runtime] ?? []
-    const core = args.map(flagName).flatMap((flag) => taken.filter((t) => t.flag === flag).map((t) => ({ flag, by: t.by })))[0]
-    if (core) return { t: 'conflict', message: `${cap} passes ${core.flag}, which ${core.by} passes`, caps: [cap] }
+    const core = args.map(flagName).flatMap((flag) => taken.flags.filter((t) => t.name === flag))[0]
+    if (core) return { t: 'conflict', message: `${cap} passes ${core.name}, which ${core.by} passes`, caps: [cap] }
     const flag = twice(flags, cap, args.map(flagName))
     if (flag) return { t: 'conflict', message: `${flag[0]} and ${cap} both pass ${flag[1]}`, caps: [flag[0], cap] }
     const env = withoutParentSession(parts.env ?? {})
+    const configured = Object.keys(env).flatMap((key) => taken.env.filter((t) => t.name === key))[0]
+    if (configured) return { t: 'conflict', message: `${cap} sets ${configured.name} in env, which ${configured.by} sets`, caps: [cap] }
     const key = twice(envs, cap, Object.keys(env))
     if (key) return { t: 'conflict', message: `${key[0]} and ${cap} both set ${key[1]} in env`, caps: [key[0], cap] }
     const member = twice(defaults, cap, Object.keys(parts.defaults ?? {}))

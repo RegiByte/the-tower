@@ -227,8 +227,9 @@ and versioned without running anything, and a runtime where an extension's failu
   placed before the core's, `exempt` and `reportsTo`; the last four a spawn's only
   ([`placeable`](ref:hub/src/bridge/launch.ts#placeable), [`mergeParts`](ref:hub/src/bridge/launch.ts#mergeParts)).
   A flag the core composes ([`CORE_FLAGS`](ref:hub/src/shared/launch.ts#CORE_FLAGS), read from a launch with every
-  part set, never written out) or the config's `argv` passes, and a flag, env key, `defaults` member or `reportsTo`
-  two contributors give, refuse the launch naming both, a `conflict` problem on each. A contributor that throws, doesn't
+  part set, never written out) or the config's `argv` passes, an env key the config's `env` sets (Claude's settings
+  would override it in silence), and a flag, env key, `defaults` member or `reportsTo` two contributors give, refuse
+  the launch naming both, a `conflict` problem on each. A contributor that throws, doesn't
   settle within 10 s (as `start`), or returns what the runtime can't place refuses a spawn carrying its fields (`internal`), and is otherwise dropped with a
   `launch` problem. Each `exempt` is logged as `tower.exempt {from, by}` and a `reportsTo` as `tower.reports-to
   {callsign, session, by}`, the session the callsign names on the board then: core facts the core's crews and hiring

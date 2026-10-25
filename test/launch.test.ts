@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
-import { coreFacts, forkFacts, mergeParts, placeable, takenFlags, type Merged } from '../src/bridge/launch.ts'
+import { coreFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Merged } from '../src/bridge/launch.ts'
 import { CORE_FLAGS } from '../src/shared/launch.ts'
 import type { LogEvent, SessionHeader } from '../src/shared/model.ts'
 import { UnsettledError, within } from '../src/tower/extensions.ts'
 
-const TAKEN = takenFlags('claude', ['claude', '--dangerously-skip-permissions', '--verbose=1'])
+const TAKEN = { flags: takenFlags('claude', ['claude', '--dangerously-skip-permissions', '--verbose=1']), env: takenEnv({ HTTPS_PROXY: 'http://proxy' }) }
 
 const merged = (result: ReturnType<typeof mergeParts>): Merged => {
   assert.equal(result.t, 'merged', result.t === 'conflict' ? result.message : '')
@@ -39,7 +39,7 @@ test("a resume or a fork takes no prompt, defaults, exemption or crew edge: thos
   assert.deepEqual(m, { t: 'merged', contributed: { systemPrompt: ['a builder'], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [] })
 })
 
-test('a flag, env key, defaults member or crew edge given twice refuses, naming both; so does a flag the core or the config passes', () => {
+test('a flag, env key, defaults member or crew edge given twice refuses, naming both; so does a flag the core or the config passes, and an env key the config sets', () => {
   const conflict = (a: object, b: object) => mergeParts('spawn', 'claude', [{ cap: 'roles', parts: a }, { cap: 'focus', parts: b }], TAKEN)
   assert.deepEqual(conflict({ args: { claude: ['--foo'] } }, { args: { claude: ['--foo=1'] } }), { t: 'conflict', message: 'roles and focus both pass --foo', caps: ['roles', 'focus'] })
   assert.match((conflict({ env: { A: '1' } }, { env: { A: '2' } }) as { message: string }).message, /^roles and focus both set A in env$/)
@@ -47,6 +47,7 @@ test('a flag, env key, defaults member or crew edge given twice refuses, naming 
   assert.match((conflict({ reportsTo: 'A-1' }, { reportsTo: 'B-2' }) as { message: string }).message, /^roles and focus both give reportsTo$/)
   assert.deepEqual(conflict({ args: { claude: ['--model=opus'] } }, {}), { t: 'conflict', message: 'roles passes --model, which the tower passes', caps: ['roles'] })
   assert.match((conflict({}, { args: { claude: ['--verbose'] } }) as { message: string }).message, /^focus passes --verbose, which the config's argv\[2\] \(--verbose=1\) passes$/)
+  assert.deepEqual(conflict({ env: { HTTPS_PROXY: 'http://other' } }, {}), { t: 'conflict', message: "roles sets HTTPS_PROXY in env, which the config's env.HTTPS_PROXY sets", caps: ['roles'] })
 })
 
 test('a part the runtime cannot place is no part: a positional among the flags, a runtime it does not know, a key it does not read', () => {
