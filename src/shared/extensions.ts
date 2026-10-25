@@ -81,9 +81,9 @@ export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'board', old: 'card.threadState', now: 'card.x.reviews.threadState', since: REVIEWS_MOVED },
   { kind: 'board', old: 'card.unseen', now: 'card.x.reviews.unseen', since: REVIEWS_MOVED },
   { kind: 'board', old: 'card.checkoutState.filed', now: 'card.x.reviews.filed', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.verbs.note', now: "board.adds['card:<id>'].actions: reviews/append", since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.calls.note', now: "board.adds['card:<id>'].actions: reviews/append", since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.actions.note', now: "board.adds['card:<id>'].actions: reviews/append", since: REVIEWS_MOVED },
+  { kind: 'board', old: 'card.verbs.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
+  { kind: 'board', old: 'card.calls.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
+  { kind: 'board', old: 'card.actions.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
 ]
 
 /** The entries `kind`'s applier reads. */
