@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Crews: who reports to whom is derived, drawn as a tree on duty and in the archive, and sent home together",
-  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the author whose work it reviews, else the worker a launch contributor named in tower.reports-to at its spawn, else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
+  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the worker a launch contributor named in tower.reports-to at its spawn (a reviewer's author, by reviews), else its hirer, followed through resumes; a reviewer spawned before 1.95 reads its author from its first prompt through LEGACY. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
@@ -11,6 +11,8 @@
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/facts.ts#REPORTS_TO",
+    "hub/src/bridge/legacy.ts#legacyCrew",
+    "hub/src/bridge/seats.ts#seats",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeActions",
@@ -36,7 +38,7 @@
   ],
   "links": [
     { "to": "hiring-limits", "verb": "uses", "carries": "card.hiredBy, the fact a hire leaves" },
-    { "to": "reviewer", "verb": "uses", "carries": "card.reviews, the author a reviewer works for" },
+    { "to": "reviewer", "verb": "uses", "carries": "a reviewer's crew edge, by reviews, to the author it works for" },
     { "to": "board-verbs", "verb": "extends", "carries": "the card verb `send-home`, its call a list of kills" }
   ]
 }
@@ -46,20 +48,24 @@ reviewers, and they hire in turn, but a flat list by start scatters a coordinato
 workers, on duty and in the archive alike. And once a hire's work is done, it and whoever it hired stay on duty with
 nothing left to do, ended one by one by hand.
 
-**Why.** Who hired whom was already a fact ([[hiring-limits]]) and a reviewer's author is derived from its first
-prompt ([[reviewer]]). The tree is computable, so it is computed. Nothing here is a "task": a worker may be a
+**Why.** Who hired whom was already a fact ([[hiring-limits]]) and a reviewer's author is logged at its spawn
+([[reviewer]]). The tree is computable, so it is computed. Nothing here is a "task": a worker may be a
 coordinator handing out work, or a conversation that just says hi. The model is who works for whom.
 
 **How.**
 - *One edge, on the board.* [`withReports`](ref:hub/src/bridge/board.ts#withReports) gives each worker's current card (no
-  `continuedBy`) `reportsTo`: the card of its author when it reviews (`workerNamed` on the floor, the one on duty first),
-  else of the worker its crew edge names (`card.crew`: a launch contributor's `reportsTo`, logged at its spawn as
-  `tower.reports-to {callsign, session, by}`, the session that callsign named then, [[extensions]]), else of its hirer,
+  `continuedBy`) `reportsTo`: the card of the worker its crew edge names (`card.crew`: a launch contributor's
+  `reportsTo`, logged at its spawn as `tower.reports-to {callsign, session, by}`, the session that callsign named then,
+  [[extensions]]; reviews gives a reviewer's), else of its hirer,
   each carried on through resumes ([`carriedOn`](ref:hub/src/bridge/board.ts#carriedOn): `hiredBy.session`
   is where the hire was made, and the hirer may have been resumed since). The edge is a core fact read while the core's
   board is built, never an extension's fold, so send-home, seats, `tower agents` and `tower home` follow it; a fork
   carries none. A reviewer the user started has no hirer and
-  still nests under its author: it works for that worker. A fork is a new worker with neither, so it heads its own crew.
+  still nests under its author: it works for that worker. A reviewer spawned before 1.95 logged no edge: its first
+  prompt names its author, and `withReports` gives it `card.crew` by reviews to that callsign's card as the board names
+  it now (`workerNamed` on the floor, the one on duty first: [`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew)),
+  as it always read. A worker whose crew edge names a worker seated when it comes sits beside it
+  ([`seats`](ref:hub/src/bridge/seats.ts#seats)), a reviewer beside its author. A fork is a new worker with neither, so it heads its own crew.
 - *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by start), `crewOf`
   (everyone under it, each before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads
   a crew, everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,

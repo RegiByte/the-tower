@@ -37,7 +37,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `items.ts`: any collection's items as rows and trays (title, tag, keeper, age), whole or bounded to the newest, how an item is read by its type,
   and what to ask before deleting one ([[collection-trays]]).
 - `reviews.ts`: the thread format, its parse and append, anchors and their state against the current diff, the
-  prompts that start a reviewer and send notes ([[review-round]], [[review-threads]]).
+  text that sends notes ([[review-round]], [[review-threads]]); the reviewer's prompt helpers stay, deprecated, until
+  2.0, a reviewer being hired with `reviews/hire` and read at `x.reviews.of` (`reviewerOf`, `/cards.js`).
 - `icons.ts`: the inline SVG every renderer draws for the same things, and `withIcons`, which draws the text marks
   shared words carry as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by

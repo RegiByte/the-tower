@@ -51,9 +51,10 @@ sequenceDiagram
   on the user: off the attention list, its status word "waiting on <HIRER>" ([[waiting-on-you]]).
 - **Going home.** The hire reports to its hirer ([[crews]]): `tower home` ends the hirer's crew, deepest first. A
   finished hire whose worktree's work has landed is on the floor's [[tidy]] list.
-- **Reviews share the fact.** `tower review` spawns with `hire` too ([[review-round]]); a prompt that starts a
-  reviewer ([`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn)) is never weighed against the limits, and neither
-  is a hire a launch contributor exempts, its `tower.exempt` logged before it starts. The weighing runs after the
+- **Reviews share the fact.** `tower review` hires through `reviews/hire`, a spawn with `hire` too ([[review-round]]);
+  a hire a launch contributor exempts is never weighed against the limits, its `tower.exempt` logged before it starts,
+  and reviews' exempts every reviewer it starts. A hire whose prompt starts a reviewer as before 1.95, with no
+  exemption given, isn't weighed either ([`legacyReviewer`](ref:hub/src/bridge/legacy.ts#legacyReviewer)). The weighing runs after the
   contributors and before the cut ([`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch), on the path the worktree
   will have), so a refused hire cuts nothing.
 - **Failure.** Without `TOWER_SESSION_ID` the command refuses (the Claude was not started by the tower); with the

@@ -464,8 +464,17 @@ sessions do.
 through `LEGACY` (`src/shared/extensions.ts`), each `{kind, old, now, since}`: an old verb or read is answered by the
 new one with RFC 9745's `Deprecation` and a `Link` to it (`probe/run` by `quota/read-now`, `GET /probe/<name>` by
 `quota/reads`); an old board field is copied from the part it moved to, as it stood at the move (`board.probes` from
-`board.x.quota`), so new fields appear only under `x`; and a stream keeps its old folder for good (the quota stream's
-facts stay in `probe.quota/`).
+`board.x.quota`), so new fields appear only under `x`; an old card verb is copied onto each card from the action an
+extension's fold offers there now (the card verb `review`, its old `spawn` call, from reviews' `reviews/hire`); and a
+stream keeps its old folder for good (the quota stream's facts stay in `probe.quota/`). A renderer that draws
+extensions' actions draws the new one and leaves the copy out.
+
+**Reviewers** (API 1.95). The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
+in a fork of the author's checkout whose `x.reviews.of` is logged before it starts, and whose launch contributor puts
+it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower.exempt`). A card reads it at
+`x.reviews.of` (`reviewerOf` in `/cards.js`), its `crew` and its `exempt`; `card.reviews` is that copied back until
+2.0. A reviewer spawned before 1.95, known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
+`floor.git` says every dir of the floor is a git repo, so a checkout of it can be forked.
 
 **Folds and contributions** (API 1.84) put an extension on the board. A subject is anything the board shows that
 extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,

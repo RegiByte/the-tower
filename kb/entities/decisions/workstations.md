@@ -36,8 +36,9 @@ defaults, and the new-worker form as the optional path.
   A full floor has no open desk.
 - Seats stay derived: a worker takes the lowest free desk when it comes on duty, replayed from the floor's
   cards in the bridge ([`withSeats`](ref:hub/src/bridge/seats.ts#withSeats)) and read by Tower 3D as `card.seat`
-  (`{n}`, a workstation, or `{beside}`, the author's id) ([[board-archive]]). A [[reviewer]] whose author is seated
-  sits beside it, taking no workstation; one whose author leaves first takes the lowest free desk then. So the open
+  (`{n}`, a workstation, or `{beside}`, the lead's id) ([[board-archive]]). A worker whose crew edge names a seated
+  worker ([[crews]]: a [[reviewer]] and its author) sits beside it, taking no workstation; one whose lead leaves first
+  takes the lowest free desk then. So the open
   desk, where the next worker sits, is the lowest free one
   ([`openStation`](ref:hub/renderers/tower3d/src/layout.ts#openStation)). Only it offers a hire, and only
   while its floor offers `spawn` ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)); the `station` act
