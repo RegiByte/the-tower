@@ -77,7 +77,6 @@ export async function worker(deps) {
     repaint($('bar-actions'), `<button class="icon-btn" popovertarget="bar-details" aria-label="details" data-tip="everything else about ${callsign(c.id)}">${ICON.info}</button>
     ${addedActionsHtml(board(), cardSubject(c))}
     ${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
-    ${!can(c, 'review') ? '' : heldWhy('review') ? heldHtml('review', verbLabel('card', 'review'), verbLabel('card', 'review')) : `<button data-act="review" data-of="${c.id}" data-tip="hire a reviewer: it works in a fork of ${esc(c.checkout)} (uncommitted work included), reviews once against ${callsign(c.id)}'s goal and leaves notes on its thread">${verbLabel('card', 'review')}</button>`}
     ${letGoHtml(c, verbLabel('card', 'let-go'))}
     ${can(c, 'send-home') ? `<button class="danger" data-act="send-home" data-of="${c.id}" data-tip="${esc(sendHomeTitle(c))}">${verbLabel('card', 'send-home')}</button>` : ''}
     <button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(board().keys, 'back to the skyline', 'home')}>${ICON.close}</button>`)

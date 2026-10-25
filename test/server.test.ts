@@ -34,6 +34,8 @@ const HUB = path.join(ROOT, 'lab')
 const BARE = path.join(ROOT, 'bare')
 const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
+/** A worker with a saved conversation in the hub's main checkout, whose work a reviewer can be hired on. */
+const LAB_AUTHOR = '20261004-211500-a7e1'
 const SHOWN = path.join(HUB, 'report', 'index.html')
 const FIXTURES = path.join(REPO, 'test', 'fixtures', 'extensions')
 /** The extensions run from copies in the root, so a test edits their code. */
@@ -204,6 +206,14 @@ function seed(port: number) {
     [0.3, 'x', { exitCode: 0 }],
   ]
   writeFileSync(path.join(ROOT, 'sessions', `${SESSION}.jsonl`), [header, ...events].map((line) => JSON.stringify(line)).join('\n') + '\n')
+  const authored = [
+    { ...header, id: LAB_AUTHOR, startedAt: Date.now() - 30_000 },
+    [0.1, 'h', { hook_event_name: 'SessionStart', source: 'startup', session_id: 'c-author' }],
+    [0.2, 'h', { hook_event_name: 'UserPromptSubmit', session_id: 'c-author', prompt: 'Build the report.' }],
+    [0.3, 'h', { hook_event_name: 'turn.complete', answer: 'Built.' }],
+    [0.4, 'x', { exitCode: 0 }],
+  ]
+  writeFileSync(path.join(ROOT, 'sessions', `${LAB_AUTHOR}.jsonl`), authored.map((line) => JSON.stringify(line)).join('\n') + '\n')
   writeConfig(port)
 }
 
@@ -216,7 +226,7 @@ function writeConfig(port: number) {
     renderers: { plain: { root: RENDERER } },
     extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
     projects: {
-      lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] },
+      lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }], hiring: { live: 0 } },
       desk: { name: 'desk', hub: DESK, repos: [] },
       bare: { name: 'bare', hub: BARE, repos: [], capabilities: { reviews: { off: true }, pulse: { off: true }, chime: { off: true }, tally: { off: true }, roles: { off: true } } },
     },
@@ -570,7 +580,8 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     slots: [{ name: 'hour', scope: 'system', when: { every: '1h' } }],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
-  assert.deepEqual(read.extensions, msg.board.extensions.map((e) => ({ ...e, exempted: [] })))
+  const exempted = (id: string) => (id === 'reviews' ? [{ session: DESK_SESSIONS.reviewer, callsign: REVIEWER, from: 'hiring' }] : [])
+  assert.deepEqual(read.extensions, msg.board.extensions.map((e) => ({ ...e, exempted: exempted(e.id) })), "the desk's reviewer, spawned on its prompt alone, is exempted by reviews")
   assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions', 'x:chime'])
   assert.equal(read.topology.startupOrder.at(-1), 'x:tally')
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)
@@ -1065,7 +1076,7 @@ test("server: the reviews extension holds the threads under its own names, and t
     ['desk/odin-1', ['reviews/append', { project: 'desk', checkout: 'odin-1' }]],
   ])
   const cardPart = (id: string) => desk.cards.find((c) => c.id === id)!.x?.reviews
-  assert.deepEqual(cardPart(DESK_SESSIONS.reviewer), { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, note: ['reviews/append', { project: 'desk', checkout: 'odin-1' }] })
+  assert.deepEqual(cardPart(DESK_SESSIONS.reviewer), { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, of: AUTHOR, note: ['reviews/append', { project: 'desk', checkout: 'odin-1' }] })
   assert.deepEqual(cardPart(DESK_SESSIONS.lark), { thread: 'lark-3', threadState: { is: 'landed', on: 'main', empty: true, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } }, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } })
   assert.deepEqual(desk.main, { dirty: 0, ahead: 0, inUse: false })
 
@@ -1118,4 +1129,53 @@ test('server: a note appended through review/append is the same bytes, numbered 
   ] as const)
     assert.equal(errorCode(await post('review/append', input)), code)
   assert.match(String(made.modifiedAt), /^\d+$/)
+})
+
+test("server: reviews/hire starts a reviewer in a fork of its author's checkout, logged in its crew and exempt before it starts, so a full hiring limit never refuses it; the card verb review renderers before 1.95 call still hires one, read from its prompt; a refused hire cuts nothing", async () => {
+  const boardWhen = (holds: (b: Board) => boolean) =>
+    settled(async () => {
+      const msg = (await firstEvent('/board')) as BoardMsg
+      assert.ok('board' in msg)
+      return msg.board
+    }, holds)
+  const cardIn = (b: Board, id: string) => b.floors.flatMap((f) => f.cards).find((c) => c.id === id)
+  const offering = await boardWhen((b) => b.adds[`card:${LAB_AUTHOR}`]?.actions?.some((a) => 'verb' in a && a.verb === 'reviews/hire') ?? false)
+  const author = cardIn(offering, LAB_AUTHOR)!
+  assert.deepEqual(offering.adds[`card:${LAB_AUTHOR}`]!.actions!.find((a) => 'verb' in a && a.verb === 'reviews/hire'), { verb: 'reviews/hire', call: { project: 'lab', of: author.callsign }, cap: 'reviews' })
+  const trees = () => execFileSync('git', ['-C', HUB, 'worktree', 'list']).toString()
+  const treesBefore = trees()
+
+  assert.equal(errorCode(await post('spawn', { project: 'lab', prompt: 'Build it.', by: SESSION, hire: true })), 'limited')
+  assert.equal(errorCode(await post('reviews/hire', { project: 'lab', of: 'NOBODY-1', by: SESSION })), 'not_found')
+  assert.equal(errorCode(await post('spawn', { project: 'lab', cut: { from: 'main' }, x: { reviews: { of: 'NOBODY-1' } } })), 'not_found')
+  assert.equal(trees(), treesBefore)
+
+  const hired = JSON.parse((await post('reviews/hire', { project: 'lab', of: author.callsign.toLowerCase(), by: SESSION, tell: true })).body) as Replies['spawn']
+  assert.equal(hired.t, 'spawned')
+  const [header, ...events] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${hired.id}.jsonl`), 'utf8'), (log) => log.includes('"o"'))).trim().split('\n').map((line) => JSON.parse(line))
+  assert.deepEqual(header.argv.slice(-2), ['--', `/tower:review ${author.callsign} tell`])
+  assert.deepEqual(events.slice(0, 3).map(([, code, fact]) => [code, fact]), [
+    ['h', { hook_event_name: 'tower.x.reviews.of', value: author.callsign }],
+    ['h', { hook_event_name: 'tower.exempt', from: 'hiring', by: 'reviews' }],
+    ['h', { hook_event_name: 'tower.reports-to', callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }],
+  ])
+
+  const old = offering.floors.flatMap((f) => f.cards).find((c) => c.id === LAB_AUTHOR)!.calls.review!
+  assert.deepEqual(old, ['spawn', { project: 'lab', cut: { from: 'main' }, prompt: `/tower:review ${author.callsign}` }])
+  const legacy = await command('spawn', { ...old[1], by: SESSION, hire: true })
+  const legacyLog = await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${legacy.id}.jsonl`), 'utf8'), (log) => log.includes('"o"'))
+  assert.ok(!legacyLog.includes('tower.exempt') && !legacyLog.includes('tower.x.reviews'))
+
+  const hiredBoard = await boardWhen((b) => [hired.id, legacy.id].every((id) => cardIn(b, id)?.reportsTo === LAB_AUTHOR))
+  const reviewer = { reviews: author.callsign, of: author.callsign, crew: { callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }, exempt: [{ from: 'hiring', by: 'reviews' }], reportsTo: LAB_AUTHOR, hiredBy: SESSION, review: undefined }
+  const read = (id: string) => {
+    const c = cardIn(hiredBoard, id)!
+    return { reviews: c.reviews, of: (c.x?.reviews as { of?: string }).of, crew: c.crew, exempt: c.exempt, reportsTo: c.reportsTo, hiredBy: c.hiredBy?.session, review: c.calls.review }
+  }
+  assert.deepEqual([read(hired.id), read(legacy.id)], [reviewer, reviewer])
+  assert.ok(!hiredBoard.adds[`card:${hired.id}`]?.actions?.some((a) => 'verb' in a && a.verb === 'reviews/hire'))
+
+  const again = await post('reviews/hire', { project: 'lab', of: cardIn(hiredBoard, hired.id)!.callsign, by: SESSION })
+  assert.equal(errorCode(again), 'refused')
+  assert.match(JSON.parse(again.body).message, /'s work can't be reviewed: it has no conversation yet$/)
 })

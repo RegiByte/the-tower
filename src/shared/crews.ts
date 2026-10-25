@@ -80,8 +80,8 @@ export const hireDepth = (cards: Card[], c: Card): number => {
   return hirer ? hireDepth(cards, hirer) + 1 : 0
 }
 
-/** A worker exempt from its floor's hiring limits: a reviewer, or one a launch contributor exempted. */
-export const exemptFromHiring = (c: Card) => c.reviews !== undefined || (c.exempt ?? []).some((e) => e.from === 'hiring')
+/** A worker exempt from its floor's hiring limits: one a launch contributor exempted at its spawn, a reviewer among them. */
+export const exemptFromHiring = (c: Card) => (c.exempt ?? []).some((e) => e.from === 'hiring')
 
 /** An exemption in words, as the card and `tower whoami` say it. */
 export const exemptionWords = (e: Exemption) => `exempt from ${EXEMPT_FROM[e.from]} by ${e.by}`
@@ -96,8 +96,8 @@ export const exemptionsBy = (cards: Card[], cap: string): { session: string; cal
 export const liveHires = (cards: Card[], c: Card) => cards.filter((h) => h.live && !exemptFromHiring(h) && h.hiredBy?.callsign === c.callsign)
 
 /**
- * Why a worker may not hire now under its floor's `hiring`, as a sentence; `undefined` when it may. A review, or a hire
- * a launch contributor exempts, is never refused.
+ * Why a worker may not hire now under its floor's `hiring`, as a sentence; `undefined` when it may. A hire a launch
+ * contributor exempts, a reviewer among them, is never refused.
  */
 export const hireRefusal = (cards: Card[], f: Floor, c: Card): string | undefined => {
   const depth = hireDepth(cards, c)

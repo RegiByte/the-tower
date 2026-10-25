@@ -19,13 +19,22 @@ export type Message = { author: string; at: string; n: number; re?: number; anch
 
 export type ReviewThread = { checkout: string; messages: Message[] }
 
-/** The mod's skill a reviewer starts with, on the callsign of the worker whose work it reviews. */
+/**
+ * The mod's skill a reviewer starts with, on the callsign of the worker whose work it reviews.
+ * @deprecated since 1.95: a reviewer is hired with `reviews/hire`, and is known by its card's `x.reviews.of`. Goes at 2.0.
+ */
 export const REVIEW_SKILL = '/tower:review'
 
-/** A reviewer's first prompt. With `tell`, the reviewer submits a pointer to its notes into the author when done. */
+/**
+ * A reviewer's first prompt. With `tell`, the reviewer submits a pointer to its notes into the author when done.
+ * @deprecated since 1.95: hire a reviewer with `reviews/hire`. Goes at 2.0.
+ */
 export const reviewPrompt = (callsign: string, tell: boolean) => `${REVIEW_SKILL} ${callsign}${tell ? ' tell' : ''}`
 
-/** The callsign a reviewer's first prompt names; `undefined` for any other prompt. */
+/**
+ * The callsign a reviewer's first prompt names; `undefined` for any other prompt.
+ * @deprecated since 1.95: read the card's `x.reviews.of` (`reviewerOf`). Goes at 2.0.
+ */
 export const reviewedIn = (prompt: string | undefined): string | undefined =>
   prompt?.startsWith(`${REVIEW_SKILL} `) ? /^[A-Z][A-Z0-9]*-\d+\b/.exec(prompt.slice(REVIEW_SKILL.length).trim())?.[0] : undefined
 

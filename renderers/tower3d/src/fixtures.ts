@@ -122,11 +122,16 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
     checkoutState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
-    reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
+    ...(f.reviews !== undefined && {
+      reviews: callsign(idOf(project, f.reviews)),
+      crew: { callsign: callsign(idOf(project, f.reviews)), session: idOf(project, f.reviews), by: 'reviews' },
+      exempt: [{ from: 'hiring', by: 'reviews' }],
+      x: { reviews: { of: callsign(idOf(project, f.reviews)) } },
+    }),
     ...life, hiredBy, enteredAt, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], conversations,
-    ...cardOffers(id, life.status, !life.unresumable, conversations, resources.length, undefined, awaitsResume(life), life.cutOff),
+    ...cardOffers(id, life.status, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
   }
 }
 
@@ -213,7 +218,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
         ...(f.threads ? reviewsCollection(f.id, f.threads, now) : []),
         ...(f.games ? gamesCollection(f.id, f.games, cards, now) : []),
       ],
-      worktrees, branches: [], bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
+      worktrees, branches: [], git: true, bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
       tidy, threads: [], cards, policies: [], ...(x && { x }),
       ...floorOffers(f.id, true, true, false, tidy),
     }

@@ -1,7 +1,6 @@
 import type { Keys } from '../shared/keymap.ts'
 import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
-import { reviewedIn } from '../shared/reviews.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
 import { crewOf, current, workerNamed } from '../shared/cards.ts'
@@ -12,7 +11,7 @@ import { shellActivity, type Shell } from '../shared/terms.ts'
 import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
 import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
-import type { ProbeStatus } from './legacy.ts'
+import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
 import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
@@ -93,18 +92,28 @@ export type Card = {
    * project (`checkoutGone`).
    */
   worktree?: { name: string; branch?: string; from?: string; gone: boolean }
-  /** The callsign of the worker whose work this one reviews, named by its first prompt (`reviewPrompt`). */
+  /**
+   * The callsign of the worker whose work this one reviews: the reviews extension's `x.reviews.of`, or for a reviewer
+   * spawned before reviews logged its facts, its first prompt (`legacyReviewer`).
+   * @deprecated since 1.95: read `x.reviews.of`. Goes at 2.0.
+   */
   reviews?: string
   /** The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none. */
   hiredBy?: HiredBy
-  /** The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did. @since 1.85 */
+  /**
+   * The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability
+   * that did; a reviewer spawned before reviews logged its facts is in its author's, by reviews, as the board names
+   * the author now (`legacyCrew`). @since 1.85
+   */
   crew?: CrewEdge
-  /** What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability. @since 1.85 */
+  /**
+   * What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability; a reviewer
+   * spawned before reviews logged its facts is exempt from hiring by reviews (`legacyReviewer`). @since 1.85
+   */
   exempt?: Exemption[]
   /**
-   * The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the
-   * author whose work it reviews, else the worker of its `crew` edge, else its hirer. Only a worker's current card
-   * reports; nobody's when it reports to none.
+   * The card of the worker this one reports to, as it runs now (carried on through resumes): the worker of its `crew`
+   * edge, else its hirer. Only a worker's current card reports; nobody's when it reports to none.
    */
   reportsTo?: string
   /** The checkout it works in: its worktree's name, or `main`. */
@@ -293,6 +302,8 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   policies: PolicyView[]
   /** The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`). */
   gallery: GalleryShowing[]
+  /** Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`). @since 1.95 */
+  git: boolean
   bases: string[]
   /** What a cut's branch is named by default: this, then the worktree's name. */
   branchPrefix: string
@@ -458,7 +469,6 @@ const card = (
   peers: Peer[],
   worktree: Card['worktree'],
   unresumableHere: Unresumable | undefined,
-  forkable: boolean,
   hirers: Map<string, HiredBy>,
   delivered: Map<string, Delivery[]>,
   callsignOf: (id: string) => string,
@@ -469,7 +479,9 @@ const card = (
   const worker = lineage(session, (s) => continued.get(s))
   const callsign = nameOf(session)
   const launch = launchPrompt(worker[0].header.argv)
-  const reviews = reviewedIn(launch)
+  const legacy = legacyReviewer(worker[0].facts, launch)
+  const reviews = legacy?.reviews
+  const exempt = legacy?.exempt ?? worker[0].facts.exempt
   const hiredBy = hirers.get(worker[0].header.id)
   const checkout = worktree?.name ?? MAIN_CHECKOUT
   const state = withLiveness(facts.state, header.id, liveIds)
@@ -518,7 +530,7 @@ const card = (
     reviews,
     hiredBy,
     crew: worker[0].facts.reportsTo,
-    ...(worker[0].facts.exempt.length && { exempt: worker[0].facts.exempt }),
+    ...(exempt.length && { exempt }),
     checkout,
     ...life,
     enteredAt,
@@ -549,7 +561,7 @@ const card = (
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    ...cardOffers(header.id, life.status, !life.unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume(life), life.cutOff),
+    ...cardOffers(header.id, life.status, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
   }
 }
 
@@ -599,8 +611,13 @@ export const withReports = (cards: Card[]): Card[] => {
   return cards.map((c) => {
     if (c.continuedBy) return c
     const hirer = c.hiredBy && carriedOn(byId, c.hiredBy.session)
-    const to = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : c.crew ? carriedOn(byId, c.crew.session) : hirer
-    return { ...c, ...(to && { reportsTo: to.id }), ...answerWait(c, hirer) }
+    if (c.crew) {
+      const lead = carriedOn(byId, c.crew.session)
+      return { ...c, ...(lead && { reportsTo: lead.id }), ...answerWait(c, hirer) }
+    }
+    const author = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : undefined
+    if (author) return { ...c, crew: legacyCrew(c.reviews!, author.id), reportsTo: author.id, ...answerWait(c, hirer) }
+    return { ...c, ...(hirer && { reportsTo: hirer.id }), ...answerWait(c, hirer) }
   })
 }
 
@@ -682,8 +699,7 @@ const withCheckouts = (config: Config, cards: Unplaced[], shells: Shell[] | unde
   return cards.map((c) => {
     const floor = floors.get(c.project)
     const ownState: CheckoutState = floor ? checkoutState(c.checkout, floor) : { is: 'gone' }
-    const reviewable = ownState.is === 'live'
-    return { ...c, checkoutState: ownState, ...offered<CardVerb, CardCalls>(c.actions.filter((a) => reviewable || a.verb !== 'review')) }
+    return { ...c, checkoutState: ownState }
   })
 }
 
@@ -720,10 +736,6 @@ export const callsignLookup = ({ config, sessions }: Pick<SystemView, 'config' |
 export const allCards = ({ config, sessions, host, processes, peers, shells, repos, stores, now }: SystemView): Card[] => {
   const continued = continuations(sessions)
   const reads = [...repos.values()]
-  const forkable = (projectId: string) => {
-    const project = config.projects[projectId]
-    return project !== undefined && (projectReads(projectDirs(project), repos)?.every((r) => r.git) ?? false)
-  }
   const nameOf = namer(continued, callsignsOf(config))
   const hirers = hirersOf(sessions, nameOf)
   const delivered = deliveries(sessions)
@@ -741,7 +753,6 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
       peers,
       cardWorktree(config.projects[s.header.project], s.header.cwd, reads, projectRead(config.projects[s.header.project])),
       unresumableOf(s.header),
-      forkable(s.header.project),
       hirers,
       delivered,
       callsignOf,
@@ -827,6 +838,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         threads: [],
         policies: [],
         gallery: galleryOf(floorCards),
+        git: read?.every((r) => r.git) ?? false,
         bases,
         branchPrefix: worktreesConfig(config, id).branchPrefix,
         cutByDefault: worktreesConfig(config, id).cutByDefault,

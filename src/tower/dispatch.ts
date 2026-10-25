@@ -12,7 +12,7 @@ import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
-import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Exemption, type Session } from '../bridge/facts.ts'
+import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
@@ -23,7 +23,7 @@ import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type 
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
-import { LEGACY_VERBS, legacyNamed } from '../bridge/legacy.ts'
+import { LEGACY_VERBS, legacyNamed, legacyReviewer, type Launched } from '../bridge/legacy.ts'
 import { nestedIn, qualifiedOf, tooDeep, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
@@ -46,7 +46,7 @@ import {
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { reviewedIn, REVIEWS, } from '../shared/reviews.ts'
+import { REVIEWS } from '../shared/reviews.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
@@ -77,7 +77,7 @@ type Deps = {
 const isVerb = (name: string): name is Verb => Object.hasOwn(VERBS, name)
 
 /** What a spawn's launch must pass just before it starts, given what its contributors exempted it from: a hire's limits. */
-type Gate = (exempt: Exemption[]) => Promise<ApiError | undefined>
+type Gate = (launched: Launched) => Promise<ApiError | undefined>
 
 /** A spawn's extension fields by capability, the facts they are logged as, and its gate. */
 type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; gate: Gate }
@@ -255,8 +255,9 @@ export const dispatch = defineResource({
       system.session(id) !== undefined && (system.session(by)?.facts.hired.includes(id) ?? false) && (system.live()?.ids.has(id) ?? false)
 
     /**
-     * A session `by` hires: refused past its floor's `hiring` limits unless it starts a reviewer or a launch contributor
-     * exempts it, which its contributors decide just before it starts, then logged in the hirer's log. A hire that can't
+     * A session `by` hires: refused past its floor's `hiring` limits unless a launch contributor exempts it, which its
+     * contributors decide just before it starts (or its prompt starts a reviewer the way they started before reviews
+     * logged its facts, `legacyReviewer`), then logged in the hirer's log. A hire that can't
      * be logged is killed, so every hire that runs is counted.
      */
     const hired = (projectId: string, by: string, prompt: string | undefined, spawning: (gate: Gate) => Answer | Promise<Answer>) =>
@@ -266,8 +267,9 @@ export const dispatch = defineResource({
           return inTurn(hirer.callsign, async () => {
             const refused = factRefused(HIRE_FACT)
             if (refused) return refused
-            const answer = await spawning(async (exempt) => {
-              if (reviewedIn(prompt) !== undefined || exempt.some((e) => e.from === 'hiring')) return undefined
+            const answer = await spawning(async (launched) => {
+              const exempt = legacyReviewer(launched, prompt)?.exempt ?? launched.exempt
+              if (exempt.some((e) => e.from === 'hiring')) return undefined
               await system.refreshLive()
               const cards = everyCard(Date.now())
               const limit = hireRefusal(cards, boardOf().floors.find((f) => f.id === projectId)!, cards.find((c) => c.id === by)!)
@@ -445,7 +447,7 @@ export const dispatch = defineResource({
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
       const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf)
       if (merged.t === 'error') return merged
-      const gated = await spawn.gate(merged.exempt)
+      const gated = await spawn.gate(merged)
       if (gated) return gated
       const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
       if (merged.reportsTo && !lead) return apiError('not_found', `${merged.reportsTo.by} has the worker report to ${merged.reportsTo.callsign}, and no worker is called that`)

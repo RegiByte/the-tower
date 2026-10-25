@@ -181,7 +181,7 @@ function meetingIn(room: Room, { crew, since }: { crew: Crew; since: number }, k
     const places = kit.places(room, stateFor(room, most, kit.states))
     const taken = new Set(at.values())
     const free = places.filter((p) => p.name !== 'head' && !taken.has(p.name))
-    const author = crew.lives.find((l) => l.card.callsign === life.card.reviews && at.has(l.card.id))
+    const author = crew.lives.find((l) => l.card.callsign === life.card.crew?.callsign && at.has(l.card.id))
     const theirs = author && placeNamed(places, at.get(author.card.id)!)
     const next = theirs && free.filter((p) => !p.stand && apart(p, theirs) <= NEXT_TO).toSorted((a, b) => apart(a, theirs) - apart(b, theirs))[0]
     const behind = theirs && `${BEHIND}${theirs.name}`

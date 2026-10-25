@@ -41,9 +41,10 @@ export type FiledThread = { id: string; tag: string; at: string }
  * author's). `threadState`: where that work stands, with the thread Tidy filed once it landed. `unseen`: the notes of that
  * thread it hasn't seen (after its own last one), while the work is live and the thread has a file. `filed`: the thread
  * Tidy filed once the work of its own checkout landed. `note`: the call that adds a note to its thread, while that work is
- * live; the renderer adds the author and what the note says.
+ * live; the renderer adds the author and what the note says. `of`: the callsign whose work it reviews, when it is a
+ * reviewer.
  */
-export type CardPart = { thread: string; threadState: CheckoutState; unseen?: number; filed?: FiledThread; note?: NoteCall }
+export type CardPart = { thread: string; threadState: CheckoutState; unseen?: number; filed?: FiledThread; note?: NoteCall; of?: string }
 
 /** The reviews part of a floor: the thread of each checkout that has one, in id order. */
 export type FloorPart = { threads: FloorThread[] }
@@ -72,12 +73,12 @@ const stateSince = (checkout: string, read: CheckoutsRead, files: { id: string }
   return recorded.is === 'landed' ? { ...recorded, filed } : recorded
 }
 
-/** A card's reviews part on its floor. */
-export const cardPart = (card: Card, floor: Floor, files: ThreadFile[]): CardPart => {
+/** A card's reviews part on its floor; `of`: the callsign whose work it reviews, when it is a reviewer. */
+export const cardPart = (card: Card, floor: Floor, files: ThreadFile[], of: string | undefined): CardPart => {
   const read = checkoutsOf(floor)
   const since = stamp(new Date(card.startedAt))
   const own = stateSince(card.checkout, read, files, since)
-  const thread = threadCheckoutOf(card)
+  const thread = threadCheckoutOf({ ...card, x: { ...card.x, reviews: { of } } })
   const threadState = stateSince(thread, read, files, since)
   const live = threadState.is === 'live'
   const file = files.find((f) => f.id === threadId(thread))
@@ -88,6 +89,7 @@ export const cardPart = (card: Card, floor: Floor, files: ThreadFile[]): CardPar
     ...(live && file && { unseen: unseenBy(file.thread, card.callsign).length }),
     ...(filed && { filed }),
     ...(live && { note: ['reviews/append', { project: card.project, checkout: thread }] satisfies NoteCall }),
+    ...(of && { of }),
   }
 }
 

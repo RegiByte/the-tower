@@ -23,9 +23,9 @@ import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, quotaOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, quotaOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
-import { langOf, repoName, REVIEWS, reviewPrompt, threadId, type Anchor } from './shared/reviews.ts'
+import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
@@ -90,25 +90,11 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
   ]
 }
 
-/** Why a card offers no `review`, by what the card shows. */
-const noReviewReason = (card: Card) =>
-  !card.conversations.length
-    ? 'it has no conversation yet'
-    : card.reviews
-      ? `it is a reviewer itself, of ${card.reviews}'s work`
-      : card.checkoutState.is === 'landed'
-        ? card.checkoutState.empty
-          ? `its checkout ${card.checkout} had nothing to land`
-          : `its work in ${card.checkout} landed${card.checkoutState.on ? ` on ${card.checkoutState.on}` : ''}`
-        : card.worktree?.gone || card.checkoutState.is === 'gone'
-          ? `its checkout ${card.checkout} is gone, so there is nothing to fork`
-          : "a dir of its floor isn't a git repo"
-
 /** Where work that landed is read once no worktree holds it. */
 const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
 
 const reportLine = (card: Card) =>
-  card.reviews ? `reviews ${card.reviews}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
+  reviewerOf(card) ? `reviews ${reviewerOf(card)}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
 
 /** A worker hired from another floor: it heads a crew on its own, and is linked under its hirer's there. */
 const hiredOff = (card: Card) => card.hiredBy !== undefined && card.hiredBy.project !== card.project
@@ -234,7 +220,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, card.peer ? `message as "${card.peer}"` : 'not reachable: its Claude is not running', modelName(card.model)].filter(Boolean).join('  ·  ')}`,
     `  in ${card.cwd}`,
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
-    ...(card.reviews ? [`  reviews ${card.reviews}'s work`] : []),
+    ...(reviewerOf(card) ? [`  reviews ${reviewerOf(card)}'s work`] : []),
     ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
     ...(card.crew ? [`  in ${card.crew.callsign}'s crew, by ${card.crew.by}`] : []),
     ...(card.exempt ?? []).map((e) => `  ${exemptionWords(e)}`),
@@ -772,11 +758,9 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const author = await cardNamed(board, callsign)
-    const review = callOf(author, 'review')
-    if (!review) throw new CliError(`${author.callsign}'s card offers no review: ${noReviewReason(author)}`, landedFix(author))
     const tell = word === 'tell'
-    const [verbName, body] = review
-    const hired = await command<{ id: string; cut: { name: string } }>(verbName, { ...body, prompt: reviewPrompt(author.callsign, tell), by: me, hire: true })
+    const hired = await ask<{ id: string; cut: { name: string } }>('reviews/hire', { project: author.project, of: author.callsign, by: me, tell })
+    if (isFailure(hired)) throw new CliError(hired.message, landedFix(author))
     console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
   },
   hire: async (args) => {

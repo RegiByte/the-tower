@@ -2,6 +2,7 @@ import type { Card, CardSubagent, Floor, HiredBy } from '../bridge/board.ts'
 import { base, commandName, modelName, tokenCount } from './format.ts'
 import { current, UNRESUMABLE_TITLE } from './status-words.ts'
 import { subagentEnd, subagentTokens } from './subagents.ts'
+import { reviewerOf } from './checkouts.ts'
 
 /**
  * A worker's particulars: where it works, how it stands to others, what it showed, and the details its header keeps
@@ -28,7 +29,7 @@ export const hirerName = (by: HiredBy, project: string) => `${by.callsign}${by.p
 
 /** How a worker's work stands to others': whose it reviews, else the checkout its worktree was forked from; and who hired it, when that isn't whose work it reviews. */
 export const pairLine = (c: Card) =>
-  [c.reviews ? `reviews ${c.reviews}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== c.reviews ? `hired by ${hirerName(c.hiredBy, c.project)}` : '']
+  [reviewerOf(c) ? `reviews ${reviewerOf(c)}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== reviewerOf(c) ? `hired by ${hirerName(c.hiredBy, c.project)}` : '']
     .filter(Boolean)
     .join(' · ')
 

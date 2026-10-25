@@ -1,6 +1,6 @@
 import type { Card } from './board.ts'
 
-/** Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the author it reviews (the author's card id). */
+/** Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the worker it reports to by its crew edge (that worker's card id). */
 export type Seat = { n: number } | { beside: string }
 
 /** When a worker left its desk: a stranded one when it was let go or its conversation resumed, any other when it stopped. */
@@ -15,8 +15,8 @@ const stationsTaken = (seated: Map<string, Seat>) => [...seated.values()].flatMa
 
 /**
  * Each on-duty worker's seat on its floor: the lowest free workstation when it came on duty, kept until it leaves; a
- * reviewer whose author is seated when it comes sits beside the author instead, while nobody else does, and takes the
- * lowest free workstation if the author leaves first. Replaying the floor's comings and goings gives every board, and
+ * worker with a crew edge (a reviewer, its author) whose lead is seated when it comes sits beside the lead instead,
+ * while nobody else does, and takes the lowest free workstation if the lead leaves first. Replaying the floor's comings and goings gives every board, and
  * every reload, the same seats.
  */
 function seats(floor: Card[], everyone: Card[]): Map<string, Seat> {
@@ -36,9 +36,9 @@ function seats(floor: Card[], everyone: Card[]): Map<string, Seat> {
       for (const [id, seat] of seated) if ('beside' in seat && seat.beside === card.id) seated.set(id, lowestFree())
       continue
     }
-    const author = card.reviews ? floor.find((a) => a.callsign === card.reviews && 'n' in (seated.get(a.id) ?? {})) : undefined
-    const free = author && ![...seated.values()].some((seat) => 'beside' in seat && seat.beside === author.id)
-    seated.set(card.id, free ? { beside: author.id } : lowestFree())
+    const beside = card.crew && floor.find((a) => a.callsign === card.crew!.callsign && 'n' in (seated.get(a.id) ?? {}))
+    const free = beside && ![...seated.values()].some((seat) => 'beside' in seat && seat.beside === beside.id)
+    seated.set(card.id, free ? { beside: beside.id } : lowestFree())
   }
   return seated
 }

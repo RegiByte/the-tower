@@ -3,7 +3,8 @@ import { draftItem } from '../../../extensions/drafts/client/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { cardReviews, floorThreadsOf, keepsThreads as floorKeepsThreads, threadCheckout } from '../../../extensions/reviews/client/panel.ts'
-import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
+import type { Added, VerbAction } from '../../../src/shared/extensions.ts'
+import { HOST_MEANS, addedActions, base, can, cardSubject, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
@@ -121,6 +122,9 @@ const holding = (board: Board, scene: Scene, verb: DaemonVerb, offer: Offer): Of
   return why ? { ...offer, whyNot: why } : offer
 }
 
+/** The reviews extension's Review on a worker's card, while it offers one. */
+export const reviewAction = (board: Board, c: Card) => addedActions(board, cardSubject(c)).find((a): a is Added<VerbAction> => 'verb' in a && a.verb === 'reviews/hire')
+
 const quoted = (title: string) => `“${title.length > 28 ? `${title.slice(0, 27)}…` : title}”`
 
 const callsignOf = (board: Board, id: string | undefined) => (id && findCard(board, id)?.callsign) ?? 'its resume'
@@ -163,7 +167,7 @@ const workerOffers = (board: Board, scene: Scene, c: Card, drive: string): Offer
   const rest: Offer[] = [
     ...(can(c, 'brief') ? [{ verb: 'brief' as const, label: 'logbook' }] : []),
     ...threadOffer(board, c),
-    ...(can(c, 'review') ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
+    ...(reviewAction(board, c) ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
     ...(can(c, 'reap') ? [{ verb: 'reap' as const, label: `reap ${c.resources.length} leftover${c.resources.length === 1 ? '' : 's'}` }] : []),
     ...(can(c, 'send-home') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
     ...(can(c, 'let-go') ? [holding(board, scene, 'let-go', { verb: 'let-go', label: 'let go' })] : []),

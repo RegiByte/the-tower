@@ -267,7 +267,7 @@ test('verbs: what a session left running makes it reapable', () => {
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
-test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty; a review forks its checkout only while its work goes on there', () => {
+test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty', () => {
   const log = homed(fixture('tool-turn'))
   const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
   const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
@@ -281,14 +281,9 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: true }]))), [undefined, true, [['resume']]])
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), ['gone', false, [[]]])
   assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
-  const reviewable = (session: SessionLog, repos: Map<string, RepoRead>) => cardAt(session, repos).verbs.includes('review')
-  assert.deepEqual(
-    [reviewable(log, reads([])), reviewable(inTree, reads([{ ...tree, present: true, absorbed: false }])), reviewable(inTree, reads([{ ...tree, present: true }])), reviewable(inTree, reads([{ ...tree, present: false }])), reviewable(inTree, reads([]))],
-    [true, true, false, false, false],
-  )
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
   const liveGone = board(viewOf(CONFIG, { sessions: [{ header: running.header, facts: factsOf(running) }], host: hostWith(running.header.id), repos: reads([]) })).floors[0].cards[0]
-  assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone, liveGone.verbs.includes('review')], [true, undefined, true, false])
+  assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone], [true, undefined, true])
   const stranded = (cwd: string) => cardsOf([homed({ ...log, events: log.events.filter((e) => e[1] !== 'x') }, cwd)])[0]
   assert.deepEqual([stranded('/hub').onDuty, stranded('/moved/hub').onDuty], [true, false])
   const spanning = { name: 'tower', hub: '/hub', repos: ['/lib'] }
@@ -468,7 +463,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   const floors = (dirty: number, absorbed: boolean) => board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(log) }], host: hostWith(), repos: repos(dirty, absorbed) })).floors
   const threadsOn = (f: Floor) => floorThreads(f, files[f.id])
   const [tower, lab] = floors(0, true)
-  assert.deepEqual([tower.cards[0].checkout, cardPart(tower.cards[0], tower, files.tower).unseen], ['main', 2])
+  assert.deepEqual([tower.cards[0].checkout, cardPart(tower.cards[0], tower, files.tower, undefined).unseen], ['main', 2])
   const note = ['reviews/append', { project: 'tower', checkout: 'main' }]
   assert.deepEqual(threadsOn(tower), [{
     key: 'tower/main', checkout: 'main', id: 'main.md', tag: tagOf('main.md'), messages: 4, last: { author: 'user', at: '2026-10-06 15:00', n: 4 }, landed: true, resolved: [],
@@ -495,7 +490,7 @@ test('a card says where its checkout’s work stands, and its thread’s, offeri
   const filed = (at: string): ThreadFile => ({ id: `odin-42@${at}.md`, thread: { checkout: 'odin-42', messages: [] } })
   const cardOf = (session: SessionLog, repos: Map<string, RepoRead>, files: ThreadFile[] = [], host = hostWith()) => {
     const floor = board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host, repos })).floors[0]
-    return { ...floor.cards[0], part: cardPart(floor.cards[0], floor, files) }
+    return { ...floor.cards[0], part: cardPart(floor.cards[0], floor, files, undefined) }
   }
   const said = (c: ReturnType<typeof cardOf>) => [c.checkoutState, c.part.threadState, c.part.note !== undefined]
   const inTree = homed(log, tree.path)
@@ -506,8 +501,6 @@ test('a card says where its checkout’s work stands, and its thread’s, offeri
   assert.deepEqual(said(cardOf(inTree, reads([tree]))), [{ is: 'landed', on: 'origin/main' }, { is: 'landed', on: 'origin/main' }, false])
   assert.deepEqual(cardOf(inTree, reads([{ ...tree, own: 2 }])).checkoutState, { is: 'landed', on: 'origin/main' })
   assert.deepEqual(cardOf(inTree, reads([{ ...tree, own: 0 }])).checkoutState, { is: 'landed', on: 'origin/main', empty: true })
-  assert.deepEqual([cardOf(inTree, reads([{ ...tree, absorbed: false }])).verbs.includes('review'), cardOf(inTree, reads([tree])).verbs.includes('review')], [true, false])
-  assert.equal(cardOf(inTree, reads([tree])).calls.review, undefined)
   const thread: ThreadFile = { id: 'odin-42.md', thread: { checkout: 'odin-42', messages: [{ author: 'user', at: '2026-10-06 15:00', n: 1, anchors: [], body: 'x' }] } }
   assert.deepEqual([cardOf(inTree, reads([{ ...tree, absorbed: false }]), [thread]).part.unseen, cardOf(inTree, reads([tree]), [thread]).part.unseen], [1, undefined])
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }

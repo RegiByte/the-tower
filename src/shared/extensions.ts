@@ -43,19 +43,22 @@ const CALLSIGN_OF = '1.92'
 
 /** The minor review threads moved into their bundled extension in: an owner writes an item by its own id. */
 const REVIEWS_MOVED = '1.93'
-
 /** The minor the reviews extension answered the core's hooks in: tidy entries' words, `ctx.collections.rename`, resolve. */
 const REVIEWS_HOOKS = '1.94'
+
+/** The minor reviewers moved to the reviews extension's launch in: the `of` fact, its crew edge and exemption. */
+const REVIEWERS_MOVED = '1.95'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
  * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
  * `module` a served URL; `stream` a folder under `streams/` and the stream's name (`quota.reads`), whose facts stay in
  * the old folder for good; `board` a field by its subject (`board.probes`, `floor.policies`, `card.run`) and where the
- * part it is copied from sits now (`board.x.quota`). What a verb's, a read's or a field's move does beyond the name is
- * in `src/bridge/legacy.ts`, keyed by `old`.
+ * part it is copied from sits now (`board.x.quota`); `action` a card verb by `card.<verb>` and the extension verb whose
+ * action on the card it is copied from (`reviews/hire`). What a verb's, a read's, a field's or an action's move does
+ * beyond the name is in `src/bridge/legacy.ts`, keyed by `old`.
  */
-export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board'; old: string; now: string; since: string }
+export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board' | 'action'; old: string; now: string; since: string }
 
 /**
  * The built-ins' old names, each with what it is now: a fixed list, added to only as a built-in moves into a bundled
@@ -88,6 +91,8 @@ export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'board', old: 'card.calls.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
   { kind: 'board', old: 'card.actions.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
   { kind: 'board', old: 'floor.tidy.threads', now: "board.adds['floor:<project>'].tidy", since: REVIEWS_HOOKS },
+  { kind: 'board', old: 'card.reviews', now: 'card.x.reviews.of', since: REVIEWERS_MOVED },
+  { kind: 'action', old: 'card.review', now: 'reviews/hire', since: REVIEWERS_MOVED },
 ]
 
 /** The entries `kind`'s applier reads. */

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import type { VerbAction } from '../../../src/shared/extensions.ts'
-import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
 import { briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
@@ -1062,7 +1062,10 @@ function runOnWorker(a: ActOf<'desk' | 'tile' | 'guest'>, verb: Verb) {
   if (verb === 'goto') return goDesk(current(c)!.resumedBy!.id)
   if (verb === 'kill') return sendHome(c)
   if (verb === 'let-go') return letWorkerGo(c)
-  if (verb === 'review') return tried(() => tower.run(offeredCall(c, 'review', c.callsign)))
+  if (verb === 'review') {
+    const review = reviewAction(s.board!, c)
+    return review ? tried(() => runVerb(review)) : toast(noLongerOffered(c.callsign, 'review'))
+  }
   if (verb === 'reap') return tried(() => tower.run(offeredCall(c, 'reap', c.callsign)))
   if (verb === 'hand') return tried(() => handOver(offeredCall(c, 'submit', c.callsign)))
   if (verb !== 'brief' && verb !== 'thread') return

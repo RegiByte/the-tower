@@ -405,6 +405,10 @@
           },
           "description": "The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`)."
         },
+        "git": {
+          "type": "boolean",
+          "description": "Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`)."
+        },
         "bases": {
           "type": "array",
           "items": {
@@ -497,6 +501,7 @@
         "collections",
         "cutByDefault",
         "gallery",
+        "git",
         "hiring",
         "hub",
         "id",
@@ -554,7 +559,8 @@
         },
         "reviews": {
           "type": "string",
-          "description": "The callsign of the worker whose work this one reviews, named by its first prompt (`reviewPrompt`)."
+          "description": "The callsign of the worker whose work this one reviews: the reviews extension's `x.reviews.of`, or for a reviewer spawned before reviews logged its facts, its first prompt (`legacyReviewer`).",
+          "deprecated": "since 1.95: read `x.reviews.of`. Goes at 2.0."
         },
         "hiredBy": {
           "$ref": "#/definitions/HiredBy",
@@ -562,18 +568,18 @@
         },
         "crew": {
           "$ref": "#/definitions/CrewEdge",
-          "description": "The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did."
+          "description": "The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did; a reviewer spawned before reviews logged its facts is in its author's, by reviews, as the board names the author now (`legacyCrew`)."
         },
         "exempt": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Exemption"
           },
-          "description": "What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability."
+          "description": "What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability; a reviewer spawned before reviews logged its facts is exempt from hiring by reviews (`legacyReviewer`)."
         },
         "reportsTo": {
           "type": "string",
-          "description": "The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the author whose work it reviews, else the worker of its `crew` edge, else its hirer. Only a worker's current card reports; nobody's when it reports to none."
+          "description": "The card of the worker this one reports to, as it runs now (carried on through resumes): the worker of its `crew` edge, else its hirer. Only a worker's current card reports; nobody's when it reports to none."
         },
         "checkout": {
           "type": "string",
@@ -1648,7 +1654,7 @@
           "additionalProperties": false
         }
       ],
-      "description": "Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the author it reviews (the author's card id)."
+      "description": "Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the worker it reports to by its crew edge (that worker's card id)."
     },
     "CardVerb": {
       "type": "string",

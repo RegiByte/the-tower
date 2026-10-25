@@ -7,7 +7,6 @@
 import type { Call } from '../shared/api.ts'
 import type { AddedTidy } from '../shared/extensions.ts'
 import { CARRY_ON } from '../shared/launch.ts'
-import { reviewPrompt } from '../shared/reviews.ts'
 import type { SessionRef } from './chains.ts'
 import type { Status } from './status.ts'
 import type { TidyPlan } from './board.ts'
@@ -60,14 +59,8 @@ export const isLive = (status: Status) => LIVE.has(status)
 const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): ConversationVerb[] =>
   resumedBy ? ['goto'] : live || !resumable ? [] : ['resume']
 
-/**
- * The work a reviewer would review: the worker's checkout and callsign, on a floor whose dirs are all git repos. None
- * for a worker that is itself a reviewer, or whose checkout is gone (`checkoutGone`): a fork needs it there.
- */
-export type ReviewTarget = { project: string; checkout: string; callsign: string }
-
 /** `awaitsResume`: stranded, on duty until its latest conversation is resumed or it is let go. `cutOff`: stranded mid-turn. */
-const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, review: ReviewTarget | undefined, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
+const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
@@ -76,7 +69,6 @@ const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedB
     ...(latest ? conversationVerbs(live, resumable, latest.resumedBy) : []),
     ...(awaitsResume && cutOff ? ['carry-on' as const] : []),
     ...(conversations.length > 0 ? ['brief' as const] : []),
-    ...(conversations.length > 0 && review ? ['review' as const] : []),
     ...(leftovers > 0 ? ['reap' as const] : []),
     ...(live ? ['kill' as const] : []),
     ...(awaitsResume ? ['let-go' as const] : []),
@@ -167,16 +159,14 @@ export const cardOffers = (
   resumable: boolean,
   conversations: { id: string; resumedBy?: SessionRef }[],
   leftovers: number,
-  review: ReviewTarget | undefined,
   awaitsResume: boolean,
   cutOff: boolean,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, resumable, conversations, leftovers, review, awaitsResume, cutOff)
+  const verbs = cardVerbs(status, resumable, conversations, leftovers, awaitsResume, cutOff)
   return actionsOf(verbs, {
     submit: (): Call<'submit'> => ['submit', { id }],
     resume: (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id }],
     'carry-on': (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id, prompt: CARRY_ON }],
-    review: (): Call<'spawn'> => ['spawn', { project: review!.project, cut: { from: review!.checkout }, prompt: reviewPrompt(review!.callsign, false) }],
     reap: (): Call<'reap'> => ['reap', { id }],
     kill: (): Call<'kill'> => ['kill', { id }],
     'let-go': (): Call<'let-go'> => ['let-go', { id }],

@@ -9,11 +9,13 @@ import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
 import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
 import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
-import { REVIEWS } from '../shared/reviews.ts'
+import { REVIEWS, reviewedIn, reviewPrompt } from '../shared/reviews.ts'
+import type { VerbAction } from '../shared/extensions.ts'
 import type { FloorThread, ReviewsCardPart, ReviewsFloorPart } from '../shared/reviews-legacy.ts'
 import type { Board, Card, Floor } from './board.ts'
+import type { CrewEdge, Exemption } from './facts.ts'
 import { checkoutsOn, landedByRecord, type CheckoutState } from './checkouts.ts'
-import { noteActions, offered, probeOffers, type NoteCalls, type NoteVerb, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
+import { noteActions, offered, probeOffers, type CardAction, type NoteCalls, type NoteVerb, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
 
 /** An old verb: its input as the new one takes it, or why it can't be; the new verb's reply as the old one answered. */
 export type LegacyVerb = { input(old: unknown): unknown; reply(now: unknown): unknown }
@@ -26,6 +28,9 @@ export type LegacyRead = {
 
 /** An old board field's value, from its subject (the board, a floor or a card) on the folded board: for a name below a field (`card.checkoutState.filed`), that field's whole value. */
 export type LegacyField = (subject: unknown, board: Board) => unknown
+
+/** An old card verb's action, from its card and the extension's action on the card it moved to. */
+export type LegacyAction = (card: Card, now: VerbAction) => CardAction
 
 /** An old stream code's fact as a reading of a kind the core folds, or `undefined` when it is none (a failed read). */
 export type LegacyReading = (fact: unknown) => RateLimitsReading | undefined
@@ -166,12 +171,32 @@ export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'card.verbs.note': (card) => beforeSendHome((card as Card).verbs, cardNote(card as Card).verbs, (v) => v),
   'card.calls.note': (card) => ({ ...(card as Card).calls, ...cardNote(card as Card).calls }),
   'card.actions.note': (card) => beforeSendHome((card as Card).actions, cardNote(card as Card).actions, (a) => a.verb),
+  'card.reviews': (card) => ((card as Card).x?.reviews as { of?: string } | undefined)?.of ?? (card as Card).reviews,
   'board.probes': (board) => {
     const quota = (board as Board).x?.quota as QuotaPart | undefined
     if (!quota) return []
     const offers: { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] } = probeOffers('quota', false)
     return [{ name: 'quota', reads: 'claude.usage', ...quota, ...offers }]
   },
+}
+
+export const LEGACY_ACTIONS: Record<string, LegacyAction> = {
+  'card.review': (card, { call }) => ({ verb: 'review', call: ['spawn', { project: card.project, cut: { from: card.checkout }, prompt: reviewPrompt((call as { of: string }).of, false) }] }),
+}
+
+/** The core's card verbs that close a card's actions, the ones an old verb is placed before. */
+const CLOSING = new Set(['reap', 'kill', 'let-go', 'send-home', 'note'])
+
+/** A card with each old verb whose action an extension offers on it, placed where the core offered it. */
+const withOldActions = (card: Card, board: Board): Card => {
+  const moved = legacyOf('action').flatMap((e) => {
+    const now = board.adds[`card:${card.id}`]?.actions?.find((a): a is VerbAction & { cap: string } => 'verb' in a && a.verb === e.now)
+    return now ? [LEGACY_ACTIONS[e.old](card, now)] : []
+  })
+  if (!moved.length) return card
+  const at = card.actions.findIndex((a) => CLOSING.has(a.verb))
+  const actions = at === -1 ? [...card.actions, ...moved] : [...card.actions.slice(0, at), ...moved, ...card.actions.slice(at)]
+  return { ...card, ...offered(actions) }
 }
 
 /** By an old stream's folder, then code: what the core folds of its facts. */
@@ -186,6 +211,26 @@ export const LEGACY_READINGS: Record<string, Record<string, LegacyReading>> = {
   },
 }
 
+/** What a spawn logged about its hire: its exemptions (`tower.exempt`) and its crew edge (`tower.reports-to`). */
+export type Launched = { exempt: Exemption[]; reportsTo?: Pick<CrewEdge, 'callsign' | 'by'> }
+
+/** The capability a reviewer spawned before 1.95 reads as exempted and put in its author's crew by. */
+const REVIEWER_BY = 'reviews'
+
+/**
+ * The reviewer a worker was spawned as before the reviews extension logged its facts at spawn: a launch that logged
+ * neither an exemption nor a crew edge, whose first prompt is `/tower:review <CALLSIGN>`, reviews that callsign and is
+ * exempt from hiring by reviews (its crew edge is `legacyCrew`). A launch that logged either is read by its facts
+ * alone. Goes at 2.0.
+ */
+export const legacyReviewer = (launched: Launched, prompt: string | undefined): { reviews: string; exempt: Exemption[] } | undefined => {
+  const reviews = launched.exempt.length || launched.reportsTo ? undefined : reviewedIn(prompt)
+  return reviews === undefined ? undefined : { reviews, exempt: [{ from: 'hiring', by: REVIEWER_BY }] }
+}
+
+/** A `legacyReviewer`'s crew edge: its author's card as the board names workers by callsign now. Goes at 2.0. */
+export const legacyCrew = (reviews: string, author: string): CrewEdge => ({ callsign: reviews, session: author, by: REVIEWER_BY })
+
 /** The entry of `kind` named `old`, when there is one. */
 export const legacyNamed = (kind: LegacyEntry['kind'], old: string): LegacyEntry | undefined => legacyOf(kind).find((e) => e.old === old)
 
@@ -194,18 +239,18 @@ const projected = <T extends object>(subject: T, field: string, board: Board, ol
 
 /**
  * The folded board with every moved part copied back to its old field: the board's own fields, then each floor's and
- * each of its cards'.
+ * each of its cards', each card with the old verbs whose actions moved.
  */
 export const projectLegacy = (board: Board): Board => {
   const at = (subject: string) => legacyOf('board').flatMap((e) => (e.old.startsWith(`${subject}.`) ? [{ old: e.old, field: e.old.slice(subject.length + 1).split('.')[0] }] : []))
   const onBoard = at('board').reduce((b, { old, field }) => projected(b, field, board, old), board)
   const onFloor = at('floor')
   const onCard = at('card')
-  if (!onFloor.length && !onCard.length) return onBoard
+  if (!onFloor.length && !onCard.length && !legacyOf('action').length) return onBoard
   return {
     ...onBoard,
     floors: onBoard.floors.map((floor) => {
-      const cards = floor.cards.map((card) => onCard.reduce((c, { old, field }) => projected(c, field, board, old), card))
+      const cards = floor.cards.map((card) => withOldActions(onCard.reduce((c, { old, field }) => projected(c, field, board, old), card), board))
       return onFloor.reduce((f, { old, field }) => projected(f, field, board, old), { ...floor, cards })
     }),
   }

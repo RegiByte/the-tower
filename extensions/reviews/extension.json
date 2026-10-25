@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.94"
+    "tower": "1.95"
   },
   "server": "server.ts",
   "client": "client",
@@ -21,6 +21,31 @@
         "delete": {
           "none": "a thread is filed by Tidy once its work lands, never deleted"
         }
+      }
+    }
+  },
+  "facts": {
+    "of": {
+      "description": "The callsign whose work this session reviews.",
+      "schema": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9]*-\\d+$"
+      }
+    }
+  },
+  "spawn": {
+    "launch": true,
+    "fields": {
+      "of": {
+        "schema": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]*-\\d+$"
+        },
+        "words": {
+          "label": "Reviews",
+          "hint": "The worker whose work this one reviews"
+        },
+        "form": false
       }
     }
   },
@@ -108,7 +133,10 @@
             "description": "The call that adds a note to its thread while that work is live: the renderer adds the author and what the note says."
           }
         }
-      }
+      },
+      "adds": [
+        "actions"
+      ]
     },
     "floor": {
       "x": {
@@ -196,7 +224,7 @@
           },
           "author": {
             "type": "string",
-            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
+            "pattern": "^[^\\s\u00b7]([^\\n\u00b7]*[^\\s\u00b7])?$",
             "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
           },
           "re": {
@@ -325,7 +353,7 @@
           },
           "author": {
             "type": "string",
-            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
+            "pattern": "^[^\\s\u00b7]([^\\n\u00b7]*[^\\s\u00b7])?$",
             "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
           },
           "notes": {
@@ -385,6 +413,70 @@
       "words": {
         "label": "Resolve",
         "hint": "mark the note resolved on its thread"
+      }
+    },
+    "hire": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "of": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9]*-\\d+$",
+            "description": "The callsign of the worker whose work is reviewed, on `project`."
+          },
+          "by": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The session hiring the reviewer: its hire is logged in its log, and never limited."
+          },
+          "tell": {
+            "type": "boolean",
+            "description": "The reviewer sends a pointer to its notes to the author when done."
+          }
+        },
+        "required": [
+          "project",
+          "of"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "spawned"
+          },
+          "id": {
+            "type": "string"
+          },
+          "cut": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "cut"
+        ]
+      },
+      "description": "Hire a reviewer of a worker's unlanded work: a worker in a fork of its checkout, uncommitted work included, that reviews once against its goal and leaves notes on its thread. It sits beside its author, in its crew, and is exempt from hiring limits.",
+      "words": {
+        "label": "Review",
+        "hint": "hire a reviewer in a fork of this worker's checkout"
       }
     }
   },

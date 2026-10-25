@@ -96,8 +96,12 @@ export const WEIGHTS = {
 
 export const PATTERNS_ENTRY = 'patterns'
 
-/** Verbs the palette leaves out: a prompt is typed in the worker's terminal, a worker is ended by sending it home, a worktree is chosen in the new-worker form. */
-const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/kill', 'floor/cut'])
+/**
+ * Verbs the palette leaves out: a prompt is typed in the worker's terminal, a worker is ended by sending it home, a
+ * reviewer is hired by the reviews extension's action (`review` is its copy for renderers of before 1.95), a worktree
+ * is chosen in the new-worker form.
+ */
+const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/kill', 'card/review', 'floor/cut'])
 
 /** Commands only a terminal or a text field runs, and the palette's own, are not listed in it. */
 const listedCommand = (id: string, scope: string) => scope === 'global' && id !== 'palette'

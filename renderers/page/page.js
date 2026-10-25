@@ -49,7 +49,7 @@ import { asksHtml } from './added.js'
  * @import { Action, Added } from '../../src/shared/extensions.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
- * @import { Call, Replies } from '../../src/shared/api.ts'
+ * @import { Call } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { DiffLayout, StatsRange } from '../../src/shared/panels.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
@@ -370,7 +370,6 @@ function doPick(does, row) {
     const to = c.conversations.at(-1)?.resumedBy
     return to ? moveTo(to.id) : toast(noLongerOffered(c.callsign, verb))
   }
-  if (verb === 'review') return void hireReviewer(row, c)
   if (verb === 'reap') return void reapAll(row, c)
   if (verb === 'let-go') return void letGo(row, c)
   if (verb === 'send-home') return void sendHome(row, c)
@@ -513,12 +512,6 @@ async function resumeAll(button, f) {
   if (!(await ask(resumeAllAsk(f, stranded), 'Resume all'))) return
   const line = await pressing(button, () => resumeStranded(stranded, tower.run))
   if (line) toast(line)
-}
-
-/** Hires a reviewer of `author`'s work in a fork of its checkout. @param {HTMLElement} button @param {Card} author */
-async function hireReviewer(button, author) {
-  const r = await told(pressing(button, async () => tower.run(offeredCall(author, 'review', author.callsign))))
-  if (r) toast(`A reviewer of ${callsign(author.id)} starts in ${/** @type {NonNullable<Replies['spawn']['cut']>} */ (r.cut).name}, a fork of ${author.checkout}`)
 }
 
 /** Ends everything a worker left running, asked first. @param {HTMLElement} button @param {Card} c */
@@ -727,7 +720,6 @@ document.addEventListener('click', async (e) => {
   const actor = target.closest('[data-act]')
   const act = actor?.dataset.act
   if (act === 'send-home') return sendHome(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected())))
-  if (act === 'review') return hireReviewer(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected())))
   if (act === 'home') return goHome()
   if (act === 'drive') {
     showPane('screen')

@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { z } from 'zod'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board, type Card } from '../src/bridge/board.ts'
+import { board, type Board, type Card } from '../src/bridge/board.ts'
+import { foldBoard, type Folder } from '../src/bridge/folds.ts'
+import { projectLegacy } from '../src/bridge/legacy.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { exemptFromHiring, hireRefusal, hiresOf } from '../src/shared/crews.ts'
 import type { Config, LogEvent, SessionLog } from '../src/shared/model.ts'
+import type { StartCtx, Started } from '../src/shared/extensions.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
+import startReviews from '../extensions/reviews/server.ts'
+import type { RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
+import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
 
 const callsign = callsigns(CALLSIGNS)
@@ -41,8 +48,34 @@ const plain = session('20261004-100400-eeee', 4, `When you are done, run /tower:
 
 const author = session(AUTHOR, 0, 'Build the thing.', hires(legacy.header.id, withFacts.header.id, plain.header.id))
 
-const cardsOf = (logs: SessionLog[]): Card[] =>
-  board(viewOf(CONFIG, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(logs.map((l) => l.header.id)), protocol: HOST_PROTOCOL } })).floors.flatMap((f) => f.cards)
+/** The bundled reviews extension as the fold pass reads it, its facts read from each card's lineage. */
+const reviewsFolder = (logs: SessionLog[]): Folder => ({
+  id: 'reviews',
+  cap: 'reviews',
+  requires: [],
+  wants: [],
+  off: [],
+  specs: new Map([['card', { x: z.unknown(), adds: ['actions'] }]]),
+  folds: { card: (startReviews({} as StartCtx) as Started).folds!.card },
+  commands: [],
+  verbs: new Map([['reviews', new Set(['hire', 'append'])]]),
+  settings: () => undefined,
+  own: ({ lineage = [] }) => ({
+    streams: {},
+    collections: {},
+    facts: logs
+      .filter((log) => lineage.includes(log.header.id))
+      .flatMap((log) => factsOf(log).extensionFacts.filter(([, cap]) => cap === 'reviews').map(([t, , name, value]) => ({ name, value, at: log.header.startedAt + t * 1000, session: log.header.id }))),
+  }),
+})
+
+/** The board as renderers read it: the core's, folded by the reviews extension, its moved parts copied back to their old fields. */
+const boardOf = (logs: SessionLog[], repos = new Map<string, RepoRead>(), live = logs.map((l) => l.header.id)): Board => {
+  const core = board(viewOf(CONFIG, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(live), protocol: HOST_PROTOCOL }, repos }))
+  return projectLegacy(foldBoard({ board: core, callsignOf: () => undefined, folders: [reviewsFolder(logs)], subjects: new Map(), now: 0, clock: () => 0 }).board)
+}
+
+const cardsOf = (logs: SessionLog[]): Card[] => boardOf(logs).floors.flatMap((f) => f.cards)
 
 const all = [author, legacy, withFacts, fork, plain]
 
@@ -72,10 +105,48 @@ test('a reviewer spawned with its facts sits beside its author while no other re
 
 test('reviewers never count against the hiring limit: the author is refused only for its plain hire', () => {
   const refusal = (logs: SessionLog[]) => {
-    const b = board(viewOf(CONFIG, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(logs.map((l) => l.header.id)), protocol: HOST_PROTOCOL } }))
+    const b = boardOf(logs)
     const cards = b.floors.flatMap((f) => f.cards)
     return hireRefusal(cards, b.floors[0], cards.find((c) => c.id === AUTHOR)!)
   }
   assert.equal(refusal([author, legacy, withFacts]), undefined)
   assert.match(refusal(all)!, new RegExp(`${AUTHOR_CALLSIGN}'s hires ${callsign(plain.header.id)} still run`))
+})
+
+test("a reviewer spawned before reviews logged its facts reads as one spawned with them: in its author's crew and exempt from hiring, by reviews", () => {
+  const cards = cardsOf(all)
+  const read = (log: SessionLog) => {
+    const { crew, exempt, x } = cards.find((c) => c.id === log.header.id)!
+    return { crew, exempt, of: (x?.reviews as { of?: string } | undefined)?.of }
+  }
+  const reviewer = { crew: { callsign: AUTHOR_CALLSIGN, session: AUTHOR, by: 'reviews' }, exempt: [{ from: 'hiring', by: 'reviews' }], of: AUTHOR_CALLSIGN }
+  assert.deepEqual([read(legacy), read(withFacts)], [reviewer, reviewer])
+  assert.deepEqual([read(fork), read(plain)], [{ crew: undefined, exempt: undefined, of: undefined }, { crew: undefined, exempt: undefined, of: undefined }])
+})
+
+test("reviews offers Review on a worker whose work goes on, in a floor of git repos, copied back as the card verb `review` and its old call; never on a reviewer, nor once the work landed or its checkout is gone", () => {
+  const tree: TreeRead = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: false, against: 'origin/main', risk: [] }
+  const reads = (trees: TreeRead[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+  const at = (cwd: string): SessionLog => {
+    const log = fixture('tool-turn')
+    return { ...log, header: { ...log.header, project: 'tower', cwd } }
+  }
+  const offered = (log: SessionLog, repos: Map<string, RepoRead>) => {
+    const b = boardOf([log], repos, [])
+    const c = b.floors[0].cards[0]
+    return { action: b.adds[`card:${c.id}`]?.actions, review: c.calls.review }
+  }
+  const main = offered(at('/hub'), reads([]))
+  const name = callsign(at('/hub').header.id)
+  assert.deepEqual(main, {
+    action: [{ verb: 'reviews/hire', call: { project: 'tower', of: name }, cap: 'reviews' }],
+    review: ['spawn', { project: 'tower', cut: { from: 'main' }, prompt: `/tower:review ${name}` }],
+  })
+  const inTree = at(tree.path)
+  assert.equal(offered(inTree, reads([tree])).action?.length, 1)
+  assert.deepEqual(offered(inTree, reads([{ ...tree, absorbed: true }])), { action: undefined, review: undefined })
+  assert.deepEqual(offered(inTree, reads([{ ...tree, present: false }])), { action: undefined, review: undefined })
+  assert.deepEqual(offered(inTree, reads([])), { action: undefined, review: undefined })
+  const reviewer = { ...at('/hub'), header: { ...at('/hub').header, argv: ['claude', '--', `/tower:review ${AUTHOR_CALLSIGN}`] } }
+  assert.deepEqual(offered(reviewer, reads([])), { action: undefined, review: undefined })
 })

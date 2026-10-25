@@ -4,8 +4,10 @@
   "names": [
     "verbs.append",
     "verbs.resolve",
+    "verbs.hire",
     "reads.history/<project>",
     "reads.said/<project>",
+    "facts.of",
     "collections.reviews",
     "client.panel.js#cardReviews",
     "client.panel.js#cardThread",
