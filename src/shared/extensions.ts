@@ -9,7 +9,7 @@ import { z } from 'zod'
 import type { Board } from '../bridge/board.ts'
 import type { StreamFact } from '../bridge/streams.ts'
 import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
-import { RUNTIMES, type Runtime } from './launch.ts'
+import { RUNTIMES, type Runtime } from './model.ts'
 
 export type { StreamFact }
 

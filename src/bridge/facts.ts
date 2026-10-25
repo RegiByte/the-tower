@@ -144,6 +144,10 @@ export type Facts = {
   received: [at: number, digest: number][]
   /** The extensions' session facts (`tower.x.<cap>.<name>`), oldest first: when (epoch ms), the capability, the name and the value. */
   extensionFacts: [at: number, cap: string, name: string, value: unknown][]
+  /** What its spawn was exempted from, and by which capability's launch contributor (`tower.exempt`). */
+  exempt: Exemption[]
+  /** The worker it reports to, as a launch contributor gave it at its spawn (`tower.reports-to`). */
+  reportsTo?: CrewEdge
   /** The first event the fold couldn't follow: the error it threw, the event's time and code. Nothing after it is folded. */
   broken?: Broken
 }
@@ -162,7 +166,7 @@ export type Session = { header: SessionHeader; facts: Facts }
 export const initialFacts = (header: SessionHeader): Facts => ({
   state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
   spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], subagentRuns: [], limitReadings: {},
-  pages: [], sent: [], received: [], extensionFacts: [],
+  pages: [], sent: [], received: [], extensionFacts: [], exempt: [],
 })
 
 /** What an extension's session facts are named under: `tower.x.<cap>.<name>`, the capability never holding a dot. */
@@ -175,6 +179,18 @@ export const extensionFactOf = (event: string): { cap: string; name: string } | 
   const dot = rest.indexOf('.')
   return dot > 0 ? { cap: rest.slice(0, dot), name: rest.slice(dot + 1) } : undefined
 }
+
+/** An exemption a launch contributor gave a spawn: `from` the floor's hiring limits, `by` its capability. */
+export type Exemption = { from: 'hiring'; by: string }
+
+/** A crew edge a launch contributor gave a spawn: the worker's callsign and session then, and `by`, its capability. */
+export type CrewEdge = { callsign: string; session: string; by: string }
+
+/** The fact a spawn's exemption from the floor's hiring limits is logged as, before the worker starts. */
+export const EXEMPT = 'tower.exempt'
+
+/** The fact a spawn's crew edge is logged as, before the worker starts. */
+export const REPORTS_TO = 'tower.reports-to'
 
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
@@ -375,6 +391,10 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, killedBy: String(hook.by) }
     case LEAVE:
       return { ...facts, leaveAt: t }
+    case EXEMPT:
+      return { ...facts, exempt: [...facts.exempt, { from: hook.from as Exemption['from'], by: String(hook.by) }] }
+    case REPORTS_TO:
+      return { ...facts, reportsTo: { callsign: String(hook.callsign), session: String(hook.session), by: String(hook.by) } }
     default: {
       const fact = extensionFactOf(String(hook.hook_event_name))
       return fact ? { ...facts, extensionFacts: [...facts.extensionFacts, [at, fact.cap, fact.name, hook.value]] } : facts
