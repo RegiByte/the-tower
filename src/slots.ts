@@ -9,7 +9,7 @@ import type { Accepted } from './bridge/extensions.ts'
 import type { Board } from './bridge/board.ts'
 import type { Caller } from './shared/extensions.ts'
 import type { Config } from './shared/model.ts'
-import { dueSlot, type When } from './shared/slots.ts'
+import { dueSlot, ON_TIME_MS, type When } from './shared/slots.ts'
 import { projectOfKey } from './shared/subjects.ts'
 import type { ExtensionsResource, Instance } from './tower/extensions.ts'
 
@@ -31,10 +31,12 @@ type Declared = { a: Accepted; instance: Instance; name: string; when: When; key
  * doesn't wait for it, and its throw is a problem of its extension's.
  */
 export const extensionSlots = (holder: ExtensionsResource, readConfig: () => Config, board: () => Board): SlotSource => {
-  /** The latest slot fired, by capability, slot name, subject and floor. */
+  /** The latest slot fired, by capability, slot name, subject and floor: dropped once past and no longer declared. */
   const fired = new Map<string, number>()
-  const fire = ({ a, instance, name, when, key, project }: Declared, now: number) => {
-    const id = `${a.provides}/${name}/${key ?? ''}@${project ?? ''}`
+  const idOf = ({ a, name, key, project }: Declared) => `${a.provides}/${name}/${key ?? ''}@${project ?? ''}`
+  const fire = (slot: Declared, now: number) => {
+    const { a, instance, name, when, key, project } = slot
+    const id = idOf(slot)
     const at = dueSlot(when, fired.get(id), now)
     if (at === undefined) return
     fired.set(id, at)
@@ -66,7 +68,10 @@ export const extensionSlots = (holder: ExtensionsResource, readConfig: () => Con
         }),
       )
       const at = Date.now()
-      for (const slot of [...declared, ...folded]) fire(slot, at)
+      const slots = [...declared, ...folded]
+      for (const slot of slots) fire(slot, at)
+      const held = new Set(slots.map(idOf))
+      for (const [id, slot] of fired) if (!held.has(id) && at - slot > ON_TIME_MS + TICK_MS) fired.delete(id)
     },
   }
 }
