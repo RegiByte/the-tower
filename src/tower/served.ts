@@ -44,11 +44,14 @@ export const MODULES: Record<string, string> = {
   '/term-view.js': path.join(SHARED, 'term-view.ts'),
 }
 
-/** A shared module as the tower serves it: one ES module, with the names it exports. */
-export function bundled(url: string) {
-  const { outputFiles, metafile } = buildSync({ entryPoints: [MODULES[url]], bundle: true, format: 'esm', write: false, metafile: true })
+/** A TypeScript or JavaScript source as the tower serves it: one ES module, with the names it exports. */
+export function bundledFile(file: string) {
+  const { outputFiles, metafile } = buildSync({ entryPoints: [file], bundle: true, format: 'esm', write: false, metafile: true })
   return { text: outputFiles[0].text, exports: Object.values(metafile.outputs)[0].exports }
 }
+
+/** A shared module as the tower serves it. */
+export const bundled = (url: string) => bundledFile(MODULES[url])
 
 /**
  * `/tower.js` speaks the API version this tower serves, starts a viewer from the default appearance and knows the shipped

@@ -4,7 +4,8 @@
  *   GET  /              the renderer the config picks (`renderer`, `page` unless set): a redirect to it at `/r/<name>/`
  *   GET  /r/<name>/[<file>]   a renderer the core or the config declares: its entry, or any file below its root but hidden ones, at the
  *                       tower's origin; an HTML page saying why when it isn't declared or built or the config can't be read
- *   GET  /x/<cap>/<file>   a file of a running extension's client folder, its commands' modules, with CORS as a renderer's
+ *   GET  /x/<cap>/<file>   a file of the client folder of the extension providing <cap> (the bundled one's while none runs),
+ *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
@@ -92,13 +93,14 @@ import { readLanded } from '../landed.ts'
 import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
-import { defaultRenderer, fileBelow, rendererFile, renderersOf } from '../renderers.ts'
+import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, exemptionsBy, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
 import { MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated } from '../shared/extensions.ts'
+import { bundledClient, clientSource } from '../extensions.ts'
 import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
@@ -111,7 +113,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { bundled, MODULES, towerClient } from './served.ts'
+import { bundled, bundledFile, MODULES, towerClient } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -525,14 +527,18 @@ export const httpServer = defineResource({
         serveFile(res, full, ANY_ORIGIN)
       })
 
-    /** A file of a running extension's client folder: its commands' modules, served with CORS as a renderer's files are. */
+    /**
+     * A file of the client folder of the extension providing `cap`: the running one's, else the bundled one's, so a
+     * renderer built on a bundled client keeps loading while that extension is off. A `.ts` source is served bundled.
+     */
     function clientFile(res: http.ServerResponse, cap: string, file: string) {
       const live = extensions.live(cap)
-      if (live.t !== 'up' || !live.a.manifest.client) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
-      const { a } = live
-      const full = fileBelow(path.join(a.dir, a.manifest.client!), file)
-      if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
-      serveFile(res, full, ANY_ORIGIN)
+      const dir = live.t === 'up' ? live.a.manifest.client && path.join(live.a.dir, live.a.manifest.client) : bundledClient(cap)
+      if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
+      const source = clientSource(dir, file)
+      if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
+      if (path.extname(source) === '.ts') return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(bundledFile(source).text)
+      serveFile(res, source, ANY_ORIGIN)
     }
 
     /** Every renderer, and the one `/` opens. */

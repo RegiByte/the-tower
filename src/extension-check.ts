@@ -74,18 +74,21 @@ export const checkFolder = async (dir: string, config: Config, views: ExtensionV
 }
 
 /**
- * Writes the folder's `contract.json`: its capability's names at its major. Refused while its manifest doesn't parse,
- * or while the contract there holds names gone from it at the same major.
+ * Writes the folder's `contract.json`: its capability's names at its major, its client modules' exports among them.
+ * Refused while its manifest or a client module doesn't parse, or while the contract there holds names gone from it
+ * at the same major.
  */
 export const freezeFolder = (dir: string): { file: string; names: number; major: number; provides: string } => {
   const parsed = Manifest.safeParse(JSON.parse(readFileSync(path.join(dir, MANIFEST_FILE), 'utf8')))
   if (!parsed.success) throw new CliError(`${MANIFEST_FILE} doesn't parse: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`, 'tower extensions check <dir> says each problem')
   const manifest = parsed.data
   const file = path.join(dir, CONTRACT_FILE)
-  const held = foundIn(manifest.id, false, dir).contract
+  const { contract: held, client } = foundIn(manifest.id, false, dir)
+  const unreadable = Object.keys(client?.unreadable ?? {})
+  if (unreadable.length) throw new CliError(`${unreadable.join(', ')} doesn't parse, so its exports can't be frozen`, 'tower extensions check <dir> says why')
   const before = held === undefined ? undefined : parseContract(held)
-  const gone = before && typeof before !== 'string' ? goneFrom(before, manifest) : []
-  const contract = contractOf(manifest)
+  const gone = before && typeof before !== 'string' ? goneFrom(before, manifest, client) : []
+  const contract = contractOf(manifest, client)
   if (gone.length) throw new CliError(`${gone.join(', ')} would leave the contract at major ${contract.major}`, 'put them back, or move the major of version and say what to use instead in its CHANGELOG.md')
   writeFileSync(file, `${JSON.stringify(contract, null, 2)}\n`)
   return { file, names: contract.names.length, major: contract.major, provides: contract.provides }

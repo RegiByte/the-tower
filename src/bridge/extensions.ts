@@ -17,7 +17,13 @@ import { offOn, type ExtensionStores } from './stores.ts'
  * An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there
  * is one; `contract`: its `contract.json`, when there is one.
  */
-export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string }
+export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string; client?: ClientRead }
+
+/**
+ * A client folder's modules as discovery read them: each by the path it is served at below `/x/<cap>/` (a `.ts` as
+ * `.js`), with the names it exports, and each module that couldn't be read, with why.
+ */
+export type ClientRead = { exports: Record<string, string[]>; unreadable: Record<string, string> }
 
 /** What `contract.json` holds: the names of a capability's contract at a major, which leave only when the major moves. */
 export type Contract = { provides: string; major: number; names: string[] }
@@ -26,18 +32,19 @@ const ContractFile = z.strictObject({ provides: z.string(), major: z.int().nonne
 
 /**
  * The names of a manifest's contract, each by its kind: `verbs.<name>`, `reads.<path>`, `facts.<name>`,
- * `streams.<name>.<code>` and `collections.<name>`.
+ * `streams.<name>.<code>`, `collections.<name>`, and its client modules' exports, `client.<module>#<export>`.
  */
-export const contractNames = (manifest: Manifest): string[] => [
+export const contractNames = (manifest: Manifest, client: ClientRead | undefined): string[] => [
   ...Object.keys(manifest.verbs ?? {}).map((name) => `verbs.${name}`),
   ...Object.keys(manifest.reads ?? {}).map((name) => `reads.${name}`),
   ...Object.keys(manifest.facts ?? {}).map((name) => `facts.${name}`),
   ...Object.entries(manifest.streams ?? {}).flatMap(([name, stream]) => Object.keys(stream.facts).map((code) => `streams.${name}.${code}`)),
   ...Object.keys(manifest.collections ?? {}).map((name) => `collections.${name}`),
+  ...Object.entries(client?.exports ?? {}).flatMap(([module, names]) => names.map((name) => `client.${module}#${name}`)),
 ]
 
-/** A manifest's contract as `tower extensions freeze` writes it. */
-export const contractOf = (manifest: Manifest): Contract => ({ provides: capabilityOf(manifest), major: versionOf(manifest.version)[0], names: contractNames(manifest) })
+/** A manifest's contract as `tower extensions freeze` writes it, with the exports of its client folder as `client` read them. */
+export const contractOf = (manifest: Manifest, client: ClientRead | undefined): Contract => ({ provides: capabilityOf(manifest), major: versionOf(manifest.version)[0], names: contractNames(manifest, client) })
 
 /** A `contract.json` as a contract, or why it is none. */
 export const parseContract = (text: string): Contract | string => {
@@ -50,9 +57,9 @@ export const parseContract = (text: string): Contract | string => {
 }
 
 /** The names `contract` holds that `manifest` lacks, while its major is the contract's: none at another major. */
-export const goneFrom = (contract: Contract, manifest: Manifest): string[] => {
+export const goneFrom = (contract: Contract, manifest: Manifest, client: ClientRead | undefined): string[] => {
   if (versionOf(manifest.version)[0] !== contract.major) return []
-  const names = contractNames(manifest)
+  const names = contractNames(manifest, client)
   return contract.names.filter((name) => !names.includes(name))
 }
 
@@ -62,7 +69,7 @@ const ownContractProblems = (found: Found, manifest: Manifest): LoadProblem[] =>
   const level = found.bundled ? error : warn
   const contract = parseContract(found.contract)
   if (typeof contract === 'string') return [level('contract', `contract.json is no contract: ${contract}`)]
-  const gone = goneFrom(contract, manifest)
+  const gone = goneFrom(contract, manifest, found.client)
   return gone.length ? [level('contract', `${gone.join(', ')} ${gone.length === 1 ? 'is' : 'are'} in contract.json at ${contract.provides} ${contract.major}.x and gone from its manifest: put ${gone.length === 1 ? 'it' : 'them'} back, or move its major and say what to use instead`)] : []
 }
 
@@ -536,6 +543,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
+    ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
     ...(foldsSlots(manifest) && !meets(manifest.requires.tower, SLOTS_ADD_SINCE) && versionOf(manifest.requires.tower)[0] === versionOf(SLOTS_ADD_SINCE)[0]
@@ -553,7 +561,7 @@ export const replacementProblem = (manifest: Manifest, found: Found, bundled: Fo
   if (found.bundled || bundled?.contract === undefined) return undefined
   const contract = parseContract(bundled.contract)
   if (typeof contract === 'string') return undefined
-  const gone = goneFrom(contract, manifest)
+  const gone = goneFrom(contract, manifest, found.client)
   return gone.length ? error('contract', `${found.id} provides ${contract.provides} ${manifest.version} but has no ${gone.join(', ')}, which ${contract.provides} ${contract.major}.x holds`) : undefined
 }
 
