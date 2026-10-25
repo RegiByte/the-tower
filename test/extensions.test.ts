@@ -59,9 +59,9 @@ test("the config's entry: a new id takes an absolute path, and a folder without 
 })
 
 test('requires.tower is read before any other key: a newer tower is too-new, an older major too-old, whatever else the manifest holds', () => {
-  const r = resolved([ext('future', { requires: { tower: '1.90' }, verbz: {} }), ext('next', { requires: { tower: '2.0' } }), ext('past', { requires: { tower: '0.9' } })])
+  const r = resolved([ext('future', { requires: { tower: '1.92' }, verbz: {} }), ext('next', { requires: { tower: '2.0' } }), ext('past', { requires: { tower: '0.9' } })])
   assert.deepEqual([codes(r, 'future'), codes(r, 'next'), codes(r, 'past')], [['too-new'], ['too-new'], ['too-old']])
-  assert.match(r.refused.get('future')!.problems[0].message, /needs tower 1\.90; this is 1\.81: tower update/)
+  assert.match(r.refused.get('future')!.problems[0].message, /needs tower 1\.92; this is 1\.81: tower update/)
 })
 
 test('a requirement no extension provides, or out of its range, is unmet; a refused provider skips its dependents, until nothing changes', () => {

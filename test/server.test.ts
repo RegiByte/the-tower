@@ -618,7 +618,7 @@ test('server: an extension reaches only the core and what it declares', async ()
 test("server: a verb runs through the chain around it, the dependent's link outside its owner's, each link's input parsed again by the verb's schema", async () => {
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual([read.chains['chime/ring'], read.chains['tower/collection/create']], [['pulse', 'chime'], ['pulse']])
-  assert.deepEqual(read.composites['tower/spawn'], ['tower/policy/run'])
+  assert.deepEqual(read.composites['tower/review/append'], ['tower/worktree/discard'])
   const rung = await post('chime/ring', { times: 1 })
   assert.deepEqual(JSON.parse(rung.body), { rang: 2, caller: { t: 'user', via: 'http', within: [] }, trail: ['pulse', 'chime'] })
   const passedOn = await post('chime/ring', { times: 3 })

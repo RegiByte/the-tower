@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.90'
+export const API_VERSION = '1.91'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -485,7 +485,6 @@ export const ROUTES: Routes = { ...VERBS, ...TRANSPORT }
 export const COMPOSITES: Record<string, string[]> = {
   'tower/tidy': ['tower/worktree/remove', 'tower/branch/delete', 'tower/reap/process', 'tower/kill'],
   'tower/worktree/discard': ['tower/review/append'],
-  'tower/policy/run': ['tower/spawn'],
 }
 
 /** A point inside a core verb where extensions take part: what it is raised with, what each answer is, and what a failed answer does. */
