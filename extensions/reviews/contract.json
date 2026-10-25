@@ -1,0 +1,9 @@
+{
+  "provides": "reviews",
+  "major": 1,
+  "names": [
+    "verbs.append",
+    "reads.history/<project>",
+    "collections.reviews"
+  ]
+}

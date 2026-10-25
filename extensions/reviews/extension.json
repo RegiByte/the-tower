@@ -1,0 +1,305 @@
+{
+  "id": "reviews",
+  "version": "1.0",
+  "title": "Review threads",
+  "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
+  "requires": {
+    "tower": "1.92"
+  },
+  "server": "server.ts",
+  "client": "client",
+  "collections": {
+    "reviews": {
+      "label": "Reviews",
+      "description": "One review thread per checkout, written only with `tower note`: not a place for write-ups.",
+      "owned": true,
+      "doors": {
+        "list": "reviews/history/<project>",
+        "read": "tower/collection/<project>/<collection>/<item>",
+        "create": "reviews/append",
+        "edit": {
+          "none": "append-only: a note is never rewritten"
+        },
+        "delete": {
+          "none": "a thread is filed by Tidy once its work lands, never deleted"
+        }
+      }
+    }
+  },
+  "subjects": {
+    "thread": {
+      "description": "A checkout's review thread, keyed by its checkout.",
+      "in": "floor",
+      "list": "threads"
+    }
+  },
+  "folds": {
+    "card": {
+      "x": {
+        "type": "object",
+        "required": [
+          "thread",
+          "threadState"
+        ],
+        "properties": {
+          "thread": {
+            "type": "string",
+            "description": "The checkout its review thread is about: a reviewer's is its author's."
+          },
+          "threadState": {
+            "type": "object",
+            "required": [
+              "is"
+            ],
+            "properties": {
+              "is": {
+                "enum": [
+                  "live",
+                  "landed",
+                  "gone"
+                ]
+              }
+            },
+            "description": "Where the work its thread is about stands, with the thread Tidy filed once it landed."
+          },
+          "unseen": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The notes on its thread it hasn't seen (after its own last one), while its thread's work is live."
+          },
+          "filed": {
+            "type": "object",
+            "required": [
+              "id",
+              "tag",
+              "at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "tag": {
+                "type": "string"
+              },
+              "at": {
+                "type": "string"
+              }
+            },
+            "description": "The thread Tidy filed once the work in its own checkout landed."
+          }
+        }
+      },
+      "adds": [
+        "actions"
+      ]
+    },
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": [
+          "threads"
+        ],
+        "properties": {
+          "threads": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "checkout",
+                "id",
+                "tag",
+                "messages",
+                "landed",
+                "state",
+                "verbs",
+                "calls",
+                "actions"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "<project>/<checkout>: its subject is reviews.thread:<project>/<checkout>."
+                },
+                "checkout": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                },
+                "messages": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "landed": {
+                  "type": "boolean"
+                },
+                "state": {
+                  "type": "object",
+                  "required": [
+                    "is"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "verbs": {
+    "append": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkout": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "description": "A worktree's name, or `main` for the main checkouts."
+          },
+          "author": {
+            "type": "string",
+            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
+            "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
+          },
+          "re": {
+            "description": "The number of the message this one answers.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "anchors": {
+            "default": [],
+            "description": "The lines the note is about, each quoted as it was.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "repo": {
+                  "type": "string",
+                  "pattern": "^[^`:\\s]+$",
+                  "description": "The repo as the Changes pane names it: its main checkout's folder."
+                },
+                "path": {
+                  "type": "string",
+                  "pattern": "^[^`\\n]+$"
+                },
+                "from": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "to": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "quote": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string",
+                      "pattern": "^\\S*$"
+                    },
+                    "lines": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[^\\n]*$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "lines"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "repo",
+                "path",
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project",
+          "checkout",
+          "author",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "appended"
+          },
+          "id": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "modifiedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "n",
+          "modifiedAt"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Append a message to the checkout's review thread, made on the first one; it is numbered one past the last.",
+      "words": {
+        "label": "Note",
+        "hint": "add a note to the checkout's review thread"
+      }
+    }
+  },
+  "reads": {
+    "history/<project>": {
+      "scope": "project",
+      "reply": {
+        "type": "object",
+        "required": [
+          "threads",
+          "authors"
+        ],
+        "properties": {
+          "threads": {
+            "type": "array"
+          },
+          "authors": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "The project's review threads, live and landed (filed by Tidy), oldest first, and what each author wrote in them."
+    }
+  }
+}
