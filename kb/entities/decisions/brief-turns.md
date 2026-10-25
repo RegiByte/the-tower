@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/bridge/turns.ts#turnsByConversation",
     "hub/src/bridge/turns.ts#lastTurns",

@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-24",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/spine.ts#config", "hub/src/tower/spine.ts#system", "hub/src/tower/spine.ts#slots", "hub/src/tower/extensions.ts#topologyOf", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/publisher.ts#publisher", "hub/src/tower/dispatch.ts#dispatch", "hub/src/tower/http.ts#httpServer", "hub/src/tower/server.ts", "hub/src/system.ts#watchSystem", "hub/src/tower/screens.ts#screenMirrors", "hub/src/shared/shelf-page.ts#Topology", "hub/package.json"]
 }
 ---

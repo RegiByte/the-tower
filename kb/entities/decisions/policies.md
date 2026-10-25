@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/shared/slots.ts#cronFields",
     "hub/src/shared/slots.ts#ruleWords",
@@ -88,7 +88,7 @@ user may replace it by providing `policies`.
   one at a time, each until the tower folds its fact.
 - *Its part of the board.* The floor fold ([`policyViews`](ref:hub/extensions/policies/policies.ts#policyViews)):
   `floor.x.policies.policies` (rule, next slot, approval of the current hash, live runs followed through resumes by the
-  worker's lineage among the floor's cards ([`liveRuns`](ref:hub/extensions/policies/policies.ts#liveRuns)), last run,
+  worker's lineage among the floor's cards ([`liveRuns`](ref:hub/extensions/policies/policies.ts#liveRuns)), last run (its worker's callsign by `ctx.callsignOf`, archived workers too),
   last pass, the newest slot with a fact, the open offer, `needs`: `reapprove` for an auto policy edited since its
   approval, `invalid` for one approved once, `held` for the latest pass's slot while it is open and a run still runs;
   shown, never rung), with `run` and `approve` as its `actions`, calling `policies/*`; `floor.x.policies.offers`
