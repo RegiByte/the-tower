@@ -22,6 +22,8 @@ import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
 import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
+import { callsignsOf } from '../src/shared/model.ts'
+import { tagOf } from '../src/shared/tags.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
 const ROOT = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'tower-api-')))
@@ -99,6 +101,65 @@ function seedPolicies() {
 }
 
 /**
+ * A second floor, `desk`, whose review threads were written before the reviews extension: a hub with three worktrees
+ * cut from `main` (`odin-1` holding a commit, `lark-3` holding none, and `odin-1-review`, a fork of `odin-1`), a worker in
+ * each, the fork's a reviewer of odin-1's, and threads on `main`, `odin-1`, `kite-2` (a checkout git no longer knows)
+ * and `lark-3`'s filed by Tidy after its worker started.
+ */
+const DESK = path.join(ROOT, 'desk')
+const DESK_STARTED = Math.floor(Date.now() / MIN) * MIN - 50 * MIN
+const DESK_SESSIONS = { author: '20261004-200000-0d01', reviewer: '20261004-200100-0d02', lark: '20261004-200200-0d03' }
+const deskCallsign = callsignsOf({ projects: {} } as Parameters<typeof callsignsOf>[0])
+const AUTHOR = deskCallsign(DESK_SESSIONS.author)
+const REVIEWER = deskCallsign(DESK_SESSIONS.reviewer)
+const localStamp = (at: number) => {
+  const d = new Date(at)
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`
+}
+const FILED_AT = localStamp(DESK_STARTED + 30 * MIN)
+const FILED_ID = `lark-3@${FILED_AT.replace(' ', '-').replace(':', '')}.md`
+const DESK_THREADS: Record<string, string> = {
+  'main.md': `# main\n\n## Ana · ${localStamp(DESK_STARTED)} · n1\nThe main checkouts look clean.\n`,
+  'odin-1.md':
+    `# odin-1\n\n## Ana · ${localStamp(DESK_STARTED + MIN)} · n1\n\`desk:src/a.ts:1-2\`\n\`\`\`ts\none\ntwo\n\`\`\`\nWhy two lines?\n\n` +
+    `## ${AUTHOR} · ${localStamp(DESK_STARTED + 2 * MIN)} · n2 · re n1\nOne per case.\n\n` +
+    `## ${REVIEWER} · ${localStamp(DESK_STARTED + 3 * MIN)} · n3\n**fix first**: the second case has no test.\n\n` +
+    `## Ana · ${localStamp(DESK_STARTED + 4 * MIN)} · n4\nAnd name the file.\n`,
+  'kite-2.md': `# kite-2\n\n## Ana · ${localStamp(DESK_STARTED - 10 * MIN)} · n1\nWhere did this go?\n`,
+  [FILED_ID]: `# lark-3\n\n## ${deskCallsign(DESK_SESSIONS.lark)} · ${localStamp(DESK_STARTED + 5 * MIN)} · n1\n**ship**\n`,
+}
+const deskGit = (...args: string[]) => execFileSync('git', ['-C', DESK, '-c', 'user.name=test', '-c', 'user.email=test@localhost', ...args], { stdio: 'ignore' })
+
+function seedDesk() {
+  mkdirSync(path.join(DESK, 'src'), { recursive: true })
+  writeFileSync(path.join(DESK, 'src', 'a.ts'), 'one\n')
+  execFileSync('git', ['init', '-q', '-b', 'main', DESK])
+  writeFileSync(path.join(DESK, '.git', 'info', 'exclude'), '.worktrees/\n')
+  deskGit('add', '.')
+  deskGit('commit', '-q', '-m', 'first')
+  const cut = (name: string, from: string, fields: Record<string, string>) => {
+    deskGit('worktree', 'add', '-q', '-b', `tower/${name}`, path.join(DESK, '.worktrees', name), from)
+    for (const [key, value] of Object.entries({ towerBase: 'main', towerName: name, ...fields })) deskGit('config', `branch.tower/${name}.${key}`, value)
+  }
+  cut('odin-1', 'main', {})
+  writeFileSync(path.join(DESK, '.worktrees', 'odin-1', 'src', 'a.ts'), 'one\ntwo\n')
+  execFileSync('git', ['-C', path.join(DESK, '.worktrees', 'odin-1'), '-c', 'user.name=test', '-c', 'user.email=test@localhost', 'commit', '-q', '-am', 'two'], { stdio: 'ignore' })
+  cut('lark-3', 'main', {})
+  cut('odin-1-review', 'tower/odin-1', { towerFrom: 'odin-1' })
+  const ended = (id: string, cwd: string, startedAt: number, argv: string[]) => {
+    const header = { id, project: 'desk', cwd, argv, startedAt, cols: 80, rows: 24 }
+    writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
+  }
+  ended(DESK_SESSIONS.author, path.join(DESK, '.worktrees', 'odin-1'), DESK_STARTED, ['bash'])
+  ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/tower:review ${AUTHOR}`])
+  ended(DESK_SESSIONS.lark, path.join(DESK, '.worktrees', 'lark-3'), DESK_STARTED + 2 * MIN, ['bash'])
+  const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
+  mkdirSync(threads, { recursive: true })
+  for (const [id, text] of Object.entries(DESK_THREADS)) writeFileSync(path.join(threads, id), text)
+}
+
+/**
  * A hub that is a repo with a branch cut from `main`, a page beside a hidden file, a renderer declared by the config with
  * a hidden file below its root, a policy, and a session that showed the page and ended.
  */
@@ -113,6 +174,7 @@ function seed(port: number) {
   mkdirSync(path.join(ROOT, 'streams', 'system', 'probe.quota'), { recursive: true })
   cpSync(path.join(REPO, 'test', 'fixtures', 'probe-quota.jsonl'), path.join(ROOT, 'streams', 'system', 'probe.quota', '2026-10.jsonl'))
   seedPolicies()
+  seedDesk()
   cpSync(FIXTURES, EXTENSIONS, { recursive: true })
   writeFileSync(path.join(EXTENSIONS, 'package.json'), JSON.stringify({ type: 'module' }))
   execFileSync('git', ['init', '-q', '-b', 'main', HUB])
@@ -140,7 +202,7 @@ function writeConfig(port: number) {
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
     extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
-    projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
+    projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] }, desk: { name: 'desk', hub: DESK, repos: [] } },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
       reviews: { label: 'Reviews', description: 'One review thread per checkout.' },
@@ -555,7 +617,7 @@ test("server: an extension's folds put its part on the board's subjects, its bad
   })
   assert.deepEqual(lab.calls.tidy, ['tidy', { project: 'lab', plan: { ...lab.tidy, x: { pulse: ['echo'] } } }], "the floor's Tidy carries the extensions' entries")
   assert.deepEqual(
-    board.asks.filter((a) => a.cap === 'pulse').map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
+    board.asks.filter((a) => a.cap === 'pulse' && a.subject === 'floor:lab').map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
     [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],
   )
   const client = await get('/x/pulse/pulse.js')
@@ -778,3 +840,103 @@ test('server: no hidden file is served below a shown page or a renderer', async 
   assert.equal(errorCode(await get('/r/plain/.secret')), 'not_found')
 })
 
+
+test('server: review threads written before the reviews extension read the same: threads, landed, filed, unseen, history and tower thread', async () => {
+  const board = await settled(
+    async () => {
+      const msg = (await firstEvent('/board')) as BoardMsg
+      assert.ok('board' in msg)
+      return msg.board
+    },
+    (b) => b.floors.find((f) => f.id === 'desk')!.worktrees.length === 3,
+  )
+  const desk = board.floors.find((f) => f.id === 'desk')!
+  const lark = deskCallsign(DESK_SESSIONS.lark)
+  const note = (checkout: string) => ['review/append', { project: 'desk', checkout }] as const
+  const noting = (checkout: string) => ({ verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }] })
+  const quiet = { verbs: [], calls: {}, actions: [] }
+  const last = (author: string, at: number, n: number) => ({ author, at: localStamp(at), n })
+  assert.deepEqual(desk.threads, [
+    { checkout: 'kite-2', id: 'kite-2.md', tag: 'merry-grove', messages: 1, last: last('Ana', DESK_STARTED - 10 * MIN, 1), landed: true, state: { is: 'gone' }, ...quiet },
+    { checkout: 'main', id: 'main.md', tag: 'chalk-whale', messages: 1, last: last('Ana', DESK_STARTED, 1), landed: true, state: { is: 'live' }, ...noting('main') },
+    { checkout: 'odin-1', id: 'odin-1.md', tag: 'vivid-badger', messages: 4, last: last('Ana', DESK_STARTED + 4 * MIN, 4), landed: false, state: { is: 'live' }, ...noting('odin-1') },
+  ])
+  assert.deepEqual(desk.tidy.threads, ['kite-2', 'main'], 'Tidy files the threads whose work landed')
+  const kept = desk.collections.find((c) => c.id === 'reviews')!
+  assert.deepEqual([kept.label, kept.description, kept.items.map((i) => i.id)], ['Reviews', 'One review thread per checkout.', ['kite-2.md', FILED_ID, 'main.md', 'odin-1.md']], "the config's line names the collection")
+  const served = await get('/reviews.js')
+  assert.equal(served.status, 200)
+  for (const name of ['parseThread', 'printThread', 'appended', 'unseenBy', 'landedThreads', 'anchorState', 'sendText']) assert.match(served.body, new RegExp(`\\b${name}\\b`), `/reviews.js serves ${name}`)
+
+  const filed = { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT }
+  const cardOf = (id: string) => {
+    const c = desk.cards.find((c) => c.id === id)!
+    return { reviews: c.reviews, checkoutState: c.checkoutState, threadState: c.threadState, unseen: c.unseen, note: c.calls.note }
+  }
+  assert.deepEqual(cardOf(DESK_SESSIONS.author), { reviews: undefined, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 2, note: note('odin-1') })
+  assert.deepEqual(cardOf(DESK_SESSIONS.reviewer), { reviews: AUTHOR, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 1, note: note('odin-1') }, "a reviewer's thread is its author's")
+  const landed = { is: 'landed', on: 'main', empty: true, filed }
+  assert.deepEqual(cardOf(DESK_SESSIONS.lark), { reviews: undefined, checkoutState: landed, threadState: landed, unseen: undefined, note: undefined }, 'its work landed, its thread filed after it started')
+
+  const message = (author: string, at: number, n: number, body: string, more: object = {}) => ({ author, at: localStamp(at), n, anchors: [], body, ...more })
+  assert.deepEqual(JSON.parse((await get('/reviews/desk')).body), {
+    threads: [
+      { id: 'kite-2.md', checkout: 'kite-2', messages: [message('Ana', DESK_STARTED - 10 * MIN, 1, 'Where did this go?')] },
+      { id: 'main.md', checkout: 'main', messages: [message('Ana', DESK_STARTED, 1, 'The main checkouts look clean.')] },
+      {
+        id: 'odin-1.md',
+        checkout: 'odin-1',
+        messages: [
+          message('Ana', DESK_STARTED + MIN, 1, 'Why two lines?', { anchors: [{ repo: 'desk', path: 'src/a.ts', from: 1, to: 2, quote: { lang: 'ts', lines: ['one', 'two'] } }] }),
+          message(AUTHOR, DESK_STARTED + 2 * MIN, 2, 'One per case.', { re: 1 }),
+          message(REVIEWER, DESK_STARTED + 3 * MIN, 3, '**fix first**: the second case has no test.', { verdict: 'fix first' }),
+          message('Ana', DESK_STARTED + 4 * MIN, 4, 'And name the file.'),
+        ],
+      },
+      { id: FILED_ID, checkout: 'lark-3', landed: FILED_AT, messages: [message(lark, DESK_STARTED + 5 * MIN, 1, '**ship**', { verdict: 'ship' })] },
+    ],
+    authors: {
+      Ana: { notes: 4, replies: 0, verdicts: {}, checkouts: ['kite-2', 'main', 'odin-1'] },
+      [AUTHOR]: { notes: 0, replies: 1, verdicts: {}, checkouts: ['odin-1'] },
+      [REVIEWER]: { notes: 1, replies: 0, verdicts: { 'fix first': 1 }, checkouts: ['odin-1'] },
+      [lark]: { notes: 1, replies: 0, verdicts: { ship: 1 }, checkouts: ['lark-3'] },
+    },
+  })
+
+  const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
+  assert.equal(
+    cli(DESK_SESSIONS.author, 'thread'),
+    `${DESK_THREADS['odin-1.md']}\n(${threads}/odin-1.md) New to you since your last note: n3, n4.\nA note's anchors name one of the checkout's repos: desk:<path>:<from>-<to>.\n`,
+  )
+  assert.equal(
+    cli(DESK_SESSIONS.reviewer, 'thread'),
+    `${DESK_THREADS['odin-1.md']}\n(${threads}/odin-1.md) New to you since your last note: n4.\nA note's anchors name one of the checkout's repos: desk:<path>:<from>-<to>.\n`,
+  )
+  assert.equal(cli(DESK_SESSIONS.lark, 'thread', 'kite-2').split('\n').at(-3), `(${threads}/kite-2.md) New to you since your last note: n1.`, "a worker that never wrote on a thread has seen none of it")
+})
+
+test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
+  const before = readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'main.md'), 'utf8')
+  const reply = await command('review/append', {
+    project: 'desk',
+    checkout: 'main',
+    author: AUTHOR,
+    re: 1,
+    anchors: [{ repo: 'desk', path: 'src/a.ts', from: 1, to: 1, quote: { lang: 'ts', lines: ['one'] } }],
+    body: '  Agreed.\n',
+  })
+  assert.deepEqual({ t: reply.t, id: reply.id, n: reply.n }, { t: 'appended', id: 'main.md', n: 2 })
+  const after = readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'main.md'), 'utf8')
+  const at = parseThread(after).messages[1].at
+  assert.equal(after, `${before}\n## ${AUTHOR} · ${at} · n2 · re n1\n\`desk:src/a.ts:1\`\n\`\`\`ts\none\n\`\`\`\nAgreed.\n`)
+  const made = await command('review/append', { project: 'desk', checkout: 'wren-5', author: 'Ana', body: 'First.' })
+  assert.deepEqual({ id: made.id, n: made.n }, { id: 'wren-5.md', n: 1 })
+  assert.equal(readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'wren-5.md'), 'utf8'), `# wren-5\n\n## Ana · ${parseThread(readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'wren-5.md'), 'utf8')).messages[0].at} · n1\nFirst.\n`)
+  for (const [input, code] of [
+    [{ project: 'desk', checkout: 'main', author: 'Ana', body: '  ' }, 'invalid'],
+    [{ project: 'desk', checkout: 'main', author: 'Ana', body: '## Ana · 2026-10-06 14:32 · n9\nforged' }, 'invalid'],
+    [{ project: 'desk', checkout: 'main', author: 'Ana', re: 9, body: 'to nothing' }, 'not_found'],
+  ] as const)
+    assert.equal(errorCode(await post('review/append', input)), code)
+  assert.match(String(made.modifiedAt), /^\d+$/)
+})
