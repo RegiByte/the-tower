@@ -26,7 +26,7 @@ function seed(root: string) {
   return {
     projects: { lab: { name: 'lab', hub, repos: [] } },
     collections: { drafts: { label: 'Drafts', description: 'Prompts kept for later.' } },
-    probes: { quota: { off: true } },
+    extensions: { quota: { off: true } },
   }
 }
 

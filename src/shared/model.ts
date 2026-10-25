@@ -153,16 +153,16 @@ export const briefConfig = (config: Config, projectId: string): Required<BriefCo
 
 /**
  * How long a session's log stays plain: `days` after its worker ended, Tidy offers to archive it (gzip it in place),
- * and a stream's month file, a probe's or a policy's, `days` after its month closed.
+ * and a stream's month file, an extension's or a policy's, `days` after its month closed.
  * Unset: never offered.
  */
 export type RetentionConfig = { days?: number }
 
 /**
- * A probe: a reader of the closed set the core knows (`reads`), run by the tower every `every` (`"30s"`, `"10m"`,
- * `"1h"`) while due, or `off`. The core declares `quota`; the config overrides its fields or adds probes by name.
+ * The quota probe's old spelling, `probes.quota`: `off` is read as `extensions.quota.off`, and `every` as
+ * `extensions.quota.settings.every`. @deprecated since 1.88, honoured until 2.0.
  */
-export type ProbeConfig = { reads?: string; every?: string; off?: boolean }
+export type ProbeConfig = { every?: string; off?: boolean }
 
 /** The person running the tower, as renderers name them and review notes are signed: `name` is free text a message heading can carry. */
 export type UserConfig = { name?: string }
@@ -270,7 +270,7 @@ export type Config = {
   hiring?: HiringConfig
   brief?: BriefConfig
   retention?: RetentionConfig
-  /** The system's probes, by name, beside the core's (`quota`): see `ProbeConfig`. */
+  /** The quota probe's old spelling, `quota` its only name: see `ProbeConfig`. @deprecated since 1.88 */
   probes?: Record<string, ProbeConfig>
   user?: UserConfig
   editor?: EditorConfig
@@ -312,7 +312,6 @@ export const WORKTREES_KEYS = keysOf<WorktreesConfig>()(['branchPrefix', 'links'
 export const HIRING_KEYS = keysOf<HiringConfig>()(['depth', 'live'])
 export const BRIEF_KEYS = keysOf<BriefConfig>()(['pairs'])
 export const RETENTION_KEYS = keysOf<RetentionConfig>()(['days'])
-export const PROBE_KEYS = keysOf<ProbeConfig>()(['reads', 'every', 'off'])
 export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
 export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings'])

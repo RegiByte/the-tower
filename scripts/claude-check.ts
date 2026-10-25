@@ -129,7 +129,7 @@ const configFor = (hub: string, dirs: string[], launch: Launch): Config => ({
   env: envOf(launch),
   port: PORT,
   projects: { check: { name: 'check', color: '#e0a040', hub, repos: dirs } },
-  probes: { quota: { off: true } },
+  extensions: { quota: { off: true } },
 })
 
 async function post<T>(verb: string, body: unknown): Promise<T> {

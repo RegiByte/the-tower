@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { configNow, LEGACY_FIELDS, LEGACY_READS, LEGACY_VERBS, projectLegacy, respelled } from '../src/bridge/legacy.ts'
+import type { Board } from '../src/bridge/board.ts'
+import { configProblems } from '../src/config-check.ts'
+import { LEGACY, streamFolder } from '../src/shared/extensions.ts'
+import { ConfigError, type Config } from '../src/shared/model.ts'
+
+const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
+
+test("the quota probe's old spelling is read where it is now, and both spellings of a field is an error naming both", () => {
+  const old = config({ probes: { quota: { off: true, every: '1h' } } })
+  assert.deepEqual(respelled(old).config.extensions, { quota: { off: true, settings: { every: '1h' } } })
+  assert.deepEqual(
+    respelled(old).old.map((o) => [o.key, o.use]),
+    [
+      ['probes.quota.off', '"extensions": { "quota": { "off": true } }'],
+      ['probes.quota.every', '"extensions": { "quota": { "settings": { "every": "1h" } } }'],
+    ],
+  )
+  const mixed = config({ probes: { quota: { every: '1h' } }, extensions: { quota: { off: false, settings: { every: '5m' } }, roles: { path: '/r' } } })
+  assert.deepEqual(respelled(mixed).both, [{ key: 'probes.quota.every', now: 'extensions.quota.settings.every' }])
+  assert.throws(() => configNow(mixed), (e) => e instanceof ConfigError && /probes\.quota\.every and extensions\.quota\.settings\.every are both set/.test(e.message))
+  assert.deepEqual(configNow(config({ probes: { quota: { off: true } }, extensions: { roles: { path: '/r' } } })).extensions, { roles: { path: '/r' }, quota: { off: true } }, 'the other extensions are kept')
+  const plain = config({ extensions: { quota: { off: true } } })
+  assert.equal(configNow(plain), plain, 'a config with no old spelling is read as it is')
+})
+
+test('tower config check warns of the old spelling with the line to write, and fails what nothing reads', () => {
+  const problems = (probes: unknown) => configProblems(config({ projects: { lab: { name: 'lab', hub: '/', repos: [] } }, probes } as never)).filter((p) => p.key.startsWith('probes'))
+  assert.deepEqual(problems({ quota: { off: true } }), [{ level: 'warn', key: 'probes.quota.off', problem: 'the old spelling, honoured until 2.0: write "extensions": { "quota": { "off": true } }' }])
+  assert.deepEqual(
+    problems({ quota: { reads: 'claude.usage' }, mine: { every: '10m' } }).map((p) => [p.level, p.key]),
+    [['fail', 'probes.quota.reads'], ['fail', 'probes.mine']],
+  )
+})
+
+test('LEGACY names what each applier reads, and every verb, read and board field has its code', () => {
+  for (const e of LEGACY) {
+    if (e.kind === 'verb') assert.ok(LEGACY_VERBS[e.old], e.old)
+    if (e.kind === 'read') assert.ok(LEGACY_READS[e.old], e.old)
+    if (e.kind === 'board') assert.ok(LEGACY_FIELDS[e.old], e.old)
+  }
+  assert.equal(streamFolder('quota.reads'), 'probe.quota', 'a moved stream keeps its old folder')
+  assert.equal(streamFolder('pulse.beats'), 'pulse.beats')
+  assert.deepEqual(LEGACY_VERBS['probe/run'].input({ name: 'quota' }), {})
+  assert.equal((LEGACY_VERBS['probe/run'].input({ name: 'mine' }) as { code: string }).code, 'not_found')
+  assert.deepEqual(LEGACY_VERBS['probe/run'].reply({ at: 1, ms: 2, ok: false, error: 'x' }), { t: 'probed', at: 1, ms: 2, ok: false, error: 'x' })
+})
+
+test('the projection copies the quota part back to board.probes, and leaves it empty while the extension does not run', () => {
+  const part = { every: 600_000, state: 'ok', lastAt: 1, answeredAt: 1, failsInRow: 0, wait: 600_000, nextAt: 600_001, held: false }
+  const board = { floors: [], probes: [], x: { quota: part } } as unknown as Board
+  const [probe] = projectLegacy(board).probes
+  assert.deepEqual(probe, { name: 'quota', reads: 'claude.usage', ...part, verbs: ['run'], calls: { run: ['probe/run', { name: 'quota' }] }, actions: [{ verb: 'run', call: ['probe/run', { name: 'quota' }] }] })
+  assert.deepEqual(projectLegacy({ floors: [], probes: [] } as unknown as Board).probes, [])
+})
