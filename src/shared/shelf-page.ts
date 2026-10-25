@@ -61,7 +61,7 @@ export type Reads = {
    * extension's as `x:<cap>`: the order, the layers by depth, who depends on whom. `chains`: the capabilities whose
    * links wrap each verb or hook, outermost first; `answers`: each hook's answerers, in the order they answer;
    * `composites`: each core verb the core's composites call through the dispatch, with those composites.
-   * `chains`, `answers` and `composites` @since 1.84
+   * `chains`, `answers` and `composites` @since 1.85
    */
   extensions: { extensions: ExtensionView[]; topology: Topology; chains: Record<string, string[]>; answers: Record<string, string[]>; composites: Record<string, string[]> }
 }
