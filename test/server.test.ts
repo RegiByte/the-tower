@@ -5,7 +5,8 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -18,6 +19,8 @@ import { fonts } from '../src/shared/design.ts'
 import { parseThread } from '../src/shared/reviews.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
+import { decide, standing } from '../src/shared/policies.ts'
+import { slotWords } from '../src/shared/slots.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
 const ROOT = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'tower-api-')))
@@ -44,6 +47,56 @@ const git = (...args: string[]) => execFileSync('git', ['-C', HUB, '-c', 'user.n
 
 const POLICY = '# Nightly\n\n```json\n{"when": {"cron": ["0 3 1 1 *"]}}\n```\n\nNever started: a run waits on the user\'s approval.\n'
 
+const MIN = 60_000
+/** The minute the root is seeded in: the kept policies' slots are placed around it. */
+const SEEDED = Math.floor(Date.now() / MIN) * MIN
+/** A daily cron, read in UTC, whose slot falls at `at`'s time of day. */
+const dailyAt = (at: number) => `${new Date(at).getUTCMinutes()} ${new Date(at).getUTCHours()} * * *`
+const policyText = (title: string, header: object) => `# ${title}\n\n\`\`\`json\n${JSON.stringify(header)}\n\`\`\`\n\nDo the ${title.toLowerCase()}.\n`
+/** A slot as the policies' facts name it: an ISO instant to the second. */
+const slotIso = (at: number) => new Date(at).toISOString().replace(/\.\d{3}Z$/, 'Z')
+/** The approval hash: the sha256 of the file's bytes. */
+const sha = (text: string) => `sha256:${createHash('sha256').update(text).digest('hex')}`
+/**
+ * Policies kept, approved, offered and run before the policies extension: an approved `auto` one whose slot is ahead, an
+ * `ask` one with an open offer, an approved `auto` one whose slot is due and already ran (by the seeded session), and an
+ * invalid one that was approved once.
+ */
+const KEPT = {
+  sweep: { id: 'sweep.md', slot: SEEDED + 3 * 60 * MIN, text: policyText('Sweep', { when: { cron: [dailyAt(SEEDED + 3 * 60 * MIN)], tz: 'UTC' }, start: 'auto' }) },
+  triage: { id: 'triage.md', slot: SEEDED - 60 * MIN, text: policyText('Triage', { when: { cron: [dailyAt(SEEDED - 60 * MIN)], tz: 'UTC' }, live: 2 }) },
+  digest: { id: 'digest.md', slot: SEEDED - MIN, text: policyText('Digest', { when: { cron: [dailyAt(SEEDED - MIN)], tz: 'UTC' }, start: 'auto', check: 'true' }) },
+  broken: { id: 'broken.md', slot: 0, text: policyText('Broken', { when: { cron: ['0 9 * * 1'] }, guards: {} }) },
+}
+const OFFERED_AT = KEPT.triage.slot + 4_000
+const RAN_AT = KEPT.digest.slot + 2_000
+const CHECKED = { exit: 0, ms: 12, out: 'two to do' }
+
+/** A project stream's month files, as the tower writes them: a header, then `[seconds into the month, code, fact]`. */
+function writeStream(project: string, stream: string, facts: [at: number, code: string, fact: object][]) {
+  const dir = path.join(ROOT, 'streams', 'projects', project, stream)
+  mkdirSync(dir, { recursive: true })
+  for (const [at, code, fact] of facts) {
+    const month = Date.UTC(new Date(at).getUTCFullYear(), new Date(at).getUTCMonth(), 1)
+    const file = path.join(dir, `${new Date(at).toISOString().slice(0, 7)}.jsonl`)
+    if (!existsSync(file)) writeFileSync(file, JSON.stringify({ stream, startedAt: month, version: 1 }) + '\n')
+    appendFileSync(file, JSON.stringify([Math.round(at - month) / 1000, code, fact]) + '\n')
+  }
+}
+
+function seedPolicies() {
+  for (const { id, text } of Object.values(KEPT)) writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', id), text)
+  writeStream('lab', 'approvals', [
+    [SEEDED - 3 * 60 * MIN, 'a', { policy: KEPT.broken.id, hash: sha('# Broken, as it was') }],
+    [SEEDED - 2 * 60 * MIN, 'a', { policy: KEPT.sweep.id, hash: sha(KEPT.sweep.text) }],
+    [SEEDED - 2 * 60 * MIN + 1_000, 'a', { policy: KEPT.digest.id, hash: sha(KEPT.digest.text), by: SESSION }],
+  ])
+  writeStream('lab', 'runs', [
+    [OFFERED_AT, 's', { policy: KEPT.triage.id, hash: sha(KEPT.triage.text), slot: slotIso(KEPT.triage.slot), outcome: 'offered' }],
+    [RAN_AT, 'r', { policy: KEPT.digest.id, hash: sha(KEPT.digest.text), id: SESSION, check: CHECKED, start: 'auto', slot: slotIso(KEPT.digest.slot) }],
+  ])
+}
+
 /**
  * A hub that is a repo with a branch cut from `main`, a page beside a hidden file, a renderer declared by the config with
  * a hidden file below its root, a policy, and a session that showed the page and ended.
@@ -58,6 +111,7 @@ function seed(port: number) {
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', 'nightly.md'), POLICY)
   mkdirSync(path.join(ROOT, 'streams', 'system', 'probe.quota'), { recursive: true })
   cpSync(path.join(REPO, 'test', 'fixtures', 'probe-quota.jsonl'), path.join(ROOT, 'streams', 'system', 'probe.quota', '2026-10.jsonl'))
+  seedPolicies()
   cpSync(FIXTURES, EXTENSIONS, { recursive: true })
   writeFileSync(path.join(EXTENSIONS, 'package.json'), JSON.stringify({ type: 'module' }))
   execFileSync('git', ['init', '-q', '-b', 'main', HUB])
@@ -263,6 +317,141 @@ test('server: every read answers', async () => {
   assert.ok(await firstEvent(`/screen/${SESSION}`))
   assert.equal(((await firstEvent('/shell/none')) as { t: string }).t, 'error')
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
+})
+
+/** The `tower` command as a worker runs it: its output, or its failure's. */
+const cli = (session: string, ...args: string[]) =>
+  execFileSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), ...args], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: session }, encoding: 'utf8' })
+
+test('server: policies kept before the policies extension keep their approvals, offers, runs and words, and the runner decides nothing new', async () => {
+  const board = await settled(
+    async () => {
+      const msg = (await firstEvent('/board')) as BoardMsg
+      assert.ok('board' in msg)
+      return msg.board
+    },
+    (b) => b.hostUp,
+  )
+  const now = Date.now()
+  const floor = board.floors.find((f) => f.id === 'lab')!
+  const worker = floor.cards.find((c) => c.id === SESSION)!
+  const DAY = 24 * 60 * MIN
+  const runByHand = (id: string) => ['run', ['policy/run', { project: 'lab', policy: id, start: 'hand' }]] as const
+  const approve = (id: string, text: string) => ['approve', ['policy/approve', { project: 'lab', policy: id, hash: sha(text) }]] as const
+  const offering = (...pairs: (readonly [string, unknown])[]) => ({ calls: Object.fromEntries(pairs), actions: pairs.map(([verb, call]) => ({ verb, call })) })
+  const rule = (at: number) => `daily at ${new Date(at).toISOString().slice(11, 16)} (UTC)`
+  const { sweep, triage, digest, broken } = KEPT
+  const triageOffer = { slot: triage.slot, since: OFFERED_AT, until: triage.slot + DAY }
+  assert.deepEqual(
+    floor.policies.filter((p) => p.id !== 'nightly.md'),
+    [
+      {
+        id: broken.id,
+        tag: 'fleet-jaguar',
+        title: 'Broken',
+        hash: sha(broken.text),
+        problems: [{ path: 'guards', message: "unknown key (this tower doesn't know it: update the tower, or put a runner's own data under x)" }],
+        needs: { kind: 'invalid' },
+        live: [],
+        ...offering(),
+      },
+      {
+        id: digest.id,
+        tag: 'warm-lily',
+        title: 'Digest',
+        hash: sha(digest.text),
+        header: { when: { cron: [dailyAt(digest.slot)], tz: 'UTC' }, check: 'true', start: 'auto', live: 1, hire: {} },
+        rule: rule(digest.slot),
+        next: digest.slot + DAY,
+        approved: { at: SEEDED - 2 * 60 * MIN + 1_000, by: SESSION },
+        live: [],
+        last: { n: 1, at: RAN_AT, slot: digest.slot, id: SESSION, callsign: worker.callsign },
+        seen: digest.slot,
+        ...offering(runByHand(digest.id)),
+      },
+      {
+        id: sweep.id,
+        tag: 'slow-basil',
+        title: 'Sweep',
+        hash: sha(sweep.text),
+        header: { when: { cron: [dailyAt(sweep.slot)], tz: 'UTC' }, start: 'auto', live: 1, hire: {} },
+        rule: rule(sweep.slot),
+        next: sweep.slot,
+        approved: { at: SEEDED - 2 * 60 * MIN },
+        live: [],
+        ...offering(runByHand(sweep.id)),
+      },
+      {
+        id: triage.id,
+        tag: 'muddy-thistle',
+        title: 'Triage',
+        hash: sha(triage.text),
+        header: { when: { cron: [dailyAt(triage.slot)], tz: 'UTC' }, start: 'ask', live: 2, hire: {} },
+        rule: rule(triage.slot),
+        next: triage.slot + DAY,
+        live: [],
+        passed: { at: OFFERED_AT, slot: triage.slot, outcome: 'offered' },
+        seen: triage.slot,
+        offer: triageOffer,
+        ...offering(runByHand(triage.id), approve(triage.id, triage.text)),
+      },
+    ],
+  )
+  const accept = ['policy/run', { project: 'lab', policy: triage.id, slot: triage.slot, start: 'offer' }]
+  assert.deepEqual(board.offers, [
+    { key: `${triage.id}@${triage.slot}`, project: 'lab', policy: triage.id, tag: 'muddy-thistle', title: 'Triage', ...triageOffer, calls: { accept }, actions: [{ verb: 'accept', call: accept }] },
+  ])
+  assert.deepEqual(worker.run, { policy: digest.id, tag: 'warm-lily', title: 'Digest', n: 1, check: CHECKED, start: 'auto', slot: digest.slot })
+  const standings = Object.fromEntries(floor.policies.map((p) => [p.id, standing(p, now)]))
+  assert.deepEqual(standings, {
+    [broken.id]: { t: 'invalid' },
+    [digest.id]: { t: 'waits', next: digest.slot + DAY, step: 'check' },
+    'nightly.md': standings['nightly.md'],
+    [sweep.id]: { t: 'waits', next: sweep.slot, step: 'run' },
+    [triage.id]: { t: 'offered', slot: triage.slot, until: triage.slot + DAY },
+  })
+  assert.deepEqual(decide(floor, new Map(), now), [], 'the slot that ran is not run again, and the offered one is not offered again')
+
+  const runs = JSON.parse((await get(`/runs/lab?policy=${digest.id}`)).body)
+  assert.deepEqual(runs, [
+    {
+      n: 1,
+      slot: digest.slot,
+      at: RAN_AT,
+      hash: sha(digest.text),
+      current: true,
+      start: 'auto',
+      check: CHECKED,
+      worker: { id: SESSION, callsign: worker.callsign, status: worker.status, live: false, endedAt: worker.enteredAt, shown: [SHOWN] },
+    },
+  ])
+
+  const day = (at: number) => slotWords(at, 'UTC', now)
+  const listed = cli(SESSION, 'policies').split('\n')
+  const nightly = listed.findIndex((l) => l.startsWith('ashen-otter'))
+  assert.deepEqual([...listed.slice(0, nightly), ...listed.slice(nightly + 3)], [
+    "fleet-jaguar   Broken   invalid · guards: unknown key (this tower doesn't know it: update the tower, or put a runner's own data under x) (it used to run on its own)",
+    `warm-lily      Digest   ${rule(digest.slot)}`,
+    `               auto · approved ${sha(digest.text).slice(7, 15)} by ${worker.callsign} · live 0/1 · last: run 1, ${day(digest.slot)}, ${worker.callsign} exited`,
+    `               now: ${day(digest.slot + DAY)} will check for work, then start on its own`,
+    `slow-basil     Sweep    ${rule(sweep.slot)}`,
+    `               auto · approved ${sha(sweep.text).slice(7, 15)} by the user · live 0/1`,
+    `               now: ${day(sweep.slot)} will start on its own`,
+    `muddy-thistle  Triage   ${rule(triage.slot)}`,
+    '               ask · live 0/2',
+    `               now: ${day(triage.slot)} is offered, until ${day(triage.slot + DAY)}`,
+    '',
+  ])
+  const ran = cli(SESSION, 'runs').split('\n')
+  assert.deepEqual(ran.slice(0, 2), [`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`, `run 1    ${day(digest.slot)}  auto              ${worker.callsign}  exited`])
+  assert.ok(ran.includes('        its check found: two to do'), ran.join('\n'))
+  const whoami = cli(SESSION, 'whoami').split('\n')
+  const at = whoami.findIndex((l) => l.startsWith('You are run'))
+  assert.deepEqual(whoami.slice(at, at + 3), [
+    `You are run 1 of policy "Digest" (warm-lily), for its slot ${day(digest.slot)}, started on its own.`,
+    '`tower runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
+    'Its check found: two to do',
+  ])
 })
 
 test('server: an extension the config adds is started as x:<cap>, after the core and what it requires, and shown on the board and at GET /extensions', async () => {
@@ -567,3 +756,4 @@ test('server: no hidden file is served below a shown page or a renderer', async 
   assert.equal(errorCode(await get(`/shown/${SESSION}${path.join(HUB, 'report', '.secret')}`)), 'not_found')
   assert.equal(errorCode(await get('/r/plain/.secret')), 'not_found')
 })
+
