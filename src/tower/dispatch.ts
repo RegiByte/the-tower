@@ -56,7 +56,7 @@ import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources,
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
 import { chainCalls } from './chains.ts'
-import type { ExtensionsResource } from './extensions.ts'
+import { UnsettledError, type ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
 
@@ -431,7 +431,7 @@ export const dispatch = defineResource({
           }
           failed = { code: 'shape', message: `returned a part ${runtime} can't place: ${placed.why}` }
         } catch (err) {
-          failed = { code: 'threw', message: `threw: ${(err as Error).message}` }
+          failed = { code: 'threw', message: err instanceof UnsettledError ? `didn't settle within ${err.ms / 1000} s` : `threw: ${(err as Error).message}` }
         }
         if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
         holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })

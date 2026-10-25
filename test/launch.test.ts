@@ -4,6 +4,7 @@ import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { coreFacts, forkFacts, mergeParts, placeable, takenFlags, type Merged } from '../src/bridge/launch.ts'
 import { CORE_FLAGS } from '../src/shared/launch.ts'
 import type { LogEvent, SessionHeader } from '../src/shared/model.ts'
+import { UnsettledError, within } from '../src/tower/extensions.ts'
 
 const TAKEN = takenFlags('claude', ['claude', '--dangerously-skip-permissions', '--verbose=1'])
 
@@ -72,4 +73,13 @@ test("a fork carries a copy of each extension fact of the lineage it forks, each
     { hook_event_name: 'tower.x.roles.role', value: 'builder' },
     { hook_event_name: 'tower.x.pulse.beat', value: 1 },
   ])
+})
+
+test("a launch contributor is bound as start is: one that hasn't settled in time is refused as unsettled, and what it answers later goes to late", async () => {
+  assert.equal(await within('launch', 50, Promise.resolve('parts'), () => assert.fail('settled in time')), 'parts')
+  let late: unknown
+  const slow = new Promise((done) => setTimeout(() => done('parts'), 30))
+  await assert.rejects(within('launch', 5, slow, (value) => (late = value)), (err) => err instanceof UnsettledError && err.message === "launch didn't settle within 0.005 s" && err.ms === 5)
+  await slow
+  assert.equal(late, 'parts')
 })

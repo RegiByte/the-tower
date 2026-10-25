@@ -247,11 +247,18 @@ export type ExtensionsResource = StartedResource<typeof extensions>
 /** How long a command `ctx.run` runs may take when it names no timeout. */
 const RUN_MS = 60_000
 
-/** How long `start` may take before the extension counts as failed. */
-const START_MS = 10_000
+/** How long `start` may take before the extension counts as failed, and a launch contributor before it counts as thrown. */
+export const SETTLE_MS = 10_000
 
 /** `start` returned something other than what the manifest declares. */
 export class MismatchError extends Error {}
+
+/** Something an extension was asked to do didn't settle in time: `ms`, how long it had. */
+export class UnsettledError extends Error {
+  constructor(what: string, readonly ms: number) {
+    super(`${what} didn't settle within ${ms / 1000} s`)
+  }
+}
 
 /**
  * The extension's `start`: its server module's default export, imported afresh for each hash with every module it
@@ -264,17 +271,20 @@ const startOf = async (a: Accepted, hash: string): Promise<Start> => {
   return module.default as Start
 }
 
-/** `promise`, or a rejection once `ms` pass first; what it settles to after that goes to `late`. */
-const within = <T>(ms: number, promise: Promise<T>, late: (value: T) => void): Promise<T> =>
+/**
+ * `promise`, or a rejection saying `what` didn't settle once `ms` pass first; what it settles to after that goes to
+ * `late`, and a throw after that to the tower's log.
+ */
+export const within = <T>(what: string, ms: number, promise: Promise<T>, late: (value: T) => void): Promise<T> =>
   new Promise((done, fail) => {
     let over = false
     const timer = setTimeout(() => {
       over = true
-      fail(new Error(`start didn't settle within ${ms / 1000} s`))
+      fail(new UnsettledError(what, ms))
     }, ms)
     promise.then(
       (value) => (clearTimeout(timer), over ? late(value) : done(value)),
-      (err) => (clearTimeout(timer), over ? console.error('a start past its time threw:', err) : fail(err)),
+      (err) => (clearTimeout(timer), over ? console.error(`a ${what} past its time threw:`, err) : fail(err)),
     )
   })
 
@@ -393,7 +403,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       .catch((err) => console.error(`${a.id}: halt:`, err))
   try {
     const start = await startOf(a, hash)
-    const started = await within(START_MS, Promise.resolve().then(() => start(ctx)), haltLate)
+    const started = await within('start', SETTLE_MS, Promise.resolve().then(() => start(ctx)), haltLate)
     const mismatch = mismatchOf(started, a.manifest)
     if (mismatch) {
       haltLate(started)
@@ -420,8 +430,15 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       settingsOf: ctx.settingsOf,
       threw: stores.threw,
       ...(started.launch && {
-        launch: async (request: LaunchRequest) =>
-          started.launch!(request, { settings: ctx.settingsOf(request.project), read: ctx.read, collections: { list: ctx.collections.list, read: ctx.collections.read } }),
+        launch: (request: LaunchRequest) =>
+          within(
+            'launch',
+            SETTLE_MS,
+            Promise.resolve().then(() =>
+              started.launch!(request, { settings: ctx.settingsOf(request.project), read: ctx.read, collections: { list: ctx.collections.list, read: ctx.collections.read } }),
+            ),
+            () => {},
+          ),
       }),
       verb: (name, input, caller) => started.verbs![name](input, handlerCtx(caller, `${a.provides}/${name}`)),
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
