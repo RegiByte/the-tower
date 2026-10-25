@@ -13,12 +13,11 @@ import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.
 import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
-import { readItem, scanCollections } from './collections.ts'
+import { scanCollections } from './collections.ts'
 import { hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath, type SystemPaths } from './shared/paths.ts'
 import type { HostLive } from './shared/protocol.ts'
-import { parseThread, REVIEWS, type ReviewThread } from './shared/reviews.ts'
 import type { Shell } from './shared/terms.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
@@ -65,20 +64,6 @@ const serially = (read: () => Promise<void>): (() => Promise<void>) => {
   }
   return call
 }
-
-/** A review thread's file, by project and item id, and what it holds. */
-export type ThreadFile = { project: string; id: string; modifiedAt: number; thread: ReviewThread }
-
-/** Each item of the review collections, parsed: a file `held` at the same version is not read again. */
-const threadsIn = (paths: SystemPaths, items: CollectionItem[], held: ThreadFile[]): ThreadFile[] =>
-  items
-    .filter((i) => i.collection === REVIEWS)
-    .flatMap(({ project, id, modifiedAt }) => {
-      const same = held.find((t) => t.project === project && t.id === id && t.modifiedAt === modifiedAt)
-      if (same) return [same]
-      const text = readItem(paths, project, REVIEWS, id)
-      return text === undefined ? [] : [{ project, id, modifiedAt, thread: parseThread(text) }]
-    })
 
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
@@ -157,8 +142,6 @@ export type System = {
   logs: () => Map<string, LogFile>
   /** Every collection's items on disk, in id order. */
   items: () => CollectionItem[]
-  /** Every review thread on disk, parsed, read again when its file changes. */
-  threads: () => ThreadFile[]
   /** Every stream's month files on disk, by path under `streams/`. */
   streamMonths: () => StreamMonth[]
   /**
@@ -213,7 +196,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   /** Each tailed log's stop, by session id, until its session exits or its log is archived. */
   const tails = new Map<string, () => void>()
   let items: CollectionItem[] = []
-  let threads: ThreadFile[] = []
   let streamMonths: StreamMonth[] = []
   let live: HostLive | undefined
   let running: Resource[] = []
@@ -334,7 +316,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         const next = scanCollections(paths)
         if (asJson(next) === asJson(items)) return
         items = next
-        threads = threadsIn(paths, items, threads)
         onChange()
       }),
       RESCAN_DEBOUNCE_MS,
@@ -472,7 +453,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   )
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
-  threads = threadsIn(paths, items, threads)
   watching(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
   mkdirSync(systemStreamsPath(paths), { recursive: true })
   watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
@@ -489,7 +469,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     session: (id) => sessions.get(id),
     logs: () => logs,
     items: () => items,
-    threads: () => threads,
     foldStream: (fold) => {
       folds.set(fold, { files: new Map(), at: new Map() })
       refold(fold)

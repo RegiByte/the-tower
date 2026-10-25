@@ -21,7 +21,7 @@
  *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
- *   GET  /reviews/<project>  the project's review threads, live and landed (filed by Tidy), and what each author wrote in them
+ *   GET  /reviews/<project>  the reviews extension's reviews/history/<project>, through LEGACY until 2.0
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
  *   GET  /runs/<project>?policy&limit  a policy's runs, newest first, each with its worker as it is now (src/bridge/policies.ts)
@@ -82,7 +82,6 @@ import path from 'node:path'
 import { z } from 'zod'
 import { archiveOf } from '../bridge/board.ts'
 import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
-import { reviewHistory } from '../bridge/reviews.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { briefOf } from '../bridge/turns.ts'
@@ -760,7 +759,7 @@ export const httpServer = defineResource({
       apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
       apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
       apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
-      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ res, params }) => json(res, reviewHistory(system.threads().filter((t) => t.project === params.project))) }),
+      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ req, res, params }) => legacyRead(req, res, 'reviews/<project>', params, {}) }),
       apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
       plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
       plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),

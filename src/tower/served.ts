@@ -18,7 +18,6 @@ export const MODULES: Record<string, string> = {
   '/items.js': path.join(SHARED, 'items.ts'),
   '/cards.js': path.join(SHARED, 'cards.ts'),
   '/icons.js': path.join(SHARED, 'icons.ts'),
-  '/reviews.js': path.join(SHARED, 'reviews.ts'),
   '/panels.js': path.join(SHARED, 'panels.ts'),
   '/brief.js': path.join(SHARED, 'brief.ts'),
   '/termkeys.js': path.join(SHARED, 'termkeys.ts'),

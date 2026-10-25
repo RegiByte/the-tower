@@ -11,7 +11,7 @@ import { continuations, lineage } from '../bridge/chains.ts'
 import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
 import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
-import { createItem, deleteItem, itemsIn, readItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemsIn, putItem, readItem, writeItem } from '../collections.ts'
 import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
@@ -135,6 +135,11 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
         collectionOf(project, name)
         if (itemOf(project, name, id).modifiedAt !== modifiedAt) throw new Error(`${project}/${name}/${id} changed since version ${modifiedAt}`)
         writeItem(paths, project, name, id, content)
+        return itemOf(project, name, id)
+      },
+      put: async (project, name, id, content) => {
+        collectionOf(project, name)
+        putItem(paths, project, name, id, content)
         return itemOf(project, name, id)
       },
       delete: async (project, name, id) => {

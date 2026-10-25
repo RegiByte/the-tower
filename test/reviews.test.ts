@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { DiffFile } from '../src/bridge/diff.ts'
 import type { RepoChanges } from '../src/changes.ts'
-import { anchorState, appended, bodyProblem, nextNumber, parseThread, printThread, unseenBy, type Anchor } from '../src/shared/reviews.ts'
+import { anchorState, appended, bodyProblem, nextNumber, parseThread, printThread, unseenBy, type Anchor } from '../extensions/reviews/client/reviews.ts'
 
 /** Written by `review/append` on the sandbox: an anchored note, a reply, a diff quote beside a plain one, a bare anchor. */
 const text = readFileSync(new URL('./fixtures/review-thread.md', import.meta.url), 'utf8')

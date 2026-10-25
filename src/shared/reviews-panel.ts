@@ -1,18 +1,20 @@
 /**
- * The Reviews panel: a checkout's thread as a place opens it, read once per version of its file, and drawn with its
- * notes' quotes marked as the Changes find them. Bundled into `/panels.js`.
+ * The Reviews panel as it stood at 1.92, over the board's old fields (`card.threadState`, `floor.threads`, the card's
+ * `note`): a checkout's thread as a place opens it, read once per version of its file, and drawn with its notes' quotes
+ * marked as the Changes find them. Bundled into `/panels.js`.
+ * @deprecated since 1.93: the reviews extension's panel, `/x/reviews/panel.js`; this copy goes at 2.0.
  */
 import type { RepoChanges } from '../changes.ts'
-import type { CheckoutState } from '../bridge/reviews.ts'
+import type { CheckoutState } from '../bridge/checkouts.ts'
 import type { Board, Card, Floor } from '../bridge/board.ts'
-import type { FloorThread } from '../bridge/reviews.ts'
 import type { NoteAction } from '../bridge/verbs.ts'
 import { can, esc, noun, sendTarget, sendTargets, threadCheckoutOf, workerIn } from './cards.ts'
 import { ICON } from './icons.ts'
 import { checkoutDirs } from './model.ts'
 import { highlightLines } from './highlight.ts'
 import { markdownHtml } from './markdown.ts'
-import { anchorState, langOf, parseThread, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { langOf, repoName, REVIEWS, threadId, type Anchor, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { anchorState, parseThread, unseenBy, type AnchorState, type FloorThread } from './reviews-legacy.ts'
 import { failureOf, valueOf, type ReadEvent, type Reads } from './reads.ts'
 import { anchorWhere } from './changes-lines.ts'
 import { fileButtonsHtml } from './file-acts.ts'
@@ -60,8 +62,9 @@ export type ThreadPlace = {
 /** The thread a worker's view (its card, tab or desk) shows, read as that worker: its work's, or the one Tidy filed once it landed. */
 export const cardThread = (c: Card): ThreadPlace => {
   const checkout = threadCheckoutOf(c)
-  const filed = c.threadState.is === 'landed' ? c.threadState.filed : undefined
-  return { project: c.project, checkout, id: filed?.id ?? threadId(checkout), state: c.threadState, offers: c, reader: c }
+  const state = c.threadState!
+  const filed = state.is === 'landed' ? state.filed : undefined
+  return { project: c.project, checkout, id: filed?.id ?? threadId(checkout), state, offers: c, reader: c }
 }
 
 /** A floor's thread opened where no worker's view is (a list of the floor's threads), read as the worker on duty in its checkout. */

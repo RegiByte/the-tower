@@ -3,7 +3,7 @@
  * as a tree, and the note box under picked lines. Bundled into `/panels.js`.
  */
 import type { RepoChanges } from '../changes.ts'
-import type { CheckoutState } from '../bridge/reviews.ts'
+import type { CheckoutState } from '../bridge/checkouts.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
 import { esc, plural } from './cards.ts'
 import { ICON } from './icons.ts'

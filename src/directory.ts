@@ -25,7 +25,7 @@ import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, quotaOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
-import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
+import { langOf, repoName, REVIEWS, reviewPrompt, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
@@ -400,13 +400,19 @@ const postToHost = (me: string, event: Record<string, unknown>) =>
     req.end(JSON.stringify(event))
   })
 
-/** A checkout's thread as the file holds it, `undefined` while nobody wrote on it. */
-const readThread = async (floor: Floor, checkout: string): Promise<string | undefined> => {
+/**
+ * What the reviews extension says of a checkout's thread read as `reader` (its read `said/<project>`): the file's text,
+ * `undefined` while nobody wrote on it, the notes new to the reader, the lines `tower thread` prints after it (or in its
+ * place), and with `sender`, the prompt Send types.
+ */
+type ThreadSaid = { text?: string; unseen: number[]; lines: string[]; send?: string }
+
+const threadSaid = async (floor: Floor, query: { checkout: string; reader: string; sender?: string; hirer?: string }): Promise<ThreadSaid> => {
   collectionOf(floor, REVIEWS)
-  const res = await fetch(`${towerAt()}/collection/${floor.id}/${REVIEWS}/${threadId(checkout)}`)
-  if (res.status === 404) return undefined
-  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the thread of ${checkout}: ${await res.text()}`)
-  return res.text()
+  const params = new URLSearchParams(Object.entries(query).filter((e): e is [string, string] => e[1] !== undefined))
+  const res = await towerGet(`/reviews/said/${floor.id}?${params}`)
+  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the thread of ${query.checkout}: ${await res.text()}`)
+  return (await res.json()) as ThreadSaid
 }
 
 const NOTE_USAGE = `${usageLine('note')}, the body on stdin`
@@ -732,15 +738,9 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const card = ownCard(board, me)
     const floor = ownFloor(board, me)
     const checkout = named ?? threadCheckoutOf(card)
-    const text = await readThread(floor, checkout)
-    if (text === undefined) {
-      console.log(`No notes on checkout ${checkout} yet. \`tower note\` writes the first.`)
-      console.log(anchorLine(floor, checkout))
-      return
-    }
-    const unseen = unseenBy(parseThread(text), card.callsign)
-    process.stdout.write(text.endsWith('\n') ? text : `${text}\n`)
-    console.log(`\n(${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}) ${unseen.length ? `New to you since your last note: ${unseen.map((m) => `n${m.n}`).join(', ')}.` : 'Nothing new to you since your last note.'}`)
+    const { text, lines } = await threadSaid(floor, { checkout, reader: card.callsign })
+    if (text !== undefined) process.stdout.write(text.endsWith('\n') ? `${text}\n` : `${text}\n\n`)
+    console.log(lines.join('\n'))
     console.log(anchorLine(floor, checkout))
   },
   note: async (args) => {
@@ -752,7 +752,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const floor = ownFloor(board, me)
     const checkout = note.on ?? threadCheckoutOf(card)
     const anchors = note.anchors.map((a) => quoted(floor, card.worktree?.from === checkout ? card.checkout : checkout, a))
-    const { n } = await command<{ n: number }>('review/append', { project: floor.id, checkout, author: card.callsign, re: note.re, anchors, body })
+    const { n } = await command<{ n: number }>('reviews/append', { project: floor.id, checkout, author: card.callsign, re: note.re, anchors, body })
     console.log(`Noted as n${n} on the thread of checkout ${checkout}${note.re ? `, answering n${note.re}` : ''}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)
   },
   review: async ([callsign, word]) => {
@@ -816,10 +816,10 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const sender = ownCard(board, me)
     const target = await cardNamed(board, callsign)
     if (!can(target, 'submit')) throw new CliError(`${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
-    const text = await readThread(board.floors.find((f) => f.id === target.project)!, target.checkout)
+    const floor = board.floors.find((f) => f.id === target.project)!
+    const { text, unseen: notes, send } = await threadSaid(floor, { checkout: target.checkout, reader: target.callsign, sender: sender.callsign, hirer: target.hiredBy?.callsign })
     if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
-    const notes = unseenBy(parseThread(text), target.callsign).map((m) => m.n)
-    await command('submit', { id: target.id, text: sendText(sender.callsign, target.checkout, notes, target.hiredBy?.callsign), by: me })
+    await command('submit', { id: target.id, text: send!, by: me })
     console.log(`Sent ${target.callsign} a pointer to ${notes.length ? notes.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.`)
   },
 }

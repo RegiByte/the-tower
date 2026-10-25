@@ -10,7 +10,6 @@ export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemVi
   peers: [],
   shells: [],
   items: [],
-  threads: [],
   repos: new Map(),
   logFiles: new Map(),
   readings: [],

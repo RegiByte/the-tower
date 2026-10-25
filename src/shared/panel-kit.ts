@@ -2,7 +2,7 @@
  * What every panel shares: a read that failed, where settled work stands, drawing html into an element while keeping
  * what is being typed and what has focus, and a worker's tab row. Bundled into `/panels.js`.
  */
-import type { CheckoutState } from '../bridge/reviews.ts'
+import type { CheckoutState } from '../bridge/checkouts.ts'
 import { esc } from './cards.ts'
 import { ICON } from './icons.ts'
 import { identityOf } from './press.ts'

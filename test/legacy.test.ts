@@ -59,6 +59,22 @@ test('the projection copies the quota part back to board.probes, and leaves it e
   assert.deepEqual(projectLegacy({ floors: [], probes: [] } as unknown as Board).probes, [])
 })
 
+test("the projection copies the reviews parts back to the old fields: a floor's threads calling review/append, a card's thread state, unseen notes and note before send-home", () => {
+  const note = ['reviews/append', { project: 'lab', checkout: 'odin-1' }]
+  const thread = { key: 'lab/odin-1', checkout: 'odin-1', id: 'odin-1.md', tag: 't', messages: 2, landed: false, state: { is: 'live' }, verbs: ['note'], calls: { note }, actions: [{ verb: 'note', call: note }] }
+  const card = {
+    project: 'lab', checkout: 'odin-1', checkoutState: { is: 'live' }, verbs: ['resume', 'send-home'], calls: {}, actions: [{ verb: 'resume' }, { verb: 'send-home' }],
+    x: { reviews: { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, note } },
+  }
+  const floor = { id: 'lab', worktrees: [], branches: [], threads: [], cards: [card], x: { reviews: { threads: [thread] } } }
+  const [projected] = projectLegacy({ floors: [floor], probes: [], offers: [] } as unknown as Board).floors
+  const old = ['review/append', { project: 'lab', checkout: 'odin-1' }]
+  const { key: _, ...unkeyed } = thread
+  assert.deepEqual(projected.threads, [{ ...unkeyed, calls: { note: old }, actions: [{ verb: 'note', call: old }] }])
+  const [c] = projected.cards
+  assert.deepEqual([c.threadState, c.unseen, c.verbs, c.calls, c.actions.map((a) => a.verb)], [{ is: 'live' }, 1, ['resume', 'note', 'send-home'], { note: old }, ['resume', 'note', 'send-home']])
+})
+
 test("the core folds the readings a manifest declares, and the old codes its stream's folder kept, from the manifest alone", () => {
   const manifest = Manifest.parse(JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'extensions', 'quota', 'extension.json'), 'utf8')))
   const [stream, ...more] = readingStreams([manifest, manifest])

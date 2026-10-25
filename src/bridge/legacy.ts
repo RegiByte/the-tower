@@ -9,8 +9,11 @@ import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
 import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
 import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
+import { REVIEWS } from '../shared/reviews.ts'
+import type { FloorThread, ReviewsCardPart, ReviewsFloorPart } from '../shared/reviews-legacy.ts'
 import type { Board, Card, Floor } from './board.ts'
-import { probeOffers, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
+import { checkoutsOn, landedByRecord, type CheckoutState } from './checkouts.ts'
+import { noteActions, offered, probeOffers, type NoteCalls, type NoteVerb, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
 
 /** An old verb: its input as the new one takes it, or why it can't be; the new verb's reply as the old one answered. */
 export type LegacyVerb = { input(old: unknown): unknown; reply(now: unknown): unknown }
@@ -21,7 +24,7 @@ export type LegacyRead = {
   reply(now: unknown, board: Board): unknown
 }
 
-/** An old board field's value, from its subject (the board, a floor or a card) on the folded board. */
+/** An old board field's value, from its subject (the board, a floor or a card) on the folded board: for a name below a field (`card.checkoutState.filed`), that field's whole value. */
 export type LegacyField = (subject: unknown, board: Board) => unknown
 
 /** An old stream code's fact as a reading of a kind the core folds, or `undefined` when it is none (a failed read). */
@@ -70,6 +73,7 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
   'policy/run': same,
   'policy/pass': same,
   'policy/approve': same,
+  'review/append': same,
   'probe/run': {
     input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
     reply: (now) => ({ t: 'probed', ...(now as Omit<Replies['probe/run'], 't'>) }),
@@ -77,6 +81,7 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
 }
 
 export const LEGACY_READS: Record<string, LegacyRead> = {
+  'reviews/<project>': { request: ({ project }) => ({ params: { project: project! }, query: {} }), reply: (now) => now },
   'runs/<project>': {
     request: ({ project }, { policy, limit }) => ({ params: { project: project! }, query: { policy: String(policy), limit: String(limit) } }),
     reply: (now) => now,
@@ -116,6 +121,26 @@ const oldCalls = <T extends { calls: Record<string, MovedCall>; actions: { verb:
   actions: thing.actions.map((a) => (a.call ? { ...a, call: oldCall(a.call) } : a)),
 })
 
+const reviewsPart = <T>(subject: { x?: Record<string, unknown> }) => subject.x?.[REVIEWS] as T | undefined
+
+/** A card's note on its thread as the core offered it before the move, calling `review/append`: while the thread's work is live. */
+const cardNote = (card: Card) => {
+  const note = reviewsPart<ReviewsCardPart>(card)?.note
+  return offered<NoteVerb, NoteCalls>(note ? noteActions(note[1].project, note[1].checkout, true) : [])
+}
+
+/** `list` with `note` where the core offered it: before `send-home`, which crews add last. */
+const beforeSendHome = <T>(list: T[], note: T[], verb: (item: T) => string): T[] => {
+  const at = list.findIndex((item) => verb(item) === 'send-home')
+  return at === -1 ? [...list, ...note] : [...list.slice(0, at), ...note, ...list.slice(at)]
+}
+
+/** A floor thread with its calls named as the core named them. */
+const oldThread = ({ key: _, ...thread }: ReviewsFloorPart['threads'][number]): FloorThread => {
+  const note = thread.calls.note && (['review/append', thread.calls.note[1]] as const)
+  return { ...thread, calls: note ? { note: [...note] } : {}, actions: note ? [{ verb: 'note', call: [...note] }] : [] }
+}
+
 const policiesPart = (subject: { x?: Record<string, unknown> }) => subject.x?.[POLICIES] as PoliciesPart | undefined
 
 export const LEGACY_FIELDS: Record<string, LegacyField> = {
@@ -123,6 +148,20 @@ export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'card.run': (card): CardRun | undefined => (policiesPart(card as Card) as { run?: CardRun } | undefined)?.run,
   'board.offers': (board): Offer[] =>
     ((board as Board).floors.flatMap((f) => (policiesPart(f)?.offers ?? []).map(oldCalls)) as Offer[]).sort((a, b) => a.since - b.since),
+  'floor.threads': (floor): FloorThread[] => (reviewsPart<ReviewsFloorPart>(floor as Floor)?.threads ?? []).map(oldThread),
+  'card.threadState': (card) => reviewsPart<ReviewsCardPart>(card as Card)?.threadState,
+  'card.unseen': (card) => reviewsPart<ReviewsCardPart>(card as Card)?.unseen,
+  'card.checkoutState.filed': (subject, board): CheckoutState => {
+    const card = subject as Card
+    const filed = reviewsPart<ReviewsCardPart>(card)?.filed
+    if (!filed) return card.checkoutState
+    const floor = board.floors.find((f) => f.id === card.project)!
+    const landed = landedByRecord(card.checkout, card.checkoutState, checkoutsOn(floor))
+    return landed.is === 'landed' ? { ...landed, filed } : landed
+  },
+  'card.verbs.note': (card) => beforeSendHome((card as Card).verbs, cardNote(card as Card).verbs, (v) => v),
+  'card.calls.note': (card) => ({ ...(card as Card).calls, ...cardNote(card as Card).calls }),
+  'card.actions.note': (card) => beforeSendHome((card as Card).actions, cardNote(card as Card).actions, (a) => a.verb),
   'board.probes': (board) => {
     const quota = (board as Board).x?.quota as QuotaPart | undefined
     if (!quota) return []
@@ -154,7 +193,7 @@ const projected = <T extends object>(subject: T, field: string, board: Board, ol
  * each of its cards'.
  */
 export const projectLegacy = (board: Board): Board => {
-  const at = (subject: string) => legacyOf('board').flatMap((e) => (e.old.startsWith(`${subject}.`) ? [{ old: e.old, field: e.old.slice(subject.length + 1) }] : []))
+  const at = (subject: string) => legacyOf('board').flatMap((e) => (e.old.startsWith(`${subject}.`) ? [{ old: e.old, field: e.old.slice(subject.length + 1).split('.')[0] }] : []))
   const onBoard = at('board').reduce((b, { old, field }) => projected(b, field, board, old), board)
   const onFloor = at('floor')
   const onCard = at('card')

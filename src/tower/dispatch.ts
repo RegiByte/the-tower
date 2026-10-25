@@ -18,7 +18,7 @@ import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { discardNote } from '../bridge/worktrees.ts'
-import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, itemVersion, renameItem, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
 import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
@@ -47,7 +47,7 @@ import {
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
+import { landedThreadId, reviewedIn, REVIEWS, threadId } from '../shared/reviews.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
@@ -645,24 +645,6 @@ export const dispatch = defineResource({
       })
 
     /**
-     * A message on a checkout's thread, numbered one past the last. Read, numbered and written in one synchronous step,
-     * so appends from the page and from every worker never interleave.
-     */
-    const appendReview = ({ project, checkout, author, re, anchors, body }: RouteInput['review/append']): Answer =>
-      onFloor(project, REVIEWS, () => {
-        if (!body.trim() && !anchors.length) return apiError('invalid', 'A note needs a body or an anchor')
-        const problem = bodyProblem(body) ?? anchors.flatMap((a) => (a.from > a.to ? [`${a.repo}:${a.path}: line ${a.from} comes after ${a.to}`] : []))[0]
-        if (problem) return apiError('invalid', problem)
-        const id = threadId(checkout)
-        const text = readItem(paths, project, REVIEWS, id)
-        const thread = parseThread(text ?? '')
-        if (re !== undefined && !thread.messages.some((m) => m.n === re)) return apiError('not_found', `The thread of ${checkout} holds no n${re}`)
-        const n = nextNumber(thread)
-        const modifiedAt = putItem(paths, project, REVIEWS, id, appended(text, checkout, { author, at: stamp(new Date()), n, re, anchors, body: body.trim() }))
-        return { t: 'appended', id, n, modifiedAt }
-      })
-
-    /**
      * A worktree whose work never landed, thrown away as the board showed it, in order: its tips read, `tower/discard.record`
      * raised, its tips noted on its thread through `tower/review/append`, then each repo's worktree removed with force and
      * its branch deleted, and the thread filed. A failed answer or a refused note stops it there, before anything is removed.
@@ -852,7 +834,7 @@ export const dispatch = defineResource({
         onWorktrees(project, async (p, config) => (await recutBranch(p, project, worktreesConfig(config, project).links, name), OK)),
       'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
       tidy: ({ project, plan }, caller) => tidyProject(project, plan, caller),
-      'review/append': appendReview,
+      'review/append': legacy('review/append'),
       'policy/run': legacy('policy/run'),
       'policy/pass': legacy('policy/pass'),
       'policy/approve': legacy('policy/approve'),

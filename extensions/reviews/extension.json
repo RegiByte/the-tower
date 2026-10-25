@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.92"
+    "tower": "1.93"
   },
   "server": "server.ts",
   "client": "client",
@@ -86,12 +86,31 @@
               }
             },
             "description": "The thread Tidy filed once the work in its own checkout landed."
+          },
+          "of": {
+            "type": "string",
+            "description": "The callsign of the worker whose work this one reviews."
+          },
+          "note": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "const": "reviews/append"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "project",
+                  "checkout"
+                ]
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "The call that adds a note to its thread while that work is live: the renderer adds the author and what the note says."
           }
         }
-      },
-      "adds": [
-        "actions"
-      ]
+      }
     },
     "floor": {
       "x": {
@@ -300,6 +319,63 @@
         }
       },
       "description": "The project's review threads, live and landed (filed by Tidy), oldest first, and what each author wrote in them."
+    },
+    "said/<project>": {
+      "scope": "project",
+      "description": "What `tower thread`, `tower note` and `tower send` say of a checkout's thread, read as `reader`: its file's text, the notes new to the reader, the lines printed after the text (or in its place while it has none), and with `sender`, the prompt Send types into the reader.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "checkout",
+          "reader"
+        ],
+        "properties": {
+          "checkout": {
+            "type": "string",
+            "description": "A worktree's name, or `main`."
+          },
+          "reader": {
+            "type": "string",
+            "description": "Whose view: a callsign, or the user's name."
+          },
+          "sender": {
+            "type": "string",
+            "description": "Who sends the notes to the reader: a callsign, or `the user`."
+          },
+          "hirer": {
+            "type": "string",
+            "description": "The callsign of the worker that hired the reader: Send tells it to report there."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "unseen",
+          "lines"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "unseen": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "send": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }

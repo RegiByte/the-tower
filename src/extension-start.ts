@@ -53,7 +53,7 @@ const ctx: StartCtx = {
     }),
   },
   facts: { append: refuse },
-  collections: { list: () => [], read: refuse, create: refuse, write: refuse, delete: refuse },
+  collections: { list: () => [], read: refuse, create: refuse, write: refuse, put: refuse, delete: refuse },
   own: { streams: () => undefined, collections: () => [], facts: () => [] },
   run: refuse,
 }

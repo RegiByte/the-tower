@@ -51,7 +51,6 @@ export const publisher = defineResource({
       peers: system.peers(),
       shells: system.shells(),
       items: system.items(),
-      threads: system.threads(),
       repos: system.repos(),
       logFiles: system.logs(),
       readings: extensions.readings(),

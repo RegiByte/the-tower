@@ -16,7 +16,7 @@ import { z } from 'zod'
 import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
 import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
-import { parseThread } from '../src/shared/reviews.ts'
+import { parseThread } from '../extensions/reviews/client/reviews.ts'
 import type { Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
@@ -790,7 +790,7 @@ test("server: a spawn's extension field is logged as a fact before the worker's 
     assert.ok('board' in msg)
     return msg.board
   }, (b) => b.floors.some((f) => f.cards.some((c) => c.id === id && c.x?.roles !== undefined)))
-  assert.deepEqual(board.floors.flatMap((f) => f.cards).find((c) => c.id === id)!.x, { roles: { role: 'builder.md' } })
+  assert.deepEqual(board.floors.flatMap((f) => f.cards).find((c) => c.id === id)!.x?.roles, { role: 'builder.md' })
   assert.deepEqual(board.adds[`card:${id}`]?.badges, [{ label: 'builder.md', tone: 'quiet', cap: 'roles' }])
 
   const gone = await post('spawn', { project: 'lab', x: { roles: { role: 'gone.md' } } })
@@ -913,6 +913,40 @@ test('server: review threads written before the reviews extension read the same:
     `${DESK_THREADS['odin-1.md']}\n(${threads}/odin-1.md) New to you since your last note: n4.\nA note's anchors name one of the checkout's repos: desk:<path>:<from>-<to>.\n`,
   )
   assert.equal(cli(DESK_SESSIONS.lark, 'thread', 'kite-2').split('\n').at(-3), `(${threads}/kite-2.md) New to you since your last note: n1.`, "a worker that never wrote on a thread has seen none of it")
+})
+
+test("server: the reviews extension holds the threads under its own names, and the old ones answer deprecated, naming them", async () => {
+  const board = await settled(
+    async () => {
+      const msg = (await firstEvent('/board')) as BoardMsg
+      assert.ok('board' in msg)
+      return msg.board
+    },
+    (b) => b.floors.find((f) => f.id === 'desk')!.worktrees.length === 3,
+  )
+  const desk = board.floors.find((f) => f.id === 'desk')!
+  const part = desk.x?.reviews as { threads: { key: string; checkout: string; calls: { note?: unknown } }[] }
+  assert.deepEqual(part.threads.map((t) => [t.key, t.calls.note]), [
+    ['desk/kite-2', undefined],
+    ['desk/main', ['reviews/append', { project: 'desk', checkout: 'main' }]],
+    ['desk/odin-1', ['reviews/append', { project: 'desk', checkout: 'odin-1' }]],
+  ])
+  const cardPart = (id: string) => desk.cards.find((c) => c.id === id)!.x?.reviews
+  assert.deepEqual(cardPart(DESK_SESSIONS.reviewer), { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, note: ['reviews/append', { project: 'desk', checkout: 'odin-1' }] })
+  assert.deepEqual(cardPart(DESK_SESSIONS.lark), { thread: 'lark-3', threadState: { is: 'landed', on: 'main', empty: true, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } }, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } })
+  assert.deepEqual(desk.main, { dirty: 0, ahead: 0, inUse: false })
+
+  const history = await get('/reviews/history/desk')
+  const old = await get('/reviews/desk')
+  assert.deepEqual([old.status, old.body, old.headers.deprecation, old.headers.link], [200, history.body, '@0', '</reviews/history/<project>>; rel="successor-version"'])
+  const served = await get('/reviews.js')
+  assert.deepEqual([served.headers.deprecation, served.headers.link], ['@0', '</x/reviews/reviews.js>; rel="successor-version"'])
+  const appended = await post('review/append', { project: 'desk', checkout: 'kite-2', author: 'Ana', body: 'Through the old name.' })
+  assert.deepEqual([appended.status, JSON.parse(appended.body).n, appended.headers.deprecation], [200, 2, '@0'])
+  const refused = await post('collection/create', { project: 'desk', collection: 'reviews', name: 'by hand', ext: 'md', content: '# x' })
+  assert.deepEqual([errorCode(refused), JSON.parse(refused.body).message], ['refused', 'reviews owns reviews: use reviews/append'])
+  const said = JSON.parse((await get(`/reviews/said/desk?checkout=odin-1&reader=${AUTHOR}&sender=Ana`)).body)
+  assert.deepEqual([said.unseen, said.send], [[3, 4], `Review notes from Ana (n3, n4) on checkout odin-1: read the thread with \`tower thread odin-1\`, act on them, and answer each with \`tower note on odin-1 re n<k>\` (the reply on stdin).`])
 })
 
 test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
