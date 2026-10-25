@@ -195,7 +195,7 @@ and versioned without running anything, and a runtime where an extension's failu
   slot facts, so an extension that needs exactly once keeps its own. `triggers.board` makes `start` return
   `board(prev, next)`, pure: the publisher hands each board that differs from the last to its listeners, frozen
   ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)); the trigger is first called on the second, off floors
-  dropped from both boards and a floor that appears taken as already there
+  dropped from both boards with their waits, offers, adds and asks, and a floor that appears taken as already there
   ([`triggerBoards`](ref:hub/src/bridge/triggers.ts#triggerBoards)), its calls made as `{t: 'tower', id: 'board'}` to
   what its ctx reaches, and paused 5 minutes past 30 calls a minute
   ([`runBoardTrigger`](ref:hub/src/tower/triggers.ts#runBoardTrigger)). A throw or a failed call is a problem in the
