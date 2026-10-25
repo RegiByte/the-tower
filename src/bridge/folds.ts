@@ -58,7 +58,7 @@ const PartShape = z.strictObject({
     .array(
       z.strictObject({
         key: z.string().min(1),
-        subject: z.string().regex(SUBJECT_KEY, 'a subject key: card:<id>, floor:<project>, board, …'),
+        subject: z.string().regex(SUBJECT_KEY, 'a subject key of the core: card:<id>, conversation:<id>, floor:<project>, item.<collection>:<project>/<id> or board'),
         title: z.string().min(1),
         since: z.number(),
         until: z.number().optional(),

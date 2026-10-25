@@ -41,8 +41,11 @@ export const ownSubject = (kind: string, entry: { key: string }, project: string
   value: entry,
 })
 
-/** A subject key as an ask names one: `board`, or a kind and what it names. */
-export const SUBJECT_KEY = /^(board|(card|conversation|floor|item\.[a-z][a-z0-9.-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*):.+)$/
+/**
+ * A subject key as an ask names one: `board`, or a core kind and what it names. An extension's own kinds sit in its
+ * part, where `subjectAt` doesn't find them, so an ask is never about one.
+ */
+export const SUBJECT_KEY = /^(board|(card|conversation|floor|item\.[a-z][a-z0-9.-]*):.+)$/
 
 /** The floor a subject key is on, as the board holds it now; none for the board's and one the board no longer holds. */
 export const projectOfKey = (board: Board, key: string): string | undefined => {

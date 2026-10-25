@@ -131,7 +131,8 @@ and versioned without running anything, and a runtime where an extension's failu
   hide in the order). A part is checked against the manifest ([`checkPart`](ref:hub/src/bridge/folds.ts#checkPart):
   only what it declares, its `x` by its schema, a verb action naming a verb of a capability it declares, a command of
   its own); its `x` lands at `subject.x[cap]`, its contributions at `board.adds[key]`, tagged with `cap`, its asks in
-  `board.asks` keyed `<cap>:<key>`, gone past `until`. A throw or a bad shape drops its part on that subject, and its
+  `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject (an own kind's entry sits in its
+  owner's part, where renderers don't find it). A throw or a bad shape drops its part on that subject, and its
   required dependents' there, as a `threw` or `shape` problem (lane `fold`, with the subject); over 50 ms of one board
   is a `slow` warning; a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the
   latest board's, derived on each build ([`extensions`](ref:hub/src/tower/extensions.ts#extensions)'s `folded`, each

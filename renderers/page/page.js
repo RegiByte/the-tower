@@ -1,4 +1,4 @@
-import { actionWords, heededAsks, isAsk, projectOfKey, runAdded, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { actionWords, heededAsks, isAsk, isCommand, projectOfKey, runCommand, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
 import { POLICIES } from '/policies.js'
@@ -46,6 +46,7 @@ import { asksHtml } from './added.js'
  * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
  * @import { BoardError } from '../../src/shared/shelf-page.ts'
  * @import { Action, Added } from '../../src/shared/extensions.ts'
+ * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call, Replies } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
@@ -439,16 +440,16 @@ function goToSubject(key) {
 }
 
 /**
- * Runs an action an extension added, asked first when its words say it destroys: its verb called, or its command run
- * on its subject as the board holds it now.
+ * Runs an action an extension added, asked first when its words say it destroys: its verb called with its call, or its
+ * command run on its subject as the board holds it now.
  * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
  */
 async function runAddedAt(el, { subject: key, action }) {
-  const subject = subjectAt(board(), key)
-  if (!subject) return toast('That is no longer on the board')
+  const subject = isCommand(action) ? subjectAt(board(), key) : undefined
+  if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
-  await told(pressing(el, () => runAdded(board(), action, subject)))
+  await told(pressing(el, () => (isCommand(action) ? runCommand(board(), action, /** @type {Subject} */ (subject)) : runVerb(action))))
 }
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. @param {string} id */

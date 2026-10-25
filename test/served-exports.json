@@ -625,6 +625,7 @@
       "risky",
       "runAdded",
       "runCommand",
+      "runVerb",
       "satellitesOf",
       "sendHomeAsk",
       "sendTarget",

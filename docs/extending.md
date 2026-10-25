@@ -442,7 +442,8 @@ folds in dependency order (card, conversations, items, floor, its own kinds, boa
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}` or `{command,
 args}`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
-with its `cap`; its asks (`{key, subject, title, since, until?, sound: 'wait' | 'offer', actions}`) in `board.asks`,
+with its `cap`; its asks (`{key, subject, title, since, until?, sound: 'wait' | 'offer', actions}`, `subject` a core subject's key:
+a card, a conversation, a floor, an item or the board) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
 manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;
 an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold

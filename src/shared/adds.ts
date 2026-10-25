@@ -67,9 +67,12 @@ export const runCommand = async (board: Board, action: Added<CommandAction>, sub
   return module[command.export]({ tower: towerOf(), board, subject: subject.value, args: action.args })
 }
 
+/** Calls a verb an extension offers, with its call: no subject needed, the call holds what it acts on. */
+export const runVerb = (action: VerbAction): Promise<unknown> => towerOf().call(action.verb as never, action.call as never)
+
 /** Runs an action an extension added: its verb called with its call, or its command run on `subject`. */
 export const runAdded = (board: Board, action: Added<Action>, subject: Subject): Promise<unknown> =>
-  isCommand(action) ? runCommand(board, action, subject) : towerOf().call(action.verb as never, (action as VerbAction).call as never)
+  isCommand(action) ? runCommand(board, action, subject) : runVerb(action)
 
 /** The page's `tower`, from `/tower.js`. */
 const towerOf = (): Tower => (globalThis as unknown as { tower: Tower }).tower
