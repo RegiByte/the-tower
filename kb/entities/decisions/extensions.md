@@ -248,13 +248,13 @@ and versioned without running anything, and a runtime where an extension's failu
   `tower.x.*` facts and neither core fact ([`forkFacts`](ref:hub/src/bridge/launch.ts#forkFacts)). Each running
   extension's `plugins.claude` joins the config's plugins on its floors ([[plugins]]). The spawn form draws the fields
   ([`formFields`](ref:hub/src/shared/spawn-form.ts#formFields)); the roles fixture is the proof.
-- **Fact kinds (1.89).** A stream's fact code may declare a `kind` the core folds, its facts checked against the
+- **Fact kinds (1.90).** A stream's fact code may declare a `kind` the core folds, its facts checked against the
   kind's schema too; an unknown kind, or `tower/rate-limits` in a project stream, is `invalid`. The one kind is
   `tower/rate-limits` ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading): `limits`,
   `extraUsage?`, `runtime?`, Claude's when it names none), which the core folds per started extension's stream beside
   the sessions' turns' ([[probes]]). `ctx.runtime(runtime)` gives the config's `argv` and `env`, and `ctx.run` takes
   `env`, so an extension runs Claude as the sessions do.
-- **The built-ins move, one at a time (1.89 on).** The first is the quota probe, `extensions/quota` ([[probes]]). A
+- **The built-ins move, one at a time (1.90 on).** The first is the quota probe, `extensions/quota` ([[probes]]). A
   bundled extension's server module imports the core's shared code (`src/shared`), never the reverse. Its old names
   keep answering until 2.0 through `LEGACY`, a fixed list of `{kind, old, now, since}` applied generally, with what a
   move does beyond a name in [`legacy.ts`](ref:hub/src/bridge/legacy.ts#projectLegacy), keyed by the old name: an old
@@ -271,7 +271,7 @@ and versioned without running anything, and a runtime where an extension's failu
 
 Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
 contributions (1.84), then middleware and hooks (1.85), then triggers, checks and restart (1.86), then launch
-(1.87), then fact kinds and the first move, the quota probe (1.89). The bundled extensions arrive as additions to the manifest and ctx, each an API minor.
+(1.87), then fact kinds and the first move, the quota probe (1.90). The bundled extensions arrive as additions to the manifest and ctx, each an API minor.
 
 **Alternatives considered.**
 

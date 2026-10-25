@@ -26,13 +26,13 @@ export type LegacyField = (subject: unknown, board: Board) => unknown
 /** An old stream code's fact as a reading of a kind the core folds, or `undefined` when it is none (a failed read). */
 export type LegacyReading = (fact: unknown) => RateLimitsReading | undefined
 
-/** The probes the core ran before 1.89: their readers, a closed set. */
+/** The probes the core ran before 1.90: their readers, a closed set. */
 type Reader = 'claude.usage'
 
 /** A probe's state as `board.probes` says it: `off` by the config. */
 export type ProbeState = 'off' | 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
 
-/** A probe as `board.probes` shows it, as it stood at 1.88. Times in epoch ms. */
+/** A probe as `board.probes` shows it, as it stood at 1.89. Times in epoch ms. */
 export type ProbeStatus = {
   name: string
   reads: Reader

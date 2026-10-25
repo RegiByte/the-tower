@@ -40,7 +40,7 @@ export type Reads = {
   stats: Stats
   /**
    * One probe's status, as `board.probes` has it, and its latest reads, newest first, `probe/<name>?last`
-   * (`Queries['probe/<name>']`). @deprecated since 1.89: read `quota/reads`, and the board's `x.quota`.
+   * (`Queries['probe/<name>']`). @deprecated since 1.90: read `quota/reads`, and the board's `x.quota`.
    */
   'probe/<name>': ProbeView
   /** What landing changed on a carried branch, `landing?project&branch` (`Queries['landing']`): each commit landed edited, its copy and `git range-diff`. */
@@ -188,7 +188,7 @@ export type Tower = {
   /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */
   renderer(): Promise<Renderer | null>
   stats(query?: Partial<StatsQuery & { project: string }>): Promise<Stats>
-  /** One probe's status and its latest `last` reads, newest first. @deprecated since 1.89: `tower.get('quota/reads')`. */
+  /** One probe's status and its latest `last` reads, newest first. @deprecated since 1.90: `tower.get('quota/reads')`. */
   probe(name: string, query?: { last?: number }): Promise<ProbeView>
   /** What landing changed on a carried branch: each commit landed edited, its copy and `git range-diff`. */
   landing(query: { project: string; branch: string }): Promise<LandingRead>

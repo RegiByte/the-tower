@@ -32,7 +32,7 @@ lifecycle inside a renderer; the spine covers resources with one inside the proc
 - `core:system` ([`system`](ref:hub/src/tower/spine.ts#system)): [`watchSystem`](ref:hub/src/system.ts#watchSystem)
   with `onChange(listener)`, so the publisher and the dispatch each hear changes and stop hearing them as they halt.
 - `core:slots` ([`slots`](ref:hub/src/tower/spine.ts#slots)): the slot loop (`core:probes`, the probes' runner,
-  left at 1.89 for the quota extension's slot, [[probes]]), whose sources are the policies, acting through the dispatch's
+  left at 1.90 for the quota extension's slot, [[probes]]), whose sources are the policies, acting through the dispatch's
   `tower/policy/run` and `tower/policy/pass`, and the running extensions' manifest slots, read from
   `core:extensions`, all called as `{t: 'tower', id: 'slot'}`.
 - `core:publisher` ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)): the board derived from the config and

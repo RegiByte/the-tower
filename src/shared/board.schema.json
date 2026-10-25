@@ -150,7 +150,7 @@
               "reads": {
                 "type": "string",
                 "const": "claude.usage",
-                "description": "The probes the core ran before 1.89: their readers, a closed set."
+                "description": "The probes the core ran before 1.90: their readers, a closed set."
               },
               "every": {
                 "type": "number",
@@ -200,8 +200,8 @@
               "wait"
             ]
           },
-          "description": "The quota probe, the quota extension's part (`x.quota`) as it stood at 1.88, with `run`, a read now (`probe/run`): none while the extension doesn't run.",
-          "deprecated": "since 1.89: read `x.quota`, and call `quota/read-now`."
+          "description": "The quota probe, the quota extension's part (`x.quota`) as it stood at 1.89, with `run`, a read now (`probe/run`): none while the extension doesn't run.",
+          "deprecated": "since 1.90: read `x.quota`, and call `quota/read-now`."
         },
         "extraUsage": {
           "$ref": "#/definitions/ExtraUsage",
