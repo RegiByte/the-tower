@@ -1,9 +1,9 @@
-import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededOffers, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, quotaOf, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, quotaOf, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { REVIEWS, landedThreads } from '/reviews.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
-import { offerWords, policyZone } from '/panels.js'
-import { POLICIES, slotWords } from '/policies.js'
+import { offerWords, policyZone } from '/x/policies/panel.js'
+import { floorPolicies, offerAskKey, POLICIES, runOf, slotWords } from '/x/policies/policies.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
@@ -79,12 +79,18 @@ export async function sidebar(deps) {
     return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c)].filter(Boolean).join(' · ')))}</div>` : ''}
-    ${c.run ? `<div class="run" data-tip="${esc(runTitle(c.project, c.run))}">run ${c.run.n} · ${esc(c.run.title ?? c.run.tag)}</div>` : ''}
+    ${runHtml(c)}
     <div class="line">${lineOf(c)}</div>
     ${badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : ''}
     ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
   </div>`
+  }
+
+  /** The run of a policy a worker is, with what started it on hover. @param {Card} c */
+  const runHtml = (c) => {
+    const run = runOf(c)
+    return run ? `<div class="run" data-tip="${esc(runTitle(c.project, run))}">run ${run.n} · ${esc(run.title ?? run.tag)}</div>` : ''
   }
 
   /** What started a policy's run, on hover: a run not started by hand has a slot. @param {string} project @param {CardRun} run */
@@ -258,20 +264,21 @@ export async function sidebar(deps) {
 
   /** The floor's policies, folded to a count with what is offered and what needs you: the panel opens in the main pane. @param {Floor} f */
   function policiesTrayHtml(f) {
-    if (!f.policies.length) return ''
-    const offered = board().offers.filter((o) => o.project === f.id).length
-    const needs = f.policies.filter((p) => p.needs).length
-    const invalid = f.policies.filter((p) => !p.header && !p.needs).length
+    const { policies, offers } = floorPolicies(f)
+    if (!policies.length) return ''
+    const offered = offers.length
+    const needs = policies.filter((p) => p.needs).length
+    const invalid = policies.filter((p) => !p.header && !p.needs).length
     const on = viewing('policies')?.project === f.id
-    return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${f.policies.length}</b> ${f.policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
+    return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${policies.length}</b> ${policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
   }
 
   /** The floor's offers this viewer heeds, in the attention order: Accept starts the run, ✕ dismisses it for this viewer. @param {Floor} f */
   const offersHtml = (f) => {
-    const offers = heededOffers(board(), heed()).filter((o) => o.project === f.id)
+    const offers = floorPolicies(f).offers.filter((o) => !heed().dismissed.has(offerAskKey(o)))
     return offers.length ? `<div class="offers">${offers.map((o) => `<div class="offer-row" data-hold="offer:${esc(o.key)}"><button class="what" data-policies="${f.id}" data-tip="${esc(`${o.title ?? o.tag}: ${offerWords(board(), o, Date.now())}`)}"><b>${esc(o.title ?? o.tag)}</b> <span>offered · ${esc(slotWords(o.slot, policyZone(board(), o.project, o.policy), Date.now()))}</span></button>
     <button class="primary" data-policy-call="${esc(JSON.stringify(o.calls.accept))}" data-tip="start the run this slot offers">Accept</button>
-    <button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button></div>`).join('')}</div>` : ''
+    <button class="icon-btn" data-offer-dismiss="${esc(offerAskKey(o))}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button></div>`).join('')}</div>` : ''
   }
 
   /**
@@ -318,8 +325,6 @@ export async function sidebar(deps) {
 
   /** The waits and offers on a floor that this viewer heeds. @param {Floor} f */
   const floorWaits = (f) => heededWaits(board(), heed()).filter((w) => f.cards.some((c) => c.id === w.id))
-  /** @param {Floor} f */
-  const floorOffers = (f) => heededOffers(board(), heed()).filter((o) => o.project === f.id)
   /** The asks about the floor or a subject on it that this viewer heeds. @param {Floor} f */
   const floorAsks = (f) => heededAsks(board(), heed()).filter((a) => projectOfKey(board(), a.subject) === f.id)
 
@@ -346,7 +351,7 @@ export async function sidebar(deps) {
   /** A folded floor's counts: its waits on you (ringed, lamp of the loudest), its offers, and its workers on duty by the loudest. @param {Floor} f */
   const floorSummaryHtml = (f) => {
     const waits = floorWaits(f).map((w) => /** @type {Card} */ (f.cards.find((c) => c.id === w.id)))
-    const offers = floorOffers(f).length + floorAsks(f).length
+    const offers = floorAsks(f).length
     const duty = f.cards.filter(onDuty)
     const tone = loudest(duty)
     /** @param {string} cls @param {number} n @param {string} words */
@@ -382,7 +387,7 @@ export async function sidebar(deps) {
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     ${floorAddsHtml(f)}
-    ${asksHtml(board(), floorAsks(f), pageNow())}
+    ${asksHtml(board(), floorAsks(f).filter((a) => a.cap !== POLICIES), pageNow())}
     ${offersHtml(f)}
     <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
     ${traysHtml(f)}`

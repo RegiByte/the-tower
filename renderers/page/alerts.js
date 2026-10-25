@@ -1,5 +1,5 @@
 import { SOUNDS, gistLine, shownTitle, statusName } from '/cards.js'
-import { offerWords } from '/panels.js'
+import { offerWords } from '/x/policies/panel.js'
 import { shownPane, shownKey } from './kit.js'
 
 /**
@@ -62,7 +62,7 @@ export function alerting(deps) {
     n.onclick = () => (window.focus(), select(c.id), showPane(shownPane(s)), n.close())
   }
 
-  /** @param {Offer} o */
+  /** @param {Omit<Offer, 'calls' | 'actions'>} o */
   function showOfferAlert(o) {
     const n = new Notification(`${o.title ?? o.tag} · offered`, { body: `${/** @type {Floor} */ (floorOf(o.project)).name}: ${offerWords(board(), o, Date.now())}`, tag: o.key })
     n.onclick = () => (window.focus(), openPolicies(o.project), n.close())

@@ -1,7 +1,7 @@
-import { actionWords, heededAsks, isAsk, isCommand, projectOfKey, runCommand, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededOffers, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { actionWords, heededAsks, isAsk, isCommand, projectOfKey, runCommand, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
-import { POLICIES } from '/policies.js'
+import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
@@ -58,10 +58,15 @@ import { asksHtml } from './added.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { Pick } from '../../src/shared/palette.ts'
  * @import { Capability } from '../../src/shared/capabilities.ts'
+ * @import { Offer } from '../../extensions/policies/policies.ts'
+ * @import { BoardAsk } from '../../src/shared/extensions.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
 watchTips(document)
+
+/** The policy's offer an ask is, when the policies extension asks it. @param {BoardAsk} a */
+const offerOf = (a) => (a.cap === POLICIES ? board().floors.flatMap((f) => floorPolicies(f).offers).find((o) => offerAskKey(o) === a.key) : undefined)
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, rateLimits: [], probes: [], extensions: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
@@ -96,7 +101,7 @@ function render() {
   /** @param {Attention} a */
   const count = (a) => duty.filter((c) => c.attention === a).length
   const waiting = heededWaits(board(), heed()).length
-  const offered = heededOffers(board(), heed()).length + heededAsks(board(), heed()).length
+  const offered = heededAsks(board(), heed()).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
   paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
     (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("policies' slots offered and not yet started, and what extensions ask of you, that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
@@ -225,12 +230,12 @@ const page = loop({
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
     announce: ({ text }) => announce(text),
     notify: ({ attended: a }) => {
-      if (Notification.permission === 'granted') alerts.set(a.key, isOffer(a) ? showOfferAlert(a) : isAsk(a) ? showAskAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
+      if (Notification.permission === 'granted') alerts.set(a.key, isAsk(a) ? (offerOf(a) ? showOfferAlert(/** @type {Offer} */ (offerOf(a))) : showAskAlert(a)) : isOffer(a) ? showOfferAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
     },
     unnotify: ({ key }) => (alerts.get(key)?.close(), alerts.delete(key)),
     sound: ({ sound }) => playSound(SOUNDS[sound]),
     keep: ({ field, value }) => tower.store.set(VIEWER_KEYS[field], value),
-    'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : isAsk(to) ? goToSubject(to.subject) : moveTo(to.id)),
+    'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : isAsk(to) ? (offerOf(to) ? openPolicies(/** @type {Offer} */ (offerOf(to)).project) : goToSubject(to.subject)) : moveTo(to.id)),
     toast: ({ message }) => toast(message),
     'save-draft': () => void saveNow(),
     leave: ({ view: v }) => {

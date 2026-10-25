@@ -2,8 +2,9 @@ import { documentCss } from '/design.js'
 import { esc, itemSubject, span, plural } from '/cards.js'
 import { ICON } from '/icons.js'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptTitles, readsText } from '/items.js'
-import { drawPanel, failedHtml, fileButtonsHtml, policiesHtml, policyDoneLine } from '/panels.js'
-import { POLICIES } from '/policies.js'
+import { drawPanel, failedHtml, fileButtonsHtml } from '/panels.js'
+import { policiesHtml, policyDoneLine } from '/x/policies/panel.js'
+import { floorPolicies, POLICIES } from '/x/policies/policies.js'
 import { HOME } from './view.js'
 import { $, closeHomeHtml, repaint, toast, told } from './kit.js'
 import { pressing } from '/press.js'
@@ -12,7 +13,8 @@ import { addsHtml } from './added.js'
 
 /**
  * @import { Board, Floor, FloorCollection, FloorItem } from '../../src/bridge/board.ts'
- * @import { Call, Replies } from '../../src/shared/api.ts'
+ * @import { Replies } from '../../src/shared/api.ts'
+ * @import { PolicyCall } from '../../extensions/policies/client/panel.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
  * @import { MainView } from './view.js'
  * @import { PageState, PageEvent } from './page.js'
@@ -75,15 +77,15 @@ export function keptViews(deps) {
   /**
    * A policy's Run now or Approve, or an offer's Accept: a run started opens its worker once the board carries it.
    * @param {HTMLElement} button
-   * @param {Call<'policy/run' | 'policy/approve'>} call
+   * @param {PolicyCall} call `policies/run` or `policies/approve`, and its input
    */
   async function policyCall(button, call) {
-    const policy = /** @type {string} */ (call[1].policy)
-    const title = floorOf(/** @type {string} */ (call[1].project))?.policies.find((p) => p.id === policy)?.title ?? policy
-    const reply = await told(pressing(button, () => /** @type {Promise<Replies['policy/run'] | Replies['policy/approve']>} */ (tower.run(call))))
+    const { project, policy } = /** @type {{ project: string; policy: string }} */ (call[1])
+    const title = floorPolicies(floorOf(project)).policies.find((p) => p.id === policy)?.title ?? policy
+    const reply = await told(pressing(button, () => /** @type {Promise<Replies['policy/run'] | Replies['policy/approve']>} */ (tower.call(/** @type {never} */ (call[0]), /** @type {never} */ (call[1])))))
     if (!reply) return
     toast(policyDoneLine(call, title, reply))
-    if (call[0] === 'policy/run') selectArriving(/** @type {Replies['policy/run']} */ (reply).id)
+    if (call[0] === 'policies/run') selectArriving(/** @type {Replies['policy/run']} */ (reply).id)
   }
 
   /** The version of the kept item open that its body was drawn from. @type {number | undefined} */
