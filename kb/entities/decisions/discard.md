@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Work that never landed is discarded deliberately, its tips noted first",
-  "summary": "worktree/discard throws away an at-risk worktree as the board showed it (each repo's head and count of uncommitted files, refused once either moved): the floor's recovery record, the answers to tower/discard.record, names each repo's branch and tip (uncommitted files committed on top, on no branch) and its unpushed commits (the reviews extension, when on, as a note on the checkout's review thread, then files the thread); then it removes the worktree with force and deletes its branches. Refused where nothing answers the hook; offered only on at-risk worktrees, on floors keeping review threads.",
+  "summary": "worktree/discard throws away an at-risk worktree as the board showed it (each repo's head and count of uncommitted files, refused once either moved): the floor's recovery record, the answers to tower/discard.record, names each repo's branch and tip (uncommitted files committed on top, on no branch) and its unpushed commits (the reviews extension, when on, as a note on the checkout's review thread); then it removes the worktree with force, deletes its branches and raises tower/discard.done (reviews files the thread). Refused where nothing answers the hook; offered only on at-risk worktrees, on floors keeping review threads.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
@@ -45,16 +45,18 @@ thread ([[review-threads]]).
   its record is in when it is one ([[extensions]]). On a floor where reviews is on, the reviews extension's answer
   ([`start`](ref:hub/extensions/reviews/server.ts#start)) appends
   [`discardNote`](ref:hub/extensions/reviews/filing.ts#discardNote) to the thread through `reviews/append`, for the
-  discard's caller (each repo's branch, full tip, unpushed commits, and `git branch <name> <tip>`), then files the
-  thread as Tidy files a landed one. Then [`discard`](ref:hub/src/worktrees.ts#discard) removes each
+  discard's caller (each repo's branch, full tip, unpushed commits, and `git branch <name> <tip>`). Then
+  [`discard`](ref:hub/src/worktrees.ts#discard) removes each
   worktree with `--force` and deletes its branch while it is still at the head the read judged, and only one the
   tower cut (one that moved since, or one checked out there by hand, is kept, named in the reply's `kept`; the note
-  says which it keeps). The reply names each tip and each record
+  says which it keeps). Once all is removed the core raises `tower/discard.done` (`{project, name, author, tips,
+  kept}`, `reported` in the reply's `done`), and the reviews answer files the thread as Tidy files a landed one, so a
+  discard refused anywhere before (by an answer, or by git) leaves the thread live. The reply names each tip and each record
   ([`discardedLine`](ref:hub/src/shared/worktree-words.ts#discardedLine)); its `thread`, the reviews record's item,
   is kept until 2.0.
-- Answers are independent: one that answered before another refused keeps what it recorded (a filed thread naming
-  tips that are still on their branches), as a sequence keeps what is done. A guard that would stop a discard wraps
-  `tower/worktree/discard` or the hook with `around`, outside every answer.
+- Answers are independent: one that answered before another refused keeps what it recorded (the reviews note, on a
+  live thread, naming tips that are still on their branches), as a sequence keeps what is done. A guard that would
+  stop a discard wraps `tower/worktree/discard` or the hook with `around`, outside every answer.
 - Renderers draw it as a destructive press, asked first with
   [`discardAsk`](ref:hub/src/shared/worktree-words.ts#discardAsk), naming what goes ([[press-feedback]]).
 

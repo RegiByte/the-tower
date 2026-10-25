@@ -123,8 +123,9 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   has landed and `main`'s once every main checkout is level with its upstream and no worker runs there: the reviews
   extension's floor fold lists one tidy entry per landed thread
   ([`tidyEntries`](ref:hub/extensions/reviews/filing.ts#tidyEntries)) and its answer to `tower/tidy.apply` files each
-  ([`start`](ref:hub/extensions/reviews/server.ts#start), [[tidy]]); a [[discard]]ed worktree's is filed at once by its
-  answer to `tower/discard.record`, after the note naming its tips. The core's Tidy and discard know no thread. A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
+  ([`start`](ref:hub/extensions/reviews/server.ts#start), [[tidy]]); a [[discard]]ed worktree's gets the note naming its
+  tips in its answer to `tower/discard.record`, and is filed in its answer to `tower/discard.done`, once the worktree
+  is gone. The core's Tidy and discard know no thread. A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
   gives it (`<checkout>@<time>.md`) and frees the checkout's name, so a reused name never inherits old notes.
   Filed threads are the review history: [`reviewHistory`](ref:hub/extensions/reviews/threads.ts#reviewHistory), at
   `GET /reviews/history/<project>` (`GET /reviews/<project>` through `LEGACY`), gives every thread, each message with its verdict

@@ -516,14 +516,16 @@ function `answers[<name>](payload, ctx)`; one that throws or answers off the sch
 problem. The core raises `tower/discard.record` (`{project, name, author, tips}` → `{note?, item?}`, `refuses`) in
 `worktree/discard` before anything is removed: the answers are the floor's recovery record (each tip with its `branch`,
 `base`, `head`, `dirty` and `unpushed`; the reviews extension's note and filed thread among them, `item` naming where
-a record is kept, API 1.93), no answer at all refuses the discard as a failed one does, and the answers come back in
-the reply's `x`, by capability. It
+a record is kept, API 1.94), no answer at all refuses the discard as a failed one does, and the answers come back in
+the reply's `x`, by capability. Once the worktrees are removed and the branches deleted, it raises
+`tower/discard.done` (`{project, name, author, tips, kept}` → `{note?, item?}`, `reported` in the reply's `done`;
+API 1.94), where the reviews extension files the thread. It
 raises `tower/tidy.apply` (`{project, keys}` → `{done, skipped}`, `reported`) in `tidy`, after the core's own parts, to
 each capability in the plan's `x` alone, with the keys of the floor's tidy entries it contributed
 (`board.adds['floor:<project>'].tidy`) that the plan carries: an entry no longer listed refuses the whole Tidy, and
 each answer, or why there is none, is the reply's `x.<cap>`. An entry is `{key, label, hint?, does?, kind?}`: `does`
 says what applying it does in a row's words, `kind` (`{one, many}`) what it is in Tidy's line (`1 landed thread`;
-API 1.93); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
+API 1.94); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
 (API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`.

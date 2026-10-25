@@ -186,7 +186,8 @@ and versioned without running anything, and a runtime where an extension's failu
   and reads, and raises its own with `ctx.raise(name, payload)`; the core's are
   [`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `tower/discard.record` raised by `worktree/discard` once the tips are
   read and before anything is removed, `refuses` (no answer at all refuses too: the answers are the floor's recovery
-  record, the reviews extension's note and filed thread among them), and `tower/tidy.apply` raised by `tidy` after its own parts,
+  record, the reviews extension's note among them), `tower/discard.done` raised once its worktrees are removed (1.93,
+  `reported` in the reply's `done`: reviews files the thread there), and `tower/tidy.apply` raised by `tidy` after its own parts,
   to each capability in `plan.x` alone with its keys, `reported` in the reply's `x.<cap>`. A floor's tidy entries are
   drawn by every renderer beside the core's rows, and the floor's `tidy` call carries them all ([[tidy]]). Answerers list a hook in `answers`; each answers in fold
   order (the resolve order), on its own, inside the hook's chain, as `{cap, ok, answer}` or `{cap, ok: false, code,
