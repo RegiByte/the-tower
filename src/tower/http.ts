@@ -80,7 +80,6 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
-import { archiveOf } from '../bridge/board.ts'
 import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
@@ -153,7 +152,7 @@ type Deps = {
 /** The server on the config's port as it is at start: it serves there until it is halted. */
 export const httpServer = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:extensions'],
-  start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
+  start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, archivedCards, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
     const PORT = towerPort(readConfig())
 
     const STATIC: Record<string, [file: string, type: string]> = {
@@ -241,7 +240,7 @@ export const httpServer = defineResource({
     function archive(res: http.ServerResponse, project: string) {
       if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
       const now = Date.now()
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archiveOf(everyCard(now), project, now)))
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archivedCards(project, now)))
     }
 
     function conversations(res: http.ServerResponse, id: string) {

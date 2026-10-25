@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, board, callsignLookup, type Board, type SystemView } from '../bridge/board.ts'
+import { allCards, archiveOf, board, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
 import { foldBoard } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
@@ -84,6 +84,26 @@ export const publisher = defineResource({
     /** Every session's card, the ones the board leaves out included. */
     const everyCard = (now: number) => allCards({ ...viewOf(), now })
 
+    /**
+     * A floor's archived cards (`archiveOf`) as the board's own cards are: each running extension's card folds on them
+     * and each moved part copied back to its old field. They are folded as the cards of their floor on the core's
+     * board, by the card folds alone: what a fold contributes beside its part (badges, actions, lines) stays the board's.
+     */
+    const archivedCards = (project: string, now: number): Card[] => {
+      if (folding) throw new Error('an archive was read inside a fold: a fold reads the board as its ctx.board')
+      const view = { ...viewOf(), now }
+      const core = board(view)
+      const floors = core.floors.filter((f) => f.id === project).map((f) => ({ ...f, cards: archiveOf(allCards(view), project, now) }))
+      const folders = extensions.folders().map((f) => ({ ...f, folds: Object.fromEntries(Object.entries(f.folds).filter(([kind]) => kind === 'card')) }))
+      folding = true
+      try {
+        const folded = foldBoard({ board: { ...core, floors }, callsignOf: callsignLookup(view), folders, subjects: extensions.subjects(), now, clock: () => performance.now() })
+        return projectLegacy(folded.board).floors.flatMap((f) => f.cards)
+      } finally {
+        folding = false
+      }
+    }
+
     const publish = () => {
       if (!boardClients.size && !boardListeners.size) return
       const next = built()
@@ -159,7 +179,7 @@ export const publisher = defineResource({
       return () => void boardListeners.delete(listener)
     }
 
-    return { board: boardOf, everyCard, streamBoard, onBoard, stop }
+    return { board: boardOf, everyCard, archivedCards, streamBoard, onBoard, stop }
   },
   halt: ({ stop }) => stop(),
 })

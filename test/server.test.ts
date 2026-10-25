@@ -19,6 +19,7 @@ import { fonts } from '../src/shared/design.ts'
 import { parseThread } from '../extensions/reviews/client/reviews.ts'
 import type { Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
+import type { Card } from '../src/bridge/board.ts'
 import { MODULES } from '../src/tower/served.ts'
 import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
@@ -108,7 +109,7 @@ function seedPolicies() {
  */
 const DESK = path.join(ROOT, 'desk')
 const DESK_STARTED = Math.floor(Date.now() / MIN) * MIN - 50 * MIN
-const DESK_SESSIONS = { author: '20261004-200000-0d01', reviewer: '20261004-200100-0d02', lark: '20261004-200200-0d03' }
+const DESK_SESSIONS = { author: '20261004-200000-0d01', reviewer: '20261004-200100-0d02', lark: '20261004-200200-0d03', past: '20261001-090000-0d04' }
 const deskCallsign = callsignsOf({ projects: {} } as Parameters<typeof callsignsOf>[0])
 const AUTHOR = deskCallsign(DESK_SESSIONS.author)
 const REVIEWER = deskCallsign(DESK_SESSIONS.reviewer)
@@ -154,6 +155,8 @@ function seedDesk() {
   ended(DESK_SESSIONS.author, path.join(DESK, '.worktrees', 'odin-1'), DESK_STARTED, ['bash'])
   ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/tower:review ${AUTHOR}`])
   ended(DESK_SESSIONS.lark, path.join(DESK, '.worktrees', 'lark-3'), DESK_STARTED + 2 * MIN, ['bash'])
+  const past = { id: DESK_SESSIONS.past, project: 'desk', cwd: path.join(DESK, '.worktrees', 'odin-1'), argv: ['bash'], startedAt: DESK_STARTED - 3 * 24 * 60 * MIN, cols: 80, rows: 24 }
+  writeFileSync(path.join(ROOT, 'sessions', `${past.id}.jsonl`), [past, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }], [0.4, 'h', { hook_event_name: 'tower.letGo' }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
   const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
   mkdirSync(threads, { recursive: true })
   for (const [id, text] of Object.entries(DESK_THREADS)) writeFileSync(path.join(threads, id), text)
@@ -947,6 +950,16 @@ test("server: the reviews extension holds the threads under its own names, and t
   assert.deepEqual([errorCode(refused), JSON.parse(refused.body).message], ['refused', 'reviews owns reviews: use reviews/append'])
   const said = JSON.parse((await get(`/reviews/said/desk?checkout=odin-1&reader=${AUTHOR}&sender=Ana`)).body)
   assert.deepEqual([said.unseen, said.send], [[3, 4], `Review notes from Ana (n3, n4) on checkout odin-1: read the thread with \`tower thread odin-1\`, act on them, and answer each with \`tower note on odin-1 re n<k>\` (the reply on stdin).`])
+})
+
+test("server: an archived card carries the extensions' parts and the old fields LEGACY copies, as the board's cards do", async () => {
+  const archived = (await settled(
+    async () => JSON.parse((await get('/archive/desk')).body) as Card[],
+    (cards) => cards.some((c) => c.id === DESK_SESSIONS.past && c.x?.reviews !== undefined),
+  )).find((c) => c.id === DESK_SESSIONS.past)!
+  const note = ['reviews/append', { project: 'desk', checkout: 'odin-1' }]
+  assert.deepEqual(archived.x?.reviews, { thread: 'odin-1', threadState: { is: 'live' }, unseen: 4, note })
+  assert.deepEqual([archived.threadState, archived.unseen, archived.calls.note], [{ is: 'live' }, 4, ['review/append', { project: 'desk', checkout: 'odin-1' }]])
 })
 
 test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
