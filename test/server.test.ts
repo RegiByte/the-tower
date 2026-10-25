@@ -458,7 +458,7 @@ test('server: policies kept before the policies extension keep their approvals, 
     '',
   ])
   const ran = cli(SESSION, 'runs').split('\n')
-  assert.deepEqual(ran.slice(0, 2), [`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`, `run 1    ${day(digest.slot)}  auto              ${worker.callsign}  exited`])
+  assert.deepEqual(ran.slice(0, 2), [`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`, [`run 1`.padEnd(7), day(digest.slot).padEnd(13), 'auto'.padEnd(16), worker.callsign, 'exited'].join('  ')])
   assert.ok(ran.includes('        its check found: two to do'), ran.join('\n'))
   const whoami = cli(SESSION, 'whoami').split('\n')
   const at = whoami.findIndex((l) => l.startsWith('You are run'))
