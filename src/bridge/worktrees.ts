@@ -184,14 +184,14 @@ const stateOf = (repos: FloorWorktreeRepo[], sessions: string[]): WorktreeState 
 const gitReads = (reads: RepoRead[]) => reads.filter((r): r is Extract<RepoRead, { git: true }> => r.git)
 
 /** One entry per name, across the project's repos, in name order. */
-export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Occupant[], keepsThreads: boolean): FloorWorktree[] => {
+export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Occupant[], recordsDiscards: boolean): FloorWorktree[] => {
   const repos = gitReads(reads).flatMap(({ dir, trees }) => trees.map(({ name, ...tree }) => ({ name, repo: { dir, ...tree, atRisk: atRisk(tree) } })))
   const names = [...new Set(repos.map((r) => r.name))].sort()
   return names.map((name) => {
     const own = repos.filter((r) => r.name === name).map((r) => r.repo)
     const sessions = occupants.filter((o) => own.some((r) => inside(o.cwd, r.path))).map((o) => o.id)
     const state = stateOf(own, sessions)
-    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state, own, keepsThreads) }
+    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state, own, recordsDiscards) }
   })
 }
 
@@ -235,13 +235,3 @@ export const treeAt = (reads: RepoRead[], cwd: string): TreeRead | undefined =>
 /** `base`: recorded when the tower cut `branch`; a branch it didn't cut is kept. */
 export type Tip = { dir: string; branch?: string; base?: string; tip: string; head: string; dirty: number; unpushed: string[] }
 
-/** The note a discard leaves on the checkout's thread: what each repo held, and how to get it back while git keeps it. */
-export const discardNote = (name: string, tips: Tip[]): string =>
-  [
-    `Discarded the worktree ${name}: its work never landed. The branches the tower cut are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: \`git branch <name> <tip>\`.`,
-    '',
-    ...tips.flatMap((t) => [
-      `- \`${t.dir}\`: ${t.branch ? `branch \`${t.branch}\`${t.base === undefined ? " (kept: the tower didn't cut it)" : ''}` : 'a detached HEAD'}, tip \`${t.tip}\`${t.dirty ? ` (${t.dirty} uncommitted ${t.dirty === 1 ? 'file' : 'files'} committed on top of \`${t.head}\`)` : ''}`,
-      ...t.unpushed.map((c) => `  - ${c}`),
-    ]),
-  ].join('\n')

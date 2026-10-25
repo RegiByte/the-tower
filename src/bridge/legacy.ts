@@ -145,6 +145,10 @@ const policiesPart = (subject: { x?: Record<string, unknown> }) => subject.x?.[P
 
 export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'floor.policies': (floor): PolicyView[] => (policiesPart(floor as Floor)?.policies ?? []).map(oldCalls) as PolicyView[],
+  'floor.tidy.threads': (floor, board): Floor['tidy'] => ({
+    ...(floor as Floor).tidy,
+    threads: (board.adds[`floor:${(floor as Floor).id}`]?.tidy ?? []).flatMap((e) => (e.cap === 'reviews' ? [e.key] : [])),
+  }),
   'card.run': (card): CardRun | undefined => (policiesPart(card as Card) as { run?: CardRun } | undefined)?.run,
   'board.offers': (board): Offer[] =>
     ((board as Board).floors.flatMap((f) => (policiesPart(f)?.offers ?? []).map(oldCalls)) as Offer[]).sort((a, b) => a.since - b.since),

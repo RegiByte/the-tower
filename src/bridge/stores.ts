@@ -6,8 +6,15 @@ import type { Collection, Doors, SessionFact } from '../shared/extensions.ts'
 import { projectCollections, type CollectionType, type Config } from '../shared/model.ts'
 import { EXTENSION_FACTS, type Session } from './facts.ts'
 
-/** What an accepted extension declares of its collections, and the capabilities it is off with (`Accepted.chain`). */
-export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection> }
+/**
+ * What an accepted extension declares of its collections, the capabilities it is off with (`Accepted.chain`), and the
+ * hooks it answers while it runs.
+ */
+export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection>; answers: string[] }
+
+/** Whether a running extension on the floor answers `hook`: a discard is offered only where one records it. */
+export const answeredOn = (config: Config, project: string, extensions: ExtensionStores[], hook: string): boolean =>
+  extensions.some((x) => x.answers.includes(hook) && !offOn(config, project, x.chain))
 
 /** Whether an extension is off on a floor: a capability of its `chain` is off there. */
 export const offOn = (config: Config, project: string, chain: string[]): boolean =>

@@ -67,7 +67,7 @@ test("the projection copies the reviews parts back to the old fields: a floor's 
     x: { reviews: { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, note } },
   }
   const floor = { id: 'lab', worktrees: [], branches: [], threads: [], cards: [card], x: { reviews: { threads: [thread] } } }
-  const [projected] = projectLegacy({ floors: [floor], probes: [], offers: [] } as unknown as Board).floors
+  const [projected] = projectLegacy({ floors: [floor], probes: [], offers: [], adds: {} } as unknown as Board).floors
   const old = ['review/append', { project: 'lab', checkout: 'odin-1' }]
   const { key: _, ...unkeyed } = thread
   assert.deepEqual(projected.threads, [{ ...unkeyed, calls: { note: old }, actions: [{ verb: 'note', call: old }] }])

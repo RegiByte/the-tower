@@ -44,6 +44,9 @@ const CALLSIGN_OF = '1.92'
 /** The minor review threads moved into their bundled extension in: an owner writes an item by its own id. */
 const REVIEWS_MOVED = '1.93'
 
+/** The minor the reviews extension answered the core's hooks in: tidy entries' words, `ctx.collections.rename`, resolve. */
+const REVIEWS_HOOKS = '1.94'
+
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
  * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
@@ -84,6 +87,7 @@ export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'board', old: 'card.verbs.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
   { kind: 'board', old: 'card.calls.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
   { kind: 'board', old: 'card.actions.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
+  { kind: 'board', old: 'floor.tidy.threads', now: "board.adds['floor:<project>'].tidy", since: REVIEWS_HOOKS },
 ]
 
 /** The entries `kind`'s applier reads. */
@@ -224,8 +228,11 @@ export type Action = VerbAction | CommandAction
 /** A word shown beside a subject: `href` a page it links to. */
 export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: string }
 
-/** Something a floor's Tidy would do for an extension, by `key`: listed with the core's, applied by its owner. */
-export type TidyEntry = { key: string; label: string; hint?: string }
+/**
+ * Something a floor's Tidy would do for an extension, by `key`: listed with the core's, applied by its owner. `does`:
+ * what applying it does, in a few words; `kind`: what it is, counted, in Tidy's line (`1 landed thread`). @since 1.94
+ */
+export type TidyEntry = { key: string; label: string; hint?: string; does?: string; kind?: { one: string; many: string } }
 
 /**
  * Something asking for the user, in the attention order beside the waits. `key`: this ask alone, as `Wait.key` names a
@@ -464,6 +471,8 @@ export type StartCtx = {
     write(project: string, name: string, id: string, content: string, modifiedAt: number): Promise<Item>
     /** An item by an id of its owner's, made or replaced whole. @since 1.93 */
     put(project: string, name: string, id: string, content: string): Promise<Item>
+    /** An item moved to the id `to`, in one step: refused when `to` is taken. @since 1.94 */
+    rename(project: string, name: string, id: string, to: string): Promise<Item>
     delete(project: string, name: string, id: string): Promise<void>
   }
   /**
@@ -602,7 +611,7 @@ export const CTX_SINCE: {
     raise: AROUND,
     streams: { append: STORES, read: STORES },
     facts: { append: STORES },
-    collections: { list: STORES, read: STORES, create: STORES, write: STORES, put: REVIEWS_MOVED, delete: STORES },
+    collections: { list: STORES, read: STORES, create: STORES, write: STORES, put: REVIEWS_MOVED, rename: REVIEWS_HOOKS, delete: STORES },
     own: { streams: STORES, collections: STORES, facts: STORES },
     run: TRIGGERS,
     runtime: KINDS,

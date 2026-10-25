@@ -93,8 +93,8 @@ const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable
 ]
 
 /** A worktree in use offers nothing. Work at risk is discarded only on a floor keeping review threads, where its tips are noted. */
-const worktreeVerbs = (state: WorktreeState, keepsThreads: boolean): WorktreeVerb[] =>
-  state === 'lost' ? ['recut', 'prune'] : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && keepsThreads ? ['discard'] : []
+const worktreeVerbs = (state: WorktreeState, recordsDiscards: boolean): WorktreeVerb[] =>
+  state === 'lost' ? ['recut', 'prune'] : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && recordsDiscards ? ['discard'] : []
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
@@ -226,8 +226,8 @@ export const withAddedTidy = <F extends { id: string; tidy: TidyPlan } & Offers<
   return { ...f, ...offered(actions) }
 }
 
-export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], keepsThreads: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
-  const verbs = worktreeVerbs(state, keepsThreads)
+export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], recordsDiscards: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
+  const verbs = worktreeVerbs(state, recordsDiscards)
   return actionsOf(verbs, {
     recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
     prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],

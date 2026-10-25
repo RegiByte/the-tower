@@ -1,15 +1,21 @@
 /**
  * The reviews extension (decision `review-threads`): one append-only markdown thread per checkout in its owned
  * `reviews` collection, appended to only through `reviews/append`; each card's thread and each floor's threads folded
- * from the parsed files and the core's checkouts; the floor's history, and what the CLI says of a thread.
+ * from the parsed files and the core's checkouts; the floor's history, and what the CLI says of a thread. A landed
+ * checkout's thread is filed by Tidy (`tower/tidy.apply`), and a discarded one's recovery note is left before anything
+ * goes (`tower/discard.record`) and the thread filed once the worktree is gone (`tower/discard.done`).
  */
 import type { Board, Card, Floor } from '../../src/bridge/board.ts'
-import { apiError, type RouteInput } from '../../src/shared/api.ts'
-import type { Part, Start } from '../../src/shared/extensions.ts'
-import { appended, bodyProblem, nextNumber, parseThread, REVIEWS, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
+import type { Tip } from '../../src/bridge/worktrees.ts'
+import { apiError, isApiError, type ApiError, type RouteInput } from '../../src/shared/api.ts'
+import type { CallCtx, Part, Start } from '../../src/shared/extensions.ts'
+import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
+import { discardNote, tidyEntries } from './filing.ts'
 import { cardPart, floorThreads, reviewHistory, type FloorPart, type ThreadFile } from './threads.ts'
 
 type AppendInput = RouteInput['review/append']
+
+type Appended = { t: 'appended'; id: string; n: number; modifiedAt: number }
 
 /** What `tower thread`, `tower note` and `tower send` say of a checkout's thread, read as `reader`. */
 type SaidQuery = { checkout: string; reader: string; sender?: string; hirer?: string }
@@ -61,13 +67,41 @@ const start: Start = (ctx) => {
     parse: { [REVIEWS]: (text: string): ReviewThread => parseThread(text) },
     folds: {
       card: (card: Card, { board, own }): Part => ({ x: cardPart(card, floorOf(board, card.project)!, filesOf(own.collections[REVIEWS] ?? [])) }),
-      floor: (floor: Floor, { own }): Part => ({ x: { threads: floorThreads(floor, filesOf(own.collections[REVIEWS] ?? [])) } satisfies FloorPart }),
+      floor: (floor: Floor, { own }): Part => {
+        const threads = floorThreads(floor, filesOf(own.collections[REVIEWS] ?? []))
+        return { x: { threads } satisfies FloorPart, tidy: tidyEntries(threads) }
+      },
     },
     verbs: {
       append: (input: AppendInput) => {
         const appending = queue.then(() => append(input))
         queue = appending.catch(() => undefined)
         return appending
+      },
+    },
+    answers: {
+      'tower/tidy.apply': async ({ project, keys }: { project: string; keys: string[] }) => {
+        const at = new Date()
+        const done: string[] = []
+        const skipped: string[] = []
+        for (const checkout of keys) {
+          try {
+            await ctx.collections.rename(project, REVIEWS, threadId(checkout), landedThreadId(checkout, at))
+            done.push(checkout)
+          } catch (err) {
+            skipped.push(`${checkout}: ${(err as Error).message}`)
+          }
+        }
+        return { done, skipped }
+      },
+      'tower/discard.record': async ({ project, name, author, tips }: { project: string; name: string; author: string; tips: Tip[] }, { call }: CallCtx) => {
+        const noted = (await call('reviews/append', { project, checkout: name, author, anchors: [], body: discardNote(name, tips) })) as Appended | ApiError
+        if (isApiError(noted)) return { ...noted, message: `the discard of "${name}" wasn't noted on its thread: ${noted.message}` }
+        return { note: `noted as n${noted.n} on ${noted.id}`, item: { collection: REVIEWS, id: noted.id } }
+      },
+      'tower/discard.done': async ({ project, name }: { project: string; name: string }) => {
+        const filed = await ctx.collections.rename(project, REVIEWS, threadId(name), landedThreadId(name, new Date()))
+        return { note: `filed as ${filed.id}`, item: { collection: REVIEWS, id: filed.id } }
       },
     },
     reads: {

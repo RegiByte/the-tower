@@ -953,7 +953,7 @@ export const registry = (
   )
   const stores = resolved.order.map((id) => {
     const { provides, chain, manifest } = resolved.accepted.get(id)!
-    return { provides, chain, collections: manifest.collections ?? {} }
+    return { provides, chain, collections: manifest.collections ?? {}, answers: states.get(id) === 'started' ? Object.keys(manifest.answers ?? {}) : [] }
   })
   const wrapping = wrappingOf(
     resolved.order.filter((id) => states.get(id) === 'started').map((id) => resolved.accepted.get(id)!),

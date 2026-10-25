@@ -210,7 +210,7 @@ test('a manifest within the rules is accepted with its stores, each schema read 
 })
 
 test("a floor's collections: the config's, then an extension's where it is on, by it, the config's words over its own; off, only the config's stay, open", () => {
-  const stores = [{ provides: 'pulse', chain: ['pulse'], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
+  const stores = [{ provides: 'pulse', chain: ['pulse'], answers: [], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
   const c = config({
     collections: { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } },
     projects: { app: { name: 'App', hub: '/app', repos: [] }, site: { name: 'Site', hub: '/site', repos: [], capabilities: { pulse: { off: true } } } },

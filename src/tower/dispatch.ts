@@ -17,8 +17,7 @@ import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, take
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
-import { discardNote } from '../bridge/worktrees.ts'
-import { createItem, deleteItem, itemPath, itemVersion, renameItem, restoreItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
 import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
@@ -47,7 +46,7 @@ import {
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { landedThreadId, reviewedIn, REVIEWS, threadId } from '../shared/reviews.ts'
+import { reviewedIn, REVIEWS, } from '../shared/reviews.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
@@ -86,7 +85,6 @@ type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; 
 export const dispatch = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:extensions'],
   start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:extensions': holder }: Deps) => {
-    const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
 
 
     /** The branches a verb kept, each with why, when it kept any. */
@@ -645,36 +643,36 @@ export const dispatch = defineResource({
       })
 
     /**
-     * A worktree whose work never landed, thrown away as the board showed it, in order: its tips read, `tower/discard.record`
-     * raised, its tips noted on its thread through `tower/review/append`, then each repo's worktree removed with force and
-     * its branch deleted, and the thread filed. A failed answer or a refused note stops it there, before anything is removed.
+     * A worktree whose work never landed, thrown away as the board showed it, in order: its tips read, the floor's recovery
+     * record made by the answers to `tower/discard.record`, then each repo's worktree removed with force and its branch
+     * deleted, then `tower/discard.done` raised. No answer to the record, or a failed one, stops it before anything is
+     * removed; a failed answer to the done is reported.
      */
     const discardWorktree = ({ project, name, author, held }: RouteInput['worktree/discard'], caller: Caller) =>
       onWorktrees(project, async (p) => {
-        if (!isDeclared(project, REVIEWS)) return apiError('refused', `"${project}" keeps no review threads, where a discard notes what it threw away`)
         const tips = await discardable(p, project, name, occupants(), held)
         const within = nestedIn(caller, 'tower/worktree/discard')
-        const shown = tips.map(({ dir, branch, tip }) => ({ dir, branch, tip }))
-        const answers = await chains.raise('tower/discard.record', { project, name, author, tips: shown }, within)
+        const answers = await chains.raise('tower/discard.record', { project, name, author, tips }, within)
+        if (!answers.length) return apiError('refused', `Nothing on "${project}" records what a discard throws away (tower/discard.record has no answer there), so "${name}" was kept`)
         const failed = answers.find((a) => !a.ok)
-        if (failed && !failed.ok) return apiError('refused', `${failed.cap} couldn't record the discard of "${name}", so nothing was noted or removed: ${failed.message}`)
-        const noted = await call('tower/review/append', { project, checkout: name, author, anchors: [], body: discardNote(name, tips) }, within)
-        if (noted.t === 'error') return { ...(noted as ApiError), message: `The discard of "${name}" wasn't noted on its thread, so nothing was removed: ${(noted as ApiError).message}` }
+        if (failed && !failed.ok) return apiError('refused', `${failed.cap} couldn't record the discard of "${name}", so nothing was removed: ${failed.message}`)
         const kept = await discard(name, tips)
-        const thread = landedThreadId(name, new Date())
-        renameItem(paths, project, REVIEWS, threadId(name), thread)
-        const x = Object.fromEntries(answers.flatMap((a) => (a.ok ? [[a.cap, a.answer]] : [])))
-        return { t: 'discarded', tips: shown, thread, ...keptOf(kept), ...(answers.length && { x }) }
+        type Recorded = NonNullable<Replies['worktree/discard']['x']>[string]
+        const x = Object.fromEntries(answers.flatMap((a) => (a.ok ? [[a.cap, a.answer as Recorded]] : [])))
+        const doneAnswers = await chains.raise('tower/discard.done', { project, name, author, tips, kept }, within)
+        const done = Object.fromEntries(doneAnswers.map((a) => [a.cap, a.ok ? (a.answer as Recorded) : { code: a.code, message: a.message }]))
+        const filed = done[REVIEWS]
+        const thread = filed && 'item' in filed ? filed.item?.id : undefined
+        return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), ...(thread && { thread }), ...keptOf(kept), x, ...(doneAnswers.length && { done }) }
       })
 
     const pruneKey = (p: Prune) => (p.t === 'reap' ? `reap ${p.id} ${p.pid}` : `kill ${p.id}`)
 
-    /** What of the listed plan the floor's Tidy no longer lists: the processes, workers and landed threads, as read now. `callsign`: a session id's. */
-    const movedOn = (plan: TidyPlan, now: TidyPlan, callsign: (id: string) => string): string[] => {
+    /** What of the listed plan the floor's Tidy no longer lists: the processes, workers, logs and stream months, as read now. `callsign`: a session id's. */
+    const movedOn = (plan: Omit<TidyPlan, 'threads'>, now: TidyPlan, callsign: (id: string) => string): string[] => {
       const prunes = new Set(now.prune.map(pruneKey))
       return [
         ...plan.prune.filter((p) => !prunes.has(pruneKey(p))).map((p) => (p.t === 'reap' ? `process ${p.pid}` : `worker ${callsign(p.id)}`)),
-        ...plan.threads.filter((t) => !now.threads.includes(t)).map((t) => `thread ${t}`),
         ...plan.logs.filter((l) => !now.logs.some((n) => n.id === l.id)).map((l) => `log ${l.id}`),
         ...plan.streams.filter((m) => !now.streams.some((n) => n.file === m.file)).map((m) => `stream ${m.file}`),
       ]
@@ -703,16 +701,16 @@ export const dispatch = defineResource({
 
     /**
      * Tidy as listed, or nothing when the list moved on: git's part checked after its fetch, then each entry applied, in
-     * order: worktrees removed and kept branches deleted, the landed threads filed, the leftover processes ended, the
-     * idle workers killed and the old logs and stream months archived; then each extension's entries in `plan.x`, applied
+     * order: worktrees removed and kept branches deleted, the leftover processes ended, the idle workers killed and the old logs and stream months archived; then each extension's entries in `plan.x`, applied
      * by its answer to `tower/tidy.apply`, a failed one reported in the reply's `x`. What another verb does is done
      * through it, for the caller, so what wraps that verb sees it. A worker is checked again just before its kill, since
      * the fetch takes seconds; an entry no longer listed, or whose verb refuses, is skipped and named, and the rest goes on.
      */
-    const tidyProject = (projectId: string, plan: RouteInput['tidy']['plan'], caller: Caller) =>
+    const tidyProject = (projectId: string, { threads, ...listed }: RouteInput['tidy']['plan'], caller: Caller) =>
       onWorktrees(projectId, async (project) => {
         const release = await system.observe()
         try {
+          const plan = threads.length ? { ...listed, x: { ...listed.x, [REVIEWS]: [...new Set([...(listed.x?.[REVIEWS] ?? []), ...threads])] } } : listed
           const callsign = callsignsOf(readConfig())
           const gone = [...movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign), ...addedMovedOn(plan.x ?? {}, projectId)]
           if (gone.length) return apiError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
@@ -733,14 +731,12 @@ export const dispatch = defineResource({
           }
           const removed = await applied(plan.worktrees, 'worktree/remove', (name) => ({ project: projectId, name }), (name) => `worktree ${name}`)
           const deleted = await applied(plan.branches, 'branch/delete', (name) => ({ project: projectId, name }), (name) => `branch ${name}`)
-          const now = new Date()
-          for (const checkout of plan.threads) renameItem(paths, projectId, REVIEWS, threadId(checkout), landedThreadId(checkout, now))
           const reaps = plan.prune.flatMap((p) => (p.t === 'reap' ? [p] : []))
           const reaped = await applied(reaps, 'reap/process', ({ id, pid }) => ({ id, pid }), ({ pid }) => `process ${pid}`)
           const killed: string[] = []
           for (const p of plan.prune) {
             if (p.t !== 'kill') continue
-            if (movedOn({ ...plan, threads: [], prune: [p], logs: [], streams: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
+            if (movedOn({ ...plan, prune: [p], logs: [], streams: [] }, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign).length) {
               skipped.push(`worker ${callsign(p.id)}: no longer done with its purpose`)
               continue
             }
@@ -761,7 +757,8 @@ export const dispatch = defineResource({
                 ? (answer.answer as { done: string[]; skipped: string[] })
                 : { code: answer.code, message: answer.cap === cap ? answer.message : `${answer.cap}'s link around tower/tidy.apply refused: ${answer.message}` }
           }
-          return { t: 'tidied', removed, deleted, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
+          const filed = x[REVIEWS]
+          return { t: 'tidied', removed, deleted, threads: filed && 'done' in filed ? filed.done : [], reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
         } finally {
           release()
         }

@@ -11,7 +11,7 @@ import { continuations, lineage } from '../bridge/chains.ts'
 import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
 import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
-import { createItem, deleteItem, itemsIn, putItem, readItem, writeItem } from '../collections.ts'
+import { createItem, deleteItem, itemPath, itemsIn, putItem, readItem, renameItem, writeItem } from '../collections.ts'
 import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
@@ -141,6 +141,13 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
         collectionOf(project, name)
         putItem(paths, project, name, id, content)
         return itemOf(project, name, id)
+      },
+      rename: async (project, name, id, to) => {
+        collectionOf(project, name)
+        itemOf(project, name, id)
+        if (existsSync(itemPath(paths, project, name, to))) throw new Error(`${project}/${name} holds an item "${to}" already`)
+        renameItem(paths, project, name, id, to)
+        return itemOf(project, name, to)
       },
       delete: async (project, name, id) => {
         collectionOf(project, name)

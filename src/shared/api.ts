@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.93'
+export const API_VERSION = '1.94'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -38,7 +38,16 @@ const worktreeName = z.string().regex(WORKTREE_NAME)
 const worktree = { project: id, name: worktreeName }
 const discardedTip = z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })
 const tidyApplied = z.object({ done: z.array(z.string()).describe('The keys applied.'), skipped: z.array(z.string()).describe('The keys left, each with why.') })
-const discardRecorded = z.object({ note: z.string().optional().describe('What the answerer recorded, in words.') })
+const recordedTip = discardedTip.extend({
+  base: z.string().optional().describe('The base the tower cut its branch from; none when the tower didn\'t cut it.'),
+  head: z.string().describe('Its HEAD as the board showed it.'),
+  dirty: z.int().nonnegative().describe('Its uncommitted files, committed on top of `head` as `tip`.'),
+  unpushed: z.array(z.string()).describe('Its commits on no remote, each `<short hash> <subject>`, newest first.'),
+})
+const discardRecorded = z.object({
+  note: z.string().optional().describe('What the answerer recorded, in words.'),
+  item: z.object({ collection: z.string(), id: z.string() }).optional().describe('The collection item the record is in, as it stands after the answer. @since 1.94'),
+})
 const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
 const actor = (what: string) =>
   id.optional().describe(`The worker that makes the request, by session id: ${what} Left out, the user makes it.`)
@@ -278,14 +287,18 @@ export const VERBS = {
           .describe("Each repo's worktree as the board showed it: its HEAD and its count of uncommitted files. Refused when any moved."),
       })
       .describe(
-        "Throw away a worktree whose work never landed (`at-risk`), in every repo: first a note on its checkout's review thread names each repo's branch and tip (uncommitted files committed on top, on no branch), recoverable with `git branch <name> <tip>` until git collects it; then each worktree is removed with force, its branch deleted, and the thread filed. Only on a floor keeping review threads.",
+        "Throw away a worktree whose work never landed (`at-risk`), in every repo: first the floor's recovery record (reviews, when on) names each repo's branch and tip (uncommitted files committed on top, on no branch), recoverable with `git branch <name> <tip>` until git collects it, by the answers to `tower/discard.record`; then each worktree is removed with force and its branch deleted, and `tower/discard.done` is raised (reviews files the thread). Refused on a floor where nothing answers `tower/discard.record`, since nothing would record what is thrown away.",
       ),
     reply: z.object({
       t: z.literal('discarded'),
       tips: z.array(discardedTip).describe('What each repo held, now on no branch.'),
-      thread: z.string().describe('The filed thread, its note naming the tips.'),
+      thread: z.string().optional().describe("The filed thread, its note naming the tips. @deprecated since 1.94: the reviews extension's `done.reviews.item`, copied here until 2.0."),
       kept: z.array(z.string()).optional().describe("Each branch kept instead of deleted, with why (`<branch> in <dir>: kept, …`)."),
       x: z.record(z.string(), discardRecorded).optional().describe("Each extension's answer to `tower/discard.record`, by capability."),
+      done: z
+        .record(z.string(), z.union([discardRecorded, z.object({ code: z.string(), message: z.string() }).describe('Why its answer failed: the discard is done regardless.')]))
+        .optional()
+        .describe("Each extension's answer to `tower/discard.done`, by capability, once the worktree is gone. @since 1.94"),
     }),
   },
   'branch/recut': {
@@ -306,7 +319,10 @@ export const VERBS = {
           .object({
             worktrees: z.array(z.string()),
             branches: z.array(z.string()),
-            threads: z.array(z.string()),
+            threads: z
+              .array(z.string())
+              .default([])
+              .describe("@deprecated since 1.94: the reviews extension's tidy entries, `x.reviews`, which these are added to until 2.0."),
             prune: z.array(
               z.discriminatedUnion('t', [
                 z.object({ t: z.literal('reap'), id, pid: z.int().positive() }),
@@ -326,13 +342,13 @@ export const VERBS = {
           .describe("The floor's `tidy` as the board listed it, and the extensions' tidy entries it lists in `board.adds`, or any part of them: refused when anything in it no longer qualifies."),
       })
       .describe(
-        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the stream months closed that long, the system's and the project's, the extensions' streams among them: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
+        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the stream months closed that long, the system's and the project's, the extensions' streams among them: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
       ),
     reply: z.object({
       t: z.literal('tidied'),
       removed: z.array(z.string()),
       deleted: z.array(z.string()),
-      threads: z.array(z.string()),
+      threads: z.array(z.string()).describe("@deprecated since 1.94: the keys the reviews extension's answer applied, `x.reviews.done`, copied here until 2.0."),
       reaped: z.array(z.int()),
       killed: z.array(z.string()),
       skipped: z.array(z.string()).describe('Branches kept instead of deleted, workers left alive (no longer idle when their turn came, or their kill failed) and stream months another floor\'s Tidy archived meanwhile, each with why.'),
@@ -484,7 +500,6 @@ export const ROUTES: Routes = { ...VERBS, ...TRANSPORT }
  */
 export const COMPOSITES: Record<string, string[]> = {
   'tower/tidy': ['tower/worktree/remove', 'tower/branch/delete', 'tower/reap/process', 'tower/kill'],
-  'tower/worktree/discard': ['tower/review/append'],
 }
 
 /** A point inside a core verb where extensions take part: what it is raised with, what each answer is, and what a failed answer does. */
@@ -500,10 +515,17 @@ export const HOOKS: Record<string, CoreHook> = {
     since: '1.85',
   },
   'discard.record': {
-    payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(discardedTip) }),
+    payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(recordedTip) }),
     answer: discardRecorded,
     failure: 'refuses',
-    description: "Raised by worktree/discard once each repo's tip is read, before anything is noted or removed: an answer that fails refuses the discard.",
+    description: "Raised by worktree/discard once each repo's tip is read, before anything is removed, for the floor's recovery record: an answer that fails refuses the discard, as does no answer at all.",
     since: '1.85',
+  },
+  'discard.done': {
+    payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(recordedTip), kept: z.array(z.string()).describe('Each branch kept instead of deleted, with why.') }),
+    answer: discardRecorded,
+    failure: 'reported',
+    description: "Raised by worktree/discard once its worktrees are removed and its branches deleted: a failed answer is reported in the reply's `done.<cap>`.",
+    since: '1.94',
   },
 }

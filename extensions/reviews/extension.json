@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.93"
+    "tower": "1.94"
   },
   "server": "server.ts",
   "client": "client",
@@ -166,7 +166,10 @@
             }
           }
         }
-      }
+      },
+      "adds": [
+        "tidy"
+      ]
     }
   },
   "verbs": {
@@ -377,5 +380,10 @@
         }
       }
     }
+  },
+  "answers": {
+    "tower/discard.done": {},
+    "tower/discard.record": {},
+    "tower/tidy.apply": {}
   }
 }

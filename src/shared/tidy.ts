@@ -15,20 +15,31 @@ const counted = (n: number, one: string, many: string) => (n ? [`${n} ${n === 1 
 /** The tidy entries extensions contribute to a floor, in fold order: Tidy lists them after the core's, and Tidy all applies them. @since 1.88 */
 export const addedTidyOf = (board: Board, f: Floor): AddedTidy[] => board.adds[`floor:${f.id}`]?.tidy ?? []
 
+const EXTENSION_ENTRY = { one: 'extension entry', many: 'extension entries' }
+
+/** The extensions' entries counted by what each is (`kind`), in the order each kind first comes. */
+const countedKinds = (added: AddedTidy[]) => {
+  const kinds = new Map<string, { kind: AddedTidy['kind'] & {}; n: number }>()
+  for (const { kind = EXTENSION_ENTRY } of added) {
+    const seen = kinds.get(kind.one)
+    kinds.set(kind.one, { kind, n: (seen?.n ?? 0) + 1 })
+  }
+  return [...kinds.values()].flatMap(({ kind, n }) => counted(n, kind.one, kind.many))
+}
+
 /**
- * A floor's Tidy in a line, before the press: `Tidy: 4 leftovers, 2 finished hires, 1 extension entry`. `added`: the
- * extensions' entries (`addedTidyOf`).
+ * A floor's Tidy in a line, before the press: `Tidy: 4 leftovers, 2 finished hires, 1 landed thread`. `added`: the
+ * extensions' entries (`addedTidyOf`), each counted by its `kind`.
  */
-export const tidyLine = ({ worktrees, branches, threads, prune, logs, streams }: TidyPlan, added: AddedTidy[] = []) => {
+export const tidyLine = ({ worktrees, branches, prune, logs, streams }: TidyPlan, added: AddedTidy[] = []) => {
   const parts = [
     ...counted(prune.filter((p) => p.t === 'reap').length, 'leftover', 'leftovers'),
     ...counted(prune.filter((p) => p.t === 'kill').length, 'finished hire', 'finished hires'),
     ...counted(worktrees.length, 'worktree', 'worktrees'),
     ...counted(branches.length, 'merged branch', 'merged branches'),
-    ...counted(threads.length, 'landed thread', 'landed threads'),
     ...counted(logs.length, 'old log', 'old logs'),
     ...counted(streams.length, 'closed stream month', 'closed stream months'),
-    ...counted(added.length, 'extension entry', 'extension entries'),
+    ...countedKinds(added),
   ]
   return parts.length ? `Tidy: ${parts.join(', ')}` : 'nothing to tidy'
 }
@@ -58,10 +69,9 @@ export const tidyRows = (f: Floor, now: number, added: AddedTidy[] = []): TidyRo
     }),
     ...f.tidy.worktrees.map((name) => ({ what: `⎇ ${name}`, does: 'remove worktree', title: 'nothing would be lost: clean, and its branch is pushed or absorbed', call: only({ worktrees: [name] }) })),
     ...f.tidy.branches.map((name) => ({ what: `⎇ ${name}`, does: 'delete merged branch', title: 'absorbed into its base', call: only({ branches: [name] }) })),
-    ...f.tidy.threads.map((checkout) => ({ what: `◇ ${checkout}`, does: 'file landed thread', title: `its work has landed: filed as ${checkout}@<time>.md`, call: only({ threads: [checkout] }) })),
     ...(f.tidy.logs.length ? [{ ...oldLogsRow(f.tidy.logs), call: only({ logs: f.tidy.logs }) }] : []),
     ...(f.tidy.streams.length ? [{ ...oldStreamsRow(f.tidy.streams), call: only({ streams: f.tidy.streams }) }] : []),
-    ...added.map(({ cap, key, label, hint }) => ({ what: label, does: `apply · ${cap}`, title: `${hint ?? label}: applied by ${cap}`, call: only({ x: { [cap]: [key] } }) })),
+    ...added.map(({ cap, key, label, hint, does }) => ({ what: label, does: does ?? `apply · ${cap}`, title: does ? (hint ?? label) : `${hint ?? label}: applied by ${cap}`, call: only({ x: { [cap]: [key] } }) })),
   ]
 }
 
@@ -93,7 +103,6 @@ export const tidiedLine = (r: Replies['tidy']) => {
     ...counted(r.killed.length, 'hire killed', 'hires killed'),
     ...r.removed,
     ...r.deleted,
-    ...r.threads.map((t) => `thread ${t}`),
     ...counted(r.archived.length, 'log archived', 'logs archived'),
     ...counted(r.streams.length, 'stream month archived', 'stream months archived'),
     ...Object.entries(r.x ?? {}).flatMap(([cap, a]) => ('done' in a ? a.done.map((key) => `${cap}'s ${key}`) : [])),

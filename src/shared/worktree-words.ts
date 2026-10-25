@@ -99,11 +99,17 @@ export const landingHtml = (l: LandingRead) =>
 
 /** What a discard asks before it runs: what it throws away, and that its tips are noted. */
 export const discardAsk = (w: FloorWorktree) =>
-  `Discard ${w.name}? Its work never landed:\n\n${worktreeRisk(w).join('\n')}\n\nIts worktrees are removed with force and its branches deleted. Each tip, uncommitted files included, is noted on its review thread first, recoverable with git branch until git collects it.`
+  `Discard ${w.name}? Its work never landed:\n\n${worktreeRisk(w).join('\n')}\n\nIts worktrees are removed with force and its branches deleted. Each tip, uncommitted files included, is recorded first (on its review thread, with reviews on), recoverable with git branch until git collects it.`
 
-/** What a discard did, in a line: `discarded tower/x at a4cf18c`. */
+/** Where a record of a discard is now: the item its done answer names (a filed thread), else its record's, else its extension. */
+const recordAt = (r: Replies['worktree/discard'], cap: string, recorded: { item?: { id: string } }) => {
+  const done = r.done?.[cap]
+  return (done && 'item' in done ? done.item?.id : undefined) ?? recorded.item?.id ?? `${cap}'s record`
+}
+
+/** What a discard did, in a line: `discarded tower/x at a4cf18c: tips noted on x@2026-10-07-1530.md`, each record where it is now. */
 export const discardedLine = (r: Replies['worktree/discard']) =>
-  `discarded ${r.tips.map((t) => `${t.branch ?? base(t.dir)} at ${t.tip.slice(0, 7)}`).join(', ')}: tips noted on ${r.thread}${keptLine(r)}`
+  `discarded ${r.tips.map((t) => `${t.branch ?? base(t.dir)} at ${t.tip.slice(0, 7)}`).join(', ')}: tips noted on ${Object.entries(r.x ?? {}).map(([cap, a]) => recordAt(r, cap, a)).join(', ')}${keptLine(r)}`
 
 /** The branches a worktree or branch verb kept, each with why, to follow its line: `; tower/x in /repo: kept, …`. */
 export const keptLine = (r: { t: string; kept?: string[] }) => (r.kept?.length ? `; ${r.kept.join('; ')}` : '')

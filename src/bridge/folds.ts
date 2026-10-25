@@ -53,7 +53,9 @@ const PartShape = z.strictObject({
   x: z.unknown().optional(),
   actions: z.array(ActionShape).optional(),
   badges: z.array(z.strictObject({ label: z.string().min(1), tone: z.enum(BADGE_TONES).optional(), hint: z.string().optional(), href: z.string().optional() })).optional(),
-  tidy: z.array(z.strictObject({ key: z.string().min(1), label: z.string().min(1), hint: z.string().optional() })).optional(),
+  tidy: z
+    .array(z.strictObject({ key: z.string().min(1), label: z.string().min(1), hint: z.string().optional(), does: z.string().min(1).optional(), kind: z.strictObject({ one: z.string().min(1), many: z.string().min(1) }).optional() }))
+    .optional(),
   lines: z.array(z.string()).optional(),
   asks: z
     .array(

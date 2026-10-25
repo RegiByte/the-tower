@@ -3587,7 +3587,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "deprecated": "since 1.94: the reviews extension's tidy entries, by key, copied here until 2.0."
         },
         "prune": {
           "type": "array",
@@ -3617,7 +3618,7 @@
         "streams"
       ],
       "additionalProperties": false,
-      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the review threads whose work has landed by checkout, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the floor's sessions', and the closed months (`oldStreams`) of the floor's own streams and of the system's, which every floor's Tidy lists."
+      "description": "A floor's Tidy, as listed: the removable worktrees and absorbed kept branches by name, the processes and workers to end (`prunable`), and the logs to archive (`oldLogs`): the floor's sessions', and the closed months (`oldStreams`) of the floor's own streams and of the system's, which every floor's Tidy lists. What extensions would tidy is in `board.adds['floor:<project>'].tidy`."
     },
     "Prune": {
       "anyOf": [
@@ -4801,6 +4802,25 @@
         },
         "hint": {
           "type": "string"
+        },
+        "does": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "object",
+          "properties": {
+            "one": {
+              "type": "string"
+            },
+            "many": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "one",
+            "many"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

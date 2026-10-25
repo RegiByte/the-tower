@@ -697,7 +697,7 @@ test('server: an extension reaches only the core and what it declares', async ()
 test("server: a verb runs through the chain around it, the dependent's link outside its owner's, each link's input parsed again by the verb's schema", async () => {
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   assert.deepEqual([read.chains['chime/ring'], read.chains['tower/collection/create']], [['pulse', 'chime'], ['pulse']])
-  assert.deepEqual(read.composites['tower/review/append'], ['tower/worktree/discard'])
+  assert.deepEqual(read.composites['tower/kill'], ['tower/tidy'])
   const rung = await post('chime/ring', { times: 1 })
   assert.deepEqual(JSON.parse(rung.body), { rang: 2, caller: { t: 'user', via: 'http', within: [] }, trail: ['pulse', 'chime'] })
   const passedOn = await post('chime/ring', { times: 3 })
@@ -725,12 +725,12 @@ test("server: a hook's answers come back to its provider in fold order, each on 
   assert.deepEqual(heard[0], { cap: 'pulse', ok: true, answer: { heard: `pulse kept ${item}` } })
   assert.deepEqual([heard.length, heard[1].cap, heard[1].ok, heard[1].code], [2, 'tally', false, 'internal'])
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
-  assert.deepEqual([read.answers['pulse/beat.kept'], read.answers['tower/discard.record']], [['pulse', 'tally'], ['tally']])
+  assert.deepEqual([read.answers['pulse/beat.kept'], read.answers['tower/discard.record']], [['pulse', 'tally'], ['reviews', 'tally']])
   const tally = read.extensions.find((e) => e.id === 'tally')!
   assert.deepEqual(tally.problems.map((p) => [p.lane, p.code, p.path]), [['hook', 'hook', 'answers.pulse/beat.kept']])
 })
 
-test("server: worktree/discard raises tower/discard.record before anything goes: a refusal keeps the worktree, an answer comes back in the reply's x", async () => {
+test("server: worktree/discard raises tower/discard.record before anything goes: a refusal keeps the worktree and its thread unfiled, an answer comes back in the reply's x", async () => {
   const discardIn = async (name: string) => {
     const tree = path.join(HUB, '.worktrees', name)
     git('worktree', 'add', '-q', '-b', `tower/${name}`, tree, 'main')
@@ -740,11 +740,13 @@ test("server: worktree/discard raises tower/discard.record before anything goes:
     return { tree, reply: await post('worktree/discard', { project: 'lab', name, author: 'NEMO-92', held: [{ dir: HUB, head, dirty: 1 }] }) }
   }
   const kept = await discardIn('keep-this')
-  assert.deepEqual(JSON.parse(kept.reply.body), { t: 'error', code: 'refused', message: 'tally couldn\'t record the discard of "keep-this", so nothing was noted or removed: keep-this is one tally keeps' })
+  assert.deepEqual(JSON.parse(kept.reply.body), { t: 'error', code: 'refused', message: 'tally couldn\'t record the discard of "keep-this", so nothing was removed: keep-this is one tally keeps' })
   assert.ok(existsSync(kept.tree))
+  const threads = readdirSync(path.join(ROOT, 'collections', 'lab', 'reviews'))
+  assert.ok(threads.includes('keep-this.md') && !threads.some((id) => id.startsWith('keep-this@')), "reviews' note stays on the live thread, unfiled")
   const gone = await discardIn('gone')
   assert.equal(gone.reply.status, 200, gone.reply.body)
-  assert.deepEqual(JSON.parse(gone.reply.body).x, { tally: { note: 'tally counted 1 tip' } })
+  assert.deepEqual(JSON.parse(gone.reply.body).x.tally, { note: 'tally counted 1 tip' })
   assert.ok(!existsSync(gone.tree))
 })
 
@@ -784,11 +786,11 @@ test("reviews: a discard notes each repo's branch and tip on the checkout's thre
   const { tree, held } = cutWithWork(HUB, 'lost')
   const discarded = await command('worktree/discard', { project: 'lab', name: 'lost', author: 'NEMO-92', held })
   assert.ok(!existsSync(tree))
-  assert.match(discarded.thread, /^lost@\d{4}-\d\d-\d\d-\d{4}\.md$/)
+  assert.match(discarded.thread!, /^lost@\d{4}-\d\d-\d\d-\d{4}\.md$/)
   assert.ok(!existsSync(path.join(threadsIn('lab'), 'lost.md')))
   const [{ tip }] = discarded.tips
   const unpushed = gitIn(HUB, 'log', '--format=%h %s', held[0].head, '--not', '--remotes').trim().split('\n')
-  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), discarded.thread), 'utf8'))
+  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), discarded.thread!), 'utf8'))
   assert.deepEqual(
     thread.messages.map(({ author, n, body }) => ({ author, n, body: body.trim() })),
     [
@@ -806,6 +808,22 @@ test("reviews: a discard notes each repo's branch and tip on the checkout's thre
   )
 })
 
+test("reviews: a landed thread is the reviews extension's tidy entry, in Tidy's words, and its key under plan.x files it", async () => {
+  writeFileSync(path.join(threadsIn('lab'), 'shipped.md'), threadText('shipped'))
+  const board = await boardWhere((b) => (b.adds['floor:lab']?.tidy ?? []).some((e) => e.key === 'shipped'))
+  assert.deepEqual(board.adds['floor:lab'].tidy!.find((e) => e.key === 'shipped'), {
+    key: 'shipped',
+    label: '◇ shipped',
+    does: 'file landed thread',
+    hint: 'its work has landed: filed as shipped@<time>.md',
+    kind: { one: 'landed thread', many: 'landed threads' },
+    cap: 'reviews',
+  })
+  const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, x: { reviews: ['shipped'] } } })
+  assert.deepEqual([tidied.x, tidied.threads], [{ reviews: { done: ['shipped'], skipped: [] } }, ['shipped']])
+  assert.equal(readdirSync(threadsIn('lab')).filter((id) => id.startsWith('shipped@')).length, 1)
+})
+
 test('reviews: on a floor keeping no threads, Tidy lists and files no thread, and a discard, which nothing there records, is refused and touches nothing', async () => {
   mkdirSync(threadsIn('bare'), { recursive: true })
   writeFileSync(path.join(threadsIn('bare'), 'landed.md'), threadText('landed'))
@@ -813,6 +831,8 @@ test('reviews: on a floor keeping no threads, Tidy lists and files no thread, an
   assert.deepEqual(floorOf(board, 'bare').tidy.threads, [])
   assert.equal(errorCode(await post('tidy', { project: 'bare', plan: { ...NO_TIDY, threads: ['landed'] } })), 'refused')
   const { tree, held } = cutWithWork(BARE, 'thrown')
+  const atRisk = await boardWhere((b) => floorOf(b, 'bare').worktrees.some((w) => w.name === 'thrown' && w.state === 'at-risk'))
+  assert.deepEqual(floorOf(atRisk, 'bare').worktrees.find((w) => w.name === 'thrown')!.verbs, [], 'nothing records a discard there, so none is offered')
   assert.equal(errorCode(await post('worktree/discard', { project: 'bare', name: 'thrown', author: 'NEMO-92', held })), 'refused')
   assert.ok(existsSync(tree))
   assert.deepEqual(readdirSync(threadsIn('bare')), ['landed.md'])

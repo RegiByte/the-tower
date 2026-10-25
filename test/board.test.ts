@@ -481,11 +481,11 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.deepEqual([threadsOn(dirtyTower)[0].landed, threadsOn(unmergedLab)[0].landed], [false, false])
   assert.deepEqual([tower.threads, tower.main], [[], { dirty: 0, ahead: 0, inUse: false }], "the core keeps no threads: the floor says where its main checkouts stand")
   const items = (project: string, id: string) => ({ project, collection: 'reviews', id, size: 1, modifiedAt: 1 })
-  const reviews = { provides: 'reviews', chain: ['reviews'], collections: { reviews: { label: 'Reviews', description: 'd', owned: true, doors: { list: 'reviews/history/<project>', read: 'tower/collection/<project>/<collection>/<item>', create: 'reviews/append', edit: { none: 'x' }, delete: { none: 'x' } } } } }
+  const reviews = { provides: 'reviews', chain: ['reviews'], answers: [], collections: { reviews: { label: 'Reviews', description: 'd', owned: true, doors: { list: 'reviews/history/<project>', read: 'tower/collection/<project>/<collection>/<item>', create: 'reviews/append', edit: { none: 'x' }, delete: { none: 'x' } } } } }
   const tidying = (config: Config, stores: SystemView['stores']) =>
     board(viewOf(config, { host: hostWith(), repos: repos(0, true), stores, items: [items('lab', 'odin-42.md'), items('lab', 'odin-42@2026-10-01-1200.md')] })).floors[1].tidy.threads
   const declared = { ...CONFIG, collections: { reviews: { label: 'Reviews' } } }
-  assert.deepEqual([tidying(CONFIG, [reviews]), tidying(declared, []), tidying({ ...declared, projects: { ...CONFIG.projects, lab: { ...CONFIG.projects.lab, capabilities: { reviews: { off: true } } } } }, [reviews])], [['odin-42'], [], []], 'Tidy files a live thread whose work landed where reviews runs, and nowhere a config line alone declares the collection')
+  assert.deepEqual([tidying(CONFIG, [reviews]), tidying(declared, []), tidying({ ...declared, projects: { ...CONFIG.projects, lab: { ...CONFIG.projects.lab, capabilities: { reviews: { off: true } } } } }, [reviews])], [[], [], []], "the core's Tidy lists no thread: the reviews extension's floor fold lists each landed one as its tidy entry")
 })
 
 test('a card says where its checkout’s work stands, and its thread’s, offering a note on it only while that work goes on', () => {
@@ -524,7 +524,7 @@ test('a card says where its checkout’s work stands, and its thread’s, offeri
   const withFiled = cardOf(inTree, reads([]), [filed('2000-01-01-0000'), later])
   assert.deepEqual([withFiled.checkoutState, withFiled.part.threadState, withFiled.part.filed], [{ is: 'gone' }, landedLater, landedLater.filed], 'the core says gone; the thread Tidy filed after it began says landed')
   assert.deepEqual(cardOf(inTree, reads([]), [filed('2000-01-01-0000')]).part.threadState, { is: 'gone' })
-  assert.deepEqual(projectLegacy({ floors: [{ ...board(viewOf(CONFIG, { sessions: [{ header: inTree.header, facts: factsOf(inTree) }], host: hostWith(), repos: reads([]) })).floors[0], cards: [{ ...withFiled, x: { reviews: withFiled.part } }] }] } as unknown as Board).floors[0].cards[0].checkoutState, landedLater, 'LEGACY copies the filed thread onto card.checkoutState')
+  assert.deepEqual(projectLegacy({ adds: {}, floors: [{ ...board(viewOf(CONFIG, { sessions: [{ header: inTree.header, facts: factsOf(inTree) }], host: hostWith(), repos: reads([]) })).floors[0], cards: [{ ...withFiled, x: { reviews: withFiled.part } }] }] } as unknown as Board).floors[0].cards[0].checkoutState, landedLater, 'LEGACY copies the filed thread onto card.checkoutState')
 })
 
 test('a watching worker is quiet and waits on nobody; the turn that ends done waits on you', () => {
