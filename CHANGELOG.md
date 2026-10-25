@@ -12,6 +12,35 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.60.0
+
+The extension mechanism is complete: an extension can now do everything the spec gives it, short of drawing its own
+views. No extension ships yet (the built-ins move one at a time next). No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), no config change, the renderer API 1.81 → 1.87 (additive).
+
+- **Verbs and reads.** An extension declares verbs and reads, the tower dispatches them by qualified name
+  (`POST /<cap>/<verb>`), and `tower x <cap> <verb>` reaches them from the CLI. Every call carries its caller (the
+  CLI sends the worker's session) and the chain of verbs it is a step of, so a guard sees who started it. A policy's
+  run spawns through the same dispatch as everything else.
+- **Stores.** An extension may own a collection, declaring the five doors others use to list, read, create, edit
+  and delete it; the generic writes and `tower keep` are refused there, naming the right verb. Its streams are folded
+  as they grow, and it logs facts on sessions.
+- **Folds and contributions.** An extension adds its part to cards, floors, items and the board, actions and badges to
+  any subject (`board.adds`), and asks for the user beside the waits (`board.asks`). Commands run in the browser from
+  its own files, served at `/x/<cap>/`. The page, the ⌘K palette and Tower 3D draw them through `/cards.js`.
+- **Middleware and hooks.** An extension wraps verbs and hooks (`around`), raises hooks of its own and answers the
+  core's: discard asks before removing, Tidy hands each extension its own entries. Tidy and discard act through the
+  core's verbs, so a guard sees every step.
+- **Slots, triggers and checks.** The policies' loop is the core's slot loop, `every` beside crons: policies behave as
+  before. Extensions fire on time and on board changes, declare checks `tower doctor` runs, and run processes with the
+  environment scrubbed. `tower extensions restart <id>` loads an extension's whole folder fresh; `tower extensions
+  check <dir>` and `freeze <dir>` (`contract.json`) are the author's loop.
+- **Launch.** An extension adds fields to the new-worker form, logged as facts before the worker starts, and
+  contributes instructions, a first prompt's tail, env, default model and effort, flags and a plugin to the workers it
+  launches; two contributors on one flag or env key, or one on a key the config sets, refuse the launch, naming both.
+  Contributed env is logged with the session's argv: it is no place for secrets. Crews and the hiring limits read the
+  new `tower.reports-to` and `tower.exempt` facts, and an exemption is drawn on the card it lifted a limit for.
+
 ## v1.59.0
 
 The tower finds, resolves, starts and shows extensions: the first of the extension mechanism's lanes, with no
