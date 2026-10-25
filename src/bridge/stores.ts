@@ -13,8 +13,11 @@ export type ExtensionStores = { provides: string; chain: string[]; collections: 
 export const offOn = (config: Config, project: string, chain: string[]): boolean =>
   chain.some((cap) => config.projects[project]?.capabilities?.[cap]?.off === true)
 
-/** A collection on a floor: `owner`, the capability that alone writes it; `doors`, how others reach it, as declared. */
-export type FloorCollectionType = CollectionType & { owner?: string; doors?: Doors }
+/**
+ * A collection on a floor: `by`, the capability of the extension that declares it; `owner`, the capability that alone
+ * writes it; `doors`, how others reach it, as declared.
+ */
+export type FloorCollectionType = CollectionType & { by?: string; owner?: string; doors?: Doors }
 
 /**
  * A floor's collections: the config's, then each of the extensions on that floor. A collection both declare takes the
@@ -28,7 +31,13 @@ export const floorCollections = (config: Config, project: string, extensions: Ex
     .flatMap((x) =>
       Object.entries(x.collections).map(([id, c]): [string, FloorCollectionType] => [
         id,
-        { label: declared[id]?.label ?? c.label, description: declared[id]?.description ?? c.description, ...(c.owned && { owner: x.provides }), ...(c.doors && { doors: c.doors }) },
+        {
+          label: declared[id]?.label ?? c.label,
+          description: declared[id]?.description ?? c.description,
+          by: x.provides,
+          ...(c.owned && { owner: x.provides }),
+          ...(c.doors && { doors: c.doors }),
+        },
       ]),
     )
   return { ...declared, ...Object.fromEntries(added) }

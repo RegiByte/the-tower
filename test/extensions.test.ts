@@ -209,7 +209,7 @@ test('a manifest within the rules is accepted with its stores, each schema read 
   assert.deepEqual(registry(r, new Map([['pulse', { at: NOW }]]), NOW).stores.map((s) => [s.provides, Object.keys(s.collections)]), [['pulse', ['pulse', 'pulse.notes']]])
 })
 
-test("a floor's collections: the config's, then an extension's where it is on, the config's words over its own; off, only the config's stay, open", () => {
+test("a floor's collections: the config's, then an extension's where it is on, by it, the config's words over its own; off, only the config's stay, open", () => {
   const stores = [{ provides: 'pulse', chain: ['pulse'], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
   const c = config({
     collections: { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } },
@@ -217,8 +217,8 @@ test("a floor's collections: the config's, then an extension's where it is on, t
   })
   const app = floorCollections(c, 'app', stores)
   assert.deepEqual(Object.keys(app), ['drafts', 'pulse', 'pulse.notes'])
-  assert.deepEqual(app.pulse, { label: 'Our beats', description: 'Its beats', owner: 'pulse', doors: DOORS })
-  assert.deepEqual(app['pulse.notes'], { label: 'Notes', description: 'Its notes' })
+  assert.deepEqual(app.pulse, { label: 'Our beats', description: 'Its beats', by: 'pulse', owner: 'pulse', doors: DOORS })
+  assert.deepEqual(app['pulse.notes'], { label: 'Notes', description: 'Its notes', by: 'pulse' })
   assert.deepEqual(floorCollections(c, 'site', stores), { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } })
   assert.equal(ownedRefusal('pulse', app.pulse), 'pulse owns pulse: use pulse/keep')
   assert.equal(ownedRefusal('pulse', { ...app.pulse, doors: { ...DOORS, create: { none: 'beats come from its clock' } } }), 'pulse owns pulse: only pulse writes it (beats come from its clock)')

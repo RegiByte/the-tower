@@ -2098,6 +2098,9 @@
         "description": {
           "type": "string"
         },
+        "by": {
+          "type": "string"
+        },
         "owner": {
           "type": "string"
         },
@@ -2121,7 +2124,7 @@
         "items"
       ],
       "additionalProperties": false,
-      "description": "A floor's collection. `owner`: the capability that alone writes it, an extension's (decision `extensions`): the generic writes are refused there. `doors`: how others list, read, create, edit and delete its items, as its extension declares them, each a verb or read, or why the domain has none."
+      "description": "A floor's collection. `by`: the capability of the extension that declares it, on a floor where that extension is on; none when only the config declares it there (decision `extensions`). `owner`: the capability that alone writes it, an extension's: the generic writes are refused there. `doors`: how others list, read, create, edit and delete its items, as its extension declares them, each a verb or read, or why the domain has none."
     },
     "Doors": {
       "type": "object",

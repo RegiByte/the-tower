@@ -244,11 +244,22 @@ export type FloorItem = Pick<CollectionItem, 'id' | 'size' | 'modifiedAt'> & {
  * are on disk, an item's file being `<dir>/<id>`. `description`: what it is for, as the config says.
  */
 /**
- * A floor's collection. `owner`: the capability that alone writes it, an extension's (decision `extensions`): the
- * generic writes are refused there. `doors`: how others list, read, create, edit and delete its items, as its extension
- * declares them, each a verb or read, or why the domain has none.
+ * A floor's collection. `by`: the capability of the extension that declares it, on a floor where that extension is on;
+ * none when only the config declares it there (decision `extensions`). `owner`: the capability that alone writes it,
+ * an extension's: the generic writes are refused there. `doors`: how others list, read, create, edit and delete its
+ * items, as its extension declares them, each a verb or read, or why the domain has none.
  */
-export type FloorCollection = { id: string; label: string; description?: string; owner?: string; doors?: Doors; dir: string; items: FloorItem[] }
+export type FloorCollection = {
+  id: string
+  label: string
+  description?: string
+  /** @since 1.89 */
+  by?: string
+  owner?: string
+  doors?: Doors
+  dir: string
+  items: FloorItem[]
+}
 
 /**
  * A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and
@@ -580,10 +591,11 @@ const hirersOf = (sessions: Session[], nameOf: (s: Session) => string): Map<stri
   new Map(sessions.flatMap((session) => session.facts.hired.map((id) => [id, { session: session.header.id, callsign: nameOf(session), project: session.header.project }] as const)))
 
 const collectionsOf = (collections: Record<string, FloorCollectionType>, projectId: string, root: string, items: CollectionItem[], keptBy: Map<string, KeptBy>): FloorCollection[] =>
-  Object.entries(collections).map(([id, { label, description, owner, doors }]) => ({
+  Object.entries(collections).map(([id, { label, description, by, owner, doors }]) => ({
     id,
     label,
     description,
+    ...(by && { by }),
     ...(owner && { owner }),
     ...(doors && { doors }),
     dir: `${root}/${projectId}/${id}`,
