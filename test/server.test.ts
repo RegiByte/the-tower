@@ -156,6 +156,7 @@ function seedDesk() {
   ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/tower:review ${AUTHOR}`])
   ended(DESK_SESSIONS.lark, path.join(DESK, '.worktrees', 'lark-3'), DESK_STARTED + 2 * MIN, ['bash'])
   const past = { id: DESK_SESSIONS.past, project: 'desk', cwd: path.join(DESK, '.worktrees', 'odin-1'), argv: ['bash'], startedAt: DESK_STARTED - 3 * 24 * 60 * MIN, cols: 80, rows: 24 }
+  writeStream('desk', 'runs', [[past.startedAt - 1_000, 'r', { policy: 'sweep.md', hash: sha('# Sweep, as it was'), id: past.id, start: 'hand', slot: null }]])
   writeFileSync(path.join(ROOT, 'sessions', `${past.id}.jsonl`), [past, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }], [0.4, 'h', { hook_event_name: 'tower.letGo' }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
   const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
   mkdirSync(threads, { recursive: true })
@@ -960,6 +961,8 @@ test("server: an archived card carries the extensions' parts and the old fields 
   const note = ['reviews/append', { project: 'desk', checkout: 'odin-1' }]
   assert.deepEqual(archived.x?.reviews, { thread: 'odin-1', threadState: { is: 'live' }, unseen: 4, note })
   assert.deepEqual([archived.threadState, archived.unseen, archived.calls.note], [{ is: 'live' }, 4, ['review/append', { project: 'desk', checkout: 'odin-1' }]])
+  const run = { policy: 'sweep.md', tag: tagOf('sweep.md'), n: 1, start: 'hand', slot: null }
+  assert.deepEqual([archived.x?.policies, archived.run], [{ run }, run], "a policy's run keeps its part and its old field too")
 })
 
 test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
