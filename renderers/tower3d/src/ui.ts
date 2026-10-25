@@ -280,13 +280,23 @@ const closeButton = `<button class="icon-btn x" data-act="close" aria-label="clo
 const cardBadgesHtml = (board: Board, c: Card) =>
   badgesOf(board, cardSubject(c)).map((b) => `<span class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}>${esc(b.label)}</span>`).join('')
 
-/** The verbs extensions offer on a card, each a button: a client command needs a renderer that imports modules. */
-const cardAddedHtml = (board: Board, c: Card) =>
+/** The key a destructive extension verb on a card is armed under: its card and its place among the card's added actions. */
+export const addedKey = (c: Card, n: number) => `added ${c.id} ${n}`
+
+/**
+ * The verbs extensions offer on a card, each a button, one whose words say it destroys asking first: a client command
+ * needs a renderer that imports modules.
+ */
+const cardAddedHtml = (board: Board, c: Card, armed: (key: string) => boolean) =>
   addedActions(board, cardSubject(c))
-    .filter((a) => !isCommand(a))
-    .map((a) => {
+    .map((a, n) => ({ a, n }))
+    .filter(({ a }) => !isCommand(a))
+    .map(({ a, n }) => {
       const words = actionWords(board, a)
-      return `<button data-act="added" data-added="${esc(JSON.stringify(a))}"${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}>${esc(words.label)}</button>`
+      const attrs = `data-act="added" data-added="${esc(JSON.stringify({ n, action: a }))}"${words.destructive ? ' class="danger"' : ''}`
+      return words.destructive
+        ? askingButton(armed(addedKey(c, n)), attrs, words.label, words.hint ?? words.label, `${words.label}?`)
+        : `<button ${attrs}${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}>${esc(words.label)}</button>`
     })
     .join('')
 
@@ -303,7 +313,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
     can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', `${ICON.resume} Resume`) : `<button class="primary" data-act="resume">${ICON.resume} Resume</button>`),
     can(c, 'let-go') && (held('let-go') ? heldButton(held('let-go')!, '', 'Let go', 'Let go') : askingButton(armed(`let-go ${c.id}`), `data-act="let-go" data-of="${esc(c.id)}"`, 'Let go', `let ${c.callsign} go: ${LET_GO_MEANS}`, letGoAsk(c))),
     can(c, 'reap') && askingButton(armed(`reap ${c.id}`), `data-act="reap" data-of="${esc(c.id)}"`, `reap ${c.resources.length}`, c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'), reapAsk(c)),
-    cardAddedHtml(board, c),
+    cardAddedHtml(board, c, armed),
     framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
     can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c))),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
