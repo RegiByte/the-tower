@@ -35,7 +35,7 @@ const TRIGGERS = '1.86'
 const LAUNCH = '1.87'
 
 /** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
-const KINDS = '1.88'
+const KINDS = '1.89'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
@@ -437,13 +437,13 @@ export type StartCtx = {
   }
   /**
    * Runs a command to its end from `cwd`: its env the tower's with the parent session scrubbed, `env` set over it (since
-   * 1.88), its process group killed by pid at `timeoutMs` (60 s when left out) and at halt. Rejects when it can't start.
+   * 1.89), its process group killed by pid at `timeoutMs` (60 s when left out) and at halt. Rejects when it can't start.
    * @since 1.86
    */
   run(argv: string[], opts: { cwd: string; timeoutMs?: number; stdin?: string; env?: Record<string, string> }): Promise<RunResult>
   /**
    * How the config starts a session of `runtime`, as it says now: the command before the arguments the tower adds, and
-   * the env set over the scrubbed one. What runs the runtime outside a session (`ctx.run`) runs it the same way. @since 1.88
+   * the env set over the scrubbed one. What runs the runtime outside a session (`ctx.run`) runs it the same way. @since 1.89
    */
   runtime(runtime: Runtime): { argv: string[]; env: Record<string, string> }
   /** Its own stores as the tower folds them, read-only: what folds get as `own`. @since 1.83 */

@@ -160,7 +160,7 @@ test('a read the quota extension writes folds as one the core wrote: u and f bes
   assert.deepEqual(readOf([NOW, 'f', { ms: 1, error: 'x' }]), readOf([NOW, 'p', { reads: 'claude.usage', ms: 1, ok: false, error: 'x' }]))
 })
 
-test("LEGACY copies the quota part back to board.probes as 1.87 had it, and GET /probe/quota answers its old shape", () => {
+test("LEGACY copies the quota part back to board.probes as 1.88 had it, and GET /probe/quota answers its old shape", () => {
   const facts = stream('probe-quota.jsonl')
   const x = statusOf(EVERY, foldReads(facts), NO_LIMITS)
   const [probe] = LEGACY_FIELDS['board.probes']({ x: { quota: x } }, {} as Board) as Board['probes']

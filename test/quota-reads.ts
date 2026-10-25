@@ -1,7 +1,7 @@
 import { LEGACY_READINGS, type ProbeRead } from '../src/bridge/legacy.ts'
 import { limitFacts, type LimitFacts } from '../src/bridge/rate-limits.ts'
 
-/** A read of the quota probe's stream as the core's probe wrote it before 1.88, at its moment. */
+/** A read of the quota probe's stream as the core's probe wrote it before 1.89, at its moment. */
 export type ProbeReading = [at: number, read: ProbeRead]
 
 /** Reads of the old format folded as the core folds the quota stream's folder, `probe.quota`. */

@@ -28,7 +28,7 @@ export type Answered = RateLimitsReading & { ms: number; answer: unknown; unavai
 /** A read with no answer, `f`. */
 export type Failed = { ms: number; error: string }
 
-/** A read as the core's probe wrote it before tower 1.88, `p`: kept, never written again. */
+/** A read as the core's probe wrote it before tower 1.89, `p`: kept, never written again. */
 export type Probed = { reads: 'claude.usage'; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
 
 /** A read in one shape, whichever code holds it: what `quota/reads` answers. */

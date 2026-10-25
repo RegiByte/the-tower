@@ -345,13 +345,13 @@ export type Board = {
   rateLimitsFrom?: LimitsFrom
   /**
    * The newest reading a session's turn took, beside the account's: what a probe of the limits waits on while turns
-   * read them. @since 1.88
+   * read them. @since 1.89
    */
   turnLimits?: { at: number; limits: RateLimit[] }
   /**
-   * The quota probe, the quota extension's part (`x.quota`) as it stood at 1.87, with `run`, a read now
+   * The quota probe, the quota extension's part (`x.quota`) as it stood at 1.88, with `run`, a read now
    * (`probe/run`): none while the extension doesn't run.
-   * @deprecated since 1.88: read `x.quota`, and call `quota/read-now`.
+   * @deprecated since 1.89: read `x.quota`, and call `quota/read-now`.
    */
   probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
   /** The account's extra usage, as the probes' newest answer that had it said. */

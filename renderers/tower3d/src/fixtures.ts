@@ -16,7 +16,7 @@ import { tower, type Board, type Brief, type Card, type Floor, type Status } fro
 import { GAMES } from './games.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
 import { wallNow } from './clock.ts'
-import type { QuotaStatus } from '../../../extensions/quota/status.ts'
+import type { ProbeStatus } from '../../../src/bridge/legacy.ts'
 
 /**
  * Fabricated boards for `?board=<name>`: the states a renderer draws, with no host behind them and none of the real
@@ -192,7 +192,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
 const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
-function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'extraUsage' | 'shells' | 'today'> & { quota: QuotaStatus }> = {}): Board {
+function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'extraUsage' | 'shells' | 'today'> & { quota: Omit<ProbeStatus, 'name' | 'reads'> }> = {}): Board {
   const threaded = floors.map((f) => withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers))))
   const reporting = withReports(threaded.flatMap((t) => t.cards))
   const built = floors.map((f, i) => {

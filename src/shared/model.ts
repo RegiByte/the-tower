@@ -160,7 +160,7 @@ export type RetentionConfig = { days?: number }
 
 /**
  * The quota probe's old spelling, `probes.quota`: `off` is read as `extensions.quota.off`, and `every` as
- * `extensions.quota.settings.every`. @deprecated since 1.88, honoured until 2.0.
+ * `extensions.quota.settings.every`. @deprecated since 1.89, honoured until 2.0.
  */
 export type ProbeConfig = { every?: string; off?: boolean }
 
@@ -270,7 +270,7 @@ export type Config = {
   hiring?: HiringConfig
   brief?: BriefConfig
   retention?: RetentionConfig
-  /** The quota probe's old spelling, `quota` its only name: see `ProbeConfig`. @deprecated since 1.88 */
+  /** The quota probe's old spelling, `quota` its only name: see `ProbeConfig`. @deprecated since 1.89 */
   probes?: Record<string, ProbeConfig>
   user?: UserConfig
   editor?: EditorConfig

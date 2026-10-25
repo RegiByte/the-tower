@@ -3,7 +3,6 @@ import type { Attention } from '../bridge/life.ts'
 import type { Replies } from './api.ts'
 import { clockAt, plural, span } from './format.ts'
 import type { ProbeStatus as LegacyProbe } from '../bridge/legacy.ts'
-import type { QuotaStatus } from '../../extensions/quota/status.ts'
 
 /** The account's rate limits, the budget's pace and the probes that read them, in words. */
 
@@ -50,7 +49,7 @@ type ProbeStatus = Omit<LegacyProbe, 'reads'>
 
 /** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. */
 export const quotaOf = (b: Pick<Board, 'x'>): ProbeStatus | undefined => {
-  const quota = b.x?.quota as QuotaStatus | undefined
+  const quota = b.x?.quota as Omit<ProbeStatus, 'name'> | undefined
   return quota && { name: 'quota', ...quota }
 }
 

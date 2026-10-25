@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Quota probe",
   "description": "Reads the account's rate limits from Claude while no session's turn does.",
-  "requires": { "tower": "1.88" },
+  "requires": { "tower": "1.89" },
   "server": "server.ts",
   "settings": {
     "type": "object",
@@ -42,7 +42,7 @@
           "schema": { "type": "object", "required": ["ms", "error"], "properties": { "ms": { "type": "integer", "minimum": 0 }, "error": { "type": "string" } } }
         },
         "p": {
-          "description": "A read as the core's quota probe wrote it before tower 1.88, answered or not: kept, and never written again.",
+          "description": "A read as the core's quota probe wrote it before tower 1.89, answered or not: kept, and never written again.",
           "schema": { "type": "object", "required": ["reads", "ms", "ok"], "properties": { "reads": { "const": "claude.usage" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } }
         }
       },
