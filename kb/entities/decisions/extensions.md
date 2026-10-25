@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
-  "reviewed": "2026-10-25",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts", "hub/src/shared/launch.ts#CORE_FLAGS", "hub/src/shared/launch.ts#spawnRequest", "hub/src/bridge/launch.ts#mergeParts", "hub/src/bridge/launch.ts#placeable", "hub/src/bridge/launch.ts#forkFacts", "hub/src/bridge/extensions.ts#compileFields", "hub/src/tower/dispatch.ts#contribute", "hub/src/tower/dispatch.ts#spawnFields", "hub/src/shared/spawn-form.ts#formFields", "hub/test/launch.test.ts", "hub/test/fixtures/extensions/roles/extension.json"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/src/tower/http.ts#legacyModule", "hub/src/extensions.ts#clientSource", "hub/src/extensions.ts#foundIn", "hub/extensions/drafts/extension.json", "hub/examples/extensions/narrate/extension.json", "hub/test/extension-folders.test.ts", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts", "hub/src/shared/launch.ts#CORE_FLAGS", "hub/src/shared/launch.ts#spawnRequest", "hub/src/bridge/launch.ts#mergeParts", "hub/src/bridge/launch.ts#placeable", "hub/src/bridge/launch.ts#forkFacts", "hub/src/bridge/extensions.ts#compileFields", "hub/src/tower/dispatch.ts#contribute", "hub/src/tower/dispatch.ts#spawnFields", "hub/src/shared/spawn-form.ts#formFields", "hub/test/launch.test.ts", "hub/test/fixtures/extensions/roles/extension.json"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -35,7 +35,10 @@ and versioned without running anything, and a runtime where an extension's failu
   single dashes, never the core's ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)), and a bundled
   capability's id is the bundled extension's ([`BUNDLED`](ref:hub/src/shared/extensions.ts#BUNDLED)): a user replaces
   one by providing it on purpose. [`LEGACY`](ref:hub/src/shared/extensions.ts#LEGACY), the built-ins' old names as
-  they move into extensions, is empty until the first moves.
+  they move into extensions, is a fixed list of tagged entries (`module`, `verb`, `read`, `stream`, `board`, each
+  `old`, `now` and `since`), read by kind with `legacyOf`. A `module` entry's old URL serves what it is now, with
+  `Deprecation` and a `Link` to it ([`legacyModule`](ref:hub/src/tower/http.ts#legacyModule)): `/drafts.js` is
+  `/x/drafts/drafts.js`. All but the stream folders go at 2.0.
 - **One version for renderers and extensions.** The core is the capability `tower` at `API_VERSION`, and
   `requires.tower` is mandatory. `requires.X: "M.m"` is met at major M, minor m or newer.
 - **Resolve, then start.** [`discover`](ref:hub/src/extensions.ts#discover) reads the checkout's `extensions/<id>/`
@@ -152,7 +155,10 @@ and versioned without running anything, and a runtime where an extension's failu
   `foldOwn`, lazily), never a second fold; `ctx.board()` inside a fold throws
   ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf)).
 - **Commands and drawing.** A manifest's `client` folder is served at `/x/<cap>/` with CORS
-  ([`clientFile`](ref:hub/src/tower/http.ts#clientFile)); a `command` is one of its modules' exports, offered on every
+  ([`clientFile`](ref:hub/src/tower/http.ts#clientFile)), a `.ts` module bundled at its name with `.js`
+  ([`clientSource`](ref:hub/src/extensions.ts#clientSource)), so a client stays typechecked and importable from
+  source; while no provider runs, the bundled extension's folder is served, so a renderer built on a bundled client
+  keeps loading with it off; a `command` is one of its modules' exports, offered on every
   subject of the kinds its `on` names with no fold, derived by the helpers rather than carried per subject, and one
   with no `on` is the palette's alone. `ExtensionView.commands` says each. Every renderer draws through `/cards.js`:
   [`actionsOf`](ref:hub/src/shared/adds.ts#actionsOf) (the core's, then `adds`, then the commands offered),
@@ -211,7 +217,9 @@ and versioned without running anything, and a runtime where an extension's failu
   against the running tower's registry, and starts it in a throwaway process with a ctx that reaches nothing to report
   `mismatch`. `tower extensions freeze <dir>` ([`freezeFolder`](ref:hub/src/extension-check.ts#freezeFolder)) writes
   `contract.json`, the names dependents build on at its major
-  ([`contractOf`](ref:hub/src/bridge/extensions.ts#contractOf): verbs, reads, facts, stream codes, collections). At
+  ([`contractOf`](ref:hub/src/bridge/extensions.ts#contractOf): verbs, reads, facts, stream codes, collections, and
+  each client module's exports as `client.<module>#<export>`, read without running them as the folder is found,
+  [`foundIn`](ref:hub/src/extensions.ts#foundIn)). At
   load, a name gone from it at the same major is `contract`, an error for a bundled extension and a warning for a
   user's; a user's extension replacing a bundled capability that lacks a name of the bundled `contract.json` at its
   major is refused ([`replacementProblem`](ref:hub/src/bridge/extensions.ts#replacementProblem)).
@@ -305,5 +313,8 @@ problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots
 `ExtensionView.spawn`, `card.crew` and `card.exempt`, `GET /extensions`' `exempted`, and the session facts
 `tower.exempt` and `tower.reports-to`. API 1.88: the floor's `tidy` offered for extensions' entries alone, its call's
 `plan.x` carrying every entry, and `addedTidyOf` in `/cards.js`.
-No host change. No extension ships yet: the bundled
-ones move in one at a time.
+API 1.89: drafts is the bundled `extensions/drafts` (its client the former
+`/drafts.js`, [[collections]]), a floor collection's `by`, `.ts` client modules served bundled, client exports in
+`contract.json`, and `LEGACY`'s first entry. `examples/extensions/` holds extensions to copy, `narrate` first (Listen
+on every draft), each loaded by `npm test` as `tower extensions check` does.
+No host change. The bundled ones move in one at a time.

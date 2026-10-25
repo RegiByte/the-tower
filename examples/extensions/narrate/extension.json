@@ -1,0 +1,17 @@
+{
+  "id": "narrate",
+  "version": "1.0",
+  "title": "Narration",
+  "description": "Listen to a draft: the browser reads it aloud.",
+  "requires": { "tower": "1.84", "drafts": "1.0" },
+  "client": "client",
+  "commands": {
+    "speak": {
+      "module": "narrate.js",
+      "export": "speak",
+      "on": ["item.drafts"],
+      "words": { "label": "Listen", "hint": "Read this draft aloud" }
+    },
+    "stop": { "module": "narrate.js", "export": "stop", "words": { "label": "Stop listening" } }
+  }
+}

@@ -283,7 +283,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
 | `/panels.js` | the Changes, Reviews, Stats and Policies panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`); the Stats panel's money, hours and durations as words (`usd`, `hours`, `duration`) |
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
-| `/drafts.js` | editing a floor's `drafts` collection over the generic `collection/*` verbs, keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`) |
+| `/x/drafts/drafts.js` | the bundled drafts extension's client: editing a floor's drafts over the generic `collection/*` verbs, the floor's drafts collection while the extension is on there (`draftsOf`), keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`). `/drafts.js` serves it too, deprecated, until 2.0 |
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
 | `/reviews.js` | the review threads' format: parse, append, anchors |
 | `/icons.js` | the icons the tower's renderers draw |
@@ -341,13 +341,15 @@ lists them on the board (metadata only), reads them (`tower.text('collection/<p>
 deletes them (`collection/create`, `collection/write`, `collection/delete`), and puts a deleted one back under its id
 (`collection/restore`, an undo). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
+`drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
+description.
 `/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
 Workers add with `tower keep <collection>`. Two ids mean something to the core: `reviews`, written only through
 `review/append`; and `policies`, standing work the tower runs at its slots: the board carries each floor's
 `policies` (parsed, with where each stands) and `board.offers`, `/policies.js` says rules and slots in words and
 where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `policy/approve` write its facts.
-An [extension](#extensions) may declare collections of its own; one it owns carries `owner` and `doors` on the board,
-and refuses the generic writes, naming the verb to use instead.
+An [extension](#extensions) may declare collections of its own, which carry its capability as `by` on the board; one
+it owns carries `owner` and `doors` too, and refuses the generic writes, naming the verb to use instead.
 
 ## Extensions
 
@@ -358,6 +360,10 @@ restarting one when its config entry changes. Code edits wait for `tower extensi
 it reads the folder again and restarts the extension with what depends on it, importing its server module and every
 module it imports inside the folder afresh (its `node_modules` aside); meanwhile its calls answer `unavailable` and its
 state is `restarting`. `tower extensions` and `GET /extensions` say how each stands.
+
+To start from a working one, copy a folder of [`examples/extensions/`](../examples/extensions/) (`narrate`: Listen on
+every draft, its voice one function to swap) and add it to the config by its path. `npm test` loads every example as
+`tower extensions check` does, so each works with the tower it ships with.
 
 ```json
 {
@@ -453,7 +459,7 @@ manifest doesn't declare costs its part on that subject, and its dependents' the
 an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold
 has its `ctx.board`.
 
-`client` names a folder served at `/x/<cap>/`, with CORS. A `command` is one of its modules' exports, with `words`;
+`client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. A `command` is one of its modules' exports, with `words`;
 its `on` offers it on every subject of those kinds with no fold (`"on": ["item.drafts"]`), and one with no `on` is
 the palette's alone. A renderer draws a subject's actions and badges with `/cards.js`: name the subject
 (`cardSubject(card)`, `floorSubject(floor)`, `itemSubject(project, collection, item)`, `boardSubject(board)`), then
@@ -510,7 +516,7 @@ finds its next slot (`ruleWords`, `nextSlot`, `slotWords`); the board lists each
 **The author's loop.** `tower extensions check <dir>` reads a folder as the tower would, resolves it against the
 running tower's extensions, and starts it in a throwaway process whose ctx reaches nothing, to say whether `start`
 returns what the manifest declares. `tower extensions freeze <dir>` writes its `contract.json`: its verbs, reads, facts,
-stream codes and collections at its major. At load, a name listed there and gone from the manifest at the same major
+stream codes, collections and client modules' exports (`client.<module>#<export>`) at its major. At load, a name listed there and gone from the manifest at the same major
 is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
 every name of the bundled one's `contract.json` at the major it claims, or it is refused.
 
