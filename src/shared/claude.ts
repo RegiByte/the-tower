@@ -20,7 +20,7 @@ export const CLAUDE_SURFACES: { surface: string; read: string }[] = [
   { surface: 'bracketed pastes kept short enough to stay out of the pasted-content wrapping', read: 'src/machine.ts' },
   { surface: 'the peer registry ~/.claude/sessions/<pid>.json', read: 'src/machine.ts, src/bridge/resources.ts' },
   { surface: 'a transcript saved with the first prompt, so a conversation can be resumed', read: 'src/bridge/conversation.ts' },
-  { surface: "print mode's get_usage control request and its answer (rate_limits.five_hour and seven_day: utilization, resets_at; rate_limits_available), recorded in test/fixtures/probe-usage.out", read: 'src/probes.ts, src/bridge/probes.ts' },
+  { surface: "print mode's get_usage control request and its answer (rate_limits.five_hour and seven_day: utilization, resets_at; rate_limits_available), recorded in test/fixtures/probe-usage.out", read: 'extensions/quota/server.ts, src/shared/rate-limits.ts, src/bridge/legacy.ts' },
   { surface: "the tui: fullscreen setting: the alternate screen and SGR mouse reports, so a viewer's wheel scrolls Claude's transcript", read: 'src/shared/launch.ts' },
 ]
 
