@@ -9,6 +9,7 @@ import { z } from 'zod'
 import type { Board } from '../bridge/board.ts'
 import type { StreamFact } from '../bridge/streams.ts'
 import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
+import { RUNTIMES, type Runtime } from './launch.ts'
 
 export type { StreamFact }
 
@@ -28,6 +29,9 @@ const AROUND = '1.85'
 
 /** The minor triggers and checks arrived in: slots, the board trigger, checks and `ctx.run`. */
 const TRIGGERS = '1.86'
+
+/** The minor launch arrived in: spawn fields, launch contributors and plugins. */
+const LAUNCH = '1.87'
 
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -60,9 +64,9 @@ export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
 /**
  * Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold,
- * a link of a chain it wraps, an answer to a hook, a slot or the board trigger.
+ * a link of a chain it wraps, an answer to a hook, a slot or the board trigger, a launch it contributed to.
  */
-export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold' | 'around' | 'hook' | 'trigger'
+export type ProblemLane = 'load' | 'start' | 'halt' | 'verb' | 'read' | 'fold' | 'around' | 'hook' | 'trigger' | 'launch'
 
 /**
  * Why an extension, or a part of it, doesn't run as declared. `error`s keep it from starting, or failed a call; `warn`s
@@ -121,7 +125,19 @@ export type ExtensionView = {
   commands: ExtensionCommand[]
   /** Its manifest's slots. @since 1.86 */
   slots: ExtensionSlot[]
+  /** What it adds to the spawn form, when it adds anything. @since 1.87 */
+  spawn?: { fields: SpawnFieldView[] }
 }
+
+/**
+ * A spawn field the form draws, by name: its value goes in a spawn's `x.<cap>.<name>`. `options`: where its choices
+ * are, a path into the extension's own floor part (`floor.x.roles.options`), each `{value, label, hint?}`; without one,
+ * it is typed.
+ */
+export type SpawnFieldView = { name: string; words: Words; options?: string }
+
+/** A spawn field's choice, as an extension's floor part lists it. */
+export type SpawnOption = { value: string; label: string; hint?: string }
 
 /**
  * One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`,
@@ -218,6 +234,47 @@ export type Caller = {
   id?: string
   via: 'http' | 'cli' | 'ctx' | 'loop' | (string & {})
   within: string[]
+}
+
+/**
+ * What a launch contributor is asked about: a spawn, a resume, or a fork (a resume as a new worker). `runtime`: the
+ * session's. `model`, `effort`: what a spawn asked for. `fields`: the spawn's values of the extension's own fields.
+ * `facts`: the extension's facts over the worker's lineage, a spawn's being the ones about to be logged, a fork's the
+ * copies of its source's.
+ */
+export type LaunchRequest = {
+  kind: 'spawn' | 'resume' | 'fork'
+  runtime: Runtime
+  project: string
+  cwd: string
+  model?: string
+  effort?: string
+  fields?: Record<string, unknown>
+  facts: SessionFact[]
+}
+
+/**
+ * What a launch contributor adds, as intents the session's runtime places. `systemPrompt`: after the tower's brief.
+ * `prompt`: after the first prompt. `env`: through the parent-session scrub. `defaults`: a model or effort, when the
+ * spawn leaves it out. `args`: a runtime's own flags, each `--flag` or `--flag=value`, placed before the core's.
+ * `exempt`: out of the floor's hiring limits, logged as `tower.exempt`. `reportsTo`: the callsign of the worker whose
+ * crew it joins, logged as `tower.reports-to`. `prompt`, `defaults`, `exempt` and `reportsTo` are a spawn's only.
+ */
+export type LaunchParts = {
+  systemPrompt?: string[]
+  prompt?: string[]
+  env?: Record<string, string>
+  defaults?: { model?: string; effort?: string }
+  args?: Partial<Record<Runtime, string[]>>
+  exempt?: 'hiring'[]
+  reportsTo?: string
+}
+
+/** What a launch contributor reads with: the floor's settings, the reads it may make, and its own collections. */
+export type LaunchCtx = {
+  settings: unknown
+  read: StartCtx['read']
+  collections: Pick<StartCtx['collections'], 'list' | 'read'>
 }
 
 /** The most calls one call may be nested in: a deeper one is refused, its chain named. */
@@ -428,6 +485,8 @@ export type Started = {
   slots?: Record<string, SlotHandler>
   /** What a board change asks for, when its manifest declares `triggers.board`. @since 1.86 */
   board?: BoardTrigger
+  /** Its launch contributor, when its manifest says `spawn.launch`: called for every spawn, resume and fork on floors where it is on. @since 1.87 */
+  launch?: (request: LaunchRequest, ctx: LaunchCtx) => LaunchParts | Promise<LaunchParts>
 }
 
 /** The default export of an extension's server module. */
@@ -446,7 +505,12 @@ type SinceOf<T> = {
         : string
 }
 
-export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 'caller'>>; fold: SinceOf<Omit<FoldCtx, 'board'>> & { board: string } } = {
+export const CTX_SINCE: {
+  start: SinceOf<StartCtx>
+  call: SinceOf<Pick<CallCtx, 'caller'>>
+  fold: SinceOf<Omit<FoldCtx, 'board'>> & { board: string }
+  launch: SinceOf<LaunchCtx>
+} = {
   start: {
     id: SINCE,
     provides: SINCE,
@@ -472,10 +536,11 @@ export const CTX_SINCE: { start: SinceOf<StartCtx>; call: SinceOf<Pick<CallCtx, 
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
   fold: { now: FOLDS, settings: FOLDS, board: FOLDS, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
+  launch: { settings: LAUNCH, read: LAUNCH, collections: { list: LAUNCH, read: LAUNCH } },
 }
 
 /** The keys `start` may return. */
-export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds', 'around', 'answers', 'slots', 'board'] as const
+export const STARTED_KEYS = ['halt', 'verbs', 'reads', 'parse', 'reduce', 'folds', 'around', 'answers', 'slots', 'board', 'launch'] as const
 
 const sinceAt =
   (version: string) =>
@@ -487,6 +552,7 @@ const stores = sinceAt(STORES)
 const folds = sinceAt(FOLDS)
 const around = sinceAt(AROUND)
 const triggers = sinceAt(TRIGGERS)
+const launch = sinceAt(LAUNCH)
 
 const Name = z
   .string()
@@ -625,6 +691,22 @@ const Command = z.strictObject({
   deprecated: folds(Deprecated.optional()),
 })
 
+const SpawnField = z.strictObject({
+  schema: launch(Schema.describe("Its value's JSON Schema: a spawn's value is parsed by it, then logged as `tower.x.<provides>.<field>`.")),
+  words: launch(Words),
+  form: launch(z.boolean().optional().describe('Drawn on every spawn form (the default), or set only by calls.')),
+  options: launch(
+    z
+      .strictObject({ from: launch(z.string().describe('A path into its own floor part, `floor.x.<provides>.…`: an array of {value, label, hint?}.')) })
+      .optional()
+      .describe('Where the form reads its choices.'),
+  ),
+})
+const Spawn = z.strictObject({
+  launch: launch(z.boolean().optional().describe('`start` returns `launch`, a contributor to every spawn, resume and fork on floors where it is on.')),
+  fields: launch(z.record(Word, SpawnField).optional().describe('Its spawn fields: a spawn sets them in `x.<provides>`, each logged as a session fact before the worker starts.')),
+})
+
 const View = z.strictObject({ module: since(Path), export: since(z.string().optional()), subject: since(SubjectKind), words: since(Words.optional()) })
 
 export const Manifest = z
@@ -676,6 +758,13 @@ export const Manifest = z
         .describe('Its change triggers.'),
     ),
     checks: triggers(z.record(Word, Check).optional().describe('Lines `tower doctor` prints: a command, or one of its reads.')),
+    spawn: launch(Spawn.optional().describe('Its spawn fields, and whether it contributes to launches.')),
+    plugins: launch(
+      z
+        .partialRecord(z.enum(RUNTIMES), Path)
+        .optional()
+        .describe("What teaches a session of a runtime the extension, by runtime: for claude, a Claude plugin's folder, passed with --plugin-dir on floors where it is on."),
+    ),
     views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
     regions: since(
       z

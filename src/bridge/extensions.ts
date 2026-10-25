@@ -8,6 +8,7 @@ import path from 'node:path'
 import { z } from 'zod'
 import { BUNDLED, capabilityOf, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
+import { RUNTIMES } from '../shared/launch.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import { offOn, type ExtensionStores } from './stores.ts'
@@ -79,6 +80,9 @@ export type CompiledFold = { x?: z.ZodType; adds: Add[] }
 /** A hook of a manifest, its payload and answer schemas as zod. */
 export type CompiledHook = { spec: NonNullable<Manifest['hooks']>[string]; payload: z.ZodType; answer: z.ZodType }
 
+/** A spawn field of a manifest, its value's schema as zod. */
+export type CompiledField = { spec: NonNullable<NonNullable<Manifest['spawn']>['fields']>[string]; schema: z.ZodType }
+
 /** An extension that may start. `requires` and `wants`: the capabilities it starts after, the core aside. `off`: its floors off. */
 export type Accepted = {
   id: string
@@ -100,6 +104,8 @@ export type Accepted = {
   /** Its folds by subject kind, as the manifest declares them. */
   folds: Map<string, CompiledFold>
   hooks: Map<string, CompiledHook>
+  /** Its spawn fields by name, as the manifest declares them. */
+  fields: Map<string, CompiledField>
   /** Its capability and every one it requires, directly or not: it is off on a floor where any of them is. */
   chain: string[]
   off: string[]
@@ -356,6 +362,33 @@ const storeSchemas = (manifest: Manifest): { schemas: StoreSchemas; problems: Lo
   return { schemas: { facts, streams }, problems }
 }
 
+/** The JSON Schema at a dotted path of properties below `schema`, `undefined` where none is declared. */
+const schemaAt = (schema: Record<string, unknown> | undefined, at: string[]): Record<string, unknown> | undefined =>
+  at.reduce<Record<string, unknown> | undefined>((node, key) => (node?.properties as Record<string, Record<string, unknown>> | undefined)?.[key], schema)
+
+/**
+ * Its spawn fields with their schemas as zod, or each rule they break: a schema the tower reads, and `options.from`, a
+ * path into its own floor part (`floor.x.<provides>.…`) where its floor fold's `x` declares an array.
+ */
+const compileFields = (manifest: Manifest, provides: string): { fields: Map<string, CompiledField>; problems: LoadProblem[] } => {
+  const problems: LoadProblem[] = []
+  const fields = new Map<string, CompiledField>()
+  const own = `floor.x.${provides}.`
+  for (const [name, spec] of Object.entries(manifest.spawn?.fields ?? {})) {
+    const at = `spawn.fields.${name}`
+    const from = spec.options?.from
+    if (from !== undefined) {
+      const path = from.startsWith(own) ? from.slice(own.length).split('.') : undefined
+      if (!path) problems.push(error('invalid', `options come from its own floor part: ${own}<path>, not ${from}`, `${at}.options.from`))
+      else if (schemaAt(manifest.folds?.floor?.x, path)?.type !== 'array') problems.push(error('invalid', `folds.floor.x declares no array at ${path.join('.')}: where ${from} reads the options`, `${at}.options.from`))
+    }
+    const schema = zodOf(spec.schema)
+    if (typeof schema === 'string') problems.push(error('invalid', `no JSON Schema the tower reads: ${schema}`, `${at}.schema`))
+    else fields.set(name, { spec, schema })
+  }
+  return { fields, problems }
+}
+
 export type Read = {
   found: Found
   claims?: string
@@ -368,6 +401,7 @@ export type Read = {
   hooks?: Map<string, CompiledHook>
   schemas?: StoreSchemas
   folds?: Map<string, CompiledFold>
+  fields?: Map<string, CompiledField>
 }
 
 /** Whether a JSON Schema takes an object that must hold `project`, a string. */
@@ -477,7 +511,11 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   if (tooFar) return { found, claims, problems: [tooFar] }
   const parsed = Manifest.safeParse(raw)
   if (!parsed.success) {
-    return { found, claims, problems: issuesOf(parsed.error.issues).map((i) => error('invalid', i.message.startsWith('unknown key') ? `${i.message}: this tower is ${tower}. If the key is newer, raise requires.tower; otherwise it's a typo` : i.message, i.path)) }
+    const unknown = (i: { path: string; message: string }) =>
+      i.path.startsWith('plugins.')
+        ? `${i.message}: plugins are keyed by a runtime this tower knows, ${RUNTIMES.join(', ')}`
+        : `${i.message}: this tower is ${tower}. If the key is newer, raise requires.tower; otherwise it's a typo`
+    return { found, claims, problems: issuesOf(parsed.error.issues).map((i) => error('invalid', i.message.startsWith('unknown key') ? unknown(i) : i.message, i.path)) }
   }
   const manifest = parsed.data
   if (!found.bundled && (BUNDLED as readonly string[]).includes(manifest.id)) return { found, claims, manifest, problems: [error('invalid', `${manifest.id} is a bundled extension's id: give yours its own, with provides: "${manifest.id}" to replace it`, 'id')] }
@@ -493,7 +531,8 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   if (targets.length) return { found, claims, manifest, problems: targets }
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest)]
+  const fields = compileFields(manifest, capabilityOf(manifest))
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
@@ -503,7 +542,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
       ? [warn('under-declared', `adds slots, since ${SLOTS_ADD_SINCE}, but requires tower ${manifest.requires.tower}: raise it to ${SLOTS_ADD_SINCE}`, 'folds')]
       : []),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds, fields: fields.fields }
 }
 
 /**
@@ -694,6 +733,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           reads: r.reads!,
           folds: r.folds!,
           hooks: r.hooks!,
+          fields: r.fields!,
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
           problems: [...r.problems, ...without],
@@ -817,6 +857,14 @@ const wrappingOf = (started: Accepted[], now: number) => {
   return { chains, answers, problems }
 }
 
+/** The spawn fields a manifest's form draws, when it has any. */
+const spawnOf = (manifest: Manifest | undefined): Pick<ExtensionView, 'spawn'> => {
+  const fields = Object.entries(manifest?.spawn?.fields ?? {})
+    .filter(([, f]) => f.form !== false)
+    .map(([name, f]) => ({ name, words: f.words, ...(f.options && { options: f.options.from }) }))
+  return fields.length ? { spawn: { fields } } : {}
+}
+
 /** Bundled first, then by id. */
 const shownOrder = (a: ExtensionView, b: ExtensionView) => Number(b.bundled) - Number(a.bundled) || a.id.localeCompare(b.id)
 
@@ -862,6 +910,7 @@ export const registry = (
       verbs: verbsOf(a.manifest),
       commands: commandsOf(a.manifest),
       slots: slotsOf(a.manifest),
+      ...spawnOf(a.manifest),
     }
   })
   const held = [...resolved.refused.values()].map(
@@ -912,7 +961,8 @@ const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefin
 
 /**
  * Why what `start` returned doesn't match the manifest, if it doesn't: a handler for every verb, read and slot it
- * declares, no more, a board trigger exactly when it declares `triggers.board`, a fold for every subject kind it folds,
+ * declares, no more, a board trigger exactly when it declares `triggers.board`, a launch contributor exactly when it says
+ * `spawn.launch`, a fold for every subject kind it folds,
  * no more, and a `parse` or `reduce` only for a collection or stream it declares.
  */
 export const mismatchOf = (started: unknown, manifest: Manifest): string | undefined => {
@@ -930,6 +980,8 @@ export const mismatchOf = (started: unknown, manifest: Manifest): string | undef
   if (calls.length) return calls.join('; ')
   if (manifest.triggers?.board && typeof started.board !== 'function') return 'its manifest declares triggers.board, and start returned no board function'
   if (!manifest.triggers?.board && started.board !== undefined) return "start returned a board trigger, which its manifest doesn't declare: triggers.board"
+  if (manifest.spawn?.launch === true && typeof started.launch !== 'function') return 'its manifest says spawn.launch, and start returned no launch function'
+  if (manifest.spawn?.launch !== true && started.launch !== undefined) return "start returned launch, and its manifest doesn't say spawn.launch"
   const folds = isObject(started.folds) ? started.folds : {}
   const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
   if (unfolded.length && (started.folds === undefined || isObject(started.folds))) return `its manifest declares folds ${unfolded.join(', ')}, and start returned no function for each`

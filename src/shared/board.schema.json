@@ -4269,6 +4269,22 @@
             "$ref": "#/definitions/ExtensionSlot"
           },
           "description": "Its manifest's slots."
+        },
+        "spawn": {
+          "type": "object",
+          "properties": {
+            "fields": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SpawnFieldView"
+              }
+            }
+          },
+          "required": [
+            "fields"
+          ],
+          "additionalProperties": false,
+          "description": "What it adds to the spawn form, when it adds anything."
         }
       },
       "required": [
@@ -4354,9 +4370,10 @@
         "fold",
         "around",
         "hook",
-        "trigger"
+        "trigger",
+        "launch"
       ],
-      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold, a link of a chain it wraps, an answer to a hook, a slot or the board trigger."
+      "description": "Where a problem arose: reading the manifests, starting an extension, halting it, a call of a verb or a read, a fold, a link of a chain it wraps, an answer to a hook, a slot or the board trigger, a launch it contributed to."
     },
     "ProblemCode": {
       "type": "string",
@@ -4532,6 +4549,26 @@
       ],
       "additionalProperties": false,
       "description": "Slots as a period, `30s`, `5m` or `2h`, aligned to the UTC clock: `5m` is each multiple of 5 minutes since the epoch."
+    },
+    "SpawnFieldView": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "words": {
+          "$ref": "#/definitions/Words"
+        },
+        "options": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "words"
+      ],
+      "additionalProperties": false,
+      "description": "A spawn field the form draws, by name: its value goes in a spawn's `x.<cap>.<name>`. `options`: where its choices are, a path into the extension's own floor part (`floor.x.roles.options`), each `{value, label, hint?}`; without one, it is typed."
     },
     "Adds": {
       "type": "object",
