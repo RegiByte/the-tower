@@ -34,7 +34,7 @@ const folder = (cap: string, folds: Record<string, Fold>, over: Partial<Folder> 
   ...over,
 })
 
-const fold = (folders: Folder[], b = core()) => foldBoard({ board: b, folders, subjects: new Map(), now: 1000, clock: () => 0 })
+const fold = (folders: Folder[], b = core()) => foldBoard({ board: b, callsignOf: () => undefined, folders, subjects: new Map(), now: 1000, clock: () => 0 })
 
 test('an extension folds card, floor, then board, each seeing its own parts made before; its part goes at x.<cap>', () => {
   const seen: string[] = []
@@ -111,6 +111,7 @@ test("a fold's input is frozen, and a build's folds of one extension over the bo
   let t = 0
   const { problems } = foldBoard({
     board: core(),
+    callsignOf: () => undefined,
     folders: [folder('pulse', { card: (card) => ((t += SLOW_MS + 1), (card.status = 'done'), {}) })],
     subjects: new Map(),
     now: 1000,

@@ -153,7 +153,8 @@ and versioned without running anything, and a runtime where an extension's failu
   dated by the first build that found it), never stored, so a failing fold can't make the board change on its own.
   `FoldCtx.own` is read from what `StartCtx.own` reads ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)'s
   `foldOwn`, lazily), never a second fold; `ctx.board()` inside a fold throws
-  ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf)).
+  ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf)). `FoldCtx.callsignOf(session)` names the worker any session the tower has known ran as, archived ones
+  too ([`callsignLookup`](ref:hub/src/bridge/board.ts#callsignLookup), API 1.92): the board holds only the day's cards.
 - **Commands and drawing.** A manifest's `client` folder is served at `/x/<cap>/` with CORS
   ([`clientFile`](ref:hub/src/tower/http.ts#clientFile)), a `.ts` module bundled at its name with `.js`
   ([`clientSource`](ref:hub/src/extensions.ts#clientSource)), so a client stays typechecked and importable from

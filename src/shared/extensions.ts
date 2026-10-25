@@ -39,6 +39,7 @@ const KINDS = '1.90'
 
 /** The minor the policies moved into their bundled extension in. */
 const POLICIES_MOVED = '1.91'
+const CALLSIGN_OF = '1.92'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
@@ -254,6 +255,8 @@ export type FoldCtx = {
   now: number
   settings: unknown
   board: Board
+  /** The callsign of the worker a session ran as, any session the tower has known, archived ones too. */
+  callsignOf: (session: string) => string | undefined
   own: { streams: Record<string, unknown>; collections: Record<string, ParsedItem[]>; facts?: SessionFact[] }
 }
 
@@ -590,7 +593,7 @@ export const CTX_SINCE: {
     runtime: KINDS,
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
-  fold: { now: FOLDS, settings: FOLDS, board: FOLDS, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
+  fold: { now: FOLDS, settings: FOLDS, board: FOLDS, callsignOf: CALLSIGN_OF, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
   launch: { settings: LAUNCH, read: LAUNCH, collections: { list: LAUNCH, read: LAUNCH } },
 }
 

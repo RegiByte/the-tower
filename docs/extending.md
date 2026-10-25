@@ -468,7 +468,7 @@ extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:
 `subjects` (`"thread": { "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`). `folds`
 declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
 on a floor, `lines` on a card, `asks`); `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
-over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board` and `own`, its stores as `ctx.own`
+over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board`, `callsignOf(session)` (the callsign of the worker any session the tower has known ran as, archived ones too, `undefined` for an id no log holds) and `own`, its stores as `ctx.own`
 reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
 folds in dependency order (card, conversations, items, floor, its own kinds, board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or

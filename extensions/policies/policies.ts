@@ -153,10 +153,9 @@ const validNeeds = (header: PolicyHeader, approval: [number, ApprovalFact] | und
   header.start === 'auto' && !approval && approvals.length ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash } : heldSlot(header, runs, passes, cards, live, now)
 
 /**
- * The views of a floor's policies. `cards`: the floor's, which a run's worker is looked up among (every live one is
- * there). `canSpawn`: the host runs, so a run can start.
+ * The views of a floor's policies. `cards`: the floor's, which a run's live worker is looked up among. `callsignOf`: any session's worker's name. `canSpawn`: the host runs, so a run can start.
  */
-export const policyViews = (project: string, files: PolicyFile[], facts: PolicyFacts, cards: Card[], canSpawn: boolean, now: number): PolicyView[] =>
+export const policyViews = (project: string, files: PolicyFile[], facts: PolicyFacts, cards: Card[], callsignOf: (session: string) => string | undefined, canSpawn: boolean, now: number): PolicyView[] =>
   files.map(({ id, hash, parsed }): PolicyView => {
     const runs = facts.runs.filter(([, r]) => r.policy === id)
     const passes = facts.passes.filter(([, p]) => p.policy === id)
@@ -180,7 +179,7 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
       ...body,
       ...(approval && { approved: { at: approval[0], ...(approval[1].by && { by: approval[1].by }) } }),
       live,
-      ...(last && { last: { n: runs.length, at: last[0], slot: runSlot(last[1].slot), id: last[1].id, callsign: callsignOf(cards, last[1].id) } }),
+      ...(last && { last: { n: runs.length, at: last[0], slot: runSlot(last[1].slot), id: last[1].id, callsign: callsignOf(last[1].id) } }),
       ...(passed && { passed: { at: passed[0], slot: slotOf(passed[1].slot), outcome: passed[1].outcome, ...(passed[1].check && { check: passed[1].check }) } }),
       ...(slots.length > 0 && { seen: Math.max(...slots) }),
       ...(header && { offer: openOffer(header, runs.map(([, r]) => r), passes, now) }),

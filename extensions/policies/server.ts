@@ -310,8 +310,8 @@ const start: Start = (ctx) => {
         const file = files.find((f) => f.id === run.policy)
         return { x: { run }, lines: runLines(run, file?.parsed.ok ? file.parsed.header.when.tz : undefined, now) }
       },
-      floor: (floor: Floor, { now, board, own }): Part => {
-        const views = policyViews(floor.id, filesOf(own.collections[POLICIES] ?? []), factsOf(own.streams as OwnStreams), floor.cards, board.hostUp, now)
+      floor: (floor: Floor, { now, board, callsignOf, own }): Part => {
+        const views = policyViews(floor.id, filesOf(own.collections[POLICIES] ?? []), factsOf(own.streams as OwnStreams), floor.cards, callsignOf, board.hostUp, now)
         const offers = offersOf(floor.id, views)
         const asks = offers.map(
           (o): Ask => ({

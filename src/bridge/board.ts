@@ -702,6 +702,16 @@ const floorGit = (config: Config, projectId: string, project: Project, repos: Ma
   return { read, worktrees: floorWorktrees(projectId, read ?? [], occupants, keepsThreads(config, projectId)), branches: floorBranches(projectId, read ?? []) }
 }
 
+/** The callsign of the worker a session ran as, over every session of `view`; `undefined` for an id no log holds. */
+export const callsignLookup = ({ config, sessions }: Pick<SystemView, 'config' | 'sessions'>): ((id: string) => string | undefined) => {
+  const nameOf = namer(continuations(sessions), callsignsOf(config))
+  const byId = new Map(sessions.map((s) => [s.header.id, s]))
+  return (id) => {
+    const session = byId.get(id)
+    return session && nameOf(session)
+  }
+}
+
 /**
  * Every session's card, archived or not, from the sessions, host, processes, peers, shells, threads, repos and now of `view`: what the board and the archive are cut from. `repos`: what git says in each
  * project dir (`src/worktrees.ts`), by dir. `shells`: the terms daemon's, which hold a worktree in use as a session

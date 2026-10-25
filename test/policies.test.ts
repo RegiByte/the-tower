@@ -51,7 +51,7 @@ const NOW = Date.parse('2026-10-14T13:31:00Z')
 const SLOT = Date.parse('2026-10-14T13:30:00Z')
 const header = (rest: string) => policyText(`{ "when": { "cron": ["30 13 * * *"], "tz": "UTC" }${rest} }`)
 const file = (id: string, text: string): PolicyFile => ({ id, hash: hashOf(text), parsed: parsePolicy(text) })
-const viewsOf = (files: PolicyFile[], facts = NO_POLICY_FACTS): PolicyView[] => policyViews('lab', files, facts, [], true, NOW)
+const viewsOf = (files: PolicyFile[], facts = NO_POLICY_FACTS): PolicyView[] => policyViews('lab', files, facts, [], () => undefined, true, NOW)
 
 test('the runner decides each due slot from the board alone: held, checked, run, offered', () => {
   const auto = file('auto.md', header(', "start": "auto"'))
@@ -102,4 +102,11 @@ test('every key a header takes parses as it always did, and the hash is the sha2
   const both = parsePolicy(policyText('{ "when": { "cron": ["0 9 * * *"] }, "hire": { "cwd": "lab", "cut": {} } }'))
   assert.deepEqual(!both.ok && both.problems, [{ path: 'hire.cut', message: 'takes `cwd` or `cut`, not both' }])
   assert.equal(hashOf('# T\n'), 'sha256:' + createHash('sha256').update('# T\n').digest('hex'))
+})
+
+test("a policy's last run names its worker by callsign when the worker has left the board", () => {
+  const hand = file('hand.md', header(''))
+  const facts = policyFacts([[NOW, 'r', { policy: 'hand.md', hash: hand.hash, id: 'archived-session', start: 'hand', slot: null }]], [])
+  const [view] = policyViews('lab', [hand], facts, [], (id) => (id === 'archived-session' ? 'GONE-01' : undefined), true, NOW)
+  assert.equal(view.last?.callsign, 'GONE-01')
 })

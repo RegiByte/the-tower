@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, board, type Board, type SystemView } from '../bridge/board.ts'
+import { allCards, board, callsignLookup, type Board, type SystemView } from '../bridge/board.ts'
 import { foldBoard } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
@@ -75,7 +75,7 @@ export const publisher = defineResource({
       const core = board(view)
       folding = true
       try {
-        const folded = foldBoard({ board: core, folders: extensions.folders(), subjects: extensions.subjects(), now: view.now, clock: () => performance.now() })
+        const folded = foldBoard({ board: core, callsignOf: callsignLookup(view), folders: extensions.folders(), subjects: extensions.subjects(), now: view.now, clock: () => performance.now() })
         return projectLegacy({ ...folded.board, extensions: extensions.folded(folded.problems, view.now) })
       } finally {
         folding = false

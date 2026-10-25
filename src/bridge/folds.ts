@@ -43,7 +43,7 @@ export type SubjectDecl = { in: 'board' | 'floor' | 'card'; list: string }
 /** A problem a fold found, by the id of the extension it counts against. */
 export type FoldProblem = { id: string; problem: Omit<ExtensionProblem, 'at' | 'count'> }
 
-export type FoldInput = { board: Board; folders: Folder[]; subjects: Map<string, SubjectDecl>; now: number; clock: () => number }
+export type FoldInput = { board: Board; callsignOf: FoldCtx['callsignOf']; folders: Folder[]; subjects: Map<string, SubjectDecl>; now: number; clock: () => number }
 
 const ActionShape = z.union([
   z.strictObject({ verb: z.string(), call: z.unknown() }).refine((a) => 'call' in a, { message: 'a verb action holds its call, the verb\'s input' }),
@@ -106,7 +106,7 @@ const kindOrder = (kinds: string[]): string[] => {
  * The board with every running extension's folds on it, and the problems they found. With no folder, the core's board
  * as it was built.
  */
-export const foldBoard = ({ board: built, folders, subjects, now, clock }: FoldInput): { board: Board; problems: FoldProblem[] } => {
+export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, clock }: FoldInput): { board: Board; problems: FoldProblem[] } => {
   if (!folders.length) return { board: built, problems: [] }
   const core = frozen(structuredClone(built))
   /** Each subject's parts, by key, then capability. */
@@ -166,7 +166,7 @@ export const foldBoard = ({ board: built, folders, subjects, now, clock }: FoldI
         drop(key, folder.cap)
         problems.push({ id: folder.id, problem: { lane: 'fold', level: 'error', code, message, path: `folds.${kind}`, subject: key } })
       }
-      const ctx: FoldCtx = { now, settings: folder.settings(at.project), board: core, own: folder.own(at) }
+      const ctx: FoldCtx = { now, settings: folder.settings(at.project), board: core, callsignOf, own: folder.own(at) }
       const started = clock()
       let part: unknown
       try {
