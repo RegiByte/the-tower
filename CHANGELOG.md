@@ -12,6 +12,35 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.61.0
+
+The first built-ins are extensions: quota, drafts and policies now live in the checkout's `extensions/`, each a
+bundled extension a user can turn off or replace, and `examples/extensions/` holds the first one to copy. Everything
+behaves as before, every old name still answers until 2.0. **config**: `probes.quota` is now `extensions.quota`. No
+restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.87 → 1.91 (additive).
+
+- **config: quota is an extension.** The quota probe is the bundled `quota` extension, its readings a core fact kind
+  (`tower/rate-limits`) that the limits, the weekly budget and `/stats` fold whether the extension runs or not.
+  `probes.quota.off` is now `extensions.quota.off` and `probes.quota.every` is `extensions.quota.settings.every`; the
+  old spelling is still read until 2.0, and `tower config check` and `tower doctor` print the line to write instead.
+  `tower probes [run quota]` works as before; `tower x quota read-now` reads too.
+- **Drafts is an extension.** Its client is served at `/x/drafts/drafts.js`; `projects.<p>.capabilities.drafts.off`
+  turns drafts off on a floor. A config's `collections.drafts` line now sets the collection's label and description.
+- **Policies is an extension.** Every policy keeps its file, its approval, its runs and its slots across the update:
+  nothing to approve again. The page's Policies panel is served at `/x/policies/`, and an offer is announced once, as
+  the extension's ask. `tower policies` and `tower runs` print as before.
+- **Example extensions.** `examples/extensions/narrate` reads a draft aloud with the browser's voice: copy the folder,
+  replace `speak` with the voice you like, and add it under `extensions` in the config. Every example is loaded by the
+  tests, so none goes stale.
+- **Tidy and extensions.** Tidy shows and applies what an extension asks to tidy, in the page and in Tower 3D, and
+  offers to archive an extension's stream months as it does the core's.
+- **For renderer authors.** The moved names answer through `LEGACY` until 2.0: `probe/run`, `GET /probe/quota`,
+  `board.probes`, `policy/*`, `GET /runs/<project>`, `floor.policies`, `card.run`, `board.offers`, `/drafts.js` and
+  `/policies.js`, each with a deprecation header or tag naming its replacement. Count a policy's offer from
+  `board.asks`, never beside `board.offers`. `wireSpawn` takes the drafts client as `io.drafts` and the palette as
+  `draftsOf`; a renderer that passes neither keeps no drafts there. Pass the extensions' tidy entries
+  (`addedTidyOf`) to `tidyAllAsk`.
+
 ## v1.60.0
 
 The extension mechanism is complete: an extension can now do everything the spec gives it, short of drawing its own
