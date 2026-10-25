@@ -525,14 +525,15 @@ where the extension is on, in dependency order. `request` is `{kind: 'spawn' | '
 cwd, model?, effort?, fields?, facts}`: `fields` its own field values on a spawn, `facts` its facts over the worker's
 lineage (a fork carries copies of its source's). `ctx` reads only: the floor's `settings`, `read`, and its
 collections' `list` and `read`. It returns parts the session's runtime places: `systemPrompt` (after the tower's
-brief), `prompt` (after the first prompt), `env` (in Claude's settings, without a parent session's markers),
+brief), `prompt` (after the first prompt), `env` (in Claude's settings, without a parent session's markers: those settings are part of the session's argv, which
+its log's header keeps for good, so contributed env is no place for secrets),
 `defaults` (`model`, `effort`, used only when the spawn leaves one out), `args.claude` (Claude's own flags, each
 `--flag` or `--flag=value`, placed before the tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`,
 `defaults`, `exempt` and `reportsTo` count on a spawn only. A flag the tower passes (`--name`, `--settings`,
 `--add-dir`, `--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
 passes, and a flag, env key, `defaults` member or `reportsTo` two extensions both give, refuses the launch, naming
-both. A contributor that throws or returns what the runtime can't place refuses a spawn that carries its fields, and
-otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
+both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
+carries its fields, and otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
 `reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
 starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin
 folder in the extension, loaded into every session on floors where it is on.

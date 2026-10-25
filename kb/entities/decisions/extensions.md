@@ -223,13 +223,13 @@ and versioned without running anything, and a runtime where an extension's failu
   settings, reads, its collections' list and read) ([`contribute`](ref:hub/src/tower/dispatch.ts#contribute)). Its
   parts are intents the runtime places: `systemPrompt` after the tower's brief, `prompt` after the first, `env` in
   Claude's `--settings` (the host's spawn carries no environment, and a host change would stop every worker) through
-  the parent-session scrub, `defaults` only where the spawn left a model or effort out, `args.claude` one flag each,
+  the parent-session scrub, and so logged with the session's argv in its header for good, no place for secrets, `defaults` only where the spawn left a model or effort out, `args.claude` one flag each,
   placed before the core's, `exempt` and `reportsTo`; the last four a spawn's only
   ([`placeable`](ref:hub/src/bridge/launch.ts#placeable), [`mergeParts`](ref:hub/src/bridge/launch.ts#mergeParts)).
   A flag the core composes ([`CORE_FLAGS`](ref:hub/src/shared/launch.ts#CORE_FLAGS), read from a launch with every
   part set, never written out) or the config's `argv` passes, and a flag, env key, `defaults` member or `reportsTo`
-  two contributors give, refuse the launch naming both, a `conflict` problem on each. A contributor that throws or
-  returns what the runtime can't place refuses a spawn carrying its fields (`internal`), and is otherwise dropped with a
+  two contributors give, refuse the launch naming both, a `conflict` problem on each. A contributor that throws, doesn't
+  settle within 10 s (as `start`), or returns what the runtime can't place refuses a spawn carrying its fields (`internal`), and is otherwise dropped with a
   `launch` problem. Each `exempt` is logged as `tower.exempt {from, by}` and a `reportsTo` as `tower.reports-to
   {callsign, session, by}`, the session the callsign names on the board then: core facts the core's crews and hiring
   limits read ([[crews]], [[hiring-limits]]), drawn on the card as a badge, said by `tower whoami`, and listed per
@@ -271,6 +271,8 @@ contributions (1.84), then middleware and hooks (1.85), then triggers, checks an
 - *Contributed flags placed after the core's*: the core reads the model, effort and prompt back from argv's end
   (`launchFlags`, `launchPrompt`); placed first, and each a single `--flag` or `--flag=value`, none can be read as one.
 - *The last contributor's flag winning*: no order of contributors would silently decide what Claude sees.
+- *Contributed env through the host's spawn*: kept out of the log, but a host change, which stops every running
+  worker; through `--settings` it is logged with the argv, which the docs say plainly.
 - *A crew edge as a fold's contribution*: the core's board, built before any fold, couldn't read it; it is a core fact.
 - *The hire's limit checked before its contributors*: an exemption is theirs to give, so the gate runs after them; a
   refused cut is rolled back.
