@@ -4,7 +4,6 @@
  *
  *   core:config     the config's path and the system root's, and the config as the file holds it now
  *   core:system     the live view of every log, stream, collection and daemon (src/system.ts), and who hears it change
- *   core:probes     the probes' runner (src/probes.ts)
  *   core:publisher  the board, and the clients of `GET /board` (publisher.ts)
  *   core:dispatch   every verb's handler (dispatch.ts)
  *   core:slots      the slot loop: the policies' runner, which acts through the verbs (src/policies.ts), and the
@@ -16,7 +15,7 @@
  */
 import { defineResource, type StartedSystem, type StartedResource } from 'braided'
 import { policySlots } from '../policies.ts'
-import { runProbes } from '../probes.ts'
+import { configNow } from '../bridge/legacy.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import { extensionSlots, runSlots, SLOT_CALLER } from '../slots.ts'
 import { readConfig, watchSystem } from '../system.ts'
@@ -25,11 +24,14 @@ import { extensions, type ExtensionsResource } from './extensions.ts'
 import { httpServer } from './http.ts'
 import { publisher, type PublisherResource } from './publisher.ts'
 
-/** The config is read again on every call: the user edits it at any time, and every read sees the edit. */
+/**
+ * The config is read again on every call: the user edits it at any time, and every read sees the edit. Its old
+ * spellings are read where they are now (`configNow`).
+ */
 export const config = defineResource({
   start: () => {
     const paths = systemPaths(configPath())
-    return { paths, read: () => readConfig(paths.config) }
+    return { paths, read: () => configNow(readConfig(paths.config)) }
   },
   halt: () => {},
 })
@@ -53,14 +55,6 @@ export const system = defineResource({
 })
 export type SystemResource = StartedResource<typeof system>
 
-export const probes = defineResource({
-  dependencies: ['core:config', 'core:system'],
-  start: ({ 'core:config': { paths, read }, 'core:system': live }: { 'core:config': ConfigResource; 'core:system': SystemResource }) =>
-    runProbes(paths, read, live.sessions, live.probes),
-  halt: ({ stop }) => stop(),
-})
-export type ProbesResource = StartedResource<typeof probes>
-
 type SlotsDeps = { 'core:config': ConfigResource; 'core:dispatch': DispatchResource; 'core:publisher': PublisherResource; 'core:extensions': ExtensionsResource }
 
 export const slots = defineResource({
@@ -81,7 +75,6 @@ export type SlotsResource = StartedResource<typeof slots>
 export const tower = () => ({
   'core:config': config,
   'core:system': system,
-  'core:probes': probes,
   'core:extensions': extensions,
   'core:publisher': publisher,
   'core:dispatch': dispatch,

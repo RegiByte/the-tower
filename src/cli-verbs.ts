@@ -63,8 +63,8 @@ export const CLI_VERBS = {
   agent: { of: 'worker', usage: 'agent <CALLSIGN>', help: 'one worker: its latest prompt and answer in full, per conversation' },
   probes: {
     of: 'worker',
-    usage: 'probes [run <name>]',
-    help: 'each probe the tower runs: its state, last read, why it failed and when it reads next; `run` reads one now (refused while off, while a read is in flight or within a minute of the last)',
+    usage: 'probes [run quota]',
+    help: "the quota probe, the quota extension's: its state, last read, why it failed and when it reads next; `run quota` reads now, as `tower x quota read` does (refused while a read is in flight or within a minute of the last)",
   },
   extensions: {
     of: 'worker',

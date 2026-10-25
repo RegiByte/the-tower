@@ -81,7 +81,7 @@ import path from 'node:path'
 import { z } from 'zod'
 import { archiveOf } from '../bridge/board.ts'
 import { runsRead } from '../bridge/policies.ts'
-import { probeView } from '../bridge/probes.ts'
+import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
@@ -285,11 +285,19 @@ export const httpServer = defineResource({
       }
     }
 
-    function probeRead(res: http.ServerResponse, name: string, { last }: z.output<(typeof QUERIES)['probe/<name>']>) {
-      const { probes } = boardOf()
-      const status = probes.find((p) => p.name === name)
-      if (!status) return fail(res, 'not_found', `No probe "${name}": the config runs ${probes.map((p) => p.name).join(', ')}`)
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(probeView(status, system.probeReads(name), last)))
+    /**
+     * A core read that moved into an extension (`LEGACY`): its params and query as the new read takes them, read through
+     * the dispatch, and the reply as the old one answered, deprecated.
+     */
+    async function legacyRead(req: http.IncomingMessage, res: http.ServerResponse, old: string, params: Record<string, string | undefined>, query: Record<string, unknown>) {
+      const { request, reply } = LEGACY_READS[old]
+      const { now, since } = legacyNamed('read', old)!
+      const mapped = request(params, query)
+      if (isApiError(mapped)) return send(res, mapped)
+      deprecate(res, { since, use: now })
+      const { cap, name } = qualifiedOf(now)!
+      const answer = await dispatch.read(cap, name, mapped.params, mapped.query, callerOf(req))
+      send(res, isApiError(answer) ? answer : reply(answer, boardOf()))
     }
 
     function runsOfPolicy(res: http.ServerResponse, project: string, { policy, limit }: z.output<(typeof QUERIES)['runs/<project>']>) {
@@ -314,8 +322,8 @@ export const httpServer = defineResource({
       const reads = await Promise.all(dirs.map((dir) => readLanded(dir, from, to)))
       const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
       const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
-      const probes = [...system.probes().values(), ...extensions.readings()]
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
+      const readings = extensions.readings()
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, readings, now), weekly: weeklyRead(sessions, readings, { from, to }), outside: outsideIn(sessions, readings, { from, to }) } satisfies Stats))
     }
 
     async function origins(res: http.ServerResponse) {
@@ -674,6 +682,8 @@ export const httpServer = defineResource({
         return send(res, await (MUX[route] as (input: unknown) => Answer | Promise<Answer>)(input.data))
       }
       if (!core) deprecate(res, dispatch.deprecationOf(q!.cap, q!.name))
+      const moved = core ? legacyNamed('verb', route) : undefined
+      if (moved) deprecate(res, { since: moved.since, use: moved.now })
       send(res, await dispatch.call(core ? `tower/${route}` : route, body.json, callerOf(req)))
     }
 
@@ -766,7 +776,7 @@ export const httpServer = defineResource({
       apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
       apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
       apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
-      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ res, params, query }) => probeRead(res, params.name!, query) }),
+      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'probe/<name>', params, query) }),
       apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
       apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),

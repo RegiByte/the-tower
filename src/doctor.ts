@@ -8,13 +8,13 @@ import { accessSync, constants, existsSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { daemons, startedPid, type Daemon, type Holder } from './machine.ts'
-import type { ProbeView } from './bridge/probes.ts'
 import { resolve, type Accepted } from './bridge/extensions.ts'
+import { respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { runProcess } from './run.ts'
 import { API_VERSION, isApiError, type ApiError } from './shared/api.ts'
 import type { Check, RunResult } from './shared/extensions.ts'
-import { extensionLine, probeLine, PROBLEM_FIX, problemLine, span } from './shared/cards.ts'
+import { extensionLine, PROBLEM_FIX, problemLine } from './shared/cards.ts'
 import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
 import { ConfigError, editorArgv, towerPort, type Config } from './shared/model.ts'
@@ -142,32 +142,6 @@ const daemon = ({ name, where, config }: Daemon, holder: Holder, stray: number |
   return { level: 'fail', what: `${name}: ${where} is held by ${holder.what}`, fix: name === 'tower' ? `stop it where it runs, or serve this system on another port: set port in ${config}` : 'stop it where it runs' }
 }
 
-/** How late a probe's read may start past its `nextAt`: the tower's tick (30 s) and the 60 s floor between reads, with room to spare. */
-const PROBE_LATE_MS = 3 * 60_000
-
-/** What failed reads say to do, by what failed: the command, Claude waiting on something, or anything else. */
-const probeFix = (error: string, log: string): string =>
-  /ENOENT/.test(error)
-    ? "argv in the config names a command that isn't on the tower's PATH: fix argv"
-    : /no answer within/.test(error)
-      ? 'run claude in a terminal: it may wait on an update, a sign-in or a trust prompt'
-      : `run claude in a terminal to see why it fails; ${log} has the tower's side, and \`tower probes\` follows the next read`
-
-/** Whether the quota probe answered recently, read from the running tower: it is the tower that runs it. */
-const quotaProbe = async (tower: Daemon, answering: boolean): Promise<Verdict> => {
-  if (!answering) return { level: 'warn', what: 'the quota probe: unchecked while the tower is down', fix: 'tower up' }
-  const res = await fetch(`${tower.where}/probe/quota?last=1`)
-  if (!res.ok) return { level: 'warn', what: `the quota probe: the tower answers ${res.status}: ${((await res.json()) as ApiError).message}`, fix: 'a tower older than this checkout: tower down tower, then tower up tower' }
-  const { status: p }: ProbeView = await res.json()
-  const now = Date.now()
-  const line = probeLine(p, now)
-  if (p.error !== undefined) return { level: 'warn', what: `${line}: ${p.failsInRow} failed in a row: ${p.error}`, fix: probeFix(p.error, tower.log) }
-  if (p.state === 'unavailable')
-    return { level: 'warn', what: `${line}: the account has no rate limits to read`, fix: 'sign in to Claude Code with a Claude subscription (claude, then /login): an API key or a cloud provider has none' }
-  if (p.lastAt !== undefined && p.nextAt !== undefined && now - p.nextAt > PROBE_LATE_MS) return { level: 'warn', what: `${line}: overdue by ${span(now - p.nextAt)}`, fix: `${tower.log} says why; tower down tower, then tower up tower` }
-  return { level: 'ok', what: line }
-}
-
 /**
  * The extensions, read from the running tower that runs them: one line each, the ones not started with what to do, and
  * a line per error problem with its fix; `all`, the warnings too.
@@ -219,7 +193,8 @@ const checkFailure = async (a: Accepted, check: Check, tower: Daemon): Promise<s
  * fails nothing.
  */
 const checkVerdicts = async (config: Config, tower: Daemon, answering: boolean): Promise<Verdict[]> => {
-  const resolved = resolve(discover(config), config, API_VERSION)
+  const now = respelled(config).config
+  const resolved = resolve(discover(now), now, API_VERSION)
   const checks = resolved.order.flatMap((id) => {
     const a = resolved.accepted.get(id)!
     return Object.entries(a.manifest.checks ?? {}).map(([name, check]) => ({ a, name, check }))
@@ -263,7 +238,7 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
 
 /**
  * Whether each daemon of this system runs, and whether something else holds its place: the tower's place is the config's
- * port. Then what the tower runs: the quota probe and the extensions, their warnings too with `all`, and the checks the
+ * port. Then what the tower runs: the extensions, their warnings too with `all`, and the checks the
  * extensions declare.
  */
 export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => {
@@ -286,7 +261,6 @@ export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict
   const tower = every.findIndex((d) => d.name === 'tower')
   return [
     ...verdicts.map((v) => v.verdict),
-    await quotaProbe(every[tower], verdicts[tower].ours),
     ...(await extensionVerdicts(every[tower], verdicts[tower].ours, all)),
     ...(await checkVerdicts(config, every[tower], verdicts[tower].ours)),
   ]

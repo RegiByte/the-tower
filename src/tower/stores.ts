@@ -13,11 +13,12 @@ import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
 import { createItem, deleteItem, itemsIn, readItem, writeItem } from '../collections.ts'
 import { hostRequest } from '../machine.ts'
-import type { FoldCtx, Item, ParsedItem, StartCtx, Started, StreamAt, StreamFact } from '../shared/extensions.ts'
+import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
 import { KIND_SCHEMAS, type FactKind, type RateLimitsReading } from '../shared/rate-limits.ts'
 import { limitsStep, NO_LIMITS, type LimitFacts } from '../bridge/rate-limits.ts'
+import { LEGACY_READINGS, type LegacyReading } from '../bridge/legacy.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
 import { logBytes, logFilesIn } from '../tail.ts'
@@ -32,6 +33,16 @@ const checked = (schema: z.ZodType, value: unknown, what: string): unknown => {
   const parsed = schema.safeParse(value)
   if (!parsed.success) throw new Error(`${what}: ${parsed.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`).join('; ')}`)
   return parsed.data
+}
+
+/**
+ * What of a stream's facts is a rate-limit reading: a fact of a code declaring the kind, and one of an old code its
+ * folder kept (`LEGACY_READINGS`); `undefined` for a stream with neither.
+ */
+const readingOf = (stream: NonNullable<Accepted['manifest']['streams']>[string], legacy: Record<string, LegacyReading>) => {
+  const kinded = new Set(Object.entries(stream.facts).flatMap(([code, f]) => (f.kind === 'tower/rate-limits' ? [code] : [])))
+  if (!kinded.size && !Object.keys(legacy).length) return undefined
+  return (code: string, fact: unknown): RateLimitsReading | undefined => (kinded.has(code) ? (fact as RateLimitsReading) : legacy[code]?.(fact))
 }
 
 /** A parse result, kept while its item's version holds. */
@@ -51,7 +62,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
   const streamOf = (name: string, at: StreamAt) => {
     const declared = manifest.streams?.[name]
     if (!declared) throw new Error(`${provides} declares no stream ${name}`)
-    const stream = `${provides}.${name}`
+    const stream = streamFolder(`${provides}.${name}`)
     if (declared.scope === 'system') {
       if (at.project !== undefined) throw new Error(`${name} is a system stream: it is appended to with no project`)
       return { declared, stream, dir: systemStreamPath(paths, stream) }
@@ -187,14 +198,18 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`; the core folds its readings of the kinds it knows. */
     attach: (started: Started) => {
       for (const [name, stream] of Object.entries(manifest.streams ?? {})) {
-        const codes = new Set(Object.entries(stream.facts).flatMap(([code, f]) => (f.kind === 'tower/rate-limits' ? [code] : [])))
-        if (!codes.size) continue
-        const step = (state: unknown, [at, code, fact]: StreamFact) => (codes.has(code) ? limitsStep(state as LimitFacts, at, fact as RateLimitsReading) : state)
-        readings.set(name, live.foldStream({ stream: `${provides}.${name}`, scope: 'system', init: NO_LIMITS, step, label: a.id }))
+        const folder = streamFolder(`${provides}.${name}`)
+        const reading = readingOf(stream, LEGACY_READINGS[folder] ?? {})
+        if (!reading) continue
+        const step = (state: unknown, [at, code, fact]: StreamFact) => {
+          const read = reading(code, fact)
+          return read ? limitsStep(state as LimitFacts, at, read) : state
+        }
+        readings.set(name, live.foldStream({ stream: folder, scope: 'system', init: NO_LIMITS, step, label: a.id }))
       }
       parse = started.parse
       for (const [name, reduce] of Object.entries(started.reduce ?? {}))
-        folds.set(name, live.foldStream({ stream: `${provides}.${name}`, scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
+        folds.set(name, live.foldStream({ stream: streamFolder(`${provides}.${name}`), scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
     },
     /**
      * What a fold gets as `own` at a subject, from what `own` reads: a stream's state on the floor (system streams alone

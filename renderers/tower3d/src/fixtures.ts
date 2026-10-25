@@ -9,13 +9,14 @@ import { DRAFTS } from '../../../extensions/drafts/client/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
-import { cardOffers, conversationOffers, floorOffers, noteActions, offered, probeOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
+import { cardOffers, conversationOffers, floorOffers, noteActions, offered, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
 import { GAMES } from './games.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
 import { wallNow } from './clock.ts'
+import type { QuotaStatus } from '../../../extensions/quota/status.ts'
 
 /**
  * Fabricated boards for `?board=<name>`: the states a renderer draws, with no host behind them and none of the real
@@ -191,7 +192,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
 const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
-function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'probes' | 'extraUsage' | 'shells' | 'today'>> = {}): Board {
+function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'extraUsage' | 'shells' | 'today'> & { quota: QuotaStatus }> = {}): Board {
   const threaded = floors.map((f) => withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers))))
   const reporting = withReports(threaded.flatMap((t) => t.cards))
   const built = floors.map((f, i) => {
@@ -227,7 +228,8 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     archiveAt: archiveAtOf(seated, seated.filter((c) => !kept(c))),
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,
-    probes: extra.probes ?? [],
+    probes: [],
+    ...(extra.quota && { x: { quota: extra.quota } }),
     extensions: [],
     adds: {},
     asks: [],
@@ -338,7 +340,7 @@ const busyBoard = (floors: FloorFacts[], now: number): Board =>
       { kind: 'seven_day', percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString() },
     ],
     rateLimitsAt: now - 3 * MIN,
-    probes: [{ name: 'quota', reads: 'claude.usage', every: 10 * MIN, state: 'ok', lastAt: now - 52 * MIN, answeredAt: now - 52 * MIN, failsInRow: 0, wait: 10 * MIN, nextAt: now + 7 * MIN, held: true, ...probeOffers('quota', false) }],
+    quota: { every: 10 * MIN, state: 'ok', lastAt: now - 52 * MIN, answeredAt: now - 52 * MIN, failsInRow: 0, wait: 10 * MIN, nextAt: now + 7 * MIN, held: true },
     today: {
       since: now - 15 * 60 * MIN, spend: 84.6, agentHours: 5.2, waits: { n: 23, p50: 260 },
       budget: { percentUsed: 27, resetsAt: new Date(now + 3 * 24 * 60 * MIN).toISOString(), since: now - 4 * 24 * 60 * MIN, spent: 310, outside: 0, usdPerPercent: 14.1, usdLeft: 1029.3, pace: { perDay: 343.1, runsOutAt: now + 40 * 60 * MIN } },
@@ -377,7 +379,7 @@ const party = (now: number) => boardOf(PARTY_GUESTS.map((guests, i) => ({
   ],
   rateLimitsAt: now - 40 * MIN,
   extraUsage: { at: now - 4 * MIN, enabled: true, used: 37, limit: 50, currency: 'USD', reached: false },
-  probes: [{ name: 'quota', reads: 'claude.usage', every: 10 * MIN, state: 'backoff', lastAt: now - 4 * MIN, error: 'no answer within 30s', answeredAt: now - 40 * MIN, failsInRow: 4, wait: 20 * MIN, nextAt: now + 16 * MIN, held: false, ...probeOffers('quota', false) }],
+  quota: { every: 10 * MIN, state: 'backoff', lastAt: now - 4 * MIN, error: 'no answer within 30s', answeredAt: now - 40 * MIN, failsInRow: 4, wait: 20 * MIN, nextAt: now + 16 * MIN, held: false },
   today: {
     since: now - 15 * 60 * MIN, spend: 212.4, agentHours: 11.3, waits: { n: 41, p50: 340 },
     budget: { percentUsed: 71, resetsAt: new Date(now + 84 * 60 * MIN).toISOString(), since: now - 5 * 24 * 60 * MIN, spent: 1080, outside: 6, usdPerPercent: 15.2, usdLeft: 440.8 },

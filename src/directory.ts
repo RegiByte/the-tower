@@ -25,7 +25,7 @@ import { checkFound, heldWords, standingWords } from './shared/policies.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, quotaOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -263,7 +263,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
 }
 
 /** A probe in one line: its short line, then its state and why its last read failed, when either adds to it. */
-const probeCliLine = (p: Board['probes'][number], now: number): string =>
+const probeCliLine = (p: NonNullable<ReturnType<typeof quotaOf>>, now: number): string =>
   [probeLine(p, now), ...(p.state === 'off' || p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
 
 /** An extension: its line, where it is off, whom it exempted, and each problem at its path. */
@@ -643,11 +643,12 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   probes: async ([sub, name]) => {
     if (!sub) {
-      console.log((await readBoard()).probes.map((p) => probeCliLine(p, now)).join('\n'))
+      const quota = quotaOf(await readBoard())
+      console.log(quota ? probeCliLine(quota, now) : 'quota probe · not running: tower extensions says why')
       return
     }
-    if (sub !== 'run' || !name) throw new CliError(usageLine('probes'))
-    console.log(probedLine(name, await command<Replies['probe/run']>('probe/run', { name: name })))
+    if (sub !== 'run' || name !== 'quota') throw new CliError(usageLine('probes'))
+    console.log(probedLine(name, await command<Pick<Replies['probe/run'], 'ms' | 'ok' | 'error'>>('quota/read-now', {})))
   },
   extensions: async ([sub, arg, ...rest]) => {
     if (!sub) {

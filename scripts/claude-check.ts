@@ -47,7 +47,8 @@ import { factsAfter, initialFacts, type Facts } from '../src/bridge/facts.ts'
 import { parseLog } from '../src/bridge/log.ts'
 import { initialConfig } from '../src/init.ts'
 import { bringAllDown, bringAllUp, daemons } from '../src/machine.ts'
-import { readUsage } from '../src/probes.ts'
+import { runProcess } from '../src/run.ts'
+import { USAGE_ARGS, usageRan, USAGE_REQUEST, USAGE_TIMEOUT_MS } from '../src/shared/rate-limits.ts'
 import { claudeRange, CLAUDE_TESTED } from '../src/shared/claude.ts'
 import type { BlockedKind } from '../src/bridge/blocked.ts'
 import type { Config, LogEvent, SessionHeader } from '../src/shared/model.ts'
@@ -405,7 +406,8 @@ async function run() {
     for (const [daemon, answer] of await bringAllDown(daemons(paths, PORT))) log(daemon.name, answer instanceof Error ? answer.message : answer)
   }
   writeConfig(configFor(hub, [], LAUNCHES.plain))
-  const usage = await readUsage(readJson<Config>(CONFIG))
+  const { argv, env } = readJson<Config>(CONFIG)
+  const usage = usageRan(await runProcess([...argv, ...USAGE_ARGS], { cwd: os.tmpdir(), timeoutMs: USAGE_TIMEOUT_MS, stdin: `${JSON.stringify(USAGE_REQUEST)}\n`, env }))
   const result: Run = { claude, startedAt, minutes: Math.round((Date.now() - startedAt) / 60_000), scenarios, usage }
   writeJson(RUN, result)
   return report()

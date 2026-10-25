@@ -22,10 +22,11 @@ import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } fr
 import { discardNote } from '../bridge/worktrees.ts'
 import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
-import { apiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
+import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { LEGACY_VERBS, legacyNamed } from '../bridge/legacy.ts'
 import { nestedIn, qualifiedOf, tooDeep, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
@@ -59,7 +60,7 @@ import { extensionCalls } from './calls.ts'
 import { chainCalls } from './chains.ts'
 import { UnsettledError, type ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
-import type { ConfigResource, ProbesResource, SystemResource } from './spine.ts'
+import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
 const TRACK_TIMEOUT_MS = 5000
@@ -77,7 +78,6 @@ type Deps = {
   'core:config': ConfigResource
   'core:system': SystemResource
   'core:publisher': PublisherResource
-  'core:probes': ProbesResource
   'core:extensions': ExtensionsResource
 }
 
@@ -90,8 +90,8 @@ type Gate = (exempt: Exemption[]) => Promise<ApiError | undefined>
 type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; gate: Gate }
 
 export const dispatch = defineResource({
-  dependencies: ['core:config', 'core:system', 'core:publisher', 'core:probes', 'core:extensions'],
-  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:probes': probeRunner, 'core:extensions': holder }: Deps) => {
+  dependencies: ['core:config', 'core:system', 'core:publisher', 'core:extensions'],
+  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:extensions': holder }: Deps) => {
     const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
 
     const policyFactsOf = (project: string) => policyFactsIn(system, project)
@@ -884,6 +884,20 @@ export const dispatch = defineResource({
         }),
       )
 
+    /**
+     * A core verb that moved into an extension (`LEGACY`): its input as the new verb takes it, called through the one
+     * dispatch as a step of the old, and the reply as the old one answered.
+     */
+    const legacy =
+      (old: string) =>
+      async (input: unknown, caller: Caller): Promise<Answer> => {
+        const { input: mapped, reply } = LEGACY_VERBS[old]
+        const now = mapped(input)
+        if (isApiError(now)) return now
+        const answer = await call(legacyNamed('verb', old)!.now, now, nestedIn(caller, `tower/${old}`))
+        return isApiError(answer) ? answer : (reply(answer) as Answer)
+      }
+
     const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
       spawn: ({ project, cwd, cut, callsign, model, effort, prompt, x, by, hire }) => {
         const fields = spawnFields(project, x ?? {})
@@ -899,11 +913,7 @@ export const dispatch = defineResource({
       resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
       kill: ({ id, by }) => kill(id, by),
       'let-go': ({ id }) => letGo(id),
-      'probe/run': async ({ name }) => {
-        const ran = await probeRunner.readNow(name)
-        if ('t' in ran) return ran
-        return { t: 'probed', at: ran.at, ms: ran.read.ms, ok: ran.read.ok, ...(!ran.read.ok && { error: ran.read.error }) }
-      },
+      'probe/run': legacy('probe/run'),
       'extension/restart': async ({ id }) => {
         const view = await holder.restart(id)
         return view ? { t: 'restarted', state: view.state } : apiError('not_found', `No extension "${id}": \`tower extensions\` lists them`)

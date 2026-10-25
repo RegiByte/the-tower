@@ -610,8 +610,7 @@ document.addEventListener('click', async (e) => {
   }
   const probeRun = target.closest('[data-probe-run]')
   if (probeRun) {
-    const probe = /** @type {Board['probes'][number]} */ (board().probes.find((p) => p.name === probeRun.dataset.probeRun))
-    return told(pressing(probeRun, async () => tower.run(offeredCall(probe, 'run', `probe ${probe.name}`)))).then((r) => r && toast(probedLine(probe.name, r)))
+    return told(pressing(probeRun, () => runVerb({ verb: 'quota/read-now', call: {} }))).then((r) => r && toast(probedLine('quota', /** @type {{ ms: number, ok: boolean, error?: string }} */ (r))))
   }
   const tidyCall = target.closest('[data-tidy-call]')
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))

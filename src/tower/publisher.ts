@@ -7,6 +7,7 @@ import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
 import { allCards, board, type Board, type Policies, type SystemView } from '../bridge/board.ts'
 import { foldBoard } from '../bridge/folds.ts'
+import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import { frozen } from '../bridge/frozen.ts'
@@ -55,7 +56,6 @@ export const publisher = defineResource({
       threads: system.threads(),
       repos: system.repos(),
       logFiles: system.logs(),
-      probes: system.probes(),
       readings: extensions.readings(),
       streams: system.streamMonths(),
       policies: policiesNow(),
@@ -68,7 +68,10 @@ export const publisher = defineResource({
     /** Set while extensions fold: a fold reads the board it is handed, never builds one. */
     let folding = false
 
-    /** The core's board, then every running extension's folds on it (`foldBoard`), and the extensions with what they found. */
+    /**
+     * The core's board, then every running extension's folds on it (`foldBoard`), and the extensions with what they
+     * found, each moved part copied back to its old field (`projectLegacy`).
+     */
     const boardOf = (): Board => {
       if (folding) throw new Error('ctx.board() was called inside a fold: a fold reads the board as its ctx.board')
       const view = viewOf()
@@ -76,7 +79,7 @@ export const publisher = defineResource({
       folding = true
       try {
         const folded = foldBoard({ board: core, folders: extensions.folders(), subjects: extensions.subjects(), now: view.now, clock: () => performance.now() })
-        return { ...folded.board, extensions: extensions.folded(folded.problems, view.now) }
+        return projectLegacy({ ...folded.board, extensions: extensions.folded(folded.problems, view.now) })
       } finally {
         folding = false
       }

@@ -7,7 +7,7 @@
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
-import { probesOf } from './bridge/probes.ts'
+import { respelled, type Respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
 import { defaultRenderer, renderersOf } from './renderers.ts'
@@ -25,7 +25,6 @@ import {
   EXTENSION_KEYS,
   FLOOR_EXTENSION_KEYS,
   HIRING_KEYS,
-  PROBE_KEYS,
   projectCollections,
   PROJECT_KEYS,
   RENDERER_KEYS,
@@ -76,6 +75,27 @@ const unknownKeysAt = (at: string, value: unknown, known: readonly string[]): Co
 /** The unknown keys of each object in a set of them by name, such as `probes.quota`. */
 const unknownKeysEach = (at: string, value: unknown, known: readonly string[]): ConfigProblem[] =>
   isObject(value) ? Object.entries(value).flatMap(([name, each]) => unknownKeysAt(`${at}.${name}`, each, known)) : []
+
+/**
+ * `probes`, the quota probe's old spelling: each field the tower honours warned with the line to write instead, one set
+ * beside its new spelling a failure, and any other probe or field a failure, since nothing reads it.
+ */
+const probesProblems = (probes: unknown, { old, both }: Respelled): ConfigProblem[] => {
+  if (probes === undefined) return []
+  if (!isObject(probes)) return [fail('probes', 'is the old spelling of the quota extension\'s settings: write "extensions": { "quota": { … } }')]
+  const quota = probes.quota
+  return [
+    ...old.map(({ key, use }): ConfigProblem => ({ level: 'warn', key, problem: `the old spelling, honoured until 2.0: write ${use}` })),
+    ...both.map(({ key, now }) => fail(key, `${now} is set too: the tower takes neither; keep ${now} and remove ${key}`)),
+    ...(quota !== undefined && !isObject(quota) ? [fail('probes.quota', 'takes an object: off and every, the old spelling of extensions.quota')] : []),
+    ...Object.keys(isObject(quota) ? quota : {})
+      .filter((key) => key !== 'off' && key !== 'every')
+      .map((key) => fail(`probes.quota.${key}`, 'nothing reads it: the quota probe is the quota extension, which takes off and settings.every')),
+    ...Object.keys(probes)
+      .filter((name) => name !== 'quota')
+      .map((name) => fail(`probes.${name}`, 'nothing reads it: the tower runs no probe of its own, and the quota probe is the quota extension (extensions.quota)')),
+  ]
+}
 
 /** A shelf entry reads its `label`, its kind's key and, for `md`, its `order`. */
 const shelfKeys = (entry: Record<string, unknown>): string[] => ['label', ...SHELF_KINDS.filter((kind) => kind in entry), ...('md' in entry ? ['order'] : [])]
@@ -230,8 +250,10 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
 }
 
 /** Every problem of a config read from its file, each at the key it is at. */
-export const configProblems = (config: Config): ConfigProblem[] => {
-  if (!isObject(config)) return [fail('(the file)', 'holds no JSON object')]
+export const configProblems = (read: Config): ConfigProblem[] => {
+  if (!isObject(read)) return [fail('(the file)', 'holds no JSON object')]
+  const spelled = respelled(read)
+  const config = spelled.config
   const renderers = (() => {
     try {
       return renderersOf(config)
@@ -262,8 +284,7 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...counts('hiring', config.hiring, HIRING_KEYS),
     ...counts('brief', config.brief, BRIEF_KEYS),
     ...counts('retention', config.retention, RETENTION_KEYS),
-    ...(config.probes === undefined || isObject(config.probes) ? checked('probes', () => probesOf(config)) : [fail('probes', 'takes an object of probes by name, such as { "quota": { "off": true } }')]),
-    ...unknownKeysEach('probes', config.probes, PROBE_KEYS),
+    ...probesProblems(config.probes, spelled),
     ...directories('plugins', config.plugins, 'absolute plugin directories'),
     ...(config.keys === undefined ? [] : keysProblems(config.keys).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...extensionEntries(config, extensions),

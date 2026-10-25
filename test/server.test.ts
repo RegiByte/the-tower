@@ -56,6 +56,8 @@ function seed(port: number) {
   writeFileSync(path.join(RENDERER, 'index.html'), '<!doctype html><title>renderer</title>')
   writeFileSync(path.join(RENDERER, '.secret'), 'hidden')
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', 'nightly.md'), POLICY)
+  mkdirSync(path.join(ROOT, 'streams', 'system', 'probe.quota'), { recursive: true })
+  cpSync(path.join(REPO, 'test', 'fixtures', 'probe-quota.jsonl'), path.join(ROOT, 'streams', 'system', 'probe.quota', '2026-10.jsonl'))
   cpSync(FIXTURES, EXTENSIONS, { recursive: true })
   writeFileSync(path.join(EXTENSIONS, 'package.json'), JSON.stringify({ type: 'module' }))
   execFileSync('git', ['init', '-q', '-b', 'main', HUB])
@@ -79,7 +81,7 @@ function writeConfig(port: number) {
   const config = {
     argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
     port,
-    probes: { quota: { off: true } },
+    probes: { quota: { every: '1h' } },
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
     extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
@@ -373,6 +375,27 @@ test("server: an extension's read answers by its path, and its deprecated verb s
   const schema = JSON.parse((await get('/schema')).body)
   assert.equal(schema.verbs['pulse/ping'].scope, 'project')
   assert.equal(schema.reads['pulse/beats/<project>'].path, '/pulse/beats/{project}')
+})
+
+test("server: the quota probe, moved into its extension, answers its old names through LEGACY, its old folder folded as before", async () => {
+  const { board } = (await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>
+  const status = board.x?.quota as { every: number; lastAt: number }
+  assert.equal(status.every, 3_600_000, 'probes.quota.every, the old spelling, is read as extensions.quota.settings.every')
+  assert.deepEqual([board.probes.length, board.probes[0].name, board.probes[0].every, board.probes[0].calls], [1, 'quota', 3_600_000, { run: ['probe/run', { name: 'quota' }] }])
+  assert.equal(board.rateLimits.find((l) => l.kind === 'seven_day')?.percentUsed, 89, "the old folder's readings are the account's limits")
+  const view = await get('/probe/quota?last=3')
+  assert.deepEqual([view.status, view.headers.deprecation, view.headers.link], [200, '@0', '</quota/reads>; rel="successor-version"'])
+  const { status: was, reads } = JSON.parse(view.body)
+  assert.deepEqual([was.name, reads.length, reads[0].reads], ['quota', 3, 'claude.usage'])
+  assert.equal(errorCode(await get('/probe/mine')), 'not_found')
+  const run = await post('probe/run', { name: 'quota' })
+  assert.deepEqual([run.status, run.headers.deprecation, run.headers.link], [200, '@0', '</quota/read-now>; rel="successor-version"'])
+  const probed = ROUTES['probe/run'].reply.parse(JSON.parse(run.body))
+  assert.deepEqual([probed.t, probed.ok], ['probed', false], 'a config whose argv is no Claude answers no get_usage')
+  assert.equal(errorCode(await post('probe/run', { name: 'quota' })), 'refused', 'a read starts at most once a minute')
+  assert.equal(errorCode(await post('probe/run', { name: 'mine' })), 'not_found')
+  const [newest] = JSON.parse((await get('/quota/reads?last=1')).body).reads
+  assert.deepEqual([newest.ok, newest.error], [false, probed.error], 'the read is appended to the old folder, newest first')
 })
 
 test('server: an extension reaches only the core and what it declares', async () => {

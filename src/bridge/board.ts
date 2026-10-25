@@ -12,7 +12,7 @@ import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
 import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from './policies.ts'
 import { POLICIES } from '../shared/policies.ts'
-import { NO_READS, probesOf, probeStatus, type ProbeFacts, type ProbeStatus } from './probes.ts'
+import type { ProbeStatus } from './legacy.ts'
 import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
@@ -29,7 +29,6 @@ import {
   floorOffers,
   noteActions,
   offered,
-  probeOffers,
   resourceOffers,
   sendHomeActions,
   type CardAction,
@@ -344,7 +343,16 @@ export type Board = {
   rateLimitsAt?: number
   /** Whose reading the rate limits are: a session's turn, or a probe's read. */
   rateLimitsFrom?: LimitsFrom
-  /** Every probe the config runs, the core's first, as its stream says it stands (decision `probes`), and `run`, a read now. */
+  /**
+   * The newest reading a session's turn took, beside the account's: what a probe of the limits waits on while turns
+   * read them. @since 1.88
+   */
+  turnLimits?: { at: number; limits: RateLimit[] }
+  /**
+   * The quota probe, the quota extension's part (`x.quota`) as it stood at 1.87, with `run`, a read now
+   * (`probe/run`): none while the extension doesn't run.
+   * @deprecated since 1.88: read `x.quota`, and call `quota/read-now`.
+   */
   probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
   /** The account's extra usage, as the probes' newest answer that had it said. */
   extraUsage?: ExtraUsage
@@ -755,7 +763,6 @@ export type SystemView = {
   threads: { project: string; id: string; thread: ReviewThread }[]
   repos: Map<string, RepoRead>
   logFiles: Map<string, LogFile>
-  probes: Map<string, ProbeFacts>
   /** Each started extension's stream of `tower/rate-limits` readings, folded. */
   readings: LimitFacts[]
   streams: StreamMonth[]
@@ -768,8 +775,14 @@ export type SystemView = {
   now: number
 }
 
+/** The newest reading any session's turn took. */
+const turnLimitsOf = (sessions: Session[]): Pick<Board, 'turnLimits'> => {
+  const newest = newestReading(sessions.map((s) => s.facts.rateLimits))
+  return newest ? { turnLimits: newest } : {}
+}
+
 export const board = (view: SystemView): Board => {
-  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, readings, streams, policies, extensions, stores, paths, now } = view
+  const { config, sessions, host, shells, items, threads, repos, logFiles, readings, streams, policies, extensions, stores, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(view)
@@ -781,8 +794,7 @@ export const board = (view: SystemView): Board => {
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
-  const limitStreams = [...probes.values(), ...readings]
-  const limits = accountLimits(sessions.map((s) => s.facts), limitStreams)
+  const limits = accountLimits(sessions.map((s) => s.facts), readings)
   const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
@@ -826,12 +838,13 @@ export const board = (view: SystemView): Board => {
     offers: [...floorPolicies].flatMap(([id, views]) => offersOf(id, views)).sort((a, b) => a.since - b.since),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
-    ...extraUsageOf(limitStreams),
-    probes: probesOf(config).map((p) => ({ ...probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits))), ...probeOffers(p.name, p.off) })),
+    ...turnLimitsOf(sessions),
+    ...extraUsageOf(readings),
+    probes: [],
     extensions,
     adds: {},
     asks: [],
-    today: today(sessions, limitStreams, now),
+    today: today(sessions, readings, now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
     claudeDefaults: claudeDefaults(sessions),

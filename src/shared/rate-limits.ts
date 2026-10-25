@@ -5,6 +5,7 @@
  * Below it, Claude's answer to `get_usage` read as one.
  */
 import { z } from 'zod'
+import type { RunResult } from './extensions.ts'
 
 /** The kinds of stream fact the core folds, each by its qualified name. */
 export const FACT_KINDS = ['tower/rate-limits'] as const
@@ -30,6 +31,15 @@ export type RateLimitsReading = z.infer<typeof RateLimitsReading>
 /** Each kind's schema: a fact of a code declaring it holds to it as well as to its own. */
 export const KIND_SCHEMAS: Record<FactKind, z.ZodType> = { 'tower/rate-limits': RateLimitsReading }
 
+/** Claude in print mode answering control requests on stdin: no tools, no settings, no MCP, no slash commands, nothing saved. */
+export const USAGE_ARGS = [
+  '-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose',
+  '--tools', '', '--setting-sources', '', '--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence',
+]
+
+/** How long Claude has to answer `get_usage` before it is killed. */
+export const USAGE_TIMEOUT_MS = 30_000
+
 /** The request Claude answers with `/usage`'s data, and nothing else: no prompt is sent. */
 export const USAGE_REQUEST = { type: 'control_request', request_id: 'usage', request: { subtype: 'get_usage', skip_behaviors: true } }
 
@@ -44,6 +54,16 @@ export const usageAnswer = (stdout: string): { answer: unknown } | { error: stri
     .find((m) => m.type === 'control_response' && m.response?.request_id === USAGE_REQUEST.request_id)?.response
   if (!response) return { error: 'claude printed no answer to get_usage' }
   return response.subtype === 'success' ? { answer: withoutNulls(response.response) } : { error: String(response.error ?? 'get_usage failed') }
+}
+
+/**
+ * What a run of Claude with `USAGE_ARGS`, `USAGE_REQUEST` its stdin, came to: its answer, or why there is none, with
+ * Claude's own last word on stderr when it exited failing.
+ */
+export const usageRan = (ran: Pick<RunResult, 'exit' | 'stdout' | 'stderr' | 'timedOut'>): { answer: unknown } | { error: string } => {
+  if (ran.timedOut) return { error: `no answer within ${USAGE_TIMEOUT_MS / 1000}s` }
+  const read = usageAnswer(ran.stdout)
+  return 'error' in read && ran.exit ? { error: `${read.error}: claude exited ${ran.exit}: ${ran.stderr.trim().split('\n').at(-1) ?? ''}` } : read
 }
 
 type UsageWindow = { utilization?: number; resets_at?: string }

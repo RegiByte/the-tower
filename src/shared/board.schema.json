@@ -103,6 +103,26 @@
           "$ref": "#/definitions/LimitsFrom",
           "description": "Whose reading the rate limits are: a session's turn, or a probe's read."
         },
+        "turnLimits": {
+          "type": "object",
+          "properties": {
+            "at": {
+              "type": "number"
+            },
+            "limits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RateLimit"
+              }
+            }
+          },
+          "required": [
+            "at",
+            "limits"
+          ],
+          "additionalProperties": false,
+          "description": "The newest reading a session's turn took, beside the account's: what a probe of the limits waits on while turns read them."
+        },
         "probes": {
           "type": "array",
           "items": {
@@ -128,7 +148,9 @@
                 "type": "string"
               },
               "reads": {
-                "$ref": "#/definitions/Reader"
+                "type": "string",
+                "const": "claude.usage",
+                "description": "The probes the core ran before 1.88: their readers, a closed set."
               },
               "every": {
                 "type": "number",
@@ -158,7 +180,7 @@
               },
               "nextAt": {
                 "type": "number",
-                "description": "When it reads next: its wait after its last read, or later while `held`; a moment past (0 before its first read) means at the tower's next tick. Absent while off."
+                "description": "When it reads next: a moment past (0 before its first read) means at the tower's next tick. Absent while off."
               },
               "held": {
                 "type": "boolean",
@@ -178,7 +200,8 @@
               "wait"
             ]
           },
-          "description": "Every probe the config runs, the core's first, as its stream says it stands (decision `probes`), and `run`, a read now."
+          "description": "The quota probe, the quota extension's part (`x.quota`) as it stood at 1.87, with `run`, a read now (`probe/run`): none while the extension doesn't run.",
+          "deprecated": "since 1.88: read `x.quota`, and call `quota/read-now`."
         },
         "extraUsage": {
           "$ref": "#/definitions/ExtraUsage",
@@ -4220,10 +4243,6 @@
       "additionalProperties": false,
       "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
-    "Reader": {
-      "type": "string",
-      "const": "claude.usage"
-    },
     "ProbeState": {
       "type": "string",
       "enum": [
@@ -4234,7 +4253,7 @@
         "backoff",
         "unavailable"
       ],
-      "description": "How a probe stands, as its stream says: `new` before its first read, `ok` while its last read answered, `failing` after a read with no answer, `backoff` once failures in a row lengthen its wait, `unavailable` while its last answer said the account has no rate limits to read, `off` by the config."
+      "description": "A probe's state as `board.probes` says it: `off` by the config."
     },
     "ExtraUsage": {
       "type": "object",

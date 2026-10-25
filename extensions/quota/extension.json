@@ -1,0 +1,105 @@
+{
+  "id": "quota",
+  "version": "1.0",
+  "title": "Quota probe",
+  "description": "Reads the account's rate limits from Claude while no session's turn does.",
+  "requires": { "tower": "1.88" },
+  "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "every": {
+        "type": "string",
+        "pattern": "^([1-9]\\d*(m|h)|([6-9]\\d|[1-9]\\d{2,})s)$",
+        "default": "10m",
+        "description": "How often it reads while no session's turn does, such as \"10m\" (\"s\", \"m\" or \"h\"): a minute at least."
+      }
+    }
+  },
+  "streams": {
+    "reads": {
+      "scope": "system",
+      "description": "Each read of the account's rate limits, answered or not.",
+      "facts": {
+        "u": {
+          "kind": "tower/rate-limits",
+          "description": "An answered read: Claude's get_usage answer as it came, nulls dropped, and the reading made of it (a reading with no runtime is Claude's).",
+          "schema": {
+            "type": "object",
+            "required": ["ms", "answer", "limits", "unavailable"],
+            "properties": {
+              "ms": { "type": "integer", "minimum": 0 },
+              "answer": { "type": "object" },
+              "limits": { "type": "array", "items": { "type": "object", "required": ["kind", "percentUsed"], "properties": { "kind": { "type": "string" }, "percentUsed": { "type": "number" }, "resetsAt": { "type": "string" } } } },
+              "extraUsage": { "type": "object" },
+              "unavailable": { "type": "boolean", "description": "The answer says the account has no rate limits to read." }
+            }
+          }
+        },
+        "f": {
+          "description": "A read with no answer, and why.",
+          "schema": { "type": "object", "required": ["ms", "error"], "properties": { "ms": { "type": "integer", "minimum": 0 }, "error": { "type": "string" } } }
+        },
+        "p": {
+          "description": "A read as the core's quota probe wrote it before tower 1.88, answered or not: kept, and never written again.",
+          "schema": { "type": "object", "required": ["reads", "ms", "ok"], "properties": { "reads": { "const": "claude.usage" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } }
+        }
+      },
+      "doors": { "read": "quota/reads", "append": "quota/read-now" }
+    }
+  },
+  "slots": { "tick": { "when": { "every": "1m" } } },
+  "folds": {
+    "board": {
+      "x": {
+        "type": "object",
+        "required": ["every", "state", "failsInRow", "wait", "nextAt", "held"],
+        "properties": {
+          "every": { "type": "integer", "description": "How often it reads while nothing else holds it, ms." },
+          "state": { "enum": ["new", "ok", "failing", "backoff", "unavailable"] },
+          "lastAt": { "type": "number", "description": "When it last read, answered or not." },
+          "error": { "type": "string", "description": "Why its last read has no answer." },
+          "answeredAt": { "type": "number", "description": "When a read last answered." },
+          "failsInRow": { "type": "integer" },
+          "wait": { "type": "integer", "description": "How long it waits after its last read, ms: every, longer while backing off or unavailable." },
+          "nextAt": { "type": "number", "description": "When it reads next: a moment past means at the next tick." },
+          "held": { "type": "boolean", "description": "nextAt is set by a session's turn, which read every limit it reads." }
+        }
+      }
+    }
+  },
+  "verbs": {
+    "read-now": {
+      "scope": "system",
+      "description": "Read the account's rate limits now, whatever the stream says, appended to it as any read is. Refused while a read is in flight, or within a minute of the last read's start.",
+      "input": { "type": "object", "additionalProperties": false },
+      "reply": {
+        "type": "object",
+        "required": ["at", "ms", "ok"],
+        "properties": { "at": { "type": "integer", "description": "When the read started, epoch ms." }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "error": { "type": "string", "description": "Why the read has no answer." } }
+      },
+      "words": { "label": "Read now", "hint": "Read the account's rate limits now (at most once a minute)" }
+    }
+  },
+  "reads": {
+    "reads": {
+      "scope": "system",
+      "description": "The latest reads, newest first, each Claude's answer as it came or why there is none.",
+      "query": { "type": "object", "properties": { "last": { "type": "string", "pattern": "^([1-9]\\d{0,2}|1000)$", "description": "How many, 20 when left out." } } },
+      "reply": {
+        "type": "object",
+        "required": ["reads"],
+        "properties": { "reads": { "type": "array", "items": { "type": "object", "required": ["at", "ms", "ok"], "properties": { "at": { "type": "number" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } } } }
+      }
+    },
+    "status": {
+      "scope": "system",
+      "description": "Whether it reads the rate limits: its line when it does; refused, saying why and what to do, when its last read failed, the account has none to read, or it is overdue.",
+      "reply": { "type": "object", "required": ["ok", "message"], "properties": { "ok": { "const": true }, "message": { "type": "string" } } }
+    }
+  },
+  "checks": {
+    "reading": { "words": { "label": "The quota probe reads the rate limits" }, "read": "status" }
+  }
+}

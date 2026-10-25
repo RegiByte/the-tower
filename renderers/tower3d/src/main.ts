@@ -1993,9 +1993,7 @@ $('hud').addEventListener('click', (e) => {
   if (el.closest('[data-stop-share]')) endShare()
   if (el.closest('[data-shown]')) lookAtNew()
   const probeRun = el.closest<HTMLElement>('[data-probe-run]')
-  const probe = probeRun && s.board?.probes.find((p) => p.name === probeRun.dataset.probeRun)
-  const run = probe && callOf(probe, 'run')
-  if (probeRun && run) void pressing(probeRun, () => offered(run)).then((r) => r && toast(probedLine(probe.name, r)))
+  if (probeRun) void pressing(probeRun, () => tried(() => runVerb({ verb: 'quota/read-now', call: {} }) as Promise<{ ms: number; ok: boolean; error?: string }>)).then((r) => r && toast(probedLine('quota', r)))
 })
 $('watch').addEventListener('click', (e) => {
   const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act

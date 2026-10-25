@@ -2,6 +2,8 @@ import type { Board } from '../bridge/board.ts'
 import type { Attention } from '../bridge/life.ts'
 import type { Replies } from './api.ts'
 import { clockAt, plural, span } from './format.ts'
+import type { ProbeStatus as LegacyProbe } from '../bridge/legacy.ts'
+import type { QuotaStatus } from '../../extensions/quota/status.ts'
 
 /** The account's rate limits, the budget's pace and the probes that read them, in words. */
 
@@ -43,7 +45,14 @@ export const paceLine = (percentUsed: number, elapsed: number) => {
   return `${Math.round(elapsed)}% of the week gone, ${gap >= 0 ? `${plural(gap, 'point')} under pace` : `${plural(-gap, 'point')} over pace`}`
 }
 
-type ProbeStatus = Board['probes'][number]
+/** A probe as these words read it: the quota extension's part with its name (`quotaOf`), or an entry of `board.probes`. */
+type ProbeStatus = Omit<LegacyProbe, 'reads'>
+
+/** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. */
+export const quotaOf = (b: Pick<Board, 'x'>): ProbeStatus | undefined => {
+  const quota = b.x?.quota as QuotaStatus | undefined
+  return quota && { name: 'quota', ...quota }
+}
 
 /** A probe's state in words, coloured by how much it asks of you: a failing probe leaves the limits to age. */
 export const PROBE_STATE_NAME: Record<ProbeStatus['state'], string> = { off: 'off', new: 'not read yet', ok: 'answering', failing: 'failing', backoff: 'backing off', unavailable: 'nothing to read' }
@@ -65,15 +74,15 @@ export const probeLine = (p: ProbeStatus, now: number) =>
 export const probeTitle = (p: ProbeStatus, now: number) =>
   [
     probeLine(p, now),
-    p.state === 'off' && `off in the config (probes.${p.name}.off): the limits refresh only during sessions' turns`,
-    p.state === 'new' && `reads ${p.reads} every ${span(p.every)} while no session's turn has`,
+    p.state === 'off' && `off in the config (extensions.${p.name}.off): the limits refresh only during sessions' turns`,
+    p.state === 'new' && `reads Claude's usage every ${span(p.every)} while no session's turn has`,
     p.state === 'unavailable' && `the account has no rate limits to read (an API key, a cloud provider, or nobody signed in): it reads again every ${span(p.wait)}`,
     p.error !== undefined && `${p.failsInRow} failed in a row${p.state === 'backoff' ? `, so it waits ${span(p.wait)}` : ''}: ${p.error}`,
     p.error !== undefined && p.answeredAt !== undefined && `last answered ${span(now - p.answeredAt)} ago`,
   ].filter(Boolean).join('\n')
 
 /** What a read now came to: `quota probe answered in 1.4s`, or why it has no answer. */
-export const probedLine = (name: string, r: Replies['probe/run']) =>
+export const probedLine = (name: string, r: Pick<Replies['probe/run'], 'ms' | 'ok' | 'error'>) =>
   r.ok ? `${name} probe answered in ${(r.ms / 1000).toFixed(1)}s` : `${name} probe failed: ${r.error}`
 
 /** Extra usage spent of its monthly limit: `$12 of $1,000`. */

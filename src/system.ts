@@ -1,6 +1,6 @@
 /**
  * A running view of the whole system: every session folded from its log and kept current as the host appends
- * to it, every probe's stream folded, every policy parsed and each project's policy facts folded, the items of every collection, the host's live set, the terms daemon's shells,
+ * to it, every stream an extension folds kept current, every policy parsed and each project's policy facts folded, the items of every collection, the host's live set, the terms daemon's shells,
  * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
@@ -9,7 +9,6 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
 import { foldLog } from './checkpoints.ts'
-import { probeFacts, readingsOf, type ProbeFacts, type ProbeReading, type StreamFile } from './bridge/probes.ts'
 import { APPROVALS_STREAM, policyFacts, RUNS_STREAM, type PolicyFacts, type PolicyFile } from './bridge/policies.ts'
 import { hashOf, parsePolicy } from './bridge/policy-file.ts'
 import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.ts'
@@ -95,18 +94,7 @@ const policyFilesIn = (paths: SystemPaths, items: CollectionItem[], held: Policy
       return text === undefined ? [] : [{ project, id, modifiedAt, hash: hashOf(text), parsed: parsePolicy(text) }]
     })
 
-const PROBE_STREAM = /^probe\.([\w-]+)$/
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
-
-/** A stream file's reads, as of its size. */
-type HeldStream = StreamFile & { bytes: number }
-
-/** A stream file read again, archived or plain: lines that are no JSON are passed over, and the tower's log says so. */
-const readStream = (file: string, bytes: number): HeldStream => {
-  const read = readingsOf(logBytes(file).toString('utf8'))
-  if (read.unreadable) console.error(`${file}: ${read.unreadable} line(s) are no JSON, each a read passed over`)
-  return { ...read, bytes }
-}
 
 /** A stream file's facts, as of its size. */
 type HeldFacts = StreamText & { bytes: number }
@@ -141,30 +129,6 @@ const policyStreamsIn = (root: string, held: Map<string, HeldFacts>): { facts: M
     ]),
   )
   return { facts, files }
-}
-
-/**
- * Each probe's stream, by probe name, from its month files in order (while Tidy archives a month both its files are
- * there, and the plain one is read), and the files as read: a file `held` at the same size is not read again.
- */
-const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams: Map<string, ProbeReading[]>; files: Map<string, HeldStream> } => {
-  const files = new Map<string, HeldStream>()
-  const streams = new Map<string, ProbeReading[]>()
-  for (const stream of readdirSync(root)) {
-    const name = PROBE_STREAM.exec(stream)?.[1]
-    if (!name) continue
-    const readings = logFilesIn(readdirSync(path.join(root, stream)).filter((f) => MONTH_FILE.test(f)))
-      .sort()
-      .flatMap((f) => {
-        const file = path.join(root, stream, f)
-        const bytes = statSync(file).size
-        const read = held.get(file)?.bytes === bytes ? held.get(file)! : readStream(file, bytes)
-        files.set(file, read)
-        return read.readings
-      })
-    streams.set(name, readings)
-  }
-  return { streams, files }
 }
 
 /**
@@ -225,10 +189,6 @@ export type System = {
   policies: () => PolicyFile[]
   /** Each project's policy facts, by project, from its `runs` and `approvals` streams, read again when they grow. */
   policyFacts: () => Map<string, PolicyFacts>
-  /** Each probe's stream folded, by probe name, read again when it grows. */
-  probes: () => Map<string, ProbeFacts>
-  /** A probe's reads, oldest first: none for a probe with no stream. */
-  probeReads: (name: string) => ProbeReading[]
   /** Every stream's month files on disk, by path under `streams/`. */
   streamMonths: () => StreamMonth[]
   /**
@@ -267,7 +227,7 @@ export type System = {
 }
 
 /**
- * `onChange` is called after anything the system holds changes: a logged event, a probe's read, a collection's items, the live set,
+ * `onChange` is called after anything the system holds changes: a logged event, a stream's fact, a collection's items, the live set,
  * the shells, the processes, git, or the config file.
  */
 export const watchSystem = async (paths: SystemPaths, notify: () => void): Promise<System> => {
@@ -287,10 +247,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let policyFiles: PolicyFile[] = []
   let policyStreamFiles = new Map<string, HeldFacts>()
   let policies = new Map<string, PolicyFacts>()
-  let streamFiles = new Map<string, HeldStream>()
   let streamMonths: StreamMonth[] = []
-  let probeStreams = new Map<string, ProbeReading[]>()
-  let probes = new Map<string, ProbeFacts>()
   let live: HostLive | undefined
   let running: Resource[] = []
   let peers: Peer[] = []
@@ -418,18 +375,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     )
   }
 
-  /** A probe's read appends a line: its stream is folded again once the write settles. */
+  /** A system stream's fact appends a line: its folds step on once the write settles. */
   let streamsTimer: NodeJS.Timeout | undefined
-  const rescanStreams = () => {
-    const next = probeStreamsIn(systemStreamsPath(paths), streamFiles)
-    const nextProbes = new Map([...next.streams].map(([name, readings]) => [name, probeFacts(readings)]))
-    const filesBefore = [...streamFiles.keys()]
-    streamFiles = next.files
-    probeStreams = next.streams
-    if (asJson(nextProbes) === asJson(probes) && asJson([...streamFiles.keys()]) === asJson(filesBefore)) return
-    probes = nextProbes
-    onChange()
-  }
   /** Any stream's line or file, the extensions' too, moves the month files Tidy lists. */
   const rescanMonths = () => {
     const next = streamMonthsIn(paths)
@@ -438,7 +385,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   }
   const scheduleStreams = () => {
-    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams(), refoldAll('system'), rescanMonths())), RESCAN_DEBOUNCE_MS)
+    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), refoldAll('system'), rescanMonths())), RESCAN_DEBOUNCE_MS)
   }
 
   /** A policy's fact appends a line: its project's streams are folded again once the write settles. */
@@ -571,7 +518,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   policyFiles = policyFilesIn(paths, items, policyFiles)
   watching(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
   mkdirSync(systemStreamsPath(paths), { recursive: true })
-  rescanStreams()
   watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
   mkdirSync(projectsStreamsPath(paths), { recursive: true })
   rescanPolicyStreams()
@@ -590,7 +536,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     threads: () => threads,
     policies: () => policyFiles,
     policyFacts: () => policies,
-    probes: () => probes,
     foldStream: (fold) => {
       folds.set(fold, { files: new Map(), at: new Map() })
       refold(fold)
@@ -600,7 +545,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         stop: () => void folds.delete(fold),
       }
     },
-    probeReads: (name) => probeStreams.get(name) ?? [],
     streamMonths: () => streamMonths,
     live: () => live,
     running: () => running,

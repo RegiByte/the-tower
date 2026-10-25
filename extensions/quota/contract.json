@@ -1,0 +1,12 @@
+{
+  "provides": "quota",
+  "major": 1,
+  "names": [
+    "verbs.read-now",
+    "reads.reads",
+    "reads.status",
+    "streams.reads.u",
+    "streams.reads.f",
+    "streams.reads.p"
+  ]
+}

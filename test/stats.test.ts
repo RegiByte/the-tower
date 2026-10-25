@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { extensionOf, landed as landing, parseLog, type RepoLanded } from '../src/bridge/landed.ts'
 import { bucketStart, outsideIn, outsideUse, pace, stats, today, weeklyBudget, weeklyRead } from '../src/bridge/stats.ts'
-import { probeFacts, type ProbeReading } from '../src/bridge/probes.ts'
+import { quotaLimits, type ProbeReading } from './quota-reads.ts'
 import { fixture } from './replay.ts'
 
 const session = (name: string): Session => {
@@ -194,7 +194,7 @@ test("a climb between two probe answers while no session used the API is outside
   const resetsAt = '2026-10-04T22:00:00.000Z'
   const answer = (utilization: number, resets_at = resetsAt) => ({ rate_limits: { seven_day: { utilization, resets_at } } })
   const read = (at: number, utilization: number, resets?: string): ProbeReading => [at, { reads: 'claude.usage', ms: 1000, ok: true, answer: answer(utilization, resets) }]
-  const probe = probeFacts([read(start - 60 * MIN, 15), read(start - 30 * MIN, 16), read(start + 30 * MIN, 18), read(start + 60 * MIN, 18)])
+  const probe = quotaLimits([read(start - 60 * MIN, 15), read(start - 30 * MIN, 16), read(start + 30 * MIN, 18), read(start + 60 * MIN, 18)])
   assert.deepEqual(probe.rises.seven_day, [[start - 60 * MIN, start - 30 * MIN, 1, resetsAt], [start - 30 * MIN, start + 30 * MIN, 2, resetsAt]])
   const now = start + 90 * MIN
   const budget = weeklyBudget([s], [probe], now)!
@@ -205,8 +205,8 @@ test("a climb between two probe answers while no session used the API is outside
   assert.equal(outsideIn([s], [probe], { from: start, to: now }), 0)
   const working = { ...s, facts: { ...s.facts, spend: [], tokens: [], turnSpans: [], turnStartedAt: 0, heardAt: 0, exitedFrom: undefined } }
   assert.equal(outsideUse([working], [probe], () => true), 1, "a turn still running holds the climbs it overlaps, though it hasn't spent yet")
-  const lost = probeFacts([read(start + 60 * MIN, 18), read(start + 90 * MIN, 21)])
+  const lost = quotaLimits([read(start + 60 * MIN, 18), read(start + 90 * MIN, 21)])
   assert.equal(outsideUse([working], [lost], () => true), 3, 'a turn silent past the stuck threshold, or lost with the host, holds nothing after it')
-  const otherWeek = probeFacts([read(start - 60 * MIN, 90, '2026-09-27T22:00:00.000Z'), read(start - 50 * MIN, 95, '2026-09-27T22:00:00.000Z'), read(start - 40 * MIN, 1)])
+  const otherWeek = quotaLimits([read(start - 60 * MIN, 90, '2026-09-27T22:00:00.000Z'), read(start - 50 * MIN, 95, '2026-09-27T22:00:00.000Z'), read(start - 40 * MIN, 1)])
   assert.equal(weeklyBudget([s], [otherWeek], now)!.outside, 0, "another week's climb is not this week's, nor is a reset a climb")
 })

@@ -37,6 +37,34 @@ const LAUNCH = '1.87'
 /** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
 const KINDS = '1.88'
 
+/**
+ * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
+ * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
+ * `module` a served URL; `stream` a folder under `streams/` and the stream's name (`quota.reads`), whose facts stay in
+ * the old folder for good; `board` a field by its subject (`board.probes`, `floor.policies`, `card.run`) and where the
+ * part it is copied from sits now (`board.x.quota`). What a verb's, a read's or a field's move does beyond the name is
+ * in `src/bridge/legacy.ts`, keyed by `old`.
+ */
+export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board'; old: string; now: string; since: string }
+
+/**
+ * The built-ins' old names, each with what it is now: a fixed list, added to only as a built-in moves into a bundled
+ * extension, never after 2.0. 2.0 removes every entry but the streams', whose folders hold what was written.
+ */
+export const LEGACY: readonly LegacyEntry[] = [
+  { kind: 'module', old: '/drafts.js', now: '/x/drafts/drafts.js', since: '1.89' },
+  { kind: 'verb', old: 'probe/run', now: 'quota/read-now', since: KINDS },
+  { kind: 'read', old: 'probe/<name>', now: 'quota/reads', since: KINDS },
+  { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
+  { kind: 'board', old: 'board.probes', now: 'board.x.quota', since: KINDS },
+]
+
+/** The entries `kind`'s applier reads. */
+export const legacyOf = (kind: LegacyEntry['kind']): LegacyEntry[] => LEGACY.filter((e) => e.kind === kind)
+
+/** The folder a stream (`<cap>.<name>`) keeps its facts in: its old name when it moved there, else its own. */
+export const streamFolder = (stream: string): string => legacyOf('stream').find((e) => e.now === stream)?.old ?? stream
+
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
 
@@ -59,18 +87,6 @@ export const RESERVED = [
  */
 export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 
-/**
- * A built-in's name from before it moved into its bundled extension, with what it is `now`, each as its kind names it:
- * `module` a served URL, `verb` and `read` a core route without its slash, `stream` a stream's folder on disk (the
- * kind that outlives 2.0: stored data never moves), `board` a dotted path from its subject. `since`: the minor it moved in.
- */
-export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board'; old: string; now: string; since: string }
-
-/** The built-ins' old names, each with what it is now: a fixed list, never added to, gone at 2.0 but for its streams. */
-export const LEGACY: readonly LegacyEntry[] = [{ kind: 'module', old: '/drafts.js', now: '/x/drafts/drafts.js', since: '1.89' }]
-
-/** The old names of one kind. */
-export const legacyOf = (kind: LegacyEntry['kind']) => LEGACY.filter((e) => e.kind === kind)
 
 /** Every problem an extension can have, by what it is. */
 export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook', 'paused', 'contract'] as const

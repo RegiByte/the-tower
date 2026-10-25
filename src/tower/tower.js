@@ -18,7 +18,8 @@
  *   await tower.stats({ from, to, bucket, project })  stats over every session's log (`/stats`): every field optional,
  *                                                   times in epoch ms, `bucket` 'hour' or 'day'; the last seven local days by day
  *   await tower.probe(name, { last })               one probe's status, as `board.probes` has it, and its latest `last` reads (20
- *                                                   unless given), newest first (`/probe/<name>`)
+ *                                                   unless given), newest first (`/probe/<name>`); deprecated since 1.88:
+ *                                                   `get('quota/reads')` and the board's `x.quota`
  *   await tower.landing({ project, branch })         what landing changed on a worktree's or kept branch's `branch` (`/landing`), when
  *                                                   the board says it is carried: per repo, each commit landed edited, its copy and
  *                                                   `git range-diff` between them
