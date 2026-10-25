@@ -663,7 +663,7 @@ export const archiveAtOf = (cards: Card[], archived: Card[]) => {
 
 const keepsThreads = (config: Config, projectId: string) => Object.hasOwn(config.projects, projectId) && Object.hasOwn(projectCollections(config, projectId), REVIEWS)
 
-/** The checkouts of a floor's live review threads (`<checkout>.md` in its `reviews`) whose work landed, in id order: Tidy files them. */
+/** The checkouts of a floor's live review threads (`<checkout>.md` in its `reviews`) whose work landed, in id order: Tidy files them where reviews runs. */
 const landedThreads = (items: CollectionItem[], projectId: string, read: CheckoutsRead): string[] =>
   items
     .filter((i) => i.project === projectId && i.collection === REVIEWS)
@@ -810,7 +810,7 @@ export const board = (view: SystemView): Board => {
       const tidy: TidyPlan = {
         worktrees: worktrees.filter((w) => w.state === 'removable').map((w) => w.name),
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),
-        threads: Object.hasOwn(collections, REVIEWS) ? landedThreads(items, id, git) : [],
+        threads: collections[REVIEWS]?.owner === REVIEWS ? landedThreads(items, id, git) : [],
         prune: prunable(floorCards, worktrees, cards),
         logs: oldLogs(floorCards, logFiles, config.retention?.days, now),
         streams: [...systemStreams, ...oldStreams(streams.filter((m) => m.file.startsWith(`projects/${id}/`)), config.retention?.days, now)],

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board, unresumableAt, type Board, type Floor } from '../src/bridge/board.ts'
+import { board, unresumableAt, type Board, type Floor, type SystemView } from '../src/bridge/board.ts'
 import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf, statusName } from '../src/shared/cards.ts'
@@ -481,9 +481,11 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.deepEqual([threadsOn(dirtyTower)[0].landed, threadsOn(unmergedLab)[0].landed], [false, false])
   assert.deepEqual([tower.threads, tower.main], [[], { dirty: 0, ahead: 0, inUse: false }], "the core keeps no threads: the floor says where its main checkouts stand")
   const items = (project: string, id: string) => ({ project, collection: 'reviews', id, size: 1, modifiedAt: 1 })
-  const tidying = (config: Config) =>
-    board(viewOf(config, { host: hostWith(), repos: repos(0, true), items: [items('lab', 'odin-42.md'), items('lab', 'odin-42@2026-10-01-1200.md')] })).floors[1].tidy.threads
-  assert.deepEqual([tidying({ ...CONFIG, collections: { reviews: { label: 'Reviews' } } }), tidying(CONFIG)], [['odin-42'], []], 'Tidy files a live thread whose work landed, on a floor keeping threads')
+  const reviews = { provides: 'reviews', chain: ['reviews'], collections: { reviews: { label: 'Reviews', description: 'd', owned: true, doors: { list: 'reviews/history/<project>', read: 'tower/collection/<project>/<collection>/<item>', create: 'reviews/append', edit: { none: 'x' }, delete: { none: 'x' } } } } }
+  const tidying = (config: Config, stores: SystemView['stores']) =>
+    board(viewOf(config, { host: hostWith(), repos: repos(0, true), stores, items: [items('lab', 'odin-42.md'), items('lab', 'odin-42@2026-10-01-1200.md')] })).floors[1].tidy.threads
+  const declared = { ...CONFIG, collections: { reviews: { label: 'Reviews' } } }
+  assert.deepEqual([tidying(CONFIG, [reviews]), tidying(declared, []), tidying({ ...declared, projects: { ...CONFIG.projects, lab: { ...CONFIG.projects.lab, capabilities: { reviews: { off: true } } } } }, [reviews])], [['odin-42'], [], []], 'Tidy files a live thread whose work landed where reviews runs, and nowhere a config line alone declares the collection')
 })
 
 test('a card says where its checkout’s work stands, and its thread’s, offering a note on it only while that work goes on', () => {
