@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../extensions/drafts/client/drafts.ts'
+import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
@@ -790,7 +790,7 @@ function relayDoc(url: string, self: ShelfSelf) {
 
 /** Opens a kept item where it lives: a draft in its editor, a game at its cabinet, anything else in the reader. */
 function openKept(k: { project: string; collection: string; id: string }) {
-  if (s.board && draftItem(s.board.floors, k.project, k.id)) return openNote(k.project, k.id)
+  if (k.collection === DRAFTS && s.board && draftItem(s.board.floors, k.project, k.id)) return openNote(k.project, k.id)
   if (k.collection === GAMES) return openGame(k.project, k.id)
   closePanels()
   setPanel({ kind: 'kept', ...k, drawn: undefined })

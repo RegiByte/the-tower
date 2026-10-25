@@ -33,7 +33,7 @@ import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
-import { AUTOSAVE_MS, draftItem, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
+import { AUTOSAVE_MS, DRAFTS, draftItem, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
@@ -562,7 +562,7 @@ document.addEventListener('click', async (e) => {
   }
   if (kept) {
     const { project, collection, id } = keptOf(kept)
-    return draftItem(board().floors, project, id) ? openDraft(project, id) : openItem(project, collection, id)
+    return collection === DRAFTS && draftItem(board().floors, project, id) ? openDraft(project, id) : openItem(project, collection, id)
   }
   if (target.closest('[data-item-act=delete]')) return deleteKept()
   if (target.closest('[data-item-read]')) return (forgetItem(), render())
