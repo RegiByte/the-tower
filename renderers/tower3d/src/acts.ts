@@ -3,7 +3,7 @@ import { draftItem } from '../../../src/shared/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, tidyLine, waitingCards } from './cards.ts'
+import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
@@ -258,7 +258,7 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
   tidy(a, board) {
     const f = floorOf(board, a.project)
     if (!f || !can(f, 'tidy')) return []
-    return [{ verb: 'use', label: 'the list, at the console' }, { verb: 'reap', label: tidyLine(f.tidy).toLowerCase() }]
+    return [{ verb: 'use', label: 'the list, at the console' }, { verb: 'reap', label: tidyLine(f.tidy, addedTidyOf(board, f)).toLowerCase() }]
   },
   landed(a, board) {
     const f = floorOf(board, a.project)

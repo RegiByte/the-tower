@@ -566,6 +566,7 @@
       "actionWords",
       "actionsOf",
       "addedActions",
+      "addedTidyOf",
       "ago",
       "archiveKey",
       "askTransitions",

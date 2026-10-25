@@ -341,6 +341,7 @@ test("server: an extension's folds put its part on the board's subjects, its bad
     tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes', cap: 'pulse' }],
     slots: [{ key: 'lab', when: { every: '1h' }, cap: 'pulse' }],
   })
+  assert.deepEqual(lab.calls.tidy, ['tidy', { project: 'lab', plan: { ...lab.tidy, x: { pulse: ['echo'] } } }], "the floor's Tidy carries the extensions' entries")
   assert.deepEqual(
     board.asks.map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
     [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],

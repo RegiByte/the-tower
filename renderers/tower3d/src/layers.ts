@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { act } from './acts.ts'
 import { arcadeSignKey, buildArcadeSign, gameTitle, makeCabinet, type ArcadeSign, type Cabinet } from './arcade.ts'
-import { can, shownKey } from './cards.ts'
+import { addedTidyOf, can, shownKey } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
 import { DESK_DRESS, pickOf } from './dress.ts'
 import { deskSlots, heldUpAt, makeDesk, makeSeat, makeStation, makeVisitor, situate, syncDesk, syncStation, type Desk, type Station } from './desk.ts'
@@ -20,6 +20,7 @@ import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { hangOn } from './levels.ts'
 import { s, type WallItem } from './state.ts'
 import type { Card } from './api.ts'
+import type { AddedTidy } from '../../../src/shared/extensions.ts'
 import { wallNow } from './clock.ts'
 
 /**
@@ -249,10 +250,14 @@ export const WALLS: Layer<{ level: FloorLevel; key: string }, WallItem> = {
 }
 
 /** Each floor's Running board, rebuilt when what it lists changes. */
-export const RUNNING: Layer<{ level: FloorLevel; key: string }, Running> = {
-  slots: (p) => floors(p).map((level) => [String(level.index), { level, key: runningKey(p, level) }]),
+export const RUNNING: Layer<{ level: FloorLevel; added: AddedTidy[]; key: string }, Running> = {
+  slots: (p) =>
+    floors(p).map((level) => {
+      const added = addedTidyOf(s.board!, level.floor)
+      return [String(level.index), { level, added, key: runningKey(p, level, added) }]
+    }),
   level: (at) => at.level.index,
-  make: ({ level }) => buildRunning(s.plan, level),
+  make: ({ level, added }) => buildRunning(s.plan, level, added),
   keep: (item, { key }) => item.key === key,
   root: (item) => item.group,
 }

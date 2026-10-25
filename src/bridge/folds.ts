@@ -10,6 +10,7 @@ import { ADDS, BADGE_TONES, qualifiedOf, WhenShape, type Action, type Added, typ
 import { boardSubject, cardSubject, conversationSubject, floorSubject, itemKey, itemSubject, ownSubject, SUBJECT_KEY, type Subject } from '../shared/subjects.ts'
 import type { Board, Floor } from './board.ts'
 import { ownKindOf, type CompiledFold } from './extensions.ts'
+import { withAddedTidy } from './verbs.ts'
 import { frozen } from './frozen.ts'
 
 /** A build's folds of one extension over this many ms is `slow`. */
@@ -215,7 +216,11 @@ export const foldBoard = ({ board: built, folders, subjects, now, clock }: FoldI
   }
 
   const all = boardView()
-  return { board: { ...all, adds, asks: asks.sort((a, b) => a.since - b.since) }, problems }
+  const floors = all.floors.map((f) => {
+    const tidy = adds[floorSubject(f).key]?.tidy
+    return tidy ? withAddedTidy(f, tidy) : f
+  })
+  return { board: { ...all, floors, adds, asks: asks.sort((a, b) => a.since - b.since) }, problems }
 }
 
 /** The keyed entries at `list` of an owner's part, where its own kind's subjects sit. */

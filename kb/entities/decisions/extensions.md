@@ -179,7 +179,8 @@ and versioned without running anything, and a runtime where an extension's failu
   and reads, and raises its own with `ctx.raise(name, payload)`; the core's are
   [`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `tower/discard.record` raised by `worktree/discard` once the tips are
   read and before anything is noted or removed, `refuses`, and `tower/tidy.apply` raised by `tidy` after its own parts,
-  to each capability in `plan.x` alone with its keys, `reported` in the reply's `x.<cap>`. Answerers list a hook in `answers`; each answers in fold
+  to each capability in `plan.x` alone with its keys, `reported` in the reply's `x.<cap>`. A floor's tidy entries are
+  drawn by every renderer beside the core's rows, and the floor's `tidy` call carries them all ([[tidy]]). Answerers list a hook in `answers`; each answers in fold
   order (the resolve order), on its own, inside the hook's chain, as `{cap, ok, answer}` or `{cap, ok: false, code,
   message}`. One that throws or answers off the schema is `internal` and a `hook` problem on it; an `ApiError` it
   answers is a refusal, no problem. An answerer off on the payload's `project` is not asked. `/schema` lists every
@@ -302,6 +303,7 @@ API 1.86: the manifest's `slots`,
 problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots.js`. API 1.87: the manifest's
 `spawn` and `plugins`, `Started.launch` and `LaunchCtx`, the problem lane `launch`, the spawn input's `x`,
 `ExtensionView.spawn`, `card.crew` and `card.exempt`, `GET /extensions`' `exempted`, and the session facts
-`tower.exempt` and `tower.reports-to`.
+`tower.exempt` and `tower.reports-to`. API 1.88: the floor's `tidy` offered for extensions' entries alone, its call's
+`plan.x` carrying every entry, and `addedTidyOf` in `/cards.js`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

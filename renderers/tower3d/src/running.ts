@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { type } from '../../../src/shared/design.ts'
 import { act } from './acts.ts'
 import { hueOf } from './avatar.ts'
+import type { AddedTidy } from '../../../src/shared/extensions.ts'
 import type { Card, Floor } from './api.ts'
 import { WORLD, can, commandName, leftoversOf, tidyLine } from './cards.ts'
 import { runningSpot, type Level, type Plan } from './layout.ts'
@@ -34,9 +35,9 @@ const rowsOf = (f: Floor): Row[] => {
 }
 
 /** What the board shows: rebuilt only when this changes. */
-export const runningKey = (p: Plan, level: FloorLevel) =>
+export const runningKey = (p: Plan, level: FloorLevel, added: AddedTidy[]) =>
   JSON.stringify([
-    runningSpot(p), level.y, tintOf(level.floor), can(level.floor, 'tidy') && tidyLine(level.floor.tidy),
+    runningSpot(p), level.y, tintOf(level.floor), can(level.floor, 'tidy') && tidyLine(level.floor.tidy, added),
     rowsOf(level.floor).map((row) => ('resource' in row ? [row.card.id, row.card.callsign, row.resource.pid, row.resource.ports, row.resource.orphan, row.resource.command, row.tidy] : [row.card.id, row.card.callsign, row.since])),
   ])
 
@@ -60,7 +61,8 @@ const clock = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-dig
  * would end is edged in amber, and its head, Tidy's line, is the floor's `tidy` act. More than fit end in a row
  * counting the rest, which the floor panel lists.
  */
-export function buildRunning(p: Plan, level: FloorLevel): Running {
+/** `added`: the extensions' tidy entries on the floor, counted in the head's line. */
+export function buildRunning(p: Plan, level: FloorLevel, added: AddedTidy[]): Running {
   const spot = runningSpot(p)
   const all = rowsOf(level.floor)
   const tidy = can(level.floor, 'tidy')
@@ -85,7 +87,7 @@ export function buildRunning(p: Plan, level: FloorLevel): Running {
   g.fillText('RUNNING', m(0.18), m(0.17))
   g.font = `700 ${m(0.085)}px ${type.ui}`
   g.letterSpacing = '0px'
-  const head = tidy ? `${tidyLine(level.floor.tidy)} · held Z` : all.length ? `${all.length} left running · held Z ends one` : 'nothing left running'
+  const head = tidy ? `${tidyLine(level.floor.tidy, added)} · held Z` : all.length ? `${all.length} left running · held Z ends one` : 'nothing left running'
   wrapped(g, head, W - m(0.32), 2).forEach((line, i) => g.fillText(line, m(0.18), m(0.36 + i * BOARD.line)))
 
   const group = new THREE.Group()
@@ -152,5 +154,5 @@ export function buildRunning(p: Plan, level: FloorLevel): Running {
   group.add(face)
   group.position.set(spot.x, level.y, spot.z)
   group.rotation.y = Math.PI / 2
-  return { group, key: runningKey(p, level) }
+  return { group, key: runningKey(p, level, added) }
 }

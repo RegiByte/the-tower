@@ -5,6 +5,7 @@
  * within the renderer and have none.
  */
 import type { Call } from '../shared/api.ts'
+import type { AddedTidy } from '../shared/extensions.ts'
 import { CARRY_ON } from '../shared/launch.ts'
 import { reviewPrompt } from '../shared/reviews.ts'
 import type { SessionRef } from './chains.ts'
@@ -211,6 +212,18 @@ export const floorOffers = (project: string, hostUp: boolean, termsUp: boolean, 
     editor: (): Call<'open'> => ['open', {}],
     tidy: (): Call<'tidy'> => ['tidy', { project, plan: tidy }],
   })
+}
+
+/**
+ * A floor's offers with the tidy entries extensions contribute to it (`board.adds['floor:<project>'].tidy`): Tidy is
+ * offered while anything is listed, and its call carries each entry's key under its capability as `plan.x`.
+ */
+export const withAddedTidy = <F extends { id: string; tidy: TidyPlan } & Offers<FloorVerb, FloorCalls>>(f: F, entries: AddedTidy[]): F => {
+  const x: Record<string, string[]> = {}
+  for (const { cap, key } of entries) (x[cap] ??= []).push(key)
+  const tidy: FloorAction = { verb: 'tidy', call: ['tidy', { project: f.id, plan: { ...f.tidy, x } }] }
+  const actions = f.verbs.includes('tidy') ? f.actions.map((a) => (a.verb === 'tidy' ? tidy : a)) : [...f.actions, tidy]
+  return { ...f, ...offered(actions) }
 }
 
 export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], keepsThreads: boolean): Offers<WorktreeVerb, WorktreeCalls> => {

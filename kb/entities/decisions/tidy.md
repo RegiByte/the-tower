@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -18,6 +18,8 @@
     "hub/src/bridge/board.ts#board",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/verbs.ts#floorOffers",
+    "hub/src/bridge/verbs.ts#withAddedTidy",
+    "hub/src/bridge/folds.ts#foldBoard",
     "hub/src/tower/dispatch.ts#tidyProject",
     "hub/src/tower/dispatch.ts#movedOn",
     "hub/src/worktrees.ts#tidyable",
@@ -25,6 +27,8 @@
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/tidy.ts#tidyLine",
     "hub/src/shared/tidy.ts#tidyRows",
+    "hub/src/shared/tidy.ts#addedTidyOf",
+    "hub/src/shared/tidy.ts#tidiedLine",
     "hub/src/shared/worktree-words.ts#editedRows",
     "hub/renderers/tower3d/src/running.ts#buildRunning",
     "hub/renderers/tower3d/src/cards.ts#landedRow",
@@ -91,7 +95,13 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - *Extensions' entries.* A floor fold contributes tidy entries (`board.adds['floor:<p>'].tidy`, `{key, label, hint}`);
   the plan carries the confirmed ones as `x: {[cap]: keys}`, checked against the adds with the rest, and after the
   core's parts each capability's answer to `tower/tidy.apply` applies its keys, reported in the reply's `x.<cap>`
-  ([[extensions]]). Renderers don't draw them yet.
+  ([[extensions]]). Once the folds ran, [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) gives each floor with
+  entries its Tidy with them ([`withAddedTidy`](ref:hub/src/bridge/verbs.ts#withAddedTidy)): `tidy` is offered while
+  anything is listed, the core's or an extension's, and its call carries every entry's key as `plan.x`, so Tidy all
+  applies them with the rest in every renderer and the CLI alike. `floor.tidy` stays the core's plan. Renderers read the
+  entries with [`addedTidyOf`](ref:hub/src/shared/tidy.ts#addedTidyOf) and pass them to the shared words: `tidyLine`
+  counts them, `tidyRows` gives each its row (its `label`, `apply · <cap>`, its `hint`) with the call that applies only
+  it, and [`tidiedLine`](ref:hub/src/shared/tidy.ts#tidiedLine) names each key applied and each skipped or refused.
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
   applies only it (one worker, one process, one worktree, one branch, one thread; the old logs as one row), applied
   and refused by the same checks as the whole.
