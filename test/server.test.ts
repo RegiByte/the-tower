@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -29,6 +29,8 @@ import { tagOf } from '../src/shared/tags.ts'
 const REPO = path.join(import.meta.dirname, '..')
 const ROOT = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'tower-api-')))
 const HUB = path.join(ROOT, 'lab')
+/** A floor that keeps no review threads. */
+const BARE = path.join(ROOT, 'bare')
 const RENDERER = path.join(ROOT, 'renderer')
 const SESSION = '20261004-210927-2c96'
 const SHOWN = path.join(HUB, 'report', 'index.html')
@@ -47,7 +49,8 @@ let tower: ChildProcess
 let host: ChildProcess
 let base: string
 
-const git = (...args: string[]) => execFileSync('git', ['-C', HUB, '-c', 'user.name=test', '-c', 'user.email=test@localhost', ...args], { stdio: 'ignore' })
+const gitIn = (dir: string, ...args: string[]) => execFileSync('git', ['-C', dir, '-c', 'user.name=test', '-c', 'user.email=test@localhost', ...args], { encoding: 'utf8' })
+const git = (...args: string[]) => gitIn(HUB, ...args)
 
 const POLICY = '# Nightly\n\n```json\n{"when": {"cron": ["0 3 1 1 *"]}}\n```\n\nNever started: a run waits on the user\'s approval.\n'
 
@@ -187,6 +190,11 @@ function seed(port: number) {
   git('branch', 'feature')
   git('config', 'branch.feature.towerBase', 'main')
   writeFileSync(path.join(HUB, '.git', 'info', 'exclude'), '.worktrees/\n')
+  execFileSync('git', ['init', '-q', '-b', 'main', BARE])
+  writeFileSync(path.join(BARE, 'README.md'), 'bare\n')
+  writeFileSync(path.join(BARE, '.git', 'info', 'exclude'), '.worktrees/\n')
+  gitIn(BARE, 'add', '.')
+  gitIn(BARE, 'commit', '-q', '-m', 'first')
   const header = { id: SESSION, project: 'lab', cwd: HUB, argv: ['bash'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
   const events = [
     [0.1, 'o', 'a session\r\n'],
@@ -206,7 +214,11 @@ function writeConfig(port: number) {
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
     extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
-    projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] }, desk: { name: 'desk', hub: DESK, repos: [] } },
+    projects: {
+      lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] },
+      desk: { name: 'desk', hub: DESK, repos: [] },
+      bare: { name: 'bare', hub: BARE, repos: [], capabilities: { reviews: { off: true }, pulse: { off: true }, chime: { off: true }, tally: { off: true }, roles: { off: true } } },
+    },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
       reviews: { label: 'Reviews', description: 'One review thread per checkout.' },
@@ -546,6 +558,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     title: 'Pulse',
     bundled: false,
     state: 'started',
+    off: ['bare'],
     problems: [],
     verbs: [
       { name: 'pulse/ping', scope: 'project', words: { label: 'Ping', hint: 'rings chime for the floor' } },
@@ -733,6 +746,77 @@ test("server: worktree/discard raises tower/discard.record before anything goes:
   assert.equal(gone.reply.status, 200, gone.reply.body)
   assert.deepEqual(JSON.parse(gone.reply.body).x, { tally: { note: 'tally counted 1 tip' } })
   assert.ok(!existsSync(gone.tree))
+})
+
+type Board = Extract<BoardMsg, { board: unknown }>['board']
+
+/** The first board on which `holds` holds. */
+const boardWhere = (holds: (b: Board) => boolean) => settled(async () => ((await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>).board, holds)
+const floorOf = (b: Board, id: string) => b.floors.find((f) => f.id === id)!
+const NO_TIDY = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
+const threadText = (checkout: string) => `# ${checkout}\n\n## NEMO-92 · 2026-10-06 14:32 · n1\nShip it.\n`
+const threadsIn = (project: string) => path.join(ROOT, 'collections', project, 'reviews')
+
+/** A worktree `name` of `hub` cut from main, one file in it uncommitted, as the board would show it to a discard. */
+const cutWithWork = (hub: string, name: string) => {
+  const tree = path.join(hub, '.worktrees', name)
+  gitIn(hub, 'worktree', 'add', '-q', '-b', `tower/${name}`, tree, 'main')
+  gitIn(hub, 'config', `branch.tower/${name}.towerBase`, 'main')
+  writeFileSync(path.join(tree, 'draft.md'), 'never landed')
+  return { tree, held: [{ dir: hub, head: gitIn(tree, 'rev-parse', 'HEAD').trim(), dirty: 1 }] }
+}
+
+test("reviews: Tidy lists the thread of a checkout whose work landed and files it as <checkout>@<stamp>.md, unchanged, its checkout's name freed", async () => {
+  mkdirSync(threadsIn('lab'), { recursive: true })
+  writeFileSync(path.join(threadsIn('lab'), 'landed.md'), threadText('landed'))
+  await boardWhere((b) => floorOf(b, 'lab').tidy.threads.includes('landed'))
+  const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, threads: ['landed'] } })
+  assert.deepEqual(tidied.threads, ['landed'])
+  const filed = readdirSync(threadsIn('lab')).filter((id) => id.startsWith('landed@'))
+  assert.equal(filed.length, 1)
+  assert.match(filed[0], /^landed@\d{4}-\d\d-\d\d-\d{4}\.md$/)
+  assert.equal(readFileSync(path.join(threadsIn('lab'), filed[0]), 'utf8'), threadText('landed'))
+  assert.ok(!existsSync(path.join(threadsIn('lab'), 'landed.md')))
+  await boardWhere((b) => !floorOf(b, 'lab').tidy.threads.includes('landed'))
+})
+
+test("reviews: a discard notes each repo's branch and tip on the checkout's thread, then files the thread", async () => {
+  const { tree, held } = cutWithWork(HUB, 'lost')
+  const discarded = await command('worktree/discard', { project: 'lab', name: 'lost', author: 'NEMO-92', held })
+  assert.ok(!existsSync(tree))
+  assert.match(discarded.thread, /^lost@\d{4}-\d\d-\d\d-\d{4}\.md$/)
+  assert.ok(!existsSync(path.join(threadsIn('lab'), 'lost.md')))
+  const [{ tip }] = discarded.tips
+  const unpushed = gitIn(HUB, 'log', '--format=%h %s', held[0].head, '--not', '--remotes').trim().split('\n')
+  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), discarded.thread), 'utf8'))
+  assert.deepEqual(
+    thread.messages.map(({ author, n, body }) => ({ author, n, body: body.trim() })),
+    [
+      {
+        author: 'NEMO-92',
+        n: 1,
+        body: [
+          "Discarded the worktree lost: its work never landed. The branches the tower cut are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: `git branch <name> <tip>`.",
+          '',
+          `- \`${HUB}\`: branch \`tower/lost\`, tip \`${tip}\` (1 uncommitted file committed on top of \`${held[0].head}\`)`,
+          ...unpushed.map((c) => `  - ${c}`),
+        ].join('\n'),
+      },
+    ],
+  )
+})
+
+test('reviews: on a floor keeping no threads, Tidy lists and files no thread, and a discard, which nothing there records, is refused and touches nothing', async () => {
+  mkdirSync(threadsIn('bare'), { recursive: true })
+  writeFileSync(path.join(threadsIn('bare'), 'landed.md'), threadText('landed'))
+  const board = await boardWhere((b) => floorOf(b, 'bare').worktrees !== undefined && floorOf(b, 'lab').tidy.threads !== undefined)
+  assert.deepEqual(floorOf(board, 'bare').tidy.threads, [])
+  assert.equal(errorCode(await post('tidy', { project: 'bare', plan: { ...NO_TIDY, threads: ['landed'] } })), 'refused')
+  const { tree, held } = cutWithWork(BARE, 'thrown')
+  assert.equal(errorCode(await post('worktree/discard', { project: 'bare', name: 'thrown', author: 'NEMO-92', held })), 'refused')
+  assert.ok(existsSync(tree))
+  assert.deepEqual(readdirSync(threadsIn('bare')), ['landed.md'])
+  assert.equal(readFileSync(path.join(threadsIn('bare'), 'landed.md'), 'utf8'), threadText('landed'))
 })
 
 test("server: Tidy offers an extension stream's month closed more than retention.days ago, archives it, and its fold reads it the same", async () => {
