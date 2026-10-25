@@ -38,9 +38,9 @@ Every collection a floor declares has a tray under its workers ([[collection-tra
 pane read as its type. Drafts are the page's own feature over the `drafts` collection ([[collections]]): an editor in
 the main pane that saves as you type, shared with Tower 3D as `/x/drafts/drafts.js` ([[corkboard]]); a draft starts a worker
 through the new-worker dialog or is submitted to a running one, then is deleted. A floor that keeps policies has a
-tray that opens the shared Policies panel at `#policies/<floor>` ([[shared-panels]]); its open offers sit above its
+tray that opens the policies extension's panel at `#policies/<floor>` ([[policies]]); its open offers sit above its
 workers and N goes to them after the waits ([[attention-list]]); a worker a run started says so under its callsign,
-from `card.run` ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
+from the policies extension's `card.x.policies.run` ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
 one tab row: the shared panels, then the worker's showings ([[agent-show]]).
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at

@@ -76,11 +76,11 @@ and versioned without running anything, and a runtime where an extension's failu
   HTTP it is what the CLI's headers claim ([`callerOf`](ref:hub/src/tower/http.ts#callerOf): `tower-session` names a
   worker, none is the user), not authenticated; the API's `by` fields stay as they were. A call made inside any
   handler keeps that handler's caller and appends its verb to `within`; only an extension's own `start` and timers
-  call as `{t: 'extension'}`, the policies' runner as `{t: 'tower', id: 'slot'}`. A call nested more than 8 deep is
+  call as `{t: 'extension'}`, a slot's handler (the policies extension's runner) as `{t: 'tower', id: 'slot'}`. A call nested more than 8 deep is
   `refused`, its chain named ([`tooDeep`](ref:hub/src/shared/extensions.ts#tooDeep)). A composite that does what
   another verb does calls it through the dispatch, for its caller, itself appended to `within`
-  ([`COMPOSITES`](ref:hub/src/shared/api.ts#COMPOSITES), listed per verb at `GET /extensions`): `policy/run` spawns
-  through `tower/spawn`, Tidy removes, deletes, reaps and kills through `tower/worktree/remove`,
+  ([`COMPOSITES`](ref:hub/src/shared/api.ts#COMPOSITES), listed per verb at `GET /extensions`): the policies extension's `policies/run` spawns
+  through `tower/spawn` as an extension verb does, Tidy removes, deletes, reaps and kills through `tower/worktree/remove`,
   `tower/branch/delete`, `tower/reap/process` and `tower/kill` (an entry refused is skipped and named in its reply),
   and `worktree/discard` notes through `tower/review/append` (refused, it stops before anything is removed); a hire is
   a `tower/spawn` call already. Filing threads and archiving logs have no verb of their own, so Tidy does them itself.

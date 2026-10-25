@@ -53,10 +53,10 @@ only by typing, one chime covered a question and an answer alike, and every wait
   unread answer, `broken` a failure. The colour says what the worker holds, `waiting` whether it is yours; a count or a
   lamp takes its loudest card's ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)), so red marks only what needs you
   ([[design-system]]).
-- A policy's offered slot (`board.offers`, [[policies]]) asks for you before any worker exists, so it is not a wait:
-  [`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder) is the heeded waits, then extensions' heeded asks
-  (`board.asks`, oldest first, [[extensions]]), then the heeded offers. N on an offer opens its floor's policies, on an
-  ask what it is about (its worker, else its floor). An ask is about a worker when its subject is that worker's card
+- A policy's offered slot asks for you before any worker exists, so it is not a wait: the policies extension puts it
+  among the asks ([[policies]]), and [`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder) is the heeded
+  waits, then extensions' heeded asks (`board.asks`, oldest first, [[extensions]]); `board.offers`, LEGACY's copy until
+  2.0, is no longer in it. N on an offer opens its floor's policies, on another ask what it is about (its worker, else its floor). An ask is about a worker when its subject is that worker's card
   ([`isAbout`](ref:hub/src/shared/waits.ts#isAbout)): the watched worker's asks ring for nobody, as its waits. An ask
   rings as its `sound` says, as a question or as an offer. An auto policy that lost its approval is a change of
   state, not a request: it never rings and isn't in the list.

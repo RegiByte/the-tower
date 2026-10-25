@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-29",
-  "reviewed": "2026-10-25",
-  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/src/policies.ts", "hub/src/update.ts#update"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/update.ts#update"]
 }
 ---
 **Problem.** The daemons are often started from a shell inside a Claude session. A Claude spawned with that parent's
@@ -25,7 +25,7 @@ The daemons `tower up` starts are scrubbed ([`startDetached`](ref:hub/src/machin
 run inherits a clean environment. What starts a session or runs the user's commands scrubs again, for a daemon started
 by hand: the host's sessions, after the config's `env` is merged in, so a config cannot set a marker again
 ([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)); the terms daemon's shells; git
-([`git.ts`](ref:hub/src/git.ts)); the quota extension's Claude (through `ctx.run`); policy checks; and `tower update`'s npm. One-shot reads (`ps`, `lsof`,
+([`git.ts`](ref:hub/src/git.ts)); the quota extension's Claude (through `ctx.run`); the policies extension's checks (through `ctx.run`); and `tower update`'s npm. One-shot reads (`ps`, `lsof`,
 `open`, the editor command, the doctor's checks) run with the caller's environment.
 
 **The launching terminal.** A daemon started from a terminal carries that terminal's identity (`TERM_PROGRAM`,

@@ -53,7 +53,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
   [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]) and Policies
   ([`policiesHtml`](ref:hub/src/shared/policies-panel.ts#policiesHtml) over `floor.policies` and `board.offers`,
-  [[policies]]). Each takes a view model and reads nothing global. The logic of rows, picks, anchors and marks lives
+  [[policies]]; deprecated since 1.91 for the policies extension's own panel, `/x/policies/panel.js`, which the tower
+  page draws). Each takes a view model and reads nothing global. The logic of rows, picks, anchors and marks lives
   beside them as pure functions. The tower page draws all four; Tower 3D draws Changes, Reviews and Stats.
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]); a

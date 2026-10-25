@@ -4,8 +4,8 @@
   "name": "Transcripts not saved",
   "summary": "A Claude started with a parent Claude session's variables believes it is a child session and saves no transcript, so its conversations cannot be resumed; the scrub in env.ts is what prevents it.",
   "in": "host",
-  "reviewed": "2026-10-25",
-  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/run.ts#runProcess", "hub/src/policies.ts", "hub/src/git.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
+  "reviewed": "2026-10-24",
+  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/git.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
 }
 ---
 **Symptom.** Resuming a conversation does not continue it, though the board offered `resume`: a conversation counts
