@@ -491,7 +491,9 @@ hook's schemas are listed at `/schema`, under `hooks`.
 at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,
 or `{ "every": "5m" }`, a period aligned to the UTC clock (`30s`, `5m`, `2h`). The tower's 30 s loop fires a slot once,
 the latest at or before now, while it is within 5 minutes; a `project`-scoped slot fires once per floor where the
-capability is on. Fired is kept in memory only: a slot missed while the tower was down stays missed, and one fired just
+capability is on. A floor's or the board's fold that declares `"adds": ["slots"]` gives slots of its own, `slots:
+[{ key, when }]`, carried at `board.adds[<subject>].slots` and fired through `start`'s `slots['*']` with the slot's `key`
+and the floor (an extension that adds slots requires tower 1.85). Fired is kept in memory only: a slot missed while the tower was down stays missed, and one fired just
 before a restart may fire again, so an extension that needs exactly once keeps its own facts. `triggers.board: {}`
 makes `start` return `board(prev, next)`, pure and synchronous, which answers the calls a board change asks for,
 `[{ verb, input }]`, made as the tower (`{t: 'tower', id: 'board', via: 'loop'}`) to what its `ctx.call` reaches. It is

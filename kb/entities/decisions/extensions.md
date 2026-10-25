@@ -189,7 +189,9 @@ and versioned without running anything, and a runtime where an extension's failu
   words, or `every`, a period aligned to the UTC clock so restarts never shift it. The policies' 30 s loop became the
   tower's slot loop ([`runSlots`](ref:hub/src/slots.ts#runSlots)) with the policies and the extensions' manifests as its
   sources; a slot fires once, the latest at or before now within 5 minutes, per floor when scoped `project`, called as
-  `{t: 'tower', id: 'slot'}` ([`extensionSlots`](ref:hub/src/slots.ts#extensionSlots)). Fired is in memory only: no
+  `{t: 'tower', id: 'slot'}` ([`extensionSlots`](ref:hub/src/slots.ts#extensionSlots)). A floor's or the board's fold
+  that adds `slots` gives `{key, when}` entries, carried at `board.adds[<subject>].slots` like any contribution and
+  fired through `slots['*']` with their key and floor: that is how policies will turn their files into slots. Fired is in memory only: no
   slot facts, so an extension that needs exactly once keeps its own. `triggers.board` makes `start` return
   `board(prev, next)`, pure: the publisher hands each board that differs from the last to its listeners, frozen
   ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)); the trigger is first called on the second, off floors
