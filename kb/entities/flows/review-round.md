@@ -4,9 +4,9 @@
   "name": "Review round",
   "summary": "One review end to end: a worker (or the user) hires a reviewer in a fork of the author's checkout, the reviewer leaves notes on the checkout's thread, delivers a pointer to them, and the author answers each note on the same thread.",
   "in": "tower",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
-  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/dispatch.ts#hired", "hub/src/directory.ts#readThread", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/src/shared/reviews.ts#sendText", "hub/src/shared/reviews.ts#unseenBy", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#appendReview", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
+  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/dispatch.ts#hired", "hub/src/directory.ts#threadSaid", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/shared/reviews.ts#reviewPrompt", "hub/src/shared/reviews.ts#reviewedIn", "hub/extensions/reviews/client/reviews.ts#sendText", "hub/extensions/reviews/client/reviews.ts#unseenBy", "hub/src/tower/dispatch.ts#spawnCut", "hub/extensions/reviews/server.ts#append", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 ```mermaid
@@ -25,13 +25,13 @@ sequenceDiagram
   H->>R: h event in the hirer's log
   Note over H: the reviewer reads the goal and the diff, runs checks in its fork
   H->>T: reviewer: tower note on <checkout> repo:path:lines (one per finding)
-  T->>R: review/append: the next n on reviews/<checkout>.md
+  T->>R: reviews/append: the next n on reviews/<checkout>.md
   H->>M: reviewer (with tell): tower send <CALLSIGN>
   M->>T: POST /submit {id: author, text: sendText(...)}
   T->>H: the pointer typed into the author's composer
   Note over H: reviewer, when the author was hired: SendMessage the author's hirer the verdict
   A->>T: tower note on <checkout> re n<k> (one answer per note)
-  T->>R: review/append
+  T->>R: reviews/append
   Note over A: when hired: SendMessage its hirer what changed and whether it is ready
 ```
 
@@ -45,10 +45,10 @@ sequenceDiagram
 - **The fork, the pair and the thread** are [[reviewer]]'s and [[review-threads]]': the reviewer works in a fork of
   the author's checkout ([`fork`](ref:hub/src/worktrees.ts#fork); a failed spawn rolls the cut back,
   [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)), the pair is derived from its first prompt, and notes are
-  appended only through [`review/append`](ref:hub/src/tower/dispatch.ts#appendReview). The hire itself is a fact
+  appended only through [`reviews/append`](ref:hub/extensions/reviews/server.ts#append), the reviews extension's verb. The hire itself is a fact
   ([[hire]]), never refused by the hiring limits ([[hiring-limits]]).
-- **Delivery is a submit.** [`sendText`](ref:hub/src/shared/reviews.ts#sendText) is one line naming the notes
-  new to the target ([`unseenBy`](ref:hub/src/shared/reviews.ts#unseenBy)) and how to read and answer them; it
+- **Delivery is a submit.** [`sendText`](ref:hub/extensions/reviews/client/reviews.ts#sendText) is one line naming the notes
+  new to the target ([`unseenBy`](ref:hub/extensions/reviews/client/reviews.ts#unseenBy)) and how to read and answer them; it
   is typed into the author's composer, so the author must be at it (the card's `submit` call). To a hired
   author it ends with whom to report to once the notes are answered: its hirer (`card.hiredBy`).
 - **One round.** The reviewer stops after delivering; a re-review is a new hire. The author answers with

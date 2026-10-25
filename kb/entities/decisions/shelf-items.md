@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shared/model.ts#shelfItem", "hub/src/shared/shelf-words.ts#shelfKind", "hub/src/shared/shelf-words.ts#shelfPage", "hub/src/shared/shelf-words.ts#shelfSource", "hub/src/shelf.ts#shelfFiles", "hub/src/shelf.ts#shelfServes", "hub/src/tower/http.ts#shelfFile", "hub/src/tower/http.ts#run"]
 }
 ---

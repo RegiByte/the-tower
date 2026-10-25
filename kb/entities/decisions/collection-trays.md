@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
 }
 ---
 **Problem.** A renderer that draws trays only for the collections it gives a meaning to hides the rest: what a worker
@@ -35,7 +35,7 @@ and reads items alike ([[renderer-is-disposable]]).
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
 - Drafts keep their own tray on the shared rows, with a way to make one, where the floor's `drafts` collection is the
   drafts extension's (`draftsOf`; a plain one of that name is drawn as any kept collection); review threads keep theirs, with the threads
-  Tidy filed in a fold below ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the board's
+  Tidy filed in a fold below ([`landedThreads`](ref:hub/extensions/reviews/client/reviews.ts#landedThreads), read off the board's
   `reviews` items), each opened in the item view; policies have their own panel.
 - A prompt in the new-worker form that closes without starting is kept
   ([`keepUnsent`](ref:hub/extensions/drafts/client/drafts.ts#keepUnsent), run by the shared new-worker dialog's machine,

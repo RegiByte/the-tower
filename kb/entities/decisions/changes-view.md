@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-25",
-  "refs": ["hub/src/bridge/reviews.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#changesHtml", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
+  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#changesHtml", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]

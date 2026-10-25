@@ -6,12 +6,12 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#changesHtml",
-    "hub/src/shared/reviews-panel.ts#reviewsHtml",
-    "hub/src/shared/reviews-panel.ts#threadViewOf",
+    "hub/extensions/reviews/client/panel.ts#reviewsHtml",
+    "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/src/shared/stats-panel.ts#statsHtml",
     "hub/src/shared/stats-panel.ts#statsQuery",
     "hub/src/shared/policies-panel.ts#policiesHtml",
@@ -48,14 +48,19 @@ are the same view in every renderer; only where they sit, their state and a few 
 - *One served module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds four panels,
   each in a module of its own that it gathers and bundles:
   Changes ([`changesHtml`](ref:hub/src/shared/changes-panel.ts#changesHtml), [[changes-view]]), Reviews
-  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml), [[review-threads]], whose view model
-  [`threadViewOf`](ref:hub/src/shared/reviews-panel.ts#threadViewOf) builds), Stats
+  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml) over the board's old fields, deprecated since 1.93
+  for the reviews extension's own panel, `/x/reviews/panel.js`
+  ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
+  view model [`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds), which both renderers
+  draw), Stats
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
   [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]) and Policies
   ([`policiesHtml`](ref:hub/src/shared/policies-panel.ts#policiesHtml) over `floor.policies` and `board.offers`,
   [[policies]]; deprecated since 1.91 for the policies extension's own panel, `/x/policies/panel.js`, which the tower
   page draws). Each takes a view model and reads nothing global. The logic of rows, picks, anchors and marks lives
-  beside them as pure functions. The tower page draws all four; Tower 3D draws Changes, Reviews and Stats.
+  beside them as pure functions. The tower page draws all four; Tower 3D draws Changes, Reviews and Stats. The Changes
+  panel knows nothing of review threads: a renderer passes it the thread whose anchors mark lines and whether a note
+  can be picked (`thread`, `noting`), and passes neither where reviews is off, so it draws nothing about notes.
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]); a
   policy's presses are calls the board offered (`data-policy-call`). Text boxes are named by attribute, not id, so

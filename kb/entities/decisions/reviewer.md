@@ -75,7 +75,7 @@ and how its findings reach the author.
   the author moves on.
 - *Delivery.* By default the notes wait on the thread for the user, who reads them in the Reviews tab and sends them on.
   With `tell` (`/tower:review <CALLSIGN> tell`), the reviewer runs `tower send <CALLSIGN>`, which submits
-  [`sendText`](ref:hub/src/shared/reviews.ts#sendText): a pointer naming the reviewer's callsign and the notes new to
+  [`sendText`](ref:hub/extensions/reviews/client/reviews.ts#sendText): a pointer naming the reviewer's callsign and the notes new to
   the author, and, when the author was hired, its hirer to report to once they are answered. `submit` takes the reviewer as `by` and names it in the author's log first ([[worker-prompts]]). An author hiring its own reviewer
   passes `tell`. When the author was hired, the reviewer also tells the author's hirer the verdict in one line
   (`SendMessage`), so the hirer knows the review is in even if the author stalls; the author, once it has answered

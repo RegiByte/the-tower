@@ -74,8 +74,8 @@ primitives every renderer can reach.
   and its `owner` and `doors`. On a floor
   where the extension is off, a collection the config also declares is a plain open one, and one only the extension
   declares is gone.
-- Two collections have a meaning in the core: `reviews`, the review threads, written only by appending through
-  `review/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
+- Two collections are bundled extensions' with a meaning of their own: `reviews`, the review threads, owned by the
+  reviews extension and written only by appending through `reviews/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
   in the project's streams, never beside the file ([[policies]]).
 - Drafts are the bundled drafts extension's ([[extensions]]): an open collection, so its doors are the generic
   verbs, declared by `extensions/drafts` and on every floor where the capability is on, with no server code. A

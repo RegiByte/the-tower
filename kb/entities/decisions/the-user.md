@@ -13,9 +13,9 @@
     "hub/src/shared/model.ts#configuredUser",
     "hub/src/bridge/board.ts#Board",
     "hub/src/shared/launch.ts#towerBrief",
-    "hub/src/shared/reviews.ts#THE_USER",
-    "hub/src/shared/reviews.ts#sendText",
-    "hub/src/shared/reviews-panel.ts#ThreadView",
+    "hub/extensions/reviews/client/reviews.ts#THE_USER",
+    "hub/extensions/reviews/client/reviews.ts#sendText",
+    "hub/extensions/reviews/client/panel.ts#ThreadView",
     "hub/src/shared/changes-panel.ts#ChangesView",
     "hub/src/directory.ts#agent",
     "hub/src/mod/skills/handbook/SKILL.md",
@@ -33,12 +33,12 @@ tower got agents that talked about someone else.
 - `config.user.name` ([`UserConfig`](ref:hub/src/shared/model.ts#UserConfig)) signs the notes renderers write for the
   user, `user` when unset ([`userName`](ref:hub/src/shared/model.ts#userName)). The board carries it as
   `board.user.name`, so a renderer written from scratch signs the same way. The Changes and Reviews panels take it as
-  `user` ([`ThreadView`](ref:hub/src/shared/reviews-panel.ts#ThreadView)), label their composers with it and mark notes signed
+  `user` ([`ThreadView`](ref:hub/extensions/reviews/client/panel.ts#ThreadView)), label their composers with it and mark notes signed
   with it as the viewer's own.
 - The brief says the name once, "the user (Ana)", only when the config gives one, so a worker knows whose notes
   `## Ana · …` are.
-- Send's prompt names its sender: a callsign, or [`THE_USER`](ref:hub/src/shared/reviews.ts#THE_USER) from a renderer
-  ([`sendText`](ref:hub/src/shared/reviews.ts#sendText)).
+- Send's prompt names its sender: a callsign, or [`THE_USER`](ref:hub/extensions/reviews/client/reviews.ts#THE_USER) from a renderer
+  ([`sendText`](ref:hub/extensions/reviews/client/reviews.ts#sendText)).
 - The brief tells every worker not to create or remove git worktrees unless the user asks: a rule of the tower, not of
   one user's own instructions.
 

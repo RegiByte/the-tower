@@ -18,7 +18,7 @@
     "hub/src/shared/file-acts.ts#fileButtonsHtml",
     "hub/src/shared/file-acts.ts#fileSpansHtml",
     "hub/src/shared/file-acts.ts#fileCall",
-    "hub/src/shared/reviews-panel.ts#threadItemFiles",
+    "hub/extensions/reviews/client/panel.ts#threadItemFiles",
     "hub/src/bridge/board.ts#Board",
     "hub/src/cli-verbs.ts#CLI_VERBS",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
@@ -66,7 +66,7 @@ for the user.
   [`fileCall`](ref:hub/src/shared/file-acts.ts#fileCall) turns a click into the call. Each renderer wires it once, as a
   capturing click listener on the document, so a button inside a file header or an anchor never also folds the
   file or jumps to Changes. The shared panels draw them on changed files, a thread's file and each note's anchor (the
-  editor at its first line, the anchor's repo found by [`threadItemFiles`](ref:hub/src/shared/reviews-panel.ts#threadItemFiles)), and
+  editor at its first line, the anchor's repo found by [`threadItemFiles`](ref:hub/extensions/reviews/client/panel.ts#threadItemFiles)), and
   each renderer wherever else it names a file: a showing, a draft, the config ([[shared-panels]], [[corkboard]]).
 - *The CLI*: `tower reveal <path>` and `tower edit <path> [line]` ([[agent-directory]]).
 
