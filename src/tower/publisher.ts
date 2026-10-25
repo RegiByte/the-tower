@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, archiveOf, board, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
+import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
 import { foldBoard } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
@@ -86,19 +86,24 @@ export const publisher = defineResource({
 
     /**
      * A floor's archived cards (`archiveOf`) as the board's own cards are: each running extension's card folds on them
-     * and each moved part copied back to its old field. They are folded as the cards of their floor on the core's
-     * board, by the card folds alone: what a fold contributes beside its part (badges, actions, lines) stays the board's.
+     * and each moved part copied back to its old field. They are folded beside their floor's cards on the core's board,
+     * every floor kept, by the card folds alone: what a fold contributes beside its part (badges, actions, lines) stays
+     * the board's, and a fold's problem on an archived card goes to the tower's log, the board's problems being the board's.
      */
     const archivedCards = (project: string, now: number): Card[] => {
       if (folding) throw new Error('an archive was read inside a fold: a fold reads the board as its ctx.board')
       const view = { ...viewOf(), now }
-      const core = board(view)
-      const floors = core.floors.filter((f) => f.id === project).map((f) => ({ ...f, cards: archiveOf(allCards(view), project, now) }))
+      const cards = allCards(view)
+      const archived = archiveOf(cards, project, now)
+      const core = boardFrom(view, cards)
+      const floors = core.floors.map((f) => (f.id === project ? { ...f, cards: [...f.cards, ...archived] } : f))
       const folders = extensions.folders().map((f) => ({ ...f, folds: Object.fromEntries(Object.entries(f.folds).filter(([kind]) => kind === 'card')) }))
       folding = true
       try {
         const folded = foldBoard({ board: { ...core, floors }, callsignOf: callsignLookup(view), folders, subjects: extensions.subjects(), now, clock: () => performance.now() })
-        return projectLegacy(folded.board).floors.flatMap((f) => f.cards)
+        for (const { id, problem } of folded.problems) console.error(`${id}: ${problem.message} (${problem.path}${problem.subject ? `, ${problem.subject}` : ''}), folding ${project}'s archive`)
+        const ids = new Set(archived.map((c) => c.id))
+        return projectLegacy(folded.board).floors.find((f) => f.id === project)!.cards.filter((c) => ids.has(c.id))
       } finally {
         folding = false
       }

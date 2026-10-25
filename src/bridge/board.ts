@@ -787,10 +787,12 @@ const turnLimitsOf = (sessions: Session[]): Pick<Board, 'turnLimits'> => {
   return newest ? { turnLimits: newest } : {}
 }
 
-export const board = (view: SystemView): Board => {
+export const board = (view: SystemView): Board => boardOf(view, allCards(view))
+
+/** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
+export const boardOf = (view: SystemView, cards: Card[]): Board => {
   const { config, sessions, host, shells, items, repos, logFiles, readings, streams, extensions, stores, paths, now } = view
   const continued = continuations(sessions)
-  const cards = allCards(view)
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
