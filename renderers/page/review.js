@@ -1,6 +1,6 @@
-import { noLongerOffered, offeredCall, sendTarget, workerIn, plural } from '/cards.js'
+import { noLongerOffered, offeredCall, runVerb, sendTarget, workerIn, plural } from '/cards.js'
 import { THE_USER, REVIEWS, sendText, threadId, unseenBy } from '/x/reviews/reviews.js'
-import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, reviewsHtml, threadCheckout, threadFailure, threadViewOf, threadWant } from '/x/reviews/panel.js'
+import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewOf, threadWant } from '/x/reviews/panel.js'
 import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, noChanges, readChanges, scopeOf, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, viewedCount } from '/panels.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
@@ -228,6 +228,13 @@ export function review(deps) {
     render()
   }
 
+  /** Marks a note of the selected worker's thread resolved, signed by the user. @param {HTMLElement} button @param {number} n */
+  async function resolveNote(button, n) {
+    const c = /** @type {Card} */ (findCard(selected()))
+    const reply = await told(pressing(button, () => runVerb(resolveAction({ project: c.project, checkout: threadCheckout(c), user: board().user.name }, n))))
+    if (reply) toast(`n${n} is resolved on the thread of ${threadCheckout(c)}`)
+  }
+
   /** The worker the viewer picked to send each checkout's notes to, by `<project>/<checkout>`; this page only. @type {Map<string, string>} */
   const sendPicks = new Map()
   /** @param {Card} c */
@@ -311,5 +318,5 @@ export function review(deps) {
     if (target.matches('[data-pick-text]') && id === 'cancel-pick') return (e.preventDefault(), dropPick(), drawChanges())
   })
 
-  return { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread }
+  return { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, resolveNote, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread }
 }

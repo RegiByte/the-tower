@@ -15,6 +15,7 @@
     "client.panel.js#keepsThreads",
     "client.panel.js#noteCallOf",
     "client.panel.js#readThread",
+    "client.panel.js#resolveAction",
     "client.panel.js#reviewsHtml",
     "client.panel.js#threadCheckout",
     "client.panel.js#threadFailure",

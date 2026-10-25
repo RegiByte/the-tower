@@ -16,7 +16,7 @@ import { anchorWhere } from '../../../src/shared/changes-lines.ts'
 import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
 import { failedHtml, settledHtml } from '../../../src/shared/panel-kit.ts'
 import type { CardPart, FloorPart, FloorThread, NoteCall } from '../threads.ts'
-import { anchorState, langOf, parseThread, repoName, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { anchorState, langOf, parseThread, repoName, resolvedIn, resolvesOf, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
 
 /** A card's reviews part: where its thread is, how its work stands, what of it is new to it, and its note while it is live. `undefined` where reviews is off. */
 export const cardReviews = (c: Card): CardPart | undefined => c.x?.[REVIEWS] as CardPart | undefined
@@ -44,7 +44,7 @@ type Worker = { id: string; callsign: string; checkout: string }
  * floor thread's `state`); `noting`: the card or floor thread offers its note, so the composer, replies and Send are drawn.
  */
 export type ThreadView = {
-  checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
+  project: string; checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
   changes: RepoChanges[] | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
   files: ThreadFiles; state: CheckoutState; noting: boolean
 }
@@ -127,7 +127,7 @@ export type ThreadViewer = {
 export function threadViewOf(board: Board, at: ThreadPlace, viewer: ThreadViewer): ThreadView {
   const f = board.floors.find((f) => f.id === at.project)!
   return {
-    checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
+    project: at.project, checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
     reader: at.reader, changes: viewer.changes, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
     user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.note !== undefined,
   }
@@ -151,9 +151,16 @@ function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
     state && ANCHOR_STATE[state] ? `<span class="state">${ANCHOR_STATE[state]}</span>` : ''}</button>${dir ? fileButtonsHtml(`${dir}/${a.path}`, a.from) : ''}</div>${a.quote ? quoteHtml(a.path, a.quote) : ''}</div>`
 }
 
-const noteHtml = (v: ThreadView, m: Message, fresh: boolean) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''}" data-note="${m.n}">
+/** What a Resolve on note `n` of the view's thread calls, signed by the viewer. @since 1.94 */
+export const resolveAction = (v: Pick<ThreadView, 'project' | 'checkout' | 'user'>, n: number) =>
+  ({ verb: 'reviews/resolve', call: { project: v.project, checkout: v.checkout, author: v.user, notes: [n] } }) as const
+
+/** `resolvedBy`: the note that resolved this one, when one did. A note can be resolved while the work goes on, unless it is a resolution. */
+const noteHtml = (v: ThreadView, m: Message, fresh: boolean, resolvedBy: number | undefined) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''} ${resolvedBy ? 'resolved' : ''}" data-note="${m.n}">
   <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<button class="re" data-to-note="${m.re}">re n${m.re}</button>` : ''}${
-    fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}${v.noting ? `<button data-reply="${m.n}">reply</button>` : ''}</header>
+    resolvedBy ? `<button class="resolved-mark" data-to-note="${resolvedBy}" data-tip="resolved by n${resolvedBy}">resolved</button>` : ''}${
+    fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}${v.noting ? `<button data-reply="${m.n}">reply</button>` : ''}${
+    v.noting && !resolvedBy && !resolvesOf(m).length ? `<button data-resolve="${m.n}" data-tip="mark n${m.n} resolved, with a note of its own">resolve</button>` : ''}</header>
   ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body md">${markdownHtml(m.body)}</div>` : ''}</article>`
 
 function sendHtml(v: ThreadView) {
@@ -175,9 +182,10 @@ export function reviewsHtml(v: ThreadView) {
   if (!v.thread) return `<div class="reviews-panel">${settled}${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
   if (settled && !v.thread.messages.length) return `<div class="reviews-panel">${settled}<p class="none">${esc(v.checkout)} has no review thread.</p></div>`
   const unseen = new Set(v.reader && !settled ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
+  const resolved = resolvedIn(v.thread)
   return `<div class="reviews-panel">${settled}<div class="reviews-head"><span>Thread of <b>${esc(v.checkout)}</b></span>${v.tag ? `<button class="tag" data-copy="${esc(v.tag)}" data-tip="copy its tag">${esc(v.tag)}</button>` : ''}${
       v.files.thread && v.thread.messages.length ? fileButtonsHtml(v.files.thread) : ''}
-      <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${v.noting ? sendHtml(v) : ''}</div>` +
-    (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
+      <span><b>${v.thread.messages.length}</b> ${noun(v.thread.messages.length, 'note')}${resolved.size ? ` · <b>${resolved.size}</b> resolved` : ''}${unseen.size ? ` · <b>${unseen.size}</b> new to ${esc(v.reader!.callsign)}` : ''}</span>${v.noting ? sendHtml(v) : ''}</div>` +
+    (v.thread.messages.map((m) => noteHtml(v, m, unseen.has(m.n), resolved.get(m.n))).join('') || '<p class="none">no notes yet: pick lines in Changes, or write one below</p>') +
     (v.noting ? composerHtml(v) : '') + '</div>'
 }

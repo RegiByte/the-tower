@@ -161,6 +161,10 @@ a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
 .reviews-panel .reviews-head button.tag { border: none; font-weight: 400; }
 .reviews-panel .note > header .new-mark { padding: 0 var(--sp-s); border-radius: var(--radius-pill); font-weight: 700; color: var(--panel); background: var(--accent); }
 .reviews-panel .note > header button { margin-left: auto; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; background: none; }
+.reviews-panel .note > header button[data-reply] + button[data-resolve] { margin-left: 0; }
+.reviews-panel .note > header button.resolved-mark { margin-left: 0; min-height: 0; padding: 0 var(--sp-s); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); color: var(--muted); cursor: pointer; }
+.reviews-panel .note.resolved { border-style: dashed; border-left-style: solid; }
+.reviews-panel .note.resolved .body, .reviews-panel .note.resolved .anchor { color: var(--muted); }
 .reviews-panel .note .body { font-size: var(--fs-l); line-height: 1.5; }
 .reviews-panel .anchor { margin: var(--sp-s) 0; border: 1px solid var(--line); border-radius: var(--radius); }
 .reviews-panel .anchor .where { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m); background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; }

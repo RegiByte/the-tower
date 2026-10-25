@@ -12,7 +12,7 @@ import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, type DiffLayout, type StatsRange } from '../../../src/shared/panels.ts'
-import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, noteCallOf, reviewsHtml, threadCheckout, threadViewOf, type ThreadPlace, type ThreadView } from '../../../extensions/reviews/client/panel.ts'
+import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, noteCallOf, resolveAction, reviewsHtml, threadCheckout, threadViewOf, type ThreadPlace, type ThreadView } from '../../../extensions/reviews/client/panel.ts'
 import type { NoteCall } from '../../../extensions/reviews/threads.ts'
 import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
@@ -2283,6 +2283,12 @@ async function addNote(at: ThreadPlace) {
   renderPanel()
 }
 
+/** Marks note `n` of the thread `at` resolved, signed by the user. */
+async function resolveNote(button: HTMLElement, at: ThreadPlace, n: number) {
+  const reply = await pressing(button, () => tried(() => runVerb(resolveAction({ project: at.project, checkout: at.checkout, user: s.board!.user.name }, n))))
+  if (reply) toast(`n${n} is resolved on the thread of ${at.checkout}`)
+}
+
 /** A note on the lines picked in a worker's Changes, on the thread its Reviews tab shows. */
 async function addPicked(c: Card) {
   const checkout = threadCheckout(c)
@@ -2315,6 +2321,8 @@ function onThreadClick(e: MouseEvent) {
   if (el.closest('[data-note-add]')) return addNote(at)
   if (el.closest('[data-thread-read]')) return (rereadThread(s.board!, at), renderPanel())
   if (el.closest('[data-reply-clear]')) return ((s.noteRe = undefined), renderPanel())
+  const resolve = el.closest<HTMLElement>('[data-resolve]')
+  if (resolve) return resolveNote(resolve, at, Number(resolve.dataset.resolve))
   const copy = el.closest<HTMLElement>('[data-copy]')?.dataset.copy
   if (copy) return copied(copy)
   const reply = el.closest<HTMLElement>('[data-reply]')?.dataset.reply

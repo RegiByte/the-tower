@@ -37,6 +37,7 @@
  *   data-anchor="<n>|<i>"      anchor `i` of note `n`: show its lines in Changes (`anchorSpot`)
  *   data-reply="<n>"           answer note `n` from the composer
  *   data-reply-clear           the composer's note answers none
+ *   data-resolve="<n>"         mark note `n` resolved: run the panel's `resolveAction` (/x/reviews/panel.js)
  *   data-note-text             the composer (a textarea): ⌘⏎ adds
  *   data-note-add              add the composer's note through `review/append`
  *   data-send                  submit `sendText` into the send target

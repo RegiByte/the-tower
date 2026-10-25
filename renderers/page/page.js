@@ -303,7 +303,7 @@ const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWor
 const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
-const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
+const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, resolveNote, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
 
@@ -632,6 +632,8 @@ document.addEventListener('click', async (e) => {
   const reply = target.closest('[data-reply]')?.dataset.reply
   if (reply) return replyTo(Number(reply))
   if (target.closest('[data-reply-clear]')) return clearReply()
+  const resolve = target.closest('[data-resolve]')
+  if (resolve) return resolveNote(resolve, Number(resolve.dataset.resolve))
   const toNote = target.closest('[data-to-note]')?.dataset.toNote
   if (toNote) return $('reviews').querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
   const anchored = target.closest('[data-anchor]')?.dataset.anchor
