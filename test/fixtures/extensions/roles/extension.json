@@ -1,0 +1,35 @@
+{
+  "id": "roles",
+  "version": "1.0",
+  "title": "Worker roles",
+  "description": "Pick a role when hiring: its markdown joins the worker's system prompt and its name shows on the card. The fixture the server test spawns with.",
+  "requires": { "tower": "1.85" },
+  "server": "server.ts",
+  "settings": { "type": "object", "additionalProperties": false, "properties": { "default": { "type": "string" } } },
+  "collections": { "roles": { "label": "Roles", "description": "One markdown file per role: a `# Name`, then what a worker in that role does." } },
+  "spawn": {
+    "launch": true,
+    "fields": {
+      "role": {
+        "schema": { "type": "string" },
+        "words": { "label": "Role", "hint": "What this worker is for" },
+        "options": { "from": "floor.x.roles.options" }
+      }
+    }
+  },
+  "folds": {
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": ["options"],
+        "properties": {
+          "options": {
+            "type": "array",
+            "items": { "type": "object", "required": ["value", "label"], "properties": { "value": { "type": "string" }, "label": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "card": { "x": { "type": "object", "properties": { "role": { "type": "string" } } }, "adds": ["badges"] }
+  }
+}

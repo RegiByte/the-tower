@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -31,10 +31,13 @@ const EXTENSIONS = path.join(ROOT, 'extensions')
 const PULSE = path.join(EXTENSIONS, 'pulse')
 const CHIME = path.join(EXTENSIONS, 'chime')
 const TALLY = path.join(EXTENSIONS, 'tally')
+const ROLES = path.join(EXTENSIONS, 'roles')
+const BUILDER = '# Builder\n\nBuilds what it is asked, and tests it.\n'
 
 const BOOT_MS = 15_000
 
 let tower: ChildProcess
+let host: ChildProcess
 let base: string
 
 const git = (...args: string[]) => execFileSync('git', ['-C', HUB, '-c', 'user.name=test', '-c', 'user.email=test@localhost', ...args], { stdio: 'ignore' })
@@ -46,7 +49,8 @@ const POLICY = '# Nightly\n\n```json\n{"when": {"cron": ["0 3 1 1 *"]}}\n```\n\n
  * a hidden file below its root, a policy, and a session that showed the page and ended.
  */
 function seed(port: number) {
-  for (const dir of [path.join(HUB, 'report'), RENDERER, path.join(ROOT, 'sessions'), path.join(ROOT, 'collections', 'lab', 'policies')]) mkdirSync(dir, { recursive: true })
+  for (const dir of [path.join(HUB, 'report'), RENDERER, path.join(ROOT, 'sessions'), path.join(ROOT, 'collections', 'lab', 'policies'), path.join(ROOT, 'collections', 'lab', 'roles')]) mkdirSync(dir, { recursive: true })
+  writeFileSync(path.join(ROOT, 'collections', 'lab', 'roles', 'builder.md'), BUILDER)
   writeFileSync(SHOWN, '<!doctype html><title>report</title>')
   writeFileSync(path.join(HUB, 'report', '.secret'), 'hidden')
   writeFileSync(path.join(RENDERER, 'index.html'), '<!doctype html><title>renderer</title>')
@@ -73,11 +77,11 @@ function seed(port: number) {
 
 function writeConfig(port: number) {
   const config = {
-    argv: ['bash'],
+    argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
     port,
     probes: { quota: { off: true } },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
     projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
     collections: {
       drafts: { label: 'Drafts', description: 'Prompts kept for later.' },
@@ -97,6 +101,27 @@ const freePort = (): Promise<number> =>
     })
   })
 
+const ENV = { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json') }
+
+/** The host, once its control socket answers: it owns the spawns' PTYs and writes their logs. */
+const bootHost = (): Promise<ChildProcess> =>
+  new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--import', 'tsx', path.join('src', 'host', 'main.ts')], { cwd: REPO, env: ENV, stdio: ['ignore', 'ignore', 'pipe'] })
+    let err = ''
+    child.stderr!.on('data', (chunk) => (err += chunk))
+    child.once('exit', () => reject(new Error(`the host exited before it was up:\n${err}`)))
+    const deadline = Date.now() + BOOT_MS
+    const knock = () =>
+      net
+        .connect(path.join(ROOT, 'control.sock'))
+        .once('connect', function (this: net.Socket) {
+          this.destroy()
+          resolve(child)
+        })
+        .once('error', () => (Date.now() > deadline ? (child.kill(), reject(new Error(`the host said nothing within ${BOOT_MS} ms:\n${err}`))) : setTimeout(knock, 50)))
+    knock()
+  })
+
 /**
  * The tower on `port`, once it says it is up; `undefined` when another process took the port first. One that says
  * nothing within `BOOT_MS` is killed and fails the boot: node:test would wait on the hook forever.
@@ -105,7 +130,7 @@ const boot = (port: number): Promise<ChildProcess | undefined> =>
   new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['--import', 'tsx', path.join('src', 'tower', 'server.ts')], {
       cwd: REPO,
-      env: { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json') },
+      env: ENV,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let err = ''
@@ -131,12 +156,14 @@ before(async () => {
       base = `http://127.0.0.1:${port}`
     }
   }
+  host = await bootHost()
 })
 
 after(async () => {
-  if (tower && tower.exitCode === null) {
-    const exited = new Promise((resolve) => tower.once('exit', resolve))
-    tower.kill()
+  for (const child of [tower, host]) {
+    if (!child || child.exitCode !== null) continue
+    const exited = new Promise((resolve) => child.once('exit', resolve))
+    child.kill()
     await exited
   }
   rmSync(ROOT, { recursive: true, force: true })
@@ -303,7 +330,7 @@ test("server: an extension's folds put its part on the board's subjects, its bad
   )
   const lab = board.floors.find((f) => f.id === 'lab')!
   const card = lab.cards.find((c) => c.id === SESSION)!
-  assert.deepEqual([lab.x, card.x], [{ pulse: { beats: 1 } }, { pulse: { beats: 1 } }])
+  assert.deepEqual([lab.x?.pulse, card.x], [{ beats: 1 }, { pulse: { beats: 1 } }])
   assert.deepEqual(board.adds[`card:${SESSION}`], {
     badges: [{ label: '1 beat', tone: 'ready', cap: 'pulse' }],
     lines: [{ text: 'You took 1 beat: `tower x pulse beat` keeps another.', cap: 'pulse' }],
@@ -422,6 +449,38 @@ test('server: extension/restart reads an extension again, a module its server im
   assert.deepEqual(await command('extension/restart', { id: 'pulse' }), { t: 'restarted', state: 'started' })
   assert.equal(JSON.parse((await get('/pulse/beats/lab')).body).word, 'thump')
   assert.equal(errorCode(await post('extension/restart', { id: 'nowhere' })), 'not_found')
+})
+
+test("server: a spawn's extension field is logged as a fact before the worker's first event, its launch adds the role's text, and its card shows the role; a spawn whose role is gone is refused", async () => {
+  const lab = () => settled(async () => {
+    const msg = (await firstEvent('/board')) as BoardMsg
+    assert.ok('board' in msg)
+    return msg.board
+  }, (b) => b.floors.find((f) => f.id === 'lab')!.x?.roles !== undefined)
+  const before = await lab()
+  assert.deepEqual(before.floors.find((f) => f.id === 'lab')!.x?.roles, { options: [{ value: 'builder.md', label: 'Builder' }] })
+  assert.deepEqual(before.extensions.find((e) => e.id === 'roles')!.spawn, { fields: [{ name: 'role', words: { label: 'Role', hint: 'What this worker is for' }, options: 'floor.x.roles.options' }] })
+
+  const { id } = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
+  const [header, first, ...rest] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8'), (log) => log.includes('"x"'))).trim().split('\n').map((line) => JSON.parse(line))
+  assert.deepEqual(first.slice(1), ['h', { hook_event_name: 'tower.x.roles.role', value: 'builder.md' }])
+  assert.ok(rest.some(([, code]) => code === 'o'))
+  const brief = header.argv[header.argv.indexOf('--append-system-prompt') + 1] as string
+  assert.ok(brief.endsWith(`\n\n${BUILDER}`), brief.slice(-200))
+
+  const board = await settled(async () => {
+    const msg = (await firstEvent('/board')) as BoardMsg
+    assert.ok('board' in msg)
+    return msg.board
+  }, (b) => b.floors.some((f) => f.cards.some((c) => c.id === id && c.x?.roles !== undefined)))
+  assert.deepEqual(board.floors.flatMap((f) => f.cards).find((c) => c.id === id)!.x, { roles: { role: 'builder.md' } })
+  assert.deepEqual(board.adds[`card:${id}`]?.badges, [{ label: 'builder.md', tone: 'quiet', cap: 'roles' }])
+
+  const gone = await post('spawn', { project: 'lab', x: { roles: { role: 'gone.md' } } })
+  assert.equal(errorCode(gone), 'internal')
+  assert.match(JSON.parse(gone.body).message, /^roles's launch contributor threw: lab\/roles holds no item "gone\.md"/)
+  assert.equal(errorCode(await post('spawn', { project: 'lab', x: { roles: { mood: 'calm' } } })), 'invalid')
+  assert.equal(errorCode(await post('spawn', { project: 'lab', x: { nobody: { role: 'x' } } })), 'invalid')
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {
