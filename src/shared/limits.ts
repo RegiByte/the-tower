@@ -54,18 +54,18 @@ export const quotaOf = (b: Pick<Board, 'x'>): ProbeStatus | undefined => {
 }
 
 /** A probe's state in words, coloured by how much it asks of you: a failing probe leaves the limits to age. */
-export const PROBE_STATE_NAME: Record<ProbeStatus['state'], string> = { off: 'off', new: 'not read yet', ok: 'answering', failing: 'failing', backoff: 'backing off', unavailable: 'nothing to read' }
-export const PROBE_ATTENTION: Record<ProbeStatus['state'], Attention> = { off: 'quiet', new: 'quiet', ok: 'quiet', failing: 'working', backoff: 'broken', unavailable: 'working' }
+export const PROBE_STATE_NAME: Record<ProbeStatus['state'], string> = { new: 'not read yet', ok: 'answering', failing: 'failing', backoff: 'backing off', unavailable: 'nothing to read' }
+export const PROBE_ATTENTION: Record<ProbeStatus['state'], Attention> = { new: 'quiet', ok: 'quiet', failing: 'working', backoff: 'broken', unavailable: 'working' }
 
 /** When a probe reads next: `reads now` once due, else in how long, and why when a session's turn holds it. */
 const probeNext = (p: ProbeStatus, now: number) =>
-  p.nextAt === undefined ? undefined : p.nextAt <= now ? 'reads now' : `next in ${span(p.nextAt - now)}${p.held ? ", after a session's reading" : ''}`
+  p.nextAt <= now ? 'reads now' : `next in ${span(p.nextAt - now)}${p.held ? ", after a session's reading" : ''}`
 
 /** A probe in a short line: `quota probe · answered 3m ago · next in 7m`. */
 export const probeLine = (p: ProbeStatus, now: number) =>
   [
     `${p.name} probe`,
-    p.state === 'off' || p.lastAt === undefined ? PROBE_STATE_NAME[p.state] : `${p.error === undefined ? 'answered' : 'failed'} ${span(now - p.lastAt)} ago`,
+    p.lastAt === undefined ? PROBE_STATE_NAME[p.state] : `${p.error === undefined ? 'answered' : 'failed'} ${span(now - p.lastAt)} ago`,
     probeNext(p, now),
   ].filter(Boolean).join(' · ')
 
@@ -73,7 +73,6 @@ export const probeLine = (p: ProbeStatus, now: number) =>
 export const probeTitle = (p: ProbeStatus, now: number) =>
   [
     probeLine(p, now),
-    p.state === 'off' && `off in the config (extensions.${p.name}.off): the limits refresh only during sessions' turns`,
     p.state === 'new' && `reads Claude's usage every ${span(p.every)} while no session's turn has`,
     p.state === 'unavailable' && `the account has no rate limits to read (an API key, a cloud provider, or nobody signed in): it reads again every ${span(p.wait)}`,
     p.error !== undefined && `${p.failsInRow} failed in a row${p.state === 'backoff' ? `, so it waits ${span(p.wait)}` : ''}: ${p.error}`,

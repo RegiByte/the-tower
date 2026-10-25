@@ -264,7 +264,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
 
 /** A probe in one line: its short line, then its state and why its last read failed, when either adds to it. */
 const probeCliLine = (p: NonNullable<ReturnType<typeof quotaOf>>, now: number): string =>
-  [probeLine(p, now), ...(p.state === 'off' || p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
+  [probeLine(p, now), ...(p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
 
 /** An extension: its line, where it is off, whom it exempted, and each problem at its path. */
 const extensionCliLines = (e: Reads['extensions']['extensions'][number]): string[] => [

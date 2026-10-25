@@ -180,7 +180,7 @@
               },
               "nextAt": {
                 "type": "number",
-                "description": "When it reads next: a moment past (0 before its first read) means at the tower's next tick. Absent while off."
+                "description": "When it reads next: a moment past (0 before its first read) means at the tower's next tick."
               },
               "held": {
                 "type": "boolean",
@@ -194,6 +194,7 @@
               "failsInRow",
               "held",
               "name",
+              "nextAt",
               "reads",
               "state",
               "verbs",
@@ -4246,14 +4247,13 @@
     "ProbeState": {
       "type": "string",
       "enum": [
-        "off",
         "new",
         "ok",
         "failing",
         "backoff",
         "unavailable"
       ],
-      "description": "A probe's state as `board.probes` says it: `off` by the config."
+      "description": "A probe's state as `board.probes` says it; the field holds none while the quota extension doesn't run, `off` among it."
     },
     "ExtraUsage": {
       "type": "object",

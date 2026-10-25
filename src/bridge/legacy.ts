@@ -29,8 +29,8 @@ export type LegacyReading = (fact: unknown) => RateLimitsReading | undefined
 /** The probes the core ran before 1.90: their readers, a closed set. */
 type Reader = 'claude.usage'
 
-/** A probe's state as `board.probes` says it: `off` by the config. */
-export type ProbeState = 'off' | 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
+/** A probe's state as `board.probes` says it; the field holds none while the quota extension doesn't run, `off` among it. */
+export type ProbeState = 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
 
 /** A probe as `board.probes` shows it, as it stood at 1.89. Times in epoch ms. */
 export type ProbeStatus = {
@@ -48,8 +48,8 @@ export type ProbeStatus = {
   failsInRow: number
   /** How long it waits after its last read, ms: `every`, longer while backing off or unavailable. */
   wait: number
-  /** When it reads next: a moment past (0 before its first read) means at the tower's next tick. Absent while off. */
-  nextAt?: number
+  /** When it reads next: a moment past (0 before its first read) means at the tower's next tick. */
+  nextAt: number
   /** `nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after. */
   held: boolean
 }
@@ -82,7 +82,7 @@ export const LEGACY_READS: Record<string, LegacyRead> = {
 }
 
 /** The quota extension's part, as `board.x.quota` holds it. */
-type QuotaPart = Omit<ProbeStatus, 'name' | 'reads' | 'state' | 'nextAt'> & { state: Exclude<ProbeState, 'off'>; nextAt: number }
+type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'>
 
 export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'board.probes': (board) => {
