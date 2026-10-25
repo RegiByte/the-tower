@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.62.0
+
+Review threads are an extension: the last built-in to move, now the bundled `reviews` extension in the checkout's
+`extensions/`. Every thread, filed thread, unseen mark, crew and reviewer reads as before, and every old name still
+answers until 2.0. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config change,
+the renderer API 1.92 → 1.95 (additive).
+
+- **Reviews is an extension.** Its client and the Reviews panel are served at `/x/reviews/`; `review/append` is
+  `reviews/append` and `GET /reviews/<project>` is `reviews/history/<project>`. A config's `collections.reviews` line
+  now sets the collection's label and description, and `projects.<p>.capabilities.reviews.off` turns review threads
+  off on a floor.
+- **Resolve a note.** The Reviews tab offers Resolve on a note while the work goes on, and dims a resolved note under
+  a mark naming its resolution. `tower note resolve n3 n4` does the same from a worker. A resolution is a note like
+  any other: threads stay append-only and read the same in an older checkout.
+- **A reviewer is known by its spawn.** `tower review` and the Review action hire through `reviews/hire`, which logs
+  the reviewer's crew and its exemption from hiring limits before it starts, in place of reading its prompt. Reviewers
+  hired before this release keep their crew, seat and exemption. `tower whoami` names both.
+- **Tidy and discard.** Tidy files a landed thread, and a discard leaves its recovery note, through the reviews
+  extension. Discard is offered where something records what it throws away (reviews, when on) and refused elsewhere,
+  as before. A landed thread's row in Tidy now comes after the core's rows.
+- **Archived workers** carry their extensions' parts again: an archived worker's Reviews tab is back, and a policy
+  run's card shows on archived workers, both missing since the moves.
+- **For extension authors.** A new core hook, `tower/discard.done`, raised after a discard removed its worktrees.
+  Tidy entries take `does` and a count noun `kind: {one, many}`.
+
 ## v1.61.1
 
 A policy's last run names its worker again when that worker has left the board, as before v1.61.0. No restart beyond
