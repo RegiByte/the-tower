@@ -15,7 +15,6 @@ const SHARED = path.join(import.meta.dirname, '..', 'shared')
 /** Shared modules renderers import, TypeScript served as JavaScript, each bundled with what it imports. */
 export const MODULES: Record<string, string> = {
   '/design.js': path.join(SHARED, 'design.ts'),
-  '/drafts.js': path.join(SHARED, 'drafts.ts'),
   '/items.js': path.join(SHARED, 'items.ts'),
   '/cards.js': path.join(SHARED, 'cards.ts'),
   '/icons.js': path.join(SHARED, 'icons.ts'),

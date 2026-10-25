@@ -1,5 +1,5 @@
 import { documentCss } from '../../../src/shared/design.ts'
-import { DRAFTS, DRAFT_STATE, draftItem, draftState, draftsOf, type Draft } from '../../../src/shared/drafts.ts'
+import { DRAFT_STATE, draftItem, draftState, draftsOf, type Draft } from '../../../extensions/drafts/client/drafts.ts'
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml } from '../../../src/shared/items.ts'
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { keptTitle } from './kept.ts'
@@ -622,7 +622,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
   const unfolded = kept.find((c) => c.id === tray)
   const trays = [
     trees && `<button class="tray${tray === 'worktrees' ? ' on' : ''}" data-tray="worktrees" aria-expanded="${tray === 'worktrees'}" data-tip="worktrees and the branches the tower kept">${ICON.branch} <b>${trees}</b> worktree${trees === 1 ? '' : 's'}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}</button>`,
-    ...kept.map((c) => `<button class="tray${tray === c.id ? ' on' : ''}" data-tray="${esc(c.id)}" aria-expanded="${tray === c.id}" data-tip="${esc(c.description ?? `items kept in ${c.label}`)}">${c.id === DRAFTS ? ICON.draft : ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}</button>`),
+    ...kept.map((c) => `<button class="tray${tray === c.id ? ' on' : ''}" data-tray="${esc(c.id)}" aria-expanded="${tray === c.id}" data-tip="${esc(c.description ?? `items kept in ${c.label}`)}">${c === draftsOf(f) ? ICON.draft : ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}</button>`),
     past && `<button class="tray" data-archive data-tip="past workers and their conversations">${ICON.archive} <b>${past}</b> archived</button>`,
   ].filter(Boolean).join('')
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
@@ -635,7 +635,7 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     ${edited.length ? `<div class="section eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${edited.map((r) => editedRowHtml(r, armed)).join('')}` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
     ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held, armed)}` : ''}
-    ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded.id === DRAFTS ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
+    ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded === draftsOf(f) ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */

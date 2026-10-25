@@ -7,7 +7,7 @@ import { POLICIES } from '/policies.js'
 import { HOME } from './view.js'
 import { $, closeHomeHtml, repaint, toast, told } from './kit.js'
 import { pressing } from '/press.js'
-import { DRAFTS } from '/drafts.js'
+import { draftsOf } from '/x/drafts/drafts.js'
 import { addsHtml } from './added.js'
 
 /**
@@ -60,7 +60,7 @@ export function keptViews(deps) {
     const f = floorOf(open.project)
     const c = f?.collections.find((c) => c.id === open.collection)
     if (!f || !c) return goHome()
-    const drafts = c.id === DRAFTS
+    const drafts = c === draftsOf(f)
     repaint($('collection-head'), `<span class="label">${esc(c.label)}</span><span class="dim">${esc(f.name)}</span><span class="actions"><small class="dim">${plural(c.items.length, 'item')}</small>${closeHomeHtml(board().keys)}</span>`)
     repaint($('collection-list'), collectionTrayHtml(f.id, c, (item) => (drafts ? draftTitle(f.id, item) : keptTitle(f.id, c.id, item)), undefined, Date.now(), drafts ? newDraftHtml(f) : ''))
   }

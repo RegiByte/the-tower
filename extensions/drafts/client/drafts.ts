@@ -1,12 +1,12 @@
-import type { FloorCollection } from '../bridge/board.ts'
-import type { Replies, Verbs } from './api.ts'
-import { itemTitles } from './titles.ts'
+import type { FloorCollection } from '../../../src/bridge/board.ts'
+import type { Replies, Verbs } from '../../../src/shared/api.ts'
+import { itemTitles } from '../../../src/shared/titles.ts'
 
 /**
  * Drafts: prompts kept for later in a project's `drafts` collection, edited in a renderer, then sent to a new
  * session or typed into a worker and deleted. The editing itself, shared by every renderer that edits them: each
  * keeps its own text field and autosave timer, and hands the draft's text over with `edit`. The tower serves this
- * module as `/drafts.js`; nothing in the core imports it.
+ * module as `/x/drafts/drafts.js`, its extension's client file.
  */
 
 export const DRAFTS = 'drafts'
@@ -30,7 +30,8 @@ type CodedError = Error & { code?: string }
 export const readDraft = (io: Pick<DraftIo, 'read'>, project: string, id: string) =>
   io.read(project, id).catch((err: CodedError) => (err.code === 'not_found' ? undefined : Promise.reject(err)))
 
-export const draftsOf = (f: Floor) => f.collections.find((c) => c.id === DRAFTS)
+/** A floor's drafts: its `drafts` collection while the drafts extension is on there; a plain one of that name is no drafts. */
+export const draftsOf = (f: Floor) => f.collections.find((c) => c.id === DRAFTS && c.by === DRAFTS)
 export function draftItem(floors: Floor[], project: string, id: string) {
   const f = floors.find((f) => f.id === project)
   return f && draftsOf(f)?.items.find((i) => i.id === id)

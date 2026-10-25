@@ -2,7 +2,7 @@ import type { FloorCollection } from '../bridge/board.ts'
 
 /**
  * An item's title, derived from its own text wherever it is shown: nothing about an item is stored beside it. The
- * tower page reads it through `/drafts.js`; `tower kept` and Tower 3D import it.
+ * tower page reads it through `/x/drafts/drafts.js`; `tower kept` and Tower 3D import it.
  */
 
 /** What an item's title is derived from: its id names its type, its tag stands in, `modifiedAt` says when to read it again. */

@@ -36,7 +36,7 @@ then carries its waits on you, its offers and its workers on duty lamped by thei
 
 Every collection a floor declares has a tray under its workers ([[collection-trays]]), an item opened in the main
 pane read as its type. Drafts are the page's own feature over the `drafts` collection ([[collections]]): an editor in
-the main pane that saves as you type, shared with Tower 3D as `/drafts.js` ([[corkboard]]); a draft starts a worker
+the main pane that saves as you type, shared with Tower 3D as `/x/drafts/drafts.js` ([[corkboard]]); a draft starts a worker
 through the new-worker dialog or is submitted to a running one, then is deleted. A floor that keeps policies has a
 tray that opens the shared Policies panel at `#policies/<floor>` ([[shared-panels]]); its open offers sit above its
 workers and N goes to them after the waits ([[attention-list]]); a worker a run started says so under its callsign,

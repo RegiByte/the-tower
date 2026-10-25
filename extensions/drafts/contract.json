@@ -1,0 +1,31 @@
+{
+  "provides": "drafts",
+  "major": 1,
+  "names": [
+    "collections.drafts",
+    "client.drafts.js#AUTOSAVE_MS",
+    "client.drafts.js#DRAFTS",
+    "client.drafts.js#DRAFT_STATE",
+    "client.drafts.js#discard",
+    "client.drafts.js#discardItem",
+    "client.drafts.js#draftItem",
+    "client.drafts.js#draftPath",
+    "client.drafts.js#draftState",
+    "client.drafts.js#draftTitles",
+    "client.drafts.js#draftsOf",
+    "client.drafts.js#edit",
+    "client.drafts.js#follow",
+    "client.drafts.js#isEdited",
+    "client.drafts.js#keepUnsent",
+    "client.drafts.js#keepsApart",
+    "client.drafts.js#leave",
+    "client.drafts.js#newDraft",
+    "client.drafts.js#openDraft",
+    "client.drafts.js#readDraft",
+    "client.drafts.js#restore",
+    "client.drafts.js#save",
+    "client.drafts.js#sendable",
+    "client.drafts.js#settle",
+    "client.drafts.js#titleOf"
+  ]
+}

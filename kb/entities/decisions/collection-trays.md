@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/src/shared/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/src/shared/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
 }
 ---
 **Problem.** A renderer that draws trays only for the collections it gives a meaning to hides the rest: what a worker
@@ -33,11 +33,12 @@ and reads items alike ([[renderer-is-disposable]]).
   is read again, a deleted one closes.
 - A sidebar tray is bounded ([`collectionPeekHtml`](ref:hub/src/shared/items.ts#collectionPeekHtml)) and lists the
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
-- Drafts keep their own tray on the shared rows, with a way to make one; review threads keep theirs, with the threads
+- Drafts keep their own tray on the shared rows, with a way to make one, where the floor's `drafts` collection is the
+  drafts extension's (`draftsOf`; a plain one of that name is drawn as any kept collection); review threads keep theirs, with the threads
   Tidy filed in a fold below ([`landedThreads`](ref:hub/src/shared/reviews.ts#landedThreads), read off the board's
   `reviews` items), each opened in the item view; policies have their own panel.
 - A prompt in the new-worker form that closes without starting is kept
-  ([`keepUnsent`](ref:hub/src/shared/drafts.ts#keepUnsent), run by the shared new-worker dialog's machine,
+  ([`keepUnsent`](ref:hub/extensions/drafts/client/drafts.ts#keepUnsent), run by the shared new-worker dialog's machine,
   [`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)): a new draft, or the draft the form was opened on, with
   its edits. A blank prompt is never kept.
 - A tray shows only while its collection holds items. An empty tray would sit under every floor for each collection

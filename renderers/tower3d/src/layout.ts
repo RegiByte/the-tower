@@ -1,4 +1,4 @@
-import { draftsOf } from '../../../src/shared/drafts.ts'
+import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'

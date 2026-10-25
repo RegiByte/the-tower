@@ -55,8 +55,18 @@ export const RESERVED = [
  */
 export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts'] as const
 
-/** The built-ins' old names, each with what it is now: none has moved yet. */
-export const LEGACY: Record<string, string> = {}
+/**
+ * A built-in's name from before it moved into its bundled extension, with what it is `now`, each as its kind names it:
+ * `module` a served URL, `verb` and `read` a core route without its slash, `stream` a stream's folder on disk (the
+ * kind that outlives 2.0: stored data never moves), `board` a dotted path from its subject. `since`: the minor it moved in.
+ */
+export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board'; old: string; now: string; since: string }
+
+/** The built-ins' old names, each with what it is now: a fixed list, never added to, gone at 2.0 but for its streams. */
+export const LEGACY: readonly LegacyEntry[] = [{ kind: 'module', old: '/drafts.js', now: '/x/drafts/drafts.js', since: '1.89' }]
+
+/** The old names of one kind. */
+export const legacyOf = (kind: LegacyEntry['kind']) => LEGACY.filter((e) => e.kind === kind)
 
 /** Every problem an extension can have, by what it is. */
 export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook', 'paused', 'contract'] as const

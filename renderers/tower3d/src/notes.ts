@@ -1,4 +1,4 @@
-import { draftPath, draftTitles } from '../../../src/shared/drafts.ts'
+import { draftPath, draftTitles } from '../../../extensions/drafts/client/drafts.ts'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS } from './fixtures.ts'
 

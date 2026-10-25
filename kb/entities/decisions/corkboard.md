@@ -8,7 +8,7 @@
   "date": "2026-10-04",
   "reviewed": "2026-10-24",
   "refs": [
-    "hub/src/shared/drafts.ts",
+    "hub/extensions/drafts/client/drafts.ts",
     "hub/renderers/tower3d/src/layout.ts#corkFor",
     "hub/renderers/tower3d/src/cork.ts",
     "hub/renderers/tower3d/src/layers.ts#NOTES",
@@ -18,7 +18,7 @@
     "hub/renderers/tower3d/src/main.ts#openDraftPanel",
     "hub/renderers/tower3d/src/hands.ts#holdNote",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/src/tower/http.ts#design"
+    "hub/src/tower/http.ts#clientFile"
   ]
 }
 ---
@@ -33,12 +33,13 @@ tower page.
 **How.**
 - **One editor, two layouts.** The draft editor's logic (saves queued, another writer's change taken unless the
   editor holds edits, a conflict held until settled, unsettled edits kept as a new draft on leaving, send only after
-  a save) is [`src/shared/drafts.ts`](ref:hub/src/shared/drafts.ts): DOM-free, its collection reads and writes passed
-  in. The tower page imports it as `/drafts.js` (served by [`design`](ref:hub/src/tower/http.ts#design)); Tower 3D
-  bundles it. Each keeps its own textarea, layout and autosave timer. The core never imports it: what drafts mean
-  stays with renderers.
-- **The corkboard** ([`corkFor`](ref:hub/renderers/tower3d/src/layout.ts#corkFor)): only on floors that keep a
-  `drafts` collection, on the left of the floor's shared wall ([[shared-wall]]). Each note is a paper card titled by
+  a save) is [`extensions/drafts/client/drafts.ts`](ref:hub/extensions/drafts/client/drafts.ts): DOM-free, its
+  collection reads and writes passed in. It is the client file of the bundled drafts extension ([[extensions]]): the
+  tower page imports it as `/x/drafts/drafts.js` (served by [`clientFile`](ref:hub/src/tower/http.ts#clientFile));
+  Tower 3D bundles it. Each keeps its own textarea, layout and autosave timer. The tower's server never imports it:
+  what drafts mean stays with renderers.
+- **The corkboard** ([`corkFor`](ref:hub/renderers/tower3d/src/layout.ts#corkFor)): only on floors where the
+  `drafts` collection is the drafts extension's (`draftsOf` reads its `by`: a plain one of that name is no drafts), on the left of the floor's shared wall ([[shared-wall]]). Each note is a paper card titled by
   its draft's first lines over its tag ([[item-tags]]), the text fetched once per `modifiedAt`
   ([`notes.ts`](ref:hub/renderers/tower3d/src/notes.ts), through the shared
   [`itemTitles`](ref:hub/src/shared/titles.ts#itemTitles)); a [`NOTES`](ref:hub/renderers/tower3d/src/layers.ts#NOTES)

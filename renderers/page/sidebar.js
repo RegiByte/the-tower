@@ -7,7 +7,7 @@ import { POLICIES, slotWords } from '/policies.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
-import { DRAFTS, draftsOf } from '/drafts.js'
+import { draftsOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { addsHtml, asksHtml, badgesHtml } from './added.js'
 
@@ -20,7 +20,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { MainView } from './view.js'
- * @import { Draft } from '../../src/shared/drafts.ts'
+ * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Titled } from '../../src/shared/titles.ts'
  */
@@ -254,7 +254,7 @@ export async function sidebar(deps) {
   const keptHtml = (f, c) => collectionPeekHtml(f.id, c, (item) => keptTitle(f.id, c.id, item), viewing('item')?.project === f.id && viewing('item')?.collection === c.id ? viewing('item')?.id : undefined, Date.now(), moreHtml(f, c))
 
   /** The collections a floor shows as trays of their own: drafts and review threads have theirs. @param {Floor} f */
-  const keptCollections = (f) => f.collections.filter((c) => c.id !== DRAFTS && c.id !== REVIEWS && c.id !== POLICIES && c.items.length)
+  const keptCollections = (f) => f.collections.filter((c) => c !== draftsOf(f) && c.id !== REVIEWS && c.id !== POLICIES && c.items.length)
 
   /** The floor's policies, folded to a count with what is offered and what needs you: the panel opens in the main pane. @param {Floor} f */
   function policiesTrayHtml(f) {

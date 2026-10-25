@@ -14,7 +14,6 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
   "env": {},
   "user": { "name": "Your Name" },
   "collections": {
-    "drafts": { "label": "Drafts", "description": "Prompts waiting to start a worker or be sent to one." },
     "reviews": { "label": "Reviews", "description": "One review thread per checkout, written through tower note." },
     "policies": { "label": "Policies", "description": "Standing work the tower starts on a schedule: one markdown file each, a # Title, a json header, then the prompt." }
   },
@@ -140,8 +139,10 @@ by id with a `label` (the name it is shown by) and an optional `description` (wh
 shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. One id means
 something to the tower itself: `reviews`, one review thread per checkout, written only through `tower note`. A second
 does too: `policies`, standing work the tower starts at its slots (`tower policies` lists them, the handbook's
-"Policies and runs" says what a policy holds); on a floor without it, nothing runs on a schedule. The
-renderers that ship read `drafts` as prompts waiting to start a worker or be sent to one. A floor keeping `games` shows each item as an arcade cabinet in
+"Policies and runs" says what a policy holds); on a floor without it, nothing runs on a schedule. `drafts`, prompts
+waiting to start a worker or be sent to one, is declared by the bundled drafts extension, on every floor where its
+capability is on: a `drafts` entry here overrides its `label` and `description`, and stays a plain collection on a
+floor with `capabilities.drafts.off`. A floor keeping `games` shows each item as an arcade cabinet in
 Tower 3D.
 
 ## Worktrees

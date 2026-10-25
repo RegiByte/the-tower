@@ -5,7 +5,7 @@ import { prunable, STUCK_MS } from '../../../src/bridge/prunable.ts'
 import { CALLSIGNS, callsigns } from '../../../src/shared/callsign.ts'
 import { tagOf } from '../../../src/shared/tags.ts'
 import { threadCheckoutOf } from '../../../src/shared/cards.ts'
-import { DRAFTS } from '../../../src/shared/drafts.ts'
+import { DRAFTS } from '../../../extensions/drafts/client/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
 import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
@@ -138,7 +138,7 @@ const draftId = (n: number) => `20261004T15${String(n).padStart(2, '0')}00.000Z.
 
 /** The drafts collection of a floor keeping drafts, a draft `n` minutes older than the next. */
 const draftsCollection = (project: string, texts: string[], now: number): Floor['collections'] => [{
-  id: DRAFTS, label: 'Drafts', dir: `/system/collections/${project}/${DRAFTS}`,
+  id: DRAFTS, label: 'Drafts', by: DRAFTS, dir: `/system/collections/${project}/${DRAFTS}`,
   items: texts.map((text, n) => ({ id: draftId(n), tag: tagOf(draftId(n)), size: text.length, modifiedAt: now - (texts.length - n) * MIN })),
 }]
 

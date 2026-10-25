@@ -21,7 +21,7 @@
     "hub/src/shared/launch.ts#keptArgs",
     "hub/src/shared/launch.ts#towerBrief",
     "hub/src/shared/paths.ts#projectCollectionsPath",
-    "hub/src/shared/drafts.ts#follow",
+    "hub/extensions/drafts/client/drafts.ts#follow",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/ui.ts#draftHeadHtml"
@@ -57,7 +57,7 @@ versions of one idea with nothing saying which was current.
   `.claude/`, so [[repos-file-access-only]]'s reason for `additionalDirectories` does not apply, and the flag is the
   client's: no host change. A project that has kept nothing yet has no directory; Claude starts anyway.
 - No edit verb: the renderers take a change made on disk. An open draft with no edits shows the new text, and one
-  with edits raises take theirs / keep mine ([`follow`](ref:hub/src/shared/drafts.ts#follow)).
+  with edits raises take theirs / keep mine ([`follow`](ref:hub/extensions/drafts/client/drafts.ts#follow)).
 
 **Alternatives considered.**
 - *Metadata beside each item (a sidecar, frontmatter, an item as a folder).* Titles, types and times are derived,

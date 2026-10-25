@@ -1,6 +1,6 @@
 import type * as THREE from 'three'
 import type { ChairKit, Chairs } from './chairs.ts'
-import type { Draft } from '../../../src/shared/drafts.ts'
+import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Note } from './cork.ts'
@@ -153,7 +153,7 @@ export type State = {
   /** Every showing you have opened, by `shownKey`, kept with your spot; and every one on the last board, to spot new ones. */
   seenShown: Set<string>
   lastShown: Set<string>
-  /** The draft taken off a corkboard, and the one open in the editor (src/shared/drafts.ts). */
+  /** The draft taken off a corkboard, and the one open in the editor (extensions/drafts/client/drafts.ts). */
   carrying: Held | undefined
   /** A beer from the roof's bar in your right hand. */
   beer: boolean

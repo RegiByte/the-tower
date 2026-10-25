@@ -5,14 +5,14 @@ import { fileButtonsHtml } from '/panels.js'
 import { HOME } from './view.js'
 import { lineOf, $, byStart, closeHomeHtml, toast, told } from './kit.js'
 import { commandOf } from '/keymap.js'
-import { DRAFTS, DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/drafts.js'
+import { DRAFTS, DRAFT_STATE, discard, draftItem, restore as restoreDraft, draftPath, draftState, draftTitles, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft as loadDraft, save, sendable, settle, titleOf } from '/x/drafts/drafts.js'
 
 /**
  * @import { Board, Card, Floor, FloorCollection } from '../../src/bridge/board.ts'
  * @import { DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
  * @import { MainView } from './view.js'
- * @import { Deleted, Draft } from '../../src/shared/drafts.ts'
+ * @import { Deleted, Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { PageState, PageEvent } from './page.js'
  */
 
@@ -37,7 +37,7 @@ import { DRAFTS, DRAFT_STATE, discard, draftItem, restore as restoreDraft, draft
  */
 
 /**
- * The draft open in the main pane (`/drafts.js`): its text saved as it is typed, followed as the board changes it,
+ * The draft open in the main pane (`/x/drafts/drafts.js`): its text saved as it is typed, followed as the board changes it,
  * sent to a new session or typed into a worker, and deleted with an undo.
  * @param {DraftDeps} deps
  */
@@ -57,7 +57,7 @@ export function draft(deps) {
   /** @param {Floor} f */
   const newDraftHtml = (f) => `<button data-new-draft="${f.id}" aria-label="new draft" data-tip="new draft">${ICON.plus}</button>`
 
-  /** The draft open in the main pane (src/shared/drafts.ts), its textarea holding `text`. @type {Draft | undefined} */
+  /** The draft open in the main pane (extensions/drafts/client/drafts.ts), its textarea holding `text`. @type {Draft | undefined} */
   let draftOpen
 
   /** The draft open, if one is. */

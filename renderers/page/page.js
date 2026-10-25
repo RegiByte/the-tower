@@ -33,7 +33,7 @@ import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
-import { AUTOSAVE_MS, DRAFTS } from '/drafts.js'
+import { AUTOSAVE_MS, draftItem } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
@@ -55,7 +55,7 @@ import { asksHtml } from './added.js'
  * @import { AttendEffect, AttendEvent, Attending } from '../../src/shared/attend.ts'
  * @import { MainView, Pane } from './view.js'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
- * @import { Draft } from '../../src/shared/drafts.ts'
+ * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { Pick } from '../../src/shared/palette.ts'
  * @import { Capability } from '../../src/shared/capabilities.ts'
  */
@@ -561,7 +561,7 @@ document.addEventListener('click', async (e) => {
   }
   if (kept) {
     const { project, collection, id } = keptOf(kept)
-    return collection === DRAFTS ? openDraft(project, id) : openItem(project, collection, id)
+    return draftItem(board().floors, project, id) ? openDraft(project, id) : openItem(project, collection, id)
   }
   if (target.closest('[data-item-act=delete]')) return deleteKept()
   if (target.closest('[data-item-read]')) return (forgetItem(), render())

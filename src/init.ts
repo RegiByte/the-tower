@@ -18,7 +18,6 @@ export const initialConfig = (hub: string, repos: string[], user: string | undef
   port: 4317,
   projects: { [projectId(hub)]: { name: path.basename(hub), hub, repos } },
   collections: {
-    drafts: { label: 'Drafts', description: 'Prompts kept for later: each starts a new session or is typed into a worker, then is deleted.' },
     [REVIEWS]: { label: 'Reviews', description: 'One review thread per checkout, written only with `tower note`: not a place for write-ups.' },
     [POLICIES]: { label: 'Policies', description: 'Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower policies` lists them.' },
   },

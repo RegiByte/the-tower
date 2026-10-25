@@ -1,0 +1,14 @@
+{
+  "id": "drafts",
+  "version": "1.0",
+  "title": "Drafts",
+  "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
+  "requires": { "tower": "1.89" },
+  "client": "client",
+  "collections": {
+    "drafts": {
+      "label": "Drafts",
+      "description": "Prompts kept for later: each starts a new session or is typed into a worker, then is deleted."
+    }
+  }
+}

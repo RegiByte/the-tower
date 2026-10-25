@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { type } from '../../../src/shared/design.ts'
-import { draftsOf } from '../../../src/shared/drafts.ts'
+import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import type { Board, Shell, Today } from './api.ts'
 import { duration, hours, usd } from '../../../src/shared/panels.ts'
 import { WEEKLY } from '../../../src/bridge/stats.ts'

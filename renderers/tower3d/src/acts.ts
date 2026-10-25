@@ -1,5 +1,5 @@
 import type * as THREE from 'three'
-import { draftItem } from '../../../src/shared/drafts.ts'
+import { draftItem } from '../../../extensions/drafts/client/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
 import { REVIEWS } from '../../../src/shared/reviews.ts'

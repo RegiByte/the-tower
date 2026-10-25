@@ -1,7 +1,7 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, formFields, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
-import { draftsOf, keepUnsent, titleOf, type Draft, type DraftIo } from './drafts.ts'
+import { draftsOf, keepUnsent, titleOf, type Draft, type DraftIo } from '../../extensions/drafts/client/drafts.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'

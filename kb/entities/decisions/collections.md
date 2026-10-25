@@ -70,15 +70,20 @@ primitives every renderer can reach.
   conflict: its `label` and `description` win, since they are what workers read. One the extension declares `owned`
   is written only through its owner's verbs: `collection/create`, `write`, `restore` and `delete` (and so `tower
   keep`) answer `refused`, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)),
-  while its reads stay open, since a read breaks no invariant. The board carries its `owner` and `doors`. On a floor
+  while its reads stay open, since a read breaks no invariant. The board carries the declaring capability as `by`,
+  and its `owner` and `doors`. On a floor
   where the extension is off, a collection the config also declares is a plain open one, and one only the extension
   declares is gone.
 - Two collections have a meaning in the core: `reviews`, the review threads, written only by appending through
   `review/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
   in the project's streams, never beside the file ([[policies]]).
-- Every other meaning is a renderer's. A drafts feature is a fold in a renderer: send is read, then `spawn` with the
-  text as `Launch.prompt`, then delete; transfer is read, then `submit`, then delete. Its editing is one module
-  renderers import, `src/shared/drafts.ts` ([[corkboard]]); nothing in the core imports it. Games are Tower 3D's
+- Drafts are the bundled drafts extension's ([[extensions]]): an open collection, so its doors are the generic
+  verbs, declared by `extensions/drafts` and on every floor where the capability is on, with no server code. A
+  config's `collections.drafts` line overrides its label and description; on a floor with
+  `capabilities.drafts.off` that line stays a plain collection, which the board marks by no `by` and renderers draw
+  as any kept one. Sending is a renderer's: send is read, then `spawn` with the text as `Launch.prompt`, then delete;
+  transfer is read, then `submit`, then delete. Its editing is the extension's client module renderers import,
+  `/x/drafts/drafts.js` ([[corkboard]]); the tower's server never imports it. Games are Tower 3D's
   ([[arcade]]). Any collection, given a meaning or not, is listed and read alike through `/items.js`
   ([[collection-trays]]), and an item's title is derived where it is shown
   ([`src/shared/titles.ts`](ref:hub/src/shared/titles.ts): a text item's first line, an html item's `<title>`).

@@ -16,8 +16,8 @@
     "hub/src/shared/toasts.ts#toastsCss",
     "hub/renderers/tower3d/src/main.ts#sendHome",
     "hub/src/shared/design.ts#designCss",
-    "hub/src/shared/drafts.ts#discard",
-    "hub/src/shared/drafts.ts#restore",
+    "hub/extensions/drafts/client/drafts.ts#discard",
+    "hub/extensions/drafts/client/drafts.ts#restore",
     "hub/src/collections.ts#restoreItem",
     "hub/src/shared/spawn-form.ts#spawnFormHtml",
     "hub/renderers/page/worker.js#resumeSentHome",
@@ -57,7 +57,7 @@ them.
   flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `resume` call, read when
   pressed from the board or its floor's archive ([[board-archive]]), so no renderer builds a call.
 - Deleting a draft is done at once, and its toast offers Undo. `discard` answers the id and text it deleted, and
-  [`restore`](ref:hub/src/shared/drafts.ts#restore) puts the file back under its own id through `collection/restore`
+  [`restore`](ref:hub/extensions/drafts/client/drafts.ts#restore) puts the file back under its own id through `collection/restore`
   ([`restoreItem`](ref:hub/src/collections.ts#restoreItem)), so its tag, its place and its name are what they were.
   The id is claimed with an exclusive create: a restore never overwrites, and an id taken again is refused.
 - The tower page asks in a dialog of its own, drawn from the design's tokens, never the browser's `confirm()`

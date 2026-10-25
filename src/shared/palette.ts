@@ -10,7 +10,7 @@ import type { Capability } from './capabilities.ts'
 import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added } from './extensions.ts'
 import type { Subject } from './subjects.ts'
-import { DRAFTS } from './drafts.ts'
+import { draftsOf } from '../../extensions/drafts/client/drafts.ts'
 import { COMMANDS, type CommandId } from './keymap.ts'
 import { VERB_WORDS, verbId, type VerbId } from './verb-words.ts'
 
@@ -168,7 +168,7 @@ const floorEntries = (f: Floor): Entry[] =>
 const placeEntries = (f: Floor, draftTitle: PaletteContext['draftTitle']): Entry[] => [
   { id: `floor:${f.id}`, group: 'Floors', label: f.name, hint: `${f.cards.filter((c) => c.onDuty).length} on duty`, keywords: [f.id], project: f.id, does: { t: 'go', target: { t: 'floor', project: f.id } } },
   ...(f.shelf ?? []).map((entry, n): Entry => ({ id: `shelf:${f.id}/${n}`, group: 'Shelf', label: entry.label, hint: f.name, keywords: [f.name], project: f.id, does: { t: 'go', target: { t: 'shelf', project: f.id, n } } })),
-  ...(f.collections.find((c) => c.id === DRAFTS)?.items ?? []).map((item): Entry => ({
+  ...(draftsOf(f)?.items ?? []).map((item): Entry => ({
     id: `draft:${f.id}/${item.id}`,
     group: 'Drafts',
     label: draftTitle(f.id, item),
