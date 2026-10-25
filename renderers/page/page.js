@@ -33,7 +33,7 @@ import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
-import { AUTOSAVE_MS, draftItem } from '/x/drafts/drafts.js'
+import { AUTOSAVE_MS, draftItem, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
@@ -479,6 +479,7 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
     const top = floorsTopDown()
     return signHtml(top.length - top.indexOf(f), f.name)
   },
+  drafts: { draftsOf, keepUnsent, titleOf },
   draftIo,
   held: async (d) => d,
   kept: (d) => void (drafting() === d && ($('draft-text').value = d.text)),

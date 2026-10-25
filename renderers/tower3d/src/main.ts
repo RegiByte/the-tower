@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, discard as discardDraft, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../extensions/drafts/client/drafts.ts'
+import { AUTOSAVE_MS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, type Deleted, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, type Draft, type DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
@@ -2734,10 +2734,11 @@ const hireOnNote = (project: string) => sendCarried(async (prompt) => (await hir
 
 const spawn = $('spawn') as HTMLDialogElement
 /** The new-worker dialog (`wireSpawn`), opened on a floor or on a draft: a prompt it closes on is kept in that draft, read again from disk, which is deleted once a worker starts on it. */
-const spawning = wireSpawn<Held>(spawn, {
+const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
   board: () => s.board!,
   run: (call, body) => tower.run(call, body),
   sign: (f) => floorSignHtml(s.plan, f.id),
+  drafts: { draftsOf, keepUnsent, titleOf },
   draftIo,
   held: async (note) => {
     const item = draftItem(s.board!.floors, note.project, note.id)

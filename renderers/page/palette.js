@@ -3,6 +3,7 @@ import { esc } from '/cards.js'
 import { chordLabel } from '/keymap.js'
 import { markdownHtml } from '/markdown.js'
 import { paletteEntries, rankPalette, rankingOf } from '/palette.js'
+import { draftsOf } from '/x/drafts/drafts.js'
 import { $, told } from './kit.js'
 
 /**
@@ -42,7 +43,7 @@ export async function palette(deps) {
   let shown = []
   let active = 0
 
-  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftTitle })
+  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftsOf, draftTitle })
 
   /** @param {Entry} e @param {number} n */
   const rowHtml = (e, n) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="pal-${n}" aria-selected="${n === active}" data-palette-entry="${esc(e.id)}">

@@ -1,7 +1,6 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, formFields, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
-import { draftsOf, keepUnsent, titleOf, type Draft, type DraftIo } from '../../extensions/drafts/client/drafts.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'
@@ -32,13 +31,13 @@ export type SpawnEvent<D> =
   | { type: 'failed'; message: string }
 
 /**
- * `show` draws the form on `project` with `text` as its prompt (`draft`: the title of the draft it was opened on) and
+ * `show` draws the form on `project` with `text` as its prompt (`on`: the draft it was opened on, titled on the form) and
  * opens it; `draw` redraws Start's busy and the error line from the state; `run` starts a worker on `form`; `keep`
  * keeps `text` as a draft (`keepUnsent`); `started` hands the new worker to the renderer.
  */
 export type SpawnEffect<D> =
   | StateEffect<Spawning<D>>
-  | { type: 'show'; project: string; text: string; draft: string | undefined }
+  | { type: 'show'; project: string; text: string; on: D | undefined }
   | { type: 'reshow' }
   | { type: 'draw' }
   | { type: 'close' }
@@ -53,7 +52,7 @@ export const spawnClosed = <D>(): Spawning<D> => ({ t: 'closed' })
 export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEffect<D>> => ({
   open: (s, { project, on, text }) => {
     if (s.t === 'starting' && !s.shown) return [{ type: 'state', state: { ...s, shown: true } }, { type: 'reshow' }]
-    return s.t === 'closed' ? [{ type: 'state', state: { t: 'editing', project, on, error: '' } }, { type: 'show', project, text, draft: on === undefined ? undefined : titleOf(text) }] : []
+    return s.t === 'closed' ? [{ type: 'state', state: { t: 'editing', project, on, error: '' } }, { type: 'show', project, text, on }] : []
   },
   start: (s, { form }) =>
     s.t === 'editing' ? [{ type: 'state', state: { t: 'starting', project: s.project, on: s.on, shown: true } }, { type: 'draw' }, { type: 'run', project: s.project, form }] : [],
@@ -72,19 +71,35 @@ export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEf
   },
 })
 
+/** A draft as the form keeps a prompt in it: its id once it is saved, and its text. */
+export type KeptDraft = { id?: string; text: string }
+
 /**
- * What the dialog needs of its renderer. `sign`: the floor's sign as the renderer draws it; `held`: the draft the form
- * was opened on as the renderer holds it now, for keeping a prompt in it; `kept`: a draft a prompt was kept in;
- * `shown`: the dialog has just opened, before its prompt takes focus;
- * `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes.
+ * The drafts client's functions the form keeps a prompt with, as the renderer imports them from the drafts extension
+ * (`/x/drafts/drafts.js`), so the form runs whichever drafts provider the page runs: `draftsOf`, a floor's drafts while
+ * the extension is on there; `keepUnsent`, a prompt kept in a draft over the renderer's `I`, its collection calls;
+ * `titleOf`, a draft's title.
  */
-export type SpawnIo<D> = {
+export type SpawnDrafts<I, K extends KeptDraft> = {
+  draftsOf(f: Floor): unknown
+  keepUnsent(io: I, project: string, from: K | undefined, text: string): Promise<K | undefined>
+  titleOf(text: string): string
+}
+
+/**
+ * What the dialog needs of its renderer. `sign`: the floor's sign as the renderer draws it; `drafts` and `draftIo`: the
+ * drafts client and its collection calls; `held`: the draft the form was opened on as the renderer holds it now, for
+ * keeping a prompt in it; `kept`: a draft a prompt was kept in; `shown`: the dialog has just opened, before its prompt
+ * takes focus; `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes.
+ */
+export type SpawnIo<D, I, K extends KeptDraft> = {
   board(): Board
   run(call: Call<'spawn'>, body: Partial<Verbs['spawn']>): Promise<Replies['spawn']>
   sign(f: Floor): string
-  draftIo: DraftIo
-  held(on: D): Promise<Draft | undefined>
-  kept(d: Draft): void
+  drafts: SpawnDrafts<I, K>
+  draftIo: I
+  held(on: D): Promise<K | undefined>
+  kept(d: K): void
   shown(): void
   started(id: string, on: D | undefined): void
   toast(text: string): void
@@ -96,7 +111,7 @@ export type SpawnIo<D> = {
  * closes it, except while Start waits on the tower. The dialog closes from its buttons, never by a form submit: a
  * shelf page runs sandboxed without `allow-forms`.
  */
-export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Spawning<D>, SpawnEvent<D>> {
+export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, io: SpawnIo<D, I, K>): Loop<Spawning<D>, SpawnEvent<D>> {
   const floorOf = (project: string) => io.board().floors.find((f) => f.id === project)
   const field = (name: string) => dialog.querySelector<HTMLInputElement>(`[name=${name}]`)!
   const form = () => dialog.querySelector<HTMLFormElement>('form')!
@@ -118,20 +133,20 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
     const f = floorOf(project)
-    if (!f || !draftsOf(f)) return
+    if (!f || !io.drafts.draftsOf(f)) return
     const from = on === undefined ? undefined : await io.held(on)
-    const kept = await keepUnsent(io.draftIo, project, from, text)
+    const kept = await io.drafts.keepUnsent(io.draftIo, project, from, text)
     if (!kept) return
     io.kept(kept)
-    io.toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${titleOf(kept.text)} (${tagOf(kept.id!)})`)
+    io.toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${io.drafts.titleOf(kept.text)} (${tagOf(kept.id!)})`)
   }
   const machine = loop({
     state: spawnClosed<D>(),
     handlers: spawnHandlers<D>(),
     execute: {
-      show: ({ project, text, draft }) => {
+      show: ({ project, text, on }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft, defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
         prompt().value = text
         sync()
         dialog.showModal()
