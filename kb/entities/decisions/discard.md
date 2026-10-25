@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Work that never landed is discarded deliberately, its tips noted first",
-  "summary": "worktree/discard throws away an at-risk worktree as the board showed it (each repo's head and count of uncommitted files, refused once either moved): the floor's recovery record, the answers to tower/discard.record, names each repo's branch and tip (uncommitted files committed on top, on no branch) and its unpushed commits (the reviews extension, when on, as a note on the checkout's review thread); then it removes the worktree with force, deletes its branches and raises tower/discard.done (reviews files the thread). Refused where nothing answers the hook; offered only on at-risk worktrees, on floors keeping review threads.",
+  "summary": "worktree/discard throws away an at-risk worktree as the board showed it (each repo's head and count of uncommitted files, refused once either moved): the floor's recovery record, the answers to tower/discard.record, names each repo's branch and tip (uncommitted files committed on top, on no branch) and its unpushed commits (the reviews extension, when on, as a note on the checkout's review thread); then it removes the worktree with force, deletes its branches and raises tower/discard.done (reviews files the thread). Refused where nothing answers the hook; offered only on at-risk worktrees, on floors where a running extension answers it.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
@@ -31,8 +31,9 @@ thread ([[review-threads]]).
 
 **How.**
 - The board offers `discard` on `at-risk` worktrees only, never `live`, `lost` or `carried`, and only on a floor
-  keeping review threads (`tower init` seeds `reviews`), so the note always has a place
-  ([`worktreeOffers`](ref:hub/src/bridge/verbs.ts#worktreeOffers)). Its call carries `held`, each repo's HEAD and count
+  where a running extension answers `tower/discard.record` (reviews, unless it is off there), so the record always
+  has a place ([`worktreeOffers`](ref:hub/src/bridge/verbs.ts#worktreeOffers), the board reading each running
+  extension's `answers` beside its stores, [`answeredOn`](ref:hub/src/bridge/stores.ts#answeredOn)). Its call carries `held`, each repo's HEAD and count
   of uncommitted files as shown; the renderer adds `author`, as for a note.
 - [`discardable`](ref:hub/src/worktrees.ts#discardable) fetches, finds the worktree `at-risk`, refuses (`refused`)
   when any repo's head or uncommitted count differs from `held`, and gives each repo's tip: its HEAD, or a
