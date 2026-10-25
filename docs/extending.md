@@ -220,7 +220,8 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
   `/probe/<name>` (deprecated since 1.90: the quota extension's `/quota/reads` and the board's `x.quota`), `/runs/<project>`
-  (`?policy&limit`: a policy's runs, newest first, each with its worker as it is now), `/landing?project&branch` (what
+  (deprecated since 1.91: the policies extension's `/policies/runs/<project>?policy&limit`, a policy's runs, newest
+  first, each with its worker as it is now), `/landing?project&branch` (what
   landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`), `/extensions` (the extensions the tower runs, none yet, and its resources as braided orders them: layers, start and halt order, dependents, and the graph as Mermaid text; the chain around each verb or hook, each hook's answerers, and the verbs the core's composites call). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
   session's share of the window by its id (turns, spend, its longest turn and wait), the weekly budget, and the
@@ -299,7 +300,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/press.js` | a control busy while what it asks is in flight (`pressing(control, request)`: `aria-busy` on it and on every control drawn with the same identity, a second press ignored), and a control's identity in html drawn anew (`identityOf`) |
 | `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
-| `/policies.js` | what renderers say and decide about policies: a rule and its slots in words (`ruleWords`, `slotWords`), where a policy stands (`standing`, `standingWords`), and the cron checks a policy file's header gets (`cronProblem`) |
+| `/x/policies/policies.js` | the bundled policies extension's client: a rule and its slots in words (`ruleWords`, `slotWords`), where a policy stands (`standing`, `standingWords`), the cron checks a policy file's header gets (`cronProblem`), and its parts of the board (`floorPolicies`, a floor's policies and offers; `runOf`, the run a card is; `offerAskKey`, an offer's ask). `/policies.js` serves it too, deprecated, until 2.0 |
+| `/x/policies/panel.js` | the policies extension's Policies panel (`policiesHtml`, `offerWords`, `policyZone`, `policyDoneLine`) over its part of the floor; `/panels.js` keeps the old one over `floor.policies` and `board.offers`, deprecated, until 2.0 |
 | `/slots.js` | the core's time trigger: a rule (`When`: crons, or `every`, a period aligned to the UTC clock) in words (`ruleWords`), its slots (`slotsBetween`, `nextSlot`, `onTimeSlot`, `dueSlot`), a slot in words (`slotWords`), and why a cron or a period is none (`cronProblem`, `periodProblem`) |
 | `/loop.js` | a machine as data: `loop` runs a map of handlers, `(state, event) -> effects`, the next state among them, through your executors of the rest; `timers()` executes timer effects, each carrying the event it fires |
 | `/reads.js` | reads a viewer holds (`Held`): the last read held until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held; the steps, and `heldHandlers` and `reading` to run them on `loop`. `/panels.js` runs them for review threads (`threadWant`, `heldThread`, `readThread`) and a worker's Changes (`changesHandlers`, `readChanges`) |
@@ -344,10 +346,13 @@ business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
 `/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
-Workers add with `tower keep <collection>`. Two ids mean something to the core: `reviews`, written only through
-`review/append`; and `policies`, standing work the tower runs at its slots: the board carries each floor's
-`policies` (parsed, with where each stands) and `board.offers`, `/policies.js` says rules and slots in words and
-where a policy stands (`standingWords`), and `policy/run`, `policy/pass` and `policy/approve` write its facts.
+Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through
+`review/append`. `policies`, standing work run at its slots, is the bundled policies extension's: each floor carries
+its policies (parsed, with where each stands) and open offers as `x.policies`, each offer also an ask in
+`board.asks`, `/x/policies/policies.js` says rules and slots in words and where a policy stands (`standingWords`),
+and `policies/run`, `policies/pass` and `policies/approve` write its facts. Until 2.0 the board copies them to
+`floor.policies`, `card.run` and `board.offers`, and `policy/run`, `policy/pass` and `policy/approve` still answer,
+deprecated.
 An [extension](#extensions) may declare collections of its own, which carry its capability as `by` on the board; one
 it owns carries `owner` and `doors` too, and refuses the generic writes, naming the verb to use instead.
 
@@ -494,7 +499,7 @@ verb's schema, and what it answers is checked against the verb's reply; a link t
 what the verb doesn't take, fails the call (`internal` or `invalid`, naming the link) and lists a problem on its
 extension: a link may be a guard, so it is never passed over. Links in a cycle of `before` and `after` are left out,
 each with a `cycle` problem. A link off on the input's floor is passed over. The core's verbs that do what other verbs
-do (Tidy, `worktree/discard`, `policy/run`) call those verbs through the same dispatch, for the same caller, so a link
+do (Tidy, `worktree/discard`) call those verbs through the same dispatch, for the same caller, so a link
 on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuses, a discard stops where it is refused.
 `GET /extensions` lists each `chains` (outermost first), `answers` and `composites`.
 
