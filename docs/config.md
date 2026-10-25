@@ -50,31 +50,10 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `hiring` | How far `tower hire` goes: see [Hiring](#hiring). A project's own win per key. | |
 | `brief.pairs` | How many of a conversation's last turns a worker's brief shows, each a prompt with Claude's latest answer to it. A project's own wins. | 2 |
 | `port` | The loopback port the tower serves on, `http://127.0.0.1:<port>`: the user's page and the API. A whole number from 1 to 65535. The tower reads it when it starts: after a change, `tower down`, then `tower up`. | 4317 |
-| `probes` | Readings the tower takes on its own, by name: see [Probes](#probes). | `quota`, on |
-| `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a stream's month file (a probe's, or a floor's policy runs and approvals). | never |
+| `probes` | Deprecated since 1.88, honoured until 2.0: `probes.quota.off` and `probes.quota.every`, the quota probe's old spelling, read as `extensions.quota.off` and `extensions.quota.settings.every` (see [The quota probe](#the-quota-probe)). Either set beside its new spelling is an error; any other probe or field is read by nothing. | none |
+| `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a stream's month file (an extension's system stream, such as the quota probe's reads, or a floor's policy runs and approvals). | never |
 | `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
 | `extensions` | The extensions the tower runs beside the bundled ones, and the bundled ones' overrides, by id: see [Extensions](#extensions). | the bundled ones |
-
-## Probes
-
-A probe is a reader the core knows, run by the tower while due, each read appended to
-`streams/system/probe.<name>/YYYY-MM.jsonl` beside the config. The core declares `quota`: Claude's `/usage` data (the
-`get_usage` control request to the `argv` sessions start with: no prompt, $0), read while no session's turn has reported the rate limits within
-`every`, so the board's limits and the weekly budget stay current while nobody works. Each key overrides the core's;
-a new name adds a probe. The tower reads the file again on every change.
-
-| Key | Takes | Unset |
-|---|---|---|
-| `reads` | The reader, one of the core's: `claude.usage`. | `quota`'s: `claude.usage`; required for a new probe |
-| `every` | How long after its last read it reads again, a whole number and `s`, `m` or `h`, at least `60s`. After 3 failures in a row it waits 10 min, doubling to 1 h. | `quota`'s: `10m`; required for a new probe |
-| `off` | `true` stops it. An account with no rate limits to read (an API key) waits 6 h between reads on its own. | `false` |
-
-`{ "probes": { "quota": { "off": true } } }` turns the quota probe off. Top-level `probes` are the system's; a
-project's own will go under `projects.<id>.probes`, not read yet.
-
-How each probe stands (its last read, why it failed, when it reads next) is on the board under the limits in both
-renderers, in `tower probes`, at `GET /probe/<name>` with its latest reads, and in `tower doctor`. A press of
-"read now" in either renderer, `tower probes run <name>` or `POST /probe/run` reads one at once, at most once a minute.
 
 ## Projects
 
@@ -113,6 +92,28 @@ depends on it. A code edit is not an edit here: restart the tower for it (`tower
   "roles": { "path": "/abs/path/to/tower-roles", "settings": { "default": "builder" } }
 }
 ```
+
+### The quota probe
+
+The bundled extension `quota` reads the account's rate limits from Claude (`/usage`'s data, the `get_usage` control
+request to the `argv` sessions start with: no prompt, $0) while no session's turn has reported them within `every`, so
+the board's limits and the weekly budget stay current while nobody works. Each read is appended to its stream,
+`streams/system/probe.quota/YYYY-MM.jsonl` beside the config, the folder it kept from before it was an extension.
+
+| Setting | Takes | Unset |
+|---|---|---|
+| `every` | How long after its last read it reads again, a whole number and `s`, `m` or `h`, at least a minute. After 3 failures in a row it waits 10 min, doubling to 1 h; an account with no rate limits to read (an API key) waits 6 h. | `10m` |
+
+```json
+"extensions": { "quota": { "settings": { "every": "30m" } } }
+```
+
+`"extensions": { "quota": { "off": true } }` turns it off: the limits then refresh only during sessions' turns. How it
+stands (its last read, why it failed, when it reads next) is the board's `x.quota`, drawn under the limits in both
+renderers, in `tower probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
+`GET /quota/reads`. A press of "read now" in either renderer, `tower probes run quota`, `tower x quota read-now` or
+`POST /quota/read-now` reads at once, at most once a minute. The old spelling, `"probes": { "quota": { "off": true } }`,
+is honoured until 2.0, and `tower config check` warns with the line to write instead.
 
 ## Shelf
 

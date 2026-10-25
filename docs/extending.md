@@ -219,7 +219,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   the tower answers 403, its guard against other web pages.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
-  `/probe/<name>` (`?last`: a probe's status as `board.probes` has it and its latest reads), `/runs/<project>`
+  `/probe/<name>` (deprecated since 1.88: the quota extension's `/quota/reads` and the board's `x.quota`), `/runs/<project>`
   (`?policy&limit`: a policy's runs, newest first, each with its worker as it is now), `/landing?project&branch` (what
   landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`), `/extensions` (the extensions the tower runs, none yet, and its resources as braided orders them: layers, start and halt order, dependents, and the graph as Mermaid text; the chain around each verb or hook, each hook's answerers, and the verbs the core's composites call). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats` of
   `src/bridge/stats.ts`: a summary, a series per bucket and spend by hour of the day, for all and per project, each
@@ -440,6 +440,23 @@ its lineage, all read-only. A `reduce`'s `step` gets the state frozen and return
 the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
 said in the tower's log.
 
+**Fact kinds** (API 1.88). A stream's fact code may declare a `kind` the core folds, its facts then holding to the
+kind's schema as well as their own. The one kind is `tower/rate-limits`, a reading of the account's rate limits
+(`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime? }`, Claude's when it names no `runtime`), in a
+system stream: the core folds every started extension's readings beside the sessions' turns' into the board's
+`rateLimits`, `extraUsage`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
+`u` facts are readings, read by its `tick` slot while `board.turnLimits`, the newest reading a session's turn took,
+is older than its `every`. `ctx.runtime('claude')` says how the config starts a session (`argv`, `env`), and
+`ctx.run(argv, { …, env })` runs a command with `env` set over the scrubbed one, so a reader runs Claude as the
+sessions do.
+
+**Moved names** (API 1.88). As a built-in moves into a bundled extension, its old names keep answering until 2.0
+through `LEGACY` (`src/shared/extensions.ts`), each `{kind, old, now, since}`: an old verb or read is answered by the
+new one with RFC 9745's `Deprecation` and a `Link` to it (`probe/run` by `quota/read-now`, `GET /probe/<name>` by
+`quota/reads`); an old board field is copied from the part it moved to, as it stood at the move (`board.probes` from
+`board.x.quota`), so new fields appear only under `x`; and a stream keeps its old folder for good (the quota stream's
+facts stay in `probe.quota/`).
+
 **Folds and contributions** (API 1.84) put an extension on the board. A subject is anything the board shows that
 extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,
 `item.<collection>:<project>/<id>`, or `<cap>.<kind>:<key>` for an extension's own kinds, which it declares in
@@ -510,7 +527,7 @@ appears taken as already there, so a restart or a floor turned on replays nothin
 5 minutes. A throw, or a call that fails, is a problem of the extension's. `checks.<name>: { "words", "run" | "read",
 "fix"? }` are lines of `tower doctor`: a command run from the folder (env scrubbed, killed at 10 s; exit 0 passes), or
 one of its own reads taking no params, which says "tower down" while the tower is. `ctx.run(argv, { cwd, timeoutMs?,
-stdin? })` runs a command the same way, killed at its timeout (60 s) and at halt. `/slots.js` says a rule in words and
+stdin?, env? })` runs a command the same way, killed at its timeout (60 s) and at halt. `/slots.js` says a rule in words and
 finds its next slot (`ruleWords`, `nextSlot`, `slotWords`); the board lists each extension's `slots`.
 
 **The author's loop.** `tower extensions check <dir>` reads a folder as the tower would, resolves it against the

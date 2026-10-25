@@ -187,8 +187,8 @@ many ran at once, the weekly budget's pace, and what landed on each project's de
 > "How much did this floor spend this week, and on what?"
 
 Workers read the same numbers from the API (`GET /stats`). The rate limits in the sidebar's chip come from
-Claude's turns and from the tower's own **probes**: the quota probe reads your account's usage while no worker's turn
-reports it. `tower probes` says how each probe stands and when it reads next; `tower probes run quota` reads now.
+Claude's turns and from the **quota probe**, a bundled extension that reads your account's usage while no worker's turn
+reports it. `tower probes` says how it stands and when it reads next; `tower probes run quota` reads now.
 
 ## Tower 3D
 
