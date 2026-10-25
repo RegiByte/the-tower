@@ -56,7 +56,8 @@ export type Entry = {
 /**
  * What the palette is drawn from: the board, the worker selected, the capabilities, the entry ids the viewer picked,
  * the latest first, the waits the viewer dismissed, a floor's drafts as the drafts extension's client finds them
- * (`draftsOf`, from `/x/drafts/drafts.js`), and a draft's title as the renderer has read it.
+ * (`draftsOf`, from `/x/drafts/drafts.js`; without it the palette lists no drafts, @since 1.89), and a draft's title as
+ * the renderer has read it.
  */
 export type PaletteContext = {
   board: Board
@@ -64,7 +65,7 @@ export type PaletteContext = {
   capabilities: readonly Capability[]
   recent: readonly string[]
   heed: { dismissed: Heed['dismissed'] }
-  draftsOf: (f: Floor) => { items: FloorItem[] } | undefined
+  draftsOf?: (f: Floor) => { items: FloorItem[] } | undefined
   draftTitle: (project: string, item: FloorItem) => string
 }
 
@@ -166,10 +167,10 @@ const floorEntries = (f: Floor): Entry[] =>
     return { id: `${verbId('floor', a.verb)}@${f.id}`, group: f.name, label: words.label, hint: words.hint, keywords: [f.name, a.verb], destructive: words.destructive, project: f.id, does: { t: 'action', subject: 'floor', verb: a.verb, project: f.id } }
   })
 
-const placeEntries = (f: Floor, { draftsOf, draftTitle }: { draftsOf: PaletteContext['draftsOf']; draftTitle: PaletteContext['draftTitle'] }): Entry[] => [
+const placeEntries = (f: Floor, { draftsOf, draftTitle }: { draftsOf?: PaletteContext['draftsOf']; draftTitle: PaletteContext['draftTitle'] }): Entry[] => [
   { id: `floor:${f.id}`, group: 'Floors', label: f.name, hint: `${f.cards.filter((c) => c.onDuty).length} on duty`, keywords: [f.id], project: f.id, does: { t: 'go', target: { t: 'floor', project: f.id } } },
   ...(f.shelf ?? []).map((entry, n): Entry => ({ id: `shelf:${f.id}/${n}`, group: 'Shelf', label: entry.label, hint: f.name, keywords: [f.name], project: f.id, does: { t: 'go', target: { t: 'shelf', project: f.id, n } } })),
-  ...(draftsOf(f)?.items ?? []).map((item): Entry => ({
+  ...(draftsOf?.(f)?.items ?? []).map((item): Entry => ({
     id: `draft:${f.id}/${item.id}`,
     group: 'Drafts',
     label: draftTitle(f.id, item),

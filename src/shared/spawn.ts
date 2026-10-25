@@ -88,7 +88,7 @@ export type SpawnDrafts<I, K extends KeptDraft> = {
 
 /**
  * What the dialog needs of its renderer. `sign`: the floor's sign as the renderer draws it; `drafts` and `draftIo`: the
- * drafts client and its collection calls; `held`: the draft the form was opened on as the renderer holds it now, for
+ * drafts client and its collection calls, a page without `drafts` keeping no drafts, as a floor with drafts off (@since 1.89); `held`: the draft the form was opened on as the renderer holds it now, for
  * keeping a prompt in it; `kept`: a draft a prompt was kept in; `shown`: the dialog has just opened, before its prompt
  * takes focus; `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes.
  */
@@ -96,7 +96,7 @@ export type SpawnIo<D, I, K extends KeptDraft> = {
   board(): Board
   run(call: Call<'spawn'>, body: Partial<Verbs['spawn']>): Promise<Replies['spawn']>
   sign(f: Floor): string
-  drafts: SpawnDrafts<I, K>
+  drafts?: SpawnDrafts<I, K>
   draftIo: I
   held(on: D): Promise<K | undefined>
   kept(d: K): void
@@ -133,12 +133,13 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
     const f = floorOf(project)
-    if (!f || !io.drafts.draftsOf(f)) return
+    const drafts = io.drafts
+    if (!f || !drafts?.draftsOf(f)) return
     const from = on === undefined ? undefined : await io.held(on)
-    const kept = await io.drafts.keepUnsent(io.draftIo, project, from, text)
+    const kept = await drafts.keepUnsent(io.draftIo, project, from, text)
     if (!kept) return
     io.kept(kept)
-    io.toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${io.drafts.titleOf(kept.text)} (${tagOf(kept.id!)})`)
+    io.toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${drafts.titleOf(kept.text)} (${tagOf(kept.id!)})`)
   }
   const machine = loop({
     state: spawnClosed<D>(),
@@ -146,7 +147,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     execute: {
       show: ({ project, text, on }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
         prompt().value = text
         sync()
         dialog.showModal()
