@@ -2,13 +2,13 @@
 {
   "type": "library",
   "name": "Live system",
-  "summary": "watchSystem: every session log folded and tailed, every probe's stream folded, every collection's items and review threads, every policy parsed and each project's policy facts folded, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
+  "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads, every policy parsed and each project's policy facts folded, the host's live set, the terms daemon's shells, leftover processes and the peer names of running Claudes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/bridge/probes.ts#probeFacts", "hub/src/bridge/policies.ts#policyFacts", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/system.ts#foldOn"],
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/system.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/bridge/policies.ts#policyFacts", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/system.ts#foldOn"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
-    { "to": "system-root", "verb": "reads", "carries": "streams/system/probe.*/YYYY-MM.jsonl, folded again once a write settles" },
+    { "to": "system-root", "verb": "reads", "carries": "streams/*/<folder>/YYYY-MM.jsonl, each stream an extension folds stepped on once a write settles" },
     { "to": "system-root", "verb": "reads", "carries": "streams/projects/<project>/{runs,approvals}/YYYY-MM.jsonl and collections/<project>/policies/*, folded and parsed again once a write settles" },
     { "to": "system-root", "verb": "reads", "carries": "an extension's streams, streams/{system|projects/<p>}/<cap>.<name>/YYYY-MM.jsonl, each folded by its reduce once a write settles" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, each log's checkpoint" },
@@ -37,8 +37,8 @@ the last by content.
 
 **Collections and streams.** The collections directory, `streams/system/` and `streams/projects/` are each watched
 recursively and read again once changes settle: collections rescanned
-([`scanCollections`](ref:hub/src/collections.ts#scanCollections); the board picks the declared ones), each probe's
-month files folded ([`probeFacts`](ref:hub/src/bridge/probes.ts#probeFacts), [[probes]]), each project's `runs` and
+([`scanCollections`](ref:hub/src/collections.ts#scanCollections); the board picks the declared ones), each
+stream an extension folds stepped on (its `reduce`, and the core's fold of its `tower/rate-limits` readings, [[probes]]), each project's `runs` and
 `approvals` folded into its policy facts ([`policyFacts`](ref:hub/src/bridge/policies.ts#policyFacts), [[policies]]).
 An extension's stream is folded by its `reduce` once registered (`foldStream`), the system's or each project's, and
 again once a write settles: only facts past where it stood are stepped, from `init` again if the stream holds fewer

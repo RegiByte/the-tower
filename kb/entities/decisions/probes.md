@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Probes: periodic readings of the account's rate limits, kept as facts in a stream, by the bundled quota extension",
-  "summary": "The quota probe reads the account's rate limits from Claude while no session's turn does: since 1.88 the bundled extension quota, whose tick slot decides each read with a pure due(every, its stream, the board's turnLimits, now), appends each read to its stream (kept in the folder streams/system/probe.quota/), an answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the rate limits, the weekly budget and its pace have no holes while no session runs; how it stands is its board part x.quota, drawn by renderers, tower probes and its doctor check, and its old names answer through LEGACY until 2.0.",
+  "summary": "The quota probe reads the account's rate limits from Claude while no session's turn does: since 1.89 the bundled extension quota, whose tick slot decides each read with a pure due(every, its stream, the board's turnLimits, now), appends each read to its stream (kept in the folder streams/system/probe.quota/), an answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the rate limits, the weekly budget and its pace have no holes while no session runs; how it stands is its board part x.quota, drawn by renderers, tower probes and its doctor check, and its old names answer through LEGACY until 2.0.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
@@ -47,7 +47,7 @@ desktop app, a phone) or when the user is away: the moment standing work would n
 **Why.** The readings are facts about the account the system can observe on its own, at no cost: Claude Code answers
 the `get_usage` control request with `/usage`'s data at no cost and no API time (`test/fixtures/probe-usage.out`). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
 
-**How.** The quota probe was core code from 1.29 to 1.87; at 1.88 it moved into the bundled extension `quota`
+**How.** The quota probe was core code from 1.29 to 1.88; at 1.89 it moved into the bundled extension `quota`
 ([[extensions]]), the first built-in to move, keeping its behaviour, its stream and its old names.
 - *Settings.* `extensions.quota.settings.every` (`10m`, at least a minute) and `extensions.quota.off`
   ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.every` and `.off`, is
@@ -77,7 +77,7 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   the core wrote ([[extensions]], `LEGACY`): a header `{stream, startedAt, version}`, then `[t, code, fact]` events:
   `u` an answered read (`ms`, Claude's answer as it came, nulls dropped, and the reading made of it), of the core's
   kind `tower/rate-limits`; `f` a read with no answer (`ms`, `error`); and `p`, a read as the core wrote it before
-  1.88 (`{reads: "claude.usage", ms, ok, answer | error}`), kept and never written again. Skipped reads are not
+  1.89 (`{reads: "claude.usage", ms, ok, answer | error}`), kept and never written again. Skipped reads are not
   logged. Each read stands alone, so a line that is no JSON costs that read only. Project streams live at
   `streams/projects/<project>/<stream>/`: the first are a floor's policies' `runs` and `approvals` ([[policies]]).
 - *Folded beside the sessions.* A stream fact code declaring `tower/rate-limits`
@@ -110,7 +110,7 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   capability's reads.)
 - *Old names, until 2.0.* `POST /probe/run {name: "quota"}` answers through `quota/read-now`, `GET /probe/quota`
   through `quota/reads` and the board, both deprecated (RFC 9745); `board.probes` is copied from `x.quota` as it stood
-  at 1.87, with its `run` offer ([[extensions]], `LEGACY`).
+  at 1.88, with its `run` offer ([[extensions]], `LEGACY`).
 - *Closed months archived.* Tidy offers a stream's months closed more than `retention.days` ago, gzipped in place
   and read the same ([[log-retention]]).
 

@@ -2,10 +2,10 @@
 {
   "type": "library",
   "name": "Log reductions",
-  "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, policies and probes, stats, and the board that gathers them for every renderer.",
+  "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, policies, rate-limit readings, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/bridge/defaults.ts#claudeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/probes.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/bridge/defaults.ts#claudeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/policies.ts", "hub/src/bridge/seats.ts", "hub/src/bridge/reviews.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -75,7 +75,7 @@
   its part at a subject's `x`, its contributions at `board.adds` and its asks at `board.asks`
   ([`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard), [[extensions]]): the core's never reads them. Its shape, field by field with their docs, is the board schema
   (`src/shared/board.schema.json`, `npm run schema:board`, served at `GET /schema`). The rate limits are the latest
-  reading of any session's turn or any probe's read ([`accountLimits`](ref:hub/src/bridge/probes.ts#accountLimits)),
+  reading of any session's turn or any extension's reading of kind `tower/rate-limits` ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits)),
   with when and whose it is (`rateLimitsAt`, `rateLimitsFrom`): a reading arrives only with a turn or a read
   ([[probes]]), so renderers show its age. The tower draws it and relays it to shelf pages ([[renderer-api]]).
 

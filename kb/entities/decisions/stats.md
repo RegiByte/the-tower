@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/stats.ts#stats",
@@ -17,7 +17,7 @@
     "hub/src/bridge/stats.ts#outsideIn",
     "hub/src/bridge/stats.ts#pace",
     "hub/src/bridge/stats.ts#today",
-    "hub/src/bridge/probes.ts#probeFacts",
+    "hub/src/bridge/rate-limits.ts#limitsStep",
     "hub/src/shared/api.ts#QUERIES",
     "hub/src/tower/http.ts#statsRead",
     "hub/src/bridge/landed.ts#parseLog",
@@ -49,7 +49,7 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   summaries, per-session shares, series per bucket and hour-of-day, per project and for all. Concurrency comes from
   [`overlap`](ref:hub/src/bridge/stats.ts#overlap) over main-loop turn spans only: subagents are not workers.
 - *The weekly budget.* [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
-  every session's readings and every probe's reads ([[probes]]); it is the account's, so `/stats?project=` filters the
+  every session's readings and every extension's readings of kind `tower/rate-limits`, the quota probe's ([[probes]]); it is the account's, so `/stats?project=` filters the
   stats and never the budget. The spend from the week's first reading to its latest, over the percent it climbed, is
   what 1% buys; [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) gives a past window's last reading, and
   [`pace`](ref:hub/src/bridge/stats.ts#pace) whether today's rate lasts to the reset.

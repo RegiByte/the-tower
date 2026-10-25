@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The spine: the tower process as braided resources",
-  "summary": "The tower process is eight braided resources (core:config, core:system, core:probes, core:extensions, core:publisher, core:dispatch, core:slots, core:http) and one per extension (x:<cap>), started in dependency order and halted in reverse on SIGTERM and SIGINT; each holds its own state in its closure, a core resource that fails to start fails the boot, an extension fails alone, and GET /extensions answers their topology.",
+  "summary": "The tower process is seven braided resources (core:config, core:system, core:extensions, core:publisher, core:dispatch, core:slots, core:http) and one per extension (x:<cap>), started in dependency order and halted in reverse on SIGTERM and SIGINT; each holds its own state in its closure, a core resource that fails to start fails the boot, an extension fails alone, and GET /extensions answers their topology.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-24",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/spine.ts#config", "hub/src/tower/spine.ts#system", "hub/src/tower/spine.ts#probes", "hub/src/tower/spine.ts#slots", "hub/src/tower/extensions.ts#topologyOf", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/publisher.ts#publisher", "hub/src/tower/dispatch.ts#dispatch", "hub/src/tower/http.ts#httpServer", "hub/src/tower/server.ts", "hub/src/system.ts#watchSystem", "hub/src/tower/screens.ts#screenMirrors", "hub/src/shared/shelf-page.ts#Topology", "hub/package.json"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/spine.ts#config", "hub/src/tower/spine.ts#system", "hub/src/tower/spine.ts#slots", "hub/src/tower/extensions.ts#topologyOf", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/publisher.ts#publisher", "hub/src/tower/dispatch.ts#dispatch", "hub/src/tower/http.ts#httpServer", "hub/src/tower/server.ts", "hub/src/system.ts#watchSystem", "hub/src/tower/screens.ts#screenMirrors", "hub/src/shared/shelf-page.ts#Topology", "hub/package.json"]
 }
 ---
 **Problem.** The tower process was a top-level-await script: about fourteen pieces of state at module scope, its
@@ -31,8 +31,8 @@ lifecycle inside a renderer; the spine covers resources with one inside the proc
   holds it now. A live reader, never a snapshot: the user edits the config at any time.
 - `core:system` ([`system`](ref:hub/src/tower/spine.ts#system)): [`watchSystem`](ref:hub/src/system.ts#watchSystem)
   with `onChange(listener)`, so the publisher and the dispatch each hear changes and stop hearing them as they halt.
-- `core:probes`, `core:slots` ([`probes`](ref:hub/src/tower/spine.ts#probes), [`slots`](ref:hub/src/tower/spine.ts#slots)):
-  the probes' runner and the slot loop, whose sources are the policies, acting through the dispatch's
+- `core:slots` ([`slots`](ref:hub/src/tower/spine.ts#slots)): the slot loop (`core:probes`, the probes' runner,
+  left at 1.89 for the quota extension's slot, [[probes]]), whose sources are the policies, acting through the dispatch's
   `tower/policy/run` and `tower/policy/pass`, and the running extensions' manifest slots, read from
   `core:extensions`, all called as `{t: 'tower', id: 'slot'}`.
 - `core:publisher` ([`publisher`](ref:hub/src/tower/publisher.ts#publisher)): the board derived from the config and
@@ -56,7 +56,7 @@ lifecycle inside a renderer; the spine covers resources with one inside the proc
 - *A container written for the tower*: braided already is the small one, and its author maintains it.
 - *Vendoring braided*: a fork of a maintained library; the tower depends on 0.3.2, after 0.3.1, the first to skip a
   missing optional dependency.
-- *Finer resources (one per stream kind, per connection)*: eight match the process's real seams; finer ones would
+- *Finer resources (one per stream kind, per connection)*: seven match the process's real seams; finer ones would
   split state that changes together.
 
 **Impact.** Additive to the API (1.80), no host change. Every piece of the process stops cleanly, so a system can be
