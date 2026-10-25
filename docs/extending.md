@@ -478,7 +478,11 @@ own, as `{cap, ok: true, answer}` or `{cap, ok: false, code, message}`, and the 
 says with a failed one. An extension answers a hook by listing it in `answers` (`"tower/discard.record": {}`) with a
 function `answers[<name>](payload, ctx)`; one that throws or answers off the schema is a failed answer and a `hook`
 problem. The core raises `tower/discard.record` (`{project, name, author, tips}` → `{note?}`, `refuses`) in
-`worktree/discard` before anything is noted or removed; the answers come back in the reply's `x`, by capability. Each
+`worktree/discard` before anything is noted or removed; the answers come back in the reply's `x`, by capability. It
+raises `tower/tidy.apply` (`{project, keys}` → `{done, skipped}`, `reported`) in `tidy`, after the core's own parts, to
+each capability in the plan's `x` alone, with the keys of the floor's tidy entries it contributed
+(`board.adds['floor:<project>'].tidy`) that the plan carries: an entry no longer listed refuses the whole Tidy, and
+each answer, or why there is none, is the reply's `x.<cap>`. Each
 hook's schemas are listed at `/schema`, under `hooks`.
 
 ## Claude plugins

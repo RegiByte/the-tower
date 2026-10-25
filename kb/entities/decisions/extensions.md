@@ -172,7 +172,8 @@ and versioned without running anything, and a runtime where an extension's failu
 - **Hooks (1.85).** A provider declares `hooks` (`payload`, `answer`, `failure`), sharing one namespace with its verbs
   and reads, and raises its own with `ctx.raise(name, payload)`; the core's are
   [`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `tower/discard.record` raised by `worktree/discard` once the tips are
-  read and before anything is noted or removed, `refuses`. Answerers list a hook in `answers`; each answers in fold
+  read and before anything is noted or removed, `refuses`, and `tower/tidy.apply` raised by `tidy` after its own parts,
+  to each capability in `plan.x` alone with its keys, `reported` in the reply's `x.<cap>`. Answerers list a hook in `answers`; each answers in fold
   order (the resolve order), on its own, inside the hook's chain, as `{cap, ok, answer}` or `{cap, ok: false, code,
   message}`. One that throws or answers off the schema is `internal` and a `hook` problem on it; an `ApiError` it
   answers is a refusal, no problem. An answerer off on the payload's `project` is not asked. `/schema` lists every
@@ -183,7 +184,7 @@ and versioned without running anything, and a runtime where an extension's failu
   without a major fails `npm test` ([[renderer-api-contract]]).
 
 Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
-contributions (1.84), then middleware and hooks (1.85). Applying tidy entries, triggers, launch contributors and the
+contributions (1.84), then middleware and hooks (1.85). Triggers, launch contributors and the
 bundled extensions arrive as additions to the manifest and ctx, each an API minor.
 
 **Alternatives considered.**
@@ -221,7 +222,7 @@ keys (`extensions`, a floor's `extensions` and `capabilities`). API 1.82: the ma
 `/cards.js`.
 API 1.85: the manifest's
 `around`, `hooks` and `answers`, ctx's `raise`, the problem lanes `around` and `hook` and the code `hook`, `/schema`'s
-`hooks`, `GET /extensions`' `chains`, `answers` and `composites`, the hook `tower/discard.record`, and
-`worktree/discard`'s reply `x`.
+`hooks`, `GET /extensions`' `chains`, `answers` and `composites`, the hooks `tower/discard.record` and
+`tower/tidy.apply`, `worktree/discard`'s and `tidy`'s reply `x`, and `tidy`'s `plan.x`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

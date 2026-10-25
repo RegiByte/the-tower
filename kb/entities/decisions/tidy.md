@@ -88,6 +88,10 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, and any entry its verb refuses (a
   kill that fails, a guard), is left and named in the reply's `skipped`, and the rest goes on, so a reply always says
   everything that was done. A branch that moved since git's read is kept the same way ([[tower-cuts-worktrees]]).
+- *Extensions' entries.* A floor fold contributes tidy entries (`board.adds['floor:<p>'].tidy`, `{key, label, hint}`);
+  the plan carries the confirmed ones as `x: {[cap]: keys}`, checked against the adds with the rest, and after the
+  core's parts each capability's answer to `tower/tidy.apply` applies its keys, reported in the reply's `x.<cap>`
+  ([[extensions]]). Renderers don't draw them yet.
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
   applies only it (one worker, one process, one worktree, one branch, one thread; the old logs as one row), applied
   and refused by the same checks as the whole.
