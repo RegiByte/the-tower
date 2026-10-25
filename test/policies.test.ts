@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { test } from 'node:test'
-import { NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName, type PolicyFile, type PolicyView } from '../extensions/policies/policies.ts'
+import type { Card } from '../src/bridge/board.ts'
+import { liveRuns, NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName, type PolicyFile, type PolicyView } from '../extensions/policies/policies.ts'
 import { hashOf, parsePolicy } from '../extensions/policies/policy-file.ts'
 import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing } from '../extensions/policies/client/policies.ts'
 import type { When } from '../src/shared/slots.ts'
@@ -81,4 +83,23 @@ test('an edit drops an auto policy to offers and says it needs you; an offer sta
   assert.deepEqual(view.offer?.check, { exit: 0, ms: 5, out: '12' }, 'an accepted offer records what its check found')
   assert.deepEqual(offersOf('lab', [view]).map((o) => [o.key, o.calls.accept]), [[`auto.md@${SLOT}`, ['policies/run', { project: 'lab', policy: 'auto.md', slot: SLOT, start: 'offer', check: { exit: 0, ms: 5, out: '12' } }]]])
   assert.deepEqual(decide({ policies: [view] }, new Map(), NOW), [], 'a slot with a fact is not decided again')
+})
+
+test("a run is live while its worker is, through every resume: the worker found by its lineage among the board's cards", () => {
+  const card = (id: string, lineage: string[], live: boolean, continuedBy?: string) =>
+    ({ id, callsign: 'RUNNER-01', live, lineage: lineage.map((s) => ({ id: s, startedAt: 0 })), ...(continuedBy && { continuedBy: { id: continuedBy, callsign: 'RUNNER-01' } }) }) as unknown as Card
+  const facts = policyFacts([[NOW, 'r', { policy: 'auto.md', hash: 'sha256:0', id: 'first', start: 'auto', slot: slotName(SLOT) }]], [])
+  assert.deepEqual(liveRuns('auto.md', facts, [card('resumed', ['first', 'resumed'], true)]).map((c) => c.id), ['resumed'], 'the first session archived, its resume on the board')
+  assert.deepEqual(liveRuns('auto.md', facts, [card('first', ['first'], false, 'resumed'), card('resumed', ['first', 'resumed'], true)]).map((c) => c.id), ['resumed'])
+  assert.deepEqual(liveRuns('auto.md', facts, [card('resumed', ['first', 'resumed'], false)]), [], 'a worker that ended holds no slot')
+})
+
+test('every key a header takes parses as it always did, and the hash is the sha256 of the bytes', () => {
+  const header = '{ "when": { "cron": ["0 9 * * 1-5"], "tz": "UTC" }, "check": "test -s queue", "start": "auto", "live": 2, "hire": { "cut": { "base": "origin/main" }, "model": "opus", "effort": "high" }, "runner": "elsewhere", "x": { "elsewhere": { "lane": 3 } } }'
+  const parsed = parsePolicy(policyText(header))
+  assert.ok(parsed.ok)
+  assert.deepEqual(parsed.header, { when: { cron: ['0 9 * * 1-5'], tz: 'UTC' }, check: 'test -s queue', start: 'auto', live: 2, hire: { cut: { base: 'origin/main' }, model: 'opus', effort: 'high' }, runner: 'elsewhere', x: { elsewhere: { lane: 3 } } })
+  const both = parsePolicy(policyText('{ "when": { "cron": ["0 9 * * *"] }, "hire": { "cwd": "lab", "cut": {} } }'))
+  assert.deepEqual(!both.ok && both.problems, [{ path: 'hire.cut', message: 'takes `cwd` or `cut`, not both' }])
+  assert.equal(hashOf('# T\n'), 'sha256:' + createHash('sha256').update('# T\n').digest('hex'))
 })
