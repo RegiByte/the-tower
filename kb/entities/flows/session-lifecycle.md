@@ -22,10 +22,10 @@ sequenceDiagram
   O->>P: a new worker
   P->>T: spawn (project, dir or cut, model, effort, first prompt, x: extensions' fields)
   T->>T: each field parsed by its extension's schema
+  T->>T: the floor's launch contributors, in resolved order (on a cut, at the worktree's path to be): their parts merged, a conflict refused
   opt cut: a new worktree
     T->>T: git fetch, worktree add in every repo (src/worktrees.ts)
   end
-  T->>T: the floor's launch contributors, in resolved order: their parts merged, a conflict refused
   T->>H: spawn {id, project, cwd, args, facts?} (composed by spawnRequest)
   H->>R: read config.json, sessionDirs(project, cwd)
   H->>C: pty.spawn(argv + --plugin-dir (tower-mod, with the hooks) + args (--settings: the other session dirs, the fullscreen TUI))
@@ -59,7 +59,7 @@ sequenceDiagram
   `facts` the host logs before the PTY starts. A resume runs them too and logs nothing; a fork carries its lineage's
   `tower.x.*` facts.
 - **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
-  the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
+  the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, composes the launch at the hub's worktree path, then cuts the same name in every repo, then starts the worker in the hub's worktree, and rolls the cut
   back if the spawn fails ([`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)). The host accepts a `cwd` only through
   [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs), which also gives the other directories the session may
   read; a worktree whose folder is gone in any repo is refused as `lost` ([[tower-cuts-worktrees]]).

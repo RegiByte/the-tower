@@ -54,8 +54,8 @@ sequenceDiagram
 - **Reviews share the fact.** `tower review` spawns with `hire` too ([[review-round]]); a prompt that starts a
   reviewer ([`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn)) is never weighed against the limits, and neither
   is a hire a launch contributor exempts, its `tower.exempt` logged before it starts. The weighing runs after the
-  contributors, just before the host spawns ([`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch)), so a cut made
-  for a hire refused there is rolled back.
+  contributors and before the cut ([`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch), on the path the worktree
+  will have), so a refused hire cuts nothing.
 - **Failure.** Without `TOWER_SESSION_ID` the command refuses (the Claude was not started by the tower); with the
   host down the floor offers no spawn and the command says to run `tower up`; a host older than protocol 2 can't
   append the fact, and the hire refuses with `unavailable` before it spawns.

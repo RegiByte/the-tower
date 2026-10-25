@@ -246,6 +246,7 @@ export type LaunchRequest = {
   kind: 'spawn' | 'resume' | 'fork'
   runtime: Runtime
   project: string
+  /** Where the session runs: on a cut, the worktree it is cut into, which may not exist yet. */
   cwd: string
   model?: string
   effort?: string

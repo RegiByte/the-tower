@@ -274,8 +274,9 @@ contributions (1.84), then middleware and hooks (1.85), then triggers, checks an
 - *Contributed env through the host's spawn*: kept out of the log, but a host change, which stops every running
   worker; through `--settings` it is logged with the argv, which the docs say plainly.
 - *A crew edge as a fold's contribution*: the core's board, built before any fold, couldn't read it; it is a core fact.
-- *The hire's limit checked before its contributors*: an exemption is theirs to give, so the gate runs after them; a
-  refused cut is rolled back.
+- *The hire's limit checked before its contributors*: an exemption is theirs to give, so the gate runs after them.
+  Contributors read stores and the API, never a worktree's files, so on a cut they run with the worktree's path before
+  it is cut (`LaunchRequest.cwd` may not exist yet) and a refused hire cuts nothing.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
   trusted, and the guards catch mistakes, not malice. It was also the other way to reload a folder's code; the resolve
   hook does it in the tower's process.

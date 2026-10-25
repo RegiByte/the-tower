@@ -47,8 +47,8 @@ the easy path stops them, as long as it is named for what it is.
   doesn't enforce them. A hire whose prompt starts a reviewer (`reviewedIn`, as `liveHires` leaves it out) is not
   weighed, and still logs `tower.hire`, so the pair is attributed.
 - *Exempt by an extension.* A launch contributor may return `exempt: ['hiring']` on a spawn ([[extensions]]). A hire is
-  weighed after its contributors have run, just before the host starts it (a cut made first is rolled back when it is
-  refused), and one they exempt is not weighed. Each exemption is logged in the new worker's log as `tower.exempt
+  weighed after its contributors have run and before anything is made: on a cut, they run on the path the worktree
+  will have, so a refused hire cuts nothing, as before. One they exempt is not weighed. Each exemption is logged in the new worker's log as `tower.exempt
   {from, by}` before it starts, so `card.exempt` shows it on the card as a badge in every renderer, `tower whoami` says
   "exempt from hiring limits by <cap>", `GET /extensions` lists whom each extension exempted, and `liveHires` leaves
   the worker out: no limit is lifted unseen.

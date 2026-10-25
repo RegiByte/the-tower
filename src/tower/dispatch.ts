@@ -38,6 +38,7 @@ import {
   projectPlugins,
   sessionDirs,
   worktreeName,
+  worktreePath,
   worktreesConfig,
   type Config,
   type EditorAction,
@@ -531,8 +532,9 @@ export const dispatch = defineResource({
     /**
      * A new worktree in every dir of the project, cut from a base on origin or forked from a checkout, then a session in the
      * hub's. The worktree is named for the worker unless it was named: for a callsign typed (`typed`), its own, lowercased;
-     * else a session id is drawn until its callsign is a free name, and its name one no worker on duty holds. A failed or
-     * refused spawn rolls the cut back.
+     * else a session id is drawn until its callsign is a free name, and its name one no worker on duty holds. Its launch
+     * is composed, and a hire weighed, in the worktree's path before the cut, so a refused spawn cuts nothing; a spawn
+     * the host fails rolls the cut back.
      */
     const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, typed: string | undefined, launch: Launch, spawn: Spawn) =>
       withProject(projectId, (project, config) =>
@@ -545,13 +547,10 @@ export const dispatch = defineResource({
             : await drawnName(project, branchPrefix, request.name, config)
           const callsign = chosen?.callsign ?? callsignsOf(config)(id)
           const branch = request.branch ?? `${branchPrefix}${name}`
+          const cwd = worktreePath(project.hub, name)
+          const started = await newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, branch, linkedSources(project, links)) }, launch, spawn)
+          if ('t' in started) return started
           const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
-          const cwd = made.made[0].path
-          const started = await newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, made.branch, linkedSources(project, links)) }, launch, spawn)
-          if ('t' in started) {
-            await rollback(made.made)
-            return started
-          }
           const answer = await host(spawnRequest(started))
           if (answer.t === 'error') {
             await rollback(made.made)
