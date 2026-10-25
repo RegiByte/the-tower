@@ -8,6 +8,7 @@
  */
 import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type StartedSystem, type SystemConfig } from 'braided'
 import { createHash } from 'node:crypto'
+import path from 'node:path'
 import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
@@ -25,6 +26,7 @@ import {
   type ExtensionView,
   type Fold,
   type FoldCtx,
+  type LaunchRequest,
   type Manifest,
   type ProblemLane,
   type Slot,
@@ -32,7 +34,7 @@ import {
   type Started,
   type StartCtx,
 } from '../shared/extensions.ts'
-import { ConfigError, type Config } from '../shared/model.ts'
+import { ConfigError, type Config, type Runtime } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
@@ -73,8 +75,13 @@ export type Instance = {
   answer(hook: string, payload: unknown, caller: Caller): unknown
   /** Fires a slot of its manifest's: the handler's calls are made as `caller`. */
   slot(name: string, slot: Slot, caller: Caller): Promise<void>
+  /** Its launch contributor, called with the ctx of the request's floor, when its manifest says `spawn.launch`. */
+  launch?(request: LaunchRequest): Promise<unknown>
   halt(): Promise<void>
 }
+
+/** An extension's launch contributor on a floor it is on, as a launch calls it. */
+export type Launcher = { id: string; cap: string; launch(request: LaunchRequest): Promise<unknown> }
 
 /** A capability as a call finds it: provided by nobody, provided and not running, being started or restarted, or running. */
 export type Live = { t: 'none' } | { t: 'down'; why: string } | { t: 'moving'; why: 'starting' | 'restarting' } | { t: 'up'; a: Accepted; instance: Instance }
@@ -149,6 +156,17 @@ export const extensions = defineResource({
             }
           })
       },
+      /** The running extensions' launch contributors on a floor where each is on, in resolved order. */
+      launchers: (project: string): Launcher[] =>
+        running().flatMap(({ a, instance }) =>
+          instance.launch && !a.off.includes(project) ? [{ id: a.id, cap: a.provides, launch: instance.launch }] : [],
+        ),
+      /** The plugin folders the running extensions on a floor teach a session of `runtime` with, in resolved order. */
+      plugins: (project: string, runtime: Runtime): string[] =>
+        running().flatMap(({ a }) => {
+          const dir = a.manifest.plugins?.[runtime]
+          return dir !== undefined && !a.off.includes(project) ? [path.join(a.dir, dir)] : []
+        }),
       /** Where each running extension's own subject kinds sit, by kind, `<cap>.<kind>`. */
       subjects: (): Map<string, SubjectDecl> =>
         new Map(running().flatMap(({ a }) => Object.entries(a.manifest.subjects ?? {}).map(([kind, decl]) => [`${a.provides}.${kind}`, decl] as const))),
@@ -395,6 +413,10 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       foldOwn: stores.foldOwn,
       settingsOf: ctx.settingsOf,
       threw: stores.threw,
+      ...(started.launch && {
+        launch: async (request: LaunchRequest) =>
+          started.launch!(request, { settings: ctx.settingsOf(request.project), read: ctx.read, collections: { list: ctx.collections.list, read: ctx.collections.read } }),
+      }),
       verb: (name, input, caller) => started.verbs![name](input, handlerCtx(caller, `${a.provides}/${name}`)),
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
       link: (target, input, next, caller) => started.around![target](input, next, handlerCtx(caller, target)),

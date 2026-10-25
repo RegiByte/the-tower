@@ -1,4 +1,4 @@
-import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project } from './model.ts'
+import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime } from './model.ts'
 import type { ToHost } from './protocol.ts'
 
 /** What a new session is asked for. Whatever is left out is Claude's own default. */
@@ -130,12 +130,8 @@ const keptArgs = (kept: string) => ['--add-dir', kept]
 /** A worktree's links lead into the main checkouts: writing through one asks no permission when its source is a directory of the session. */
 const linkArgs = (worktree: WorktreeBrief | undefined) => (worktree?.links ?? []).flatMap((source) => ['--add-dir', source])
 
-/** The plugins the config names for the session's project (`projectPlugins`), loaded beside the tower mod the host passes. */
+/** The plugins the config names for the session's project (`projectPlugins`) and the extensions on its floor, loaded beside the tower mod the host passes. */
 const pluginArgs = (plugins: string[]) => plugins.flatMap((dir) => ['--plugin-dir', dir])
-
-/** The agent runtimes the tower launches: a session's is fixed for its whole resume chain (its header's `runtime`). */
-export const RUNTIMES = ['claude'] as const
-export type Runtime = (typeof RUNTIMES)[number]
 
 /**
  * What launch contributors add to a session, merged in fold order, as the runtime places it: text after the tower's

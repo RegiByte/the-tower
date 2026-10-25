@@ -79,12 +79,18 @@ export const SPAWN_FIELDS = z.strictObject({
       "The new worker's callsign, `NAME` or `NAME-NN`, upper-cased: refused when its name is a worker's on duty. Drawn at random when left out; a cut's worktree is named for it, lowercased, unless `cut.name` names it.",
     ),
   ...launch,
+  x: z
+    .record(z.string(), z.record(z.string(), z.unknown()))
+    .optional()
+    .describe(
+      "Extensions' spawn fields, by capability then field (`{roles: {role: 'builder'}}`): each value parsed by its field's schema and logged as `tower.x.<cap>.<field>` before the worker starts. A field no extension on the floor declares is `invalid`.",
+    ),
   by,
   hire: z
     .literal(true)
     .optional()
     .describe(
-      "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer. Hires of one worker are taken one at a time, each counted before the next is weighed.",
+      "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer or a launch contributor exempts it. Hires of one worker are taken one at a time, each counted before the next is weighed.",
     ),
 })
 

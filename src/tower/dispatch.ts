@@ -11,22 +11,40 @@ import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
-import { carriesOn, heldBy, heldCallsigns, resumeName, runsAs } from '../bridge/chains.ts'
-import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
+import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
+import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Exemption, type Session } from '../bridge/facts.ts'
+import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../bridge/policies.ts'
 import { hashOf, parsePolicy } from '../bridge/policy-file.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
-import { collectionOn, ownedRefusal, type FloorCollectionType } from '../bridge/stores.ts'
+import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { discardNote } from '../bridge/worktrees.ts'
 import { createItem, deleteItem, itemPath, itemVersion, putItem, readItem, renameItem, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
 import { apiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
-import { callOf, can, hireRefusal } from '../shared/cards.ts'
-import { newSessionId, NOTHING_CONTRIBUTED, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
-import { nestedIn, qualifiedOf, tooDeep, type Caller } from '../shared/extensions.ts'
-import { callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, worktreeName, worktreesConfig, type Config, type EditorAction, type Project } from '../shared/model.ts'
+import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
+import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { nestedIn, qualifiedOf, tooDeep, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
+import {
+  callsignsOf,
+  ConfigError,
+  configuredUser,
+  editorArgv,
+  outsideProject,
+  projectCollections,
+  projectDirs,
+  projectPlugins,
+  sessionDirs,
+  worktreeName,
+  worktreesConfig,
+  type Config,
+  type EditorAction,
+  type ModEvent,
+  type Project,
+  type Runtime,
+} from '../shared/model.ts'
 import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
 import { POLICIES, ruleWords, slotsBetween } from '../shared/policies.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
@@ -63,6 +81,12 @@ type Deps = {
 }
 
 const isVerb = (name: string): name is Verb => Object.hasOwn(VERBS, name)
+
+/** What a spawn's launch must pass just before it starts, given what its contributors exempted it from: a hire's limits. */
+type Gate = (exempt: Exemption[]) => Promise<ApiError | undefined>
+
+/** A spawn's extension fields by capability, the facts they are logged as, and its gate. */
+type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; gate: Gate }
 
 export const dispatch = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:probes', 'core:extensions'],
@@ -239,23 +263,24 @@ export const dispatch = defineResource({
       system.session(id) !== undefined && (system.session(by)?.facts.hired.includes(id) ?? false) && (system.live()?.ids.has(id) ?? false)
 
     /**
-     * A session `by` hires: refused past its floor's `hiring` limits unless it starts a reviewer, then logged in the hirer's
-     * log. A hire that can't be logged is killed, so every hire that runs is counted.
+     * A session `by` hires: refused past its floor's `hiring` limits unless it starts a reviewer or a launch contributor
+     * exempts it, which its contributors decide just before it starts, then logged in the hirer's log. A hire that can't
+     * be logged is killed, so every hire that runs is counted.
      */
-    const hired = (projectId: string, by: string, prompt: string | undefined, spawning: () => Answer | Promise<Answer>) =>
+    const hired = (projectId: string, by: string, prompt: string | undefined, spawning: (gate: Gate) => Answer | Promise<Answer>) =>
       fromWorker(by, () =>
         withProject(projectId, () => {
           const hirer = everyCard(Date.now()).find((c) => c.id === by)!
           return inTurn(hirer.callsign, async () => {
             const refused = factRefused(HIRE_FACT)
             if (refused) return refused
-            if (reviewedIn(prompt) === undefined) {
+            const answer = await spawning(async (exempt) => {
+              if (reviewedIn(prompt) !== undefined || exempt.some((e) => e.from === 'hiring')) return undefined
               await system.refreshLive()
               const cards = everyCard(Date.now())
               const limit = hireRefusal(cards, boardOf().floors.find((f) => f.id === projectId)!, cards.find((c) => c.id === by)!)
-              if (limit) return apiError('limited', `${limit} (the limits are \`hiring\` in the tower's config)`)
-            }
-            const answer = await spawning()
+              return limit ? apiError('limited', `${limit} (the limits are \`hiring\` in the tower's config)`) : undefined
+            })
             if (answer.t !== 'spawned') return answer
             const { id } = answer as Replies['spawn']
             const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
@@ -296,20 +321,25 @@ export const dispatch = defineResource({
         if (!held) return apiError('not_found', `Session "${id}" holds no conversation "${conversation}"`)
         if (!held.saved) return apiError('refused', `Claude hasn't saved conversation "${conversation}" yet`)
         await system.refreshLive()
-        const holder = heldBy(conversation, system.sessions(), system.live()?.ids ?? new Set())
-        if (holder) return apiError('refused', `${runsAs(holder)} (session ${holder.header.id}) is already in conversation "${conversation}": go to it`)
+        const inIt = heldBy(conversation, system.sessions(), system.live()?.ids ?? new Set())
+        if (inIt) return apiError('refused', `${runsAs(inIt)} (session ${inIt.header.id}) is already in conversation "${conversation}": go to it`)
         const config = readConfig()
         const project = config.projects[source.header.project]
         if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
         const lost = lostWorktree(project, source.header.cwd)
         if (lost) return lost
-        const heir = carriesOn(source, conversation) ? newSessionId() : (await workerIds(config))()
+        const kind = carriesOn(source, conversation) ? 'resume' : 'fork'
+        const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
         const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
         const { project: projectId, cwd } = source.header
+        const runtime = source.header.runtime ?? 'claude'
+        const worker = lineage(source, (s) => continues(s, system.sessions()))
+        const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker))
+        if (merged.t === 'error') return merged
         const answer = await host(
           resumeRequest({
-            kind: carriesOn(source, conversation) ? 'resume' : 'fork',
-            runtime: 'claude',
+            kind,
+            runtime,
             id: heir,
             name: resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)),
             project: projectId,
@@ -318,9 +348,9 @@ export const dispatch = defineResource({
             user: configuredUser(config),
             worktree: brief,
             kept: projectCollectionsPath(paths, projectId),
-            plugins: projectPlugins(config, projectId),
-            contributed: NOTHING_CONTRIBUTED,
-            facts: [],
+            plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
+            contributed: merged.contributed,
+            facts: kind === 'fork' ? forkFacts(worker) : [],
             conversation,
             prompt,
           }),
@@ -376,22 +406,97 @@ export const dispatch = defineResource({
       return { id, callsign: typedCallsign(typed, id) }
     }
 
-    /** A new worker's launch on the project's floor: where it starts, and what its spawn asked for. */
-    const newLaunch = (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch): SpawnLaunch => ({
-      kind: 'spawn',
-      runtime: 'claude',
-      project: projectId,
-      ...at,
-      user: configuredUser(config),
-      kept: projectCollectionsPath(paths, projectId),
-      plugins: projectPlugins(config, projectId),
-      contributed: NOTHING_CONTRIBUTED,
-      facts: [],
-      launch,
-    })
+    /**
+     * The launch contributors of the floor's running extensions, in resolved order, merged for a launch of `kind`. One that
+     * throws or returns what the runtime can't place refuses the launch when `fields` holds its capability's (the user
+     * asked for what failed); otherwise its parts are dropped and it gets a `launch` problem. A conflict refuses the
+     * launch, and is a problem of every extension it names. `factsOf`: a capability's facts over the worker's lineage.
+     */
+    const contribute = async (
+      kind: LaunchRequest['kind'],
+      runtime: Runtime,
+      at: Pick<LaunchRequest, 'project' | 'cwd' | 'model' | 'effort'>,
+      fields: Map<string, Record<string, unknown>>,
+      factsOf: (cap: string) => SessionFact[],
+    ): Promise<Merged | ApiError> => {
+      const launchers = holder.launchers(at.project)
+      const contributions: Contribution[] = []
+      for (const { id, cap, launch } of launchers) {
+        let failed: { code: 'threw' | 'shape'; message: string }
+        try {
+          const placed = placeable(await launch({ kind, runtime, ...at, ...(fields.has(cap) && { fields: fields.get(cap) }), facts: factsOf(cap) }))
+          if (placed.ok) {
+            contributions.push({ cap, parts: placed.parts })
+            continue
+          }
+          failed = { code: 'shape', message: `returned a part ${runtime} can't place: ${placed.why}` }
+        } catch (err) {
+          failed = { code: 'threw', message: `threw: ${(err as Error).message}` }
+        }
+        if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
+        holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })
+      }
+      const merged = mergeParts(kind, runtime, contributions, takenFlags(runtime, readConfig().argv))
+      if (merged.t === 'merged') return merged
+      for (const cap of merged.caps) holder.problem(launchers.find((l) => l.cap === cap)!.id, { lane: 'launch', level: 'error', code: 'conflict', message: merged.message, at: Date.now() })
+      return apiError('refused', merged.message)
+    }
+
+    /**
+     * A new worker's launch on the project's floor: where it starts and what its spawn asked for, with what the floor's
+     * launch contributors add (a model or effort only where the spawn left it out). Refused as a contributor or `gate`
+     * refuses it, or when its crew edge names no worker; its facts are its fields' and the core's.
+     */
+    const newLaunch = async (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch, spawn: Spawn): Promise<SpawnLaunch | ApiError> => {
+      const runtime = 'claude'
+      const now = Date.now()
+      const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
+      const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf)
+      if (merged.t === 'error') return merged
+      const gated = await spawn.gate(merged.exempt)
+      if (gated) return gated
+      const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
+      if (merged.reportsTo && !lead) return apiError('not_found', `${merged.reportsTo.by} has the worker report to ${merged.reportsTo.callsign}, and no worker is called that`)
+      return {
+        kind: 'spawn',
+        runtime,
+        project: projectId,
+        ...at,
+        user: configuredUser(config),
+        kept: projectCollectionsPath(paths, projectId),
+        plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
+        contributed: merged.contributed,
+        facts: [...spawn.facts, ...coreFacts(merged, lead?.id)],
+        launch: { ...launch, model: launch.model ?? merged.defaults.model, effort: launch.effort ?? merged.defaults.effort },
+      }
+    }
+
+    /**
+     * A spawn's extension fields, each value parsed by its field's schema, and the facts they are logged as: refused as
+     * `invalid` for a capability no extension provides, one off on the floor, or a field it doesn't declare.
+     */
+    const spawnFields = (project: string, x: Record<string, Record<string, unknown>>): Pick<Spawn, 'fields' | 'facts'> | ApiError => {
+      const fields = new Map<string, Record<string, unknown>>()
+      for (const [cap, values] of Object.entries(x)) {
+        const live = holder.live(cap)
+        if (live.t === 'none') return apiError('invalid', `x.${cap}: no extension provides ${cap}`)
+        if (live.t !== 'up') return apiError('unavailable', `x.${cap}: ${cap} is ${live.why}, so its fields can't be logged`)
+        if (live.a.off.includes(project)) return apiError('invalid', `x.${cap}: ${cap} is off on ${project}`)
+        const parsed: Record<string, unknown> = {}
+        for (const [name, value] of Object.entries(values)) {
+          const field = live.a.fields.get(name)
+          if (!field) return apiError('invalid', `x.${cap}.${name}: ${cap} declares no spawn field ${name}`)
+          const ok = field.schema.safeParse(value)
+          if (!ok.success) return apiError('invalid', `x.${cap}.${name}: ${z.prettifyError(ok.error)}`)
+          parsed[name] = ok.data
+        }
+        fields.set(cap, parsed)
+      }
+      return { fields, facts: fieldFacts(Object.fromEntries(fields)) }
+    }
 
     /** A session in `cwd`, or in the hub's main checkout when none is given. */
-    const spawnIn = (projectId: string, given: string | undefined, typed: string | undefined, launch: Launch) =>
+    const spawnIn = (projectId: string, given: string | undefined, typed: string | undefined, launch: Launch, spawn: Spawn) =>
       withProject(projectId, async (project, config) => {
         const cwd = given ?? project.hub
         const outside = outsideProject(project, cwd)
@@ -400,7 +505,8 @@ export const dispatch = defineResource({
         if (lost) return lost
         const worker = await newWorker(config, typed)
         if ('t' in worker) return worker
-        return host(spawnRequest(newLaunch(config, projectId, { id: worker.id, name: worker.callsign, cwd, dirs: sessionDirs(project, cwd), worktree: await briefFor(project, worktreesConfig(config, projectId).links, cwd) }, launch)))
+        const started = await newLaunch(config, projectId, { id: worker.id, name: worker.callsign, cwd, dirs: sessionDirs(project, cwd), worktree: await briefFor(project, worktreesConfig(config, projectId).links, cwd) }, launch, spawn)
+        return 't' in started ? started : host(spawnRequest(started))
       })
 
     /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -425,10 +531,10 @@ export const dispatch = defineResource({
     /**
      * A new worktree in every dir of the project, cut from a base on origin or forked from a checkout, then a session in the
      * hub's. The worktree is named for the worker unless it was named: for a callsign typed (`typed`), its own, lowercased;
-     * else a session id is drawn until its callsign is a free name, and its name one no worker on duty holds. A failed spawn
-     * rolls the cut back.
+     * else a session id is drawn until its callsign is a free name, and its name one no worker on duty holds. A failed or
+     * refused spawn rolls the cut back.
      */
-    const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, typed: string | undefined, launch: Launch) =>
+    const spawnCut = (projectId: string, request: { name?: string; branch?: string; base?: string; from?: string }, typed: string | undefined, launch: Launch, spawn: Spawn) =>
       withProject(projectId, (project, config) =>
         worktreeVerb(async () => {
           const { branchPrefix, links } = worktreesConfig(config, projectId)
@@ -441,7 +547,12 @@ export const dispatch = defineResource({
           const branch = request.branch ?? `${branchPrefix}${name}`
           const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
           const cwd = made.made[0].path
-          const answer = await host(spawnRequest(newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, made.branch, linkedSources(project, links)) }, launch)))
+          const started = await newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, made.branch, linkedSources(project, links)) }, launch, spawn)
+          if ('t' in started) {
+            await rollback(made.made)
+            return started
+          }
+          const answer = await host(spawnRequest(started))
           if (answer.t === 'error') {
             await rollback(made.made)
             return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)
@@ -775,9 +886,13 @@ export const dispatch = defineResource({
       )
 
     const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
-      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, by, hire }) => {
-        const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, { model, effort, prompt }) : spawnIn(project, cwd, callsign, { model, effort, prompt })), prompt, by)
-        return hire ? hired(project, by!, prompt, spawning) : spawning()
+      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, x, by, hire }) => {
+        const fields = spawnFields(project, x ?? {})
+        if ('t' in fields) return fields
+        const launch = { model, effort, prompt }
+        const spawning = (gate: Gate) =>
+          spawnedBy(() => (cut ? spawnCut(project, cut, callsign, launch, { ...fields, gate }) : spawnIn(project, cwd, callsign, launch, { ...fields, gate })), prompt, by)
+        return hire ? hired(project, by!, prompt, spawning) : spawning(async () => undefined)
       },
       resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
       keys: ({ id, data, by }) => keys(id, data, by),
