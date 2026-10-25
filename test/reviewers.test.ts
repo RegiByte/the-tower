@@ -150,3 +150,14 @@ test("reviews offers Review on a worker whose work goes on, in a floor of git re
   const reviewer = { ...at('/hub'), header: { ...at('/hub').header, argv: ['claude', '--', `/tower:review ${AUTHOR_CALLSIGN}`] } }
   assert.deepEqual(offered(reviewer, reads([])), { action: undefined, review: undefined })
 })
+
+test("a reviewer's note writes on its author's thread, whether its prompt or its facts say it is one (FREYR-47)", () => {
+  const fork: TreeRead = { name: 'freyr-1', path: '/hub/.worktrees/freyr-1', branch: 'tower/freyr-1', from: 'main', present: true, dirty: 0, unpushed: 0, absorbed: false, against: 'origin/main', risk: [] }
+  const repos = new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], main: { dirty: 0, ahead: 0 }, trees: [fork], kept: [] }]])
+  const inFork = (log: SessionLog): SessionLog => ({ ...log, header: { ...log.header, cwd: fork.path } })
+  const config: Config = { ...CONFIG, collections: { reviews: { label: 'Reviews', description: 'Threads.' } } }
+  const core = (logs: SessionLog[]) => board(viewOf(config, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(logs.map((l) => l.header.id)), protocol: HOST_PROTOCOL }, repos }))
+  const b = projectLegacy(foldBoard({ board: core([author, inFork(legacy), inFork(withFacts)]), callsignOf: () => undefined, folders: [reviewsFolder([author, legacy, withFacts])], subjects: new Map(), now: 0, clock: () => 0 }).board)
+  const notes = (log: SessionLog) => b.floors[0].cards.find((c) => c.id === log.header.id)!.calls.note?.[1]
+  assert.deepEqual(notes(withFacts), notes(legacy))
+})
