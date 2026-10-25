@@ -21,7 +21,7 @@
     "hub/src/bridge/rate-limits.ts#accountLimits",
     "hub/src/bridge/legacy.ts#LEGACY_READINGS",
     "hub/src/bridge/legacy.ts#respelled",
-    "hub/src/tower/stores.ts#storesOf",
+    "hub/src/bridge/rate-limits.ts#readingStreams",
     "hub/src/shared/limits.ts#quotaOf",
     "hub/src/shared/limits.ts#probeLine",
     "hub/src/shared/limits.ts#probeTitle",
@@ -82,8 +82,10 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   `streams/projects/<project>/<stream>/`: the first are a floor's policies' `runs` and `approvals` ([[policies]]).
 - *Folded beside the sessions.* A stream fact code declaring `tower/rate-limits`
   ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading): `limits`, `extraUsage?`, `runtime?`,
-  Claude's when it names none) in any started extension's system stream is folded by the core
-  ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf), [`limitsStep`](ref:hub/src/bridge/rate-limits.ts#limitsStep)),
+  Claude's when it names none) in a system stream any resolved manifest declares, its extension started, off or failed
+  (not one refused as `invalid`), is folded by the core ([`readingStreams`](ref:hub/src/bridge/rate-limits.ts#readingStreams),
+  [`limitsStep`](ref:hub/src/bridge/rate-limits.ts#limitsStep)), so turning the probe off stops new reads and keeps
+  every past one,
   and an old `p` through [`LEGACY_READINGS`](ref:hub/src/bridge/legacy.ts#LEGACY_READINGS), so every past read folds
   as it did: `limitReadings` and `rateLimits` in the sessions' shape and `rises`, each limit's climb from one reading
   to the next in the same window, which the stats read as use from outside the tower ([[stats]]). The board's
@@ -110,7 +112,7 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   capability's reads.)
 - *Old names, until 2.0.* `POST /probe/run {name: "quota"}` answers through `quota/read-now`, `GET /probe/quota`
   through `quota/reads` and the board, both deprecated (RFC 9745); `board.probes` is copied from `x.quota` as it stood
-  at 1.89, with its `run` offer ([[extensions]], `LEGACY`).
+  at 1.89, with its `run` offer, and holds none while the extension doesn't run ([[extensions]], `LEGACY`).
 - *Closed months archived.* Tidy offers a stream's months closed more than `retention.days` ago, gzipped in place
   and read the same ([[log-retention]]).
 

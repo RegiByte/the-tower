@@ -16,9 +16,7 @@ import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
-import { KIND_SCHEMAS, type FactKind, type RateLimitsReading } from '../shared/rate-limits.ts'
-import { limitsStep, NO_LIMITS, type LimitFacts } from '../bridge/rate-limits.ts'
-import { LEGACY_READINGS, type LegacyReading } from '../bridge/legacy.ts'
+import { KIND_SCHEMAS, type FactKind } from '../shared/rate-limits.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
 import { logBytes, logFilesIn } from '../tail.ts'
@@ -33,16 +31,6 @@ const checked = (schema: z.ZodType, value: unknown, what: string): unknown => {
   const parsed = schema.safeParse(value)
   if (!parsed.success) throw new Error(`${what}: ${parsed.error.issues.map((i) => `${i.path.join('.') || 'value'}: ${i.message}`).join('; ')}`)
   return parsed.data
-}
-
-/**
- * What of a stream's facts is a rate-limit reading: a fact of a code declaring the kind, and one of an old code its
- * folder kept (`LEGACY_READINGS`); `undefined` for a stream with neither.
- */
-const readingOf = (stream: NonNullable<Accepted['manifest']['streams']>[string], legacy: Record<string, LegacyReading>) => {
-  const kinded = new Set(Object.entries(stream.facts).flatMap(([code, f]) => (f.kind === 'tower/rate-limits' ? [code] : [])))
-  if (!kinded.size && !Object.keys(legacy).length) return undefined
-  return (code: string, fact: unknown): RateLimitsReading | undefined => (kinded.has(code) ? (fact as RateLimitsReading) : legacy[code]?.(fact))
 }
 
 /** A parse result, kept while its item's version holds. */
@@ -190,23 +178,10 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     },
   }
 
-  /** The core's folds of its streams of rate-limit readings, from start to halt. */
-  const readings = new Map<string, ReturnType<SystemResource['foldStream']>>()
-
   return {
     ctx,
-    /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`; the core folds its readings of the kinds it knows. */
+    /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`. */
     attach: (started: Started) => {
-      for (const [name, stream] of Object.entries(manifest.streams ?? {})) {
-        const folder = streamFolder(`${provides}.${name}`)
-        const reading = readingOf(stream, LEGACY_READINGS[folder] ?? {})
-        if (!reading) continue
-        const step = (state: unknown, [at, code, fact]: StreamFact) => {
-          const read = reading(code, fact)
-          return read ? limitsStep(state as LimitFacts, at, read) : state
-        }
-        readings.set(name, live.foldStream({ stream: folder, scope: 'system', init: NO_LIMITS, step, label: a.id }))
-      }
       parse = started.parse
       for (const [name, reduce] of Object.entries(started.reduce ?? {}))
         folds.set(name, live.foldStream({ stream: streamFolder(`${provides}.${name}`), scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
@@ -227,13 +202,10 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
         ...(lineage && { facts: () => sessionFacts(provides, lineage.flatMap((id) => live.session(id) ?? [])) }),
       }),
     /** Each stream fold stopped before a fact its step threw on, and why. */
-    threw: () => [...folds, ...readings].flatMap(([name, fold]) => fold.threw().map((t) => ({ stream: name, ...t }))),
-    /** Each of its streams of rate-limit readings, as the core folds them. */
-    limits: (): LimitFacts[] => [...readings.values()].map((fold) => fold.state() as LimitFacts),
+    threw: () => [...folds].flatMap(([name, fold]) => fold.threw().map((t) => ({ stream: name, ...t }))),
     stop: () => {
-      for (const fold of [...folds.values(), ...readings.values()]) fold.stop()
+      for (const fold of folds.values()) fold.stop()
       folds.clear()
-      readings.clear()
     },
   }
 }

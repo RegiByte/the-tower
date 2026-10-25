@@ -33,6 +33,7 @@ import {
   type Start,
   type Started,
   type StartCtx,
+  type StreamFact,
 } from '../shared/extensions.ts'
 import { ConfigError, type Config, type Runtime } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -43,7 +44,7 @@ import type { ConfigResource, SystemResource, TowerResources, TowerSystem } from
 import { storesOf } from './stores.ts'
 import { BOARD_CALLER, runBoardTrigger } from './triggers.ts'
 import { offOn } from '../bridge/stores.ts'
-import type { LimitFacts } from '../bridge/rate-limits.ts'
+import { limitsStep, NO_LIMITS, readingStreams, type LimitFacts } from '../bridge/rate-limits.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
 const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
@@ -70,8 +71,6 @@ export type Instance = {
   settingsOf(project: string): unknown
   /** Each of its stream folds stopped before a fact its step threw on, and why. */
   threw(): { stream: string; project?: string; message: string }[]
-  /** Each of its streams of `tower/rate-limits` readings, as the core folds them, until it halts. */
-  limits(): LimitFacts[]
   /** Its link around `target`, a qualified verb or hook. */
   link(target: string, input: unknown, next: (input: unknown) => Promise<unknown>, caller: Caller): unknown
   /** Its answer to `hook`, qualified. */
@@ -97,9 +96,38 @@ const NO_RESOLVED: Resolved = { order: [], accepted: new Map(), refused: new Map
 /** The resource an extension's capability is started as. */
 export const resourceOf = (cap: string) => `x:${cap}`
 
+/**
+ * The manifests whose stored facts the core folds: every one resolved, started or not, but one refused as `invalid`,
+ * whose declarations can't be trusted.
+ */
+const declaredBy = (resolved: Resolved): Manifest[] => [
+  ...[...resolved.accepted.values()].map((a) => a.manifest),
+  ...[...resolved.refused.values()].flatMap((r) => (r.manifest && !r.problems.some((p) => p.code === 'invalid') ? [r.manifest] : [])),
+]
+
 export const extensions = defineResource({
-  start: () => {
+  dependencies: ['core:system'],
+  start: ({ 'core:system': live }: { 'core:system': SystemResource }) => {
     let held: Held = { resolved: NO_RESOLVED, outcomes: new Map(), at: 0, resources: {}, system: {} }
+    /** The core's fold of each stream of rate-limit readings the resolved manifests declare, by folder. */
+    const readingFolds = new Map<string, ReturnType<SystemResource['foldStream']>>()
+    /** Folds what the manifests now declare, and stops folding what they no longer do. */
+    const foldReadings = (resolved: Resolved) => {
+      const streams = readingStreams(declaredBy(resolved))
+      for (const [folder, fold] of readingFolds) {
+        if (streams.some((s) => s.folder === folder)) continue
+        fold.stop()
+        readingFolds.delete(folder)
+      }
+      for (const { folder, reading } of streams) {
+        if (readingFolds.has(folder)) continue
+        const step = (state: unknown, [at, code, fact]: StreamFact) => {
+          const read = reading(code, fact)
+          return read ? limitsStep(state as LimitFacts, at, read) : state
+        }
+        readingFolds.set(folder, live.foldStream({ stream: folder, scope: 'system', init: NO_LIMITS, step, label: 'tower/rate-limits' }))
+      }
+    }
     /** The capabilities the reconcile under way starts or restarts. */
     let moving = new Set<string>()
     /** The problems calls found, by extension id, newest first: kept until the extension starts again. */
@@ -165,12 +193,13 @@ export const extensions = defineResource({
             }
           })
       },
-      /**
-       * Every started extension's streams of rate-limit readings, folded: one halting for a restart keeps them until its
-       * stores close, so the board's limits hold through it.
-       */
-      readings: (): LimitFacts[] =>
-        [...held.resolved.accepted.values()].flatMap((a) => (held.system[resourceOf(a.provides)] as Instance | undefined)?.limits() ?? []),
+      /** Each stream of rate-limit readings the resolved manifests declare, folded, whether its extension runs or not. */
+      readings: (): LimitFacts[] => [...readingFolds.values()].map((fold) => fold.state() as LimitFacts),
+      /** Stops folding the readings. */
+      stop: () => {
+        for (const fold of readingFolds.values()) fold.stop()
+        readingFolds.clear()
+      },
       /** The running extensions' launch contributors on a floor where each is on, in resolved order. */
       launchers: (project: string): Launcher[] =>
         running().flatMap(({ a, instance }) =>
@@ -220,6 +249,7 @@ export const extensions = defineResource({
       /** What a reconcile ended with; the call problems of the extensions it `started` are dropped. */
       set: (next: Held, started: string[]) => {
         held = next
+        foldReadings(next.resolved)
         moving = new Set()
         calls = new Map([...calls].filter(([id]) => !started.includes(id)))
         changed()
@@ -249,7 +279,7 @@ export const extensions = defineResource({
       },
     }
   },
-  halt: () => {},
+  halt: ({ stop }) => stop(),
 })
 export type ExtensionsResource = StartedResource<typeof extensions>
 
@@ -442,7 +472,6 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       foldOwn: stores.foldOwn,
       settingsOf: ctx.settingsOf,
       threw: stores.threw,
-      limits: stores.limits,
       ...(started.launch && {
         launch: (request: LaunchRequest) =>
           within(

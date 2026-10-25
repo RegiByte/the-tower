@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { test } from 'node:test'
 import { configNow, LEGACY_FIELDS, LEGACY_READS, LEGACY_VERBS, projectLegacy, respelled } from '../src/bridge/legacy.ts'
 import type { Board } from '../src/bridge/board.ts'
 import { configProblems } from '../src/config-check.ts'
-import { LEGACY, streamFolder } from '../src/shared/extensions.ts'
+import { LEGACY, Manifest, streamFolder } from '../src/shared/extensions.ts'
+import { readingStreams } from '../src/bridge/rate-limits.ts'
 import { ConfigError, type Config } from '../src/shared/model.ts'
 
 const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
@@ -54,4 +57,15 @@ test('the projection copies the quota part back to board.probes, and leaves it e
   const [probe] = projectLegacy(board).probes
   assert.deepEqual(probe, { name: 'quota', reads: 'claude.usage', ...part, verbs: ['run'], calls: { run: ['probe/run', { name: 'quota' }] }, actions: [{ verb: 'run', call: ['probe/run', { name: 'quota' }] }] })
   assert.deepEqual(projectLegacy({ floors: [], probes: [] } as unknown as Board).probes, [])
+})
+
+test("the core folds the readings a manifest declares, and the old codes its stream's folder kept, from the manifest alone", () => {
+  const manifest = Manifest.parse(JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'extensions', 'quota', 'extension.json'), 'utf8')))
+  const [stream, ...more] = readingStreams([manifest, manifest])
+  assert.deepEqual([stream.folder, more.length], ['probe.quota', 0], 'once per folder, the folder the stream kept')
+  const limits = [{ kind: 'seven_day', percentUsed: 9 }]
+  assert.deepEqual(stream.reading('u', { ms: 1, answer: {}, limits, unavailable: false }), { ms: 1, answer: {}, limits, unavailable: false })
+  assert.equal(stream.reading('f', { ms: 1, error: 'x' }), undefined)
+  assert.deepEqual(stream.reading('p', { reads: 'claude.usage', ms: 1, ok: true, answer: { rate_limits: { seven_day: { utilization: 9 } } } }), { limits })
+  assert.deepEqual(readingStreams([{ ...manifest, streams: { reads: { ...manifest.streams!.reads, scope: 'project' } } }]), [], 'the account is read in a system stream')
 })
