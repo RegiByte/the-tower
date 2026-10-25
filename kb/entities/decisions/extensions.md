@@ -118,7 +118,8 @@ and versioned without running anything, and a runtime where an extension's failu
   the floors it is on ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections), [[collections]]); an
   owned one refuses the generic writes, naming its create door
   ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)). A stream is always its extension's: only its ctx
-  appends, each fact checked by its code's schema. ctx gains `streams` (append, read over a window), `facts` (logged
+  appends, each fact checked by its code's schema. Its closed months are offered by Tidy and archived as the core's
+  are ([[log-retention]]). ctx gains `streams` (append, read over a window), `facts` (logged
   through the host's `fact`, [[let-go]]), `collections` (its own, on floors where it is on) and `own`
   ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)): each `reduce` folded by [[live-system]] as its stream grows,
   only new facts stepped from a frozen state, a step that throws stopping the fold before its fact

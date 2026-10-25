@@ -80,6 +80,7 @@ function writeConfig(port: number) {
     argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
     port,
     probes: { quota: { off: true } },
+    retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
     extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
     projects: { lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }] } },
@@ -432,6 +433,26 @@ test("server: worktree/discard raises tower/discard.record before anything goes:
   assert.equal(gone.reply.status, 200, gone.reply.body)
   assert.deepEqual(JSON.parse(gone.reply.body).x, { tally: { note: 'tally counted 1 tip' } })
   assert.ok(!existsSync(gone.tree))
+})
+
+test("server: Tidy offers an extension stream's month closed more than retention.days ago, archives it, and its fold reads it the same", async () => {
+  type Kept = { beats: { count: number } }
+  const kept = async (): Promise<Kept> => JSON.parse((await get('/pulse/kept/lab')).body)
+  const before = (await kept()).beats.count
+  const month = path.join('projects', 'lab', 'pulse.beats', '2025-01.jsonl')
+  const startedAt = Date.UTC(2025, 0, 1)
+  mkdirSync(path.dirname(path.join(ROOT, 'streams', month)), { recursive: true })
+  writeFileSync(path.join(ROOT, 'streams', month), `${JSON.stringify({ stream: 'pulse.beats', startedAt, version: 1 })}\n${JSON.stringify([60, 'b', { item: 'old-beat' }])}\n`)
+  await settled(kept, (k) => k.beats.count === before + 1)
+  const board = await settled(
+    async () => ((await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>).board,
+    (b) => b.floors.find((f) => f.id === 'lab')!.tidy.streams.some((m) => m.file === month),
+  )
+  const old = board.floors.find((f) => f.id === 'lab')!.tidy.streams.filter((m) => m.file === month)
+  const tidied = await command('tidy', { project: 'lab', plan: { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: old } })
+  assert.deepEqual(tidied.streams, [month])
+  assert.ok(existsSync(path.join(ROOT, 'streams', `${month}.gz`)) && !existsSync(path.join(ROOT, 'streams', month)))
+  assert.equal((await settled(kept, (k) => k.beats.count === before + 1)).beats.count, before + 1)
 })
 
 test("server: tidy hands each extension its listed entries through tower/tidy.apply, its answer in the reply's x, and refuses an entry no longer listed", async () => {

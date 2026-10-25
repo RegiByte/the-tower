@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/bridge/retention.ts#oldLogs",
     "hub/src/bridge/retention.ts#LogFile",
@@ -76,6 +76,10 @@ times over: compressing keeps every fact readable and gives back most of the spa
   [[policies]]' runs and approvals) are listed in that floor's Tidy alone, after the system's. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with
   no fold first (streams keep no checkpoints); the live view reads a month plain while it is, else archived
   ([`StreamMonth`](ref:hub/src/bridge/retention.ts#StreamMonth) on `system.streamMonths()`), and its reads fold the same.
+  `system.streamMonths()` lists every stream folder's month files from disk, whoever writes them, read again whenever
+  anything under `streams/` changes ([`watchSystem`](ref:hub/src/system.ts#watchSystem)): an extension's streams
+  (`<cap>.<name>/`, [[extensions]]) are offered and archived exactly as the core's, whether or not the extension is
+  running, and its folds and `ctx.streams.read` read an archived month through [`tail.ts`](ref:hub/src/tail.ts).
 
 [`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) folds every fixture gzipped to the plain log's facts
 and offset, from its start and from the checkpoint it leaves, and replays its screen the same.

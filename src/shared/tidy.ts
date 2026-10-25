@@ -61,7 +61,7 @@ const oldStreamsRow = (streams: TidyPlan['streams']): Omit<TidyRow, 'call'> => {
   return {
     what: `▤ ${n}`,
     does: `archive · ${sizeOf(streams.reduce((sum, m) => sum + m.bytes, 0))}`,
-    title: `${n} of the tower's own logs (${streams.map((m) => m.file).join(', ')}), closed more than retention.days ago, gzipped in place: the limits and the budget read the same`,
+    title: `${n} of the tower's streams and its extensions' (${streams.map((m) => m.file).join(', ')}), closed more than retention.days ago, gzipped in place: the limits, the budget and the extensions' folds read the same`,
   }
 }
 

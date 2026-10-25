@@ -326,7 +326,7 @@ export const VERBS = {
           .describe("The floor's `tidy` as the board listed it, and the extensions' tidy entries it lists in `board.adds`, or any part of them: refused when anything in it no longer qualifies."),
       })
       .describe(
-        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the system's stream months closed that long: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
+        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the stream months closed that long, the system's and the project's, the extensions' streams among them: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
       ),
     reply: z.object({
       t: z.literal('tidied'),

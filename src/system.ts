@@ -167,6 +167,21 @@ const probeStreamsIn = (root: string, held: Map<string, HeldStream>): { streams:
   return { streams, files }
 }
 
+/**
+ * Every stream's month files under `streams/`, the system's (`system/<stream>/`) and each project's
+ * (`projects/<project>/<stream>/`), whoever writes them: the core's and the extensions' alike. Read by size only.
+ */
+const streamMonthsIn = (paths: SystemPaths): StreamMonth[] => {
+  const streamDirs = (root: string) => readdirSync(root, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? [path.join(root, d.name)] : []))
+  const dirs = [...streamDirs(systemStreamsPath(paths)), ...streamDirs(projectsStreamsPath(paths)).flatMap(streamDirs)]
+  return dirs.flatMap((dir) =>
+    logFilesIn(readdirSync(dir).filter((f) => MONTH_FILE.test(f))).map((f) => {
+      const file = path.join(dir, f)
+      return { file: path.relative(paths.streams, file), archived: isArchived(file), bytes: statSync(file).size }
+    }),
+  )
+}
+
 /** A stream folded as its facts arrive: `system`'s one, or each project's. */
 export type StreamFold = { stream: string; scope: 'system' | 'project'; init: unknown; step: (state: unknown, fact: StreamFact) => unknown; label: string }
 
@@ -273,6 +288,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let policyStreamFiles = new Map<string, HeldFacts>()
   let policies = new Map<string, PolicyFacts>()
   let streamFiles = new Map<string, HeldStream>()
+  let streamMonths: StreamMonth[] = []
   let probeStreams = new Map<string, ProbeReading[]>()
   let probes = new Map<string, ProbeFacts>()
   let live: HostLive | undefined
@@ -414,8 +430,15 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     probes = nextProbes
     onChange()
   }
+  /** Any stream's line or file, the extensions' too, moves the month files Tidy lists. */
+  const rescanMonths = () => {
+    const next = streamMonthsIn(paths)
+    if (asJson(next) === asJson(streamMonths)) return
+    streamMonths = next
+    onChange()
+  }
   const scheduleStreams = () => {
-    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams(), refoldAll('system'))), RESCAN_DEBOUNCE_MS)
+    streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), rescanStreams(), refoldAll('system'), rescanMonths())), RESCAN_DEBOUNCE_MS)
   }
 
   /** A policy's fact appends a line: its project's streams are folded again once the write settles. */
@@ -429,7 +452,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   }
   const schedulePolicyStreams = () => {
-    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams(), refoldAll('project'))), RESCAN_DEBOUNCE_MS)
+    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams(), refoldAll('project'), rescanMonths())), RESCAN_DEBOUNCE_MS)
   }
 
   /** Every read below that fails keeps its last read, and the failure goes to the tower's log: the next poll reads again. */
@@ -552,6 +575,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
   mkdirSync(projectsStreamsPath(paths), { recursive: true })
   rescanPolicyStreams()
+  rescanMonths()
   watching(watch(projectsStreamsPath(paths), { recursive: true }, schedulePolicyStreams), projectsStreamsPath(paths))
   watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
@@ -577,8 +601,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       }
     },
     probeReads: (name) => probeStreams.get(name) ?? [],
-    streamMonths: () =>
-      [...streamFiles, ...policyStreamFiles].map(([file, { bytes }]) => ({ file: path.relative(paths.streams, file), archived: isArchived(file), bytes })),
+    streamMonths: () => streamMonths,
     live: () => live,
     running: () => running,
     peers: () => peers,
