@@ -24,7 +24,7 @@ import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest 
 import { apiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal } from '../shared/cards.ts'
-import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch } from '../shared/launch.ts'
+import { newSessionId, NOTHING_CONTRIBUTED, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { nestedIn, qualifiedOf, tooDeep, type Caller } from '../shared/extensions.ts'
 import { callsignsOf, ConfigError, configuredUser, editorArgv, outsideProject, projectCollections, projectDirs, projectPlugins, sessionDirs, worktreeName, worktreesConfig, type Config, type EditorAction, type Project } from '../shared/model.ts'
 import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
@@ -305,7 +305,26 @@ export const dispatch = defineResource({
         if (lost) return lost
         const heir = carriesOn(source, conversation) ? newSessionId() : (await workerIds(config))()
         const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
-        const answer = await host(resumeRequest(source.header, conversation, prompt, heir, resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)), sessionDirs(project, source.header.cwd), configuredUser(config), brief, projectCollectionsPath(paths, source.header.project), projectPlugins(config, source.header.project)))
+        const { project: projectId, cwd } = source.header
+        const answer = await host(
+          resumeRequest({
+            kind: carriesOn(source, conversation) ? 'resume' : 'fork',
+            runtime: 'claude',
+            id: heir,
+            name: resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)),
+            project: projectId,
+            cwd,
+            dirs: sessionDirs(project, cwd),
+            user: configuredUser(config),
+            worktree: brief,
+            kept: projectCollectionsPath(paths, projectId),
+            plugins: projectPlugins(config, projectId),
+            contributed: NOTHING_CONTRIBUTED,
+            facts: [],
+            conversation,
+            prompt,
+          }),
+        )
         if (answer.t === 'spawned') await system.tracked(heir, TRACK_TIMEOUT_MS)
         return answer
       })
@@ -357,6 +376,20 @@ export const dispatch = defineResource({
       return { id, callsign: typedCallsign(typed, id) }
     }
 
+    /** A new worker's launch on the project's floor: where it starts, and what its spawn asked for. */
+    const newLaunch = (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch): SpawnLaunch => ({
+      kind: 'spawn',
+      runtime: 'claude',
+      project: projectId,
+      ...at,
+      user: configuredUser(config),
+      kept: projectCollectionsPath(paths, projectId),
+      plugins: projectPlugins(config, projectId),
+      contributed: NOTHING_CONTRIBUTED,
+      facts: [],
+      launch,
+    })
+
     /** A session in `cwd`, or in the hub's main checkout when none is given. */
     const spawnIn = (projectId: string, given: string | undefined, typed: string | undefined, launch: Launch) =>
       withProject(projectId, async (project, config) => {
@@ -367,7 +400,7 @@ export const dispatch = defineResource({
         if (lost) return lost
         const worker = await newWorker(config, typed)
         if ('t' in worker) return worker
-        return host(spawnRequest(worker.id, worker.callsign, projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), await briefFor(project, worktreesConfig(config, projectId).links, cwd), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+        return host(spawnRequest(newLaunch(config, projectId, { id: worker.id, name: worker.callsign, cwd, dirs: sessionDirs(project, cwd), worktree: await briefFor(project, worktreesConfig(config, projectId).links, cwd) }, launch)))
       })
 
     /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -408,7 +441,7 @@ export const dispatch = defineResource({
           const branch = request.branch ?? `${branchPrefix}${name}`
           const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
           const cwd = made.made[0].path
-          const answer = await host(spawnRequest(id, callsign, projectId, cwd, sessionDirs(project, cwd), launch, configuredUser(config), worktreeBrief(project, cwd, made.branch, linkedSources(project, links)), projectCollectionsPath(paths, projectId), projectPlugins(config, projectId)))
+          const answer = await host(spawnRequest(newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, made.branch, linkedSources(project, links)) }, launch)))
           if (answer.t === 'error') {
             await rollback(made.made)
             return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)
