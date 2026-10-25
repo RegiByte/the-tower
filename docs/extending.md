@@ -399,7 +399,7 @@ export default start
 The manifest is strict: a key this tower doesn't know refuses the extension, so declare in `requires.tower` the API
 version of the newest key you use. `start` returns a handler for every verb and read the manifest declares, and
 nothing else, a `parse` per collection or a `reduce` per stream it declares, a fold per subject kind it folds, a link
-per `around` and an answer per `answers` entry, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
+per `around` and an answer per `answers` entry, `launch` when it says `spawn.launch`, and `halt`. Its `ctx` holds who it is, its settings (and a floor's, `settingsOf`), whether it is on on a
 floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
 calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
 the served modules: removing one is a major.
@@ -512,11 +512,37 @@ stream codes and collections at its major. At load, a name listed there and gone
 is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
 every name of the bundled one's `contract.json` at the major it claims, or it is refused.
 
+**Launch** (API 1.87) shapes the workers the tower starts. `spawn.fields` declares fields a spawn sets as `x.<cap>.<field>`
+(`{ "role": { "schema": {"type": "string"}, "words": {"label": "Role"}, "options": { "from": "floor.x.roles.options" } } }`):
+each value is parsed by its `schema` and logged in the new session's log as `tower.x.<cap>.<field>` before its PTY
+starts, so a card fold reads it from `own.facts`. Every renderer's spawn form draws a field unless its `form` is
+`false`, its choices (`{value, label, hint?}`) read from the path `options.from` names in the extension's own floor
+part, which its floor fold's `x` declares as an array. A capability nobody provides, off on the floor, or a field it
+doesn't declare is `invalid`.
+
+`spawn.launch: true` means `start` returns `launch(request, ctx)`, called for every spawn, resume and fork on a floor
+where the extension is on, in dependency order. `request` is `{kind: 'spawn' | 'resume' | 'fork', runtime, project,
+cwd, model?, effort?, fields?, facts}`: `fields` its own field values on a spawn, `facts` its facts over the worker's
+lineage (a fork carries copies of its source's). `ctx` reads only: the floor's `settings`, `read`, and its
+collections' `list` and `read`. It returns parts the session's runtime places: `systemPrompt` (after the tower's
+brief), `prompt` (after the first prompt), `env` (in Claude's settings, without a parent session's markers),
+`defaults` (`model`, `effort`, used only when the spawn leaves one out), `args.claude` (Claude's own flags, each
+`--flag` or `--flag=value`, placed before the tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`,
+`defaults`, `exempt` and `reportsTo` count on a spawn only. A flag the tower passes (`--name`, `--settings`,
+`--add-dir`, `--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
+passes, and a flag, env key, `defaults` member or `reportsTo` two extensions both give, refuses the launch, naming
+both. A contributor that throws or returns what the runtime can't place refuses a spawn that carries its fields, and
+otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
+`reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
+starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin
+folder in the extension, loaded into every session on floors where it is on.
+
 ## Claude plugins
 
 `plugins`, at the top level or under a project, lists absolute plugin directories every session the tower starts
 loads, each passed to Claude as `--plugin-dir`. Your commands and skills live in one plugin outside your repos and
-reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next session started.
+reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next session started. An extension
+brings its own with `plugins.claude`.
 
 ```json
 { "plugins": ["/Users/you/code/my-workflow"] }

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -81,7 +81,10 @@ and how its findings reach the author.
   (`SendMessage`), so the hirer knows the review is in even if the author stalls; the author, once it has answered
   the notes, reports to its hirer what changed and whether the work is ready (the handbook's Reviews).
 - *A hire.* `tower review` spawns with `hire` like `tower hire`, so the tower logs `tower.hire` in the hirer's log and the
-  reviewer's card names who hired it; the floor's hiring limits never refuse a review ([[hiring-limits]]).
+  reviewer's card names who hired it; the floor's hiring limits never refuse a review ([[hiring-limits]]). The pair
+  and the exemption are still read from the first prompt beside the core facts `tower.reports-to` and `tower.exempt`
+  that launch contributors log ([[extensions]]); reviews moving into an extension replaces the prompt's reading with
+  those facts.
 - *One round.* The reviewer stops after delivering. A re-review is a new request: a new fork from a new snapshot.
 - *The pair is derived.* A worker whose first prompt is `reviewPrompt` reviews that callsign:
   [`reviewedIn`](ref:hub/src/shared/reviews.ts#reviewedIn) over the prompt read back from the first session's argv

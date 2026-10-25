@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The config names the plugins every session loads",
-  "summary": "Config plugins, at the top level and per project, are absolute plugin directories each passed to Claude as --plugin-dir on every spawn and resume the tower composes (hire and review included), beside the tower mod. The public tower ships no workflow: plugins is a primitive any user fills.",
+  "summary": "Config plugins, at the top level and per project, are absolute plugin directories each passed to Claude as --plugin-dir on every spawn and resume the tower composes (hire and review included), beside the tower mod, and after them each running extension's plugins.claude on the floors where it is on. The public tower ships no workflow: plugins is a primitive any user fills.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/model.ts#projectPlugins", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/host/session.ts#sessionArgv"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/shared/model.ts#projectPlugins", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/host/session.ts#sessionArgv", "hub/src/tower/extensions.ts#extensions"]
 }
 ---
 **Problem.** A user's own commands and skills, copied into every repo's `.claude/`, drift apart: one change has to be
@@ -29,6 +29,8 @@ touching any repo.
   hire` and `tower review` all load them. The host composes none of it ([[host-owns-ptys]]): it adds the mod's
   `--plugin-dir` before the client's args, and Claude takes the flag repeated. Each Claude reads its plugins as it
   starts: a changed plugin reaches the next session started, a changed list the next spawn or resume.
+- *An extension's.* A manifest's `plugins.claude` names a folder inside the extension; each running extension's joins
+  the list after the config's, on floors where it is on, for every spawn, resume and fork ([[extensions]]).
 - *What goes in a plugin.* Commands and skills that describe a workflow only. What a project adds (its knowledge base,
   its repos, its rules) stays in its CLAUDE.md, AGENTS.md or its own skills, which the workflow names by convention
   ("when the project keeps a knowledge base, its instructions say how to query it"). A plugin's commands are

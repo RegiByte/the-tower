@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Extensions: a manifest that declares, code that implements, resolved before anything runs",
-  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js. Since 1.85 every call runs through the chain of links extensions wrap around its verb, and a provider raises its hooks for others to answer, the core's discard.record among them.",
+  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js. Since 1.85 every call runs through the chain of links extensions wrap around its verb, and a provider raises its hooks for others to answer, the core's discard.record among them. Since 1.87 extensions shape the workers the tower starts: spawn fields logged as facts before the PTY, launch contributors whose parts the runtime places, a plugin per runtime, and the core facts tower.exempt and tower.reports-to.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts", "hub/src/shared/launch.ts#CORE_FLAGS", "hub/src/shared/launch.ts#spawnRequest", "hub/src/bridge/launch.ts#mergeParts", "hub/src/bridge/launch.ts#placeable", "hub/src/bridge/launch.ts#forkFacts", "hub/src/bridge/extensions.ts#compileFields", "hub/src/tower/dispatch.ts#contribute", "hub/src/tower/dispatch.ts#spawnFields", "hub/src/shared/spawn-form.ts#formFields", "hub/test/launch.test.ts", "hub/test/fixtures/extensions/roles/extension.json"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -213,13 +213,37 @@ and versioned without running anything, and a runtime where an extension's failu
   load, a name gone from it at the same major is `contract`, an error for a bundled extension and a warning for a
   user's; a user's extension replacing a bundled capability that lacks a name of the bundled `contract.json` at its
   major is refused ([`replacementProblem`](ref:hub/src/bridge/extensions.ts#replacementProblem)).
+- **Launch (1.87).** A manifest's `spawn.fields` each take a value's `schema`, `words`, `form` (drawn on every spawn
+  form unless `false`) and `options.from`, a path into its own floor part where its floor fold's `x` declares an array
+  ([`compileFields`](ref:hub/src/bridge/extensions.ts#compileFields)); `plugins` is keyed by a runtime the tower knows.
+  A spawn's `x.<cap>.<field>` is parsed by the field's schema ([`spawnFields`](ref:hub/src/tower/dispatch.ts#spawnFields):
+  a capability nobody provides, off on the floor, or a field it doesn't declare is `invalid`) and logged as
+  `tower.x.<cap>.<field>` in the host's spawn, before the PTY starts. `spawn.launch` means `start` returns `launch`,
+  called for every spawn, resume and fork on floors where it is on, in resolved order, with `LaunchCtx` (the floor's
+  settings, reads, its collections' list and read) ([`contribute`](ref:hub/src/tower/dispatch.ts#contribute)). Its
+  parts are intents the runtime places: `systemPrompt` after the tower's brief, `prompt` after the first, `env` in
+  Claude's `--settings` (the host's spawn carries no environment, and a host change would stop every worker) through
+  the parent-session scrub, `defaults` only where the spawn left a model or effort out, `args.claude` one flag each,
+  placed before the core's, `exempt` and `reportsTo`; the last four a spawn's only
+  ([`placeable`](ref:hub/src/bridge/launch.ts#placeable), [`mergeParts`](ref:hub/src/bridge/launch.ts#mergeParts)).
+  A flag the core composes ([`CORE_FLAGS`](ref:hub/src/shared/launch.ts#CORE_FLAGS), read from a launch with every
+  part set, never written out) or the config's `argv` passes, and a flag, env key, `defaults` member or `reportsTo`
+  two contributors give, refuse the launch naming both, a `conflict` problem on each. A contributor that throws or
+  returns what the runtime can't place refuses a spawn carrying its fields (`internal`), and is otherwise dropped with a
+  `launch` problem. Each `exempt` is logged as `tower.exempt {from, by}` and a `reportsTo` as `tower.reports-to
+  {callsign, session, by}`, the session the callsign names on the board then: core facts the core's crews and hiring
+  limits read ([[crews]], [[hiring-limits]]), drawn on the card as a badge, said by `tower whoami`, and listed per
+  extension at `GET /extensions` (`exempted`). A resume logs nothing again; a fork carries copies of its lineage's
+  `tower.x.*` facts and neither core fact ([`forkFacts`](ref:hub/src/bridge/launch.ts#forkFacts)). Each running
+  extension's `plugins.claude` joins the config's plugins on its floors ([[plugins]]). The spawn form draws the fields
+  ([`formFields`](ref:hub/src/shared/spawn-form.ts#formFields)); the roles fixture is the proof.
 - **Held by the contract test.** `test/served-exports.json` lists the manifest's key paths, each lane's ctx members
   ([`CTX_SINCE`](ref:hub/src/shared/extensions.ts#CTX_SINCE)) and the core's problem codes, names and hooks, so removing one
   without a major fails `npm test` ([[renderer-api-contract]]).
 
 Load, resolve, start and see arrived first (1.81), verbs and reads next (1.82), then stores (1.83), then folds and
-contributions (1.84), then middleware and hooks (1.85), then triggers, checks and restart (1.86). Launch
-contributors and the bundled extensions arrive as additions to the manifest and ctx, each an API minor.
+contributions (1.84), then middleware and hooks (1.85), then triggers, checks and restart (1.86), then launch
+(1.87). The bundled extensions arrive as additions to the manifest and ctx, each an API minor.
 
 **Alternatives considered.**
 
@@ -244,6 +268,12 @@ contributors and the bundled extensions arrive as additions to the manifest and 
   guard, and a guard that fails open is no guard.
 - *Answers that see each other's*: an answerer that needs to see or change the others' wraps the hook with `around`;
   answers stay independent, so one failing costs only itself.
+- *Contributed flags placed after the core's*: the core reads the model, effort and prompt back from argv's end
+  (`launchFlags`, `launchPrompt`); placed first, and each a single `--flag` or `--flag=value`, none can be read as one.
+- *The last contributor's flag winning*: no order of contributors would silently decide what Claude sees.
+- *A crew edge as a fold's contribution*: the core's board, built before any fold, couldn't read it; it is a core fact.
+- *The hire's limit checked before its contributors*: an exemption is theirs to give, so the gate runs after them; a
+  refused cut is rolled back.
 - *A process per extension*: isolation at the cost of every lane crossing a process boundary; same-user code is
   trusted, and the guards catch mistakes, not malice. It was also the other way to reload a folder's code; the resolve
   hook does it in the tower's process.
@@ -264,6 +294,9 @@ API 1.85: the manifest's
 `tower/tidy.apply`, `worktree/discard`'s and `tidy`'s reply `x`, and `tidy`'s `plan.x`.
 API 1.86: the manifest's `slots`,
 `triggers` and `checks`, `Started.slots` and `board`, `ctx.run`, `ExtensionView.slots` and the state `restarting`, the
-problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots.js`.
+problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots.js`. API 1.87: the manifest's
+`spawn` and `plugins`, `Started.launch` and `LaunchCtx`, the problem lane `launch`, the spawn input's `x`,
+`ExtensionView.spawn`, `card.crew` and `card.exempt`, `GET /extensions`' `exempted`, and the session facts
+`tower.exempt` and `tower.reports-to`.
 No host change. No extension ships yet: the bundled
 ones move in one at a time.

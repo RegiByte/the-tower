@@ -4,9 +4,9 @@
   "name": "Session lifecycle",
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut"]
+  "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#newLaunch", "hub/src/tower/dispatch.ts#contribute"]
 }
 ---
 ```mermaid
@@ -20,14 +20,16 @@ sequenceDiagram
   participant L as [[live-system]]
   participant F as [[log-reductions]]
   O->>P: a new worker
-  P->>T: spawn (project, dir or cut, model, effort, first prompt)
+  P->>T: spawn (project, dir or cut, model, effort, first prompt, x: extensions' fields)
+  T->>T: each field parsed by its extension's schema
   opt cut: a new worktree
     T->>T: git fetch, worktree add in every repo (src/worktrees.ts)
   end
+  T->>T: the floor's launch contributors, in resolved order: their parts merged, a conflict refused
   T->>H: spawn {id, project, cwd, args, facts?} (composed by spawnRequest)
   H->>R: read config.json, sessionDirs(project, cwd)
   H->>C: pty.spawn(argv + --plugin-dir (tower-mod, with the hooks) + args (--settings: the other session dirs, the fullscreen TUI))
-  H->>R: sessions/<id>.jsonl header {runtime: claude}, then the spawn's tower.* facts as h events
+  H->>R: sessions/<id>.jsonl header {runtime: claude}, then the spawn's tower.* facts as h events (tower.x.<cap>.<field>, tower.exempt, tower.reports-to)
   H-->>T: spawned <id>
   loop while it runs
     C->>H: PTY output
@@ -50,7 +52,12 @@ sequenceDiagram
   ([`newWorker`](ref:hub/src/tower/dispatch.ts#newWorker), [[callsign-free-name]]) and builds the request with
   [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which names Claude by its [[callsign]] and composes its
   `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]); the host adds only its own wiring
-  ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)).
+  ([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)). Before it, [`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch)
+  runs the floor's launch contributors ([`contribute`](ref:hub/src/tower/dispatch.ts#contribute), [[extensions]]): their
+  flags go before the core's, their text after the tower's brief and the first prompt, their env in `--settings`, a
+  model or effort only where the spawn left it out, and the spawn's fields and the core facts they give are the
+  `facts` the host logs before the PTY starts. A resume runs them too and logs nothing; a fork carries its lineage's
+  `tower.x.*` facts.
 - **Where.** A session starts in a main checkout (`spawn {cwd}`, the hub's when `cwd` is left out), in a [[worktree]]
   the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, cuts the same name in every repo first, then starts the worker in the hub's worktree, and rolls the cut
   back if the spawn fails ([`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)). The host accepts a `cwd` only through

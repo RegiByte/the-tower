@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Who hired whom is a fact, and hiring through the tower command has limits",
-  "summary": "A spawn with hire is its by's hire: the tower refuses it past the floor's hiring limits (how deep a hire stands, how many of a worker's hires run at once), takes a hirer's hires one at a time, and logs tower.hire in the hirer's own log; the board derives card.hiredBy across resumes. tower hire and tower review spawn that way; reviews are never refused. It guards against a chain of hires running away by accident, not against a worker that spawns without hire.",
+  "summary": "A spawn with hire is its by's hire: the tower refuses it past the floor's hiring limits (how deep a hire stands, how many of a worker's hires run at once), takes a hirer's hires one at a time, and logs tower.hire in the hirer's own log; the board derives card.hiredBy across resumes. tower hire and tower review spawn that way; reviews, and hires a launch contributor exempts, are never refused. It guards against a chain of hires running away by accident, not against a worker that spawns without hire.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLine", "hub/src/shared/worker-details.ts#hirerName"]
+  "reviewed": "2026-10-25",
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLine", "hub/src/shared/worker-details.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -32,8 +32,8 @@ the easy path stops them, as long as it is named for what it is.
 - *The limits* (config `hiring: {depth, live}`, top level and per project, the project's winning per key, through
   [`hiringConfig`](ref:hub/src/shared/model.ts#hiringConfig); defaults in [[docs-config]]). A worker nobody hired stands at
   depth 0, a hire one deeper than its hirer ([`hireDepth`](ref:hub/src/shared/crews.ts#hireDepth)); a hire may stand
-  at most `depth` deep. At most `live` of a worker's hires run at once, reviewers aside
-  ([`liveHires`](ref:hub/src/shared/crews.ts#liveHires)). [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal)
+  at most `depth` deep. At most `live` of a worker's hires run at once, the exempt aside
+  ([`liveHires`](ref:hub/src/shared/crews.ts#liveHires), [`exemptFromHiring`](ref:hub/src/shared/crews.ts#exemptFromHiring)). [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal)
   says why a worker may not hire, as a sentence; the tower answers a hire past the spawn's floor's limits with it,
   as error `limited`, and `tower hire` tells the worker to ask the user. A hire on another floor (`tower hire floor
   <id>`) meets that floor's limits, the floor it would crowd, with the hirer's depth and live hires counted on every
@@ -46,6 +46,12 @@ the easy path stops them, as long as it is named for what it is.
 - *Reviews are never refused.* A self-review must stay possible at any depth: the system enables workflows, it
   doesn't enforce them. A hire whose prompt starts a reviewer (`reviewedIn`, as `liveHires` leaves it out) is not
   weighed, and still logs `tower.hire`, so the pair is attributed.
+- *Exempt by an extension.* A launch contributor may return `exempt: ['hiring']` on a spawn ([[extensions]]). A hire is
+  weighed after its contributors have run, just before the host starts it (a cut made first is rolled back when it is
+  refused), and one they exempt is not weighed. Each exemption is logged in the new worker's log as `tower.exempt
+  {from, by}` before it starts, so `card.exempt` shows it on the card as a badge in every renderer, `tower whoami` says
+  "exempt from hiring limits by <cap>", `GET /extensions` lists whom each extension exempted, and `liveHires` leaves
+  the worker out: no limit is lifted unseen.
 - *Drawn.* `tower whoami` tells a hired worker who hired it, and every renderer says "hired by X" through
   [`pairLine`](ref:hub/src/shared/worker-details.ts#pairLine), "hired by X (floor)" when X works on another floor
   ([`hirerName`](ref:hub/src/shared/worker-details.ts#hirerName)).

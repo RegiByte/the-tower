@@ -2,14 +2,15 @@
 {
   "type": "decision",
   "name": "Crews: who reports to whom is derived, drawn as a tree on duty and in the archive, and sent home together",
-  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the author whose work it reviews, else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
+  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the author whose work it reviews, else the worker a launch contributor named in tower.reports-to at its spawn, else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-25",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
+    "hub/src/bridge/facts.ts#REPORTS_TO",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeActions",
@@ -52,8 +53,12 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 **How.**
 - *One edge, on the board.* [`withReports`](ref:hub/src/bridge/board.ts#withReports) gives each worker's current card (no
   `continuedBy`) `reportsTo`: the card of its author when it reviews (`workerNamed` on the floor, the one on duty first),
-  else of its hirer, carried on through resumes ([`carriedOn`](ref:hub/src/bridge/board.ts#carriedOn): `hiredBy.session`
-  is where the hire was made, and the hirer may have been resumed since). A reviewer the user started has no hirer and
+  else of the worker its crew edge names (`card.crew`: a launch contributor's `reportsTo`, logged at its spawn as
+  `tower.reports-to {callsign, session, by}`, the session that callsign named then, [[extensions]]), else of its hirer,
+  each carried on through resumes ([`carriedOn`](ref:hub/src/bridge/board.ts#carriedOn): `hiredBy.session`
+  is where the hire was made, and the hirer may have been resumed since). The edge is a core fact read while the core's
+  board is built, never an extension's fold, so send-home, seats, `tower agents` and `tower home` follow it; a fork
+  carries none. A reviewer the user started has no hirer and
   still nests under its author: it works for that worker. A fork is a new worker with neither, so it heads its own crew.
 - *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by start), `crewOf`
   (everyone under it, each before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads
@@ -102,7 +107,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   every crew read upside down, the other way round from the floor on duty.
 - *Keeping a non-matching coordinator as a dimmed context row while filtering*: more rows than the words asked for.
 
-**Impact.** Board: `card.reportsTo` and the card verb `send-home`, its call a list of kills, on every worker;
+**Impact.** Board: `card.reportsTo` (and since 1.87 `card.crew`, the edge a launch contributor logged) and the card verb `send-home`, its call a list of kills, on every worker;
 renderers draw no Kill on a worker. Shared: the crew folds and the archive's order are `/cards.js` exports every
 renderer draws from. The board carries only today's past cards, so the sidebar's fold counts those; the archive's
 tree reads the archive too.
