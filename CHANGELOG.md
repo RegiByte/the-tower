@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.61.1
+
+A policy's last run names its worker again when that worker has left the board, as before v1.61.0. No restart beyond
+the tower's own (`tower down tower`, then `tower up tower`), no config change, the renderer API 1.91 → 1.92
+(additive).
+
+- **For extension authors.** A fold's `ctx.callsignOf(session)` names the worker of any session the tower has known,
+  archived ones included.
+
 ## v1.61.0
 
 The first built-ins are extensions: quota, drafts and policies now live in the checkout's `extensions/`, each a
