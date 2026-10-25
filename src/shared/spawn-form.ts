@@ -3,6 +3,7 @@ import type { ClaudeDefaults } from '../bridge/defaults.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
 import { base, esc, modelName } from './format.ts'
+import type { SpawnOption, Words } from './extensions.ts'
 import { can, offeredCall } from './offered.ts'
 import { WORKTREE_STATE_NAME, worktreeBranch } from './worktree-words.ts'
 
@@ -20,9 +21,42 @@ export type Where = 'new' | 'worktree' | 'main'
 /**
  * The new-worker form's values, named as its fields are. `worktree`: an existing worktree's first folder; `checkout`:
  * a main checkout. An empty `callsign`, `name`, `branch` or `base` is left to the tower (drawn at random, the callsign,
- * the prefix, origin's default), an empty `model` or `effort` to Claude.
+ * the prefix, origin's default), an empty `model` or `effort` to Claude. `x`: the extensions' spawn fields by capability,
+ * named `x.<cap>.<field>` in the form; an empty one is left out.
  */
-export type SpawnForm = { where: Where; worktree: string; checkout: string; callsign: string; name: string; branch: string; base: string; model: string; effort: string; prompt: string }
+export type SpawnForm = {
+  where: Where
+  worktree: string
+  checkout: string
+  callsign: string
+  name: string
+  branch: string
+  base: string
+  model: string
+  effort: string
+  prompt: string
+  x: Record<string, Record<string, string>>
+}
+
+/** An extension's spawn field as the form draws it on a floor: its choices read from the extension's floor part, or typed. */
+export type FormField = { cap: string; name: string; words: Words; options?: SpawnOption[] }
+
+/** The value at a dotted path below `value`: `undefined` where it holds none. */
+const at = (value: unknown, path: string[]): unknown => path.reduce<unknown>((v, key) => (v !== null && typeof v === 'object' ? (v as Record<string, unknown>)[key] : undefined), value)
+
+/**
+ * The spawn fields the form draws on `f`, in the board's order: each running extension's on a floor it is on, its
+ * options read from `f`'s part at the path it names (`floor.x.roles.options`).
+ */
+export const formFields = (board: Board, f: Floor): FormField[] =>
+  board.extensions
+    .filter((e) => e.state === 'started' && !e.off?.includes(f.id))
+    .flatMap((e) =>
+      (e.spawn?.fields ?? []).map((field) => {
+        const options = field.options === undefined ? undefined : at(f, field.options.split('.').slice(1))
+        return { cap: e.provides, name: field.name, words: field.words, ...(field.options !== undefined && { options: Array.isArray(options) ? (options as SpawnOption[]) : [] }) }
+      }),
+    )
 
 export const MODELS = ['fable', 'opus', 'sonnet', 'haiku']
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
@@ -50,16 +84,28 @@ export const shellPlaces = (floors: Floor[], first?: string): ShellPlace[] =>
 
 /** The form as it opens, and as a quick hire sends it: everything left to its default. */
 export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
-  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt,
+  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt, x: {},
 })
 
-/** The form's values from its fields' entries (`new FormData(form)`), the defaults under them. */
-export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValue]>): SpawnForm => ({ ...spawnDefaults(f), ...Object.fromEntries(entries) })
+/** The name an extension's field has in the form. */
+const fieldName = (cap: string, name: string) => `x.${cap}.${name}`
+
+/** The form's values from its fields' entries (`new FormData(form)`), the defaults under them; `x.<cap>.<field>` gathered in `x`. */
+export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValue]>): SpawnForm => {
+  const all = [...entries].map(([k, v]): [string, string] => [k, String(v)])
+  const x: SpawnForm['x'] = {}
+  for (const [key, value] of all.filter(([k]) => k.startsWith('x.'))) {
+    const [, cap, name] = key.split('.')
+    x[cap] = { ...x[cap], [name]: value }
+  }
+  return { ...spawnDefaults(f), ...Object.fromEntries(all.filter(([k]) => !k.startsWith('x.'))), x }
+}
 
 /** The request a form sends: a cut, or a start in the directory picked. Throws once the floor no longer offers it (`offeredCall`). */
 export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs['spawn']>] => {
   const given = (o: Record<string, string>) => Object.fromEntries(Object.entries(o).filter(([, x]) => x.trim()).map(([k, x]) => [k, x.trim()]))
-  const launch = given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt })
+  const x = Object.fromEntries(Object.entries(v.x).flatMap(([cap, fields]) => (Object.keys(given(fields)).length ? [[cap, given(fields)]] : [])))
+  const launch = { ...given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt }), ...(Object.keys(x).length && { x }) }
   if (v.where === 'new') return [offeredCall(f, 'cut', f.name), { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) }]
   return [offeredCall(f, 'spawn', f.name), { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
@@ -83,8 +129,8 @@ const formCallsign = (v: SpawnForm) => {
   return !given || given.includes('-') ? given : `${given}-<nn>`
 }
 
-/** What starting the form as it stands does, as a line of facts. `defaults`: the board's `claudeDefaults`. */
-export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefaults = {}): string {
+/** What starting the form as it stands does, as a line of facts. `defaults`: the board's `claudeDefaults`; `fields`: the extensions' (`formFields`). */
+export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefaults = {}, fields: FormField[] = []): string {
   const repos = [f.hub, ...f.repos].map(base).join(' + ')
   const joined = joinable(f).find((w) => w.repos[0].path === v.worktree)
   const others = joined?.sessions.length ?? 0
@@ -101,7 +147,11 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
     v.effort ? `${v.effort} effort` : observed("Claude's effort", defaults.effort),
     v.prompt.trim() ? 'starts on the prompt' : 'starts idle',
   ]
-  return [...(callsign ? [`as <b>${esc(callsign)}</b>`] : []), ...place, ...claude.map(esc)].map((fact) => `<span>${fact}</span>`).join('')
+  const added = fields.flatMap((field) => {
+    const value = v.x[field.cap]?.[field.name]?.trim()
+    return value ? [`${field.words.label.toLowerCase()} <b>${esc(field.options?.find((o) => o.value === value)?.label ?? value)}</b>`] : []
+  })
+  return [...(callsign ? [`as <b>${esc(callsign)}</b>`] : []), ...place, ...claude.map(esc), ...added].map((fact) => `<span>${fact}</span>`).join('')
 }
 
 /** Words for what Claude picks, with what it was seen to pick when known (`Board.claudeDefaults`). */
@@ -120,15 +170,25 @@ const labelHtml = (name: string, optional = false) => `<span class="lbl eyebrow"
 
 const optionsHtml = (values: string[], none: string) => [`<option value="">${esc(none)}</option>`, ...values.map((v) => `<option>${esc(v)}</option>`)].join('')
 
+/** An extension's field: a choice of its options, or typed; its hint as the placeholder or the empty choice. */
+const formFieldHtml = ({ cap, name, words, options }: FormField) =>
+  `<label class="wide">${labelHtml(words.label, true)}${
+    options
+      ? `<select name="${esc(fieldName(cap, name))}"${words.hint ? ` title="${esc(words.hint)}"` : ''}><option value="">${esc(words.hint ?? 'none')}</option>${options
+          .map((o) => `<option value="${esc(o.value)}"${o.hint ? ` title="${esc(o.hint)}"` : ''}>${esc(o.label)}</option>`)
+          .join('')}</select>`
+      : `<input name="${esc(fieldName(cap, name))}" autocomplete="off" spellcheck="false"${words.hint ? ` placeholder="${esc(words.hint)}"` : ''}>`
+  }</label>`
+
 /**
  * The new-worker form both renderers put in their dialog: the first prompt beside where and how the worker starts,
  * and a line saying what Start will do. `sign`: the floor's sign as the renderer draws it; `draft`: the draft it was
  * opened on. Its buttons carry `data-close` (`cancel`, `start`) and submit nothing; `[data-summary]` is the line to
  * redraw from `spawnSummaryHtml` as the fields change, `[name=branch]`'s placeholder from `branchPlaceholder`, and
  * `[data-callsign-why]` and `[name=callsign]`'s validity from `callsignRefusal`. `defaults`: the board's `claudeDefaults`,
- * said beside each of Claude's defaults.
+ * said beside each of Claude's defaults. `fields`: the extensions' spawn fields on the floor (`formFields`), drawn below Claude's.
  */
-export function spawnFormHtml(f: Floor, { sign, draft, defaults = {} }: { sign: string; draft?: string; defaults?: ClaudeDefaults }): string {
+export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [] }: { sign: string; draft?: string; defaults?: ClaudeDefaults; fields?: FormField[] }): string {
   const v = spawnDefaults(f)
   const worktrees = joinable(f)
   const repos = [f.hub, ...f.repos]
@@ -158,11 +218,12 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {} }: { sign: 
         <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
         <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, defaultOption(modelName(defaults.model)))}</select></label>
         <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, defaultOption(defaults.effort))}</select></label>
+        ${fields.map(formFieldHtml).join('')}
       </div>
     </div>
   </div>
   <p class="spawn-error" role="alert" data-spawn-error></p>
-  <footer><p class="summary" data-summary>${spawnSummaryHtml(f, v, defaults)}</p>
+  <footer><p class="summary" data-summary>${spawnSummaryHtml(f, v, defaults, fields)}</p>
     <button type="button" data-close="cancel">Cancel</button><button type="button" class="primary" data-close="start">Start <kbd>⌘⏎</kbd></button></footer>
 </form>`
 }

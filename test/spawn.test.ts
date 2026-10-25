@@ -4,7 +4,7 @@ import { spawnClosed, spawnHandlers, type SpawnEffect, type SpawnEvent, type Spa
 import type { SpawnForm } from '../src/shared/cards.ts'
 
 const h = spawnHandlers<string>()
-const form: SpawnForm = { where: 'main', worktree: '', checkout: '/hub', callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt: 'go' }
+const form: SpawnForm = { where: 'main', worktree: '', checkout: '/hub', callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt: 'go', x: {} }
 
 /** Runs events from `state` as the loop does, answering the state they leave and every effect but `state`. */
 function run(events: SpawnEvent<string>[], state: Spawning<string> = spawnClosed()) {

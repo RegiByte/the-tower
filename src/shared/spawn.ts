@@ -1,6 +1,6 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
-import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
+import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, formFields, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
 import { draftsOf, keepUnsent, titleOf, type Draft, type DraftIo } from './drafts.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
@@ -113,7 +113,7 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
     field('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
     field('callsign').setCustomValidity(refused)
     dialog.querySelector('[data-callsign-why]')!.textContent = refused
-    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().claudeDefaults)
+    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().claudeDefaults, formFields(io.board(), f))
     return v
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
@@ -131,7 +131,7 @@ export function wireSpawn<D>(dialog: HTMLDialogElement, io: SpawnIo<D>): Loop<Sp
     execute: {
       show: ({ project, text, draft }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft, defaults: io.board().claudeDefaults })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft, defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
         prompt().value = text
         sync()
         dialog.showModal()
