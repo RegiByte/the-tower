@@ -1,5 +1,6 @@
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
-import { REVIEWS } from '../../../src/shared/reviews.ts'
+import { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
+import type { FloorThread } from '../../../extensions/reviews/threads.ts'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
 import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room, type RoomId } from './floorplan.ts'
@@ -164,7 +165,7 @@ export type WallSlot = { minX: number; maxX: number; z: number; face: number; he
  * A floor's pigeonhole, when it keeps review threads: its center against the control room's outer wall (facing +x), and
  * its slots, a checkout's thread each, the latest written first, as many as fit; `more` counts the rest.
  */
-export type PigeonholeSlot = { x: number; z: number; threads: Floor['threads']; more: number }
+export type PigeonholeSlot = { x: number; z: number; threads: FloorThread[]; more: number }
 
 /** A game's cabinet against the game room's front wall, facing into the room (-z): its center on the floor, and who kept it. */
 export type CabinetSlot = { id: string; tag: string; modifiedAt: number; keptBy: string | undefined; x: number; z: number }
@@ -477,14 +478,14 @@ function arcadeSignFor(floor: Floor, rooms: Room[]): ArcadeSignSlot | undefined 
 /** A pigeonhole's slots, columns by rows, each a cell this wide and high. */
 export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth: 0.32, bottom: 0.4 }
 
-const lastAt = (t: Floor['threads'][number]) => t.last?.at ?? ''
+const lastAt = (t: FloorThread) => t.last?.at ?? ''
 
 /** A floor's pigeonhole beside the nook, on the game room's outer wall between its back and its door. */
 function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined {
-  if (!floor.collections.some((c) => c.id === REVIEWS)) return undefined
+  if (!keepsThreads(floor)) return undefined
   const game = roomOf(rooms, 'game')
   const fit = PIGEONHOLE.columns * PIGEONHOLE.rows
-  const threads = floor.threads.toSorted((a, b) => lastAt(b).localeCompare(lastAt(a)) || a.checkout.localeCompare(b.checkout))
+  const threads = floorThreadsOf(floor).toSorted((a, b) => lastAt(b).localeCompare(lastAt(a)) || a.checkout.localeCompare(b.checkout))
   return { x: game.box.maxX + PIGEONHOLE.depth / 2, z: (game.box.minZ + game.door.z - ROOM_DOOR / 2) / 2, threads: threads.slice(0, fit), more: Math.max(0, threads.length - fit) }
 }
 

@@ -2,8 +2,8 @@ import type * as THREE from 'three'
 import { draftItem } from '../../../extensions/drafts/client/drafts.ts'
 import type { ShelfEntry } from '../../../src/shared/model.ts'
 import type { Board, Card } from './api.ts'
-import { REVIEWS } from '../../../src/shared/reviews.ts'
-import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, threadCheckoutOf, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
+import { cardReviews, floorThreadsOf, keepsThreads as floorKeepsThreads, threadCheckout } from '../../../extensions/reviews/client/panel.ts'
+import { HOST_MEANS, base, can, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
@@ -133,16 +133,20 @@ const goOn = (board: Board, scene: Scene, c: Card): Offer[] =>
 const floorOf = (board: Board, project: string) => board.floors.find((f) => f.id === project)
 
 /** Whether a floor keeps review threads. */
-export const keepsThreads = (board: Board, project: string) => Boolean(floorOf(board, project)?.collections.some((c) => c.id === REVIEWS))
+export const keepsThreads = (board: Board, project: string) => {
+  const f = floorOf(board, project)
+  return f !== undefined && floorKeepsThreads(f)
+}
 
 const notes = (n: number) => `${n} note${n === 1 ? '' : 's'}`
 
 /** A worker's review thread: its own checkout's, its author's for a reviewer, with what is new to it. */
 const threadOffer = (board: Board, c: Card): Offer[] => {
   if (!keepsThreads(board, c.project)) return []
-  const checkout = threadCheckoutOf(c)
+  const checkout = threadCheckout(c)
   if (checkout !== c.checkout) return [{ verb: 'thread', label: `the review thread of ${checkout}` }]
-  return [{ verb: 'thread', label: c.unseen ? `read ${notes(c.unseen)} new to it` : 'review thread' }]
+  const unseen = cardReviews(c)?.unseen
+  return [{ verb: 'thread', label: unseen ? `read ${notes(unseen)} new to it` : 'review thread' }]
 }
 
 const homeLabel = (board: Board, c: Card) => {
@@ -197,9 +201,10 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
   desk: workerAt('sit'),
   papers(a, board) {
     const c = findCard(board, a.id)
-    if (!c?.unseen) return []
+    const unseen = c && cardReviews(c)?.unseen
+    if (!c || !unseen) return []
     return [
-      { verb: 'thread', label: `read ${notes(c.unseen)} new to ${c.callsign}` },
+      { verb: 'thread', label: `read ${notes(unseen)} new to ${c.callsign}` },
       ...(can(c, 'submit') ? [{ verb: 'send' as const, label: `send them to ${c.callsign}` }] : []),
       { verb: 'use', label: c.live ? 'sit' : 'see its last screen' },
     ]
@@ -211,12 +216,13 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
   },
   thread(a, board) {
     const f = floorOf(board, a.project)
-    const t = f?.threads.find((t) => t.checkout === a.checkout)
+    const t = (f ? floorThreadsOf(f) : []).find((t) => t.checkout === a.checkout)
     if (!t) return []
     const to = sendTarget(f!, a.checkout, undefined)
+    const unseen = to && cardReviews(to)?.unseen
     return [
       { verb: 'thread', label: `read the thread of ${a.checkout}: ${notes(t.messages)}` },
-      ...(to?.unseen ? [{ verb: 'send' as const, label: `send ${notes(to.unseen)} new to ${to.callsign}` }] : []),
+      ...(to && unseen ? [{ verb: 'send' as const, label: `send ${notes(unseen)} new to ${to.callsign}` }] : []),
     ]
   },
   station(a, board, scene) {

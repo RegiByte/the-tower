@@ -7,9 +7,10 @@ import { tagOf } from '../../../src/shared/tags.ts'
 import { threadCheckoutOf } from '../../../src/shared/cards.ts'
 import { DRAFTS } from '../../../extensions/drafts/client/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
-import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../src/shared/reviews.ts'
+import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../extensions/reviews/client/reviews.ts'
+import type { CardPart, FloorPart, NoteCall } from '../../../extensions/reviews/threads.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
-import { cardOffers, conversationOffers, floorOffers, noteActions, offered, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
+import { cardOffers, conversationOffers, floorOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
@@ -119,7 +120,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
   return {
     id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
-    checkoutState: { is: 'live' }, threadState: { is: 'live' },
+    checkoutState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     reviews: f.reviews === undefined ? undefined : callsign(idOf(project, f.reviews)),
     ...life, hiredBy, enteredAt, startedAt, cols: 120, rows: 40,
@@ -162,20 +163,25 @@ const reviewsCollection = (project: string, threads: Record<string, string>, now
 }]
 
 /**
- * A floor's threads as the board lists them, and each card with what of its checkout's thread is new to it; on a floor
- * keeping threads, every checkout's work goes on, so each offers a note.
+ * A floor's threads as the reviews extension folds them, and each card's reviews part with what of its checkout's
+ * thread is new to it; on a floor keeping threads, every checkout's work goes on, so each offers a note.
  */
-function withThreads(f: FloorFacts, cards: Card[]): Pick<Floor, 'threads' | 'cards'> {
-  const parsed = Object.entries(f.threads ?? {}).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
-  const notes = (checkout: string) => noteActions(f.id, checkout, f.threads !== undefined)
+function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Card[] } {
+  if (!f.threads) return { cards }
+  const parsed = Object.entries(f.threads).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
+  const note = (checkout: string): NoteCall => ['reviews/append', { project: f.id, checkout }]
+  const threads: FloorPart['threads'] = parsed.map(({ checkout, thread }) => ({
+    key: `${f.id}/${checkout}`, checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const },
+    verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }],
+    last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
+  }))
   return {
-    threads: parsed.map(({ checkout, thread }) => ({
-      checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const }, ...offered(notes(checkout)),
-      last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
-    })),
+    x: { [REVIEWS]: { threads } satisfies FloorPart },
     cards: cards.map((c) => {
-      const thread = parsed.find((t) => t.checkout === threadCheckoutOf(c))?.thread
-      return { ...c, ...offered([...c.actions, ...notes(threadCheckoutOf(c))]), ...(thread && { unseen: unseenBy(thread, c.callsign).length }) }
+      const checkout = threadCheckoutOf(c)
+      const thread = parsed.find((t) => t.checkout === checkout)?.thread
+      const part: CardPart = { thread: checkout, threadState: { is: 'live' }, ...(thread && { unseen: unseenBy(thread, c.callsign).length }), note: note(checkout) }
+      return { ...c, x: { ...c.x, [REVIEWS]: part } }
     }),
   }
 }
@@ -196,7 +202,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
   const threaded = floors.map((f) => withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers))))
   const reporting = withReports(threaded.flatMap((t) => t.cards))
   const built = floors.map((f, i) => {
-    const { threads } = threaded[i]
+    const { x } = threaded[i]
     const cards = reporting.filter((c) => c.project === f.id)
     const worktrees = worktreesOf(f)
     const tidy = tidyOf(cards, worktrees)
@@ -208,7 +214,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
         ...(f.games ? gamesCollection(f.id, f.games, cards, now) : []),
       ],
       worktrees, branches: [], bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
-      tidy, threads, cards, policies: [],
+      tidy, threads: [], cards, policies: [], ...(x && { x }),
       ...floorOffers(f.id, true, true, false, tidy),
     }
   })

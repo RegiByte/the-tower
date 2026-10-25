@@ -1,6 +1,7 @@
 import { actionWords, heededAsks, isAsk, isCommand, projectOfKey, runCommand, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, probedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
-import { threadWant, panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus, cardThread } from '/panels.js'
+import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
+import { cardThread, threadWant } from '/x/reviews/panel.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'

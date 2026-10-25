@@ -1,6 +1,7 @@
 import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, PROBE_ATTENTION, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, probeLine, probeTitle, quotaOf, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
-import { REVIEWS, landedThreads } from '/reviews.js'
+import { REVIEWS, landedThreads } from '/x/reviews/reviews.js'
+import { floorThreadsOf } from '/x/reviews/panel.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
 import { offerWords, policyZone } from '/x/policies/panel.js'
 import { floorPolicies, offerAskKey, POLICIES, runOf, slotWords } from '/x/policies/policies.js'
@@ -205,7 +206,7 @@ export async function sidebar(deps) {
 
   /** A floor's review threads, each named by its checkout beside its tag, and the threads Tidy filed once their work landed, folded. @param {Floor} f */
   const threadsHtml = (f) => {
-    const rows = f.threads.map((t) => {
+    const rows = floorThreadsOf(f).map((t) => {
       const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
       return `<button class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
     })
@@ -291,7 +292,7 @@ export async function sidebar(deps) {
     const trees = f.worktrees.length + f.branches.length
     const atRisk = risky(f)
     const past = pastCount(f)
-    const threads = f.threads.length
+    const threads = floorThreadsOf(f).length
     const landed = landedOf(f).length
     const kept = keptCollections(f)
     const edited = editedRows(f).length

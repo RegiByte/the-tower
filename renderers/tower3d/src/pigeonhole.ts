@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { type } from '../../../src/shared/design.ts'
+import { cardReviews } from '../../../extensions/reviews/client/panel.ts'
 import { act } from './acts.ts'
 import { WORLD, workerIn } from './cards.ts'
 import { PIGEONHOLE, type Level, type PigeonholeSlot } from './layout.ts'
@@ -22,7 +23,7 @@ export type Pigeonhole = { group: THREE.Group; key: string }
 const slotsOf = (level: FloorLevel, slot: PigeonholeSlot) =>
   slot.threads.map((t) => {
     const worker = workerIn(level.floor, t.checkout)
-    return { ...t, unseen: worker?.onDuty ? (worker.unseen ?? 0) : 0 }
+    return { ...t, unseen: worker?.onDuty ? (cardReviews(worker)?.unseen ?? 0) : 0 }
   })
 
 /** What the rack shows: rebuilt only when this changes. */

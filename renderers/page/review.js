@@ -1,6 +1,7 @@
-import { threadCheckoutOf, can, offeredCall, sendTarget, workerIn, plural } from '/cards.js'
-import { THE_USER, REVIEWS, sendText, threadId, unseenBy } from '/reviews.js'
-import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, heldThread, noChanges, readChanges, readThread, scopeOf, threadFailure, threadWant, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, viewedCount, cardThread, threadViewOf } from '/panels.js'
+import { noLongerOffered, offeredCall, sendTarget, workerIn, plural } from '/cards.js'
+import { THE_USER, REVIEWS, sendText, threadId, unseenBy } from '/x/reviews/reviews.js'
+import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, reviewsHtml, threadCheckout, threadFailure, threadViewOf, threadWant } from '/x/reviews/panel.js'
+import { anchorOf, anchorSpot, changedFiles, changesHtml, changesPath, changesFailure, changesHandlers, changesOf, noChanges, readChanges, scopeOf, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, viewedCount } from '/panels.js'
 import { loop, timers } from '/loop.js'
 import { heldHandlers, noReads, reading } from '/reads.js'
 import { $, toast, told } from './kit.js'
@@ -11,7 +12,8 @@ import { pressing } from '/press.js'
  * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
  * @import { DiffFile } from '../../src/bridge/diff.ts'
  * @import { Anchor, ReviewThread } from '../../src/shared/reviews.ts'
- * @import { Verbs } from '../../src/shared/api.ts'
+ * @import { NoteCall } from '../../extensions/reviews/threads.ts'
+ * @import { Replies, Verbs } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { ChangesEvent, ChangesRead, ChangesReads, ChangesScope, LinePick } from '../../src/shared/panels.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
@@ -143,7 +145,7 @@ export function review(deps) {
     if (shown && desk.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
     if (shown) desk.pick = live
     const failed = shown ? undefined : changesFailure(changeReads.state(), c.id)
-    drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: threadOf(c), checkout: threadCheckoutOf(c), user: board().user.name, state: c.checkoutState, noting: can(c, 'note'), layout: viewer().diffLayout, scope: scopeIn(c.id), tree: viewer().changesTree, treeFolds }), { 'pick-text': desk.text })
+    drawPanel($('changes'), changesHtml({ read: shown, failed, folds, pick: desk.pick, picking: desk.picking, thread: keepsThreads(c) ? threadOf(c) : undefined, checkout: threadCheckout(c), user: board().user.name, state: c.checkoutState, noting: noteCallOf(c) !== undefined, layout: viewer().diffLayout, scope: scopeIn(c.id), tree: viewer().changesTree, treeFolds }), { 'pick-text': desk.text })
     if (desk.fresh) $('changes').querySelector('[data-pick-text]')?.focus()
     desk.fresh = false
     if (desk.jump && shown) jumpToAnchor()
@@ -161,10 +163,8 @@ export function review(deps) {
     drop: () => ((desk.picking = false), (desk.fresh = true), drawChanges()),
   })
 
-  /** @param {Floor | undefined} f */
-  const reviewsOf = (f) => f?.collections.find((col) => col.id === REVIEWS)
-  /** @param {Card} c */
-  const keepsThreads = (c) => Boolean(reviewsOf(floorOf(c.project)))
+  /** A worker's view keeps a thread where reviews is on, on its floor. @param {Card} c */
+  const keepsThreads = (c) => cardReviews(c) !== undefined
 
   /**
    * The workers' threads as last read, the one Tidy filed once a worker's work landed, else its checkout's: each read
@@ -188,14 +188,22 @@ export function review(deps) {
 
   /** What the worker hasn't seen of its checkout's thread, else how many notes it holds. @param {Card} c */
   const reviewsTally = (c) => {
-    const notes = /** @type {Floor} */ (floorOf(c.project)).threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
-    return c.unseen ? `<small class="unseen" data-tip="${plural(c.unseen, 'note')} ${callsign(c.id)} hasn't seen">${c.unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
+    const notes = floorThreadsOf(/** @type {Floor} */ (floorOf(c.project))).find((t) => t.checkout === threadCheckout(c))?.messages
+    const unseen = cardReviews(c)?.unseen
+    return unseen ? `<small class="unseen" data-tip="${plural(unseen, 'note')} ${callsign(c.id)} hasn't seen">${unseen} new</small>` : notes ? `<small>${notes}</small>` : ''
   }
 
-  /** A note is added only on a worker that offers `note`. @param {HTMLElement} button @param {Card} c @param {Partial<Verbs['review/append']>} fields */
+  /** @param {NoteCall} call @param {Partial<Verbs['review/append']>} fields */
+  const note = ([verb, input], fields) => /** @type {Promise<Replies['review/append']>} */ (tower.call(/** @type {never} */ (verb), /** @type {never} */ ({ ...input, ...fields })))
+
+  /** A note is added only on a worker that offers one. @param {HTMLElement} button @param {Card} c @param {Partial<Verbs['review/append']>} fields */
   async function addNote(button, c, fields) {
-    const reply = await told(pressing(button, async () => tower.run(offeredCall(c, 'note', c.callsign), { author: board().user.name, ...fields })))
-    if (reply) toast(`n${reply.n} is on the thread of ${threadCheckoutOf(c)}`)
+    const reply = await told(pressing(button, async () => {
+      const call = noteCallOf(c)
+      if (!call) throw new Error(noLongerOffered(c.callsign, 'note'))
+      return note(call, { author: board().user.name, ...fields })
+    }))
+    if (reply) toast(`n${reply.n} is on the thread of ${threadCheckout(c)}`)
     return reply
   }
 
@@ -209,7 +217,7 @@ export function review(deps) {
   /** The reviews pane's composer: the note being written on each checkout, by `<project>/<checkout>`, and the note it answers. @type {Map<string, string>} */
   const noteDrafts = new Map()
   /** @param {Card} c */
-  const draftKey = (c) => `${c.project}/${threadCheckoutOf(c)}`
+  const draftKey = (c) => `${c.project}/${threadCheckout(c)}`
 
   /** @param {HTMLElement} button */
   async function addWritten(button) {
@@ -223,14 +231,14 @@ export function review(deps) {
   /** The worker the viewer picked to send each checkout's notes to, by `<project>/<checkout>`; this page only. @type {Map<string, string>} */
   const sendPicks = new Map()
   /** @param {Card} c */
-  const pickedFor = (c) => sendPicks.get(`${c.project}/${threadCheckoutOf(c)}`)
+  const pickedFor = (c) => sendPicks.get(`${c.project}/${threadCheckout(c)}`)
 
   /** Send reaches a worker whenever it is drawn. @param {HTMLElement} button @param {Card} c */
   function sendNotes(button, c) {
-    const target = /** @type {Card} */ (sendTarget(/** @type {Floor} */ (floorOf(c.project)), threadCheckoutOf(c), pickedFor(c)))
+    const target = /** @type {Card} */ (sendTarget(/** @type {Floor} */ (floorOf(c.project)), threadCheckout(c), pickedFor(c)))
     const thread = threadOf(c)
-    const text = sendText(THE_USER, threadCheckoutOf(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
-    told(pressing(button, async () => tower.run(offeredCall(target, 'submit', target.callsign), { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckoutOf(c)}`))
+    const text = sendText(THE_USER, threadCheckout(c), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
+    told(pressing(button, async () => tower.run(offeredCall(target, 'submit', target.callsign), { text }))).then((r) => r && toast(`Sent ${target.callsign} to the thread of ${threadCheckout(c)}`))
   }
 
   /** @param {Card} c */
@@ -285,7 +293,7 @@ export function review(deps) {
     const picker = /** @type {HTMLSelectElement | null} */ (target.closest('[data-send-pick]'))
     if (!picker) return
     const c = /** @type {Card} */ (findCard(selected()))
-    sendPicks.set(`${c.project}/${threadCheckoutOf(c)}`, picker.value)
+    sendPicks.set(`${c.project}/${threadCheckout(c)}`, picker.value)
     render()
   })
 

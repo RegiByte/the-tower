@@ -1,11 +1,12 @@
 import type { RepoChanges } from '../../../src/changes.ts'
 import { loop, timers } from '../../../src/shared/loop.ts'
 import {
-  changesFailure, changesHandlers, changesPath, changesOf as changesIn, heldThread, noChanges, readChanges, readThread, scopeOf as scopeIn, threadFailure, threadWant,
-  type ChangesEvent, type ChangesScope, type ThreadAt,
+  changesFailure, changesHandlers, changesPath, changesOf as changesIn, noChanges, readChanges, scopeOf as scopeIn,
+  type ChangesEvent, type ChangesScope,
 } from '../../../src/shared/panels.ts'
+import { heldThread, readThread, threadFailure, threadWant, type ThreadAt } from '../../../extensions/reviews/client/panel.ts'
 import { heldHandlers, noReads, reading } from '../../../src/shared/reads.ts'
-import { parseThread, type ReviewThread } from '../../../src/shared/reviews.ts'
+import { parseThread, type ReviewThread } from '../../../extensions/reviews/client/reviews.ts'
 import { tower, type Board, type Card } from './api.ts'
 import { wallNow } from './clock.ts'
 import { FIXTURE, FIXTURE_CHANGES, FIXTURE_THREADS } from './fixtures.ts'

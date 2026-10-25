@@ -1,6 +1,7 @@
 import { documentCss } from '/design.js'
-import { cardSubject, sentHome, threadCheckoutOf, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
+import { cardSubject, sentHome, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
+import { threadCheckout } from '/x/reviews/panel.js'
 import { keepShownTabs, fileSpansHtml } from '/panels.js'
 import { toolHtml, when, $, fillOf, keyedTip, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
 import { shownFrom } from '/brief.js'
@@ -152,7 +153,7 @@ export async function worker(deps) {
     return `<span class="tab-set" role="tablist" aria-label="views of ${callsign(c.id)}"><button class="pane-tab ${pane === 'screen' ? 'on' : ''}" ${paneTabAttrs('screen', pane === 'screen', 'the session in its terminal')}>Terminal</button>` +
       (can(c, 'brief') ? `<button class="pane-tab ${pane === 'brief' ? 'on' : ''}" ${paneTabAttrs('brief', pane === 'brief', 'the last prompts and answers of each conversation, in full')}>Brief</button>` : '') +
       `<button class="pane-tab ${pane === 'changes' ? 'on' : ''}" ${paneTabAttrs('changes', pane === 'changes', "what changed in the worker's repos, as git reads it")}>Changes${changesTally(c)}</button>` +
-      (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews', `the review thread of checkout ${threadCheckoutOf(c)}: notes from you, its workers and reviewers`)}>Reviews${reviewsTally(c)}</button>` : '') +
+      (keepsThreads(c) ? `<button class="pane-tab ${pane === 'reviews' ? 'on' : ''}" ${paneTabAttrs('reviews', pane === 'reviews', `the review thread of checkout ${threadCheckout(c)}: notes from you, its workers and reviewers`)}>Reviews${reviewsTally(c)}</button>` : '') +
       (shown.length ? `<span class="shown-tabs">${shown.map((s) => shownTabHtml(c, s, pane === shownPane(s))).join('')}</span>` : '') + '</span>'
   }
 

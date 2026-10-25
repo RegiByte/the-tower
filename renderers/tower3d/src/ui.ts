@@ -3,14 +3,14 @@ import { DRAFT_STATE, draftItem, draftState, draftsOf, type Draft } from '../../
 import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml } from '../../../src/shared/items.ts'
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { keptTitle } from './kept.ts'
-import { REVIEWS } from '../../../src/shared/reviews.ts'
+import { cardReviews, floorThreadsOf, keepsThreads, threadCheckout } from '../../../extensions/reviews/client/panel.ts'
 import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { actionWords, addedActions, badgesOf, cardSubject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, quotaOf, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, threadCheckoutOf, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { actionWords, addedActions, badgesOf, cardSubject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, PROBE_ATTENTION, quotaOf, PROBE_STATE_NAME, extraUsageAmounts, extraUsageLine, limitsFromTitle, probeTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -125,13 +125,14 @@ function aimedHead(act: Act, board: Board, cats: CatNames) {
   }
   if (act.kind === 'papers') {
     const c = findCard(board, act.id)
-    if (!c?.unseen) return ''
-    return `<div class="head"><span class="call">Review notes</span><span class="meta">${c.unseen} new to ${esc(c.callsign)}</span></div>
+    const unseen = c && cardReviews(c)?.unseen
+    if (!c || !unseen) return ''
+    return `<div class="head"><span class="call">Review notes</span><span class="meta">${unseen} new to ${esc(c.callsign)}</span></div>
       <div class="meta">on the thread of ${esc(c.checkout)}</div>`
   }
   if (act.kind === 'thread') {
     const f = board.floors.find((f) => f.id === act.project)
-    const t = f?.threads.find((t) => t.checkout === act.checkout)
+    const t = (f ? floorThreadsOf(f) : []).find((t) => t.checkout === act.checkout)
     if (!f || !t) return ''
     const last = t.last ? ` · last ${esc(t.last.author)}, ${esc(t.last.at.slice(11))}` : ''
     return `<div class="head"><span class="call">${esc(t.checkout)}</span><span class="meta">${esc(t.tag)}</span></div>
@@ -379,17 +380,16 @@ export const logbookTabsHtml = (tab: LogbookTab) =>
 
 /** The Reviews tab's tally: the notes new to the worker, else how many its thread holds. */
 const reviewsTally = (c: Card, f: Floor) => {
-  const notes = f.threads.find((t) => t.checkout === threadCheckoutOf(c))?.messages
-  return c.unseen ? ` <small class="unseen">${c.unseen} new</small>` : notes ? ` <small>${notes}</small>` : ''
+  const notes = floorThreadsOf(f).find((t) => t.checkout === threadCheckout(c))?.messages
+  const unseen = cardReviews(c)?.unseen
+  return unseen ? ` <small class="unseen">${unseen} new</small>` : notes ? ` <small>${notes}</small>` : ''
 }
 
 export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean) {
-  const own = (['screen', 'brief', 'changes', ...(keepsReviews(f) ? ['reviews'] as const : [])] as const)
+  const own = (['screen', 'brief', 'changes', ...(keepsThreads(f) ? ['reviews'] as const : [])] as const)
     .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${t === 'reviews' ? reviewsTally(c, f) : ''}</button>`).join('')
   return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')}</span>` : '')
 }
-
-const keepsReviews = (f: Floor) => f.collections.some((col) => col.id === REVIEWS)
 
 /** A thread read away from any desk: nobody works in its checkout now. */
 export const statsHeadHtml = () =>

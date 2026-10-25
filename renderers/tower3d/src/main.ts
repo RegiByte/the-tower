@@ -3,7 +3,7 @@ import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, 
 import type { Call, Replies, Verb as ApiVerb, Verbs } from '../../../src/shared/api.ts'
 import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
-import { THE_USER, sendText, unseenBy, type Anchor } from '../../../src/shared/reviews.ts'
+import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
 import { briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
@@ -11,12 +11,14 @@ import { changesSection, faceInstalled, markdownSection, prefSections, settingsC
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
 import { ICON } from '../../../src/shared/icons.ts'
-import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, reviewsHtml, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, cardThread, floorThread, threadViewOf, type DiffLayout, type StatsRange, type ThreadPlace, type ThreadView } from '../../../src/shared/panels.ts'
+import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, type DiffLayout, type StatsRange } from '../../../src/shared/panels.ts'
+import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, noteCallOf, reviewsHtml, threadCheckout, threadViewOf, type ThreadPlace, type ThreadView } from '../../../extensions/reviews/client/panel.ts'
+import type { NoteCall } from '../../../extensions/reviews/threads.ts'
 import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
-import { actionWords, runVerb, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, threadCheckoutOf, sentHome, shownHref, shownKey, workerIn, can, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { actionWords, runVerb, boardErrorTitle, bubbleOf, probedLine, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
 import { hueOf } from './avatar.ts'
@@ -216,7 +218,7 @@ function dressSides() {
 /** The review notes new to each worker, stacked on its own desk, beside its logbook; a reviewer beside its author has neither. */
 function dressAllPapers() {
   for (const desk of s.desks.values()) {
-    dressPapers(desk, desk.side ? (desk.card.unseen ?? 0) : 0)
+    dressPapers(desk, desk.side ? (cardReviews(desk.card)?.unseen ?? 0) : 0)
     dressBinder(desk, desk.card.lineage.length)
   }
 }
@@ -504,7 +506,7 @@ function renderPanel() {
   }
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
-    const t = f?.threads.find((t) => t.checkout === panel.checkout)
+    const t = (f ? floorThreadsOf(f) : []).find((t) => t.checkout === panel.checkout)
     if (!t) return closeDoc()
     $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout)
     drawThread($('doc-body'), floorThread(floorOf(panel.project), t))
@@ -1086,7 +1088,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   },
   drawer: (a) => openSide({ kind: 'drawer', project: a.project, n: a.n }),
   thread(a, verb) {
-    const t = floorOf(a.project).threads.find((t) => t.checkout === a.checkout)
+    const t = floorThreadsOf(floorOf(a.project)).find((t) => t.checkout === a.checkout)
     if (verb === 'send' && t) return sendNotes(floorThread(floorOf(a.project), t), sendTarget(floorOf(a.project), a.checkout, undefined))
     openThread(a.project, a.checkout)
   },
@@ -2149,14 +2151,14 @@ function shownThread(): ThreadPlace | undefined {
   const panel = panelNow()
   if (panel?.kind === 'desk') {
     const c = findCard(s.board!, panel.id)
-    return c && cardThread(c)
+    return c && floorKeepsThreads(floorOf(c.project)) ? cardThread(c) : undefined
   }
   if (panel?.kind !== 'thread') return undefined
-  const t = floorOf(panel.project).threads.find((t) => t.checkout === panel.checkout)
+  const t = floorThreadsOf(floorOf(panel.project)).find((t) => t.checkout === panel.checkout)
   return t && floorThread(floorOf(panel.project), t)
 }
 
-const noting = (t: ThreadPlace) => t.offers.verbs.includes('note')
+const noting = (t: ThreadPlace) => t.note !== undefined
 
 /** The worker the viewer picked to send a thread's notes to. */
 const pickedFor = (at: ThreadPlace) => s.sendPicks.get(`${at.project}/${at.checkout}`)
@@ -2176,12 +2178,12 @@ function drawThread(el: HTMLElement, at: ThreadPlace) {
 /** A worker's Changes, its lines marked by the notes on the thread its Reviews tab shows, where a note on picked lines goes. */
 function drawChanges(c: Card) {
   const el = $('desk-changes')
-  const checkout = threadCheckoutOf(c)
+  const checkout = threadCheckout(c)
   const read = changesOf(c.id)
   const live = read && livePick(read, s.pick)
   if (read && s.pick && !live) toast('The file changed under your pick: pick its lines again, your note is kept')
   if (read) s.pick = live
-  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: threadOf(s.board!, cardThread(c)), checkout, user: s.board!.user.name, state: c.checkoutState, noting: can(c, 'note'), layout: s.viewer.diffLayout, scope: scopeOf(c.id), tree: s.viewer.changesTree, treeFolds: s.treeFolds }), { 'pick-text': s.pickText })
+  drawPanel(el, changesHtml({ read, failed: changesFailed(c.id), folds: s.folds, pick: s.pick, picking: s.picking, thread: floorKeepsThreads(floorOf(c.project)) ? threadOf(s.board!, cardThread(c)) : undefined, checkout, user: s.board!.user.name, state: c.checkoutState, noting: noteCallOf(c) !== undefined, layout: s.viewer.diffLayout, scope: scopeOf(c.id), tree: s.viewer.changesTree, treeFolds: s.treeFolds }), { 'pick-text': s.pickText })
   showSince(el)
   if (s.pickFresh) el.querySelector<HTMLTextAreaElement>('[data-pick-text]')?.focus()
   s.pickFresh = false
@@ -2263,10 +2265,17 @@ async function sendNotes(at: ThreadPlace, to: Card | undefined) {
   if (await tried(() => tower.run(offeredCall(to, 'submit', to.callsign), { text }))) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
+/** A note added with a thread's note call while it is offered, else a toast saying `name` no longer offers one. */
+const note = (call: NoteCall | undefined, name: string, fields: Partial<Verbs['review/append']>) =>
+  tried(() => {
+    if (!call) throw new Error(noLongerOffered(name, 'note'))
+    return tower.call(call[0] as never, { ...call[1], ...fields } as never) as Promise<Replies['review/append']>
+  })
+
 async function addNote(at: ThreadPlace) {
   const { project, checkout } = at
   const key = `${project}/${checkout}`
-  const reply = await tried(() => tower.run(offeredCall(at.offers, 'note', `the thread of ${checkout}`), { author: s.board!.user.name, re: s.noteRe, anchors: [], body: s.noteTexts.get(key) ?? '' }))
+  const reply = await note(at.note, `the thread of ${checkout}`, { author: s.board!.user.name, re: s.noteRe, anchors: [], body: s.noteTexts.get(key) ?? '' })
   if (!reply) return
   toast(`n${reply.n} is on the thread of ${checkout}`)
   s.noteTexts.delete(key)
@@ -2276,9 +2285,9 @@ async function addNote(at: ThreadPlace) {
 
 /** A note on the lines picked in a worker's Changes, on the thread its Reviews tab shows. */
 async function addPicked(c: Card) {
-  const checkout = threadCheckoutOf(c)
+  const checkout = threadCheckout(c)
   const anchors = [pickAnchor(changesOf(c.id)!.repos, s.pick!)]
-  const reply = await tried(() => tower.run(offeredCall(c, 'note', c.callsign), { author: s.board!.user.name, anchors, body: s.pickText }))
+  const reply = await note(noteCallOf(c), c.callsign, { author: s.board!.user.name, anchors, body: s.pickText })
   if (!reply) return
   toast(`n${reply.n} is on the thread of ${checkout}`)
   dropPick()
