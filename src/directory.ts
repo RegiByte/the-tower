@@ -418,13 +418,20 @@ const threadSaid = async (floor: Floor, query: { checkout: string; reader: strin
 const NOTE_USAGE = `${usageLine('note')}, the body on stdin`
 const ANCHOR_ARG = /^([^:\s]+):(.+):(\d+)(?:-(\d+))?$/
 
-type NoteArgs = { on?: string; re?: number; anchors: Omit<Anchor, 'quote'>[] }
+type NoteArgs = { on?: string; re?: number; anchors: Omit<Anchor, 'quote'>[]; resolves?: number[] }
+
+const NOTE_NUMBER = /^n?\d+$/
 
 const noteArgs = (args: string[]): NoteArgs => {
   const note: NoteArgs = { anchors: [] }
   for (let i = 0; i < args.length; i++) {
     if (args[i] === 'on' && args[i + 1]) note.on = args[++i]
-    else if (args[i] === 're' && /^n?\d+$/.test(args[i + 1] ?? '')) note.re = Number(args[++i].replace(/^n/, ''))
+    else if (args[i] === 're' && NOTE_NUMBER.test(args[i + 1] ?? '')) note.re = Number(args[++i].replace(/^n/, ''))
+    else if (args[i] === 'resolve') {
+      note.resolves = []
+      while (NOTE_NUMBER.test(args[i + 1] ?? '')) note.resolves.push(Number(args[++i].replace(/^n/, '')))
+      if (!note.resolves.length) throw new CliError(`resolve names the notes it resolves (resolve n3 n4). ${NOTE_USAGE}`)
+    }
     else {
       const anchor = ANCHOR_ARG.exec(args[i])
       if (!anchor) throw new CliError(`"${args[i]}" is no anchor. ${NOTE_USAGE}`)
@@ -432,6 +439,7 @@ const noteArgs = (args: string[]): NoteArgs => {
       note.anchors.push({ repo, path, from: Number(from), to: Number(to ?? from) })
     }
   }
+  if (note.resolves && (note.re !== undefined || note.anchors.length)) throw new CliError(`A resolution answers no note and quotes no lines. ${NOTE_USAGE}`)
   return note
 }
 
@@ -745,12 +753,16 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   note: async (args) => {
     const note = noteArgs(args)
-    if (process.stdin.isTTY) throw new CliError(NOTE_USAGE)
-    const body = await readStdin()
+    if (process.stdin.isTTY && !note.resolves) throw new CliError(NOTE_USAGE)
+    const body = process.stdin.isTTY ? '' : await readStdin()
     const board = await readBoard()
     const card = ownCard(board, me)
     const floor = ownFloor(board, me)
     const checkout = note.on ?? threadCheckoutOf(card)
+    if (note.resolves) {
+      const { n } = await command<{ n: number }>('reviews/resolve', { project: floor.id, checkout, author: card.callsign, notes: note.resolves, body })
+      return console.log(`Resolved ${note.resolves.map((k) => `n${k}`).join(', ')} with n${n} on the thread of checkout ${checkout}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)
+    }
     const anchors = note.anchors.map((a) => quoted(floor, card.worktree?.from === checkout ? card.checkout : checkout, a))
     const { n } = await command<{ n: number }>('reviews/append', { project: floor.id, checkout, author: card.callsign, re: note.re, anchors, body })
     console.log(`Noted as n${n} on the thread of checkout ${checkout}${note.re ? `, answering n${note.re}` : ''}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)

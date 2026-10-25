@@ -844,6 +844,9 @@ test('reviews: a resolution is a note marking earlier notes resolved, read as a 
   assert.deepEqual(JSON.parse(again.body), { t: 'error', code: 'invalid', message: 'n2 is resolved already, by n4' })
   assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'resolving', author: 'ODIN-07', notes: [9] })), 'invalid')
   assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'nowhere', author: 'ODIN-07', notes: [1] })), 'not_found')
+  const said = cli(SESSION, 'note', 'on', 'resolving', 'resolve', 'n3')
+  assert.match(said, /^Resolved n3 with n5 on the thread of checkout resolving: /)
+  assert.deepEqual(parseThread(readFileSync(path.join(threadsIn('lab'), 'resolving.md'), 'utf8')).messages.at(-1)!.body, '**Resolved:** n3')
 })
 
 test('reviews: on a floor keeping no threads, Tidy lists and files no thread, and a discard, which nothing there records, is refused and touches nothing', async () => {

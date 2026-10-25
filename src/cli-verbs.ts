@@ -103,8 +103,8 @@ export const CLI_VERBS = {
   },
   note: {
     of: 'worker',
-    usage: 'note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]',
-    help: "a message on the thread, the body on stdin, each anchor's lines quoted from the checkout's files as they are now (from your own, when it is a fork of that checkout: the version you read)",
+    usage: 'note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …] | note [on <checkout>] resolve n<k> …',
+    help: "a message on the thread, the body on stdin, each anchor's lines quoted from the checkout's files as they are now (from your own, when it is a fork of that checkout: the version you read); with resolve, a note marking those notes resolved, anything on stdin said under the mark",
   },
   send: { of: 'worker', usage: 'send <CALLSIGN>', help: "submit into a worker a pointer to the notes on its checkout's thread new to it" },
   review: {
