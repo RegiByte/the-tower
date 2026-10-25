@@ -47,7 +47,10 @@ export const DISMISSED_KEY = VIEWER_KEYS.dismissed
 /** The waits a viewer hasn't dismissed, in the board's order. */
 export const heededWaits = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.waiting.filter((w) => !heed.dismissed.has(w.key))
 
-/** The offers a viewer hasn't dismissed, oldest first. A dismissed offer stays open, and stays acceptable, until its policy's next slot. */
+/**
+ * The offers a viewer hasn't dismissed, oldest first. A dismissed offer stays open, and stays acceptable, until its policy's next slot.
+ * @deprecated since 1.91: each offer is the policies extension's ask too (`heededAsks`); `board.offers` is its copy until 2.0, so don't count both.
+ */
 export const heededOffers = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.offers.filter((o) => !heed.dismissed.has(o.key))
 
 /** The asks of extensions a viewer hasn't dismissed, oldest first. */
@@ -76,7 +79,10 @@ export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: st
  */
 export const transitions = (prev: Board | undefined, next: Board): { began: Wait[]; ended: Wait[] } => (prev ? keyed(prev.waiting, next.waiting) : { began: [], ended: [] })
 
-/** The offers that opened and the offers that closed between two boards, as `transitions` reads waits. */
+/**
+ * The offers that opened and the offers that closed between two boards, as `transitions` reads waits.
+ * @deprecated since 1.91: `askTransitions` holds them, as the policies extension's asks; don't announce both.
+ */
 export const offerTransitions = (prev: Board | undefined, next: Board): { began: Offer[]; ended: Offer[] } => (prev ? keyed(prev.offers, next.offers) : { began: [], ended: [] })
 
 /** The asks that began and the asks that ended between two boards, as `transitions` reads waits. */
@@ -126,7 +132,10 @@ export const waitsBeganLine = (began: Wait[], callsignOf: (id: string) => string
 
 export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worker waits again'
 
-/** What a renderer's polite live region says as `began` offers open (`offerTransitions`): one sentence per offer, empty for none. */
+/**
+ * What a renderer's polite live region says as `began` offers open (`offerTransitions`): one sentence per offer, empty for none.
+ * @deprecated since 1.91: `asksBeganLine`, over the policies extension's asks.
+ */
 export const offersBeganLine = (began: Offer[]) => began.map((o) => `${o.title ?? o.tag} is offered: a slot to start.`).join(' ')
 
 export const DISMISS_OFFER_TITLE = 'dismiss this offer: out of your way, still open until its next slot'

@@ -1,5 +1,5 @@
 import type { Board } from '../bridge/board.ts'
-import { REMIND_MS, askTransitions, asksBeganLine, attentionOrder, dismissing, findCard, isAbout, offerTransitions, offersBeganLine, ringingSound, transitions, waitsBeganLine, type Attended, type Ring, type Sound } from './cards.ts'
+import { REMIND_MS, askTransitions, asksBeganLine, attentionOrder, dismissing, findCard, isAbout, ringingSound, transitions, waitsBeganLine, type Attended, type Ring, type Sound } from './cards.ts'
 import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
 import type { Viewer } from './viewer.ts'
 
@@ -84,19 +84,21 @@ const into = (state: Attending): AttendEffect => ({ type: 'state', state })
 
 /** The attention machine: one handler per event. */
 export const attendHandlers: Handlers<Attending, AttendEvent, AttendEffect> = {
-  /** The waits and offers that began are said, notified and rung but for the watched worker's; those that ended close. */
+  /**
+   * The waits and asks that began are said, notified and rung but for the watched worker's; those that ended close. A
+   * policy's offer is among the asks: `board.offers` holds the same slot again, for renderers of before 1.91.
+   */
   board: (a, { board }) => {
     const waits = transitions(a.board, board)
     const asks = askTransitions(a.board, board)
-    const offers = offerTransitions(a.board, board)
     const next = { ...a, board }
     const heeded = heeds(a)
     const watched = watchedIn(a)
-    const text = [waitsBeganLine(waits.began.filter(heeded), (id) => findCard(board, id)!.callsign), asksBeganLine(asks.began.filter(heeded)), offersBeganLine(offers.began.filter(heeded))].filter(Boolean).join(' ')
-    const began = [...waits.began.filter((w) => heeded(w) && w.id !== watched), ...asks.began.filter((x) => heeded(x) && !isAbout(x, watched)), ...offers.began.filter(heeded)]
+    const text = [waitsBeganLine(waits.began.filter(heeded), (id) => findCard(board, id)!.callsign), asksBeganLine(asks.began.filter(heeded))].filter(Boolean).join(' ')
+    const began = [...waits.began.filter((w) => heeded(w) && w.id !== watched), ...asks.began.filter((x) => heeded(x) && !isAbout(x, watched))]
     return [
       into(next),
-      ...[...waits.ended, ...asks.ended, ...offers.ended].map((x): AttendEffect => ({ type: 'unnotify', key: x.key })),
+      ...[...waits.ended, ...asks.ended].map((x): AttendEffect => ({ type: 'unnotify', key: x.key })),
       ...(text ? [{ type: 'announce' as const, text }] : []),
       ...began.map((attended): AttendEffect => ({ type: 'notify', attended })),
       ...rung(next, ringingSound(began, watched)),

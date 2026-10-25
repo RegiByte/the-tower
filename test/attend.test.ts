@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board, Wait } from '../src/bridge/board.ts'
-import type { Offer } from '../extensions/policies/policies.ts'
+import type { Offer } from '../src/shared/policies-legacy.ts'
+import type { BoardAsk } from '../src/shared/extensions.ts'
 import { attendNext, attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendEvent, type AttendOut } from '../src/shared/attend.ts'
 
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })
 const offer = { key: 'nightly:1', project: 'p', policy: 'nightly', tag: 'quiet-owl', slot: 0, since: 0, until: 1 } as Offer
+/** The same slot as the policies extension asks it: the board carries both, the offer as LEGACY's copy. */
+const offerAsk: BoardAsk = { key: 'policies:nightly:1', cap: 'policies', subject: 'item.policies:p/nightly', title: 'Nightly', since: 0, until: 1, sound: 'offer', actions: [] }
 const boardOf = (waiting: Wait[], offers: Offer[] = []) =>
-  ({ waiting, offers, asks: [], floors: [{ cards: ['A', 'B'].map((id) => ({ id, callsign: `${id}-01` })) }] }) as unknown as Board
+  ({ waiting, offers, asks: offers.length ? [offerAsk] : [], floors: [{ cards: ['A', 'B'].map((id) => ({ id, callsign: `${id}-01` })) }] }) as unknown as Board
 const kinds = (effects: (AttendEffect | AttendOut)[]) => effects.map((e) => (e.type === 'sound' ? `sound:${e.sound}` : e.type))
 
 test('attend: the first board is silent, a wait that begins is said, notified and rung, and one that ends closes', () => {
@@ -18,7 +21,7 @@ test('attend: the first board is silent, a wait that begins is said, notified an
   assert.deepEqual(kinds(seeBoard(asked, boardOf([wait('B', 'done')]), undefined)[1]), ['unnotify'])
 })
 
-test("attend: the watched worker's wait is said but neither notified nor rung, and an offer rings beside it", () => {
+test("attend: the watched worker's wait is said but neither notified nor rung, and an offer rings beside it, said and notified once though the board carries it twice", () => {
   const [opened] = seeBoard(attending(), boardOf([]), undefined)
   assert.deepEqual(kinds(seeBoard(opened, boardOf([wait('A')]), 'A')[1]), ['announce'])
   assert.deepEqual(kinds(seeBoard(opened, boardOf([wait('A')], [offer]), 'A')[1]), ['announce', 'notify', 'sound:offer'])
