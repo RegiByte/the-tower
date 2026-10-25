@@ -56,6 +56,7 @@ export const publisher = defineResource({
       repos: system.repos(),
       logFiles: system.logs(),
       probes: system.probes(),
+      readings: extensions.readings(),
       streams: system.streamMonths(),
       policies: policiesNow(),
       extensions: extensions.registry().extensions,

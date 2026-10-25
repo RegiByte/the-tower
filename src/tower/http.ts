@@ -314,7 +314,7 @@ export const httpServer = defineResource({
       const reads = await Promise.all(dirs.map((dir) => readLanded(dir, from, to)))
       const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
       const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
-      const probes = [...system.probes().values()]
+      const probes = [...system.probes().values(), ...extensions.readings()]
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, probes, now), weekly: weeklyRead(sessions, probes, { from, to }), outside: outsideIn(sessions, probes, { from, to }) } satisfies Stats))
     }
 

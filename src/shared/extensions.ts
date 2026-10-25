@@ -10,6 +10,7 @@ import type { Board } from '../bridge/board.ts'
 import type { StreamFact } from '../bridge/streams.ts'
 import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 import { RUNTIMES, type Runtime } from './model.ts'
+import { FACT_KINDS } from './rate-limits.ts'
 
 export type { StreamFact }
 
@@ -32,6 +33,9 @@ const TRIGGERS = '1.86'
 
 /** The minor launch arrived in: spawn fields, launch contributors and plugins. */
 const LAUNCH = '1.87'
+
+/** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
+const KINDS = '1.88'
 
 /** `id` and `provides`: lowercase words of letters and digits joined by single dashes, 2 to 32 long. */
 export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -568,6 +572,7 @@ const folds = sinceAt(FOLDS)
 const around = sinceAt(AROUND)
 const triggers = sinceAt(TRIGGERS)
 const launch = sinceAt(LAUNCH)
+const kinds = sinceAt(KINDS)
 
 const Name = z
   .string()
@@ -629,7 +634,14 @@ const Stream = z.strictObject({
   description: stores(z.string().optional()),
   facts: stores(
     z
-      .record(z.string().regex(/^[a-z]$/, 'a fact code is one lowercase letter'), z.strictObject({ schema: stores(Schema), description: stores(z.string().optional()) }))
+      .record(
+        z.string().regex(/^[a-z]$/, 'a fact code is one lowercase letter'),
+        z.strictObject({
+          schema: stores(Schema),
+          kind: kinds(Qualified.optional().describe(`A kind the core folds, its facts holding to the kind's schema too: ${FACT_KINDS.join(', ')}.`)),
+          description: stores(z.string().optional()),
+        }),
+      )
       .describe('Its fact codes, each with the JSON Schema its facts hold to.'),
   ),
   doors: stores(z.strictObject({ read: stores(Door), append: stores(Door) }).optional().describe('How others read it and append to it, through its owner.')),

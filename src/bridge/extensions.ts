@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { BUNDLED, capabilityOf, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
+import { FACT_KINDS } from '../shared/rate-limits.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import { offOn, type ExtensionStores } from './stores.ts'
@@ -266,6 +267,20 @@ const checkProblems = (manifest: Manifest): LoadProblem[] =>
   })
 
 /**
+ * Why a stream's fact code can't declare its kind: the core folds no such kind, or the kind is the account's rate
+ * limits and the stream is a floor's.
+ */
+const kindProblems = (manifest: Manifest): LoadProblem[] =>
+  Object.entries(manifest.streams ?? {}).flatMap(([name, stream]) =>
+    Object.entries(stream.facts).flatMap(([code, fact]) => {
+      const at = `streams.${name}.facts.${code}.kind`
+      if (fact.kind === undefined) return []
+      if (!(FACT_KINDS as readonly string[]).includes(fact.kind)) return [error('invalid', `the core folds no kind ${fact.kind}: its kinds are ${FACT_KINDS.join(', ')}`, at)]
+      return stream.scope === 'system' ? [] : [error('invalid', `${fact.kind} is the account's: a fact of it is in a system stream`, at)]
+    }),
+  )
+
+/**
  * What a manifest's stores break of the rules its schema can't say: a collection is named `<provides>` or
  * `<provides>.<name>`, and a door names a current read (of the owner's or the core's) to read, or a verb of the owner's to act.
  */
@@ -277,6 +292,7 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
     ...Object.entries(manifest.streams ?? {}).flatMap(([name, s]) => doorsAt(s.doors, `streams.${name}`)),
   ]
   return [
+    ...kindProblems(manifest),
     ...Object.keys(manifest.collections ?? {})
       .filter((name) => name !== provides && !name.startsWith(`${provides}.`))
       .map((name) => error('invalid', `collection ${name} is named by the capability: ${provides}, or ${provides}.<name>`, `collections.${name}`)),

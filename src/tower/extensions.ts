@@ -43,6 +43,7 @@ import type { ConfigResource, SystemResource, TowerResources, TowerSystem } from
 import { storesOf } from './stores.ts'
 import { BOARD_CALLER, runBoardTrigger } from './triggers.ts'
 import { offOn } from '../bridge/stores.ts'
+import type { LimitFacts } from '../bridge/rate-limits.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
 const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
@@ -69,6 +70,8 @@ export type Instance = {
   settingsOf(project: string): unknown
   /** Each of its stream folds stopped before a fact its step threw on, and why. */
   threw(): { stream: string; project?: string; message: string }[]
+  /** Each of its streams of `tower/rate-limits` readings, as the core folds them, until it halts. */
+  limits(): LimitFacts[]
   /** Its link around `target`, a qualified verb or hook. */
   link(target: string, input: unknown, next: (input: unknown) => Promise<unknown>, caller: Caller): unknown
   /** Its answer to `hook`, qualified. */
@@ -162,6 +165,12 @@ export const extensions = defineResource({
             }
           })
       },
+      /**
+       * Every started extension's streams of rate-limit readings, folded: one halting for a restart keeps them until its
+       * stores close, so the board's limits hold through it.
+       */
+      readings: (): LimitFacts[] =>
+        [...held.resolved.accepted.values()].flatMap((a) => (held.system[resourceOf(a.provides)] as Instance | undefined)?.limits() ?? []),
       /** The running extensions' launch contributors on a floor where each is on, in resolved order. */
       launchers: (project: string): Launcher[] =>
         running().flatMap(({ a, instance }) =>
@@ -429,6 +438,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       foldOwn: stores.foldOwn,
       settingsOf: ctx.settingsOf,
       threw: stores.threw,
+      limits: stores.limits,
       ...(started.launch && {
         launch: (request: LaunchRequest) =>
           within(

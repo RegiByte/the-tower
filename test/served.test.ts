@@ -8,6 +8,7 @@ import { designCss } from '../src/shared/design.ts'
 import { bundledClient, clientSource } from '../src/extensions.ts'
 import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, legacyOf, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
 import { bundled, bundledFile, MODULES, towerClient } from '../src/tower/served.ts'
+import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 
 /**
  * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
@@ -76,6 +77,7 @@ function servedNow(): Record<string, string[]> {
       ...ADDS.map((add) => `adds.${add}`),
       ...BADGE_TONES.map((tone) => `tone.${tone}`),
       ...Object.keys(HOOKS).map((name) => `hook.tower/${name}`),
+      ...FACT_KINDS.map((kind) => `kind.${kind}`),
     ],
   }
   for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports

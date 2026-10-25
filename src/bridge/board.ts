@@ -12,7 +12,8 @@ import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
 import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from './policies.ts'
 import { POLICIES } from '../shared/policies.ts'
-import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ExtraUsage, type ProbeFacts, type ProbeStatus } from './probes.ts'
+import { NO_READS, probesOf, probeStatus, type ProbeFacts, type ProbeStatus } from './probes.ts'
+import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
@@ -737,12 +738,6 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, thr
   return withSeats(withCrews(withCheckouts(config, placed, shells, repos, threadFiles)))
 }
 
-/** The newest answer's extra usage among the probes'. */
-const extraUsageOf = (probes: ProbeFacts[]): { extraUsage?: ExtraUsage } => {
-  const newest = probes.reduce<ExtraUsage | undefined>((a, p) => (p.extraUsage && (!a || p.extraUsage.at > a.at) ? p.extraUsage : a), undefined)
-  return newest ? { extraUsage: newest } : {}
-}
-
 /**
  * Everything the board is derived from, read once: a snapshot of the system. `repos`: what git says in each project dir
  * (`src/worktrees.ts`), by dir; a floor shows no worktrees until all its dirs are read. `logFiles`: each session's log
@@ -761,6 +756,8 @@ export type SystemView = {
   repos: Map<string, RepoRead>
   logFiles: Map<string, LogFile>
   probes: Map<string, ProbeFacts>
+  /** Each started extension's stream of `tower/rate-limits` readings, folded. */
+  readings: LimitFacts[]
   streams: StreamMonth[]
   policies: Policies
   /** Every extension as it stands (`src/bridge/extensions.ts`). */
@@ -772,7 +769,7 @@ export type SystemView = {
 }
 
 export const board = (view: SystemView): Board => {
-  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, streams, policies, extensions, stores, paths, now } = view
+  const { config, sessions, host, shells, items, threads, repos, logFiles, probes, readings, streams, policies, extensions, stores, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(view)
@@ -784,7 +781,8 @@ export const board = (view: SystemView): Board => {
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
-  const limits = accountLimits(sessions.map((s) => s.facts), [...probes.values()])
+  const limitStreams = [...probes.values(), ...readings]
+  const limits = accountLimits(sessions.map((s) => s.facts), limitStreams)
   const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
@@ -828,12 +826,12 @@ export const board = (view: SystemView): Board => {
     offers: [...floorPolicies].flatMap(([id, views]) => offersOf(id, views)).sort((a, b) => a.since - b.since),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
-    ...extraUsageOf([...probes.values()]),
+    ...extraUsageOf(limitStreams),
     probes: probesOf(config).map((p) => ({ ...probeStatus(p, probes.get(p.name) ?? NO_READS, newestReading(sessions.map((s) => s.facts.rateLimits))), ...probeOffers(p.name, p.off) })),
     extensions,
     adds: {},
     asks: [],
-    today: today(sessions, [...probes.values()], now),
+    today: today(sessions, limitStreams, now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
     claudeDefaults: claudeDefaults(sessions),

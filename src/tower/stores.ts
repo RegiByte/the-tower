@@ -16,6 +16,8 @@ import { hostRequest } from '../machine.ts'
 import type { FoldCtx, Item, ParsedItem, StartCtx, Started, StreamAt, StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
+import { KIND_SCHEMAS, type FactKind, type RateLimitsReading } from '../shared/rate-limits.ts'
+import { limitsStep, NO_LIMITS, type LimitFacts } from '../bridge/rate-limits.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
 import { logBytes, logFilesIn } from '../tail.ts'
@@ -88,7 +90,10 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
         const { stream, dir } = streamOf(name, at)
         const schema = a.schemas.streams.get(name)!.get(code)
         if (!schema) throw new Error(`${name} declares no fact code ${code}`)
-        appendFact(dir, stream, Date.now(), code, checked(schema, fact, `${name} ${code}`))
+        const kind = manifest.streams![name].facts[code].kind as FactKind | undefined
+        const value = checked(schema, fact, `${name} ${code}`)
+        if (kind) checked(KIND_SCHEMAS[kind], value, `${name} ${code}, of kind ${kind}`)
+        appendFact(dir, stream, Date.now(), code, value)
       },
       read: (name, at, window = {}) => {
         const { dir } = streamOf(name, at)
@@ -174,10 +179,19 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     },
   }
 
+  /** The core's folds of its streams of rate-limit readings, from start to halt. */
+  const readings = new Map<string, ReturnType<SystemResource['foldStream']>>()
+
   return {
     ctx,
-    /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`. */
+    /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`; the core folds its readings of the kinds it knows. */
     attach: (started: Started) => {
+      for (const [name, stream] of Object.entries(manifest.streams ?? {})) {
+        const codes = new Set(Object.entries(stream.facts).flatMap(([code, f]) => (f.kind === 'tower/rate-limits' ? [code] : [])))
+        if (!codes.size) continue
+        const step = (state: unknown, [at, code, fact]: StreamFact) => (codes.has(code) ? limitsStep(state as LimitFacts, at, fact as RateLimitsReading) : state)
+        readings.set(name, live.foldStream({ stream: `${provides}.${name}`, scope: 'system', init: NO_LIMITS, step, label: a.id }))
+      }
       parse = started.parse
       for (const [name, reduce] of Object.entries(started.reduce ?? {}))
         folds.set(name, live.foldStream({ stream: `${provides}.${name}`, scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
@@ -198,10 +212,13 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
         ...(lineage && { facts: () => sessionFacts(provides, lineage.flatMap((id) => live.session(id) ?? [])) }),
       }),
     /** Each stream fold stopped before a fact its step threw on, and why. */
-    threw: () => [...folds].flatMap(([name, fold]) => fold.threw().map((t) => ({ stream: name, ...t }))),
+    threw: () => [...folds, ...readings].flatMap(([name, fold]) => fold.threw().map((t) => ({ stream: name, ...t }))),
+    /** Each of its streams of rate-limit readings, as the core folds them. */
+    limits: (): LimitFacts[] => [...readings.values()].map((fold) => fold.state() as LimitFacts),
     stop: () => {
-      for (const fold of folds.values()) fold.stop()
+      for (const fold of [...folds.values(), ...readings.values()]) fold.stop()
       folds.clear()
+      readings.clear()
     },
   }
 }

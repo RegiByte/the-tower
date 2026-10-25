@@ -14,6 +14,7 @@ export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemVi
   repos: new Map(),
   logFiles: new Map(),
   probes: new Map(),
+  readings: [],
   streams: [],
   policies: NO_POLICIES,
   extensions: [],

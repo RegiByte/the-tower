@@ -7,7 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import type { Session } from './bridge/facts.ts'
 import {
-  due, newestReading, FLOOR_MS, NO_READS, probesOf, streamName, usageAnswer, USAGE_REQUEST,
+  due, FLOOR_MS, NO_READS, probesOf, streamName,
   type Probe, type ProbeFacts, type ProbeRead, type Reader,
 } from './bridge/probes.ts'
 import { apiError, type ApiError } from './shared/api.ts'
@@ -15,6 +15,8 @@ import { withoutParentSession } from './shared/env.ts'
 import type { Config } from './shared/model.ts'
 import { systemStreamsPath, type SystemPaths } from './shared/paths.ts'
 import { appendFact } from './streams.ts'
+import { newestReading } from './bridge/rate-limits.ts'
+import { usageAnswer, USAGE_REQUEST } from './shared/rate-limits.ts'
 
 const TICK_MS = 30_000
 const READ_TIMEOUT_MS = 30_000
