@@ -311,6 +311,7 @@ test("server: an extension's folds put its part on the board's subjects, its bad
   assert.deepEqual(board.adds['floor:lab'], {
     actions: [{ verb: 'pulse/ping', call: { project: 'lab' }, cap: 'pulse' }],
     tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes', cap: 'pulse' }],
+    slots: [{ key: 'lab', when: { every: '1h' }, cap: 'pulse' }],
   })
   assert.deepEqual(
     board.asks.map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),

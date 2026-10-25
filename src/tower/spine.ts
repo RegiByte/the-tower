@@ -71,7 +71,7 @@ export const slots = defineResource({
         run: (input) => call('tower/policy/run', input, SLOT_CALLER),
         pass: (input) => call('tower/policy/pass', input, SLOT_CALLER),
       }),
-      extensionSlots(holder, read),
+      extensionSlots(holder, read, board),
     ]),
   halt: ({ stop }) => stop(),
 })

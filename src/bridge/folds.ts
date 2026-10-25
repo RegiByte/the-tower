@@ -6,7 +6,7 @@
  * costs that extension's part on that subject, and its dependents' there: a problem, never a failed board.
  */
 import { z } from 'zod'
-import { ADDS, BADGE_TONES, qualifiedOf, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
+import { ADDS, BADGE_TONES, qualifiedOf, WhenShape, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
 import { boardSubject, cardSubject, conversationSubject, floorSubject, itemKey, itemSubject, ownSubject, SUBJECT_KEY, type Subject } from '../shared/subjects.ts'
 import type { Board, Floor } from './board.ts'
 import { ownKindOf, type CompiledFold } from './extensions.ts'
@@ -67,6 +67,7 @@ const PartShape = z.strictObject({
       }),
     )
     .optional(),
+  slots: z.array(z.strictObject({ key: z.string().min(1), when: WhenShape })).optional(),
 })
 
 const issuesLine = (issues: z.core.$ZodIssue[]) => issues.map((i) => `${i.path.join('.') || 'part'}: ${i.message}`).join('; ')
@@ -143,6 +144,7 @@ export const foldBoard = ({ board: built, folders, subjects, now, clock }: FoldI
     if (part.badges?.length) into.badges = [...(into.badges ?? []), ...tagged(cap, part.badges)]
     if (part.tidy?.length) into.tidy = [...(into.tidy ?? []), ...tagged(cap, part.tidy)]
     if (part.lines?.length) into.lines = [...(into.lines ?? []), ...part.lines.map((text) => ({ text, cap }))]
+    if (part.slots?.length) into.slots = [...(into.slots ?? []), ...tagged(cap, part.slots)]
     if (!Object.keys(into).length) delete adds[key]
     for (const ask of part.asks ?? []) {
       if (ask.until !== undefined && ask.until <= now) continue

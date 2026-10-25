@@ -42,6 +42,7 @@ const start: Start = (ctx) => {
         x: { beats: (own.streams.beats as Beats).count },
         actions: [{ verb: 'pulse/ping', call: { project: floor.id } }],
         tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes' }],
+        slots: [{ key: floor.id, when: { every: '1h' } }],
         asks: [{ key: `beat-${floor.id}`, subject: `floor:${floor.id}`, title: `Keep a beat on ${floor.name}`, since: startedAt, sound: 'offer', actions: [{ verb: 'pulse/beat', call: { project: floor.id } }] }],
       }),
     },
@@ -61,7 +62,10 @@ const start: Start = (ctx) => {
       'pulse/beat.kept': ({ item }: { item: string }) => ({ heard: `pulse kept ${item}` }),
       'tower/tidy.apply': ({ keys }: { keys: string[] }) => ({ done: keys, skipped: [] }),
     },
-    slots: { hour: ({ at }) => ctx.log(`${line ?? 'pulse'} at ${new Date(at).toISOString()}`) },
+    slots: {
+      hour: ({ at }) => ctx.log(`${line ?? 'pulse'} at ${new Date(at).toISOString()}`),
+      '*': ({ key, at }) => ctx.log(`${line ?? 'pulse'} on ${key} at ${new Date(at).toISOString()}`),
+    },
     board: (prev, next) => next.waiting.filter((w) => !prev.waiting.some((p) => p.key === w.key)).map(() => ({ verb: 'chime/ring', input: {} })),
     halt: () => ctx.log('halted'),
   }

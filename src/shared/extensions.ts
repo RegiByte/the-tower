@@ -129,8 +129,11 @@ export type ExtensionView = {
  */
 export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; deprecated?: Deprecated }
 
-/** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. */
-export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks'] as const
+/** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the board's, since 1.86. */
+export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots'] as const
+
+/** The tower version a manifest that adds `slots` requires. */
+export const SLOTS_ADD_SINCE = '1.86'
 export type Add = (typeof ADDS)[number]
 
 /** How a badge reads, as a card's attention does. */
@@ -158,8 +161,11 @@ export type TidyEntry = { key: string; label: string; hint?: string }
  */
 export type Ask = { key: string; subject: string; title: string; since: number; until?: number; sound: 'wait' | 'offer'; actions: Action[] }
 
+/** A slot a fold gives its subject: `key`, which of the extension's subjects it is for, and its rule. */
+export type FoldedSlot = { key: string; when: When }
+
 /** What one fold returns for one subject: its own part `x`, and what it adds to the subject and the board. */
-export type Part = { x?: unknown; actions?: Action[]; badges?: Badge[]; tidy?: TidyEntry[]; lines?: string[]; asks?: Ask[] }
+export type Part = { x?: unknown; actions?: Action[]; badges?: Badge[]; tidy?: TidyEntry[]; lines?: string[]; asks?: Ask[]; slots?: FoldedSlot[] }
 
 /** A contribution as the board carries it: tagged with the capability that made it. */
 export type Added<T> = T & { cap: string }
@@ -168,9 +174,13 @@ export type AddedAction = (VerbAction | CommandAction) & { cap: string }
 export type AddedBadge = Badge & { cap: string }
 export type AddedTidy = TidyEntry & { cap: string }
 export type AddedLine = { text: string; cap: string }
+export type AddedSlot = FoldedSlot & { cap: string }
 
-/** What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker. */
-export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[] }
+/**
+ * What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker.
+ * `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`.
+ */
+export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[]; slots?: AddedSlot[] }
 
 /** An ask as the board carries it: its `key` qualified by its capability, `<cap>:<key>`, and its actions tagged. */
 export type BoardAsk = Omit<Ask, 'actions'> & { cap: string; actions: AddedAction[] }
@@ -414,7 +424,7 @@ export type Started = {
   around?: Record<string, AroundHandler>
   /** An answer per hook its manifest's `answers` names. @since 1.85 */
   answers?: Record<string, AnswerHandler>
-  /** Per slot its manifest declares, what fires at it. @since 1.86 */
+  /** Per slot its manifest declares, what fires at it, and `'*'` for the slots its floor and board folds give. @since 1.86 */
   slots?: Record<string, SlotHandler>
   /** What a board change asks for, when its manifest declares `triggers.board`. @since 1.86 */
   board?: BoardTrigger
@@ -566,7 +576,7 @@ const Period = z
     const problem = periodProblem(every)
     if (problem) ctx.addIssue({ code: 'custom', message: problem })
   })
-const When = z.union([
+export const WhenShape = z.union([
   z.strictObject({
     cron: triggers(z.array(Cron).min(1).describe('Crons in the subset the tower says in words: their slots are the union of theirs.')),
     tz: triggers(z.string().refine(isZone, 'an IANA zone, like Europe/Lisbon').optional().describe("The zone the crons are read in; the tower machine's when left out.")),
@@ -578,7 +588,7 @@ const When = z.union([
   }),
 ])
 const SlotSpec = z.strictObject({
-  when: triggers(When.describe('Its slots: crons, or a period.')),
+  when: triggers(WhenShape.describe('Its slots: crons, or a period.')),
   scope: triggers(Scope.optional().describe('`system`: one slot for the tower, the default; `project`: one per floor where it is on, the floor named.')),
 })
 const Check = z

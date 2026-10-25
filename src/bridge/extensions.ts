@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -317,6 +317,7 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
     const adds = spec.adds ?? []
     if (adds.includes('tidy') && kind !== 'floor') problems.push(error('invalid', 'tidy entries are a floor\'s', `${at}.adds`))
     if (adds.includes('lines') && kind !== 'card') problems.push(error('invalid', 'lines are a card\'s: tower whoami prints them', `${at}.adds`))
+    if (adds.includes('slots') && kind !== 'floor' && kind !== 'board') problems.push(error('invalid', "slots are a floor's or the board's: the slot loop fires them through slots['*']", `${at}.adds`))
     if (spec.x && !holdsX(kind, manifest.collections)) {
       problems.push(
         error('invalid', kind.startsWith('item.') ? `an item's x is its collection's: ${provides} declares no collection ${kind.slice('item.'.length)}` : `a ${kind} holds no x of its own: its fold adds only`, `${at}.x`),
@@ -498,6 +499,9 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...ownContractProblems(found, manifest),
     ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
+    ...(foldsSlots(manifest) && !meets(manifest.requires.tower, SLOTS_ADD_SINCE) && versionOf(manifest.requires.tower)[0] === versionOf(SLOTS_ADD_SINCE)[0]
+      ? [warn('under-declared', `adds slots, since ${SLOTS_ADD_SINCE}, but requires tower ${manifest.requires.tower}: raise it to ${SLOTS_ADD_SINCE}`, 'folds')]
+      : []),
   ]
   return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds }
 }
@@ -899,6 +903,9 @@ const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers' | 'slots',
   ]
 }
 
+/** Whether a manifest's floor or board folds give slots, which `start`'s `slots['*']` fires. */
+export const foldsSlots = (manifest: Manifest): boolean => Object.values(manifest.folds ?? {}).some((fold) => fold.adds?.includes('slots'))
+
 /** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
 const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
   isObject(lane) ? Object.keys(lane).filter((name) => !Object.hasOwn(declared ?? {}, name)) : []
@@ -918,7 +925,7 @@ export const mismatchOf = (started: unknown, manifest: Manifest): string | undef
     ...namesMismatch('reads', Object.keys(manifest.reads ?? {}), started.reads),
     ...namesMismatch('around', Object.keys(manifest.around ?? {}), started.around),
     ...namesMismatch('answers', Object.keys(manifest.answers ?? {}), started.answers),
-    ...namesMismatch('slots', Object.keys(manifest.slots ?? {}), started.slots),
+    ...namesMismatch('slots', [...Object.keys(manifest.slots ?? {}), ...(foldsSlots(manifest) ? ['*'] : [])], started.slots),
   ]
   if (calls.length) return calls.join('; ')
   if (manifest.triggers?.board && typeof started.board !== 'function') return 'its manifest declares triggers.board, and start returned no board function'

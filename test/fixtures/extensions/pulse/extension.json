@@ -111,7 +111,7 @@
     },
     "floor": {
       "x": { "type": "object", "additionalProperties": false, "required": ["beats"], "properties": { "beats": { "type": "integer", "minimum": 0 } } },
-      "adds": ["actions", "asks", "tidy"]
+      "adds": ["actions", "asks", "tidy", "slots"]
     }
   },
   "commands": {

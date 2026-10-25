@@ -4559,10 +4559,16 @@
           "items": {
             "$ref": "#/definitions/AddedLine"
           }
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddedSlot"
+          }
         }
       },
       "additionalProperties": false,
-      "description": "What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker."
+      "description": "What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker. `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`."
     },
     "AddedAction": {
       "anyOf": [
@@ -4677,6 +4683,26 @@
         "cap"
       ],
       "additionalProperties": false
+    },
+    "AddedSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cap": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/definitions/When"
+        }
+      },
+      "required": [
+        "cap",
+        "key",
+        "when"
+      ]
     },
     "BoardAsk": {
       "type": "object",
