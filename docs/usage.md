@@ -85,6 +85,9 @@ and its reviewers discuss the work before it lands.
 - A hired worker reports to whoever hired it once it has answered the notes, and its reviewer tells that hirer
   the verdict, so a coordinator hears the review loop close without you relaying it.
 - `tower note` writes a note, `tower thread` reads one, and `tower send <CALLSIGN>` points a worker at its new notes.
+- A note that is dealt with can be **resolved**: **resolve** on a note in the Reviews tab, or
+  `tower note resolve n3 n4`, appends a note marking those resolved. Resolved notes are dimmed and no longer count as
+  new to anyone; the thread stays append-only, so it still reads as the conversation it was.
 
 ## Keeping things for later
 
@@ -167,7 +170,8 @@ From a terminal: `tower ls`, `tower resume <id>`.
 Each floor's **Tidy** lists what can go: worktrees whose work landed, absorbed branches, review threads of landed
 checkouts (filed, still readable), processes left by sessions no longer running, hires done with their purpose, and
 old logs to archive (`retention.days`). Nothing goes until you press, all of it or one row at a time. Work that
-never landed is only thrown away on purpose (**discard**), after a note on its thread names how to get it back.
+never landed is only thrown away on purpose (**discard**), after the floor's recovery record (a note on its review
+thread, with reviews on) names how to get it back: where nothing would record it, discard is refused.
 
 > "What would Tidy remove on this floor?"
 

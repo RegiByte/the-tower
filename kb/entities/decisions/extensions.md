@@ -185,7 +185,8 @@ and versioned without running anything, and a runtime where an extension's failu
 - **Hooks (1.85).** A provider declares `hooks` (`payload`, `answer`, `failure`), sharing one namespace with its verbs
   and reads, and raises its own with `ctx.raise(name, payload)`; the core's are
   [`HOOKS`](ref:hub/src/shared/api.ts#HOOKS), `tower/discard.record` raised by `worktree/discard` once the tips are
-  read and before anything is noted or removed, `refuses`, and `tower/tidy.apply` raised by `tidy` after its own parts,
+  read and before anything is removed, `refuses` (no answer at all refuses too: the answers are the floor's recovery
+  record, the reviews extension's note and filed thread among them), and `tower/tidy.apply` raised by `tidy` after its own parts,
   to each capability in `plan.x` alone with its keys, `reported` in the reply's `x.<cap>`. A floor's tidy entries are
   drawn by every renderer beside the core's rows, and the floor's `tidy` call carries them all ([[tidy]]). Answerers list a hook in `answers`; each answers in fold
   order (the resolve order), on its own, inside the hook's chain, as `{cap, ok, answer}` or `{cap, ok: false, code,
@@ -265,8 +266,8 @@ and versioned without running anything, and a runtime where an extension's failu
   move does beyond a name in [`legacy.ts`](ref:hub/src/bridge/legacy.ts#projectLegacy), keyed by the old name: an old
   verb's handler calls the new one through the dispatch as a step of the old (`LEGACY_VERBS`: input and reply
   mapped), an old read is served by the new one (`LEGACY_READS`), both with `Deprecation` and a `Link`; the published
-  board copies each moved part back to its old field as it stood at the move
-  ([`projectLegacy`](ref:hub/src/bridge/legacy.ts#projectLegacy), `LEGACY_FIELDS`); a moved stream keeps its old folder
+  board copies each moved part back to its old field as it stood at the move, a dotted field within its subject
+  included (`floor.tidy.threads`) ([`projectLegacy`](ref:hub/src/bridge/legacy.ts#projectLegacy), `LEGACY_FIELDS`); a moved stream keeps its old folder
   for good ([`streamFolder`](ref:hub/src/shared/extensions.ts#streamFolder)), its old fact codes read by the core
   where they were readings (`LEGACY_READINGS`); and a served module keeps its old URL. The config's old spelling is
   read where it is now by one pure function at read time ([`respelled`](ref:hub/src/bridge/legacy.ts#respelled)).
@@ -347,4 +348,9 @@ API 1.89: drafts is the bundled `extensions/drafts` (its client the former
 on every draft), each loaded by `npm test` as `tower extensions check` does. API 1.93: review threads are the bundled
 `extensions/reviews` (`/x/reviews/reviews.js`, `/x/reviews/panel.js`), `ctx.collections.put`, and `floor.main`;
 `review/append`, `GET /reviews/<project>`, `/reviews.js` and the old board fields kept by `LEGACY`.
+API 1.94: the hook `tower/discard.done` and `worktree/discard`'s reply `done`, a tidy entry's `does` and `kind`,
+`ctx.collections.rename`, `tower/discard.record`'s tips with `base`, `head`, `dirty` and `unpushed` and its answer's
+`item`, and `reviews/resolve`; Tidy and discard file threads only through the reviews extension's answers,
+`floor.tidy.threads`, `plan.threads`, `tidy`'s reply `threads` and `worktree/discard`'s reply `thread` kept through
+`LEGACY` until 2.0 ([[tidy]], [[discard]], [[review-threads]]).
 No host change. The bundled ones move in one at a time.

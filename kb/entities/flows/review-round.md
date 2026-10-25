@@ -52,7 +52,8 @@ sequenceDiagram
   is typed into the author's composer, so the author must be at it (the card's `submit` call). To a hired
   author it ends with whom to report to once the notes are answered: its hirer (`card.hiredBy`).
 - **One round.** The reviewer stops after delivering; a re-review is a new hire. The author answers with
-  `tower note on <checkout> re n<k>`.
+  `tower note on <checkout> re n<k>`; a note once dealt with is resolved by a note marking it
+  (`reviews/resolve`, `tower note resolve n<k>`), so it no longer counts as new ([[review-threads]]).
 - **The loop closes at the hirer.** When the author was hired, the reviewer tells the author's hirer its verdict in
   one line, and the author, once it has answered every note, reports to its hirer what changed and whether the work
   is ready: the thread alone reaches no one who isn't reading it (the `review` skill and the handbook's Reviews). The reviewer reports to its author, so sending the author home sends it too

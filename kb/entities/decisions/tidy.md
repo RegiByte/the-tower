@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tidy: one list of what can go, computed, applied as shown",
-  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, landed review threads, the processes of sessions no longer running, hired workers done with their purpose (hirer gone, quiet, work landed), and old logs and stream months to archive; a worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
+  "summary": "Each floor's Tidy is a plan computed in the bridge: removable worktrees, absorbed kept branches, the processes of sessions no longer running, hired workers done with their purpose (hirer gone, quiet, work landed), and old logs and stream months to archive, with what extensions' floor folds add (the reviews extension's landed threads); a worker the user started is never offered. Its call carries the plan; POST /tidy applies exactly that list, or any part of it (each row of the list is its own call), and is refused once any of it no longer qualifies. A worker working with no word from Claude for 20 min is stuck: flagged on its card, never killed.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
@@ -78,21 +78,22 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   the same. Time alone makes a worker stuck, so the tower republishes the board every minute; an unchanged board is
   not sent.
 - The floor's [`TidyPlan`](ref:hub/src/bridge/board.ts#TidyPlan), `floor.tidy`: worktrees and branches by name,
-  landed threads by checkout, `prune`, `logs`, and `streams`, the closed months of the system's streams, which every floor
+  `prune`, `logs`, and `streams`, the closed months of the system's streams, which every floor
   lists, and of the floor's own ([[log-retention]]). `tidy` is offered while it lists anything, its call `['tidy', { project, plan }]`
   ([`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)).
 - [`tidyProject`](ref:hub/src/tower/dispatch.ts#tidyProject) checks the plan against the floor as read now
-  ([`movedOn`](ref:hub/src/tower/dispatch.ts#movedOn): processes, workers, threads, logs, stream months) and git's part
+  ([`movedOn`](ref:hub/src/tower/dispatch.ts#movedOn): processes, workers, logs, stream months) and git's part
   after its fetch ([`tidyable`](ref:hub/src/worktrees.ts#tidyable)), and answers `refused` before touching anything when an
-  item no longer qualifies. It applies only what is listed, in order: worktrees removed and branches deleted, threads
-  filed, processes reaped (SIGTERM), workers killed, old logs and stream months archived. What another verb does it
+  item no longer qualifies. It applies only what is listed, in order: worktrees removed and branches deleted, processes reaped (SIGTERM), workers killed, old logs and stream months archived. What another verb does it
   does through that verb, by the dispatch, for its caller with `tower/tidy` in `within`
   ([`COMPOSITES`](ref:hub/src/shared/api.ts#COMPOSITES): `worktree/remove`, `branch/delete`, `reap/process`, `kill`),
   so whatever an extension wraps around one of them sees Tidy's acts too ([[extensions]]). Each worker is checked again
   just before its kill, since git's fetch takes seconds: one typed into meanwhile, and any entry its verb refuses (a
   kill that fails, a guard), is left and named in the reply's `skipped`, and the rest goes on, so a reply always says
   everything that was done. A branch that moved since git's read is kept the same way ([[tower-cuts-worktrees]]).
-- *Extensions' entries.* A floor fold contributes tidy entries (`board.adds['floor:<p>'].tidy`, `{key, label, hint}`);
+- *Extensions' entries.* A floor fold contributes tidy entries (`board.adds['floor:<p>'].tidy`, `{key, label, hint,
+  does?, kind?}`), the reviews extension one per thread whose work landed, filed by its answer as
+  `<checkout>@<stamp>.md` ([[review-threads]]);
   the plan carries the confirmed ones as `x: {[cap]: keys}`, checked against the adds with the rest, and after the
   core's parts each capability's answer to `tower/tidy.apply` applies its keys, reported in the reply's `x.<cap>`
   ([[extensions]]). Once the folds ran, [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) gives each floor with
@@ -100,11 +101,13 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   anything is listed, the core's or an extension's, and its call carries every entry's key as `plan.x`, so Tidy all
   applies them with the rest in every renderer and the CLI alike. `floor.tidy` stays the core's plan. Renderers read the
   entries with [`addedTidyOf`](ref:hub/src/shared/tidy.ts#addedTidyOf) and pass them to the shared words: `tidyLine`
-  counts them, `tidyRows` gives each its row (its `label`, `apply · <cap>`, its `hint`) with the call that applies only
-  it, and [`tidiedLine`](ref:hub/src/shared/tidy.ts#tidiedLine) names each key applied and each skipped or refused.
+  counts them by their `kind` (`1 landed thread`), `tidyRows` gives each its row (its `label`, its `does` or
+  `apply · <cap>`, its `hint`) with the call that applies only it, and [`tidiedLine`](ref:hub/src/shared/tidy.ts#tidiedLine) names each key applied and each skipped or refused.
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
-  applies only it (one worker, one process, one worktree, one branch, one thread; the old logs as one row), applied
+  applies only it (one worker, one process, one worktree, one branch, one extension entry; the old logs as one row), applied
   and refused by the same checks as the whole.
+- *Until 2.0* (`LEGACY`): `floor.tidy.threads` is copied from the reviews extension's entries, an input's
+  `plan.threads` is added to `plan.x.reviews`, and the reply's `threads` is copied from `x.reviews.done`.
 - *Never in bulk*: a [[carried]] copy may hold less than the branch did (the lander dropped a hunk), so a worktree
   landed edited is never in the plan and `tidy` refuses it.
   [`editedRows`](ref:hub/src/shared/worktree-words.ts#editedRows) lists each such worktree and kept branch with its own
@@ -126,8 +129,7 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - *Offering a landed hire whose hirer is on duty*: a hire kept to answer its implementers' questions, its work living
   outside the repo, would be offered and sent home by mistake. No explicit "keep" fact is stored: the hirer being on
   duty is already on the board.
-- *Per-item verbs only* (`worktree/remove`, `branch/delete`, `reap/process`, `kill`): no verb files a landed thread or
-  archives a log on its own, and each checks its own conditions, not the ones Tidy listed by. A row's call is Tidy's
+- *Per-item verbs only* (`worktree/remove`, `branch/delete`, `reap/process`, `kill`): no verb archives a log on its own, and each checks its own conditions, not the ones Tidy listed by. A row's call is Tidy's
   own, so a row does exactly what the whole would do to it. Tidy checks its conditions first, then calls those verbs
   for each entry, so their own checks and whatever wraps them run as well.
 

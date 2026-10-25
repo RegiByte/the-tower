@@ -23,10 +23,13 @@
     "hub/extensions/reviews/threads.ts#floorThreads",
     "hub/extensions/reviews/server.ts",
     "hub/extensions/reviews/server.ts#append",
-    "hub/src/tower/dispatch.ts#tidyProject",
+    "hub/extensions/reviews/filing.ts#tidyEntries",
     "hub/src/shared/reviews.ts#landedThreadId",
     "hub/extensions/reviews/client/reviews.ts#verdictOf",
     "hub/extensions/reviews/threads.ts#reviewHistory",
+    "hub/extensions/reviews/client/reviews.ts#resolvesOf",
+    "hub/extensions/reviews/client/reviews.ts#resolvedIn",
+    "hub/extensions/reviews/client/reviews.ts#unseenBy",
     "hub/src/directory.ts",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/src/changes.ts#changesIn",
@@ -88,8 +91,14 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   unknown `re`, a note with neither body nor anchor, and a body that would break the parse (a heading outside a
   fence, a fence left open). Authorship is declared in the heading: same-user processes are trusted. This narrows
   [[workers-edit-kept-items]] for this collection: anyone appends, nobody rewrites.
-- *No states.* No resolve, status or kinds: "fixed in 3f2a" is a reply, and a reviewer's finding is a note.
-  What a worker hasn't seen is every message after its own last one (`unseenBy`), worked out, not stored.
+- *No states but resolved, and it is a note.* No status or kinds: "fixed in 3f2a" is a reply, and a reviewer's
+  finding is a note. `reviews/resolve` (the reviews collection's edit door) appends a note like any other whose body
+  opens `**Resolved:** n3, n4` ([`resolvesOf`](ref:hub/extensions/reviews/client/reviews.ts#resolvesOf)), so a thread holding one
+  reads as before wherever resolving is unknown; it refuses a note that is missing, resolved already or a resolution
+  itself. [`resolvedIn`](ref:hub/extensions/reviews/client/reviews.ts#resolvedIn) folds which notes are resolved, by what. What a
+  worker hasn't seen is every message after its own last one, but resolved notes and resolutions that say nothing
+  more ([`unseenBy`](ref:hub/extensions/reviews/client/reviews.ts#unseenBy)), worked out, not stored. The Reviews panel dims a
+  resolved note under a mark naming its resolution and offers Resolve on the others while the work is live.
 - *Delivery: `submit` into a worker the user picks* (by default the one most recently active in the checkout).
   [`sendText`](ref:hub/extensions/reviews/client/reviews.ts#sendText) never carries notes inline: one line naming the sender, the
   notes new to the target and the checkout, how to read and answer them, and, to a hired worker, that it reports
@@ -111,9 +120,11 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   checkout. Until 2.0, `LEGACY` copies them to `card.threadState`, `card.unseen`, `card.checkoutState.filed` and the
   card's `note` verb, calling `review/append`.
 - *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once its work
-  has landed and `main`'s once every main checkout is level with its upstream and no worker runs there
-  ([`tidyProject`](ref:hub/src/tower/dispatch.ts#tidyProject), [[tidy]]; a [[discard]]ed worktree's at once, after
-  the note naming its tips). A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
+  has landed and `main`'s once every main checkout is level with its upstream and no worker runs there: the reviews
+  extension's floor fold lists one tidy entry per landed thread
+  ([`tidyEntries`](ref:hub/extensions/reviews/filing.ts#tidyEntries)) and its answer to `tower/tidy.apply` files each
+  ([`start`](ref:hub/extensions/reviews/server.ts#start), [[tidy]]); a [[discard]]ed worktree's is filed at once by its
+  answer to `tower/discard.record`, after the note naming its tips. The core's Tidy and discard know no thread. A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
   gives it (`<checkout>@<time>.md`) and frees the checkout's name, so a reused name never inherits old notes.
   Filed threads are the review history: [`reviewHistory`](ref:hub/extensions/reviews/threads.ts#reviewHistory), at
   `GET /reviews/history/<project>` (`GET /reviews/<project>` through `LEGACY`), gives every thread, each message with its verdict
@@ -123,7 +134,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   so a commit doesn't turn every note outdated ([[changes-view]]).
 - *On the board:* the extension's [`parse`](ref:hub/extensions/reviews/server.ts) reads each thread once per
   version of its file; [`floorThreads`](ref:hub/extensions/reviews/threads.ts#floorThreads) gives each floor
-  `x.reviews.threads` (checkout, item, count, last message, `landed`, `state`, the note call), each a subject
+  `x.reviews.threads` (checkout, item, count, last message, `landed`, `resolved`, `state`, the note call), each a subject
   `reviews.thread:<project>/<checkout>` others may contribute to; `floor.threads` is their copy until 2.0.
 - *Workers:* the CLI reads its words from the extension (`reviews/said/<project>`): `tower thread [checkout]` prints the thread, the notes new to the caller and the repos an anchor can
   name; `tower note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]` appends under the caller's callsign, quoting each
@@ -150,6 +161,8 @@ the desk panel's Reviews tab ([[tower3d]]).
 **Alternatives considered.**
 - *One file per note, threads worked out from replies naming their parent:* nobody can read the thread as one file.
 - *A thread per branch or per repo:* one ticket spanning repos would split into several threads.
+- *Resolving by rewriting a note* (`reviews/edit`): ends append-only, and a thread's file would no longer be its
+  history.
 - *Findings as JSON with triage states:* not readable as a conversation; keep, drop and addressed are better said
   as replies, and "addressed" can't be worked out from the diff, since a changed line isn't a fix.
 - *The reviewer `SendMessage`s the author:* invisible on the board, and it lands outside the composer.
