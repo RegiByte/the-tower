@@ -10,8 +10,7 @@ import type { SystemPaths } from '../shared/paths.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
-import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from '../../extensions/policies/policies.ts'
-import { POLICIES } from '../../extensions/policies/client/policies.ts'
+import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
 import type { ProbeStatus } from './legacy.ts'
 import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
@@ -205,7 +204,10 @@ export type Card = {
   continuedBy?: SessionRef
   /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go. */
   onDuty: boolean
-  /** The run of a policy it is, through every resume: a run fact names the first session of its lineage. */
+  /**
+   * The run of a policy it is, through every resume: a run fact names the first session of its lineage.
+   * @deprecated since 1.91: the policies extension's `x.policies.run`, copied here until 2.0.
+   */
   run?: CardRun
   /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
   seat?: Seat
@@ -277,7 +279,10 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   branches: FloorBranch[]
   /** The review thread of each checkout that has one, when the floor keeps the `reviews` collection. */
   threads: FloorThread[]
-  /** Its policies, in id order, when the floor keeps the `policies` collection (decision `policies`). */
+  /**
+   * Its policies, in id order (decision `policies`), their calls naming `policy/*`.
+   * @deprecated since 1.91: the policies extension's `x.policies.policies`, copied here until 2.0.
+   */
   policies: PolicyView[]
   /** The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`). */
   gallery: GalleryShowing[]
@@ -328,7 +333,10 @@ export type Board = {
   floors: Floor[]
   /** Who waits on you, in the order to go to them. */
   waiting: Wait[]
-  /** Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot. */
+  /**
+   * Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot.
+   * @deprecated since 1.91: each floor's `x.policies.offers`, and its ask in `asks`, copied here until 2.0.
+   */
   offers: Offer[]
   /**
    * The latest change to any archived card (epoch ms; 0 with none archived): a renderer holding a floor's archive reads
@@ -442,7 +450,6 @@ const card = (
   callsignOf: (id: string) => string,
   now: number,
   nameOf: (s: Session) => string,
-  runOf: (first: string, project: string) => CardRun | undefined,
 ): Unplaced => {
   const { header, facts } = session
   const worker = lineage(session, (s) => continued.get(s))
@@ -530,7 +537,6 @@ const card = (
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    run: runOf(worker[0].header.id, header.project),
     ...cardOffers(header.id, life.status, !life.unresumable, conversations, resources.length, forkable && !reviews && !worktree?.gone ? { project: header.project, checkout, callsign } : undefined, awaitsResume(life), life.cutOff),
   }
 }
@@ -696,19 +702,13 @@ const floorGit = (config: Config, projectId: string, project: Project, repos: Ma
   return { read, worktrees: floorWorktrees(projectId, read ?? [], occupants, keepsThreads(config, projectId)), branches: floorBranches(projectId, read ?? []) }
 }
 
-/** Every policy item, parsed, and each project's policy facts, by project. */
-export type Policies = { files: PolicyFile[]; facts: Map<string, PolicyFacts> }
-
-export const NO_POLICIES: Policies = { files: [], facts: new Map() }
-
 /**
- * Every session's card, archived or not, from the sessions, host, processes, peers, shells, threads, repos, policies and now of `view`: what the board and the archive are cut from. `repos`: what git says in each
+ * Every session's card, archived or not, from the sessions, host, processes, peers, shells, threads, repos and now of `view`: what the board and the archive are cut from. `repos`: what git says in each
  * project dir (`src/worktrees.ts`), by dir. `shells`: the terms daemon's, which hold a worktree in use as a session
  * does. `threads`: every review thread file, parsed. `now`: epoch ms.
  */
-export const allCards = ({ config, sessions, host, processes, peers, shells, threads, repos, policies, now }: SystemView): Card[] => {
+export const allCards = ({ config, sessions, host, processes, peers, shells, threads, repos, now }: SystemView): Card[] => {
   const continued = continuations(sessions)
-  const runOf = (first: string, project: string) => cardRun(first, policies.files.filter((f) => f.project === project), policies.facts.get(project) ?? NO_POLICY_FACTS)
   const reads = [...repos.values()]
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const threadAt = (projectId: string) => (checkout: string) => threadFiles.find((t) => t.project === projectId && t.id === threadId(checkout))?.thread
@@ -740,7 +740,6 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, thr
       callsignOf,
       now,
       nameOf,
-      runOf,
     ),
   )
   return withSeats(withCrews(withCheckouts(config, placed, shells, repos, threadFiles)))
@@ -766,7 +765,6 @@ export type SystemView = {
   /** Each started extension's stream of `tower/rate-limits` readings, folded. */
   readings: LimitFacts[]
   streams: StreamMonth[]
-  policies: Policies
   /** Every extension as it stands (`src/bridge/extensions.ts`). */
   extensions: ExtensionView[]
   /** The stores of the extensions the tower accepted: their collections join the floors they are on. */
@@ -782,15 +780,10 @@ const turnLimitsOf = (sessions: Session[]): Pick<Board, 'turnLimits'> => {
 }
 
 export const board = (view: SystemView): Board => {
-  const { config, sessions, host, shells, items, threads, repos, logFiles, readings, streams, policies, extensions, stores, paths, now } = view
+  const { config, sessions, host, shells, items, threads, repos, logFiles, readings, streams, extensions, stores, paths, now } = view
   const continued = continuations(sessions)
   const threadFiles = threads.filter((t) => keepsThreads(config, t.project))
   const cards = allCards(view)
-  const policiesOf = (id: string): PolicyView[] =>
-    Object.hasOwn(projectCollections(config, id), POLICIES)
-      ? policyViews(id, policies.files.filter((f) => f.project === id), policies.facts.get(id) ?? NO_POLICY_FACTS, cards.filter((c) => c.project === id), host !== undefined, now)
-      : []
-  const floorPolicies = new Map(Object.keys(config.projects).map((id) => [id, policiesOf(id)]))
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
@@ -824,7 +817,7 @@ export const board = (view: SystemView): Board => {
         worktrees,
         branches,
         threads: floorThreadsNow,
-        policies: floorPolicies.get(id)!,
+        policies: [],
         gallery: galleryOf(floorCards),
         bases,
         branchPrefix: worktreesConfig(config, id).branchPrefix,
@@ -835,7 +828,7 @@ export const board = (view: SystemView): Board => {
       }
     }),
     waiting: waitingOrder(cards),
-    offers: [...floorPolicies].flatMap(([id, views]) => offersOf(id, views)).sort((a, b) => a.since - b.since),
+    offers: [],
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     ...limits,
     ...turnLimitsOf(sessions),

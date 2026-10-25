@@ -17,6 +17,7 @@ import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
 import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
 import { parseThread } from '../src/shared/reviews.ts'
+import type { Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
 import { decide, standing } from '../extensions/policies/client/policies.ts'
@@ -402,6 +403,20 @@ test('server: policies kept before the policies extension keep their approvals, 
     { key: `${triage.id}@${triage.slot}`, project: 'lab', policy: triage.id, tag: 'muddy-thistle', title: 'Triage', ...triageOffer, calls: { accept }, actions: [{ verb: 'accept', call: accept }] },
   ])
   assert.deepEqual(worker.run, { policy: digest.id, tag: 'warm-lily', title: 'Digest', n: 1, check: CHECKED, start: 'auto', slot: digest.slot })
+  const part = floor.x?.policies as { policies: { id: string; calls: object }[]; offers: { key: string; calls: object }[] }
+  const renamed = (value: unknown) => JSON.parse(JSON.stringify(value).replaceAll('"policy/run"', '"policies/run"').replaceAll('"policy/approve"', '"policies/approve"'))
+  assert.deepEqual(part, { policies: renamed(floor.policies), offers: renamed(board.offers) }, 'the extension holds the same views, its calls naming its own verbs')
+  assert.deepEqual(worker.x?.policies, { run: worker.run })
+  assert.deepEqual(
+    (board.adds['floor:lab']?.slots ?? []).filter((s) => s.cap === 'policies').map((s) => s.key),
+    ['digest.md', 'nightly.md', 'sweep.md', 'triage.md'],
+    'every valid policy the tower runs has its slots fired by the core',
+  )
+  assert.deepEqual(
+    board.asks.filter((a) => a.cap === 'policies'),
+    [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], cap: 'policies' }] }],
+    'the open offer is an ask that rings as an offer, until the next slot',
+  )
   const standings = Object.fromEntries(floor.policies.map((p) => [p.id, standing(p, now)]))
   assert.deepEqual(standings, {
     [broken.id]: { t: 'invalid' },
@@ -522,19 +537,25 @@ test("server: an extension's folds put its part on the board's subjects, its bad
   )
   const lab = board.floors.find((f) => f.id === 'lab')!
   const card = lab.cards.find((c) => c.id === SESSION)!
-  assert.deepEqual([lab.x?.pulse, card.x], [{ beats: 1 }, { pulse: { beats: 1 } }])
-  assert.deepEqual(board.adds[`card:${SESSION}`], {
+  /** What pulse added to a subject, each list without the other extensions' entries. */
+  const byPulse = (adds: Adds | undefined) =>
+    Object.fromEntries(Object.entries(adds ?? {}).flatMap(([kind, list]) => {
+      const own = (list as { cap: string }[]).filter((a) => a.cap === 'pulse')
+      return own.length ? [[kind, own]] : []
+    }))
+  assert.deepEqual([lab.x?.pulse, card.x?.pulse], [{ beats: 1 }, { beats: 1 }])
+  assert.deepEqual(byPulse(board.adds[`card:${SESSION}`]), {
     badges: [{ label: '1 beat', tone: 'ready', cap: 'pulse' }],
     lines: [{ text: 'You took 1 beat: `tower x pulse beat` keeps another.', cap: 'pulse' }],
   })
-  assert.deepEqual(board.adds['floor:lab'], {
+  assert.deepEqual(byPulse(board.adds['floor:lab']), {
     actions: [{ verb: 'pulse/ping', call: { project: 'lab' }, cap: 'pulse' }],
     tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes', cap: 'pulse' }],
     slots: [{ key: 'lab', when: { every: '1h' }, cap: 'pulse' }],
   })
   assert.deepEqual(lab.calls.tidy, ['tidy', { project: 'lab', plan: { ...lab.tidy, x: { pulse: ['echo'] } } }], "the floor's Tidy carries the extensions' entries")
   assert.deepEqual(
-    board.asks.map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
+    board.asks.filter((a) => a.cap === 'pulse').map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
     [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],
   )
   const client = await get('/x/pulse/pulse.js')

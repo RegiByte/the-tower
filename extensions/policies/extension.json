@@ -1,0 +1,711 @@
+{
+  "id": "policies",
+  "version": "1.0",
+  "title": "Policies",
+  "description": "Standing work the tower starts at its slots: a markdown file with a json header and the prose a run starts on.",
+  "requires": {
+    "tower": "1.86"
+  },
+  "server": "server.ts",
+  "client": "client",
+  "collections": {
+    "policies": {
+      "label": "Policies",
+      "description": "Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower policies` lists them."
+    }
+  },
+  "streams": {
+    "runs": {
+      "scope": "project",
+      "description": "Each policy's runs and passes, oldest first: kept in the folder runs/.",
+      "facts": {
+        "r": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "policy",
+              "hash",
+              "id",
+              "start",
+              "slot"
+            ],
+            "properties": {
+              "policy": {
+                "type": "string"
+              },
+              "hash": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "by": {
+                "type": "string"
+              },
+              "check": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "exit": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "description": "Its exit code: 0, there is work; 1, none."
+                      },
+                      "ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "out": {
+                        "description": "Its stdout when it found work, at most 2,048 characters.",
+                        "type": "string",
+                        "maxLength": 2048
+                      },
+                      "stderr": {
+                        "description": "The end of its stderr when it failed, at most 500 characters.",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "exit",
+                      "ms"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "description": "Why it has no exit code: it timed out, or could not start."
+                      },
+                      "ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "stderr": {
+                        "description": "The end of its stderr when it failed, at most 500 characters.",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "ms"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "start": {
+                "enum": [
+                  "hand",
+                  "auto",
+                  "offer"
+                ]
+              },
+              "slot": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "description": "A worker started for a policy: `slot` an ISO instant, null by hand."
+        },
+        "s": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "policy",
+              "hash",
+              "slot",
+              "outcome"
+            ],
+            "properties": {
+              "policy": {
+                "type": "string"
+              },
+              "hash": {
+                "type": "string"
+              },
+              "slot": {
+                "type": "string"
+              },
+              "outcome": {
+                "enum": [
+                  "offered",
+                  "no-work",
+                  "held",
+                  "check-failed"
+                ]
+              },
+              "check": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "exit": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "description": "Its exit code: 0, there is work; 1, none."
+                      },
+                      "ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "out": {
+                        "description": "Its stdout when it found work, at most 2,048 characters.",
+                        "type": "string",
+                        "maxLength": 2048
+                      },
+                      "stderr": {
+                        "description": "The end of its stderr when it failed, at most 500 characters.",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "exit",
+                      "ms"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "string",
+                        "description": "Why it has no exit code: it timed out, or could not start."
+                      },
+                      "ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "stderr": {
+                        "description": "The end of its stderr when it failed, at most 500 characters.",
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "error",
+                      "ms"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "description": "A slot seen and not started, and why."
+        }
+      },
+      "doors": {
+        "read": "policies/runs/<project>",
+        "append": "policies/run"
+      }
+    },
+    "approvals": {
+      "scope": "project",
+      "description": "Each policy's approved hashes: kept in the folder approvals/.",
+      "facts": {
+        "a": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "policy",
+              "hash"
+            ],
+            "properties": {
+              "policy": {
+                "type": "string"
+              },
+              "hash": {
+                "type": "string"
+              },
+              "by": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "description": "A policy's hash approved for the runner to start on its own."
+        }
+      },
+      "doors": {
+        "read": "policies/runs/<project>",
+        "append": "policies/approve"
+      }
+    }
+  },
+  "folds": {
+    "card": {
+      "x": {
+        "type": "object",
+        "required": [
+          "run"
+        ],
+        "properties": {
+          "run": {
+            "type": "object",
+            "required": [
+              "policy",
+              "tag",
+              "n",
+              "start",
+              "slot"
+            ]
+          }
+        }
+      },
+      "adds": [
+        "lines"
+      ]
+    },
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": [
+          "policies",
+          "offers"
+        ],
+        "properties": {
+          "policies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "tag",
+                "hash",
+                "live",
+                "calls",
+                "actions"
+              ]
+            }
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "key",
+                "project",
+                "policy",
+                "slot",
+                "since",
+                "until",
+                "calls",
+                "actions"
+              ]
+            }
+          }
+        }
+      },
+      "adds": [
+        "slots",
+        "asks"
+      ]
+    }
+  },
+  "verbs": {
+    "run": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "pattern": "^[^./\\\\][^/\\\\]*$",
+            "description": "The policy: its item's id in the project's `policies` collection."
+          },
+          "by": {
+            "description": "The worker that makes the request, by session id: named on the run fact as the session that accepted or started it. Left out, the user makes it.",
+            "type": "string",
+            "minLength": 1
+          },
+          "check": {
+            "description": "The check that let it run.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "exit": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "description": "Its exit code: 0, there is work; 1, none."
+                  },
+                  "ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "out": {
+                    "description": "Its stdout when it found work, at most 2,048 characters.",
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "stderr": {
+                    "description": "The end of its stderr when it failed, at most 500 characters.",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "exit",
+                  "ms"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string",
+                    "description": "Why it has no exit code: it timed out, or could not start."
+                  },
+                  "ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "stderr": {
+                    "description": "The end of its stderr when it failed, at most 500 characters.",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "error",
+                  "ms"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "start": {
+            "type": "string",
+            "enum": [
+              "hand",
+              "auto",
+              "offer"
+            ],
+            "description": "`hand`, now with no slot; `auto`, a runner at its slot; `offer`, an open offer accepted."
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "The slot it runs for, epoch ms: one of the policy's, at or before now. Required by `auto` and `offer`; `hand` takes none."
+          }
+        },
+        "required": [
+          "project",
+          "policy",
+          "start"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "ran"
+          },
+          "id": {
+            "type": "string",
+            "description": "The worker's session."
+          },
+          "n": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "The run's number among the policy's runs."
+          },
+          "hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "n",
+          "hash"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval (the caller consents), except `auto`, refused unless the file's words as read now are approved. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
+      "words": {
+        "label": "Run now",
+        "hint": "start a run of the policy now"
+      }
+    },
+    "pass": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "pattern": "^[^./\\\\][^/\\\\]*$",
+            "description": "The policy: its item's id in the project's `policies` collection."
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "One of the policy's slots, epoch ms, at or before now."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "offered",
+              "no-work",
+              "held",
+              "check-failed"
+            ]
+          },
+          "check": {
+            "description": "The check, when one ran.",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "exit": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "description": "Its exit code: 0, there is work; 1, none."
+                  },
+                  "ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "out": {
+                    "description": "Its stdout when it found work, at most 2,048 characters.",
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "stderr": {
+                    "description": "The end of its stderr when it failed, at most 500 characters.",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "exit",
+                  "ms"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string",
+                    "description": "Why it has no exit code: it timed out, or could not start."
+                  },
+                  "ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "stderr": {
+                    "description": "The end of its stderr when it failed, at most 500 characters.",
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "error",
+                  "ms"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "project",
+          "policy",
+          "slot",
+          "outcome"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "ok"
+          }
+        },
+        "required": [
+          "t"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Record a slot of a policy the runner saw and didn't start, and why: `offered`, `no-work`, `held` (live was full), `check-failed`. Refused once the slot has a fact."
+    },
+    "approve": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "pattern": "^[^./\\\\][^/\\\\]*$",
+            "description": "The policy: its item's id in the project's `policies` collection."
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "The hash of the policy's file as the approver read it, `sha256:<hex>`."
+          },
+          "by": {
+            "description": "The worker that makes the request, by session id: named on the approval fact. Left out, the user makes it.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "project",
+          "policy",
+          "hash"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "ok"
+          }
+        },
+        "required": [
+          "t"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Approve a policy's current words for the runner to start on its own (`start: auto`): refused unless `hash` is the file's hash now. Any edit needs a new approval.",
+      "words": {
+        "label": "Approve",
+        "hint": "approve the policy's words as they are now, for it to start on its own"
+      }
+    }
+  },
+  "reads": {
+    "runs/<project>": {
+      "scope": "project",
+      "query": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "type": "string",
+            "pattern": "^[^./\\\\][^/\\\\]*$",
+            "description": "The policy: its item's id in the project's `policies` collection."
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^([1-9][0-9]{0,2}|1000)$",
+            "description": "How many of its latest runs, newest first: 20 when left out, at most 1000."
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "n",
+            "slot",
+            "at",
+            "hash",
+            "current",
+            "start",
+            "worker"
+          ]
+        }
+      },
+      "description": "A policy's runs, newest first: each run's number, slot, how it started and on which hash, its check, and its worker as it is now, its latest answer in full."
+    },
+    "said/<project>": {
+      "scope": "project",
+      "description": "What `tower policies` and `tower runs` print of the floor's policies, in this extension's words: each policy's lines and where it stands, by id, and with `policy`, its latest `runs` runs.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "policy": {
+            "type": "string",
+            "description": "A policy's id: its runs' lines too."
+          },
+          "runs": {
+            "type": "string",
+            "pattern": "^([1-9][0-9]{0,2}|1000)$",
+            "description": "How many of its latest runs: 5 when left out."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "lines",
+          "standing"
+        ],
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "standing": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

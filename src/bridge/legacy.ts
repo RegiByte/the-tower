@@ -8,7 +8,8 @@ import { apiError, type ApiError, type Replies } from '../shared/api.ts'
 import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
 import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
-import type { Board } from './board.ts'
+import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
+import type { Board, Card, Floor } from './board.ts'
 import { probeOffers, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
 
 /** An old verb: its input as the new one takes it, or why it can't be; the new verb's reply as the old one answered. */
@@ -62,7 +63,13 @@ export type ProbeView = { status: Board['probes'][number]; reads: ({ at: number 
 
 const QUOTA_ONLY = (name: string | undefined) => apiError('not_found', `No probe "${name}": the tower runs quota, the quota extension's (tower x quota)`)
 
+/** An old verb whose input and reply are the new one's. */
+const same: LegacyVerb = { input: (old) => old, reply: (now) => now }
+
 export const LEGACY_VERBS: Record<string, LegacyVerb> = {
+  'policy/run': same,
+  'policy/pass': same,
+  'policy/approve': same,
   'probe/run': {
     input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
     reply: (now) => ({ t: 'probed', ...(now as Omit<Replies['probe/run'], 't'>) }),
@@ -70,6 +77,10 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
 }
 
 export const LEGACY_READS: Record<string, LegacyRead> = {
+  'runs/<project>': {
+    request: ({ project }, { policy, limit }) => ({ params: { project: project! }, query: { policy: String(policy), limit: String(limit) } }),
+    reply: (now) => now,
+  },
   'probe/<name>': {
     request: ({ name }, { last }) => (name === 'quota' ? { params: {}, query: { last: String(last) } } : QUOTA_ONLY(name)),
     reply: (now, board) => {
@@ -84,7 +95,34 @@ export const LEGACY_READS: Record<string, LegacyRead> = {
 /** The quota extension's part, as `board.x.quota` holds it. */
 type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'>
 
+/** A call as the policies extension's part names it: its verb, and its input. */
+type MovedCall = [verb: string, input: unknown]
+
+/** The policies extension's part of a floor, as it stood at the move: its calls naming `policies/run` and `policies/approve`. */
+type PoliciesPart = {
+  policies: (PolicyFields & { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] })[]
+  offers: (OfferFields & { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] })[]
+}
+
+/** The core's verbs the moved calls named before the move. */
+const OLD_VERB: Record<string, string> = { 'policies/run': 'policy/run', 'policies/approve': 'policy/approve' }
+
+const oldCall = ([verb, input]: MovedCall): MovedCall => [OLD_VERB[verb] ?? verb, input]
+
+/** What a view or an offer calls, named as the core named it. */
+const oldCalls = <T extends { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] }>(thing: T): T => ({
+  ...thing,
+  calls: Object.fromEntries(Object.entries(thing.calls).map(([verb, call]) => [verb, oldCall(call)])),
+  actions: thing.actions.map((a) => (a.call ? { ...a, call: oldCall(a.call) } : a)),
+})
+
+const policiesPart = (subject: { x?: Record<string, unknown> }) => subject.x?.[POLICIES] as PoliciesPart | undefined
+
 export const LEGACY_FIELDS: Record<string, LegacyField> = {
+  'floor.policies': (floor): PolicyView[] => (policiesPart(floor as Floor)?.policies ?? []).map(oldCalls) as PolicyView[],
+  'card.run': (card): CardRun | undefined => (policiesPart(card as Card) as { run?: CardRun } | undefined)?.run,
+  'board.offers': (board): Offer[] =>
+    ((board as Board).floors.flatMap((f) => (policiesPart(f)?.offers ?? []).map(oldCalls)) as Offer[]).sort((a, b) => a.since - b.since),
   'board.probes': (board) => {
     const quota = (board as Board).x?.quota as QuotaPart | undefined
     if (!quota) return []

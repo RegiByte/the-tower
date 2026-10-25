@@ -48,7 +48,7 @@ test('slots follow the zone: a spring-forward time is skipped, a repeated one ru
 const NOW = Date.parse('2026-10-14T13:31:00Z')
 const SLOT = Date.parse('2026-10-14T13:30:00Z')
 const header = (rest: string) => policyText(`{ "when": { "cron": ["30 13 * * *"], "tz": "UTC" }${rest} }`)
-const file = (id: string, text: string): PolicyFile => ({ project: 'lab', id, modifiedAt: 0, hash: hashOf(text), parsed: parsePolicy(text) })
+const file = (id: string, text: string): PolicyFile => ({ id, hash: hashOf(text), parsed: parsePolicy(text) })
 const viewsOf = (files: PolicyFile[], facts = NO_POLICY_FACTS): PolicyView[] => policyViews('lab', files, facts, [], true, NOW)
 
 test('the runner decides each due slot from the board alone: held, checked, run, offered', () => {
@@ -79,6 +79,6 @@ test('an edit drops an auto policy to offers and says it needs you; an offer sta
   assert.equal(view.approved, undefined)
   assert.deepEqual(standing(view, NOW), { t: 'offered', slot: SLOT, until: SLOT + 24 * 60 * MIN })
   assert.deepEqual(view.offer?.check, { exit: 0, ms: 5, out: '12' }, 'an accepted offer records what its check found')
-  assert.deepEqual(offersOf('lab', [view]).map((o) => [o.key, o.calls.accept]), [[`auto.md@${SLOT}`, ['policy/run', { project: 'lab', policy: 'auto.md', slot: SLOT, start: 'offer', check: { exit: 0, ms: 5, out: '12' } }]]])
+  assert.deepEqual(offersOf('lab', [view]).map((o) => [o.key, o.calls.accept]), [[`auto.md@${SLOT}`, ['policies/run', { project: 'lab', policy: 'auto.md', slot: SLOT, start: 'offer', check: { exit: 0, ms: 5, out: '12' } }]]])
   assert.deepEqual(decide({ policies: [view] }, new Map(), NOW), [], 'a slot with a fact is not decided again')
 })

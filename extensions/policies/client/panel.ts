@@ -4,13 +4,13 @@
  */
 import type { Board, Floor } from '../../../src/bridge/board.ts'
 import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../policies.ts'
-import type { Call, Replies } from '../../../src/shared/api.ts'
+import type { Replies } from '../../../src/shared/api.ts'
 import { DISMISS_OFFER_TITLE, callOf, esc } from '../../../src/shared/cards.ts'
-import { heldWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
+import { floorPolicies, heldWords, offerAskKey, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
 
-/** A floor's policies as the panel draws them, at `now`, and the offers this viewer dismissed (`DISMISSED_KEY`). */
+/** A floor's policies as the panel draws them, at `now`, and the asks this viewer dismissed (`DISMISSED_KEY`): an offer's is `offerAskKey`. */
 export type PoliciesView = { board: Board; floor: Floor; now: number; dismissed: ReadonlySet<string> }
 
 /** A worker by its session id, as a link the renderer wires (`data-worker`). */
@@ -23,12 +23,12 @@ const tzOf = (p: PolicyView) => p.header?.when.tz
 
 /** The zone a policy's slots are said in (`slotWords`): its `when.tz`; none for a policy deleted or invalid since, read in the viewer's. */
 export const policyZone = (board: Board, project: string, policy: string) => {
-  const p = board.floors.find((f) => f.id === project)?.policies.find((p) => p.id === policy)
+  const p = floorPolicies(board.floors.find((f) => f.id === project)).policies.find((p) => p.id === policy)
   return p && tzOf(p)
 }
 
 /** A slot offered, in words: `today 15:00 offered, open until Fri 15:00`. */
-export const offerWords = (board: Board, offer: Offer, now: number) => {
+export const offerWords = (board: Board, offer: Pick<Offer, 'project' | 'policy' | 'slot' | 'until'>, now: number) => {
   const tz = policyZone(board, offer.project, offer.policy)
   return `${slotWords(offer.slot, tz, now)} offered, open until ${slotWords(offer.until, tz, now)}`
 }
@@ -49,7 +49,10 @@ const lastHtml = (board: Board, p: PolicyView, now: number) =>
 const runHeld = (p: ValidPolicyView) =>
   p.header.runner !== undefined ? `left to the runner "${p.header.runner}"` : p.live.length >= p.header.live ? `live is full: ${p.live.length} of ${p.header.live} run` : 'the host is down'
 
-const callHtml = (call: Call<'policy/run' | 'policy/approve'>, label: string, tip: string, cls = '') =>
+/** A press of one of the policies' calls: `policies/run` or `policies/approve`, and its input. */
+export type PolicyCall = [verb: string, input: object]
+
+const callHtml = (call: PolicyCall, label: string, tip: string, cls = '') =>
   `<button class="${cls}" data-policy-call="${esc(JSON.stringify(call))}" data-tip="${esc(tip)}">${label}</button>`
 
 const approveHtml = (p: PolicyView) => {
@@ -87,8 +90,8 @@ const needsHtml = (v: PoliciesView, p: PolicyView) =>
     : `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
 
 const offerRowHtml = (v: PoliciesView, o: Offer) => {
-  const dismissed = v.dismissed.has(o.key)
-  const dismiss = dismissed ? '<small>dismissed</small>' : `<button class="icon-btn" data-offer-dismiss="${esc(o.key)}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button>`
+  const dismissed = v.dismissed.has(offerAskKey(o))
+  const dismiss = dismissed ? '<small>dismissed</small>' : `<button class="icon-btn" data-offer-dismiss="${esc(offerAskKey(o))}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button>`
   return `<div class="offer${dismissed ? ' dismissed' : ''}"><span class="lamp"></span><button class="title" data-policy-open="${esc(o.policy)}" data-tip="open its file">${esc(o.title ?? o.tag)}</button>
     <span class="when">${esc(offerWords(v.board, o, v.now))}</span><span class="acts">${callHtml(callOf(o, 'accept')!, 'Accept', 'start the run this slot offers, on the file as it is now', 'primary')}${dismiss}</span></div>`
 }
@@ -99,16 +102,16 @@ const offerRowHtml = (v: PoliciesView, o: Offer) => {
  * last run, and Run now and Approve.
  */
 export function policiesHtml(v: PoliciesView) {
-  const needs = v.floor.policies.filter((p) => p.needs)
-  const offers = v.board.offers.filter((o) => o.project === v.floor.id)
+  const { policies, offers } = floorPolicies(v.floor)
+  const needs = policies.filter((p) => p.needs)
   const section = (title: string, tip: string, body: string) => `<section><h3 data-tip="${esc(tip)}">${title}</h3>${body}</section>`
   return `<div class="policies-panel">
     ${needs.length ? section('Needs you', 'auto policies that lost the right to run on its own (their slots are offered meanwhile), and slots held by runs still on duty', needs.map((p) => needsHtml(v, p)).join('')) : ''}
     ${offers.length ? section('Offered', 'slots offered and not yet started: each stays open until its policy\'s next slot', offers.map((o) => offerRowHtml(v, o)).join('')) : ''}
-    ${section(`${v.floor.policies.length} ${v.floor.policies.length === 1 ? 'policy' : 'policies'}`, 'standing work the tower runs at its slots, kept as files in the floor\'s policies collection',
-      v.floor.policies.map((p) => policyHtml(v, p)).join('') || '<p class="none">no policies: keep one with <code>tower keep policies</code></p>')}</div>`
+    ${section(`${policies.length} ${policies.length === 1 ? 'policy' : 'policies'}`, 'standing work the tower runs at its slots, kept as files in the floor\'s policies collection',
+      policies.map((p) => policyHtml(v, p)).join('') || '<p class="none">no policies: keep one with <code>tower keep policies</code></p>')}</div>`
 }
 
 /** What a press of `data-policy-call` did, as a toast says it. */
-export const policyDoneLine = (call: Call<'policy/run' | 'policy/approve'>, title: string, reply: Replies['policy/run'] | Replies['policy/approve']) =>
-  call[0] === 'policy/approve' ? `Approved ${title}` : `Started run ${(reply as Replies['policy/run']).n} of ${title}`
+export const policyDoneLine = (call: PolicyCall, title: string, reply: Replies['policy/run'] | Replies['policy/approve']) =>
+  call[0].endsWith('/approve') ? `Approved ${title}` : `Started run ${(reply as Replies['policy/run']).n} of ${title}`

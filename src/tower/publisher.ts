@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, board, type Board, type Policies, type SystemView } from '../bridge/board.ts'
+import { allCards, board, type Board, type SystemView } from '../bridge/board.ts'
 import { foldBoard } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
@@ -43,8 +43,6 @@ export const publisher = defineResource({
 
     const currentBoard = (): string => built().text
 
-    const policiesNow = (): Policies => ({ files: system.policies(), facts: system.policyFacts() })
-
     const viewOf = (): SystemView => ({
       config: readConfig(),
       sessions: system.sessions(),
@@ -58,7 +56,6 @@ export const publisher = defineResource({
       logFiles: system.logs(),
       readings: extensions.readings(),
       streams: system.streamMonths(),
-      policies: policiesNow(),
       extensions: extensions.registry().extensions,
       stores: extensions.registry().stores,
       paths,

@@ -14,8 +14,6 @@ import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Exemption, type Session } from '../bridge/facts.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
-import { APPROVALS_STREAM, liveRuns, NO_POLICY_FACTS, RUNS_STREAM, shortHash, slotName, slotSeen, type ApprovalFact, type Parsed, type PassFact, type PolicyFacts, type RunFact } from '../../extensions/policies/policies.ts'
-import { hashOf, parsePolicy } from '../../extensions/policies/policy-file.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
@@ -47,13 +45,10 @@ import {
   type Project,
   type Runtime,
 } from '../shared/model.ts'
-import { projectCollectionsPath, projectStreamPath } from '../shared/paths.ts'
-import { POLICIES, ruleWords, slotsBetween } from '../../extensions/policies/client/policies.ts'
+import { projectCollectionsPath } from '../shared/paths.ts'
 import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, reviewedIn, REVIEWS, stamp, threadId } from '../shared/reviews.ts'
-import { tagOf } from '../shared/tags.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
-import { appendFact } from '../streams.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
@@ -72,7 +67,6 @@ export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
 export const isDeclaredIn = (config: Config, project: string, collection: string): boolean =>
   Object.hasOwn(config.projects, project) && Object.hasOwn(projectCollections(config, project), collection)
 
-export const policyFactsIn = (live: SystemResource, project: string) => live.policyFacts().get(project) ?? NO_POLICY_FACTS
 
 type Deps = {
   'core:config': ConfigResource
@@ -94,7 +88,6 @@ export const dispatch = defineResource({
   start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard }, 'core:extensions': holder }: Deps) => {
     const isDeclared = (project: string, collection: string) => isDeclaredIn(readConfig(), project, collection)
 
-    const policyFactsOf = (project: string) => policyFactsIn(system, project)
 
     /** The branches a verb kept, each with why, when it kept any. */
     const keptOf = (kept: string[]) => (kept.length ? { kept } : {})
@@ -792,98 +785,6 @@ export const dispatch = defineResource({
         }
       })
 
-    /** A policy's file as it is now: its text's hash and its parse. */
-    const policyFile = (project: string, policy: string): { hash: string; parsed: Parsed } | ApiError => {
-      if (!isDeclared(project, POLICIES)) return apiError('not_found', `"${project}" keeps no policies: the \`${POLICIES}\` collection is declared in the config`)
-      const text = readItem(paths, project, POLICIES, policy)
-      if (text === undefined) return apiError('not_found', `${project}/${POLICIES} holds no policy "${policy}"`)
-      return { hash: hashOf(text), parsed: parsePolicy(text) }
-    }
-
-
-    /** Why a policy can't take a fact for `slot`: it isn't valid, another runner acts on it, or `slot` is none of its slots up to now. */
-    const slotRefusal = (policy: string, parsed: Parsed, slot: number | undefined): ApiError | undefined => {
-      if (!parsed.ok) return apiError('refused', `The policy ${tagOf(policy)} is invalid: ${parsed.problems.map((p) => `${p.path}: ${p.message}`).join('; ')}`)
-      if (parsed.header.runner !== undefined) return apiError('refused', `The policy ${tagOf(policy)} is left to the runner "${parsed.header.runner}"`)
-      if (slot === undefined) return undefined
-      if (slot > Date.now()) return apiError('refused', `${slotName(slot)} is still to come`)
-      return slotsBetween(parsed.header.when, slot - 1, slot).includes(slot) ? undefined : apiError('invalid', `${slotName(slot)} is not one of the slots of ${tagOf(policy)} (${ruleWords(parsed.header.when)})`)
-    }
-
-    /** Appends a policy fact to its project's stream, and resolves once the system holds it, so the next request reads it. */
-    const appendPolicyFact = async (project: string, stream: string, code: string, fact: object, held: (facts: PolicyFacts) => boolean) => {
-      appendFact(projectStreamPath(paths, project, stream), stream, Date.now(), code, fact)
-      await system.until(() => held(policyFactsOf(project)), TRACK_TIMEOUT_MS)
-    }
-
-    /** A policy's runs, passes and approvals are taken one at a time, each until the system holds its fact. */
-    const onPolicy = (project: string, policy: string, act: () => Promise<Answer>) => inTurn(`policy ${project}/${policy}`, act)
-
-    /**
-     * A run of a policy: its file parsed now, a worker spawned on its prose with its `hire` through `tower/spawn`, and the
-     * run fact appended. A worker whose fact can't be appended is killed, so no run goes uncounted.
-     */
-    const runPolicy = (input: RouteInput['policy/run'], caller: Caller) => {
-      const { project, policy, by, check } = input
-      const [slot, startFact] =
-        input.start === 'hand' ? [undefined, { start: 'hand', slot: null } as const] : [input.slot, { start: input.start, slot: slotName(input.slot) } as const]
-      return fromWorker(by, () =>
-        onPolicy(project, policy, async () => {
-          const file = policyFile(project, policy)
-          if ('t' in file) return file
-          const refused = slotRefusal(policy, file.parsed, slot)
-          if (refused) return refused
-          const { header, prompt } = file.parsed as Extract<Parsed, { ok: true }>
-          if (input.start === 'auto' && !policyFactsOf(project).approvals.some(([, a]) => a.policy === policy && a.hash === file.hash)) return apiError('refused', `${tagOf(policy)} is not approved as it is now (${shortHash(file.hash)}): it starts on its own only on approved words`)
-          if (slot !== undefined && policyFactsOf(project).runs.some(([, r]) => r.policy === policy && r.slot === slotName(slot))) return apiError('refused', `${tagOf(policy)} already ran for ${slotName(slot)}`)
-          if (!system.live()) return apiError('unavailable', 'No host runs, so no worker can start: the user starts it with `tower up`')
-          await system.refreshLive()
-          const live = liveRuns(policy, policyFactsOf(project), everyCard(Date.now()))
-          if (live.length >= header.live) return apiError('limited', `${live.map((c) => c.callsign).join(', ')} still run${live.length === 1 ? 's' : ''}: ${tagOf(policy)} runs at most ${header.live} at once (its \`live\`)`)
-          const answer = await call('tower/spawn', { project, ...header.hire, prompt }, nestedIn(caller, 'tower/policy/run'))
-          if (answer.t !== 'spawned') return answer
-          const { id } = answer as Replies['spawn']
-          const fact: RunFact = { policy, hash: file.hash, id, ...(by && { by }), ...(check && { check }), ...startFact }
-          try {
-            await appendPolicyFact(project, RUNS_STREAM, 'r', fact, (facts) => facts.runs.some(([, r]) => r.id === id))
-          } catch (err) {
-            await host({ t: 'kill', id })
-            return apiError('internal', `Session ${id} started but its run couldn't be recorded, so it was killed (it can be resumed): ${(err as Error).message}`)
-          }
-          await system.tracked(id, TRACK_TIMEOUT_MS)
-          return { t: 'ran', id, n: policyFactsOf(project).runs.filter(([, r]) => r.policy === policy).length, hash: file.hash }
-        }),
-      )
-    }
-
-    /** A slot the runner saw and didn't start, and why: refused once the slot has a fact. */
-    const passPolicy = ({ project, policy, slot, outcome, check }: RouteInput['policy/pass']) =>
-      onPolicy(project, policy, async () => {
-        const file = policyFile(project, policy)
-        if ('t' in file) return file
-        const refused = slotRefusal(policy, file.parsed, slot)
-        if (refused) return refused
-        if (slotSeen(policy, slot, policyFactsOf(project))) return apiError('refused', `${slotName(slot)} of ${tagOf(policy)} already has a fact`)
-        const fact: PassFact = { policy, hash: file.hash, slot: slotName(slot), outcome, ...(check && { check }) }
-        await appendPolicyFact(project, RUNS_STREAM, 's', fact, (facts) => slotSeen(policy, slot, facts))
-        return OK
-      })
-
-    /** An approval of the words the approver read: refused unless `hash` is the file's now. */
-    const approvePolicy = ({ project, policy, hash, by }: RouteInput['policy/approve']) =>
-      fromWorker(by, () =>
-        onPolicy(project, policy, async () => {
-          const file = policyFile(project, policy)
-          if ('t' in file) return file
-          if (file.hash !== hash) return apiError('refused', `${tagOf(policy)} changed since it was read: its hash is ${shortHash(file.hash)} now, not ${shortHash(hash)}. Read it again, then approve what you read`)
-          if (!file.parsed.ok) return apiError('refused', `The policy ${tagOf(policy)} is invalid: ${file.parsed.problems.map((p) => `${p.path}: ${p.message}`).join('; ')}`)
-          const count = policyFactsOf(project).approvals.length
-          const fact: ApprovalFact = { policy, hash, ...(by && { by }) }
-          await appendPolicyFact(project, APPROVALS_STREAM, 'a', fact, (facts) => facts.approvals.length > count)
-          return OK
-        }),
-      )
-
     /**
      * A core verb that moved into an extension (`LEGACY`): its input as the new verb takes it, called through the one
      * dispatch as a step of the old, and the reply as the old one answered.
@@ -952,9 +853,9 @@ export const dispatch = defineResource({
       'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
       tidy: ({ project, plan }, caller) => tidyProject(project, plan, caller),
       'review/append': appendReview,
-      'policy/run': runPolicy,
-      'policy/pass': passPolicy,
-      'policy/approve': approvePolicy,
+      'policy/run': legacy('policy/run'),
+      'policy/pass': legacy('policy/pass'),
+      'policy/approve': legacy('policy/approve'),
     }
 
     /** A core verb: its input parsed by its schema, handled with its caller, and its reply checked against its schema. */

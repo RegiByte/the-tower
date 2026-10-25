@@ -1,42 +1,43 @@
 /**
- * Policies' facts, written only by the tower to each project's streams (`streams/projects/<project>/runs/` and
- * `approvals/`), and what the board derives from them and the floor's `policies` items: each policy's view, the open
- * offers, and the run a card is. Nothing about a policy is stored beside these facts (decision `policies`).
+ * Policies' facts, written only by the policies extension to each project's streams (`runs` and `approvals`, kept in
+ * the folders `streams/projects/<project>/runs/` and `approvals/`), and what its folds derive from them and the floor's
+ * `policies` items: each policy's view, the open offers, and the run a card is. Nothing about a policy is stored
+ * beside these facts (decision `policies`).
  */
-import type { Call } from '../../src/shared/api.ts'
-import { nextSlot, ruleWords, type PolicyHeader, type Problem } from './client/policies.ts'
+import type { Verbs } from '../../src/shared/api.ts'
+import { nextSlot, ruleWords } from '../../src/shared/slots.ts'
 import { tagOf } from '../../src/shared/tags.ts'
 import type { Card } from '../../src/bridge/board.ts'
 import type { StreamFact } from '../../src/bridge/streams.ts'
-import { calledOffers, type OfferAction, type OfferCalls, type OfferVerb, type PolicyAction, type PolicyCalls, type PolicyVerb } from '../../src/bridge/verbs.ts'
+import { calledOffers } from '../../src/bridge/verbs.ts'
+import type {
+  CardRun,
+  CheckResult,
+  HeldBy,
+  InvalidPolicy,
+  OfferFields,
+  Outcome,
+  PolicyFields,
+  PolicyHeader,
+  Problem,
+  RunRead,
+  ValidPolicy,
+} from '../../src/shared/policies-legacy.ts'
 
-export const RUNS_STREAM = 'runs'
-export const APPROVALS_STREAM = 'approvals'
+export type { CardRun, CheckResult, HeldBy, Outcome, PolicyHeader, Problem, RunRead, RunStart } from '../../src/shared/policies-legacy.ts'
+export { shortHash } from '../../src/shared/policies-legacy.ts'
 
 /**
- * A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error`
- * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
- * when it failed (at most 500).
- */
-export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
-
-/** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
-export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
-
-/** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
-export type RunStart = 'auto' | 'offer' | 'hand'
-
-/**
- * `r` in `runs/`: a worker started for a policy. `policy` is its item id; `hash` the file's as it ran; `slot` an ISO
+ * `r` in `runs`: a worker started for a policy. `policy` is its item id; `hash` the file's as it ran; `slot` an ISO
  * instant, `null` by hand; `id` the worker's session; `by` the session that accepted or started it (absent: the user,
  * or the runner for `auto`); `check` the check that let it run.
  */
 export type RunFact = { policy: string; hash: string; id: string; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: string })
 
-/** `s` in `runs/`: a slot the runner saw and didn't start, and why. */
+/** `s` in `runs`: a slot the runner saw and didn't start, and why. */
 export type PassFact = { policy: string; hash: string; slot: string; outcome: Outcome; check?: CheckResult }
 
-/** `a` in `approvals/`: a policy's hash approved for the runner to start on its own. `by`: the approving worker's session (absent: the user). */
+/** `a` in `approvals`: a policy's hash approved for the runner to start on its own. `by`: the approving worker's session (absent: the user). */
 export type ApprovalFact = { policy: string; hash: string; by?: string }
 
 /** A project's policy facts, each at its moment (epoch ms), oldest first. */
@@ -57,14 +58,25 @@ export const slotName = (slot: number): string => new Date(slot).toISOString().r
 /** A file of the `policies` collection, parsed: a policy, or why it isn't one. */
 export type Parsed = { ok: true; title: string; header: PolicyHeader; prompt: string } | { ok: false; title?: string; problems: Problem[] }
 
-/** A policy item as the system holds it: the hash of its bytes, and its parse. */
-export type PolicyFile = { project: string; id: string; modifiedAt: number; hash: string; parsed: Parsed }
+/** A policy item as its collection's parse holds it: the hash of its bytes, and its parse. */
+export type PolicyFile = { id: string; hash: string; parsed: Parsed }
 
-/** The hash as people read it: its first 8 hex. */
-export const shortHash = (hash: string) => hash.replace(/^sha256:/, '').slice(0, 8)
+/** The verbs a policy's and an offer's calls name: the extension's own. */
+export const VERB_NAMES = { run: 'policies/run', approve: 'policies/approve' } as const
 
-/** A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms). */
-export type HeldBy = { n: number; id: string; callsign?: string; since: number }
+
+/** A verb offered now, with its call. */
+type Action<V extends string, C> = { [K in V]: K extends keyof C ? { verb: K; call: Exclude<C[K], undefined> } : { verb: K } }[V]
+
+/** `run` starts a run of a policy now, by hand, while it may (`runnable`); `approve` approves its current hash, until approved. */
+export type PolicyVerb = 'run' | 'approve'
+export type PolicyCalls = { run?: ['policies/run', Partial<Verbs['policy/run']>]; approve?: ['policies/approve', Partial<Verbs['policy/approve']>] }
+export type PolicyAction = Action<PolicyVerb, PolicyCalls>
+
+/** `accept` starts the run an open offer's slot offers. */
+export type OfferVerb = 'accept'
+export type OfferCalls = { accept: ['policies/run', Partial<Verbs['policy/run']>] }
+export type OfferAction = Action<OfferVerb, OfferCalls>
 
 /**
  * A policy on its floor: valid, with its `header`, `rule` and `next`, or invalid, with its `problems`. `rule`: its crons in words; `next`: its next slot
@@ -74,53 +86,33 @@ export type HeldBy = { n: number; id: string; callsign?: string; since: number }
  * or invalid once approved), else a slot held while it is still open (`HeldBy`). `actions`: `run` it now, by hand, and
  * `approve` its current hash, each with its call; `calls` says the same.
  */
-export type PolicyView = PolicyBase & (ValidPolicy | InvalidPolicy)
-
-export type ValidPolicy = { header: PolicyHeader; rule: string; next?: number; needs?: { kind: 'reapprove'; approved: string } | { kind: 'held'; slot: number; by: HeldBy[] } }
-
-export type InvalidPolicy = { header?: undefined; problems: Problem[]; needs?: { kind: 'invalid' } }
+export type PolicyView = PolicyFields & { calls: PolicyCalls; actions: PolicyAction[] } & (ValidPolicy | InvalidPolicy)
 
 export type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
-
-type PolicyBase = {
-  id: string
-  tag: string
-  title?: string
-  hash: string
-  approved?: { at: number; by?: string }
-  live: string[]
-  last?: { n: number; at: number; slot: number | null; id: string; callsign?: string }
-  passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
-  seen?: number
-  offer?: { slot: number; since: number; until: number; check?: CheckResult }
-  calls: PolicyCalls
-  actions: PolicyAction[]
-}
 
 /**
  * A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check
  * found, which the run accepting it records.
  */
-export type Offer = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult; calls: OfferCalls; actions: OfferAction[] }
+export type Offer = OfferFields & { calls: OfferCalls; actions: OfferAction[] }
 
-/** The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check. */
-export type CardRun = { policy: string; tag: string; title?: string; n: number; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: number })
+/** The policies extension's part of a floor: its policies, in id order, and its open offers, oldest first. */
+export type FloorPolicies = { policies: PolicyView[]; offers: Offer[] }
 
 const slotOf = (slot: string) => Date.parse(slot)
 
 /** A run's slot as a moment: `null` by hand. */
 const runSlot = (slot: string | null) => (slot === null ? null : slotOf(slot))
 
-/** A session's card as it runs now: the card of the session that carries it on, through every resume. */
-const currentCard = (byId: Map<string, Card>, id: string): Card | undefined => {
-  const c = byId.get(id)
-  return c?.continuedBy ? currentCard(byId, c.continuedBy.id) : c
-}
+/** The card a session's worker runs as now, among `cards`: the one whose lineage holds it, carried on by none. */
+export const currentCard = (cards: Card[], id: string): Card | undefined => cards.find((c) => !c.continuedBy && c.lineage.some((s) => s.id === id))
 
-/** The current cards of a policy's runs that run: a run follows its worker through its resumes. `cards`: every card. */
+/** A session's callsign, among `cards`: its own card's, else the card of the worker it ran as. */
+const callsignOf = (cards: Card[], id: string): string | undefined => (cards.find((c) => c.id === id) ?? cards.find((c) => c.lineage.some((s) => s.id === id)))?.callsign
+
+/** The current cards of a policy's runs that run: a run follows its worker through its resumes. `cards`: those a live worker is among. */
 export const liveRuns = (policy: string, facts: PolicyFacts, cards: Card[]): Card[] => {
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  const current = facts.runs.filter(([, r]) => r.policy === policy).map(([, r]) => currentCard(byId, r.id))
+  const current = facts.runs.filter(([, r]) => r.policy === policy).map(([, r]) => currentCard(cards, r.id))
   return [...new Set(current.filter((c): c is Card => c?.live === true))]
 }
 
@@ -144,29 +136,28 @@ const openOffer = (header: PolicyHeader, runs: RunFact[], passes: [number, PassF
  * The slot a policy's latest pass held, while it is open (before the policy's next slot) and live is still full: that
  * slot and the runs that hold it. It clears when the slot passes or a holder ends.
  */
-const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, live: string[], now: number): { kind: 'held'; slot: number; by: HeldBy[] } | undefined => {
+const heldSlot = (header: PolicyHeader, runs: [number, RunFact][], passes: [number, PassFact][], cards: Card[], live: string[], now: number): { kind: 'held'; slot: number; by: HeldBy[] } | undefined => {
   const passed = passes.at(-1)
   if (passed?.[1].outcome !== 'held') return undefined
   const slot = slotOf(passed[1].slot)
   const until = nextSlot(header.when, slot)
   if (until === undefined || now >= until) return undefined
   const by = runs.flatMap(([at, r], i): HeldBy[] => {
-    const worker = currentCard(byId, r.id)
+    const worker = currentCard(cards, r.id)
     return worker && live.includes(worker.id) ? [{ n: i + 1, id: worker.id, callsign: worker.callsign, since: at }] : []
   })
   return by.length >= header.live ? { kind: 'held', slot, by } : undefined
 }
 
-const validNeeds = (header: PolicyHeader, approval: [number, ApprovalFact] | undefined, approvals: [number, ApprovalFact][], runs: [number, RunFact][], passes: [number, PassFact][], byId: Map<string, Card>, live: string[], now: number): ValidPolicy['needs'] =>
-  header.start === 'auto' && !approval && approvals.length ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash } : heldSlot(header, runs, passes, byId, live, now)
+const validNeeds = (header: PolicyHeader, approval: [number, ApprovalFact] | undefined, approvals: [number, ApprovalFact][], runs: [number, RunFact][], passes: [number, PassFact][], cards: Card[], live: string[], now: number): ValidPolicy['needs'] =>
+  header.start === 'auto' && !approval && approvals.length ? { kind: 'reapprove', approved: approvals.at(-1)![1].hash } : heldSlot(header, runs, passes, cards, live, now)
 
 /**
- * The views of a floor's policies. `cards`: every card, archived ones too, which a run's worker is looked up among.
- * `canSpawn`: the host runs, so a run can start.
+ * The views of a floor's policies. `cards`: the floor's, which a run's worker is looked up among (every live one is
+ * there). `canSpawn`: the host runs, so a run can start.
  */
-export const policyViews = (project: string, files: PolicyFile[], facts: PolicyFacts, cards: Card[], canSpawn: boolean, now: number): PolicyView[] => {
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  return files.map(({ id, hash, parsed }): PolicyView => {
+export const policyViews = (project: string, files: PolicyFile[], facts: PolicyFacts, cards: Card[], canSpawn: boolean, now: number): PolicyView[] =>
+  files.map(({ id, hash, parsed }): PolicyView => {
     const runs = facts.runs.filter(([, r]) => r.policy === id)
     const passes = facts.passes.filter(([, p]) => p.policy === id)
     const approvals = facts.approvals.filter(([, a]) => a.policy === id)
@@ -176,7 +167,7 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
     const approval = approvals.findLast(([, a]) => a.hash === hash)
     const slots = [...runs.flatMap(([, r]) => (r.slot ? [slotOf(r.slot)] : [])), ...passes.map(([, p]) => slotOf(p.slot))]
     const header = parsed.ok ? parsed.header : undefined
-    const needs = parsed.ok ? validNeeds(parsed.header, approval, approvals, runs, passes, byId, live, now) : undefined
+    const needs = parsed.ok ? validNeeds(parsed.header, approval, approvals, runs, passes, cards, live, now) : undefined
     const body: ValidPolicy | InvalidPolicy = parsed.ok
       ? { header: parsed.header, rule: ruleWords(parsed.header.when), next: nextSlot(parsed.header.when, now), ...(needs && { needs }) }
       : { problems: parsed.problems, ...(approvals.length && { needs: { kind: 'invalid' as const } }) }
@@ -189,24 +180,23 @@ export const policyViews = (project: string, files: PolicyFile[], facts: PolicyF
       ...body,
       ...(approval && { approved: { at: approval[0], ...(approval[1].by && { by: approval[1].by }) } }),
       live,
-      ...(last && { last: { n: runs.length, at: last[0], slot: runSlot(last[1].slot), id: last[1].id, callsign: byId.get(last[1].id)?.callsign } }),
+      ...(last && { last: { n: runs.length, at: last[0], slot: runSlot(last[1].slot), id: last[1].id, callsign: callsignOf(cards, last[1].id) } }),
       ...(passed && { passed: { at: passed[0], slot: slotOf(passed[1].slot), outcome: passed[1].outcome, ...(passed[1].check && { check: passed[1].check }) } }),
       ...(slots.length > 0 && { seen: Math.max(...slots) }),
       ...(header && { offer: openOffer(header, runs.map(([, r]) => r), passes, now) }),
       ...calledOffers<PolicyVerb, PolicyCalls>([
-        ...(runnable ? [{ verb: 'run' as const, call: ['policy/run', { project, policy: id, start: 'hand' }] as Call<'policy/run'> }] : []),
-        ...(header && !approval ? [{ verb: 'approve' as const, call: ['policy/approve', { project, policy: id, hash }] as Call<'policy/approve'> }] : []),
+        ...(runnable ? [{ verb: 'run' as const, call: [VERB_NAMES.run, { project, policy: id, start: 'hand' }] as NonNullable<PolicyCalls['run']> }] : []),
+        ...(header && !approval ? [{ verb: 'approve' as const, call: [VERB_NAMES.approve, { project, policy: id, hash }] as NonNullable<PolicyCalls['approve']> }] : []),
       ]),
     }
   })
-}
 
 /** A floor's open offers, oldest first. */
 export const offersOf = (project: string, views: PolicyView[]): Offer[] =>
   views
     .flatMap((v) =>
       v.offer
-        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, ...calledOffers<OfferVerb, OfferCalls>([{ verb: 'accept', call: ['policy/run', { project, policy: v.id, slot: v.offer.slot, start: 'offer', ...(v.offer.check && { check: v.offer.check }) }] }]) }]
+        ? [{ key: `${v.id}@${v.offer.slot}`, project, policy: v.id, tag: v.tag, title: v.title, ...v.offer, ...calledOffers<OfferVerb, OfferCalls>([{ verb: 'accept', call: [VERB_NAMES.run, { project, policy: v.id, slot: v.offer.slot, start: 'offer', ...(v.offer.check && { check: v.offer.check }) }] }]) }]
         : [],
     )
     .sort((a, b) => a.since - b.since)
@@ -230,32 +220,14 @@ export const cardRun = (first: string, files: PolicyFile[], facts: PolicyFacts):
 }
 
 /**
- * One run as `GET /runs/<project>` reads it: its number, slot, when it started, the hash it ran on and whether that is
- * the file's current one, how and by whom it started, its check, and its worker as it is now (its current card): its
- * status, whether it runs, when it ended, its cost, what it showed and its latest answer.
+ * A policy's runs, newest first, the latest `limit`. `cards`: every card, archived ones too. `answers`: each run's
+ * worker's latest answer in full, by its current session.
  */
-export type RunRead = {
-  n: number
-  slot: number | null
-  at: number
-  hash: string
-  current: boolean
-  start: RunStart
-  by?: { id: string; callsign?: string }
-  check?: CheckResult
-  worker: { id: string; callsign: string; status: Card['status']; live: boolean; endedAt?: number; cost?: number; shown: string[]; answer?: string }
-}
-
-/**
- * A policy's runs, newest first, the latest `limit`. `cards`: every card, archived ones too. `answerOf`: a session's
- * latest answer in full.
- */
-export const runsRead = (policy: string, hash: string | undefined, facts: PolicyFacts, cards: Card[], answerOf: (id: string) => string | undefined, limit: number): RunRead[] => {
-  const byId = new Map(cards.map((c) => [c.id, c]))
-  return facts.runs
+export const runsRead = (policy: string, hash: string | undefined, facts: PolicyFacts, cards: Card[], answers: Map<string, string | undefined>, limit: number): RunRead[] =>
+  facts.runs
     .filter(([, r]) => r.policy === policy)
     .map(([at, r], i): RunRead => {
-      const worker = currentCard(byId, r.id)!
+      const worker = currentCard(cards, r.id)!
       return {
         n: i + 1,
         slot: runSlot(r.slot),
@@ -263,7 +235,7 @@ export const runsRead = (policy: string, hash: string | undefined, facts: Policy
         hash: r.hash,
         current: r.hash === hash,
         start: r.start,
-        ...(r.by && { by: { id: r.by, callsign: byId.get(r.by)?.callsign } }),
+        ...(r.by && { by: { id: r.by, callsign: callsignOf(cards, r.by) } }),
         ...(r.check && { check: r.check }),
         worker: {
           id: worker.id,
@@ -273,10 +245,9 @@ export const runsRead = (policy: string, hash: string | undefined, facts: Policy
           ...(!worker.live && { endedAt: worker.enteredAt }),
           ...(worker.costUsd !== undefined && { cost: worker.costUsd }),
           shown: worker.shown.map((s) => s.target),
-          answer: answerOf(worker.id),
+          answer: answers.get(worker.id),
         },
       }
     })
     .reverse()
     .slice(0, limit)
-}

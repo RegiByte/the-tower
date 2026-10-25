@@ -1,6 +1,6 @@
 /**
  * A running view of the whole system: every session folded from its log and kept current as the host appends
- * to it, every stream an extension folds kept current, every policy parsed and each project's policy facts folded, the items of every collection, the host's live set, the terms daemon's shells,
+ * to it, every stream an extension folds kept current, the items of every collection, the host's live set, the terms daemon's shells,
  * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
@@ -9,8 +9,6 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
 import { foldLog } from './checkpoints.ts'
-import { APPROVALS_STREAM, policyFacts, RUNS_STREAM, type PolicyFacts, type PolicyFile } from '../extensions/policies/policies.ts'
-import { hashOf, parsePolicy } from '../extensions/policies/policy-file.ts'
 import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.ts'
 import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
@@ -19,7 +17,6 @@ import { readItem, scanCollections } from './collections.ts'
 import { hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath, type SystemPaths } from './shared/paths.ts'
-import { POLICIES } from '../extensions/policies/client/policies.ts'
 import type { HostLive } from './shared/protocol.ts'
 import { parseThread, REVIEWS, type ReviewThread } from './shared/reviews.ts'
 import type { Shell } from './shared/terms.ts'
@@ -83,17 +80,6 @@ const threadsIn = (paths: SystemPaths, items: CollectionItem[], held: ThreadFile
       return text === undefined ? [] : [{ project, id, modifiedAt, thread: parseThread(text) }]
     })
 
-/** Each item of the policies collections, parsed and hashed: a file `held` at the same version is not read again. */
-const policyFilesIn = (paths: SystemPaths, items: CollectionItem[], held: PolicyFile[]): PolicyFile[] =>
-  items
-    .filter((i) => i.collection === POLICIES)
-    .flatMap(({ project, id, modifiedAt }) => {
-      const same = held.find((p) => p.project === project && p.id === id && p.modifiedAt === modifiedAt)
-      if (same) return [same]
-      const text = readItem(paths, project, POLICIES, id)
-      return text === undefined ? [] : [{ project, id, modifiedAt, hash: hashOf(text), parsed: parsePolicy(text) }]
-    })
-
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
 /** A stream file's facts, as of its size. */
@@ -118,18 +104,6 @@ const streamIn = (dir: string, held: Map<string, HeldFacts>, files: Map<string, 
           return read.facts
         })
     : []
-
-/** Each project's policy facts, from its `runs` and `approvals` streams, and the files as read. */
-const policyStreamsIn = (root: string, held: Map<string, HeldFacts>): { facts: Map<string, PolicyFacts>; files: Map<string, HeldFacts> } => {
-  const files = new Map<string, HeldFacts>()
-  const facts = new Map(
-    readdirSync(root).map((project) => [
-      project,
-      policyFacts(streamIn(path.join(root, project, RUNS_STREAM), held, files), streamIn(path.join(root, project, APPROVALS_STREAM), held, files)),
-    ]),
-  )
-  return { facts, files }
-}
 
 /**
  * Every stream's month files under `streams/`, the system's (`system/<stream>/`) and each project's
@@ -185,10 +159,6 @@ export type System = {
   items: () => CollectionItem[]
   /** Every review thread on disk, parsed, read again when its file changes. */
   threads: () => ThreadFile[]
-  /** Every item of the policies collections, parsed and hashed, read again when its file changes. */
-  policies: () => PolicyFile[]
-  /** Each project's policy facts, by project, from its `runs` and `approvals` streams, read again when they grow. */
-  policyFacts: () => Map<string, PolicyFacts>
   /** Every stream's month files on disk, by path under `streams/`. */
   streamMonths: () => StreamMonth[]
   /**
@@ -244,9 +214,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   const tails = new Map<string, () => void>()
   let items: CollectionItem[] = []
   let threads: ThreadFile[] = []
-  let policyFiles: PolicyFile[] = []
-  let policyStreamFiles = new Map<string, HeldFacts>()
-  let policies = new Map<string, PolicyFacts>()
   let streamMonths: StreamMonth[] = []
   let live: HostLive | undefined
   let running: Resource[] = []
@@ -368,7 +335,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         if (asJson(next) === asJson(items)) return
         items = next
         threads = threadsIn(paths, items, threads)
-        policyFiles = policyFilesIn(paths, items, policyFiles)
         onChange()
       }),
       RESCAN_DEBOUNCE_MS,
@@ -388,18 +354,10 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     streamsTimer ??= setTimeout(logged('streams', () => ((streamsTimer = undefined), refoldAll('system'), rescanMonths())), RESCAN_DEBOUNCE_MS)
   }
 
-  /** A policy's fact appends a line: its project's streams are folded again once the write settles. */
-  let policyStreamsTimer: NodeJS.Timeout | undefined
-  const rescanPolicyStreams = () => {
-    const next = policyStreamsIn(projectsStreamsPath(paths), policyStreamFiles)
-    const filesBefore = [...policyStreamFiles.keys()]
-    policyStreamFiles = next.files
-    if (asJson(next.facts) === asJson(policies) && asJson([...policyStreamFiles.keys()]) === asJson(filesBefore)) return
-    policies = next.facts
-    onChange()
-  }
-  const schedulePolicyStreams = () => {
-    policyStreamsTimer ??= setTimeout(logged('policy streams', () => ((policyStreamsTimer = undefined), rescanPolicyStreams(), refoldAll('project'), rescanMonths())), RESCAN_DEBOUNCE_MS)
+  /** A project stream's fact appends a line: the project streams are folded again once the write settles. */
+  let projectStreamsTimer: NodeJS.Timeout | undefined
+  const scheduleProjectStreams = () => {
+    projectStreamsTimer ??= setTimeout(logged('project streams', () => ((projectStreamsTimer = undefined), refoldAll('project'), rescanMonths())), RESCAN_DEBOUNCE_MS)
   }
 
   /** Every read below that fails keeps its last read, and the failure goes to the tower's log: the next poll reads again. */
@@ -515,14 +473,12 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   mkdirSync(paths.collections, { recursive: true })
   items = scanCollections(paths)
   threads = threadsIn(paths, items, threads)
-  policyFiles = policyFilesIn(paths, items, policyFiles)
   watching(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
   mkdirSync(systemStreamsPath(paths), { recursive: true })
   watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
   mkdirSync(projectsStreamsPath(paths), { recursive: true })
-  rescanPolicyStreams()
   rescanMonths()
-  watching(watch(projectsStreamsPath(paths), { recursive: true }, schedulePolicyStreams), projectsStreamsPath(paths))
+  watching(watch(projectsStreamsPath(paths), { recursive: true }, scheduleProjectStreams), projectsStreamsPath(paths))
   watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
   await refreshLive()
   await refreshShells()
@@ -534,8 +490,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     logs: () => logs,
     items: () => items,
     threads: () => threads,
-    policies: () => policyFiles,
-    policyFacts: () => policies,
     foldStream: (fold) => {
       folds.set(fold, { files: new Map(), at: new Map() })
       refold(fold)
@@ -578,7 +532,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       for (const stopTail of tails.values()) stopTail()
       tails.clear()
       ;[...livePolls, ...machinePolls].forEach(clearInterval)
-      ;[rescanTimer, streamsTimer, policyStreamsTimer].forEach(clearTimeout)
+      ;[rescanTimer, streamsTimer, projectStreamsTimer].forEach(clearTimeout)
       for (const done of [...awaited.values()]) done()
       for (const done of [...waiters.values()]) done()
       const ending = reader

@@ -79,6 +79,6 @@ export {
   type ThreadView, type ThreadFiles, type ThreadPlace, type ThreadAt, type ThreadViewer,
 } from './reviews-panel.ts'
 export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsRange, type StatsProject, type StatsView } from './stats-panel.ts'
-export { policyZone, offerWords, policiesHtml, policyDoneLine, type PoliciesView } from '../../extensions/policies/client/panel.ts'
+export { policyZone, offerWords, policiesHtml, policyDoneLine, type PoliciesView } from './policies-panel.ts'
 export { failedHtml, drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'
 export { panelsCss } from './panels-css.ts'

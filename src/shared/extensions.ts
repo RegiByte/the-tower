@@ -37,6 +37,9 @@ const LAUNCH = '1.87'
 /** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
 const KINDS = '1.90'
 
+/** The minor the policies moved into their bundled extension in. */
+const POLICIES_MOVED = '1.91'
+
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
  * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
@@ -57,6 +60,16 @@ export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'read', old: 'probe/<name>', now: 'quota/reads', since: KINDS },
   { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
   { kind: 'board', old: 'board.probes', now: 'board.x.quota', since: KINDS },
+  { kind: 'verb', old: 'policy/run', now: 'policies/run', since: POLICIES_MOVED },
+  { kind: 'verb', old: 'policy/pass', now: 'policies/pass', since: POLICIES_MOVED },
+  { kind: 'verb', old: 'policy/approve', now: 'policies/approve', since: POLICIES_MOVED },
+  { kind: 'read', old: 'runs/<project>', now: 'policies/runs/<project>', since: POLICIES_MOVED },
+  { kind: 'stream', old: 'runs', now: 'policies.runs', since: POLICIES_MOVED },
+  { kind: 'stream', old: 'approvals', now: 'policies.approvals', since: POLICIES_MOVED },
+  { kind: 'board', old: 'floor.policies', now: 'floor.x.policies.policies', since: POLICIES_MOVED },
+  { kind: 'board', old: 'card.run', now: 'card.x.policies.run', since: POLICIES_MOVED },
+  { kind: 'board', old: 'board.offers', now: 'floor.x.policies.offers', since: POLICIES_MOVED },
+  { kind: 'module', old: '/policies.js', now: '/x/policies/policies.js', since: POLICIES_MOVED },
 ]
 
 /** The entries `kind`'s applier reads. */

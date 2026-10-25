@@ -83,7 +83,8 @@
           "items": {
             "$ref": "#/definitions/Offer"
           },
-          "description": "Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot."
+          "description": "Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot.",
+          "deprecated": "since 1.91: each floor's `x.policies.offers`, and its ask in `asks`, copied here until 2.0."
         },
         "archiveAt": {
           "type": "number",
@@ -389,7 +390,8 @@
           "items": {
             "$ref": "#/definitions/PolicyView"
           },
-          "description": "Its policies, in id order, when the floor keeps the `policies` collection (decision `policies`)."
+          "description": "Its policies, in id order (decision `policies`), their calls naming `policy/*`.",
+          "deprecated": "since 1.91: the policies extension's `x.policies.policies`, copied here until 2.0."
         },
         "gallery": {
           "type": "array",
@@ -786,7 +788,8 @@
         },
         "run": {
           "$ref": "#/definitions/CardRun",
-          "description": "The run of a policy it is, through every resume: a run fact names the first session of its lineage."
+          "description": "The run of a policy it is, through every resume: a run fact names the first session of its lineage.",
+          "deprecated": "since 1.91: the policies extension's `x.policies.run`, copied here until 2.0."
         },
         "seat": {
           "$ref": "#/definitions/Seat",
@@ -2977,6 +2980,15 @@
                 }
               ]
             },
+            "calls": {
+              "$ref": "#/definitions/PolicyCalls"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyAction"
+              }
+            },
             "id": {
               "type": "string"
             },
@@ -3088,15 +3100,6 @@
                 "until"
               ],
               "additionalProperties": false
-            },
-            "calls": {
-              "$ref": "#/definitions/PolicyCalls"
-            },
-            "actions": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PolicyAction"
-              }
             }
           },
           "required": [
@@ -3136,6 +3139,15 @@
               ],
               "additionalProperties": false
             },
+            "calls": {
+              "$ref": "#/definitions/PolicyCalls"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyAction"
+              }
+            },
             "id": {
               "type": "string"
             },
@@ -3247,15 +3259,6 @@
                 "until"
               ],
               "additionalProperties": false
-            },
-            "calls": {
-              "$ref": "#/definitions/PolicyCalls"
-            },
-            "actions": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PolicyAction"
-              }
             }
           },
           "required": [
@@ -3393,16 +3396,6 @@
       "additionalProperties": false,
       "description": "A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms)."
     },
-    "Outcome": {
-      "type": "string",
-      "enum": [
-        "offered",
-        "no-work",
-        "held",
-        "check-failed"
-      ],
-      "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
-    },
     "PolicyCalls": {
       "type": "object",
       "properties": {
@@ -3501,6 +3494,16 @@
         }
       ],
       "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
+    },
+    "Outcome": {
+      "type": "string",
+      "enum": [
+        "offered",
+        "no-work",
+        "held",
+        "check-failed"
+      ],
+      "description": "Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed."
     },
     "Problem": {
       "type": "object",
@@ -4056,7 +4059,17 @@
     },
     "Offer": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
+        "calls": {
+          "$ref": "#/definitions/OfferCalls"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OfferAction"
+          }
+        },
         "key": {
           "type": "string"
         },
@@ -4083,29 +4096,19 @@
         },
         "check": {
           "$ref": "#/definitions/CheckResult"
-        },
-        "calls": {
-          "$ref": "#/definitions/OfferCalls"
-        },
-        "actions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OfferAction"
-          }
         }
       },
       "required": [
-        "key",
-        "project",
-        "policy",
-        "tag",
-        "slot",
-        "since",
-        "until",
+        "actions",
         "calls",
-        "actions"
+        "key",
+        "policy",
+        "project",
+        "since",
+        "slot",
+        "tag",
+        "until"
       ],
-      "additionalProperties": false,
       "description": "A slot offered and not yet taken, open until the policy's next slot. `key`: `policy@slot`. `check`: what the check found, which the run accepting it records."
     },
     "OfferCalls": {

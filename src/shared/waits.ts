@@ -1,5 +1,5 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
-import type { Offer } from '../../extensions/policies/policies.ts'
+import type { Offer } from './policies-legacy.ts'
 import type { BoardAsk } from './extensions.ts'
 import { dutyOrder, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'
@@ -53,15 +53,18 @@ export const heededOffers = (board: Board, heed: Pick<Heed, 'dismissed'>) => boa
 /** The asks of extensions a viewer hasn't dismissed, oldest first. */
 export const heededAsks = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.asks.filter((a) => !heed.dismissed.has(a.key))
 
-/** What asks for you: a worker's wait, an extension's ask (`board.asks`), or a policy's slot offered (`board.offers`), which has no worker yet. */
+/**
+ * What asks for you: a worker's wait, or an extension's ask (`board.asks`), a policy's slot offered among them. An offer
+ * of `board.offers` is the same slot as the policies extension's ask, read the way renderers read it before 1.91.
+ */
 export type Attended = Wait | BoardAsk | Offer
 
 export const isOffer = (a: Attended): a is Offer => 'policy' in a
 
 export const isAsk = (a: Attended): a is BoardAsk => 'cap' in a
 
-/** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, the extensions' asks, then the offers. */
-export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededAsks(board, heed), ...heededOffers(board, heed)]
+/** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, then the extensions' asks, the policies' offers among them. */
+export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededAsks(board, heed)]
 
 /** The dismissed keys to store once `key` (a wait's, an ask's or an offer's) is dismissed too: those that are over drop out. */
 export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: string) =>
@@ -98,10 +101,11 @@ export const nextWait = <T extends { key: string; id?: string }>(waits: T[], vis
 
 /**
  * `nextWait` over `attentionOrder` from where the viewer is: the worker `here.id`, whose waits and the asks about it
- * count as visited, or the floor `here.policies` whose policies are open, whose offers count as visited the same way.
+ * count as visited, or the floor `here.policies` whose policies are open, whose offers (the policies extension's asks
+ * about its policies) count as visited the same way.
  */
 export const nextAttended = (attended: Attended[], visited: ReadonlySet<string>, here: { id?: string; policies?: string }) =>
-  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : isAbout(a, here.id)))
+  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : isAbout(a, here.id) || (here.policies !== undefined && isAsk(a) && a.cap === 'policies' && a.subject.startsWith(`item.policies:${here.policies}/`))))
 
 const nextIn = <T extends { key: string }>(waits: T[], visited: ReadonlySet<string>, heres: (w: T) => boolean): { to?: T; visited: Set<string> } => {
   const at = waits.filter(heres).map((w) => w.key)

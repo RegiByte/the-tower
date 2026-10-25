@@ -6,20 +6,18 @@
  *   core:system     the live view of every log, stream, collection and daemon (src/system.ts), and who hears it change
  *   core:publisher  the board, and the clients of `GET /board` (publisher.ts)
  *   core:dispatch   every verb's handler (dispatch.ts)
- *   core:slots      the slot loop: the policies' runner, which acts through the verbs (src/policies.ts), and the
- *                   extensions' slots (src/slots.ts)
+ *   core:slots      the slot loop: the extensions' slots, the policies' among them (src/slots.ts)
  *   core:http       the renderer API on the config's port (http.ts)
  *   core:extensions what the board and `GET /extensions` show of the extensions (extensions.ts)
  *
  * and one resource per extension the config and the checkout declare, `x:<cap>`, beside them (extensions.ts).
  */
 import { defineResource, type StartedSystem, type StartedResource } from 'braided'
-import { policySlots } from '../policies.ts'
 import { configNow } from '../bridge/legacy.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
-import { extensionSlots, runSlots, SLOT_CALLER } from '../slots.ts'
+import { extensionSlots, runSlots } from '../slots.ts'
 import { readConfig, watchSystem } from '../system.ts'
-import { dispatch, type DispatchResource } from './dispatch.ts'
+import { dispatch } from './dispatch.ts'
 import { extensions, type ExtensionsResource } from './extensions.ts'
 import { httpServer } from './http.ts'
 import { publisher, type PublisherResource } from './publisher.ts'
@@ -55,18 +53,11 @@ export const system = defineResource({
 })
 export type SystemResource = StartedResource<typeof system>
 
-type SlotsDeps = { 'core:config': ConfigResource; 'core:dispatch': DispatchResource; 'core:publisher': PublisherResource; 'core:extensions': ExtensionsResource }
+type SlotsDeps = { 'core:config': ConfigResource; 'core:publisher': PublisherResource; 'core:extensions': ExtensionsResource }
 
 export const slots = defineResource({
-  dependencies: ['core:config', 'core:dispatch', 'core:publisher', 'core:extensions'],
-  start: ({ 'core:config': { read }, 'core:dispatch': { call }, 'core:publisher': { board }, 'core:extensions': holder }: SlotsDeps) =>
-    runSlots([
-      policySlots(board, {
-        run: (input) => call('tower/policy/run', input, SLOT_CALLER),
-        pass: (input) => call('tower/policy/pass', input, SLOT_CALLER),
-      }),
-      extensionSlots(holder, read, board),
-    ]),
+  dependencies: ['core:config', 'core:publisher', 'core:extensions'],
+  start: ({ 'core:config': { read }, 'core:publisher': { board }, 'core:extensions': holder }: SlotsDeps) => runSlots([extensionSlots(holder, read, board)]),
   halt: ({ stop }) => stop(),
 })
 export type SlotsResource = StartedResource<typeof slots>

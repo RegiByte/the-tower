@@ -81,7 +81,6 @@ import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
 import { archiveOf } from '../bridge/board.ts'
-import { runsRead } from '../../extensions/policies/policies.ts'
 import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
 import { reviewHistory } from '../bridge/reviews.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
@@ -109,7 +108,7 @@ import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
-import { DispatchResource, policyFactsIn } from './dispatch.ts'
+import { DispatchResource } from './dispatch.ts'
 import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
@@ -299,15 +298,6 @@ export const httpServer = defineResource({
       const { cap, name } = qualifiedOf(now)!
       const answer = await dispatch.read(cap, name, mapped.params, mapped.query, callerOf(req))
       send(res, isApiError(answer) ? answer : reply(answer, boardOf()))
-    }
-
-    function runsOfPolicy(res: http.ServerResponse, project: string, { policy, limit }: z.output<(typeof QUERIES)['runs/<project>']>) {
-      if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-      const facts = policyFactsIn(system, project)
-      const hash = system.policies().find((p) => p.project === project && p.id === policy)?.hash
-      if (hash === undefined && !facts.runs.some(([, r]) => r.policy === policy)) return fail(res, 'not_found', `${project} has no policy "${policy}", and no runs of one`)
-      const answerOf = (id: string) => system.session(id)?.facts.conversations.findLast((c) => c.answer !== undefined)?.answer
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(runsRead(policy, hash, facts, everyCard(Date.now()), answerOf, limit)))
     }
 
     async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIES.stats>) {
@@ -776,7 +766,7 @@ export const httpServer = defineResource({
       plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
       apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
       apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
-      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ res, params, query }) => runsOfPolicy(res, params.project!, query) }),
+      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'runs/<project>', params, query) }),
       apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'probe/<name>', params, query) }),
       apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
       apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),

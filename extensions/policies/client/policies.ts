@@ -4,40 +4,30 @@
  * runner say and decide about them, pure over the board: where each policy stands, and what a runner does at a tick.
  * Their slots are `slots.ts`'s. Served as `/policies.js`.
  */
-import type { Board } from '../../../src/bridge/board.ts'
-import type { CheckResult, Outcome, PolicyView, ValidPolicyView } from '../policies.ts'
-import { listed, nextSlot, onTimeSlot, ruleWords, slotWords, type CronWhen } from '../../../src/shared/slots.ts'
+import type { Board, Card, Floor } from '../../../src/bridge/board.ts'
+import type { FloorPolicies } from '../policies.ts'
+import type { CardRun, CheckResult, InvalidPolicy, Outcome, PolicyFields, PolicyHeader, Problem, Step, ValidPolicy } from '../../../src/shared/policies-legacy.ts'
+import { listed, nextSlot, onTimeSlot, ruleWords, slotWords } from '../../../src/shared/slots.ts'
+
+export type { Hire, PolicyHeader, Problem, Step } from '../../../src/shared/policies-legacy.ts'
+
+/** A policy's view, whichever verbs its calls name: what the words and the runner read. */
+type PolicyView = PolicyFields & (ValidPolicy | InvalidPolicy)
+type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
 
 /** The rule and slot words renderers import from `/policies.js`. */
 export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '../../../src/shared/slots.ts'
 
 export const POLICIES = 'policies'
 
-/** Where a run's worker starts and on what model: the spawn verb's own fields (`SPAWN_FIELDS`), which its schema picks. */
-export type Hire = { cwd?: string; cut?: { name?: string; branch?: string; base?: string; from?: string }; model?: string; effort?: string }
+/** The policies extension's part of a floor, `floor.x.policies`: its policies and open offers, none while it is off there. */
+export const floorPolicies = (floor: Pick<Floor, 'x'> | undefined): FloorPolicies => (floor?.x?.[POLICIES] as FloorPolicies | undefined) ?? { policies: [], offers: [] }
 
-/** A policy's header, its defaults filled in. */
-export type PolicyHeader = {
-  /** Its slots, as crons. */
-  when: CronWhen
-  /** A shell line run at the slot from the floor's hub: exit 0, there is work; 1, none; anything else, it failed. */
-  check?: string
-  /** `ask`: each slot is offered. `auto`: started while the file's current hash has an approval, offered otherwise. */
-  start: 'ask' | 'auto'
-  /** The most runs of this policy whose workers run at once; a slot due while full is held. */
-  live: number
-  hire: Hire
-  /** The runner that acts on it; the tower's acts on the policies that name none. */
-  runner?: string
-  /** Each runner's own attributes, under its name. */
-  x?: Record<string, unknown>
-}
+/** The run of a policy a worker is, `card.x.policies.run`. */
+export const runOf = (card: Pick<Card, 'x'>): CardRun | undefined => (card.x?.[POLICIES] as { run?: CardRun } | undefined)?.run
 
-/** What makes a file no policy, at its path as `tower config check` prints one: `when.cron[1]`, `header`, `prose`. */
-export type Problem = { path: string; message: string }
-
-/** What the runner does with a slot of the policy as it stands: hold it (live is full), check first, run it, or offer it. */
-export type Step = 'held' | 'check' | 'run' | 'offer'
+/** An offer's ask in `board.asks`, by its key there: what a viewer dismisses. */
+export const offerAskKey = (offer: { key: string }) => `${POLICIES}:${offer.key}`
 
 /**
  * Where a policy stands at `now`: `invalid`; left to another runner; `due`, a slot on time with no fact yet, and the

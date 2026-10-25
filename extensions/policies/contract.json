@@ -1,0 +1,14 @@
+{
+  "provides": "policies",
+  "major": 1,
+  "names": [
+    "verbs.run",
+    "verbs.pass",
+    "verbs.approve",
+    "reads.runs/<project>",
+    "streams.runs.r",
+    "streams.runs.s",
+    "streams.approvals.a",
+    "collections.policies"
+  ]
+}

@@ -1,7 +1,7 @@
 /**
  * The tower's slot loop (decisions `extensions`, `policies`): every 30 s each source decides which of its slots are due
- * and acts on them. The policies are one source (`policies.ts`), the extensions' slots another. A source's tick in
- * flight skips its next ticks, never another source's. Fired is held in memory only: a restart within a slot's 5 on-time
+ * and acts on them: the extensions' slots, the policies extension's among them. A source's tick in flight skips its
+ * next ticks, never another source's. Fired is held in memory only: a restart within a slot's 5 on-time
  * minutes fires it again, and a slot missed while the tower was down stays missed.
  */
 import { offOn } from './bridge/stores.ts'

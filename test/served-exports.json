@@ -957,27 +957,6 @@
       "toastsCss",
       "toldTimes"
     ],
-    "/policies.js": [
-      "ON_TIME_MS",
-      "POLICIES",
-      "checkFound",
-      "checkKey",
-      "checkWhy",
-      "cronFields",
-      "cronProblem",
-      "decide",
-      "heldWords",
-      "nextSlot",
-      "onTimeSlot",
-      "policyLine",
-      "ruleWords",
-      "slotWords",
-      "slotsBetween",
-      "standing",
-      "standingOf",
-      "standingWords",
-      "zoneCity"
-    ],
     "/slots.js": [
       "ON_TIME_MS",
       "cronFields",
@@ -1070,6 +1049,30 @@
       "sendable",
       "settle",
       "titleOf"
+    ],
+    "/policies.js": [
+      "ON_TIME_MS",
+      "POLICIES",
+      "checkFound",
+      "checkKey",
+      "checkWhy",
+      "cronFields",
+      "cronProblem",
+      "decide",
+      "floorPolicies",
+      "heldWords",
+      "nextSlot",
+      "offerAskKey",
+      "onTimeSlot",
+      "policyLine",
+      "ruleWords",
+      "runOf",
+      "slotWords",
+      "slotsBetween",
+      "standing",
+      "standingOf",
+      "standingWords",
+      "zoneCity"
     ]
   }
 }
