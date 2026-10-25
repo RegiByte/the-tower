@@ -562,6 +562,12 @@ export const dispatch = defineResource({
       ]
     }
 
+    /** Each extension's tidy entry in `x` that the floor's adds no longer list, as read now. */
+    const addedMovedOn = (x: Record<string, string[]>, projectId: string): string[] => {
+      const listed = boardOf().adds[`floor:${projectId}`]?.tidy ?? []
+      return Object.entries(x).flatMap(([cap, keys]) => keys.filter((key) => !listed.some((e) => e.cap === cap && e.key === key)).map((key) => `${cap}'s ${key}`))
+    }
+
     /**
      * Every floor's Tidy lists the system's stream months, so two can press for the same one: they are archived one at a
      * time, and a month another Tidy archived meanwhile is not there to archive. `false` for that month.
@@ -580,19 +586,21 @@ export const dispatch = defineResource({
     /**
      * Tidy as listed, or nothing when the list moved on: git's part checked after its fetch, then each entry applied, in
      * order: worktrees removed and kept branches deleted, the landed threads filed, the leftover processes ended, the
-     * idle workers killed and the old logs and stream months archived. What another verb does is done through it, for
-     * the caller, so what wraps that verb sees it. A worker is checked again just before its kill, since the fetch takes
-     * seconds; an entry no longer listed, or whose verb refuses, is skipped and named, and the rest goes on.
+     * idle workers killed and the old logs and stream months archived; then each extension's entries in `plan.x`, applied
+     * by its answer to `tower/tidy.apply`, a failed one reported in the reply's `x`. What another verb does is done
+     * through it, for the caller, so what wraps that verb sees it. A worker is checked again just before its kill, since
+     * the fetch takes seconds; an entry no longer listed, or whose verb refuses, is skipped and named, and the rest goes on.
      */
-    const tidyProject = (projectId: string, plan: TidyPlan, caller: Caller) =>
+    const tidyProject = (projectId: string, plan: RouteInput['tidy']['plan'], caller: Caller) =>
       onWorktrees(projectId, async (project) => {
         const release = await system.observe()
         try {
           const callsign = callsignsOf(readConfig())
-          const gone = movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign)
+          const gone = [...movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign), ...addedMovedOn(plan.x ?? {}, projectId)]
           if (gone.length) return apiError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
           if (plan.worktrees.length || plan.branches.length) await tidyable(project, projectId, occupants(), plan)
-          const step = (verb: string, input: object) => call(`tower/${verb}`, input, nestedIn(caller, 'tower/tidy'))
+          const within = nestedIn(caller, 'tower/tidy')
+          const step = (verb: string, input: object) => call(`tower/${verb}`, input, within)
           const skipped: string[] = []
           /** Each entry whose verb answered, its branches kept named in `skipped`; each refused, named with why. */
           const applied = async <T>(entries: T[], verb: string, input: (entry: T) => object, what: (entry: T) => string): Promise<T[]> => {
@@ -626,7 +634,12 @@ export const dispatch = defineResource({
             if (await archiveMonth(file)) streams.push(file)
             else skipped.push(`stream ${file}: archived by another floor's Tidy meanwhile`)
           }
-          return { t: 'tidied', removed, deleted, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams }
+          const x: Replies['tidy']['x'] = {}
+          for (const [cap, keys] of Object.entries(plan.x ?? {})) {
+            const answer = (await chains.raiseTo('tower/tidy.apply', cap, { project: projectId, keys }, within)).find((a) => a.cap === cap)
+            x[cap] = !answer ? { code: 'refused', message: `${cap} is off on ${projectId}` } : answer.ok ? (answer.answer as { done: string[]; skipped: string[] }) : { code: answer.code, message: answer.message }
+          }
+          return { t: 'tidied', removed, deleted, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
         } finally {
           release()
         }

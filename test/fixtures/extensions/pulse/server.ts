@@ -40,6 +40,7 @@ const start: Start = (ctx) => {
       floor: (floor: Floor, { own }) => ({
         x: { beats: (own.streams.beats as Beats).count },
         actions: [{ verb: 'pulse/ping', call: { project: floor.id } }],
+        tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes' }],
         asks: [{ key: `beat-${floor.id}`, subject: `floor:${floor.id}`, title: `Keep a beat on ${floor.name}`, since: startedAt, sound: 'offer', actions: [{ verb: 'pulse/beat', call: { project: floor.id } }] }],
       }),
     },
@@ -55,7 +56,10 @@ const start: Start = (ctx) => {
         return next(input)
       },
     },
-    answers: { 'pulse/beat.kept': ({ item }: { item: string }) => ({ heard: `pulse kept ${item}` }) },
+    answers: {
+      'pulse/beat.kept': ({ item }: { item: string }) => ({ heard: `pulse kept ${item}` }),
+      'tower/tidy.apply': ({ keys }: { keys: string[] }) => ({ done: keys, skipped: [] }),
+    },
     halt: () => ctx.log('halted'),
   }
 }

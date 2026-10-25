@@ -314,6 +314,7 @@
       "bundled.quota",
       "bundled.reviews",
       "hook.tower/discard.record",
+      "hook.tower/tidy.apply",
       "problem.conflict",
       "problem.cycle",
       "problem.deprecated",

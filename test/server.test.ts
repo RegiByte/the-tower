@@ -302,7 +302,10 @@ test("server: an extension's folds put its part on the board's subjects, its bad
     badges: [{ label: '1 beat', tone: 'ready', cap: 'pulse' }],
     lines: [{ text: 'You took 1 beat: `tower x pulse beat` keeps another.', cap: 'pulse' }],
   })
-  assert.deepEqual(board.adds['floor:lab'], { actions: [{ verb: 'pulse/ping', call: { project: 'lab' }, cap: 'pulse' }] })
+  assert.deepEqual(board.adds['floor:lab'], {
+    actions: [{ verb: 'pulse/ping', call: { project: 'lab' }, cap: 'pulse' }],
+    tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes', cap: 'pulse' }],
+  })
   assert.deepEqual(
     board.asks.map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
     [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],
@@ -395,6 +398,15 @@ test("server: worktree/discard raises tower/discard.record before anything goes:
   assert.equal(gone.reply.status, 200, gone.reply.body)
   assert.deepEqual(JSON.parse(gone.reply.body).x, { tally: { note: 'tally counted 1 tip' } })
   assert.ok(!existsSync(gone.tree))
+})
+
+test("server: tidy hands each extension its listed entries through tower/tidy.apply, its answer in the reply's x, and refuses an entry no longer listed", async () => {
+  const plan = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
+  const tidied = await post('tidy', { project: 'lab', plan: { ...plan, x: { pulse: ['echo'] } } })
+  assert.equal(tidied.status, 200, tidied.body)
+  assert.deepEqual(JSON.parse(tidied.body).x, { pulse: { done: ['echo'], skipped: [] } })
+  const gone = await post('tidy', { project: 'lab', plan: { ...plan, x: { pulse: ['gone'] } } })
+  assert.deepEqual(JSON.parse(gone.body), { t: 'error', code: 'refused', message: "Tidy's list moved on: pulse's gone no longer qualifies" })
 })
 
 test('server: a collection item is created, written, read back and deleted', async () => {

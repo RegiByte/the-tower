@@ -37,6 +37,7 @@ const written = z.object({ t: z.literal('written'), modifiedAt })
 const worktreeName = z.string().regex(WORKTREE_NAME)
 const worktree = { project: id, name: worktreeName }
 const discardedTip = z.object({ dir: z.string(), branch: z.string().optional(), tip: z.string() })
+const tidyApplied = z.object({ done: z.array(z.string()).describe('The keys applied.'), skipped: z.array(z.string()).describe('The keys left, each with why.') })
 const discardRecorded = z.object({ note: z.string().optional().describe('What the answerer recorded, in words.') })
 const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
 const actor = (what: string) =>
@@ -302,11 +303,15 @@ export const VERBS = {
               .array(z.object({ file: z.string().min(1), bytes: z.int().nonnegative() }))
               .default([])
               .describe("Stream month files, by path under the system root's `streams/`."),
+            x: z
+              .record(z.string(), z.array(z.string()))
+              .optional()
+              .describe("The floor's tidy entries an extension contributes (`board.adds['floor:<project>'].tidy`), by key under its capability: each capability's answer to `tower/tidy.apply` applies them."),
           })
-          .describe("The floor's `tidy` as the board listed it, or any part of it: refused when anything in it no longer qualifies."),
+          .describe("The floor's `tidy` as the board listed it, and the extensions' tidy entries it lists in `board.adds`, or any part of them: refused when anything in it no longer qualifies."),
       })
       .describe(
-        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the system's stream months closed that long: each gzipped in place as `<file>.gz`, read the same as before.",
+        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, file the review thread of each checkout whose work has landed as `<checkout>@<YYYY-MM-DD-HHMM>.md` (freeing the checkout's name for a new thread), end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the system's stream months closed that long: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
       ),
     reply: z.object({
       t: z.literal('tidied'),
@@ -318,6 +323,10 @@ export const VERBS = {
       skipped: z.array(z.string()).describe('Branches kept instead of deleted, workers left alive (no longer idle when their turn came, or their kill failed) and stream months another floor\'s Tidy archived meanwhile, each with why.'),
       archived: z.array(z.string()).describe('The sessions whose logs were archived.'),
       streams: z.array(z.string()).describe('The stream month files archived, by path under `streams/`.'),
+      x: z
+        .record(z.string(), z.union([tidyApplied, z.object({ code: z.string(), message: z.string() }).describe('Why its answer failed: nothing of it was applied, as far as the tower knows.')]))
+        .optional()
+        .describe("Each capability's answer to `tower/tidy.apply` for its keys of `plan.x`."),
     }),
   },
   'policy/run': {
@@ -469,6 +478,13 @@ export type CoreHook = { payload: z.ZodType; answer: z.ZodType; failure: 'refuse
 
 /** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
 export const HOOKS: Record<string, CoreHook> = {
+  'tidy.apply': {
+    payload: z.object({ project: id, keys: z.array(z.string()) }),
+    answer: tidyApplied,
+    failure: 'reported',
+    description: "Raised by tidy after the core's own parts, once per capability in its plan's `x`, to that capability's answerer alone, with its keys: a failed answer is reported in the reply's `x.<cap>`.",
+    since: '1.85',
+  },
   'discard.record': {
     payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(discardedTip) }),
     answer: discardRecorded,

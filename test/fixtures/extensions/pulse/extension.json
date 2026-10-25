@@ -2,7 +2,7 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, keeps its beats and tells its hook's answerers of each, shows them on the board, and wraps chime's ring and the core's collection/create: the fixture the server test boots.",
+  "description": "Logs a line at its interval while it runs, pings through chime, reads its beat, keeps its beats and tells its hook's answerers of each, shows them on the board with a tidy entry it applies, and wraps chime's ring and the core's collection/create: the fixture the server test boots.",
   "requires": { "tower": "1.85", "chime": "1.0" },
   "server": "server.ts",
   "client": "client",
@@ -99,7 +99,7 @@
       "failure": "reported"
     }
   },
-  "answers": { "pulse/beat.kept": {} },
+  "answers": { "pulse/beat.kept": {}, "tower/tidy.apply": {} },
   "around": { "chime/ring": {}, "tower/collection/create": {} },
   "facts": {
     "beat": { "description": "A beat a session took.", "schema": { "type": "integer", "minimum": 1 } }
@@ -111,7 +111,7 @@
     },
     "floor": {
       "x": { "type": "object", "additionalProperties": false, "required": ["beats"], "properties": { "beats": { "type": "integer", "minimum": 0 } } },
-      "adds": ["actions", "asks"]
+      "adds": ["actions", "asks", "tidy"]
     }
   },
   "commands": {

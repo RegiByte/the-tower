@@ -91,10 +91,10 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
     return { reply, ...(isApiError(reply) && refusedBy && { refusedBy }) }
   }
 
-  /** Each answerer of `hook`, in fold order, on its own: its answer checked, its failure a `hook` problem. */
-  const deliver = async (hook: string, answer: z.ZodType, payload: unknown, caller: Caller): Promise<Answered[]> => {
+  /** Each of `caps` answering `hook`, in order, on its own: its answer checked, its failure a `hook` problem. */
+  const deliver = async (hook: string, answer: z.ZodType, payload: unknown, caller: Caller, caps: string[]): Promise<Answered[]> => {
     const answers: Answered[] = []
-    for (const cap of holder.registry().answers[hook] ?? []) {
+    for (const cap of caps) {
       const live = holder.live(cap)
       if (live.t !== 'up') {
         answers.push({ cap, ok: false, code: 'unavailable', message: `${cap} ${live.t === 'moving' ? `is ${live.why}` : "doesn't run"}` })
@@ -132,11 +132,11 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
   }
 
   /**
-   * `hook` raised for `caller` with `payload`: each answer, inside the hook's chain. A refusal of the chain is the one
-   * answer of the capability whose link refused. A payload its schema refuses, or a raise nested too deep, throws: the
-   * provider raised it wrong.
+   * `hook` raised for `caller` with `payload`: the answers of those `among` its answerers picks, inside the hook's chain.
+   * A refusal of the chain is the one answer of the capability whose link refused. A payload its schema refuses, or a
+   * raise nested too deep, throws: the provider raised it wrong.
    */
-  const raise = async (hook: string, payload: unknown, caller: Caller): Promise<Answered[]> => {
+  const raising = async (hook: string, payload: unknown, caller: Caller, among: (answerers: string[]) => string[]): Promise<Answered[]> => {
     const schemas = hookOf(hook)
     if (!schemas) throw new Error(`No hook ${hook}`)
     const deep = tooDeep(caller, hook)
@@ -144,11 +144,20 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
     const parsed = schemas.payload.safeParse(payload)
     if (!parsed.success) throw new Error(`${hook} raised with a payload its schema refuses: ${z.prettifyError(parsed.error)}`)
     const { reply, refusedBy } = await wrap(hook, { input: schemas.payload, reply: answeredList(schemas.answer) }, parsed.data, caller, (value) =>
-      deliver(hook, schemas.answer, value, caller),
+      deliver(hook, schemas.answer, value, caller, among(holder.registry().answers[hook] ?? [])),
     )
     if (!isApiError(reply)) return reply as Answered[]
     return [{ cap: refusedBy ?? qualifiedOf(hook)!.cap, ok: false, code: reply.code, message: reply.message }]
   }
 
-  return { wrap, raise }
+  /** `hook` raised for every answerer, in fold order. */
+  const raise = (hook: string, payload: unknown, caller: Caller) => raising(hook, payload, caller, (answerers) => answerers)
+
+  /** `hook` raised for the answerer `cap` alone: `not_found` its one answer when `cap` doesn't answer it. */
+  const raiseTo = async (hook: string, cap: string, payload: unknown, caller: Caller): Promise<Answered[]> =>
+    (holder.registry().answers[hook] ?? []).includes(cap)
+      ? raising(hook, payload, caller, () => [cap])
+      : [{ cap, ok: false, code: 'not_found', message: `${cap} doesn't answer ${hook}: no running extension provides it with ${hook} in its answers` }]
+
+  return { wrap, raise, raiseTo }
 }
