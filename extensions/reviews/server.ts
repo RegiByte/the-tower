@@ -1,7 +1,8 @@
 /**
  * The reviews extension (decision `review-threads`): one append-only markdown thread per checkout in its owned
  * `reviews` collection, appended to only through `reviews/append`; each card's thread and each floor's threads folded
- * from the parsed files and the core's checkouts; the floor's history, and what the CLI says of a thread. A landed
+ * from the parsed files and the core's checkouts; the floor's history, and what the CLI says of a thread. Its notes
+ * are resolved by appending a note that marks them (`reviews/resolve`). A landed
  * checkout's thread is filed by Tidy (`tower/tidy.apply`), and a discarded one's recovery note is left before anything
  * goes (`tower/discard.record`) and the thread filed once the worktree is gone (`tower/discard.done`).
  */
@@ -9,13 +10,15 @@ import type { Board, Card, Floor } from '../../src/bridge/board.ts'
 import type { Tip } from '../../src/bridge/worktrees.ts'
 import { apiError, isApiError, type ApiError, type RouteInput } from '../../src/shared/api.ts'
 import type { CallCtx, Part, Start } from '../../src/shared/extensions.ts'
-import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, REVIEWS, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
+import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
 import { discardNote, tidyEntries } from './filing.ts'
 import { cardPart, floorThreads, reviewHistory, type FloorPart, type ThreadFile } from './threads.ts'
 
 type AppendInput = RouteInput['review/append']
 
 type Appended = { t: 'appended'; id: string; n: number; modifiedAt: number }
+
+type ResolveInput = { project: string; checkout: string; author: string; notes: number[]; body?: string }
 
 /** What `tower thread`, `tower note` and `tower send` say of a checkout's thread, read as `reader`. */
 type SaidQuery = { checkout: string; reader: string; sender?: string; hirer?: string }
@@ -77,6 +80,13 @@ const start: Start = (ctx) => {
         const appending = queue.then(() => append(input))
         queue = appending.catch(() => undefined)
         return appending
+      },
+      resolve: async ({ project, checkout, author, notes, body }: ResolveInput, { call }: CallCtx) => {
+        const text = await textOf(project, threadId(checkout))
+        if (text === undefined) return apiError('not_found', `${checkout} has no review thread on ${project}`)
+        const problem = resolveProblem(parseThread(text), notes)
+        if (problem) return apiError('invalid', problem)
+        return call('reviews/append', { project, checkout, author, anchors: [], body: resolutionBody(notes, body) })
       },
     },
     answers: {

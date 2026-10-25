@@ -3,6 +3,7 @@
   "major": 1,
   "names": [
     "verbs.append",
+    "verbs.resolve",
     "reads.history/<project>",
     "reads.said/<project>",
     "collections.reviews",
@@ -38,6 +39,10 @@
     "client.reviews.js#printMessage",
     "client.reviews.js#printThread",
     "client.reviews.js#repoName",
+    "client.reviews.js#resolutionBody",
+    "client.reviews.js#resolveProblem",
+    "client.reviews.js#resolvedIn",
+    "client.reviews.js#resolvesOf",
     "client.reviews.js#reviewPrompt",
     "client.reviews.js#reviewedIn",
     "client.reviews.js#sendText",

@@ -135,8 +135,8 @@ const beforeSendHome = <T>(list: T[], note: T[], verb: (item: T) => string): T[]
   return at === -1 ? [...list, ...note] : [...list.slice(0, at), ...note, ...list.slice(at)]
 }
 
-/** A floor thread with its calls named as the core named them. */
-const oldThread = ({ key: _, ...thread }: ReviewsFloorPart['threads'][number]): FloorThread => {
+/** A floor thread as the core gave it: its calls named as the core named them, and none of what came after the move. */
+const oldThread = ({ key: _, resolved: __, ...thread }: ReviewsFloorPart['threads'][number]): FloorThread => {
   const note = thread.calls.note && (['review/append', thread.calls.note[1]] as const)
   return { ...thread, calls: note ? { note: [...note] } : {}, actions: note ? [{ verb: 'note', call: [...note] }] : [] }
 }

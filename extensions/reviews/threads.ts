@@ -6,7 +6,7 @@ import type { Card, Floor } from '../../src/bridge/board.ts'
 import { checkoutLanded, checkoutState, landedByRecord, type CheckoutsRead, type CheckoutState, type LandedState } from '../../src/bridge/checkouts.ts'
 import { threadCheckoutOf } from '../../src/shared/checkouts.ts'
 import { tagOf } from '../../src/shared/tags.ts'
-import { checkoutOfId, landedOfId, stamp, threadId, unseenBy, verdictOf, type Message, type ReviewThread, type Verdict } from './client/reviews.ts'
+import { checkoutOfId, landedOfId, resolvedIn, stamp, threadId, unseenBy, verdictOf, type Message, type ReviewThread, type Verdict } from './client/reviews.ts'
 
 /** A thread file of the floor's collection, parsed. */
 export type ThreadFile = { id: string; thread: ReviewThread }
@@ -29,6 +29,8 @@ const noteOffers = (project: string, checkout: string, live: boolean): NoteOffer
  */
 export type FloorThread = {
   key: string; checkout: string; id: string; tag: string; messages: number; last?: Pick<Message, 'author' | 'at' | 'n'>; landed: boolean; state: CheckoutState
+  /** Its resolved notes, by number, in order. @since 1.94 */
+  resolved: number[]
 } & NoteOffers
 
 /** A thread Tidy filed: its item's id and tag, and when it was filed, as a message heading writes a time. */
@@ -108,6 +110,7 @@ export const floorThreads = (floor: Floor, files: ThreadFile[]): FloorThread[] =
           messages: thread.messages.length,
           ...(last && { last: { author: last.author, at: last.at, n: last.n } }),
           landed: checkoutLanded(checkout, read),
+          resolved: [...resolvedIn(thread).keys()].sort((a, b) => a - b),
           state,
           ...noteOffers(floor.id, checkout, state.is === 'live'),
         },

@@ -113,9 +113,9 @@ export type { FiledThread }
 
 export type ReviewsCardPart = { thread: string; threadState: CheckoutState; unseen?: number; filed?: FiledThread; note?: NoteCall }
 
-/** The reviews extension's part of a floor, as it stood at the move: its calls naming `reviews/append`. */
+/** The reviews extension's part of a floor, as LEGACY reads it: as it stood at the move, its calls naming `reviews/append`, and its notes `resolved` since 1.94. */
 export type ReviewsFloorPart = {
-  threads: (Omit<FloorThread, 'calls' | 'actions'> & { key: string; calls: { note?: NoteCall }; actions: { verb: 'note'; call: NoteCall }[] })[]
+  threads: (Omit<FloorThread, 'calls' | 'actions'> & { key: string; resolved: number[]; calls: { note?: NoteCall }; actions: { verb: 'note'; call: NoteCall }[] })[]
 }
 
 /** A reviewer's verdict in its closing note. */

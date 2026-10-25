@@ -7,7 +7,7 @@ import { tagOf } from '../../../src/shared/tags.ts'
 import { threadCheckoutOf } from '../../../src/shared/cards.ts'
 import { DRAFTS } from '../../../extensions/drafts/client/drafts.ts'
 import { DEFAULT_KEYS } from '../../../src/shared/keymap.ts'
-import { REVIEWS, parseThread, reviewPrompt, threadId, unseenBy } from '../../../extensions/reviews/client/reviews.ts'
+import { REVIEWS, parseThread, resolvedIn, reviewPrompt, threadId, unseenBy } from '../../../extensions/reviews/client/reviews.ts'
 import type { CardPart, FloorPart, NoteCall } from '../../../extensions/reviews/threads.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
 import { cardOffers, conversationOffers, floorOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
@@ -171,7 +171,7 @@ function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Car
   const parsed = Object.entries(f.threads).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
   const note = (checkout: string): NoteCall => ['reviews/append', { project: f.id, checkout }]
   const threads: FloorPart['threads'] = parsed.map(({ checkout, thread }) => ({
-    key: `${f.id}/${checkout}`, checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, state: { is: 'live' as const },
+    key: `${f.id}/${checkout}`, checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, resolved: [...resolvedIn(thread).keys()], state: { is: 'live' as const },
     verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }],
     last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
   }))

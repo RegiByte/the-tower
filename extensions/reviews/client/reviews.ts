@@ -156,13 +156,48 @@ export const bodyProblem = (body: string): string | undefined => {
 /** A message's number is one past the last. */
 export const nextNumber = (thread: ReviewThread): number => (thread.messages.at(-1)?.n ?? 0) + 1
 
+const RESOLVED = /^\*\*Resolved:\*\* (n\d+(?:, n\d+)*)\s*$/
+
 /**
- * The messages `author` hasn't seen: everything after its own last message that others wrote. A worker that never
- * wrote has seen none.
+ * The notes a message marks resolved: a resolution is a note like any other whose body opens with
+ * `**Resolved:** n3, n4`, so a thread holding one reads as before wherever resolving is unknown.
+ */
+export const resolvesOf = (m: Message): number[] => {
+  const marked = RESOLVED.exec(m.body.split('\n', 1)[0])
+  return marked ? marked[1].split(', ').map((n) => Number(n.slice(1))) : []
+}
+
+/** A resolution's body: the mark, then what the resolver adds. */
+export const resolutionBody = (notes: number[], body = ''): string =>
+  [`**Resolved:** ${notes.map((n) => `n${n}`).join(', ')}`, ...(body.trim() ? ['', body.trim()] : [])].join('\n')
+
+/** Each resolved note of the thread, by number, with the note that resolved it first. */
+export const resolvedIn = (thread: ReviewThread): Map<number, number> => {
+  const resolved = new Map<number, number>()
+  for (const m of thread.messages) for (const n of resolvesOf(m)) if (!resolved.has(n)) resolved.set(n, m.n)
+  return resolved
+}
+
+/** Why `notes` can't be resolved on `thread`, if they can't: each must be a note of it, unresolved and no resolution. */
+export const resolveProblem = (thread: ReviewThread, notes: number[]): string | undefined => {
+  const resolved = resolvedIn(thread)
+  for (const n of notes) {
+    const m = thread.messages.find((m) => m.n === n)
+    if (!m) return `The thread of ${thread.checkout} holds no n${n}`
+    if (resolved.has(n)) return `n${n} is resolved already, by n${resolved.get(n)}`
+    if (resolvesOf(m).length) return `n${n} is a resolution: it resolves nothing further`
+  }
+  return undefined
+}
+
+/**
+ * The messages `author` hasn't seen: everything after its own last message that others wrote, but notes resolved
+ * since and resolutions saying nothing more. A worker that never wrote has seen none.
  */
 export const unseenBy = (thread: ReviewThread, author: string): Message[] => {
   const own = thread.messages.findLast((m) => m.author === author)?.n ?? 0
-  return thread.messages.filter((m) => m.n > own && m.author !== author)
+  const resolved = resolvedIn(thread)
+  return thread.messages.filter((m) => m.n > own && m.author !== author && !resolved.has(m.n) && !(resolvesOf(m).length && !m.body.includes('\n')))
 }
 
 /**

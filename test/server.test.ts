@@ -16,7 +16,8 @@ import { z } from 'zod'
 import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
 import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
-import { parseThread } from '../extensions/reviews/client/reviews.ts'
+import { parseThread, unseenBy } from '../extensions/reviews/client/reviews.ts'
+import type { FloorPart } from '../extensions/reviews/threads.ts'
 import type { Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
@@ -755,6 +756,8 @@ type Board = Extract<BoardMsg, { board: unknown }>['board']
 /** The first board on which `holds` holds. */
 const boardWhere = (holds: (b: Board) => boolean) => settled(async () => ((await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>).board, holds)
 const floorOf = (b: Board, id: string) => b.floors.find((f) => f.id === id)!
+/** A floor's threads as the reviews extension folds them. */
+const reviewThreads = (b: Board, id: string) => (floorOf(b, id).x!.reviews as FloorPart).threads
 const NO_TIDY = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
 const threadText = (checkout: string) => `# ${checkout}\n\n## NEMO-92 · 2026-10-06 14:32 · n1\nShip it.\n`
 const threadsIn = (project: string) => path.join(ROOT, 'collections', project, 'reviews')
@@ -822,6 +825,25 @@ test("reviews: a landed thread is the reviews extension's tidy entry, in Tidy's 
   const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, x: { reviews: ['shipped'] } } })
   assert.deepEqual([tidied.x, tidied.threads], [{ reviews: { done: ['shipped'], skipped: [] } }, ['shipped']])
   assert.equal(readdirSync(threadsIn('lab')).filter((id) => id.startsWith('shipped@')).length, 1)
+})
+
+test('reviews: a resolution is a note marking earlier notes resolved, read as a plain note by the thread format, and resolved notes leave what is unseen', async () => {
+  const note = (author: string, body: string) => command('review/append', { project: 'lab', checkout: 'resolving', author, body })
+  await note('NEMO-92', 'Why one by one?')
+  await note('NEMO-92', 'And this name?')
+  await note('ODIN-07', 'Fixed both.')
+  const resolved = (await post('reviews/resolve', { project: 'lab', checkout: 'resolving', author: 'NEMO-92', notes: [1, 2] }))
+  assert.equal(resolved.status, 200, resolved.body)
+  assert.equal(JSON.parse(resolved.body).n, 4)
+  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), 'resolving.md'), 'utf8'))
+  assert.deepEqual(thread.messages.at(-1), { author: 'NEMO-92', at: thread.messages.at(-1)!.at, n: 4, re: undefined, anchors: [], body: '**Resolved:** n1, n2' })
+  assert.deepEqual(unseenBy(thread, 'ODIN-07'), [])
+  const board = await boardWhere((b) => reviewThreads(b, 'lab').some((t) => t.checkout === 'resolving' && t.resolved.length === 2))
+  assert.deepEqual(reviewThreads(board, 'lab').find((t) => t.checkout === 'resolving')!.resolved, [1, 2])
+  const again = await post('reviews/resolve', { project: 'lab', checkout: 'resolving', author: 'ODIN-07', notes: [2] })
+  assert.deepEqual(JSON.parse(again.body), { t: 'error', code: 'invalid', message: 'n2 is resolved already, by n4' })
+  assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'resolving', author: 'ODIN-07', notes: [9] })), 'invalid')
+  assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'nowhere', author: 'ODIN-07', notes: [1] })), 'not_found')
 })
 
 test('reviews: on a floor keeping no threads, Tidy lists and files no thread, and a discard, which nothing there records, is refused and touches nothing', async () => {

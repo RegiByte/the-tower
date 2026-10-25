@@ -471,7 +471,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.deepEqual([tower.cards[0].checkout, cardPart(tower.cards[0], tower, files.tower).unseen], ['main', 2])
   const note = ['reviews/append', { project: 'tower', checkout: 'main' }]
   assert.deepEqual(threadsOn(tower), [{
-    key: 'tower/main', checkout: 'main', id: 'main.md', tag: tagOf('main.md'), messages: 4, last: { author: 'user', at: '2026-10-06 15:00', n: 4 }, landed: true,
+    key: 'tower/main', checkout: 'main', id: 'main.md', tag: tagOf('main.md'), messages: 4, last: { author: 'user', at: '2026-10-06 15:00', n: 4 }, landed: true, resolved: [],
     state: { is: 'live' }, verbs: ['note'], calls: { note }, actions: [{ verb: 'note', call: note }],
   }])
   assert.deepEqual(threadsOn(lab).map((t) => [t.checkout, t.landed, t.state, t.verbs]), [['odin-42', true, { is: 'landed' }, []]])

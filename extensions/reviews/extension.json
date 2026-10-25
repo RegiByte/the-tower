@@ -17,9 +17,7 @@
         "list": "reviews/history/<project>",
         "read": "tower/collection/<project>/<collection>/<item>",
         "create": "reviews/append",
-        "edit": {
-          "none": "append-only: a note is never rewritten"
-        },
+        "edit": "reviews/resolve",
         "delete": {
           "none": "a thread is filed by Tidy once its work lands, never deleted"
         }
@@ -133,7 +131,8 @@
                 "state",
                 "verbs",
                 "calls",
-                "actions"
+                "actions",
+                "resolved"
               ],
               "properties": {
                 "key": {
@@ -161,6 +160,14 @@
                   "required": [
                     "is"
                   ]
+                },
+                "resolved": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "description": "Its resolved notes, by number, in order."
                 }
               }
             }
@@ -300,6 +307,84 @@
       "words": {
         "label": "Note",
         "hint": "add a note to the checkout's review thread"
+      }
+    },
+    "resolve": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkout": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "description": "A worktree's name, or `main` for the main checkouts."
+          },
+          "author": {
+            "type": "string",
+            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
+            "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
+          },
+          "notes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "description": "The notes it resolves, by number: each one of the thread's, unresolved and no resolution itself."
+          },
+          "body": {
+            "type": "string",
+            "description": "What the resolver adds under the mark."
+          }
+        },
+        "required": [
+          "project",
+          "checkout",
+          "author",
+          "notes"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "appended"
+          },
+          "id": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "modifiedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "n",
+          "modifiedAt"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Mark notes of the checkout's thread resolved by appending a note, numbered like any other, whose body opens `**Resolved:** n3, n4`: append-only, and read as a plain note wherever resolving is unknown.",
+      "words": {
+        "label": "Resolve",
+        "hint": "mark the note resolved on its thread"
       }
     }
   },
