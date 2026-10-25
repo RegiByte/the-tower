@@ -153,10 +153,10 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
 
 /** What extensions offer on `subject`, each an entry in `group`, about the worker `card` and the floor `project` when it has them. */
 const addedEntries = (board: Board, subject: Subject, actions: Added<Action>[], group: string, about: { card?: string; project?: string }): Entry[] =>
-  actions.map((action) => {
+  actions.map((action, n) => {
     const words = actionWords(board, action)
     const name = 'verb' in action ? action.verb : `${action.cap}/${action.command}`
-    return { id: `added:${subject.key}:${name}`, group, label: words.label, hint: words.hint, keywords: [action.cap, name, group], destructive: words.destructive, ...about, does: { t: 'added', subject: subject.key, action } }
+    return { id: `added:${subject.key}:${name}#${n}`, group, label: words.label, hint: words.hint, keywords: [action.cap, name, group], destructive: words.destructive, ...about, does: { t: 'added', subject: subject.key, action } }
   })
 
 const floorEntries = (f: Floor): Entry[] =>
