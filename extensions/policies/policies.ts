@@ -3,12 +3,12 @@
  * `approvals/`), and what the board derives from them and the floor's `policies` items: each policy's view, the open
  * offers, and the run a card is. Nothing about a policy is stored beside these facts (decision `policies`).
  */
-import type { Call } from '../shared/api.ts'
-import { nextSlot, ruleWords, type PolicyHeader, type Problem } from '../shared/policies.ts'
-import { tagOf } from '../shared/tags.ts'
-import type { Card } from './board.ts'
-import type { StreamFact } from './streams.ts'
-import { calledOffers, type OfferAction, type OfferCalls, type OfferVerb, type PolicyAction, type PolicyCalls, type PolicyVerb } from './verbs.ts'
+import type { Call } from '../../src/shared/api.ts'
+import { nextSlot, ruleWords, type PolicyHeader, type Problem } from './client/policies.ts'
+import { tagOf } from '../../src/shared/tags.ts'
+import type { Card } from '../../src/bridge/board.ts'
+import type { StreamFact } from '../../src/bridge/streams.ts'
+import { calledOffers, type OfferAction, type OfferCalls, type OfferVerb, type PolicyAction, type PolicyCalls, type PolicyVerb } from '../../src/bridge/verbs.ts'
 
 export const RUNS_STREAM = 'runs'
 export const APPROVALS_STREAM = 'approvals'

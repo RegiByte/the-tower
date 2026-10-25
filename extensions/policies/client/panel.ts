@@ -2,13 +2,13 @@
  * The Policies panel: a floor's policies, the slots offered now and what needs the user, with Run now, Approve and
  * Accept. Bundled into `/panels.js`.
  */
-import type { Board, Floor } from '../bridge/board.ts'
-import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../bridge/policies.ts'
-import type { Call, Replies } from './api.ts'
-import { DISMISS_OFFER_TITLE, callOf, esc } from './cards.ts'
+import type { Board, Floor } from '../../../src/bridge/board.ts'
+import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../policies.ts'
+import type { Call, Replies } from '../../../src/shared/api.ts'
+import { DISMISS_OFFER_TITLE, callOf, esc } from '../../../src/shared/cards.ts'
 import { heldWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
-import { ICON } from './icons.ts'
-import { fileButtonsHtml } from './file-acts.ts'
+import { ICON } from '../../../src/shared/icons.ts'
+import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
 
 /** A floor's policies as the panel draws them, at `now`, and the offers this viewer dismissed (`DISMISSED_KEY`). */
 export type PoliciesView = { board: Board; floor: Floor; now: number; dismissed: ReadonlySet<string> }

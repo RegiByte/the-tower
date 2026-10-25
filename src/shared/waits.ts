@@ -1,5 +1,5 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
-import type { Offer } from '../bridge/policies.ts'
+import type { Offer } from '../../extensions/policies/policies.ts'
 import type { BoardAsk } from './extensions.ts'
 import { dutyOrder, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'

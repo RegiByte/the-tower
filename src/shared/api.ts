@@ -5,7 +5,7 @@
  */
 import { z } from 'zod'
 import { AUTHOR, WORKTREE_NAME } from './model.ts'
-import type { CheckResult, Outcome, RunStart } from '../bridge/policies.ts'
+import type { CheckResult, Outcome, RunStart } from '../../extensions/policies/policies.ts'
 
 /**
  * `<major>.<minor>`. The minor moves when the API adds something an older renderer reads past: a board field, a verb,

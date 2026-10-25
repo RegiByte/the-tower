@@ -18,6 +18,7 @@
     "scripts",
     "spikes",
     "src",
+    "extensions",
     "test"
   ],
   "exclude": [

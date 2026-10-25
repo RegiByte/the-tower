@@ -19,7 +19,7 @@ import { fonts } from '../src/shared/design.ts'
 import { parseThread } from '../src/shared/reviews.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import { MODULES } from '../src/tower/served.ts'
-import { decide, standing } from '../src/shared/policies.ts'
+import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
 
 const REPO = path.join(import.meta.dirname, '..')

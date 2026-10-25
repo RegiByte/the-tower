@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import type { Config } from './shared/model.ts'
-import { POLICIES } from './shared/policies.ts'
+import { POLICIES } from '../extensions/policies/client/policies.ts'
 import { REVIEWS } from './shared/reviews.ts'
 import { CliError } from './cli-error.ts'
 

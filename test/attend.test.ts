@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board, Wait } from '../src/bridge/board.ts'
-import type { Offer } from '../src/bridge/policies.ts'
+import type { Offer } from '../extensions/policies/policies.ts'
 import { attendNext, attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendEvent, type AttendOut } from '../src/shared/attend.ts'
 
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName, type PolicyFile, type PolicyView } from '../src/bridge/policies.ts'
-import { hashOf, parsePolicy } from '../src/bridge/policy-file.ts'
-import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing } from '../src/shared/policies.ts'
+import { NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName, type PolicyFile, type PolicyView } from '../extensions/policies/policies.ts'
+import { hashOf, parsePolicy } from '../extensions/policies/policy-file.ts'
+import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing } from '../extensions/policies/client/policies.ts'
 import type { When } from '../src/shared/slots.ts'
 
 const MIN = 60_000

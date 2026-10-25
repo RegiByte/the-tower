@@ -4,12 +4,12 @@
  * through the public verbs, as any other runner's would. It holds only the checks' results until their slots are past.
  */
 import type { Board, Floor } from './bridge/board.ts'
-import type { CheckResult } from './bridge/policies.ts'
+import type { CheckResult } from '../extensions/policies/policies.ts'
 import type { RouteInput } from './shared/api.ts'
 import { runProcess } from './run.ts'
 import { TICK_MS, type SlotSource } from './slots.ts'
 import type { RunResult } from './shared/extensions.ts'
-import { checkKey, decide, ON_TIME_MS, type Action } from './shared/policies.ts'
+import { checkKey, decide, ON_TIME_MS, type Action } from '../extensions/policies/client/policies.ts'
 
 const CHECK_TIMEOUT_MS = 60_000
 const OUT_MAX = 2048

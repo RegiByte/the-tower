@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board, Card, Floor, Wait } from '../src/bridge/board.ts'
-import type { Offer } from '../src/bridge/policies.ts'
+import type { Offer } from '../extensions/policies/policies.ts'
 import type { BoardAsk } from '../src/shared/extensions.ts'
 import { triggerBoards } from '../src/bridge/triggers.ts'
 

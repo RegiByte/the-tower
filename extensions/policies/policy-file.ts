@@ -4,9 +4,9 @@
  */
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { SPAWN_FIELDS } from '../shared/api.ts'
-import type { PolicyHeader, Problem } from '../shared/policies.ts'
-import { cronProblem, isZone } from '../shared/slots.ts'
+import { SPAWN_FIELDS } from '../../src/shared/api.ts'
+import type { PolicyHeader, Problem } from './client/policies.ts'
+import { cronProblem, isZone } from '../../src/shared/slots.ts'
 import type { Parsed } from './policies.ts'
 
 const Cron = z.string().superRefine((cron, ctx) => {

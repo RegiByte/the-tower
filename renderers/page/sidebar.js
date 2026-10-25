@@ -14,7 +14,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
 /**
  * @import { Board, Card, Floor, FloorCollection, FloorItem, Unresumable } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { CardRun } from '../../src/bridge/policies.ts'
+ * @import { CardRun } from '../../extensions/policies/policies.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'

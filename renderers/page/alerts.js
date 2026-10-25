@@ -4,7 +4,7 @@ import { shownPane, shownKey } from './kit.js'
 
 /**
  * @import { Board, Card, CardShown, Floor, Wait } from '../../src/bridge/board.ts'
- * @import { Offer } from '../../src/bridge/policies.ts'
+ * @import { Offer } from '../../extensions/policies/policies.ts'
  * @import { BoardAsk } from '../../src/shared/extensions.ts'
  * @import { Sound } from '../../src/shared/cards.ts'
  * @import { Pane } from './view.js'

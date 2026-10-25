@@ -12,7 +12,7 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "checkJs": true,
-    "paths": { "/x/drafts/*.js": ["./extensions/drafts/client/*.ts"], "/*.js": ["./src/shared/*.ts"] }
+    "paths": { "/x/drafts/*.js": ["./extensions/drafts/client/*.ts"], "/*.js": ["./src/shared/*.ts"], "/policies.js": ["./extensions/policies/client/policies.ts"] }
   },
   "include": ["src/tower/client.d.ts", "src/tower/tower.js", "renderers/week/week.js", "src/mod/hooks/register.js"]
 }

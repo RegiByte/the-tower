@@ -4,12 +4,12 @@
  * runner say and decide about them, pure over the board: where each policy stands, and what a runner does at a tick.
  * Their slots are `slots.ts`'s. Served as `/policies.js`.
  */
-import type { Board } from '../bridge/board.ts'
-import type { CheckResult, Outcome, PolicyView, ValidPolicyView } from '../bridge/policies.ts'
-import { listed, nextSlot, onTimeSlot, ruleWords, slotWords, type CronWhen } from './slots.ts'
+import type { Board } from '../../../src/bridge/board.ts'
+import type { CheckResult, Outcome, PolicyView, ValidPolicyView } from '../policies.ts'
+import { listed, nextSlot, onTimeSlot, ruleWords, slotWords, type CronWhen } from '../../../src/shared/slots.ts'
 
 /** The rule and slot words renderers import from `/policies.js`. */
-export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from './slots.ts'
+export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '../../../src/shared/slots.ts'
 
 export const POLICIES = 'policies'
 
