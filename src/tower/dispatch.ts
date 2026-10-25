@@ -636,8 +636,12 @@ export const dispatch = defineResource({
           }
           const x: Replies['tidy']['x'] = {}
           for (const [cap, keys] of Object.entries(plan.x ?? {})) {
-            const answer = (await chains.raiseTo('tower/tidy.apply', cap, { project: projectId, keys }, within)).find((a) => a.cap === cap)
-            x[cap] = !answer ? { code: 'refused', message: `${cap} is off on ${projectId}` } : answer.ok ? (answer.answer as { done: string[]; skipped: string[] }) : { code: answer.code, message: answer.message }
+            const [answer] = await chains.raiseTo('tower/tidy.apply', cap, { project: projectId, keys }, within)
+            x[cap] = !answer
+              ? { code: 'refused', message: `${cap} is off on ${projectId}` }
+              : answer.ok
+                ? (answer.answer as { done: string[]; skipped: string[] })
+                : { code: answer.code, message: answer.cap === cap ? answer.message : `${answer.cap}'s link around tower/tidy.apply refused: ${answer.message}` }
           }
           return { t: 'tidied', removed, deleted, threads: plan.threads, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
         } finally {
