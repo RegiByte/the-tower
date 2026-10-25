@@ -127,8 +127,14 @@ export const extensions = defineResource({
     }
     return {
       registry: () => shown,
-      /** `GET /extensions`: every extension as it stands, and the tower's resources as braided orders them. */
-      read: (): Reads['extensions'] => ({ extensions: views(), topology: topologyOf(held.resources), chains: shown.chains, answers: shown.answers, composites: compositesByVerb }),
+      /** What `GET /extensions` reads beside the board: every extension as it stands, and the tower's resources as braided orders them. */
+      read: (): Omit<Reads['extensions'], 'extensions'> & { extensions: ExtensionView[] } => ({
+        extensions: views(),
+        topology: topologyOf(held.resources),
+        chains: shown.chains,
+        answers: shown.answers,
+        composites: compositesByVerb,
+      }),
       /** The running extensions that fold, as the fold pass reads them, each one's floor settings read once per build. */
       folders: (): Folder[] => {
         const all = running()

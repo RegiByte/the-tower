@@ -256,7 +256,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     slots: [{ name: 'hour', scope: 'system', when: { every: '1h' } }],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
-  assert.deepEqual(read.extensions, msg.board.extensions)
+  assert.deepEqual(read.extensions, msg.board.extensions.map((e) => ({ ...e, exempted: [] })))
   assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions', 'x:chime'])
   assert.equal(read.topology.startupOrder.at(-1), 'x:tally')
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)

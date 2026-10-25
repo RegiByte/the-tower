@@ -1,4 +1,5 @@
 import type { Board, Card, Floor } from '../bridge/board.ts'
+import type { Exemption } from '../bridge/facts.ts'
 import { plural } from './format.ts'
 import { callOf } from './offered.ts'
 import { VIEWER_KEYS } from './viewer.ts'
@@ -79,10 +80,25 @@ export const hireDepth = (cards: Card[], c: Card): number => {
   return hirer ? hireDepth(cards, hirer) + 1 : 0
 }
 
-/** A worker's hires that run now, reviewers aside, across the sessions it ran as. */
-export const liveHires = (cards: Card[], c: Card) => cards.filter((h) => h.live && !h.reviews && h.hiredBy?.callsign === c.callsign)
+/** A worker exempt from its floor's hiring limits: a reviewer, or one a launch contributor exempted. */
+export const exemptFromHiring = (c: Card) => c.reviews !== undefined || (c.exempt ?? []).some((e) => e.from === 'hiring')
 
-/** Why a worker may not hire now under its floor's `hiring`, as a sentence; `undefined` when it may. A review is never refused. */
+/** An exemption in words, as the card and `tower whoami` say it. */
+export const exemptionWords = (e: Exemption) => `exempt from ${EXEMPT_FROM[e.from]} by ${e.by}`
+
+const EXEMPT_FROM: Record<Exemption['from'], string> = { hiring: 'hiring limits' }
+
+/** What each extension has exempted, by capability: the worker, by its current card, and from what. */
+export const exemptionsBy = (cards: Card[], cap: string): { session: string; callsign: string; from: Exemption['from'] }[] =>
+  cards.filter((c) => !c.continuedBy).flatMap((c) => (c.exempt ?? []).filter((e) => e.by === cap).map((e) => ({ session: c.id, callsign: c.callsign, from: e.from })))
+
+/** A worker's hires that run now, the exempt aside, across the sessions it ran as. */
+export const liveHires = (cards: Card[], c: Card) => cards.filter((h) => h.live && !exemptFromHiring(h) && h.hiredBy?.callsign === c.callsign)
+
+/**
+ * Why a worker may not hire now under its floor's `hiring`, as a sentence; `undefined` when it may. A review, or a hire
+ * a launch contributor exempts, is never refused.
+ */
 export const hireRefusal = (cards: Card[], f: Floor, c: Card): string | undefined => {
   const depth = hireDepth(cards, c)
   if (depth + 1 > f.hiring.depth) return `${c.callsign} stands ${plural(depth, 'hire')} deep, and ${f.name} lets hires stand at most ${f.hiring.depth} deep`

@@ -13,7 +13,7 @@ import { continuations, lineage, namer, threads, type SessionRef, type Thread } 
 import { cardRun, NO_POLICY_FACTS, offersOf, policyViews, type CardRun, type Offer, type PolicyFacts, type PolicyFile, type PolicyView } from './policies.ts'
 import { POLICIES } from '../shared/policies.ts'
 import { accountLimits, newestReading, NO_READS, probesOf, probeStatus, type LimitsFrom, type ExtraUsage, type ProbeFacts, type ProbeStatus } from './probes.ts'
-import { killedOutside, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
+import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { withLiveness, type Status } from './status.ts'
@@ -98,9 +98,14 @@ export type Card = {
   reviews?: string
   /** The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none. */
   hiredBy?: HiredBy
+  /** The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did. @since 1.85 */
+  crew?: CrewEdge
+  /** What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability. @since 1.85 */
+  exempt?: Exemption[]
   /**
    * The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the
-   * author whose work it reviews, else its hirer. Only a worker's current card reports; nobody's when it reports to none.
+   * author whose work it reviews, else the worker of its `crew` edge, else its hirer. Only a worker's current card
+   * reports; nobody's when it reports to none.
    */
   reportsTo?: string
   /** The checkout it works in: its worktree's name, or `main`. */
@@ -472,6 +477,8 @@ const card = (
     worktree,
     reviews,
     hiredBy,
+    crew: worker[0].facts.reportsTo,
+    ...(worker[0].facts.exempt.length && { exempt: worker[0].facts.exempt }),
     checkout,
     unseen: thread && unseenBy(thread, callsign).length,
     ...life,
@@ -554,7 +561,7 @@ export const withReports = (cards: Card[]): Card[] => {
   return cards.map((c) => {
     if (c.continuedBy) return c
     const hirer = c.hiredBy && carriedOn(byId, c.hiredBy.session)
-    const to = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : hirer
+    const to = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : c.crew ? carriedOn(byId, c.crew.session) : hirer
     return { ...c, ...(to && { reportsTo: to.id }), ...answerWait(c, hirer) }
   })
 }

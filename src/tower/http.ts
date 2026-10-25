@@ -95,7 +95,7 @@ import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, fileBelow, rendererFile, renderersOf } from '../renderers.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
-import { esc, shelfKind, shelfPage } from '../shared/cards.ts'
+import { esc, exemptionsBy, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
 import { MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated } from '../shared/extensions.ts'
@@ -735,7 +735,14 @@ export const httpServer = defineResource({
       streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
       plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
       apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
-      apiRead('extensions', { path: /^\/extensions$/, serve: ({ res }) => json(res, extensions.read()) }),
+      apiRead('extensions', {
+        path: /^\/extensions$/,
+        serve: ({ res }) => {
+          const read = extensions.read()
+          const cards = boardOf().floors.flatMap((f) => f.cards)
+          json(res, { ...read, extensions: read.extensions.map((e) => ({ ...e, exempted: exemptionsBy(cards, e.provides) })) } satisfies Reads['extensions'])
+        },
+      }),
       apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
       apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
       apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),

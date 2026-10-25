@@ -25,7 +25,7 @@ import { checkFound, heldWords, standingWords } from './shared/policies.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, parseThread, repoName, REVIEWS, reviewPrompt, sendText, threadId, unseenBy, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -109,7 +109,8 @@ const noReviewReason = (card: Card) =>
 /** Where work that landed is read once no worktree holds it. */
 const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
 
-const reportLine = (card: Card) => (card.reviews ? `reviews ${card.reviews}` : `hired by ${hirerName(card.hiredBy!, card.project)}`)
+const reportLine = (card: Card) =>
+  card.reviews ? `reviews ${card.reviews}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
 
 /** A worker hired from another floor: it heads a crew on its own, and is linked under its hirer's there. */
 const hiredOff = (card: Card) => card.hiredBy !== undefined && card.hiredBy.project !== card.project
@@ -147,6 +148,8 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     `You are ${card.callsign}, session ${card.id}, a worker on ${floorTitle(floor)}.`,
     card.peer ? `Other Claude sessions message you as "${card.peer}".` : 'Your Claude session name is not known to the tower yet.',
     ...(card.hiredBy ? [`${hirerWords(card)} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
+    ...(card.crew ? [`You are in ${card.crew.callsign}'s crew, by ${card.crew.by}: \`tower agent ${card.crew.callsign}\` says how to reach it.`] : []),
+    ...(card.exempt ?? []).map((e) => `You are ${exemptionWords(e)}.`),
     ...(card.run ? runLines(floor, card.run) : []),
     ...linesOf(board, card.id),
     ...(card.worktree ? worktreeLines(floor, card.worktree) : [`You work in ${card.cwd}.`]),
@@ -251,6 +254,8 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
     ...(card.reviews ? [`  reviews ${card.reviews}'s work`] : []),
     ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
+    ...(card.crew ? [`  in ${card.crew.callsign}'s crew, by ${card.crew.by}`] : []),
+    ...(card.exempt ?? []).map((e) => `  ${exemptionWords(e)}`),
     ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${[statusName(h), ...(h.project === card.project ? [] : [`on ${h.project}`])].join(', ')})`).join(', ')}`] : []),
     ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, card.conversations.find((conv) => conv.id === t.id)?.promptBy)]) : ['', 'No saved conversation yet.']),
     ...(earlier.length ? ['', `Earlier sessions of ${card.callsign}, each read in full at /conversations/<session>:`, ...earlier.map(earlierLine)] : []),
@@ -261,14 +266,15 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
 const probeCliLine = (p: Board['probes'][number], now: number): string =>
   [probeLine(p, now), ...(p.state === 'off' || p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
 
-/** An extension: its line, where it is off, and each problem at its path. */
-const extensionCliLines = (e: ExtensionView): string[] => [
+/** An extension: its line, where it is off, whom it exempted, and each problem at its path. */
+const extensionCliLines = (e: Reads['extensions']['extensions'][number]): string[] => [
   `${e.id}  ${extensionLine(e)}${e.provides === e.id ? '' : ` · provides ${e.provides}`}${e.bundled ? ' · bundled' : ''}`,
   ...(e.off?.length ? [`  off on ${e.off.join(', ')}`] : []),
   ...e.slots.map((s) => {
     const next = nextSlot(s.when, now)
     return `  slot ${s.name}  ${ruleWords(s.when)}${s.scope === 'project' ? ', on each floor' : ''}${next === undefined ? '' : ` · next ${slotWords(next, 'cron' in s.when ? s.when.tz : undefined, now)}`}`
   }),
+  ...(e.exempted.length ? [`  exempted ${e.exempted.map((x) => `${x.callsign} from ${x.from}`).join(', ')}`] : []),
   ...e.problems.map((p) => `  ${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`),
 ]
 

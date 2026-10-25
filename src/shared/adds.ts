@@ -1,4 +1,5 @@
-import type { Board } from '../bridge/board.ts'
+import type { Board, Card } from '../bridge/board.ts'
+import { exemptionWords } from './crews.ts'
 import type { Action, Added, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
 import type { Tower } from './shelf-page.ts'
 import type { Subject } from './subjects.ts'
@@ -34,8 +35,14 @@ const coreActions = (subject: Subject): { verb: string }[] =>
 /** Everything offered on `subject`: the core's actions, then what extensions add. */
 export const actionsOf = (board: Board, subject: Subject): ({ verb: string } | Added<Action>)[] => [...coreActions(subject), ...addedActions(board, subject)]
 
-/** The badges extensions show beside `subject`, in fold order. */
-export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => board.adds[subject.key]?.badges ?? []
+/**
+ * The badges extensions show beside `subject`: on a card, each exemption a launch contributor gave its worker, so no
+ * limit is lifted unseen; then what folds add, in fold order.
+ */
+export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [
+  ...(subject.kind === 'card' ? ((subject.value as Card).exempt ?? []).map((e) => ({ label: 'exempt', tone: 'offered' as const, hint: exemptionWords(e), cap: e.by })) : []),
+  ...(board.adds[subject.key]?.badges ?? []),
+]
 
 /** The lines extensions add to what `tower whoami` prints for the worker of `card`. */
 export const linesOf = (board: Board, card: string): string[] => (board.adds[`card:${card}`]?.lines ?? []).map((l) => l.text)

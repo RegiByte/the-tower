@@ -63,8 +63,17 @@ export type Reads = {
    * `composites`: each core verb the core's composites call through the dispatch, with those composites.
    * `chains`, `answers` and `composites` @since 1.85
    */
-  extensions: { extensions: ExtensionView[]; topology: Topology; chains: Record<string, string[]>; answers: Record<string, string[]>; composites: Record<string, string[]> }
+  extensions: {
+    extensions: (ExtensionView & { exempted: Exempted[] })[]
+    topology: Topology
+    chains: Record<string, string[]>
+    answers: Record<string, string[]>
+    composites: Record<string, string[]>
+  }
 }
+
+/** A worker an extension's launch contributor exempted, by its current card, and from what. @since 1.85 */
+export type Exempted = { session: string; callsign: string; from: 'hiring' }
 
 /** A resource the tower runs: what it depends on, what depends on it, and its depth (0 when it depends on nothing). */
 export type TopologyNode = { id: string; dependencies: string[]; dependents: string[]; depth: number }

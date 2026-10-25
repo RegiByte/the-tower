@@ -529,9 +529,20 @@
           "$ref": "#/definitions/HiredBy",
           "description": "The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none."
         },
+        "crew": {
+          "$ref": "#/definitions/CrewEdge",
+          "description": "The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did."
+        },
+        "exempt": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Exemption"
+          },
+          "description": "What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability."
+        },
         "reportsTo": {
           "type": "string",
-          "description": "The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the author whose work it reviews, else its hirer. Only a worker's current card reports; nobody's when it reports to none."
+          "description": "The card of the worker this one reports to, as it runs now (its hirer or author carried on through resumes): the author whose work it reviews, else the worker of its `crew` edge, else its hirer. Only a worker's current card reports; nobody's when it reports to none."
         },
         "checkout": {
           "type": "string",
@@ -838,6 +849,45 @@
       ],
       "additionalProperties": false,
       "description": "A hirer: the session it hired from, its callsign, and the floor it works on, which a hire on another floor doesn't share."
+    },
+    "CrewEdge": {
+      "type": "object",
+      "properties": {
+        "callsign": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "by": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "callsign",
+        "session",
+        "by"
+      ],
+      "additionalProperties": false,
+      "description": "A crew edge a launch contributor gave a spawn: the worker's callsign and session then, and `by`, its capability."
+    },
+    "Exemption": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "const": "hiring"
+        },
+        "by": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "by"
+      ],
+      "additionalProperties": false,
+      "description": "An exemption a launch contributor gave a spawn: `from` the floor's hiring limits, `by` its capability."
     },
     "CheckoutState": {
       "anyOf": [
