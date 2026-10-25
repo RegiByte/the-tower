@@ -109,6 +109,9 @@ export const tidiedLine = (r: Replies['tidy']) => {
 /** What a renderer asks before ending everything a worker left running. */
 export const reapAsk = (c: Card) => `End what ${c.callsign} left running?\n\n${c.resources.map((r) => `${r.pid}  ${r.command}`).join('\n')}`
 
-/** What a renderer asks before doing one of Tidy's rows, or all of them. */
+/**
+ * What a renderer asks before doing one of Tidy's rows, or all of them. The floor's `tidy` call applies every extension
+ * entry too: a renderer offering it passes `added` (`addedTidyOf`), so the ask lists them.
+ */
 export const tidyRowAsk = (r: TidyRow) => `${r.what}: ${r.does}?\n\n${r.title}`
 export const tidyAllAsk = (f: Floor, now: number, added: AddedTidy[] = []) => `${tidyLine(f.tidy, added)}\n\n${tidyRows(f, now, added).map((r) => `${r.what}: ${r.does}`).join('\n')}\n\nDo all of it?`

@@ -485,7 +485,9 @@ problem. The core raises `tower/discard.record` (`{project, name, author, tips}`
 raises `tower/tidy.apply` (`{project, keys}` → `{done, skipped}`, `reported`) in `tidy`, after the core's own parts, to
 each capability in the plan's `x` alone, with the keys of the floor's tidy entries it contributed
 (`board.adds['floor:<project>'].tidy`) that the plan carries: an entry no longer listed refuses the whole Tidy, and
-each answer, or why there is none, is the reply's `x.<cap>`. Each
+each answer, or why there is none, is the reply's `x.<cap>`. The floor's `tidy` call carries every entry as `plan.x`
+(API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
+`/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`.
 **Slots, triggers and checks** (API 1.86). `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
 at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,
