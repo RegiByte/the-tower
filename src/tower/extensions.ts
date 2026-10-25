@@ -399,7 +399,11 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     log,
     signal: controller.signal,
     board: () => publisher.board(),
-    run: (argv, { cwd, timeoutMs = RUN_MS, stdin }) => runProcess(argv, { cwd, timeoutMs, stdin, signal: controller.signal }),
+    run: (argv, { cwd, timeoutMs = RUN_MS, stdin, env }) => runProcess(argv, { cwd, timeoutMs, stdin, env, signal: controller.signal }),
+    runtime: () => {
+      const { argv, env = {} } = config.read()
+      return { argv, env }
+    },
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
     ...stores.ctx,
   }

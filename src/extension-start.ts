@@ -39,6 +39,9 @@ const ctx: StartCtx = {
   board: () => {
     throw new Error(NO_TOWER)
   },
+  runtime: () => {
+    throw new Error(NO_TOWER)
+  },
   call: async () => apiError('unavailable', NO_TOWER),
   read: async () => apiError('unavailable', NO_TOWER),
   raise: async () => [],

@@ -420,10 +420,16 @@ export type StartCtx = {
     delete(project: string, name: string, id: string): Promise<void>
   }
   /**
-   * Runs a command to its end from `cwd`: its env the tower's with the parent session scrubbed, its process group killed
-   * by pid at `timeoutMs` (60 s when left out) and at halt. Rejects when it can't start. @since 1.86
+   * Runs a command to its end from `cwd`: its env the tower's with the parent session scrubbed, `env` set over it (since
+   * 1.88), its process group killed by pid at `timeoutMs` (60 s when left out) and at halt. Rejects when it can't start.
+   * @since 1.86
    */
-  run(argv: string[], opts: { cwd: string; timeoutMs?: number; stdin?: string }): Promise<RunResult>
+  run(argv: string[], opts: { cwd: string; timeoutMs?: number; stdin?: string; env?: Record<string, string> }): Promise<RunResult>
+  /**
+   * How the config starts a session of `runtime`, as it says now: the command before the arguments the tower adds, and
+   * the env set over the scrubbed one. What runs the runtime outside a session (`ctx.run`) runs it the same way. @since 1.88
+   */
+  runtime(runtime: Runtime): { argv: string[]; env: Record<string, string> }
   /** Its own stores as the tower folds them, read-only: what folds get as `own`. @since 1.83 */
   own: {
     /** A stream's `reduce` state: a `project` stream's on that floor; its `init` before any fact. */
@@ -552,6 +558,7 @@ export const CTX_SINCE: {
     collections: { list: STORES, read: STORES, create: STORES, write: STORES, delete: STORES },
     own: { streams: STORES, collections: STORES, facts: STORES },
     run: TRIGGERS,
+    runtime: KINDS,
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
   fold: { now: FOLDS, settings: FOLDS, board: FOLDS, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
