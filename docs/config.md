@@ -137,8 +137,10 @@ away. The shelf is not a collection, though an `item` entry shows one of a colle
 
 A collection is a kind of file a floor keeps in the system root, `collections/<project>/<collection>/<item>`, declared
 by id with a `label` (the name it is shown by) and an optional `description` (what it is for, in a sentence or two,
-shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. One id means
-something to the tower itself: `reviews`, one review thread per checkout, written only through `tower note`.
+shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. The bundled
+extensions declare three. `reviews`, one review thread per checkout, written only through `tower note`, is
+declared by the bundled reviews extension, owned, on every floor where its capability is on: a `reviews` entry here
+overrides its `label` and `description`, and stays a plain collection on a floor with `capabilities.reviews.off`.
 `policies`, standing work started at its slots (`tower policies` lists them, the handbook's "Policies and runs" says
 what a policy holds), is declared by the bundled policies extension, on every floor where its capability is on: a
 `policies` entry here overrides its `label` and `description`, and stays a plain collection on a floor with

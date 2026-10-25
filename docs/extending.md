@@ -215,10 +215,11 @@ in the tower's own view when framed, else in a new tab.
 Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
-  `review/append`, `tidy` and the rest. Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
+  `tidy` and the rest, and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
-  `/conversations/<id>`, `/archive/<project>`, `/reviews/<project>`, `/collection/<project>/<collection>/<item>`,
+  `/conversations/<id>`, `/archive/<project>`, `/collection/<project>/<collection>/<item>`, `/reviews/<project>`
+  (deprecated since 1.93: the reviews extension's `/reviews/history/<project>`),
   `/probe/<name>` (deprecated since 1.90: the quota extension's `/quota/reads` and the board's `x.quota`), `/runs/<project>`
   (deprecated since 1.91: the policies extension's `/policies/runs/<project>?policy&limit`, a policy's runs, newest
   first, each with its worker as it is now), `/landing?project&branch` (what
@@ -286,7 +287,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: its stylesheet, what a viewer opened read back from the drawn html, copying a prompt or answer as written (`saidText`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
 | `/x/drafts/drafts.js` | the bundled drafts extension's client: editing a floor's drafts over the generic `collection/*` verbs, the floor's drafts collection while the extension is on there (`draftsOf`), keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`). `/drafts.js` serves it too, deprecated, until 2.0 |
 | `/items.js` | any collection's items as rows and trays (title, tag, who kept it, age), an item read by its type, and the question before deleting one |
-| `/reviews.js` | the review threads' format: parse, append, anchors |
+| `/x/reviews/reviews.js` | the bundled reviews extension's client: the review threads' format (parse, append, anchors, what a reader hasn't seen). `/reviews.js` serves it too, deprecated, until 2.0 |
+| `/x/reviews/panel.js` | the Reviews panel over the extension's part (`x.reviews` on a card and a floor): a card's thread and note call (`cardReviews`, `noteCallOf`), a floor's threads (`floorThreadsOf`), and the panel as a pure view. `/panels.js` keeps its 1.92 copy over the old fields, deprecated, until 2.0 |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
 | `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults); chord labels, `aria-keyshortcuts` and the `?` sheet |
@@ -346,8 +348,11 @@ business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
 `/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
-Workers add with `tower keep <collection>`. One id means something to the core: `reviews`, written only through
-`review/append`. `policies`, standing work run at its slots, is the bundled policies extension's: each floor carries
+Workers add with `tower keep <collection>`. `reviews` is the bundled reviews extension's, owned: one markdown thread
+per checkout, written only through `reviews/append`. Each card carries its thread as `x.reviews` (the checkout it is
+about, where that work stands, the notes new to it, and its note call while the work is live) and each floor its
+threads; until 2.0 the board copies them to `floor.threads`, `card.threadState`, `card.unseen`, the card's `note`
+and `card.checkoutState.filed`, and `review/append` still answers, deprecated. `policies`, standing work run at its slots, is the bundled policies extension's: each floor carries
 its policies (parsed, with where each stands) and open offers as `x.policies`, each offer also an ask in
 `board.asks`, `/x/policies/policies.js` says rules and slots in words and where a policy stands (`standingWords`),
 and `policies/run`, `policies/pass` and `policies/approve` write its facts. Until 2.0 the board copies them to
