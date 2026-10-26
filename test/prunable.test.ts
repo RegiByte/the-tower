@@ -55,7 +55,7 @@ const hired = (log: SessionLog, where: 'worktree' | 'main', upTo = Infinity): Se
 /** Git's read of the tower floor's hub: worktree odin-42 with its work landed or not. */
 const repos = (absorbed: boolean, dirty: number) =>
   new Map<string, RepoRead>([
-    [HUB, { dir: HUB, git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, dirty, unpushed: absorbed ? 0 : 1, absorbed, risk: [] }], kept: [] }],
+    [HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, dirty, unpushed: absorbed ? 0 : 1, absorbed, risk: [] }], kept: [] }],
   ])
 
 /** The tower floor at `now` with `logs`, the last of them running, and every one when `allLive`. */

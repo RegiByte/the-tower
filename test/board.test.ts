@@ -236,7 +236,7 @@ test('a worker killed by a signal from outside the tower, caught or not, is stra
 
 test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs", () => {
   const tree = { name: 'odin-42', path: '/lab/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
-  const repos = (present: boolean) => new Map<string, RepoRead>([['/lab', { dir: '/lab', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present }], kept: [] }]])
+  const repos = (present: boolean) => new Map<string, RepoRead>([['/lab', { dir: '/lab', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present }], kept: [] }]])
   const log = homed(fixture('interrupts'), tree.path)
   const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }
   const letGo = { ...lost, events: [...lost.events, [150, 'h', { hook_event_name: 'tower.letGo' }] as SessionLog['events'][number]] }
@@ -270,7 +270,7 @@ test('verbs: what a session left running makes it reapable', () => {
 test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty', () => {
   const log = homed(fixture('tool-turn'))
   const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
-  const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+  const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
   const cardAt = (session: SessionLog, repos: Map<string, RepoRead>) =>
     board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host: hostWith(), repos })).floors[0].cards[0]
   const inTree = homed(log, tree.path)
@@ -289,8 +289,8 @@ test('a past worker can be resumed only where its floor still has its folder: el
   const spanning = { name: 'tower', hub: '/hub', repos: ['/lib'] }
   const both = (libPresent: boolean) =>
     new Map<string, RepoRead>([
-      ['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present: true }], kept: [] }],
-      ['/lib', { dir: '/lib', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, path: '/lib/.worktrees/odin-42', present: libPresent }], kept: [] }],
+      ['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present: true }], kept: [] }],
+      ['/lib', { dir: '/lib', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, path: '/lib/.worktrees/odin-42', present: libPresent }], kept: [] }],
     ])
   const readsOf = (repos: Map<string, RepoRead>) => [...repos.values()]
   assert.deepEqual([unresumableAt(spanning, tree.path, readsOf(both(true))), unresumableAt(spanning, tree.path, readsOf(both(false)))], [undefined, 'gone'])
@@ -457,8 +457,8 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   const tree = (absorbed: boolean) => ({ name: 'odin-42', path: '/lab/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed, risk: [] })
   const repos = (dirty: number, absorbed: boolean) =>
     new Map<string, RepoRead>([
-      ['/hub', { dir: '/hub', git: true, bases: [], main: { dirty, ahead: 0 }, trees: [], kept: [] }],
-      ['/lab', { dir: '/lab', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees: [tree(absorbed)], kept: [] }],
+      ['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty, ahead: 0 }, trees: [], kept: [] }],
+      ['/lab', { dir: '/lab', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [tree(absorbed)], kept: [] }],
     ])
   const floors = (dirty: number, absorbed: boolean) => board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(log) }], host: hostWith(), repos: repos(dirty, absorbed) })).floors
   const threadsOn = (f: Floor) => floorThreads(f, files[f.id])
@@ -486,7 +486,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
 test('a card says where its checkout’s work stands, and its thread’s, offering a note on it only while that work goes on', () => {
   const log = homed(fixture('tool-turn'))
   const tree: TreeRead = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: true, against: 'origin/main', risk: [] }
-  const reads = (trees: TreeRead[], kept: BranchRead[] = []) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], main: { dirty: 0, ahead: 0 }, trees, kept }]])
+  const reads = (trees: TreeRead[], kept: BranchRead[] = []) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept }]])
   const filed = (at: string): ThreadFile => ({ id: `odin-42@${at}.md`, thread: { checkout: 'odin-42', messages: [] } })
   const cardOf = (session: SessionLog, repos: Map<string, RepoRead>, files: ThreadFile[] = [], host = hostWith()) => {
     const floor = board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host, repos })).floors[0]

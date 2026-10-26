@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { carriedOf, commonBases, copiesOf, cuttable, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
+import { carriedOf, commonBases, copiesOf, cuttable, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, sharedDefault, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
 
 const HUB = '/w/lab'
 const API = '/w/lab-api'
@@ -8,7 +8,7 @@ const API = '/w/lab-api'
 const tree = (dir: string, name: string, over: Partial<TreeRead> = {}): TreeRead => ({
   name, path: `${dir}/.worktrees/${name}`, branch: `tower/${name}`, head: 'abc', base: 'origin/main', present: true, dirty: 0, unpushed: 0, absorbed: false, risk: [], ...over,
 })
-const repo = (dir: string, trees: TreeRead[], kept: Extract<RepoRead, { git: true }>['kept'] = [], bases = ['origin/main']): RepoRead => ({ dir, git: true, bases, main: { dirty: 0, ahead: 0 }, trees, kept })
+const repo = (dir: string, trees: TreeRead[], kept: Extract<RepoRead, { git: true }>['kept'] = [], bases = ['origin/main']): RepoRead => ({ dir, git: true, bases, originHead: bases[0], main: { dirty: 0, ahead: 0 }, trees, kept })
 
 const states = (reads: RepoRead[], occupants: { id: string; cwd: string }[] = []) =>
   floorWorktrees('lab', reads, occupants, true).map((w) => [w.name, w.state, w.verbs])
@@ -92,6 +92,16 @@ test('a cut is possible when every dir is a git repo with an origin, though thei
   assert.equal(cuttable(differing), true)
   assert.equal(cuttable([...differing, repo('/w/bare', [], [], [])]), false)
   assert.equal(cuttable([...differing, { dir: '/w/notes', git: false }]), false)
+})
+
+test("a cut's default is named only when every repo has the same one recorded; a branch they share is not their default", () => {
+  assert.equal(sharedDefault([repo(HUB, [], [], ['origin/main', 'origin/staging']), repo(API, [], [], ['origin/main'])]), 'origin/main')
+  const differing = [repo(HUB, [], [], ['origin/main', 'origin/staging']), repo(API, [], [], ['origin/development', 'origin/staging'])]
+  assert.deepEqual(commonBases(differing), ['origin/staging'])
+  assert.equal(sharedDefault(differing), undefined)
+  const unrecorded = (dir: string): RepoRead => ({ dir, git: true, bases: ['origin/staging', 'origin/main'], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [], kept: [] })
+  assert.equal(sharedDefault([unrecorded(HUB), unrecorded(API)]), undefined)
+  assert.equal(sharedDefault([repo(HUB, [], [], ['origin/main']), { dir: '/w/notes', git: false }]), undefined)
 })
 
 test('carried: each branch commit without an equal patch has a copy by author and date, committed no earlier', () => {

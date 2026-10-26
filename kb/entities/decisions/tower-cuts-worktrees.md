@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-10-26",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -43,11 +43,17 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)): preflight every repo (a repo with an origin, a valid and free
   branch, a free path not named `main`, each `worktrees.links` key ignored and untracked), fetch (else `offline`; a
   burst of verbs shares one fetch per repo: [`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin)), resolve the base
-  (an origin branch, `origin/HEAD` by default), then per repo `worktree add --no-track -b`, record `towerBase` and
+  (an origin branch named for every repo, else each repo's own `origin/HEAD`), then per repo `worktree add --no-track -b`, record `towerBase` and
   `towerName` in the branch's config, copy what `.worktreeinclude` names and symlink the links. Every verb writing a
   repo's `.git/config` runs one at a time ([`writingConfig`](ref:hub/src/worktrees.ts#writingConfig)), since git locks
   the file. A failure while making, or a failed spawn, rolls back what this request made. The default name is a
   callsign whose name is free on the floor, and the worker is started with that session id ([[callsign-free-name]]).
+- **What a floor offers.** `cut` while every dir is a git repo with an origin, whatever default branch each has
+  ([`cuttable`](ref:hub/src/bridge/worktrees.ts#cuttable)). The floor's `bases` are the origin branches every repo has,
+  nameable for all at once ([`commonBases`](ref:hub/src/bridge/worktrees.ts#commonBases)), and `defaultBase` is the
+  default they share, absent when their defaults differ or one isn't recorded
+  ([`sharedDefault`](ref:hub/src/bridge/worktrees.ts#sharedDefault)). The spawn form's From names `defaultBase` as
+  origin's default, or says each repo's own default; a branch they share is never shown as their default.
 - **A fork** ([`fork`](ref:hub/src/worktrees.ts#fork), offered through `spawn {cut: {from}}`): the same preflight,
   fetch and making, each repo started from a [`snapshot`](ref:hub/src/worktrees.ts#snapshot) of a checkout (uncommitted work
   committed from a copy of its index, the source untouched), and recording the source's base plus

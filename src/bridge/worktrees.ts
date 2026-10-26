@@ -131,9 +131,10 @@ export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head:
 
 /**
  * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `bases`: origin's
- * branches as `origin/<x>`, its default first, empty without an origin. `main`: the main checkout's own work.
+ * branches as `origin/<x>`, its default first, empty without an origin. `originHead`: that default, when the clone
+ * recorded it (`origin/HEAD`). `main`: the main checkout's own work.
  */
-export type RepoRead = { dir: string; git: false } | { dir: string; git: true; bases: string[]; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
+export type RepoRead = { dir: string; git: false } | { dir: string; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
 
 /** The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without one). */
 export type MainRead = { dirty: number; ahead: number }
@@ -209,6 +210,12 @@ export const floorBranches = (project: string, reads: RepoRead[]): FloorBranch[]
 
 /** Whether a cut can start in every dir of the project: each is a git repo with an origin, whichever default branch it has. */
 export const cuttable = (reads: RepoRead[]): boolean => reads.length > 0 && gitReads(reads).length === reads.length && gitReads(reads).every((r) => r.bases.length > 0)
+
+/** Origin's default branch when every repo of the project has the same one recorded: where a cut naming no base starts each. */
+export const sharedDefault = (reads: RepoRead[]): string | undefined => {
+  const heads = new Set(reads.map((r) => (r.git ? r.originHead : undefined)))
+  return heads.size === 1 ? [...heads][0] : undefined
+}
 
 /** The bases a cut can name for every repo at once: origin's branches every repo of the project has, in the hub's order. Empty when their defaults differ and no other branch is shared. */
 export const commonBases = (reads: RepoRead[]): string[] => {

@@ -354,7 +354,7 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
     Promise.all(keptBranches.map(([branch, record]) => branchRead(round, branch, heads.get(branch)!, record, created.get(branch)))),
   ])
   return {
-    read: { dir, git: true, bases: originBases(remotes, originHead), main: { dirty: main.length, ahead: facts.ahead }, trees, kept },
+    read: { dir, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead }, trees, kept },
     parts: { layout, facts, main, statuses, created },
   }
 }

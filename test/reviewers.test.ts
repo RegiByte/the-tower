@@ -126,7 +126,7 @@ test("a reviewer spawned before reviews logged its facts reads as one spawned wi
 
 test("reviews offers Review on a worker whose work goes on, in a floor of git repos, copied back as the card verb `review` and its old call; never on a reviewer, nor once the work landed or its checkout is gone", () => {
   const tree: TreeRead = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: false, against: 'origin/main', risk: [] }
-  const reads = (trees: TreeRead[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+  const reads = (trees: TreeRead[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], originHead: 'origin/main', main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
   const at = (cwd: string): SessionLog => {
     const log = fixture('tool-turn')
     return { ...log, header: { ...log.header, project: 'tower', cwd } }
@@ -153,7 +153,7 @@ test("reviews offers Review on a worker whose work goes on, in a floor of git re
 
 test("a reviewer's note writes on its author's thread, whether its prompt or its facts say it is one (FREYR-47)", () => {
   const fork: TreeRead = { name: 'freyr-1', path: '/hub/.worktrees/freyr-1', branch: 'tower/freyr-1', from: 'main', present: true, dirty: 0, unpushed: 0, absorbed: false, against: 'origin/main', risk: [] }
-  const repos = new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], main: { dirty: 0, ahead: 0 }, trees: [fork], kept: [] }]])
+  const repos = new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: ['origin/main'], originHead: 'origin/main', main: { dirty: 0, ahead: 0 }, trees: [fork], kept: [] }]])
   const inFork = (log: SessionLog): SessionLog => ({ ...log, header: { ...log.header, cwd: fork.path } })
   const config: Config = { ...CONFIG, collections: { reviews: { label: 'Reviews', description: 'Threads.' } } }
   const core = (logs: SessionLog[]) => board(viewOf(config, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(logs.map((l) => l.header.id)), protocol: HOST_PROTOCOL }, repos }))

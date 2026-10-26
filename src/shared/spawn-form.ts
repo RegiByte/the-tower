@@ -138,7 +138,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
   const callsign = formCallsign(v)
   const place =
     v.where === 'new'
-      ? [name ? `new worktree <b>${esc(name)}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, name))}`, `from ${esc(v.base || f.bases[0] || 'each repo’s origin default')}`, `in ${esc(repos)}`]
+      ? [name ? `new worktree <b>${esc(name)}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, name))}`, `from ${esc(v.base || f.defaultBase || 'each repo’s origin default')}`, `in ${esc(repos)}`]
       : v.where === 'worktree' && joined
         ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} on duty in it` : 'nobody else in it']
         : [`main checkout of <b>${esc(base(v.checkout))}</b>`, 'shared with you and every worker there']
@@ -208,7 +208,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
       <div class="if-new fields">
         <label>${labelHtml('Worktree name', true)}<input name="name" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]*" placeholder="the callsign, by default"></label>
         <label>${labelHtml('Branch', true)}<input name="branch" autocomplete="off" spellcheck="false" placeholder="${esc(branchPlaceholder(f, ''))}"></label>
-        <label class="wide">${labelHtml('From')}<select name="base">${f.bases.length ? f.bases.map((b, i) => `<option value="${i ? esc(b) : ''}">${esc(b)}${i ? '' : " · origin's default"}</option>`).join('') : `<option value="">each repo's origin default</option>`}</select></label>
+        <label class="wide">${labelHtml('From')}<select name="base"><option value="">${f.defaultBase ? `${esc(f.defaultBase)} · origin's default` : "each repo's origin default"}</option>${f.bases.filter((b) => b !== f.defaultBase).map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join('')}</select></label>
       </div>
       <fieldset class="if-worktree picks">${worktrees.map((w, i) => `<label class="pick"><input type="radio" name="worktree" value="${esc(w.repos[0].path)}"${i ? '' : ' checked'}>
         <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
