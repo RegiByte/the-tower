@@ -5,6 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
+import { run as runGit } from './git.ts'
 import { parseListening, parseProcesses, peers, resources, type ClaudeRegistration, type Peer, type Process, type Resource } from './bridge/resources.ts'
 import { connectHost, connectTerms } from './shared/client.ts'
 import { withoutParentSession } from './shared/env.ts'
@@ -161,13 +162,10 @@ const NO_REMOTE = 1
 
 /** The web page of the repository's `origin` remote; `undefined` when it has none or the dir is no repository. */
 export const originUrl = async (dir: string): Promise<string | undefined> => {
-  try {
-    const { stdout } = await promisify(execFile)('git', ['-C', dir, 'config', '--get', 'remote.origin.url'], { encoding: 'utf8' })
-    return webUrl(stdout.trim())
-  } catch (err) {
-    if ((err as { code?: number }).code === NO_REMOTE) return undefined
-    throw err
-  }
+  const r = await runGit(dir, ['config', '--get', 'remote.origin.url'])
+  if (r.code === NO_REMOTE) return undefined
+  if (r.code !== 0) throw new Error(`git config --get remote.origin.url in ${dir}: ${r.stderr.trim()}`)
+  return webUrl(r.stdout.trim())
 }
 
 /** Shows `target` selected in a Finder window. */
