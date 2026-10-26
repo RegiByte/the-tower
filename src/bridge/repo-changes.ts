@@ -48,29 +48,35 @@ const checkoutChange = (rel: string, checkout: { main: true } | { tree: string }
 /** Files of the main checkout's own that git keeps in the common dir when the two are one. */
 const MAIN_OWN = new Set(['index', 'HEAD', 'logs/HEAD'])
 
+/** A change in the tower's worktrees folder, `<root>/.worktrees/…`; `undefined` for one outside it. */
+const worktreesChange = (root: string, path: string): Stale | undefined => {
+  if (!under(path, `${root}/${WORKTREES_DIR}`)) return undefined
+  const [, name, ...inside] = within(path, root).split('/')
+  if (name === undefined || !inside.length) return { ...NOTHING, repo: true }
+  return WORKTREE_NAME.test(name) ? { ...NOTHING, trees: [name] } : NOTHING
+}
+
 /**
  * What the change of `file` (an absolute real path; `null` when the watcher couldn't say) makes stale in the repo laid
- * out as `layout`. `nested`: the roots of the other project dirs inside this one, whose changes are theirs.
+ * out as `layout`. `nested`: the roots of the other project dirs inside this one, whose changes are theirs. The
+ * worktrees folder is told apart before the common dir, which in a bare repo is the project dir itself.
  */
 export const staleOf = (layout: RepoLayout | undefined, nested: string[], file: string | null): Stale => {
   if (file === null || layout === undefined) return 'all'
   const path = file.replace(/\.lock$/, '')
   for (const [tree, admin] of Object.entries(layout.admins)) if (under(path, admin)) return checkoutChange(within(path, admin), { tree })
   if (layout.gitDir !== layout.commonDir && under(path, layout.gitDir)) return checkoutChange(within(path, layout.gitDir), { main: true })
+  if (nested.some((dir) => under(path, dir))) return NOTHING
+  if (path === layout.root) return 'all'
+  const inWorktrees = worktreesChange(layout.root, path)
+  if (inWorktrees) return inWorktrees
   if (under(path, layout.commonDir)) {
     const rel = within(path, layout.commonDir)
     if (layout.gitDir === layout.commonDir && MAIN_OWN.has(rel)) return checkoutChange(rel, { main: true })
     const branch = /^logs\/refs\/heads\/(.+)$/.exec(rel)?.[1]
     return branch ? { ...NOTHING, branches: [branch] } : { ...NOTHING, repo: true }
   }
-  if (nested.some((dir) => under(path, dir))) return NOTHING
-  if (!under(path, layout.root)) return NOTHING
-  const rel = within(path, layout.root)
-  if (path === layout.root) return 'all'
-  const [top, name, ...inside] = rel.split('/')
-  if (top !== WORKTREES_DIR) return { ...NOTHING, main: true }
-  if (name === undefined || !inside.length) return { ...NOTHING, repo: true }
-  return WORKTREE_NAME.test(name) ? { ...NOTHING, trees: [name] } : NOTHING
+  return under(path, layout.root) ? { ...NOTHING, main: true } : NOTHING
 }
 
 /**

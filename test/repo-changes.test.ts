@@ -33,6 +33,14 @@ test('a linked worktree as the project dir: its own git dir is the main checkout
   assert.deepEqual(staleOf(linked, [], '/w/main/.git/refs/heads/x'), { ...NOTHING, repo: true })
 })
 
+test('a bare repo as the project dir: its worktrees folder is told apart from the git dir it lies in', () => {
+  const bare: RepoLayout = { root: '/w/lab.git', gitDir: '/w/lab.git', commonDir: '/w/lab.git', admins: { a: '/w/lab.git/worktrees/a' } }
+  assert.deepEqual(staleOf(bare, [], '/w/lab.git/.worktrees/a/src/x.ts'), { ...NOTHING, trees: ['a'] })
+  assert.deepEqual(staleOf(bare, [], '/w/lab.git/.worktrees/new'), { ...NOTHING, repo: true })
+  assert.deepEqual(staleOf(bare, [], '/w/lab.git/worktrees/a/index'), { ...NOTHING, trees: ['a'] })
+  assert.deepEqual(staleOf(bare, [], '/w/lab.git/refs/heads/x'), { ...NOTHING, repo: true })
+})
+
 test('changes settle once quiet, and no later than SETTLE_MAX_MS after the first however long they go on', () => {
   let s: Settling = {}
   const at = (t: number, stale = { ...NOTHING, main: true }) => {
