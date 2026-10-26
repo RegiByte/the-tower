@@ -14,6 +14,8 @@ import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
 import { scanCollections } from './collections.ts'
+import { watchRepos, type RepoAsk } from './repo-watch.ts'
+import type { RepoReading } from './worktrees.ts'
 import { hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath, type SystemPaths } from './shared/paths.ts'
@@ -21,7 +23,7 @@ import type { HostLive } from './shared/protocol.ts'
 import type { Shell } from './shared/terms.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
-import { logged, loggedRead, watchedOrExit } from './logged.ts'
+import { logged, loggedRead, serially, watchedOrExit } from './logged.ts'
 
 const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
@@ -39,30 +41,6 @@ export const readConfig = (file: string): Config => {
   } catch (err) {
     throw new ConfigError(`${file} is not valid JSON: ${(err as Error).message}`)
   }
-}
-
-/**
- * One run at a time: a call while a run is in flight gets that run, and the read runs once more after it, so a read
- * always starts after the last call.
- */
-const serially = (read: () => Promise<void>): (() => Promise<void>) => {
-  let running: Promise<void> | undefined
-  let again = false
-  const call = (): Promise<void> => {
-    if (running) {
-      again = true
-      return running
-    }
-    running = read().finally(() => {
-      running = undefined
-      if (again) {
-        again = false
-        void call()
-      }
-    })
-    return running
-  }
-  return call
 }
 
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
@@ -171,8 +149,9 @@ export type System = {
   /** Read every project dir's git again now, after a request that changed its worktrees or branches. */
   refreshRepos: () => Promise<void>
   /**
-   * Keeps `running`, `peers` and `repos` current, re-read every 5 s, until the returned function is called; nobody
-   * observing, they are not read at all. Resolves once they are current: the first observer after none reads them now.
+   * Keeps `running` and `peers` current, re-read every 5 s, and `repos`, read as their git changes (`repo-watch.ts`),
+   * until the returned function is called; nobody observing, they are not read or watched at all. Resolves once they
+   * are current: the first observer after none reads them now.
    */
   observe: () => Promise<() => void>
   /** Stops watching: every watcher closed, every tail stopped, every poll and timer cleared, the git reader ended. */
@@ -201,7 +180,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let running: Resource[] = []
   let peers: Peer[] = []
   let shells: Shell[] | undefined
-  let repos = new Map<string, RepoRead>()
   const awaited = new Map<string, () => void>()
   /** Each stream fold: its files as read, and where it stands, by project (`''` for the system's). */
   const folds = new Map<StreamFold, { files: Map<string, HeldFacts>; at: Map<string, Folded> }>()
@@ -373,7 +351,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let reader: Worker | undefined
   /** Once stopped, no read starts a reader again. */
   let stopped = false
-  const readRepos = async (dirs: string[]): Promise<PromiseSettledResult<RepoRead>[]> => {
+  const readRepos = async (asks: RepoAsk[]): Promise<PromiseSettledResult<RepoReading>[]> => {
     if (!reader) {
       reader = new Worker(new URL('./repo-reader.ts', import.meta.url))
       reader.unref()
@@ -383,7 +361,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       throw new Error(`the git reader exited (${code}) before it answered`)
     })
     const reply = Promise.race([once(reader, 'message', { signal: ended.signal }), exited])
-    reader.postMessage(dirs)
+    reader.postMessage(asks)
     try {
       return (await reply)[0]
     } catch (err) {
@@ -398,44 +376,36 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
    * A dir git fails to read keeps its last read, and the failure goes to the tower's log. A config the tower can't
    * read keeps every last read: the board says what to fix.
    */
-  const refreshRepos = serially(loggedRead('git', async () => {
-    let config: Config
+  const configDirs = (): string[] | undefined => {
+    if (stopped) return undefined
     try {
-      config = readConfig(paths.config)
+      return [...new Set(Object.values(readConfig(paths.config).projects).flatMap(projectDirs))]
     } catch (err) {
-      if (err instanceof ConfigError) return
+      if (err instanceof ConfigError) return undefined
       throw err
     }
-    if (stopped) return
-    const dirs = [...new Set(Object.values(config.projects).flatMap(projectDirs))]
-    const next = new Map<string, RepoRead>()
-    for (const [i, read] of (await readRepos(dirs)).entries()) {
-      if (read.status === 'fulfilled') next.set(dirs[i], read.value)
-      else {
-        console.error(`git in ${dirs[i]}:`, read.reason)
-        if (repos.has(dirs[i])) next.set(dirs[i], repos.get(dirs[i])!)
-      }
-    }
-    if (asJson(next) === asJson(repos)) return
-    repos = next
-    onChange()
-  }))
+  }
+  const repoWatch = watchRepos(configDirs, readRepos, onChange)
+  const refreshRepos = repoWatch.refresh
 
-  /** The machine is read only while someone observes it: a scan of every process and every repo's git costs about 0.6 s. */
+  /** The processes are scanned, and the repos' git watched and read, only while someone observes the machine. */
   let observers = 0
   let machinePolls: NodeJS.Timeout[] = []
   let machineRead: Promise<unknown> = Promise.resolve()
   const observe = async (): Promise<() => void> => {
     if (observers++ === 0) {
-      machineRead = Promise.all([refreshRunning(), refreshRepos()])
-      machinePolls = [setInterval(refreshRunning, MACHINE_POLL_MS), setInterval(refreshRepos, MACHINE_POLL_MS)]
+      machineRead = Promise.all([refreshRunning(), repoWatch.start()])
+      machinePolls = [setInterval(refreshRunning, MACHINE_POLL_MS)]
     }
     await machineRead
     let released = false
     return () => {
       if (released) return
       released = true
-      if (--observers === 0) machinePolls.forEach(clearInterval)
+      if (--observers === 0) {
+        machinePolls.forEach(clearInterval)
+        repoWatch.pause()
+      }
     }
   }
 
@@ -459,7 +429,11 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   mkdirSync(projectsStreamsPath(paths), { recursive: true })
   rescanMonths()
   watching(watch(projectsStreamsPath(paths), { recursive: true }, scheduleProjectStreams), projectsStreamsPath(paths))
-  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && onChange())), paths.config)
+  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => {
+        if (file !== path.basename(paths.config)) return
+        repoWatch.reconcile()
+        onChange()
+      })), paths.config)
   await refreshLive()
   await refreshShells()
   const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS)]
@@ -483,7 +457,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     running: () => running,
     peers: () => peers,
     shells: () => shells,
-    repos: () => repos,
+    repos: repoWatch.repos,
     refreshLive,
     tracked: (id, ms) =>
       sessions.has(id)
@@ -507,6 +481,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     observe,
     stop: async () => {
       stopped = true
+      repoWatch.pause()
       for (const watcher of watchers) watcher.close()
       for (const stopTail of tails.values()) stopTail()
       tails.clear()

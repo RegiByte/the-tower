@@ -4,8 +4,8 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-10-24",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
+  "reviewed": "2026-10-26",
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges"]
 }
 ---
 `src/worktrees.ts` is the only code that changes the tower's worktrees and branches. The tower server calls it; what
@@ -13,7 +13,7 @@ git's output means is decided in the bridge (`src/bridge/worktrees.ts`). The rul
 deleted, why removal never forces, how links are checked) are [[tower-cuts-worktrees]]'s.
 
 Every verb, cut and fork included, fetches first ([`fetchOrigin`](ref:hub/src/worktrees.ts#fetchOrigin), shared by
-verbs at once in a repo) and re-checks what it was offered on, since the board is a few seconds old and its remote refs
+verbs at once in a repo) and re-checks what it was offered on, since the board may lag a change and its remote refs are
 as old as the last fetch.
 
 - **Cut and fork.** [`cut`](ref:hub/src/worktrees.ts#cut) makes one [[worktree]] per repo at `.worktrees/<name>`, on
@@ -24,8 +24,11 @@ as old as the last fetch.
   [`linkedSources`](ref:hub/src/worktrees.ts#linkedSources) gives a worktree session the links' source directories.
   [`rollback`](ref:hub/src/worktrees.ts#rollback) undoes a cut whose session failed to start.
 - **Read.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads a repo's worktrees and kept branches without
-  fetching, on a thread of its own (`src/repo-reader.ts`, started by [[live-system]]), remembering what never changes
-  for a commit: whether it is [[absorbed]] or [[carried]], and what is unpushed.
+  fetching, every part afresh, as every verb does after its fetch; [`rereadRepo`](ref:hub/src/worktrees.ts#rereadRepo)
+  reads again only the parts a change made stale (the repo's own facts, a checkout's status, a branch's reflog) and
+  keeps the rest from its last parts, as the board's reads do on a thread of their own (`src/repo-reader.ts`, started
+  by [[live-system]]). Both remember what never changes for a commit: whether it is [[absorbed]] or [[carried]], and
+  what is unpushed.
   [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch.
 - **One worktree or branch.** The `/worktree/*` and `/branch/*` verbs: recut a lost worktree or a [[kept-branch]],
   prune a lost one, remove one that is removable or carried, delete a kept branch once absorbed or carried.

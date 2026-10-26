@@ -35,3 +35,27 @@ export const watchedOrExit = (watcher: FSWatcher, what: string): FSWatcher =>
     say(`${what} is no longer watched, so the process exits: start it again`)(err)
     process.exit(1)
   })
+
+/**
+ * One run at a time: a call while a run is in flight gets that run, and the read runs once more after it, so a read
+ * always starts after the last call.
+ */
+export const serially = (read: () => Promise<void>): (() => Promise<void>) => {
+  let running: Promise<void> | undefined
+  let again = false
+  const call = (): Promise<void> => {
+    if (running) {
+      again = true
+      return running
+    }
+    running = read().finally(() => {
+      running = undefined
+      if (again) {
+        again = false
+        void call()
+      }
+    })
+    return running
+  }
+  return call
+}
