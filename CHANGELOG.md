@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.64.0
+
+The spawn form's From says where a cut really starts. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), no config change, the renderer API 1.95 → 1.96 (additive).
+
+- **Origin's default is named only when every repo has the same one.** On a floor whose repos' default branches
+  differ but share another branch, From showed that shared branch as "origin's default", and the cut started each
+  repo from its own default instead. It did the same on a clone that never recorded `origin/HEAD`. From now reads
+  "each repo's origin default" in both cases, and every branch the repos share is a choice of its own that cuts
+  from it (#225).
+- **`floor.defaultBase`** (API 1.96): origin's default branch when every directory of the floor has the same one,
+  absent otherwise.
+
 ## v1.63.1
 
 A floor whose repos have different default branches can cut a worktree. No restart beyond the tower's own
