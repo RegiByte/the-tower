@@ -170,14 +170,17 @@ export const watchRepos = (
         current.delete(root)
       }
     for (const [root, ignore] of [...roots].filter(([r]) => !current.has(r))) {
-      let failed = false
+      /** Set once the watch started: a watch that fails as it starts reports before `subscribe` returns. */
+      let started: Watch | undefined
+      let failedAtStart = false
       const subscription = subscribe(root, ignore, changesIn(dir), (err) => {
-        failed = true
-        if (current.get(root)?.subscription === subscription) current.delete(root)
+        if (!started) failedAtStart = true
+        else if (current.get(root) === started) current.delete(root)
         notWatched(root, err)
       })
-      if (failed) continue
-      current.set(root, { subscription, ignore })
+      if (failedAtStart) continue
+      started = { subscription, ignore }
+      current.set(root, started)
       unwatched.delete(root)
     }
   }
@@ -188,12 +191,12 @@ export const watchRepos = (
     settle.dispatch({ type: 'forget', dir })
   }
 
+  /** `dir`'s real path; none for a dir that can't be resolved, which its watch says why. */
   const realOrNothing = (dir: string): string[] => {
     try {
       return [realpathSync(dir)]
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
-      throw err
+    } catch {
+      return []
     }
   }
 
@@ -222,7 +225,6 @@ export const watchRepos = (
   const safetyTick = () => {
     const now = dirs()
     if (!now) return
-    reconcileNow(now)
     const repoStep = roundSlice(now, repoCursor, SAFETY_TICK_MS / SAFETY_REPO_MS)
     repoCursor = repoStep.at
     for (const dir of repoStep.slice) ask(dir, REPO_ROUND)
@@ -231,6 +233,7 @@ export const watchRepos = (
     treeCursor = treeStep.at
     for (const [dir, name] of treeStep.slice) ask(dir, { repo: false, main: false, trees: [name], branches: [] })
     void drain()
+    reconcileNow(now)
   }
 
   const refresh = () => {
