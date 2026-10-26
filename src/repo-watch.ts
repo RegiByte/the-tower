@@ -74,6 +74,8 @@ export const watchRepos = (
   const watched = new Map<string, Map<string, Watch>>()
   /** Why each root isn't watched, said once until the reason changes. */
   const unwatched = new Map<string, string>()
+  /** Why each dir's last read failed, said once until the reason changes or a read succeeds. */
+  const failing = new Map<string, string>()
   /** Each dir's nested project dirs, real paths: their changes are theirs. */
   let nested = new Map<string, string[]>()
   let watching = false
@@ -100,9 +102,12 @@ export const watchRepos = (
       for (const [i, result] of (asks.length ? await read(asks) : []).entries()) {
         const { dir } = asks[i]
         if (result.status === 'rejected') {
-          console.error(`git in ${dir}:`, result.reason)
+          const why = String(result.reason)
+          if (failing.get(dir) !== why) console.error(`git in ${dir}:`, result.reason)
+          failing.set(dir, why)
           continue
         }
+        failing.delete(dir)
         if (result.value.parts) parts.set(dir, result.value.parts)
         else parts.delete(dir)
         if (asJson(result.value.read) !== asJson(repos.get(dir))) {

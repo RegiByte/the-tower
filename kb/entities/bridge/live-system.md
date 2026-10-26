@@ -69,7 +69,8 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   ([`staleOf`](ref:hub/src/bridge/repo-changes.ts#staleOf)): a file in the main checkout or a tower worktree, that
   checkout's status; its own index, the same; its HEAD, refs, `packed-refs`, the config or the worktree list, the
   repo's own facts; a branch's reflog, that branch's; a path in a nested project dir, nothing (that dir's own watch has
-  it); an unknown path, everything.
+  it); an unknown path, everything. The worktrees folder is told apart before the common dir, which in a bare repo is
+  the project dir itself.
 - **Settled with a ceiling.** A repo's changes are read once they go quiet for `SETTLE_QUIET_MS` (1 s), and no later
   than `SETTLE_MAX_MS` (10 s) after the first, so a file a script rewrites forever costs one status a tree per 10 s and
   never starves the read ([`settleHandlers`](ref:hub/src/bridge/repo-changes.ts#settleHandlers), a machine,
@@ -93,7 +94,8 @@ One read runs at a time, a read asked during one running once more after it, wit
 ([`serially`](ref:hub/src/logged.ts#serially), as the process scan does) ([[tower-cuts-worktrees]]).
 
 **Failures.** No poll or watch callback can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails
-keeps its last read (an unparseable config keeps every repo's) and says why in the tower's log. A log's tail whose
+keeps its last read (an unparseable config keeps every repo's) and says why in the tower's log, a repo's read once
+until its reason changes or a read succeeds. A log's tail whose
 watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections,
 the streams or the config's directory ends the tower ([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit)), since
 every board after it would look current and be stale. A repo's watch that fails, or a dir that doesn't exist, says
