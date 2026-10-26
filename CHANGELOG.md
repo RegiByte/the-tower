@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.63.1
+
+A floor whose repos have different default branches can cut a worktree. No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), no config change, no renderer API change.
+
+- **New worktree is offered whenever every directory is a git repo with an origin.** A floor whose hub and repos
+  default to different branches (`main` here, `development` there) and share no other branch name lost New worktree
+  and the `cut` verb, and the spawn form blamed the hub. A cut starts each repo from its own origin default, as it
+  always could; the form's From says so, and a refusal now says whether the host is down or a directory is not a git
+  repo with an origin (#222, by @vitoraderaldo).
+
 ## v1.63.0
 
 Git is read when it changes, not every 5 s. While a page was open, the tower read every repo and every worktree of
