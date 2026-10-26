@@ -513,7 +513,7 @@
         "verbs",
         "worktrees"
       ],
-      "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can start from, the default first; empty when a dir isn't a git repo with an origin."
+      "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, the default first; empty when a dir isn't a git repo with an origin, or when their default branches differ and share no other (a cut unnamed still starts each repo from its own)."
     },
     "Card": {
       "type": "object",

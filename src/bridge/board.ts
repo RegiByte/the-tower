@@ -49,7 +49,7 @@ import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { deliveries, type Delivery } from './messages.ts'
-import { commonBases, floorBranches, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
+import { commonBases, cuttable, floorBranches, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 
 /** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 const EXCERPT_CHARS = 280
@@ -276,8 +276,9 @@ export type FloorCollection = {
 
 /**
  * A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and
- * kept branches in its repos. `bases`: the origin branches a cut can start from, the default first; empty when a dir
- * isn't a git repo with an origin.
+ * kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, the default first;
+ * empty when a dir isn't a git repo with an origin, or when their default branches differ and share no other (a cut
+ * unnamed still starts each repo from its own).
  */
 export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities'> & {
   id: string
@@ -844,7 +845,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         cutByDefault: worktreesConfig(config, id).cutByDefault,
         hiring: hiringConfig(config, id),
         tidy,
-        ...floorOffers(id, host !== undefined, shells !== undefined, bases.length > 0, tidy),
+        ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(read ?? []), tidy),
       }
     }),
     waiting: waitingOrder(cards),

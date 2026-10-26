@@ -75,7 +75,7 @@ const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedB
   ]
 }
 
-/** `canCut`: every dir of the project is a git repo with an origin. `tidyable`: its Tidy lists something. */
+/** `canCut`: every dir of the project is a git repo with an origin (`cuttable`). `tidyable`: its Tidy lists something. */
 const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable: boolean): FloorVerb[] => [
   ...(hostUp ? ['spawn' as const] : []),
   ...(hostUp && canCut ? ['cut' as const] : []),

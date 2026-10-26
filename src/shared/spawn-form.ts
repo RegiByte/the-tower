@@ -138,7 +138,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
   const callsign = formCallsign(v)
   const place =
     v.where === 'new'
-      ? [name ? `new worktree <b>${esc(name)}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, name))}`, `from ${esc(v.base || f.bases[0])}`, `in ${esc(repos)}`]
+      ? [name ? `new worktree <b>${esc(name)}</b>` : 'new worktree named for its callsign', `⎇ ${esc(v.branch.trim() || branchPlaceholder(f, name))}`, `from ${esc(v.base || f.bases[0] || 'each repo’s origin default')}`, `in ${esc(repos)}`]
       : v.where === 'worktree' && joined
         ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} on duty in it` : 'nobody else in it']
         : [`main checkout of <b>${esc(base(v.checkout))}</b>`, 'shared with you and every worker there']
@@ -193,7 +193,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
   const worktrees = joinable(f)
   const repos = [f.hub, ...f.repos]
   const isDefault = (w: Where) => (w === v.where ? 'default' : '')
-  const cutWhy = f.bases.length ? 'the host is down' : 'the hub is not a git repo with an origin'
+  const cutWhy = can(f, 'spawn') ? 'a directory is not a git repo with an origin' : 'the host is down'
   return `<form class="spawn-form"${f.color ? ` style="--p:${esc(f.color)}"` : ''}>
   <header>${sign}<h2>New worker</h2>${draft ? `<span class="draft">on the draft <b>${esc(draft)}</b>, deleted once it starts</span>` : ''}</header>
   <div class="cols">
@@ -208,7 +208,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
       <div class="if-new fields">
         <label>${labelHtml('Worktree name', true)}<input name="name" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9][A-Za-z0-9._\\-]*" placeholder="the callsign, by default"></label>
         <label>${labelHtml('Branch', true)}<input name="branch" autocomplete="off" spellcheck="false" placeholder="${esc(branchPlaceholder(f, ''))}"></label>
-        <label class="wide">${labelHtml('From')}<select name="base">${f.bases.map((b, i) => `<option value="${i ? esc(b) : ''}">${esc(b)}${i ? '' : " · origin's default"}</option>`).join('')}</select></label>
+        <label class="wide">${labelHtml('From')}<select name="base">${f.bases.length ? f.bases.map((b, i) => `<option value="${i ? esc(b) : ''}">${esc(b)}${i ? '' : " · origin's default"}</option>`).join('') : `<option value="">each repo's origin default</option>`}</select></label>
       </div>
       <fieldset class="if-worktree picks">${worktrees.map((w, i) => `<label class="pick"><input type="radio" name="worktree" value="${esc(w.repos[0].path)}"${i ? '' : ' checked'}>
         <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>

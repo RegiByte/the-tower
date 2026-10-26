@@ -207,7 +207,10 @@ export const floorBranches = (project: string, reads: RepoRead[]): FloorBranch[]
   })
 }
 
-/** The bases a cut can take: origin's branches every repo of the project has, in the hub's order. */
+/** Whether a cut can start in every dir of the project: each is a git repo with an origin, whichever default branch it has. */
+export const cuttable = (reads: RepoRead[]): boolean => reads.length > 0 && gitReads(reads).length === reads.length && gitReads(reads).every((r) => r.bases.length > 0)
+
+/** The bases a cut can name for every repo at once: origin's branches every repo of the project has, in the hub's order. Empty when their defaults differ and no other branch is shared. */
 export const commonBases = (reads: RepoRead[]): string[] => {
   const repos = gitReads(reads)
   if (repos.length !== reads.length || !repos.length) return []

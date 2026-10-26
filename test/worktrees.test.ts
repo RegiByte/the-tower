@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { carriedOf, commonBases, copiesOf, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
+import { carriedOf, commonBases, copiesOf, cuttable, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
 
 const HUB = '/w/lab'
 const API = '/w/lab-api'
@@ -82,6 +82,14 @@ test('a cut can start from the origin branches every repo has, in the hub order;
   const reads = [repo(HUB, [], [], ['origin/main', 'origin/tower/arch-v2', 'origin/x']), repo(API, [], [], ['origin/x', 'origin/main'])]
   assert.deepEqual(commonBases(reads), ['origin/main', 'origin/x'])
   assert.deepEqual(commonBases([...reads, { dir: '/w/notes', git: false }]), [])
+})
+
+test('a cut is possible when every dir is a git repo with an origin, though their default branches share no name', () => {
+  const differing = [repo(HUB, [], [], ['origin/main']), repo(API, [], [], ['origin/development'])]
+  assert.deepEqual(commonBases(differing), [])
+  assert.equal(cuttable(differing), true)
+  assert.equal(cuttable([...differing, repo('/w/bare', [], [], [])]), false)
+  assert.equal(cuttable([...differing, { dir: '/w/notes', git: false }]), false)
 })
 
 test('carried: each branch commit without an equal patch has a copy by author and date, committed no earlier', () => {
