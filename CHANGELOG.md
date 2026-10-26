@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.63.0
+
+Git is read when it changes, not every 5 s. While a page was open, the tower read every repo and every worktree of
+every floor every 5 s, changed or not: on a floor of many worktrees the reads never stopped, and a laptop's battery
+drained (#218). No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config change, no
+renderer API change.
+
+- **Reads follow changes.** Each project dir is watched; a change re-reads only what it touched (one worktree's
+  status, a branch, or the repo's refs) once it settles, within a second or two and at most 10 s after the first
+  change, however long a file keeps changing. Slow safety rounds catch what the OS doesn't report. On a sandbox floor
+  of 6 repos and 240 worktrees, an idle tower went from about 6,800 git runs a minute to 48, and its CPU from 9.3 s a
+  minute to 0.6 s. Tidy, discard and the other worktree verbs still read git afresh before they act.
+- **Bare repos.** A project dir that is a bare repo is read: its worktrees and branches reach the board. Its read
+  failed every time before.
+- **Quieter log.** A repo whose read keeps failing the same way says so once in the tower's log, not on every read.
+- **Linux and WSL2.** Watching uses Node's `fs.watch`, one FSEvents stream per tree on macOS. On Linux it costs an
+  inotify watch per directory, and under WSL2 files on `/mnt/c` edited from Windows raise no events, so only the
+  safety rounds see them. `@parcel/watcher` is planned behind the same seam for both.
+
 ## v1.62.0
 
 Review threads are an extension: the last built-in to move, now the bundled `reviews` extension in the checkout's
