@@ -339,7 +339,7 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
   const keptCreation = (branch: string) =>
     prior && !fresh!.branches.includes(branch) && prior.created.has(branch) && prior.facts.heads.get(branch) === heads.get(branch)
   const [main, statuses, created] = await Promise.all([
-    prior && !fresh!.main ? prior.main : entries[0]?.bare ? [] : statusOf(dir),
+    prior && !fresh!.main ? prior.main : located.gitDir === located.root ? [] : statusOf(dir),
     Promise.all(towerEntries.filter(({ entry }) => !entry.prunable).map(async ({ name, entry }) => [name, keptStatus(name) || (await statusOf(entry.path))] as const)).then((s) => new Map(s)),
     Promise.all(
       [...towerEntries.flatMap(({ entry }) => (entry.branch && entry.head ? [entry.branch] : [])), ...keptBranches.map(([branch]) => branch)].map(

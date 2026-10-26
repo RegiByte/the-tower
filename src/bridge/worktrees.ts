@@ -6,11 +6,8 @@
 import { WORKTREE_NAME, WORKTREES_DIR } from '../shared/model.ts'
 import { branchOffers, worktreeOffers, type BranchAction, type BranchCalls, type BranchVerb, type WorktreeAction, type WorktreeCalls, type WorktreeVerb } from './verbs.ts'
 
-/**
- * One entry of `git worktree list --porcelain`. `bare`: a bare repo's own entry, with no working tree, its `head` and
- * `branch` missing; `branch` is missing on a detached HEAD too.
- */
-export type GitWorktree = { path: string; head?: string; branch?: string; bare: boolean; prunable: boolean; locked: boolean }
+/** One entry of `git worktree list --porcelain`. `head` and `branch` are missing on a bare entry, `branch` on a detached HEAD. */
+export type GitWorktree = { path: string; head?: string; branch?: string; prunable: boolean; locked: boolean }
 
 export const parseWorktreeList = (porcelain: string): GitWorktree[] =>
   porcelain
@@ -24,7 +21,6 @@ export const parseWorktreeList = (porcelain: string): GitWorktree[] =>
         path: value('worktree')!,
         head: value('HEAD'),
         branch: value('branch')?.replace(/^refs\/heads\//, ''),
-        bare: has('bare'),
         prunable: has('prunable'),
         locked: has('locked'),
       }

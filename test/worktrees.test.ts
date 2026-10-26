@@ -22,11 +22,11 @@ test('git worktree list --porcelain: bare, detached and prunable entries', () =>
     'worktree /w/lab/.worktrees/c\nHEAD 444\nbranch refs/heads/tower/c\nlocked',
   ].join('\n\n')
   assert.deepEqual(parseWorktreeList(`${out}\n`), [
-    { path: '/w/lab.git', head: undefined, branch: undefined, bare: true, prunable: false, locked: false },
-    { path: '/w/lab', head: '111', branch: 'main', bare: false, prunable: false, locked: false },
-    { path: '/w/lab/.worktrees/a', head: '222', branch: undefined, bare: false, prunable: false, locked: false },
-    { path: '/w/lab/.worktrees/b', head: '333', branch: 'tower/b', bare: false, prunable: true, locked: false },
-    { path: '/w/lab/.worktrees/c', head: '444', branch: 'tower/c', bare: false, prunable: false, locked: true },
+    { path: '/w/lab.git', head: undefined, branch: undefined, prunable: false, locked: false },
+    { path: '/w/lab', head: '111', branch: 'main', prunable: false, locked: false },
+    { path: '/w/lab/.worktrees/a', head: '222', branch: undefined, prunable: false, locked: false },
+    { path: '/w/lab/.worktrees/b', head: '333', branch: 'tower/b', prunable: true, locked: false },
+    { path: '/w/lab/.worktrees/c', head: '444', branch: 'tower/c', prunable: false, locked: true },
   ])
 })
 
