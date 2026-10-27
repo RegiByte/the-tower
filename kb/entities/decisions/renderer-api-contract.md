@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json"]
 }
 ---

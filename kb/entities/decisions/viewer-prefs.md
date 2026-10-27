@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": [
     "hub/src/shared/prefs.ts",
     "hub/src/shared/prefs.ts#PREFS_DEFAULT",

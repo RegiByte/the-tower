@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": [
     "hub/src/directory.ts#keepContent",
     "hub/src/directory.ts#keepArgs",

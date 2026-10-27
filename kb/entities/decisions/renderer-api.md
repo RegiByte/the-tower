@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": ["hub/src/shared/api.ts", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/shelf-page.ts", "hub/src/tower/tower.js", "hub/src/tower/http.ts#openMux", "hub/src/tower/http.ts#run", "hub/src/tower/tower.js#relay", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
