@@ -198,7 +198,7 @@ export async function worker(deps) {
     if (reviewing(pane) && keepsThreads(c)) followThread(c)
     if (pane === 'changes') drawChanges()
     if (pane === 'reviews') drawReviews(c)
-    const key = brief && `${c.id} ${c.status === 'working'} ${JSON.stringify(c.conversations)}`
+    const key = brief && `${c.id} ${c.status === 'working'} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board().adds[`conversation:${v.id}`]))}`
     if (!key || key === briefKey) return
     briefKey = key
     told(tower.conversations(c.id)).then((threads) => threads && briefKey === key && showBrief(c, threads))
