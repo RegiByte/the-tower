@@ -799,7 +799,7 @@ function run(id, e) {
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || $('confirm').open) return
   const id = commandOf(board().keys, e, isTyping() ? 'field' : 'page')
-  if (id && run(id, e)) e.preventDefault()
+  if (id && run(id, e)) (e.preventDefault(), (enterGuard = undefined))
 })
 
 /**
@@ -843,22 +843,34 @@ addEventListener('message', (e) => {
   if (!(frame instanceof HTMLIFrameElement) || e.source !== frame.contentWindow || !frame.sandbox.contains('allow-scripts') || !document.hasFocus()) return
   const mods = new Set(msg.mods)
   const press = { key: msg.key, code: msg.code, altKey: mods.has('Alt'), ctrlKey: mods.has('Ctrl'), metaKey: mods.has('Meta'), shiftKey: mods.has('Shift'), repeat: false }
-  if (frameKey(press, msg.editable)) enterGuarded = true
+  if (!frameKey(press, msg.editable)) return
+  const opened = document.activeElement
+  enterGuard = opened && typesText(opened) ? opened : 'pending'
 })
 
+/** @param {Element | null} el */
+const typesText = (el) => el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName))
+
 /**
- * Set while what a framed page's key ran may have opened a field or a terminal: the page could time its key so the
- * user's next keystrokes land there, so the first Enter typed into one is held back. A click is the user's own.
+ * The field or terminal a framed page's key opened, or `pending` until what it ran focuses one (a new shell's terminal
+ * focuses late): the page could time its key so the user's next keystrokes land there, so the first Enter typed into
+ * that surface is held back. Focus leaving it, a click, or a key the page ran itself ends the guard.
+ * @type {Element | 'pending' | undefined}
  */
-let enterGuarded = false
+let enterGuard
+addEventListener('focusin', (e) => {
+  if (enterGuard === 'pending' && typesText(/** @type {Element} */ (e.target))) enterGuard = /** @type {Element} */ (e.target)
+  else if (enterGuard !== 'pending' && e.target !== enterGuard) enterGuard = undefined
+}, true)
 addEventListener('keydown', (e) => {
-  if (!enterGuarded || e.key !== 'Enter' || !isTyping()) return
-  enterGuarded = false
+  if (enterGuard === 'pending') enterGuard = undefined
+  if (!enterGuard || e.key !== 'Enter' || e.target !== enterGuard) return
+  enterGuard = undefined
   e.preventDefault()
   e.stopImmediatePropagation()
   toast('Opened by a key in a framed page: press Enter again to go on')
 }, true)
-addEventListener('pointerdown', () => (enterGuarded = false), true)
+addEventListener('pointerdown', () => (enterGuard = undefined), true)
 
 /** xterm measures its cells when it opens: the terminal face must be loaded by then. */
 await loadTerminalFont(termFont())
