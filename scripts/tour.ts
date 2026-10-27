@@ -3,7 +3,7 @@
  * building looks after a visual change. Same seed, same stepped clock and same wall-clock date on every run, so two
  * tours of the same code are the same pictures.
  *
- *   npm run sandbox -- up                  the tower it reads (TOWER_SANDBOX's, at the port in its config)
+ *   npm run sandbox -- up                  the tower it reads (the sandbox's: sandbox-root.ts)
  *   npm run tool:tour -- <label>           builds the bundle, writes <TOWER_TOUR>/<label>/<time>-<spot>.png
  *   npm run tool:tour -- <label> --only lobby,roof
  *

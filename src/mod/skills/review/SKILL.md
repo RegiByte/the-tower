@@ -16,7 +16,7 @@ You review the work of tower worker **$ARGUMENTS** (its callsign first; `tell` a
 - Your fork is yours: run tests, add files, write a test that proves a finding. Anything that writes caches or builds lands here, never in the author's checkout.
 - Never edit the author's checkout: it is still working there.
 - Don't push and don't merge. A fork with no commits of its own is tidied away once you are done; one you committed on is kept until the user decides.
-- Anything outside your worktree is shared: fixed ports, `/tmp` paths, a sandbox. Use your own (this project's sandbox: `TOWER_SANDBOX=/tmp/tower-<your callsign> npm run sandbox -- up --port <free port>`), or skip that check and say so.
+- Anything outside your worktree is shared: fixed ports, `/tmp` paths, a sandbox. Use your own (this project's sandbox: `npm run sandbox -- up` is yours alone, and `npm run -s sandbox -- run <command>` reaches it), or skip that check and say so.
 
 ## Steps
 

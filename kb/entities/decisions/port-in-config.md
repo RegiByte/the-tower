@@ -33,9 +33,11 @@ on, kept in each one's environment, is two copies that drift.
 - The workers' directory reads the config at `TOWER_CONFIG` (the default system root when unset) for the board's
   address, and `tower whoami` prints it, the page's and the API's address alike. The handbook points there.
 - `tower init` writes `port: 4317` into a first config, so the key is found where it is changed.
-- The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it into the config (4399 for a new
-  sandbox, the one already there otherwise; the rest of an existing config is left as it is), and `down`, `tool:frames` and `tool:tour` read it from the config under
-  `TOWER_SANDBOX` ([`sandbox-root.ts`](ref:hub/scripts/sandbox-root.ts)).
+- The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it into the config (for a new
+  sandbox, 4399 at the shared `/tmp/tower-sandbox` and a free port at any other root, a worker's own
+  `/tmp/tower-<callsign>` among them; the one already there otherwise; the rest of an existing config is left as it
+  is), and `down`, `run`, `tool:frames` and `tool:tour` read it from the config under the sandbox's root
+  ([`sandbox-root.ts`](ref:hub/scripts/sandbox-root.ts)).
 
 **Alternatives considered.**
 
@@ -46,4 +48,4 @@ on, kept in each one's environment, is two copies that drift.
   `tower whoami` reads it when asked.
 
 **Impact.** A config key. Two systems on one machine run side by side with
-nothing in the environment but which config each is (`TOWER_CONFIG`, or `TOWER_SANDBOX` for a sandbox).
+nothing in the environment but which config each is (`TOWER_CONFIG`, which `npm run sandbox -- run` sets for a sandbox).

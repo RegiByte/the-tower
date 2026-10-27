@@ -4,7 +4,7 @@
  * wall clock pinned, and keeps every stage's `state()` and scene PNG. Two recordings of the same code are identical
  * byte for byte, so any difference is the change.
  *
- *   npm run sandbox -- up                         the tower it reads (TOWER_SANDBOX's, at the port in its config)
+ *   npm run sandbox -- up                         the tower it reads (the sandbox's: sandbox-root.ts)
  *   npm run tool:frames -- record before          builds the bundle, walks every board twice (a scenario that does
  *                                                 not repeat is refused), keeps the walk under TOWER_FRAMES/before
  *   …change the code…
