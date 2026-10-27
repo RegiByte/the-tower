@@ -43,6 +43,9 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
     return project === undefined || !offOn(readConfig(), project, chain)
   }
 
+  /** Whether the extension providing `cap` takes part, decided from the registry, so it needs no running instance. */
+  const capTakesPart = (cap: string, value: unknown) => takesPart(holder.registry().stores.find((s) => s.provides === cap)!.chain, value)
+
   /**
    * `inner` called through the chain around `target`, for `caller`. Without links, `inner` gets the input as given;
    * with them, the input is parsed first, and a link off on the input's floor is passed over, running or not: only a link that takes part and isn't up refuses.
@@ -56,7 +59,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
     const step = async (i: number, value: unknown): Promise<unknown> => {
       if (i === caps.length) return inner(value)
       const cap = caps[i]
-      if (!takesPart(holder.registry().stores.find((s) => s.provides === cap)!.chain, value)) return step(i + 1, value)
+      if (!capTakesPart(cap, value)) return step(i + 1, value)
       const live = holder.live(cap)
       if (live.t !== 'up') {
         refusedBy = cap
@@ -95,12 +98,12 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
   const deliver = async (hook: string, answer: z.ZodType, payload: unknown, caller: Caller, caps: string[]): Promise<Answered[]> => {
     const answers: Answered[] = []
     for (const cap of caps) {
+      if (!capTakesPart(cap, payload)) continue
       const live = holder.live(cap)
       if (live.t !== 'up') {
         answers.push({ cap, ok: false, code: 'unavailable', message: `${cap} ${live.t === 'moving' ? `is ${live.why}` : "doesn't run"}` })
         continue
       }
-      if (!takesPart(live.a.chain, payload)) continue
       const failed = (message: string): Answered => {
         holder.problem(live.a.id, { lane: 'hook', level: 'error', code: 'hook', message, at: Date.now(), path: `answers.${hook}` })
         return { cap, ok: false, code: 'internal', message: `${live.a.id} failed to answer ${hook}: ${message}` }
