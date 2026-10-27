@@ -1,10 +1,12 @@
 /**
- * Narration's commands, run by renderers that import client modules: `speak` is offered on every draft, `stop` in the
- * palette. Each reads through `window.tower`, as any renderer does, and speaks through `voice.js`.
+ * Narration's commands, run by renderers that import client modules: `speak` is offered on every markdown or text item
+ * and file a worker showed, `stop` in the palette. Each reads through `window.tower`, as any renderer does, and speaks
+ * through `voice.js`.
  */
+import { textOf } from '/cards.js'
 import * as voice from './voice.js'
 
-/** A draft's markdown as it is read aloud: headings, emphasis, code fences and link targets left out. */
+/** Markdown as it is read aloud: headings, emphasis, code fences and link targets left out. */
 export const spoken = (markdown) =>
   markdown
     .replace(/^```.*$/gm, '')
@@ -13,9 +15,9 @@ export const spoken = (markdown) =>
     .replace(/[*_`~]+/g, '')
     .trim()
 
-/** Reads the draft aloud: its text through the drafts collection's generic read. */
-export async function speak({ tower, subject }) {
-  voice.speak(spoken(await tower.text(`collection/${subject.project}/drafts/${encodeURIComponent(subject.id)}`)))
+/** Reads the subject aloud: its text, wherever the subject says it is. */
+export async function speak({ tower, target }) {
+  voice.speak(spoken(await textOf(tower, target)))
 }
 
 /** Stops reading. */

@@ -1,16 +1,17 @@
 {
   "id": "narrate",
-  "version": "1.0",
+  "version": "1.1",
   "title": "Narration",
-  "description": "Listen to a draft: the browser reads it aloud.",
-  "requires": { "tower": "1.84", "drafts": "1.0" },
+  "description": "Listen to what workers write: any markdown or text item, drafts among them, and the markdown and text files they show.",
+  "requires": { "tower": "1.98" },
   "client": "client",
   "commands": {
     "speak": {
       "module": "narrate.js",
       "export": "speak",
-      "on": ["item.drafts"],
-      "words": { "label": "Listen", "hint": "Read this draft aloud" }
+      "on": ["item.*", "shown"],
+      "accepts": ["text/markdown", "text/plain"],
+      "words": { "label": "Listen", "hint": "Read this aloud" }
     },
     "stop": { "module": "narrate.js", "export": "stop", "words": { "label": "Stop listening" } }
   }
