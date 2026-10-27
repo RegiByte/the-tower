@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.65.0
+
+Extensions draw where their words were missing, and a worker's sandbox can't reach the real tower. No restart beyond
+the tower's own (`tower down tower`, then `tower up tower`), no config change, the renderer API 1.96 → 1.97
+(additive).
+
+- **The page and Tower 3D draw what extensions add to a card and a conversation.** A card's `lines` show as quiet
+  text under the card in the sidebar, in the worker header and in Tower 3D's desk head. A conversation's badges and
+  actions show on its heading in the Brief (`/brief.js`'s `briefHtml` takes an `adds` callback), and its badges in
+  Tower 3D's logbook (#228).
+- **The quota probe's words and whose work a reviewer reviews come from their extensions' clients** (API 1.97):
+  `/x/quota/quota.js` (`quotaOf`, `probeLine`, `probeTitle`, `probedLine`, `PROBE_STATE_NAME`, `PROBE_ATTENTION`) and
+  `/x/reviews/reviews.js` (`reviewerOf`, `threadCheckoutOf`); `pairLineOf` and `whereLineOf` in `/cards.js` take the
+  reviewed callsign. The old names stay in `/cards.js`, deprecated. `tower probes` reads its words from the new
+  `quota/said` read. Every line reads as before (#227).
+- **A worker's own sandbox:** `npm run sandbox -- up`, run by a tower worker, starts at `/tmp/tower-<callsign>` on a
+  free port; `npm run -s sandbox -- run <command>` points `tower`, curl and `drive` at it and never at the real
+  tower. `docs/extending.md` answers what three extensions built from it alone had to find in the code, with a table
+  of which renderer draws which subject and contribution (#229).
+
 ## v1.64.0
 
 The spawn form's From says where a cut really starts. No restart beyond the tower's own (`tower down tower`, then
