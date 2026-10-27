@@ -318,9 +318,13 @@ after(async () => {
 
 type Reply = { status: number; type: string; body: string; headers: http.IncomingHttpHeaders }
 
+/**
+ * Each request on a connection of its own: a test's CLI calls block this process past the tower's keep-alive, and a
+ * pooled connection the tower closed meanwhile resets the next request.
+ */
 const request = (pathname: string, options: http.RequestOptions = {}, body?: Buffer | string): Promise<Reply> =>
   new Promise((resolve, reject) => {
-    const req = http.request(`${base}${pathname}`, options, (res) => {
+    const req = http.request(`${base}${pathname}`, { agent: false, ...options }, (res) => {
       let text = ''
       res.setEncoding('utf8').on('data', (chunk) => (text += chunk))
       res.on('end', () => resolve({ status: res.statusCode!, type: String(res.headers['content-type']), body: text, headers: res.headers }))
@@ -344,7 +348,7 @@ async function command<V extends Verb>(verb: V, input: unknown): Promise<Replies
 /** The first event of an SSE stream, its connection then closed. */
 const firstEvent = (pathname: string): Promise<unknown> =>
   new Promise((resolve, reject) => {
-    const req = http.get(`${base}${pathname}`, (res) => {
+    const req = http.get(`${base}${pathname}`, { agent: false }, (res) => {
       if (res.headers['content-type'] !== 'text/event-stream') return reject(new Error(`${pathname}: ${res.statusCode} ${res.headers['content-type']}`))
       let text = ''
       res.setEncoding('utf8').on('data', (chunk) => {
