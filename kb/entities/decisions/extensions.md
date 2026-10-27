@@ -352,7 +352,7 @@ problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots
 `ExtensionView.spawn`, `card.crew` and `card.exempt`, `GET /extensions`' `exempted`, and the session facts
 `tower.exempt` and `tower.reports-to`. API 1.88: the floor's `tidy` offered for extensions' entries alone, its call's
 `plan.x` carrying every entry, and `addedTidyOf` in `/cards.js`. API 1.95: `reviews/hire`, the reviews extension's
-spawn field `of` and its launch, `card.x.reviews.of` (`reviewerOf` in `/cards.js`), `floor.git`, `card.crew` given to a
+spawn field `of` and its launch, `card.x.reviews.of` (`reviewerOf` in `/cards.js`, in `/x/reviews/reviews.js` since 1.97), `floor.git`, `card.crew` given to a
 reviewer spawned before it, and the `LEGACY` kind `action`.
 API 1.89: drafts is the bundled `extensions/drafts` (its client the former
 `/drafts.js`, [[collections]]), a floor collection's `by`, `.ts` client modules served bundled, client exports in

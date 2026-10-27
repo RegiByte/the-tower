@@ -4,13 +4,14 @@ import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, 
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { keptTitle } from './kept.ts'
 import { cardReviews, floorThreadsOf, keepsThreads, threadCheckout } from '../../../extensions/reviews/client/panel.ts'
+import { reviewerOf } from '../../../extensions/reviews/client/reviews.ts'
 import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { actionWords, addedActions, badgesOf, cardSubject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLine, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { actionWords, addedActions, badgesOf, cardSubject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle, quotaOf } from '../../../extensions/quota/client/quota.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
@@ -318,7 +319,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
     can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c))),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
-  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLine(c, floor))}</span>
+  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, reviewerOf(c)))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
 }
 

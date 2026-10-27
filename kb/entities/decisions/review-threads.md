@@ -41,7 +41,7 @@
     "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/extensions/reviews/client/panel.ts#cardThread",
     "hub/extensions/reviews/client/panel.ts#floorThread",
-    "hub/src/shared/checkouts.ts#threadCheckoutOf",
+    "hub/extensions/reviews/client/reviews.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
     "hub/renderers/tower3d/src/layout.ts#pigeonholeFor",
@@ -114,7 +114,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   ([`filedThreadOf`](ref:hub/extensions/reviews/threads.ts#filedThreadOf), applied by
   [`landedByRecord`](ref:hub/src/bridge/checkouts.ts#landedByRecord)). Each card carries the core's `checkoutState`
   and, in `x.reviews` ([`cardPart`](ref:hub/extensions/reviews/threads.ts#cardPart)), the checkout its thread is about
-  (a reviewer's is its author's, [`threadCheckoutOf`](ref:hub/src/shared/checkouts.ts#threadCheckoutOf), by `x.reviews.of`), its
+  (a reviewer's is its author's, [`threadCheckoutOf`](ref:hub/extensions/reviews/client/reviews.ts#threadCheckoutOf), by `x.reviews.of`), its
   `threadState`, the thread `filed` for its own work, `unseen` and the `note` call, the last two only while the
   work is live; the reviews extension's Review is offered only while its own work is ([[board-verbs]], [[reviewer]]). `reviews/append` still takes any
   checkout. Until 2.0, `LEGACY` copies them to `card.threadState`, `card.unseen`, `card.checkoutState.filed` and the

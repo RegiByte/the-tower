@@ -2,7 +2,8 @@ import * as THREE from 'three'
 import { act } from './acts.ts'
 import { random } from './random.ts'
 import type { Card } from './api.ts'
-import { WORLD, shownKey, branchLine, bubbleOf, pairLine, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
+import { WORLD, shownKey, branchLine, bubbleOf, pairLineOf, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
+import { reviewerOf } from '../../../extensions/reviews/client/reviews.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
 import { ASLEEP, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
@@ -451,7 +452,7 @@ export function syncDesk(desk: Desk, card: Card) {
   desk.avatar.root.visible = !card.stranded
   showOnMonitor(desk, monitorOf(card))
 
-  const tagText = [card.callsign, statusName(card), desk.marks.branch && card.worktree && branchLine(card), desk.marks.pair && pairLine(card)].filter(Boolean).join('  ·  ')
+  const tagText = [card.callsign, statusName(card), desk.marks.branch && card.worktree && branchLine(card), desk.marks.pair && pairLineOf(card, reviewerOf(card))].filter(Boolean).join('  ·  ')
   if (`${tagText}|${card.attention}` !== desk.tagText) {
     desk.tagText = `${tagText}|${card.attention}`
     const tag = sprite(tagText, desk.marks.tagHeight, { color: onStatusColor(card), bg: color, px: 44 })

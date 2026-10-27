@@ -4,9 +4,8 @@
  */
 import type { Card, Floor } from '../../src/bridge/board.ts'
 import { checkoutLanded, checkoutState, landedByRecord, type CheckoutsRead, type CheckoutState, type LandedState } from '../../src/bridge/checkouts.ts'
-import { threadCheckoutOf } from '../../src/shared/checkouts.ts'
 import { tagOf } from '../../src/shared/tags.ts'
-import { checkoutOfId, landedOfId, resolvedIn, stamp, threadId, unseenBy, verdictOf, type Message, type ReviewThread, type Verdict } from './client/reviews.ts'
+import { checkoutOfId, landedOfId, resolvedIn, stamp, threadCheckoutOf, threadId, unseenBy, verdictOf, type Message, type ReviewThread, type Verdict } from './client/reviews.ts'
 
 /** A thread file of the floor's collection, parsed. */
 export type ThreadFile = { id: string; thread: ReviewThread }

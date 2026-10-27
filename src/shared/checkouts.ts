@@ -3,10 +3,10 @@ import { can } from './offered.ts'
 
 /** Who a checkout's review thread is about, who works at it, and who Send reaches. */
 
-/** The callsign whose work a worker reviews, as the reviews extension's part of its card says (`x.reviews.of`). @since 1.95 */
+/** The callsign whose work a worker reviews, as the reviews extension's part of its card says (`x.reviews.of`). @since 1.95 @deprecated since 1.97: the reviews extension's client, `/x/reviews/reviews.js`; this copy goes at 2.0. */
 export const reviewerOf = (c: Pick<Card, 'x'>): string | undefined => (c.x?.reviews as { of?: string } | undefined)?.of
 
-/** The checkout whose review thread is about a worker's work: a reviewer writes on its author's, any other worker on its own. */
+/** The checkout whose review thread is about a worker's work: a reviewer writes on its author's, any other worker on its own. @deprecated since 1.97: the reviews extension's client, `/x/reviews/reviews.js`; this copy goes at 2.0. */
 export const threadCheckoutOf = (c: Pick<Card, 'x' | 'worktree' | 'checkout'>) => (reviewerOf(c) && c.worktree?.from) || c.checkout
 
 /** The worker a checkout's thread opens on: the one on duty there, else the latest to have worked there. */

@@ -20,6 +20,7 @@
  * seen is worked out from who wrote what. The reviews extension's client, served at `/x/reviews/reviews.js` (and at
  * `/reviews.js` through `LEGACY` until 2.0); the names the core shares with it come from `src/shared/reviews.ts`.
  */
+import type { Card } from '../../../src/bridge/board.ts'
 import type { RepoChanges } from '../../../src/changes.ts'
 import { repoName, type Anchor, type Message, type Quote, type ReviewThread } from '../../../src/shared/reviews.ts'
 
@@ -27,6 +28,12 @@ export {
   REVIEWS, REVIEW_SKILL, reviewPrompt, reviewedIn, threadId, checkoutOfId, landedThreadId, stamp, repoName, langOf,
   type Quote, type Anchor, type Message, type ReviewThread,
 } from '../../../src/shared/reviews.ts'
+
+/** The callsign whose work a worker reviews, as the reviews extension's part of its card says (`x.reviews.of`). @since 1.97 */
+export const reviewerOf = (c: Pick<Card, 'x'>): string | undefined => (c.x?.reviews as { of?: string } | undefined)?.of
+
+/** The checkout whose review thread is about a worker's work: a reviewer writes on its author's, any other worker on its own. @since 1.97 */
+export const threadCheckoutOf = (c: Pick<Card, 'x' | 'worktree' | 'checkout'>) => (reviewerOf(c) && c.worktree?.from) || c.checkout
 
 /** Who a renderer's Send names to the worker: the person running the tower, whose notes are signed with `board.user.name`. */
 export const THE_USER = 'the user'

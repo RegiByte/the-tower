@@ -1,7 +1,7 @@
-import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLine, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
-import { REVIEWS, landedThreads } from '/x/reviews/reviews.js'
+import { REVIEWS, landedThreads, reviewerOf } from '/x/reviews/reviews.js'
 import { floorThreadsOf } from '/x/reviews/panel.js'
 import { collectionPeekHtml, keptKey } from '/items.js'
 import { offerWords, policyZone } from '/x/policies/panel.js'
@@ -80,7 +80,7 @@ export async function sidebar(deps) {
   const sessionHtml = (c, over) => {
     return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
-    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLine(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c)].filter(Boolean).join(' · ')))}</div>` : ''}
+    ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, reviewerOf(c))].filter(Boolean).join(' · ')))}</div>` : ''}
     ${runHtml(c)}
     <div class="line">${lineOf(c)}</div>
     ${badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : ''}

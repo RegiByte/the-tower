@@ -1,7 +1,8 @@
 import { documentCss } from '/design.js'
-import { cardSubject, sentHome, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLine, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
+import { cardSubject, sentHome, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLineOf, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
 import { threadCheckout } from '/x/reviews/panel.js'
+import { reviewerOf } from '/x/reviews/reviews.js'
 import { keepShownTabs, fileSpansHtml } from '/panels.js'
 import { toolHtml, when, $, fillOf, keyedTip, shownPane, shownKey, shownHref, DOC_CSS, repaint, toast, told } from './kit.js'
 import { shownFrom } from '/brief.js'
@@ -67,7 +68,7 @@ export async function worker(deps) {
     const ctx = c.context
     repaint($('bar-info'), `<span class="call" role="heading" aria-level="2">${callsign(c.id)}</span>
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>${dismissHtml(c)}${badgesHtml(board(), cardSubject(c))}
-    <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLine(c, /** @type {Floor} */ (floorOf(c.project)))))}</span>
+    <span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, /** @type {Floor} */ (floorOf(c.project)), reviewerOf(c))))}</span>
     <span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}

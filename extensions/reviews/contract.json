@@ -48,8 +48,10 @@
     "client.reviews.js#resolvesOf",
     "client.reviews.js#reviewPrompt",
     "client.reviews.js#reviewedIn",
+    "client.reviews.js#reviewerOf",
     "client.reviews.js#sendText",
     "client.reviews.js#stamp",
+    "client.reviews.js#threadCheckoutOf",
     "client.reviews.js#threadId",
     "client.reviews.js#unseenBy",
     "client.reviews.js#verdictOf"

@@ -23,6 +23,7 @@ import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
+// `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
 import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'

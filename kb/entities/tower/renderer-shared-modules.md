@@ -4,7 +4,7 @@
   "name": "Renderer shared modules",
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
-  "reviewed": "2026-10-25",
+  "reviewed": "2026-10-26",
   "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/extensions/drafts/client/drafts.ts", "hub/src/shared/items.ts", "hub/extensions/reviews/client/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/checkouts.ts#sendTargets", "hub/src/shared/changes-panel.ts#changesHtml", "hub/extensions/reviews/client/panel.ts#reviewsHtml", "hub/extensions/drafts/client/drafts.ts#readDraft", "hub/extensions/reviews/client/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/extensions/policies/client/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/extensions/reviews/client/panel.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/spawn.ts#SpawnDrafts", "hub/src/shared/palette.ts#PaletteContext", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView"]
 }
 ---
@@ -38,7 +38,7 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   and what to ask before deleting one ([[collection-trays]]).
 - `reviews.ts`: the thread format, its parse and append, anchors and their state against the current diff, the
   text that sends notes ([[review-round]], [[review-threads]]); the reviewer's prompt helpers stay, deprecated, until
-  2.0, a reviewer being hired with `reviews/hire` and read at `x.reviews.of` (`reviewerOf`, `/cards.js`).
+  2.0, a reviewer being hired with `reviews/hire` and read at `x.reviews.of` (`reviewerOf`, `/x/reviews/reviews.js`; `/cards.js` keeps a deprecated copy until 2.0, and its `pairLineOf` and `whereLineOf` take the reviewed callsign).
 - `icons.ts`: the inline SVG every renderer draws for the same things, and `withIcons`, which draws the text marks
   shared words carry as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by

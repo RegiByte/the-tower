@@ -27,15 +27,24 @@ export const branchLine = (c: Card) => (c.worktree ? `⎇ ${c.worktree.branch ??
 /** A hirer by callsign, with its floor when it hired onto another than `project`: `PEDRINHO-33 (tower)`. */
 export const hirerName = (by: HiredBy, project: string) => `${by.callsign}${by.project === project ? '' : ` (${by.project})`}`
 
-/** How a worker's work stands to others': whose it reviews, else the checkout its worktree was forked from; and who hired it, when that isn't whose work it reviews. */
-export const pairLine = (c: Card) =>
-  [reviewerOf(c) ? `reviews ${reviewerOf(c)}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== reviewerOf(c) ? `hired by ${hirerName(c.hiredBy, c.project)}` : '']
+/**
+ * How a worker's work stands to others': `reviews`, the callsign whose work it reviews, else the checkout its worktree
+ * was forked from; and who hired it, when that isn't whose work it reviews. @since 1.97
+ */
+export const pairLineOf = (c: Card, reviews: string | undefined) =>
+  [reviews ? `reviews ${reviews}` : c.worktree?.from ? `fork of ${c.worktree.from}` : '', c.hiredBy && c.hiredBy.callsign !== reviews ? `hired by ${hirerName(c.hiredBy, c.project)}` : '']
     .filter(Boolean)
     .join(' · ')
 
-/** Where a worker works, short: its floor, then its branch in a worktree or its folder off the hub, and whose work it reviews. */
-export const whereLine = (c: Card, f: Floor | undefined) =>
-  [f?.name ?? c.project, c.worktree ? branchLine(c) : c.cwd === f?.hub ? '' : base(c.cwd), pairLine(c)].filter(Boolean).join(' · ')
+/** Where a worker works, short: its floor, then its branch in a worktree or its folder off the hub, and `pairLineOf`. @since 1.97 */
+export const whereLineOf = (c: Card, f: Floor | undefined, reviews: string | undefined) =>
+  [f?.name ?? c.project, c.worktree ? branchLine(c) : c.cwd === f?.hub ? '' : base(c.cwd), pairLineOf(c, reviews)].filter(Boolean).join(' · ')
+
+/** `pairLineOf`, whose work it reviews read from its card's `x.reviews.of`. @deprecated since 1.97: `pairLineOf` with `reviewerOf` of `/x/reviews/reviews.js`; goes at 2.0. */
+export const pairLine = (c: Card) => pairLineOf(c, reviewerOf(c))
+
+/** `whereLineOf`, whose work it reviews read from its card's `x.reviews.of`. @deprecated since 1.97: `whereLineOf` with `reviewerOf` of `/x/reviews/reviews.js`; goes at 2.0. */
+export const whereLine = (c: Card, f: Floor | undefined) => whereLineOf(c, f, reviewerOf(c))
 
 /**
  * The session a worker's conversation came from, as label and value, its start in `when`'s words: its own earlier

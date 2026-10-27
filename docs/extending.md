@@ -472,7 +472,7 @@ extensions' actions draws the new one and leaves the copy out.
 **Reviewers** (API 1.95). The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
 in a fork of the author's checkout whose `x.reviews.of` is logged before it starts, and whose launch contributor puts
 it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower.exempt`). A card reads it at
-`x.reviews.of` (`reviewerOf` in `/cards.js`), its `crew` and its `exempt`; `card.reviews` is that copied back until
+`x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`, since 1.97; its copy in `/cards.js` goes at 2.0), its `crew` and its `exempt`; `card.reviews` is that copied back until
 2.0. A reviewer spawned before 1.95, known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
 `floor.git` says every dir of the floor is a git repo, so a checkout of it can be forked.
 

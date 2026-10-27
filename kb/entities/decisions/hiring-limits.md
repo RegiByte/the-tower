@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-26",
-  "refs": ["hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLine", "hub/src/shared/worker-details.ts#hirerName"]
+  "refs": ["hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLineOf", "hub/src/shared/worker-details.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -56,7 +56,7 @@ the easy path stops them, as long as it is named for what it is.
   "exempt from hiring limits by <cap>", `GET /extensions` lists whom each extension exempted, and `liveHires` leaves
   the worker out: no limit is lifted unseen.
 - *Drawn.* `tower whoami` tells a hired worker who hired it, and every renderer says "hired by X" through
-  [`pairLine`](ref:hub/src/shared/worker-details.ts#pairLine), "hired by X (floor)" when X works on another floor
+  [`pairLineOf`](ref:hub/src/shared/worker-details.ts#pairLineOf), "hired by X (floor)" when X works on another floor
   ([`hirerName`](ref:hub/src/shared/worker-details.ts#hirerName)).
 - *Whose prompt.* A conversation's `promptBy` is the hirer while its latest prompt is still the one the worker was
   hired on (the first session's launch prompt); `tower agent` and both renderers' Brief
