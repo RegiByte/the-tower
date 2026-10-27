@@ -1937,41 +1937,43 @@ const typing = () => {
 /** The aimed thing's verb on a key, by `KeyboardEvent.code`. */
 const offerOnKey = (code: string) => (s.aimed && (captured() || s.view === 'overview') ? offerForKey(s.offers, code) : undefined)
 
-/** A key the building answers, by `KeyboardEvent.code`: the aimed thing's verbs first, then the building's own. */
-function onKey(code: string, repeat: boolean) {
-  if (code === 'KeyB') return toggleMusic()
-  if (code === 'Backquote') return toggleFps()
+/** A key the building answers, by `KeyboardEvent.code`: the aimed thing's verbs first, then the building's own. Returns whether it answered. */
+function onKey(code: string, repeat: boolean): boolean {
+  if (code === 'KeyB') return (toggleMusic(), true)
+  if (code === 'Backquote') return (toggleFps(), true)
   startMusic()
-  if (s.view === 'pet') return
+  if (s.view === 'pet') return false
   const offer = offerOnKey(code)
   if (s.aimed && offer) {
-    if (repeat) return
-    return HELD.has(offer.verb) ? startHold(s.aimed, offer, code) : run(s.aimed, offer.verb)
+    if (!repeat) HELD.has(offer.verb) ? startHold(s.aimed, offer, code) : run(s.aimed, offer.verb)
+    return true
   }
-  if (code === 'Escape' && s.doorHeld) return unlock()
-  if (code === 'KeyP' && captured()) return letGo()
-  if (code === 'KeyN') return nextWaiting()
-  if (code === 'KeyV') return lookAtNew()
-  if (code === 'KeyM') return panelNow()?.kind === 'directory' ? (closeSide(), lock()) : openSide({ kind: 'directory' })
-  if (code === 'KeyH') return s.view === 'overview' ? (leaveOverview(), lock()) : overview()
-  if (code === 'Escape' && s.view === 'overview') return leaveOverview()
-  if (code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return replay(s.replay.id, undefined)
-  if (code === 'Escape' && panelNow()) return closePanels()
+  if (code === 'Escape' && s.doorHeld) return (unlock(), true)
+  if (code === 'KeyP' && captured()) return (letGo(), true)
+  if (code === 'KeyN') return (nextWaiting(), true)
+  if (code === 'KeyV') return (lookAtNew(), true)
+  if (code === 'KeyM') return (panelNow()?.kind === 'directory' ? (closeSide(), lock()) : openSide({ kind: 'directory' }), true)
+  if (code === 'KeyH') return (s.view === 'overview' ? (leaveOverview(), lock()) : overview(), true)
+  if (code === 'Escape' && s.view === 'overview') return (leaveOverview(), true)
+  if (code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (replay(s.replay.id, undefined), true)
+  if (code === 'Escape' && panelNow()) return (closePanels(), true)
   const to = levelForKey(s.plan, code)
-  if (to === undefined || to === s.me.level || s.ride) return
-  if (s.view === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) return startRide(to)
-  goLevel(to)
+  if (to === undefined || to === s.me.level || s.ride) return false
+  if (s.view === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) startRide(to)
+  else goLevel(to)
+  return true
 }
 
+/** A key the building answered is taken (`preventDefault`): framed in the tower, the tower runs its own command only for a key left alone. */
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || commandKey(e)) return
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
-  if (e.code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return replay(s.replay.id, undefined)
+  if (e.code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (e.preventDefault(), replay(s.replay.id, undefined))
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
   if (e.code === 'Space' && captured()) e.preventDefault()
   // A verb may focus a field (the spawn dialog's prompt): its key must not be typed into it.
   if (offerOnKey(e.code)) e.preventDefault()
-  onKey(e.code, e.repeat)
+  if (onKey(e.code, e.repeat)) e.preventDefault()
 })
 
 document.addEventListener('keyup', (e) => {

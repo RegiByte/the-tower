@@ -92,7 +92,7 @@ export type Engine = {
   render(): void
   /** Real frames run again, from now. */
   play(): void
-  onKey(code: string, repeat: boolean): void
+  onKey(code: string, repeat: boolean): boolean
   run(a: Act, verb: Verb): void
   place(level: number, spot: Standing): void
   leaveOverview(): void
