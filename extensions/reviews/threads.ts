@@ -24,7 +24,7 @@ const noteOffers = (project: string, checkout: string, live: boolean): NoteOffer
 /**
  * A checkout's thread: `messages` it holds and the `last` one. `landed`: the checkout's work has landed
  * (`checkoutLanded`), so Tidy files it (`landedThreadId`). `state`: where its work stands, a note offered only while it
- * is live. `key`: `<project>/<checkout>`, its subject's (`reviews.thread:<key>`).
+ * is live. `key`: `<project>/<checkout>`, its subject's (`reviews.thread:floor:<project>/<key>`).
  */
 export type FloorThread = {
   key: string; checkout: string; id: string; tag: string; messages: number; last?: Pick<Message, 'author' | 'at' | 'n'>; landed: boolean; state: CheckoutState

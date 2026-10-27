@@ -165,7 +165,7 @@
               "properties": {
                 "key": {
                   "type": "string",
-                  "description": "<project>/<checkout>: its subject is reviews.thread:<project>/<checkout>."
+                  "description": "<project>/<checkout>: its subject is reviews.thread:floor:<project>/<project>/<checkout>."
                 },
                 "checkout": {
                   "type": "string"
