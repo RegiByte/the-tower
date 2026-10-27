@@ -45,7 +45,7 @@ one tab row: the shared panels, then the worker's showings ([[agent-show]]).
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at
 an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may also read the
-clipboard.
+clipboard. Keys pressed in any frame but a `url` one reach the page's keymap, its global commands alone ([[keymap]]).
 
 What the main pane shows is one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js), beside the page):
 the skyline, a worker on one of its panes, a worker the page started until the board carries it, a shelf entry and its
