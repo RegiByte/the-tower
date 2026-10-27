@@ -231,11 +231,10 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
   ]
 }
 
-/** What the quota extension says for `tower probes`; `undefined` while no running extension provides quota. */
-const quotaSaid = async (): Promise<{ line: string; last?: string } | undefined> => {
+/** What the quota extension says for `tower probes`. */
+const quotaSaid = async (): Promise<{ line: string; last?: string }> => {
   const res = await towerGet('/quota/said')
-  if (res.status === 404 || res.status === 502) return undefined
-  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the quota probe: ${await res.text()}`)
+  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the quota probe: ${await res.text()}`, 'a quota extension started before tower 1.97 has no `said` read: `tower extensions restart quota`')
   return res.json()
 }
 
@@ -598,13 +597,13 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   probes: async ([sub, name]) => {
     if (!sub) {
-      console.log((await quotaSaid())?.line ?? 'quota probe · not running: tower extensions says why')
+      console.log((await readBoard()).x?.quota ? (await quotaSaid()).line : 'quota probe · not running: tower extensions says why')
       return
     }
     if (sub !== 'run' || name !== 'quota') throw new CliError(usageLine('probes'))
     await command('quota/read-now', {})
     const said = await quotaSaid()
-    if (!said?.last) throw new CliError('The quota probe read, then stopped answering before it said what the read came to', '`tower extensions` says why')
+    if (!said.last) throw new CliError('The quota probe read, then stopped answering before it said what the read came to', '`tower extensions` says why')
     console.log(said.last)
   },
   extensions: async ([sub, arg, ...rest]) => {

@@ -87,7 +87,7 @@ const start: Start = (ctx) => {
       said: async () => {
         const s = { name: 'quota', ...status() }
         let last: Read | undefined
-        for await (const fact of ctx.streams.read('reads', {})) last = readOf(fact) ?? last
+        if (s.lastAt !== undefined) for await (const fact of ctx.streams.read('reads', {}, { from: s.lastAt })) last = readOf(fact) ?? last
         const line = [probeLine(s, Date.now()), ...(s.state === 'new' ? [] : [PROBE_STATE_NAME[s.state]]), ...(s.error === undefined ? [] : [s.error])].join(' · ')
         return { line, ...(last && { last: probedLine('quota', last) }) }
       },
