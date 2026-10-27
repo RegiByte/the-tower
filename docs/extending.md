@@ -525,8 +525,8 @@ it shows:
 
 | Subject | The tower page | Tower 3D | The `tower` command |
 |---|---|---|---|
-| `card` | badges on the worker's row in the sidebar; actions, commands among them, in the worker's header and the palette; `lines` not drawn | badges and verb actions on the worker's panel; no commands | `lines`, under the worker in `tower whoami` |
-| `conversation` | not drawn | not drawn | not drawn |
+| `card` | badges and `lines` on the worker's row in the sidebar and in its header; actions, commands among them, in the worker's header and the palette | badges, `lines` and verb actions on the worker's panel; no commands | `lines`, under the worker in `tower whoami` |
+| `conversation` | badges and actions, commands among them, on the conversation's heading in the Brief | badges on the conversation's heading in the logbook; no actions | not drawn |
 | `floor` | badges and actions under the floor in the sidebar, and in the palette; `tidy` entries in Tidy | `tidy` entries in Tidy | not drawn |
 | `item.<collection>` | badges and actions on the item's row in the floor's trays, in the drafts editor for a draft, and in the palette | not drawn | not drawn |
 | `board` | actions in the palette, with the commands that have no `on`; badges not drawn | not drawn | not drawn |
