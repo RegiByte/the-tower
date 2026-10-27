@@ -1,5 +1,5 @@
 import { documentCss } from '/design.js'
-import { cardSubject, linesOf, sentHome, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLineOf, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
+import { cardSubject, shownSubject, linesOf, sentHome, lampOf, BLOCKED_TEXT, DISMISS_TITLE, heededWaits, claudeFlagHtml, ago, callOf, can, noLongerOffered, detailsOf, esc, gistLine, modelName, shownTitle, statusName, whereLineOf, resumesRow, statusTitle, sendHomeAsk } from '/cards.js'
 import { ICON, withIcons } from '/icons.js'
 import { threadCheckout } from '/x/reviews/panel.js'
 import { reviewerOf } from '/x/reviews/reviews.js'
@@ -9,7 +9,7 @@ import { shownFrom } from '/brief.js'
 import { documentHtml } from '/markdown.js'
 import { pressing } from '/press.js'
 import { verbLabel } from '/verb-words.js'
-import { addedActionsHtml, badgesHtml } from './added.js'
+import { addedActionsHtml, addsHtml, badgesHtml } from './added.js'
 
 /**
  * @import { Board, Card, CardResource, CardShown, Floor } from '../../src/bridge/board.ts'
@@ -86,7 +86,7 @@ export async function worker(deps) {
     $('main').classList.toggle('asking', c.status === 'needs_input' || c.status === 'blocked')
     $('ask').innerHTML = `<span class="what"><span class="call">${callsign(c.id)}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
     ${can(c, 'drive') ? `<button class="primary" data-act="drive" ${keyedTip(board().keys, 'answer in its terminal', 'pane-terminal')}>${verbLabel('card', 'drive')}</button>` : ''}`
-    repaint($('bar-line'), paneTabsHtml(c, paneOf(c)))
+    repaint($('bar-line'), paneTabsHtml(c, paneOf(c)) + shownAddsHtml(c, paneOf(c)))
     keepShownTabs($('bar-line'), c.id)
     renderPane(c)
   }
@@ -165,6 +165,13 @@ export async function worker(deps) {
     (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
     (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
     `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
+  }
+
+  /** What extensions add to the showing open in `pane`, beside its tab. @param {Card} c @param {Pane} pane */
+  const shownAddsHtml = (c, pane) => {
+    const s = pane.startsWith('shown:') ? shownOn(c, pane) : undefined
+    const adds = s ? addsHtml(board(), shownSubject(c, s)) : ''
+    return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(/** @type {CardShown} */ (s)))}">${adds}</span>`
   }
 
   /** @param {Card} c @param {Pane} pane */
