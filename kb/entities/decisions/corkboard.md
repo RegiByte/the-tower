@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-25",
+  "reviewed": "2026-10-26",
   "refs": [
     "hub/extensions/drafts/client/drafts.ts",
     "hub/renderers/tower3d/src/layout.ts#corkFor",

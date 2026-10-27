@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-19",
-  "reviewed": "2026-10-25",
+  "reviewed": "2026-10-26",
   "refs": [
     "hub/src/shared/loop.ts",
     "hub/src/shared/loop.ts#loop",
