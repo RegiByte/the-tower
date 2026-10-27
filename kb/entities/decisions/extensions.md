@@ -144,7 +144,7 @@ and versioned without running anything, and a runtime where an extension's failu
   ([`mediaTypeOf`](ref:hub/src/shared/media.ts#mediaTypeOf)); `textOf` reads either. A manifest's `folds` declare, per subject kind, the
   `x` schema of its part and the `adds` it contributes (`actions`, `badges`, `tidy` on a floor, `lines` on a card,
   `asks`); the loader refuses an own kind not declared, another's of a capability it doesn't declare, a subject list
-  that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's)
+  that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's), a command's `accepts` with no `on` to narrow
   ([`compileFolds`](ref:hub/src/bridge/extensions.ts#compileFolds)), and `start` must return a fold per kind. The core's
   board is built, then [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) runs, pure, over a frozen copy: each
   running extension in resolved order folds card, conversations, showings, items, collections, shelf entries, floor,

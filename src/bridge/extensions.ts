@@ -362,6 +362,9 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
     }
   }
   for (const [name, command] of Object.entries(manifest.commands ?? {})) for (const kind of command.on ?? []) kindProblem(kind, `commands.${name}.on`)
+  for (const [name, command] of Object.entries(manifest.commands ?? {})) {
+    if (command.accepts && !command.on) problems.push(error('invalid', 'accepts narrows the subjects its on offers it on: declare on', `commands.${name}.accepts`))
+  }
   if (manifest.commands && !manifest.client) problems.push(error('invalid', 'commands are modules of its client folder: declare client', 'commands'))
   return { folds, problems }
 }
