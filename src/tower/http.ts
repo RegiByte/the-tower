@@ -102,6 +102,7 @@ import { bundledClient, clientSource } from '../extensions.ts'
 import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
+import { MEDIA_TYPES, UNKNOWN_TYPE } from '../shared/media.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
@@ -183,27 +184,10 @@ export const httpServer = defineResource({
      */
     const SHELF_SANDBOX = 'sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock'
 
-    const FILE_TYPES: Record<string, string> = {
-      '.html': 'text/html; charset=utf-8',
-      '.md': 'text/markdown; charset=utf-8',
-      '.css': 'text/css',
-      '.js': 'text/javascript',
-      '.mjs': 'text/javascript',
-      '.map': 'application/json',
-      '.wasm': 'application/wasm',
-      '.woff2': 'font/woff2',
-      '.ico': 'image/x-icon',
-      '.json': 'application/json',
-      '.svg': 'image/svg+xml',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.txt': 'text/plain; charset=utf-8',
-    }
+    /** What a served file is sent as: its media type, with the charset of the text a worker writes. */
+    const FILE_TYPES: Record<string, string> = Object.fromEntries(
+      Object.entries(MEDIA_TYPES).map(([ext, type]) => [ext, ['text/html', 'text/markdown', 'text/plain'].includes(type) ? `${type}; charset=utf-8` : type]),
+    )
 
     /**
      * A served file's guard against running as the tower: the CSP sandbox, or for a video, which runs no script and which
@@ -588,7 +572,7 @@ export const httpServer = defineResource({
     const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
       if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
       res
-        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...headers })
+        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? UNKNOWN_TYPE, 'cache-control': 'no-store', ...headers })
         .end(readFileSync(file))
     }
 
