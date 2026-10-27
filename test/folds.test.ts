@@ -4,12 +4,17 @@ import { z } from 'zod'
 import { board, type Board } from '../src/bridge/board.ts'
 import { factsOf } from '../src/bridge/facts.ts'
 import { foldBoard, SLOW_MS, type Folder } from '../src/bridge/folds.ts'
-import type { Fold } from '../src/shared/extensions.ts'
+import { actionWords, addedActions } from '../src/shared/adds.ts'
+import type { ExtensionView, Fold } from '../src/shared/extensions.ts'
+import { parentOf, projectOfKey, subjectAt, type Subject } from '../src/shared/subjects.ts'
 import type { Config } from '../src/shared/model.ts'
 import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
 
-const CONFIG: Config = { argv: ['claude'], projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] } } }
+const CONFIG: Config = {
+  argv: ['claude'],
+  projects: { tower: { name: 'tower', hub: '/hub', repos: [], shelf: [{ label: 'KB', html: 'kb.html' }] }, lab: { name: 'lab', hub: '/lab', repos: [] } },
+}
 
 const core = (): Board => {
   const log = fixture('tool-turn')
@@ -34,7 +39,24 @@ const folder = (cap: string, folds: Record<string, Fold>, over: Partial<Folder> 
   ...over,
 })
 
-const fold = (folders: Folder[], b = core()) => foldBoard({ board: b, callsignOf: () => undefined, folders, subjects: new Map(), now: 1000, clock: () => 0 })
+const fold = (folders: Folder[], b = core(), subjects: Parameters<typeof foldBoard>[0]['subjects'] = new Map()) =>
+  foldBoard({ board: b, callsignOf: () => undefined, folders, subjects, now: 1000, clock: () => 0 })
+
+/** A started extension as the board shows it, with only what a test reads. */
+const started = (provides: string, over: Partial<ExtensionView>): ExtensionView => ({
+  id: provides,
+  provides,
+  version: '1.0',
+  title: provides,
+  bundled: false,
+  state: 'started',
+  problems: [],
+  verbs: [],
+  commands: [],
+  slots: [],
+  subjects: [],
+  ...over,
+})
 
 test('an extension folds card, floor, then board, each seeing its own parts made before; its part goes at x.<cap>', () => {
   const seen: string[] = []
@@ -118,4 +140,48 @@ test("a fold's input is frozen, and a build's folds of one extension over the bo
     clock: () => t,
   })
   assert.deepEqual(problems.map((p) => [p.problem.code, p.problem.level]), [['threw', 'error'], ['slow', 'warn']])
+})
+
+test("what a worker showed and a floor's shelf entries are folded; an action's own words are its; a command is offered by its accepts", () => {
+  const built = core()
+  const card = CARD(built)
+  card.shown = [
+    { kind: 'file', target: '/hub/notes.md', at: 5, session: card.id },
+    { kind: 'file', target: '/hub/shot.png', at: 6, session: card.id },
+  ]
+  const { board: folded, problems } = fold(
+    [folder('narrate', { shown: (s) => ({ actions: [{ command: 'speak', words: { label: `Listen · ${s.target}` } }] }), shelf: (e) => ({ badges: [{ label: e.label }] }) }, { commands: ['speak'] })],
+    built,
+  )
+  assert.deepEqual(problems, [])
+  const b = { ...folded, extensions: [started('narrate', { commands: [{ name: 'speak', module: 'n.js', export: 'speak', words: { label: 'Listen' }, on: ['item.*', 'shown'], accepts: ['text/*'] }] })] }
+  const key = `shown:${card.id}/5`
+  const md = subjectAt(b, key) as Subject
+  assert.deepEqual([md.kind, md.project, parentOf(md), projectOfKey(b, key)], ['shown', 'tower', `card:${card.id}`, 'tower'])
+  assert.deepEqual([(md.value as { text: string }).text, (md.value as { type: string }).type], [`shown/${card.id}/hub/notes.md`, 'text/markdown'])
+  assert.deepEqual(
+    addedActions(b, md).map((a) => actionWords(b, a).label),
+    ['Listen · /hub/notes.md', 'Listen'],
+  )
+  assert.deepEqual(
+    addedActions(b, subjectAt(b, `shown:${card.id}/6`) as Subject).map((a) => actionWords(b, a).label),
+    ['Listen · /hub/shot.png'],
+  )
+  assert.deepEqual(b.adds['shelf:tower/0'].badges, [{ label: 'KB', cap: 'narrate' }])
+  assert.equal(parentOf(subjectAt(b, 'shelf:tower/0') as Subject), 'floor:tower')
+})
+
+test("an own kind's entry is keyed by the subject it was found in, its contributions copied to its old key, and resolved while its extension runs", () => {
+  const { board: folded, problems } = fold(
+    [folder('reviews', { floor: () => ({ x: { threads: [{ key: 'main' }] } }) }), folder('chime', { 'reviews.thread': (t) => ({ badges: [{ label: t.key }] }) }, { wants: ['reviews'] })],
+    core(),
+    new Map([['reviews.thread', { in: 'floor', list: 'threads' }]]),
+  )
+  assert.deepEqual(problems, [])
+  assert.deepEqual(folded.adds['reviews.thread:floor:lab/main'].badges, [{ label: 'main', cap: 'chime' }])
+  assert.equal(folded.adds['reviews.thread:main'].badges?.length, 2)
+  assert.equal(subjectAt(folded, 'reviews.thread:floor:lab/main'), undefined)
+  const b = { ...folded, extensions: [started('reviews', { subjects: [{ kind: 'reviews.thread', in: 'floor', list: 'threads' }] })] }
+  const thread = subjectAt(b, 'reviews.thread:floor:lab/main') as Subject
+  assert.deepEqual([thread.project, thread.value, parentOf(thread), projectOfKey(b, thread.key)], ['lab', { key: 'main' }, 'floor:lab', 'lab'])
 })

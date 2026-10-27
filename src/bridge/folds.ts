@@ -1,13 +1,28 @@
 /**
  * The fold pass (decision `extensions`): the core's board, built and frozen, with each extension's part and
  * contributions folded on. Extensions fold in resolved order, each in a fixed order of subject kinds (card, its
- * conversations, items, floor, its own kinds and those it contributes to, board), each fold seeing the subject with
+ * conversations, what it showed, items, collections, shelf entries, floor, its own kinds and those it contributes to,
+ * board), each fold seeing the subject with
  * only the parts of the capabilities it declares. A fold that throws or returns what its manifest doesn't declare
  * costs that extension's part on that subject, and its dependents' there: a problem, never a failed board.
  */
 import { z } from 'zod'
-import { ADDS, BADGE_TONES, qualifiedOf, WhenShape, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
-import { boardSubject, cardSubject, conversationSubject, floorSubject, itemKey, itemSubject, ownSubject, SUBJECT_KEY, type Subject } from '../shared/subjects.ts'
+import { ADDS, BADGE_TONES, qualifiedOf, WhenShape, WordsShape, type Action, type Added, type Adds, type BoardAsk, type ExtensionProblem, type Fold, type FoldCtx, type Part } from '../shared/extensions.ts'
+import {
+  boardSubject,
+  cardSubject,
+  collectionSubject,
+  conversationSubject,
+  floorSubject,
+  itemKey,
+  itemSubject,
+  ownLegacyKey,
+  ownSubject,
+  shelfSubject,
+  shownSubject,
+  SUBJECT_KEY,
+  type Subject,
+} from '../shared/subjects.ts'
 import type { Board, Floor } from './board.ts'
 import { ownKindOf, type CompiledFold } from './extensions.ts'
 import { withAddedTidy } from './verbs.ts'
@@ -46,8 +61,8 @@ export type FoldProblem = { id: string; problem: Omit<ExtensionProblem, 'at' | '
 export type FoldInput = { board: Board; callsignOf: FoldCtx['callsignOf']; folders: Folder[]; subjects: Map<string, SubjectDecl>; now: number; clock: () => number }
 
 const ActionShape = z.union([
-  z.strictObject({ verb: z.string(), call: z.unknown() }).refine((a) => 'call' in a, { message: 'a verb action holds its call, the verb\'s input' }),
-  z.strictObject({ command: z.string(), args: z.unknown().optional() }),
+  z.strictObject({ verb: z.string(), call: z.unknown(), words: WordsShape.optional() }).refine((a) => 'call' in a, { message: 'a verb action holds its call, the verb\'s input' }),
+  z.strictObject({ command: z.string(), args: z.unknown().optional(), words: WordsShape.optional() }),
 ])
 const PartShape = z.strictObject({
   x: z.unknown().optional(),
@@ -61,7 +76,9 @@ const PartShape = z.strictObject({
     .array(
       z.strictObject({
         key: z.string().min(1),
-        subject: z.string().regex(SUBJECT_KEY, 'a subject key of the core: card:<id>, conversation:<id>, floor:<project>, item.<collection>:<project>/<id> or board'),
+        subject: z
+          .string()
+          .regex(SUBJECT_KEY, 'a subject key of the core: card:<id>, conversation:<id>, shown:<card>/<at>, floor:<project>, collection:<project>/<collection>, shelf:<project>/<n>, item.<collection>:<project>/<id> or board'),
         title: z.string().min(1),
         since: z.number(),
         until: z.number().optional(),
@@ -100,7 +117,8 @@ const checkPart = (folder: Folder, kind: string, spec: CompiledFold, part: unkno
 
 /** The kinds an extension folds, in the order it folds them. */
 const kindOrder = (kinds: string[]): string[] => {
-  const rank = (kind: string) => (kind === 'card' ? 0 : kind === 'conversation' ? 1 : kind.startsWith('item.') ? 2 : kind === 'floor' ? 3 : kind === 'board' ? 5 : 4)
+  const ranks = ['card', 'conversation', 'shown', 'item.', 'collection', 'shelf', 'floor']
+  const rank = (kind: string) => (kind === 'board' ? ranks.length + 1 : ((i) => (i < 0 ? ranks.length : i))(ranks.findIndex((r) => (r === 'item.' ? kind.startsWith(r) : kind === r))))
   return [...kinds].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
 }
 
@@ -141,7 +159,16 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     if (!dropped.has(key)) dropped.set(key, new Set())
     dropped.get(key)!.add(cap)
   }
-  const contribute = (cap: string, key: string, part: Part) => {
+  /** `part`'s contributions at `key`, and its asks; an own kind's contributions copied to its key before 1.98 until 2.0. */
+  const contribute = (cap: string, subject: Subject, legacyKey: string | undefined, part: Part) => {
+    addAt(cap, subject.key, part)
+    if (legacyKey) addAt(cap, legacyKey, part)
+    for (const ask of part.asks ?? []) {
+      if (ask.until !== undefined && ask.until <= now) continue
+      asks.push({ ...ask, key: `${cap}:${ask.key}`, cap, actions: tagged<Action>(cap, ask.actions) })
+    }
+  }
+  const addAt = (cap: string, key: string, part: Part) => {
     const into = (adds[key] ??= {})
     if (part.actions?.length) into.actions = [...(into.actions ?? []), ...tagged<Action>(cap, part.actions)]
     if (part.badges?.length) into.badges = [...(into.badges ?? []), ...tagged(cap, part.badges)]
@@ -149,10 +176,6 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     if (part.lines?.length) into.lines = [...(into.lines ?? []), ...part.lines.map((text) => ({ text, cap }))]
     if (part.slots?.length) into.slots = [...(into.slots ?? []), ...tagged(cap, part.slots)]
     if (!Object.keys(into).length) delete adds[key]
-    for (const ask of part.asks ?? []) {
-      if (ask.until !== undefined && ask.until <= now) continue
-      asks.push({ ...ask, key: `${cap}:${ask.key}`, cap, actions: tagged<Action>(cap, ask.actions) })
-    }
   }
 
   for (const folder of folders) {
@@ -160,8 +183,8 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     const on = (project: string | undefined) => project === undefined || !folder.off.includes(project)
     let spent = 0
 
-    /** Folds `subject` (`value` as `folder` sees it) with its fold of `kind`, at the floor `at.project`. */
-    const foldOne = (kind: string, subject: Subject, value: unknown, at: OwnAt) => {
+    /** Folds `subject` (`value` as `folder` sees it) with its fold of `kind`, at the floor `at.project`; an own kind's entry with its `legacyKey`. */
+    const foldOne = (kind: string, subject: Subject, value: unknown, at: OwnAt, legacyKey?: string) => {
       const { key } = subject
       if (folder.requires.some((cap) => dropped.get(key)?.has(cap))) return drop(key, folder.cap)
       const failed = (code: 'threw' | 'shape', message: string) => {
@@ -184,7 +207,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
         if (!parts.has(key)) parts.set(key, new Map())
         parts.get(key)!.set(folder.cap, checked.part.x)
       }
-      contribute(folder.cap, key, checked.part)
+      contribute(folder.cap, subject, legacyKey, checked.part)
     }
 
     for (const kind of kindOrder(Object.keys(folder.folds))) {
@@ -197,6 +220,12 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
         if (kind === 'card') for (const c of f.cards) foldOne(kind, cardSubject(c), withX(c, cardSubject(c).key, allowed), { project: f.id, lineage: c.lineage.map((s) => s.id) })
         else if (kind === 'conversation') {
           for (const c of f.cards) for (const v of c.conversations) foldOne(kind, conversationSubject(c, v), Object.freeze(conversationSubject(c, v).value), { project: f.id })
+        } else if (kind === 'shown') {
+          for (const c of f.cards) for (const s of c.shown) foldOne(kind, shownSubject(c, s), Object.freeze(shownSubject(c, s).value), { project: f.id })
+        } else if (kind === 'collection') {
+          for (const c of floorView(f, allowed).collections) foldOne(kind, collectionSubject(f.id, c), Object.freeze(collectionSubject(f.id, c).value), { project: f.id })
+        } else if (kind === 'shelf') {
+          for (const [n, entry] of (f.shelf ?? []).entries()) foldOne(kind, shelfSubject(f.id, entry, n), Object.freeze(shelfSubject(f.id, entry, n).value), { project: f.id })
         } else if (kind.startsWith('item.')) {
           const collection = kind.slice('item.'.length)
           for (const item of f.collections.find((c) => c.id === collection)?.items ?? []) {
@@ -207,12 +236,16 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
         else if (own) {
           const decl = subjects.get(kind)
           if (!decl || decl.in === 'board') continue
-          const holders = decl.in === 'floor' ? [floorSubject(f).key] : f.cards.map((c) => cardSubject(c).key)
-          for (const holder of holders) for (const entry of entriesOf(parts.get(holder)?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, f.id), entry, { project: f.id })
+          const holders = decl.in === 'floor' ? [floorSubject(f)] : f.cards.map(cardSubject)
+          for (const holder of holders) {
+            for (const entry of entriesOf(parts.get(holder.key)?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, holder), entry, { project: f.id }, ownLegacyKey(kind, entry))
+          }
         }
       }
       const decl = own && subjects.get(kind)
-      if (own && decl && decl.in === 'board') for (const entry of entriesOf(parts.get('board')?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, undefined), entry, {})
+      if (own && decl && decl.in === 'board') {
+        for (const entry of entriesOf(parts.get('board')?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, boardSubject(core)), entry, {}, ownLegacyKey(kind, entry))
+      }
     }
     if (spent > SLOW_MS) problems.push({ id: folder.id, problem: { lane: 'fold', level: 'warn', code: 'slow', message: `its folds took ${Math.round(spent)} ms of one board, over ${SLOW_MS} ms: the tower can't stop a fold, so every board waits on it`, path: 'folds' } })
   }

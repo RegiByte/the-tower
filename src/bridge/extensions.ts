@@ -304,7 +304,7 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
 }
 
 /** The subject kinds the core folds: an extension's own are `<capability>.<kind>`. */
-const CORE_KINDS = ['card', 'conversation', 'floor', 'board']
+const CORE_KINDS = ['card', 'conversation', 'shown', 'collection', 'shelf', 'floor', 'board']
 
 /** An extension's own subject kind split, `reviews.thread` into its capability and kind; `undefined` for the core's and items. */
 export const ownKindOf = (kind: string): { cap: string; kind: string } | undefined => {
@@ -815,8 +815,13 @@ const commandsOf = (manifest: Manifest | undefined): ExtensionView['commands'] =
     export: c.export,
     words: c.words,
     ...(c.on && { on: c.on }),
+    ...(c.accepts && { accepts: c.accepts }),
     ...(c.deprecated && { deprecated: c.deprecated }),
   }))
+/** A manifest's own subject kinds as the board shows them, qualified. */
+const subjectsOf = (manifest: Manifest | undefined): ExtensionView['subjects'] =>
+  Object.entries(manifest?.subjects ?? {}).map(([kind, s]) => ({ kind: `${capabilityOf(manifest!)}.${kind}`, in: s.in, list: s.list }))
+
 /** A link of a chain as ordering reads it: its capability, and the capabilities its manifest says it runs before and after. */
 export type Link = { cap: string; before: string[]; after: string[] }
 
@@ -934,6 +939,7 @@ export const registry = (
       verbs: verbsOf(a.manifest),
       commands: commandsOf(a.manifest),
       slots: slotsOf(a.manifest),
+      subjects: subjectsOf(a.manifest),
       ...spawnOf(a.manifest),
     }
   })
@@ -949,6 +955,7 @@ export const registry = (
       verbs: verbsOf(r.manifest),
       commands: commandsOf(r.manifest),
       slots: slotsOf(r.manifest),
+      subjects: subjectsOf(r.manifest),
     }),
   )
   const stores = resolved.order.map((id) => {

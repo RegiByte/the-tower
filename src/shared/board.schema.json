@@ -4385,6 +4385,13 @@
           },
           "description": "Its manifest's slots."
         },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionSubject"
+          },
+          "description": "Its manifest's own subject kinds."
+        },
         "spawn": {
           "type": "object",
           "properties": {
@@ -4412,7 +4419,8 @@
         "problems",
         "verbs",
         "commands",
-        "slots"
+        "slots",
+        "subjects"
       ],
       "additionalProperties": false,
       "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
@@ -4607,6 +4615,12 @@
             "type": "string"
           }
         },
+        "accepts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "deprecated": {
           "$ref": "#/definitions/Deprecated"
         }
@@ -4618,7 +4632,7 @@
         "words"
       ],
       "additionalProperties": false,
-      "description": "One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`, and `on`, the subject kinds every subject of which is offered it."
+      "description": "One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`, and `on`, the subject kinds every subject of which is offered it (`item.*`: every collection's items), those whose `value.type` is one of `accepts` (since 1.98) when it has one."
     },
     "ExtensionSlot": {
       "type": "object",
@@ -4664,6 +4678,32 @@
       ],
       "additionalProperties": false,
       "description": "Slots as a period, `30s`, `5m` or `2h`, aligned to the UTC clock: `5m` is each multiple of 5 minutes since the epoch."
+    },
+    "ExtensionSubject": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "in": {
+          "type": "string",
+          "enum": [
+            "board",
+            "floor",
+            "card"
+          ]
+        },
+        "list": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "in",
+        "list"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's own subject kinds as the board shows it: `kind`, qualified (`reviews.thread`), its entries the keyed ones at `list` in its own part of each subject of kind `in`."
     },
     "SpawnFieldView": {
       "type": "object",
@@ -4734,7 +4774,10 @@
             "verb": {
               "type": "string"
             },
-            "call": {}
+            "call": {},
+            "words": {
+              "$ref": "#/definitions/Words"
+            }
           },
           "required": [
             "call",
@@ -4752,7 +4795,10 @@
             "command": {
               "type": "string"
             },
-            "args": {}
+            "args": {},
+            "words": {
+              "$ref": "#/definitions/Words"
+            }
           },
           "required": [
             "cap",

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-22",
   "reviewed": "2026-10-27",
-  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/bridge/legacy.ts#LEGACY_ACTIONS", "hub/src/shared/extensions.ts#streamFolder", "hub/src/bridge/legacy.ts#projectLegacy", "hub/src/bridge/legacy.ts#respelled", "hub/src/shared/rate-limits.ts#RateLimitsReading", "hub/src/bridge/rate-limits.ts#readingStreams", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/src/tower/http.ts#legacyModule", "hub/src/extensions.ts#clientSource", "hub/src/extensions.ts#foundIn", "hub/extensions/drafts/extension.json", "hub/extensions/reviews/extension.json", "hub/src/bridge/checkouts.ts#checkoutState", "hub/examples/extensions/narrate/extension.json", "hub/test/extension-folders.test.ts", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts", "hub/src/shared/launch.ts#CORE_FLAGS", "hub/src/shared/launch.ts#spawnRequest", "hub/src/bridge/launch.ts#mergeParts", "hub/src/bridge/launch.ts#placeable", "hub/src/bridge/launch.ts#forkFacts", "hub/src/bridge/extensions.ts#compileFields", "hub/src/tower/dispatch.ts#contribute", "hub/src/tower/dispatch.ts#spawnFields", "hub/src/shared/spawn-form.ts#formFields", "hub/test/launch.test.ts", "hub/test/fixtures/extensions/roles/extension.json"]
+  "refs": ["hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#RESERVED", "hub/src/shared/extensions.ts#BUNDLED", "hub/src/shared/extensions.ts#LEGACY", "hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/bridge/legacy.ts#LEGACY_ACTIONS", "hub/src/shared/extensions.ts#streamFolder", "hub/src/bridge/legacy.ts#projectLegacy", "hub/src/bridge/legacy.ts#respelled", "hub/src/shared/rate-limits.ts#RateLimitsReading", "hub/src/bridge/rate-limits.ts#readingStreams", "hub/src/shared/extensions.ts#StartCtx", "hub/src/shared/extensions.ts#CTX_SINCE", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#Caller", "hub/src/shared/extensions.ts#qualifiedOf", "hub/src/shared/extensions.ts#tooDeep", "hub/src/bridge/extensions.ts#compileCalls", "hub/src/tower/calls.ts#extensionCalls", "hub/src/tower/dispatch.ts#call", "hub/src/tower/http.ts#callerOf", "hub/src/tower/http.ts#deprecate", "hub/src/tower/http.ts#read", "hub/src/directory.ts#extensionVerbLines", "hub/test/fixtures/extensions/chime/extension.json", "hub/src/bridge/extensions.ts#resolve", "hub/src/bridge/extensions.ts#registry", "hub/src/bridge/stores.ts#offOn", "hub/src/extensions.ts#discover", "hub/src/tower/extensions.ts#runExtensions", "hub/src/tower/extensions.ts#startExtension", "hub/src/tower/extensions.ts#hashOf", "hub/src/tower/extensions.ts#extensions", "hub/src/config-check.ts#floorExtensions", "hub/src/shared/extension-words.ts", "hub/src/doctor.ts#extensionVerdicts", "hub/test/extensions.test.ts", "hub/test/fixtures/extensions/pulse/extension.json", "hub/docs/config.md", "hub/src/bridge/stores.ts#floorCollections", "hub/src/bridge/stores.ts#ownedRefusal", "hub/src/bridge/stores.ts#sessionFacts", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/folds.ts#checkPart", "hub/src/bridge/extensions.ts#compileFolds", "hub/src/tower/extensions.ts#extensions", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/stores.ts#storesOf", "hub/src/shared/subjects.ts", "hub/src/shared/media.ts#mediaTypeOf", "hub/src/shared/adds.ts#actionsOf", "hub/src/shared/adds.ts#runCommand", "hub/src/tower/http.ts#clientFile", "hub/src/tower/http.ts#legacyModule", "hub/src/extensions.ts#clientSource", "hub/src/extensions.ts#foundIn", "hub/extensions/drafts/extension.json", "hub/extensions/reviews/extension.json", "hub/src/bridge/checkouts.ts#checkoutState", "hub/examples/extensions/narrate/extension.json", "hub/test/extension-folders.test.ts", "hub/renderers/page/added.js", "hub/test/folds.test.ts", "hub/src/bridge/extensions.ts#chainOrder", "hub/src/bridge/extensions.ts#targetProblems", "hub/src/tower/chains.ts#chainCalls", "hub/src/shared/api.ts#HOOKS", "hub/src/shared/api.ts#COMPOSITES", "hub/test/fixtures/extensions/tally/extension.json", "hub/src/shared/slots.ts", "hub/src/slots.ts#extensionSlots", "hub/src/slots.ts#runSlots", "hub/src/bridge/triggers.ts#triggerBoards", "hub/src/tower/triggers.ts#runBoardTrigger", "hub/src/tower/publisher.ts#publisher", "hub/src/doctor.ts#checkVerdicts", "hub/src/run.ts#runProcess", "hub/src/fresh-imports.ts#importFresh", "hub/src/bridge/extensions.ts#mismatchOf", "hub/src/bridge/extensions.ts#contractOf", "hub/src/bridge/extensions.ts#replacementProblem", "hub/src/extension-check.ts#checkFolder", "hub/src/extension-check.ts#freezeFolder", "hub/src/extension-start.ts", "hub/src/shared/launch.ts#CORE_FLAGS", "hub/src/shared/launch.ts#spawnRequest", "hub/src/bridge/launch.ts#mergeParts", "hub/src/bridge/launch.ts#placeable", "hub/src/bridge/launch.ts#forkFacts", "hub/src/bridge/extensions.ts#compileFields", "hub/src/tower/dispatch.ts#contribute", "hub/src/tower/dispatch.ts#spawnFields", "hub/src/shared/spawn-form.ts#formFields", "hub/test/launch.test.ts", "hub/test/fixtures/extensions/roles/extension.json"]
 }
 ---
 **Problem.** Users want features of their own that a renderer can't hold: work the tower does on its own, data it keeps
@@ -132,21 +132,28 @@ and versioned without running anything, and a runtime where an extension's failu
   all frozen. The spec gives folds `own` alone; handlers need the same state (a read answering from its stream), so
   ctx carries the accessors, and the folds' `FoldCtx.own` is built from them, never a second fold.
 - **Folds and contributions (1.84).** A subject is anything the board shows that extensions add to, keyed
-  `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, or
-  `<cap>.<kind>:<key>` for an extension's own kinds, declared in `subjects` (where their keyed entries sit in its part);
-  [`subjects.ts`](ref:hub/src/shared/subjects.ts) spells every key. A manifest's `folds` declare, per subject kind, the
+  `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, since 1.98
+  `shown:<card>/<at>` (what a worker showed), `collection:<project>/<collection>` and `shelf:<project>/<n>`, or
+  `<cap>.<kind>:<instance>/<key>` for an extension's own kinds, declared in `subjects` (where their keyed entries sit in
+  its part), keyed since 1.98 by the subject they were found in (an entry's own key needn't be unique across floors),
+  its contributions copied to the old `<cap>.<kind>:<key>` until 2.0;
+  [`subjects.ts`](ref:hub/src/shared/subjects.ts) spells every key, names each subject's parent (`parentOf`: an item's
+  collection, a showing's card, an own kind's instance) and resolves any key on the board (`subjectAt`, own kinds
+  through `ExtensionView.subjects`). A subject whose content is text or a file says where it is, `value.text` a read
+  path (an item's, a shown file's) or `value.body` the text, and `value.type` its media type
+  ([`mediaTypeOf`](ref:hub/src/shared/media.ts#mediaTypeOf)); `textOf` reads either. A manifest's `folds` declare, per subject kind, the
   `x` schema of its part and the `adds` it contributes (`actions`, `badges`, `tidy` on a floor, `lines` on a card,
   `asks`); the loader refuses an own kind not declared, another's of a capability it doesn't declare, a subject list
   that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's)
   ([`compileFolds`](ref:hub/src/bridge/extensions.ts#compileFolds)), and `start` must return a fold per kind. The core's
   board is built, then [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) runs, pure, over a frozen copy: each
-  running extension in resolved order folds card, conversations, items, floor, its own kinds, board, on floors where it
+  running extension in resolved order folds card, conversations, showings, items, collections, shelf entries, floor,
+  its own kinds, board, on floors where it
   is on, each fold seeing the subject with only its own parts and its requires' and wants' (an undeclared read can't
   hide in the order). A part is checked against the manifest ([`checkPart`](ref:hub/src/bridge/folds.ts#checkPart):
   only what it declares, its `x` by its schema, a verb action naming a verb of a capability it declares, a command of
   its own); its `x` lands at `subject.x[cap]`, its contributions at `board.adds[key]`, tagged with `cap`, its asks in
-  `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject (an own kind's entry sits in its
-  owner's part, where renderers don't find it). A throw or a bad shape drops its part on that subject, and its
+  `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject. A throw or a bad shape drops its part on that subject, and its
   required dependents' there, as a `threw` or `shape` problem (lane `fold`, with the subject); over 50 ms of one board
   is a `slow` warning; a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the
   latest board's, derived on each build ([`extensions`](ref:hub/src/tower/extensions.ts#extensions)'s `folded`, each
@@ -160,14 +167,17 @@ and versioned without running anything, and a runtime where an extension's failu
   ([`clientSource`](ref:hub/src/extensions.ts#clientSource)), so a client stays typechecked and importable from
   source; while no provider runs, the bundled extension's folder is served, so a renderer built on a bundled client
   keeps loading with it off; a `command` is one of its modules' exports, offered on every
-  subject of the kinds its `on` names with no fold, derived by the helpers rather than carried per subject, and one
-  with no `on` is the palette's alone. `ExtensionView.commands` says each. Every renderer draws through `/cards.js`:
+  subject of the kinds its `on` names (`item.*` every collection's items) with no fold, narrowed since 1.98 by
+  `accepts` to the subjects whose `value.type` it lists (`image/*` a top-level type's every subtype), derived by the
+  helpers rather than carried per subject, and one with no `on` is the palette's alone. `ExtensionView.commands` says
+  each. Every renderer draws through `/cards.js`:
   [`actionsOf`](ref:hub/src/shared/adds.ts#actionsOf) (the core's, then `adds`, then the commands offered),
-  `badgesOf`, `actionWords` (a verb's words from its provider's `ExtensionView.verbs`), and
+  `badgesOf`, `actionWords` (an action's own `words` a fold gave it since 1.98, else a verb's words from its provider's
+  `ExtensionView.verbs` or a command's), and
   [`runCommand`](ref:hub/src/shared/adds.ts#runCommand), which imports the module and calls its export with
-  `{tower, board, subject, args}`. Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
+  `{tower, board, subject, target, args}`: `subject` the subject's value until 2.0, `target` the subject itself. Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
   prints a card's lines. The tower page draws a card's, a floor's and an item's badges and actions where it draws
-  their own ([`added.js`](ref:hub/renderers/page/added.js)), asks with the offers, and the palette lists them
+  their own ([`added.js`](ref:hub/renderers/page/added.js)), a showing's beside its tabs while it is open, asks with the offers, and the palette lists them
   ([[command-palette]]); Tower 3D draws a desk's badges and verbs, and leaves commands out, as the CLI does.
 - **Middleware (1.85).** A manifest's `around` wraps verbs and hooks by qualified name, each the core's, its own, or
   of a capability it requires or wants, and existing there: the core's and its own checked as it is read
@@ -354,11 +364,14 @@ problem codes `paused` and `contract`, the verb `extension/restart`, and `/slots
 `tower.exempt` and `tower.reports-to`. API 1.88: the floor's `tidy` offered for extensions' entries alone, its call's
 `plan.x` carrying every entry, and `addedTidyOf` in `/cards.js`. API 1.95: `reviews/hire`, the reviews extension's
 spawn field `of` and its launch, `card.x.reviews.of` (`reviewerOf` in `/cards.js`, in `/x/reviews/reviews.js` since 1.97), `floor.git`, `card.crew` given to a
-reviewer spawned before it, and the `LEGACY` kind `action`.
+reviewer spawned before it, and the `LEGACY` kind `action`. API 1.98: the subject kinds `shown`, `collection` and
+`shelf`, an own kind's key by its instance (the old key's contributions copied until 2.0), `ExtensionView.subjects`,
+an item's and a shown file's `text` and `type`, a command's `accepts` and `on: ["item.*"]`, `target` beside a
+command's `subject`, an action's `words`, and `parentOf`, `textOf` and the new constructors in `/cards.js`.
 API 1.89: drafts is the bundled `extensions/drafts` (its client the former
 `/drafts.js`, [[collections]]), a floor collection's `by`, `.ts` client modules served bundled, client exports in
 `contract.json`, and `LEGACY`'s first entry. `examples/extensions/` holds extensions to copy, `narrate` first (Listen
-on every draft), each loaded by `npm test` as `tower extensions check` does. API 1.93: review threads are the bundled
+on every markdown or text item and shown file since 1.98), each loaded by `npm test` as `tower extensions check` does. API 1.93: review threads are the bundled
 `extensions/reviews` (`/x/reviews/reviews.js`, `/x/reviews/panel.js`), `ctx.collections.put`, and `floor.main`;
 `review/append`, `GET /reviews/<project>`, `/reviews.js` and the old board fields kept by `LEGACY`.
 API 1.94: the hook `tower/discard.done` and `worktree/discard`'s reply `done`, a tidy entry's `does` and `kind`,

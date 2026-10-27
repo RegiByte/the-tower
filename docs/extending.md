@@ -372,7 +372,7 @@ module it imports inside the folder afresh (its `node_modules` aside); meanwhile
 state is `restarting`. `tower extensions` and `GET /extensions` say how each stands.
 
 To start from a working one, copy a folder of [`examples/extensions/`](../examples/extensions/) (`narrate`: Listen on
-every draft, its voice one function to swap) and add it to the config by its path. `npm test` loads every example as
+every markdown or text item and file a worker shows, its voice one function to swap) and add it to the config by its path. `npm test` loads every example as
 `tower extensions check` does, so each works with the tower it ships with.
 
 ```json
@@ -486,20 +486,30 @@ it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower
 `floor.git` says every dir of the floor is a git repo, so a checkout of it can be forked.
 
 **Folds and contributions** (API 1.84) put an extension on the board. A subject is anything the board shows that
-extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,
-`item.<collection>:<project>/<id>`, or `<cap>.<kind>:<key>` for an extension's own kinds, which it declares in
-`subjects` (`"thread": { "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`). `folds`
+extensions add to and commands run on, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,
+`item.<collection>:<project>/<id>`, since API 1.98 `shown:<card>/<at>` (a thing a worker showed, `at` the epoch ms of
+its `card.shown` entry), `collection:<project>/<collection>` and `shelf:<project>/<n>` (the `n`th of the floor's
+`shelf`), or `<cap>.<kind>:<instance>/<key>` for an extension's own kinds, which it declares in `subjects` (`"thread":
+{ "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`), keyed by the subject the entry
+was found in (`reviews.thread:floor:<project>/<key>`), since an entry's own key needn't be unique across floors.
+`board.adds` carries an own kind's contributions under its key before 1.98, `<cap>.<kind>:<key>`, too, until 2.0.
+Every subject but the board belongs to another, `parentOf(subject)` in `/cards.js`: a floor to the board, a card, a
+collection and a shelf entry to their floor, a conversation and a showing to their card, an item to its collection, an
+own kind's entry to the subject it was found in; `subjectAt(board, key)` finds any of them on the board now. `folds`
 declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
 on a floor, `lines` on a card, `asks`), both optional: a fold that only contributes declares `adds` alone, with no
 part of its own, and is the common case. `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
 over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board`, `callsignOf(session)` (the callsign of the worker any session the tower has known ran as, archived ones too, `undefined` for an id no log holds) and `own`, its stores as `ctx.own`
 reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
-folds in dependency order (card, conversations, items, floor, its own kinds, board), on floors where it is on, seeing
+folds in dependency order (card, conversations, showings, items, collections, shelf entries, floor, its own kinds,
+board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
 qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
-with its `cap`; its asks (`{key, subject, title, since, until?, sound: 'wait' | 'offer', actions}`, `subject` a core subject's key:
-a card, a conversation, a floor, an item or the board) in `board.asks`,
+with its `cap`; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
+command's, so one command offered on several things says which; its asks (`{key, subject, title, since, until?, sound:
+'wait' | 'offer', actions}`, `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
+a shelf entry, an item or the board) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
 manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;
 an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold
@@ -507,18 +517,27 @@ has its `ctx.board`.
 
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. Each
 of `commands` is one of its modules' exports, with `words`. Its `on` offers it on every subject of those kinds with
-no fold needed (`"on": ["item.drafts"]`), whether the extension folds or not; one with no `on` is the palette's alone.
-A renderer draws a subject's actions and badges with `/cards.js`: name the subject (`cardSubject(card)`,
-`floorSubject(floor)`, `itemSubject(project, collection, item)`, `boardSubject(board)`), then `actionsOf(board,
-subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded` to press one: a
-verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with `{ tower,
-board, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out (`isCommand`).
+no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items), whether the extension folds or
+not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
+`value.type` it lists: media types, `"text/markdown"`, or a top-level type's every subtype, `"image/*"`; a subject
+with no type is offered none of them. A renderer draws a subject's actions and badges with `/cards.js`: name the
+subject (`cardSubject(card)`, `floorSubject(floor)`, `shownSubject(card, shown)`, `itemSubject(project, collection,
+item)`, `collectionSubject(project, collection)`, `shelfSubject(project, entry, n)`, `boardSubject(board)`), then
+`actionsOf(board, subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded`
+to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
+`{ tower, board, target, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out
+(`isCommand`).
 
-That `subject` is the subject's value, not the record `cardSubject` returns: the card itself on a card (`subject.id`
-its session), the floor on a floor, the board on the board, `{ ...item, project, collection }` on an item, and
-`{ ...conversation, card, project }` on a conversation. A command reads what its subject holds through `tower`: an
-item's text with `tower.text('collection/<project>/<collection>/<id>')`, and a file a worker showed (each of
-`card.shown` whose `kind` is `file`, its `target` an absolute path) with `tower.text('shown/<session><target>')`.
+`target` (API 1.98) is the subject, `{ kind, key, project?, value }`. `subject` on a command is the subject's value
+until 2.0; use `target`. The value is the card itself on a card (`id` its session), the floor on a floor, the board on
+the board, `{ ...shown, card, project }` on a showing, `{ ...item, project, collection }` on an item, `{ ...collection,
+project }` on a collection, `{ ...entry, n, project }` on a shelf entry, `{ ...conversation, card, project }` on a
+conversation, and the entry on an own kind. A subject whose content is text or a file says where it is: an item and a
+shown file carry `text`, the path `tower.text` reads it at (`collection/<project>/<collection>/<id>`,
+`shown/<session><target>`), and `type`, its media type by its file's extension (`text/markdown`, `image/png`,
+`application/octet-stream` when the tower doesn't know it). `textOf(tower, target)` in `/cards.js` reads a subject's
+text: its `body` when a renderer hands the text itself, else what `text` reads; it throws on a subject that bears
+neither, so a command that reads text declares `accepts`.
 
 Not every renderer draws every subject or every contribution. Before choosing `on` or what a fold adds, check where
 it shows:
@@ -528,9 +547,11 @@ it shows:
 | `card` | badges and `lines` on the worker's row in the sidebar and in its header; actions, commands among them, in the worker's header and the palette | badges, `lines` and verb actions on the worker's panel; no commands | `lines`, under the worker in `tower whoami` |
 | `conversation` | badges and actions, commands among them, on the conversation's heading in the Brief | badges on the conversation's heading in the logbook; no actions | not drawn |
 | `floor` | badges and actions under the floor in the sidebar, and in the palette; `tidy` entries in Tidy | `tidy` entries in Tidy | not drawn |
+| `shown` | badges and actions beside the worker's tabs while the showing is open | not drawn | not drawn |
 | `item.<collection>` | badges and actions on the item's row in the floor's trays, in the drafts editor for a draft, and in the palette | not drawn | not drawn |
+| `collection`, `shelf` | not drawn | not drawn | not drawn |
 | `board` | actions in the palette, with the commands that have no `on`; badges not drawn | not drawn | not drawn |
-| an extension's own kind | not drawn | not drawn | not drawn |
+| an extension's own kind | not drawn (found by `subjectAt`, for a renderer of your own) | not drawn | not drawn |
 
 An ask (`board.asks`) is listed with the waits by the tower page, under its floor or, for the board's, at the top,
 and said, notified and rung there and in Tower 3D. The Week draws no contributions. A renderer of your own draws

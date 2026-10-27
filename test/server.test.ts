@@ -578,6 +578,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     ],
     commands: [{ name: 'listen', module: 'pulse.js', export: 'listen', words: { label: 'Listen', hint: 'reads the beat aloud' }, on: ['item.pulse'] }],
     slots: [{ name: 'hour', scope: 'system', when: { every: '1h' } }],
+    subjects: [],
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   const exempted = (id: string) => (id === 'reviews' ? [{ session: DESK_SESSIONS.reviewer, callsign: REVIEWER, from: 'hiring' }] : [])

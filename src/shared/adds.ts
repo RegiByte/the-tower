@@ -2,7 +2,8 @@ import type { Board, Card } from '../bridge/board.ts'
 import { exemptionWords } from './crews.ts'
 import type { Action, Added, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
 import type { Tower } from './shelf-page.ts'
-import type { Subject } from './subjects.ts'
+import { accepted } from './media.ts'
+import { onKind, type Subject, type Text } from './subjects.ts'
 
 /**
  * What extensions add to the board's subjects, as every renderer draws it (decision `extensions`): a subject's actions
@@ -15,11 +16,15 @@ export * from './subjects.ts'
 /** A command's action, tagged with the capability whose client module runs it. */
 export const isCommand = (action: Action): action is CommandAction => 'command' in action
 
-/** The commands offered on `subject` with no fold: each running extension's whose `on` holds its kind, on a floor it is on. */
+/** Whether `command` is offered on `subject`: its `on` holds its kind, and its `accepts`, when it has one, its type. */
+const offers = (command: ExtensionCommand, subject: Subject) =>
+  !!command.on && onKind(command.on, subject.kind) && (!command.accepts || accepted(command.accepts, (subject.value as Text).type))
+
+/** The commands offered on `subject` with no fold: each running extension's that offers it, on a floor it is on. */
 const offeredCommands = (board: Board, subject: Subject): Added<CommandAction>[] =>
   board.extensions
     .filter((e) => e.state === 'started' && !(subject.project !== undefined && e.off?.includes(subject.project)))
-    .flatMap((e) => e.commands.filter((c) => c.on?.includes(subject.kind)).map((c) => ({ command: c.name, cap: e.provides })))
+    .flatMap((e) => e.commands.filter((c) => offers(c, subject)).map((c) => ({ command: c.name, cap: e.provides })))
 
 /** The commands offered on no subject kind: each running extension's that has no `on`, run on the board, from a palette. */
 export const unboundCommands = (board: Board): Added<CommandAction>[] =>
@@ -51,8 +56,9 @@ export const linesOf = (board: Board, card: string): string[] => (board.adds[`ca
 const commandOf = (board: Board, action: Added<CommandAction>): ExtensionCommand | undefined =>
   board.extensions.find((e) => e.provides === action.cap && e.state === 'started')?.commands.find((c) => c.name === action.command)
 
-/** An action in words: its verb's, as its provider's manifest says them, or its command's; its name when it has none. */
+/** An action in words: its own, as its fold gave them; else its verb's, as its provider's manifest says them, or its command's; its name when it has none. */
 export const actionWords = (board: Board, action: Added<Action>): Words => {
+  if (action.words) return action.words
   if (isCommand(action)) return commandOf(board, action)?.words ?? { label: action.command }
   const at = action.verb.indexOf('/')
   return board.extensions.find((e) => e.provides === action.verb.slice(0, at))?.verbs.find((v) => v.name === action.verb)?.words ?? { label: action.verb.slice(at + 1) }
@@ -63,15 +69,15 @@ export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
 
 /**
  * Runs a client command on `subject`: imports its module from `/x/<cap>/` and calls its export with the tower, the board,
- * the subject's value and the action's `args`. Only a renderer that imports modules runs one: the CLI and Tower 3D leave
- * commands out.
+ * `target`, the subject, `subject`, its value until 2.0, and the action's `args`. Only a renderer that imports modules
+ * runs one: the CLI and Tower 3D leave commands out.
  */
 export const runCommand = async (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => {
   const command = commandOf(board, action)
   if (!command) throw new Error(`${action.cap} offers no command ${action.command} now`)
   const module = await import(commandUrl(action.cap, command.module))
   if (typeof module[command.export] !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
-  return module[command.export]({ tower: towerOf(), board, subject: subject.value, args: action.args })
+  return module[command.export]({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args })
 }
 
 /** Calls a verb an extension offers, with its call: no subject needed, the call holds what it acts on. */

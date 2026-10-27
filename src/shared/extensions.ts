@@ -49,6 +49,9 @@ const REVIEWS_HOOKS = '1.94'
 /** The minor reviewers moved to the reviews extension's launch in: the `of` fact, its crew edge and exemption. */
 const REVIEWERS_MOVED = '1.95'
 
+/** The minor subjects grew in: shown, collection and shelf, an own kind's key by its instance, `accepts`, an action's words. */
+const SUBJECTS = '1.98'
+
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
  * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
@@ -169,6 +172,12 @@ export type Deprecated = { since: string; use?: string; why?: string }
 /** One of an extension's verbs as the board shows it: its qualified name, scope and words. */
 export type ExtensionVerb = { name: string; scope: Scope; description?: string; words?: Words; deprecated?: Deprecated }
 
+/**
+ * One of an extension's own subject kinds as the board shows it: `kind`, qualified (`reviews.thread`), its entries the
+ * keyed ones at `list` in its own part of each subject of kind `in`.
+ */
+export type ExtensionSubject = { kind: string; in: 'board' | 'floor' | 'card'; list: string }
+
 /** One of an extension's slots as the board shows it: `/slots.js` says its rule in words and finds its next slot. */
 export type ExtensionSlot = { name: string; scope: Scope; when: When }
 
@@ -191,6 +200,8 @@ export type ExtensionView = {
   commands: ExtensionCommand[]
   /** Its manifest's slots. @since 1.86 */
   slots: ExtensionSlot[]
+  /** Its manifest's own subject kinds. @since 1.98 */
+  subjects: ExtensionSubject[]
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
 }
@@ -207,9 +218,10 @@ export type SpawnOption = { value: string; label: string; hint?: string }
 
 /**
  * One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`,
- * and `on`, the subject kinds every subject of which is offered it.
+ * and `on`, the subject kinds every subject of which is offered it (`item.*`: every collection's items), those whose
+ * `value.type` is one of `accepts` (since 1.98) when it has one.
  */
-export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; deprecated?: Deprecated }
+export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; accepts?: string[]; deprecated?: Deprecated }
 
 /** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the board's, since 1.86. */
 export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots'] as const
@@ -222,11 +234,11 @@ export type Add = (typeof ADDS)[number]
 export const BADGE_TONES = ['quiet', 'working', 'needs', 'offered', 'ready', 'broken'] as const
 export type BadgeTone = (typeof BADGE_TONES)[number]
 
-/** A verb offered on a subject with its input (`call`), qualified: `pulse/ping`. Its words are its provider's. */
-export type VerbAction = { verb: string; call: unknown }
+/** A verb offered on a subject with its input (`call`), qualified: `pulse/ping`. Its words its own (since 1.98), else its provider's. */
+export type VerbAction = { verb: string; call: unknown; words?: Words }
 
-/** One of the extension's own client commands offered on a subject, by name, with what it is handed as `args`. */
-export type CommandAction = { command: string; args?: unknown }
+/** One of the extension's own client commands offered on a subject, by name, with what it is handed as `args`; its words its own (since 1.98), else its command's. */
+export type CommandAction = { command: string; args?: unknown; words?: Words }
 
 export type Action = VerbAction | CommandAction
 
@@ -654,8 +666,10 @@ const Path = z
   .min(1)
   .regex(/^(?!\/)(?!.*\.\.)/, 'a path inside the folder: relative, without ".."')
 const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12, as /schema serves the API\'s.')
-const SubjectKind = z.string().regex(/^(card|floor|board|conversation|item\.[a-z][a-z0-9.-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
+const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|item\.[a-z][a-z0-9.-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
+/** A name in words as a manifest or a fold's action gives them. */
+export const WordsShape = Words
 const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
 const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>')
 const Scope = z.enum(['system', 'project'])
@@ -782,7 +796,14 @@ const Command = z.strictObject({
   module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
   export: folds(z.string().min(1)),
   words: folds(Words),
-  on: folds(z.array(SubjectKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed.')),
+  on: folds(z.array(z.union([SubjectKind, z.literal('item.*')])).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items.')),
+  accepts: sinceAt(SUBJECTS)(
+    z
+      .array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*'))
+      .min(1)
+      .optional()
+      .describe("The media types of the subjects it is offered on, matched against a subject's value.type: a subject with no type isn't offered it."),
+  ),
   deprecated: folds(Deprecated.optional()),
 })
 
