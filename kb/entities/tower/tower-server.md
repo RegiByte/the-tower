@@ -71,9 +71,8 @@ the verb's reply schema, all through the dispatch's [`call`](ref:hub/src/tower/d
 extension's `POST /<cap>/<verb>` is answered too; a path no entry of `READS` matches is an extension's read when its
 first segment is a running capability ([[extensions]]). Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused` (`not_found` when the terms daemon
-holds no such shell), one that doesn't answer `unavailable`. A spawn, a resume or a fork answers once the system tracks the new session's log
-([`host`](ref:hub/src/tower/dispatch.ts#host), at most `TRACK_TIMEOUT_MS`): a renderer that reads the id it was given finds
-the session. Every GET but the served files (`/tower.js`, the
+holds no such shell), one that doesn't answer `unavailable`. A spawn, a resume or a fork answers once the system tracks the new session's log, or
+after `TRACK_TIMEOUT_MS` without it, answering `spawned` all the same ([`host`](ref:hub/src/tower/dispatch.ts#host)). Every GET but the served files (`/tower.js`, the
 design, the modules, the vendored scripts) is an entry of [`READS`](ref:hub/src/tower/http.ts#READS): a pattern
 matched against the pathname, whose named groups are its params, and what serves it. An entry is either an API read
 that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema taken from `QUERIES[name]`) or says its
