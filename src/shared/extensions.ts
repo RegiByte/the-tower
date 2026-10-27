@@ -782,7 +782,7 @@ const Command = z.strictObject({
   module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
   export: folds(z.string().min(1)),
   words: folds(Words),
-  on: folds(z.array(SubjectKind).optional().describe('The subject kinds every subject of which is offered it, with no fold.')),
+  on: folds(z.array(SubjectKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed.')),
   deprecated: folds(Deprecated.optional()),
 })
 

@@ -420,14 +420,22 @@ floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `sign
 calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
 the served modules: removing one is a major.
 
+`requires` names the capabilities it can't run without, each at the version it is written for, the core's `tower`
+among them: it is refused while one is missing, and off on a floor where one is off. `wants` takes the same form
+(`"wants": { "drafts": "1.0" }`) and names those it uses when they run: it starts without one (`ctx.deps.drafts` is
+then `undefined`), and stays on on a floor where one is off, where it simply finds none of that capability's subjects.
+
 **Verbs and reads.** Each verb's `input` and `reply`, and each read's `query` and `reply`, is a JSON Schema the tower
 parses with, as it parses its own: a verb is `POST /<capability>/<verb>`, a read `GET /<capability>/<path>` (its
-`<param>`s from the path, its query values strings), and both are listed at `/schema`. A `project`-scoped verb's input
+`<param>`s from the path, its query values strings), and both are listed at `/schema`. Every verb and read declares
+its `scope`, `system` or `project`: one without it is refused. A `project`-scoped verb's input
 requires `project`, a project-scoped read names it as a `<project>` param or in its query, and either is refused on a
 floor where the capability is off. A handler that throws, or answers off its reply schema, fails that call as
 `internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
-`tower x` lists every running extension's verbs, and `tower x <capability> <verb> '<json>'` calls one.
+`tower x` lists every running extension's verbs, and `tower x <capability> <verb> '<json>'` calls one. It calls verbs
+only: a read is a `GET`, such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's
+`port`, which `tower whoami` names).
 
 **Calls.** `ctx.call('tower/spawn', input)` and `ctx.read('tower/conversations/<id>', params, query)` take qualified
 names, the core's under `tower/`, and reach the core, the extension itself, and what it `requires` or `wants`;
@@ -443,7 +451,8 @@ extension is on, each named `<cap>` or `<cap>.<name>`; one marked `owned` declar
 `tower/board`, or `{ "none": "<why the domain has no such act>" }`), and the generic writes (`collection/*`, `tower
 keep`) are refused there, naming its create door. `streams` live at `streams/{system|projects/<p>}/<cap>.<name>/`,
 each with a `scope` and its fact codes (one letter each, with a schema); only the extension appends to them. `facts`
-are session facts logged as `tower.x.<cap>.<name>`. `ctx.streams.append`, `ctx.facts.append` and `ctx.collections`
+are session facts logged as `tower.x.<cap>.<name>`, appended to any session whose log the tower holds: a running
+worker's, or one that exited or that an earlier host ran. `ctx.streams.append`, `ctx.facts.append` and `ctx.collections`
 write them, each checked by its schema; `ctx.streams.read` reads a stream over a window; `ctx.own` reads what the
 tower folds of them: a stream's `reduce` state, a collection's items with their `parse`, and a session's facts over
 its lineage, all read-only. A `reduce`'s `step` gets the state frozen and returns a new one; a step that throws stops
@@ -481,13 +490,14 @@ extensions add to, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:
 `item.<collection>:<project>/<id>`, or `<cap>.<kind>:<key>` for an extension's own kinds, which it declares in
 `subjects` (`"thread": { "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`). `folds`
 declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
-on a floor, `lines` on a card, `asks`); `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
+on a floor, `lines` on a card, `asks`), both optional: a fold that only contributes declares `adds` alone, with no
+part of its own, and is the common case. `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
 over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board`, `callsignOf(session)` (the callsign of the worker any session the tower has known ran as, archived ones too, `undefined` for an id no log holds) and `own`, its stores as `ctx.own`
 reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
 folds in dependency order (card, conversations, items, floor, its own kinds, board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
-an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}` or `{command,
-args}`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
+an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
+qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
 with its `cap`; its asks (`{key, subject, title, since, until?, sound: 'wait' | 'offer', actions}`, `subject` a core subject's key:
 a card, a conversation, a floor, an item or the board) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
@@ -495,14 +505,52 @@ manifest doesn't declare costs its part on that subject, and its dependents' the
 an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold
 has its `ctx.board`.
 
-`client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. A `command` is one of its modules' exports, with `words`;
-its `on` offers it on every subject of those kinds with no fold (`"on": ["item.drafts"]`), and one with no `on` is
-the palette's alone. A renderer draws a subject's actions and badges with `/cards.js`: name the subject
-(`cardSubject(card)`, `floorSubject(floor)`, `itemSubject(project, collection, item)`, `boardSubject(board)`), then
-`actionsOf(board, subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded`
-to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
-`{ tower, board, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out
-(`isCommand`). `tower whoami` prints a card's lines.
+`client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. Each
+of `commands` is one of its modules' exports, with `words`. Its `on` offers it on every subject of those kinds with
+no fold needed (`"on": ["item.drafts"]`), whether the extension folds or not; one with no `on` is the palette's alone.
+A renderer draws a subject's actions and badges with `/cards.js`: name the subject (`cardSubject(card)`,
+`floorSubject(floor)`, `itemSubject(project, collection, item)`, `boardSubject(board)`), then `actionsOf(board,
+subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded` to press one: a
+verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with `{ tower,
+board, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out (`isCommand`).
+
+That `subject` is the subject's value, not the record `cardSubject` returns: the card itself on a card (`subject.id`
+its session), the floor on a floor, the board on the board, `{ ...item, project, collection }` on an item, and
+`{ ...conversation, card, project }` on a conversation. A command reads what its subject holds through `tower`: an
+item's text with `tower.text('collection/<project>/<collection>/<id>')`, and a file a worker showed (each of
+`card.shown` whose `kind` is `file`, its `target` an absolute path) with `tower.text('shown/<session><target>')`.
+
+Not every renderer draws every subject or every contribution. Before choosing `on` or what a fold adds, check where
+it shows:
+
+| Subject | The tower page | Tower 3D | The `tower` command |
+|---|---|---|---|
+| `card` | badges on the worker's row in the sidebar; actions, commands among them, in the worker's header and the palette; `lines` not drawn | badges and verb actions on the worker's panel; no commands | `lines`, under the worker in `tower whoami` |
+| `conversation` | not drawn | not drawn | not drawn |
+| `floor` | badges and actions under the floor in the sidebar, and in the palette; `tidy` entries in Tidy | `tidy` entries in Tidy | not drawn |
+| `item.<collection>` | badges and actions on the item's row in the floor's trays, in the drafts editor for a draft, and in the palette | not drawn | not drawn |
+| `board` | actions in the palette, with the commands that have no `on`; badges not drawn | not drawn | not drawn |
+| an extension's own kind | not drawn | not drawn | not drawn |
+
+An ask (`board.asks`) is listed with the waits by the tower page, under its floor or, for the board's, at the top,
+and said, notified and rung there and in Tower 3D. The Week draws no contributions. A renderer of your own draws
+whatever it reads.
+
+A command is an action: no renderer gives an extension a place of its own on screen yet. Its module is imported once
+per page and stays loaded between presses until the page reloads (`tower extensions restart` doesn't reach a page
+already open), so it may keep state in the module. It runs in the renderer's document at the tower's origin: it may
+add elements of its own, such as a dialog or an overlay, which the renderer doesn't know of, so it removes them when
+done; it leaves the renderer's own elements alone. A pane of your own is a renderer the config declares (its folder
+may sit in the extension's), framed on a floor's shelf as a `renderer` entry ([Shelf pages](#shelf-pages)): an
+extension can't declare a renderer or a shelf entry, so the user adds both to the config.
+
+To show a worker's terminal, `mountTermView(host, xterm, io)` from `/term-view.js` runs one on a
+`terminal/<id>` stream. In the tower page, xterm.js is loaded as globals: pass `{ Terminal, FitAddon:
+FitAddon.FitAddon }`. Elsewhere, load `/xterm.js`, `/addon-fit.js` and `/xterm.css` first, or a copy of your own. `io`
+is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`
+and `run` are a renderer's keymap: a command that is not the renderer passes `keymap: () => board.keys` and `run: ()
+=> false`, which sends every key to the PTY.
+
 **Middleware and hooks** (API 1.85). `around` wraps verbs and hooks, by qualified name (`"tower/spawn": {}`,
 `"chime/ring": { "after": ["audit"] }`), each one the core's, its own, or of a capability it `requires` or `wants`; its
 code is `around[<name>](input, next, ctx)`, which calls `next` with the input to pass on or answers without calling
@@ -538,6 +586,7 @@ API 1.94); the reviews extension's landed threads are such entries. The floor's 
 (API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`.
+
 **Slots, triggers and checks** (API 1.86). `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
 at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,
 or `{ "every": "5m" }`, a period aligned to the UTC clock (`30s`, `5m`, `2h`). The tower's 30 s loop fires a slot once,
@@ -562,6 +611,11 @@ returns what the manifest declares. `tower extensions freeze <dir>` writes its `
 stream codes, collections and client modules' exports (`client.<module>#<export>`) at its major. At load, a name listed there and gone from the manifest at the same major
 is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
 every name of the bundled one's `contract.json` at the major it claims, or it is refused.
+
+`tower` reads the system whose config `TOWER_CONFIG` names, `~/.tower/config.json` unless set. To try an extension
+away from your own system, a checkout of the tower starts a throwaway one with `npm run sandbox -- up`, which prints
+where it is: add the extension to the config there, and run `tower` against it with `npm run -s sandbox -- run tower
+extensions` (header of `scripts/sandbox.ts`).
 
 **Launch** (API 1.87) shapes the workers the tower starts. `spawn.fields` declares fields a spawn sets as `x.<cap>.<field>`
 (`{ "role": { "schema": {"type": "string"}, "words": {"label": "Role"}, "options": { "from": "floor.x.roles.options" } } }`):
