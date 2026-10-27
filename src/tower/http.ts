@@ -17,6 +17,7 @@
  *   GET  /screen/<id>   SSE: a snapshot of the session's screen, then its output as the host logs it
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
+ *   GET  /frame-keys.js a framed page's keys sent to the tower framing it, appended to every html page served sandboxed
  *   GET  /origins       the web page of each project directory's origin remote, by directory
  *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
@@ -111,7 +112,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { bundled, bundledFile, MODULES, towerClient } from './served.ts'
+import { bundled, bundledFile, FRAME_KEYS, MODULES, towerClient } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -160,6 +161,7 @@ export const httpServer = defineResource({
       '/xterm.css': [path.join(packageDir('@xterm/xterm'), 'css', 'xterm.css'), 'text/css'],
       '/addon-fit.js': [path.join(packageDir('@xterm/addon-fit'), 'lib', 'addon-fit.js'), 'text/javascript'],
       '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
+      '/frame-keys.js': [FRAME_KEYS, 'text/javascript'],
     }
 
     /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
@@ -182,6 +184,9 @@ export const httpServer = defineResource({
      * tower's routes as the tower.
      */
     const SHELF_SANDBOX = 'sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock'
+
+    /** What a sandboxed html page gets appended: its keys sent to the tower framing it, with no API and at its own origin. */
+    const FRAME_KEYS_TAG = '\n<script src="/frame-keys.js"></script>\n'
 
     const FILE_TYPES: Record<string, string> = {
       '.html': 'text/html; charset=utf-8',
@@ -478,7 +483,7 @@ export const httpServer = defineResource({
       if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
       const found = shelfFile(projectId, project, entry, file)
       if ('message' in found) return fail(res, 'not_found', found.message)
-      serveFile(res, found.file, sandboxed(file))
+      serveSandboxed(res, found.file)
     }
 
     /** A file an entry serves, on disk: under the hub, or an `item` entry's in its collection, which must hold it. */
@@ -571,7 +576,7 @@ export const httpServer = defineResource({
       if (!ITEM_ID.test(id)) return fail(res, 'invalid', `"${id}" is not an item id`)
       const file = itemPath(paths, project, collection, id)
       if (!existsSync(file)) return fail(res, 'not_found', `${project}/${collection} holds no item "${id}"`)
-      serveFile(res, file, sandboxed(file))
+      serveSandboxed(res, file)
     }
 
     /** A file a worker showed, sandboxed like a shelf's. */
@@ -580,16 +585,24 @@ export const httpServer = defineResource({
       if (!session) return fail(res, 'not_found', `No session "${id}"`)
       if (!shownServes(session.facts.shown, file)) return fail(res, 'not_found', `${id} showed no "${file}"`)
       if (!existsSync(file)) return fail(res, 'not_found', `"${file}" is gone`)
-      serveFile(res, file, sandboxed(file))
+      serveSandboxed(res, file)
     }
 
     const isDeclared = (project: string, collection: string) => collectionOn(readConfig(), project, collection, extensions.registry().stores) !== undefined
 
-    const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => {
+    const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => serveBytes(res, file, headers, readFileSync)
+
+    /** A file served sandboxed: an html page with `/frame-keys.js` appended after it, which keeps its doctype first. */
+    const serveSandboxed = (res: http.ServerResponse, file: string) =>
+      path.extname(file) === '.html'
+        ? serveBytes(res, file, sandboxed(file), (f) => readFileSync(f, 'utf8') + FRAME_KEYS_TAG)
+        : serveFile(res, file, sandboxed(file))
+
+    const serveBytes = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders, read: (file: string) => Buffer | string) => {
       if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
       res
         .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store', ...headers })
-        .end(readFileSync(file))
+        .end(read(file))
     }
 
     /** The mux's verbs, which hold this server's connections: every other verb is the dispatch's. */

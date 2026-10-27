@@ -180,12 +180,22 @@ const HELD: Record<Modifier, keyof KeyPress> = { Ctrl: 'ctrlKey', Alt: 'altKey',
 const matches = (c: Chord, e: KeyPress): boolean =>
   (c.char ? e.key === c.char : e.code === c.code) && MODIFIERS.every((m) => (c.char && m === 'Shift') || c.mods.has(m) === e[HELD[m]])
 
-/** The command a key press runs with `focus` where it is, by `keys` (`board.keys`). */
-export const commandOf = (keys: Keys, e: KeyPress, focus: Focus): string | undefined =>
-  COMMANDS.find((c) => keys[c.id]?.some((text) => {
+const firstOf = (commands: readonly Command[], keys: Keys, e: KeyPress, focus: Focus): string | undefined =>
+  commands.find((c) => keys[c.id]?.some((text) => {
     const chord = parse(text) as Chord
     return reach(c.scope, chord).includes(focus) && matches(chord, e)
   }))?.id
+
+/** The command a key press runs with `focus` where it is, by `keys` (`board.keys`). */
+export const commandOf = (keys: Keys, e: KeyPress, focus: Focus): string | undefined => firstOf(COMMANDS, keys, e, focus)
+
+const GLOBAL_COMMANDS = COMMANDS.filter((c) => c.scope === 'global')
+
+/**
+ * The command a key pressed in a framed page runs: a global one alone, so no frame starts a session or types into a
+ * terminal. `focus` is `field` when the key's target took typing, `page` otherwise.
+ */
+export const frameCommandOf = (keys: Keys, e: KeyPress, focus: Exclude<Focus, 'terminal'>): string | undefined => firstOf(GLOBAL_COMMANDS, keys, e, focus)
 
 const KEY_LABEL: Record<string, string> = {
   ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', Enter: '⏎', Tab: '⇥', Backspace: '⌫', Delete: '⌦', Space: 'Space',

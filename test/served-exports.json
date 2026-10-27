@@ -842,6 +842,7 @@
       "MOVE_COMMAND",
       "chordLabel",
       "commandOf",
+      "frameCommandOf",
       "keymapOf",
       "keymapSheetHtml",
       "keysHint",

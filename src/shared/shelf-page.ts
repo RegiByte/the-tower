@@ -153,6 +153,12 @@ export type FromPage =
   /** Keep a value in the viewer's browser under a key every page shares, the tower page included; `stored` answers it. */
   | { t: 'store'; key: string; value: unknown }
   | { t: 'stored'; id: number; key: string }
+  /**
+   * A key pressed in the page that none of its handlers took, sent by `/frame-keys.js` (and `/tower.js`) with no
+   * token: `key`, `code` and `mods` as the keymap reads them, `editable` whether its target took typing. The tower
+   * hears it only from the frame holding focus, and runs only a global command for it.
+   */
+  | { t: 'key'; key: string; code: string; mods: ('Alt' | 'Ctrl' | 'Meta' | 'Shift')[]; editable: boolean }
 
 export type ToPage =
   /** Sent after `hello`, then whenever the board changes: the board, or why the tower can't build it. */
