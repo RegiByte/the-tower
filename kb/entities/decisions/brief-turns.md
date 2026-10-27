@@ -88,6 +88,8 @@ renderer can draw the brief alike, inline.
   answers are bubbles of their own kind; a hired worker's launch prompt is headed by its hirer. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText)),
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
+  A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
+  conversation's heading: the view is pure and draws nothing when it is not given.
 - *Rendered or raw* is a viewer's choice in `tower.store`
   ([`BRIEF_MARKDOWN_KEY`](ref:hub/src/shared/brief.ts#BRIEF_MARKDOWN_KEY),
   [`markdownSection`](ref:hub/src/shared/settings.ts#markdownSection)): view state, not config
