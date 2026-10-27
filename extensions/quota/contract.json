@@ -4,9 +4,16 @@
   "names": [
     "verbs.read-now",
     "reads.reads",
+    "reads.said",
     "reads.status",
     "streams.reads.u",
     "streams.reads.f",
-    "streams.reads.p"
+    "streams.reads.p",
+    "client.quota.js#PROBE_ATTENTION",
+    "client.quota.js#PROBE_STATE_NAME",
+    "client.quota.js#probeLine",
+    "client.quota.js#probeTitle",
+    "client.quota.js#probedLine",
+    "client.quota.js#quotaOf"
   ]
 }

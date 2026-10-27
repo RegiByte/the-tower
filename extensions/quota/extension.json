@@ -5,6 +5,7 @@
   "description": "Reads the account's rate limits from Claude while no session's turn does.",
   "requires": { "tower": "1.90" },
   "server": "server.ts",
+  "client": "client",
   "settings": {
     "type": "object",
     "additionalProperties": false,
@@ -92,6 +93,11 @@
         "required": ["reads"],
         "properties": { "reads": { "type": "array", "items": { "type": "object", "required": ["at", "ms", "ok"], "properties": { "at": { "type": "number" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } } } }
       }
+    },
+    "said": {
+      "scope": "system",
+      "description": "What `tower probes` prints: the probe's line, its state and why its last read failed, and the latest read in words (`quota probe answered in 1.4s`), when there is one.",
+      "reply": { "type": "object", "required": ["line"], "properties": { "line": { "type": "string" }, "last": { "type": "string" } } }
     },
     "status": {
       "scope": "system",

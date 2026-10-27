@@ -47,21 +47,22 @@ export const paceLine = (percentUsed: number, elapsed: number) => {
 /** A probe as these words read it: the quota extension's part with its name (`quotaOf`), or an entry of `board.probes`. */
 type ProbeStatus = Omit<LegacyProbe, 'reads'>
 
-/** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. */
+/** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const quotaOf = (b: Pick<Board, 'x'>): ProbeStatus | undefined => {
   const quota = b.x?.quota as Omit<ProbeStatus, 'name'> | undefined
   return quota && { name: 'quota', ...quota }
 }
 
-/** A probe's state in words, coloured by how much it asks of you: a failing probe leaves the limits to age. */
+/** A probe's state in words, coloured by how much it asks of you: a failing probe leaves the limits to age. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const PROBE_STATE_NAME: Record<ProbeStatus['state'], string> = { new: 'not read yet', ok: 'answering', failing: 'failing', backoff: 'backing off', unavailable: 'nothing to read' }
+/** @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const PROBE_ATTENTION: Record<ProbeStatus['state'], Attention> = { new: 'quiet', ok: 'quiet', failing: 'working', backoff: 'broken', unavailable: 'working' }
 
 /** When a probe reads next: `reads now` once due, else in how long, and why when a session's turn holds it. */
 const probeNext = (p: ProbeStatus, now: number) =>
   p.nextAt <= now ? 'reads now' : `next in ${span(p.nextAt - now)}${p.held ? ", after a session's reading" : ''}`
 
-/** A probe in a short line: `quota probe · answered 3m ago · next in 7m`. */
+/** A probe in a short line: `quota probe · answered 3m ago · next in 7m`. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const probeLine = (p: ProbeStatus, now: number) =>
   [
     `${p.name} probe`,
@@ -69,7 +70,7 @@ export const probeLine = (p: ProbeStatus, now: number) =>
     probeNext(p, now),
   ].filter(Boolean).join(' · ')
 
-/** A probe in full: its line, then what its state means, why its last read failed and when it last answered. */
+/** A probe in full: its line, then what its state means, why its last read failed and when it last answered. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const probeTitle = (p: ProbeStatus, now: number) =>
   [
     probeLine(p, now),
@@ -79,7 +80,7 @@ export const probeTitle = (p: ProbeStatus, now: number) =>
     p.error !== undefined && p.answeredAt !== undefined && `last answered ${span(now - p.answeredAt)} ago`,
   ].filter(Boolean).join('\n')
 
-/** What a read now came to: `quota probe answered in 1.4s`, or why it has no answer. */
+/** What a read now came to: `quota probe answered in 1.4s`, or why it has no answer. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
 export const probedLine = (name: string, r: Pick<Replies['probe/run'], 'ms' | 'ok' | 'error'>) =>
   r.ok ? `${name} probe answered in ${(r.ms / 1000).toFixed(1)}s` : `${name} probe failed: ${r.error}`
 

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-25",
+  "reviewed": "2026-10-26",
   "refs": [
     "hub/extensions/quota/extension.json",
     "hub/extensions/quota/server.ts",
@@ -22,10 +22,9 @@
     "hub/src/bridge/legacy.ts#LEGACY_READINGS",
     "hub/src/bridge/legacy.ts#respelled",
     "hub/src/bridge/rate-limits.ts#readingStreams",
-    "hub/src/shared/limits.ts#quotaOf",
-    "hub/src/shared/limits.ts#probeLine",
-    "hub/src/shared/limits.ts#probeTitle",
-    "hub/src/directory.ts#probeCliLine",
+    "hub/extensions/quota/client/quota.ts#quotaOf",
+    "hub/extensions/quota/client/quota.ts#probeLine",
+    "hub/extensions/quota/client/quota.ts#probeTitle",
     "hub/src/shared/paths.ts#systemStreamsPath",
     "hub/test/fixtures/probe-usage.out",
     "hub/test/fixtures/probe-quota.jsonl",
@@ -99,9 +98,11 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   last read that failed, when one last answered, failures in a row, its `wait`, and `nextAt`, when it reads next: its
   wait after its last read, or later while a session's newer reading holds it (`held`). Times, never "due now".
 - *Where it shows.* Renderers draw it under the limits from the same words
-  ([`quotaOf`](ref:hub/src/shared/limits.ts#quotaOf), [`probeLine`](ref:hub/src/shared/limits.ts#probeLine),
-  [`probeTitle`](ref:hub/src/shared/limits.ts#probeTitle) in `/cards.js`). `GET /quota/reads?last` answers its latest
-  reads, newest first. `tower probes` prints its line ([`probeCliLine`](ref:hub/src/directory.ts#probeCliLine)), and
+  ([`quotaOf`](ref:hub/extensions/quota/client/quota.ts#quotaOf), [`probeLine`](ref:hub/extensions/quota/client/quota.ts#probeLine),
+  [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle), the extension's client at `/x/quota/quota.js`
+  since 1.97, their copies in `/cards.js` deprecated until 2.0). `GET /quota/reads?last` answers its latest
+  reads, newest first. `tower probes` prints what the read `quota/said` says (its line, and after `run` the latest
+  read in words), and
   `tower doctor` runs its check `reading`, the read `quota/status`: it answers while the probe reads, else refuses with
   one fix by what failed (the command not found, no answer in time, anything else; no limits to read; overdue past its
   `nextAt`).

@@ -7,9 +7,9 @@ import os from 'node:os'
 import type { Board } from '../../src/bridge/board.ts'
 import { apiError } from '../../src/shared/api.ts'
 import type { Start, StartCtx, StreamFact } from '../../src/shared/extensions.ts'
-import { probeLine } from '../../src/shared/limits.ts'
 import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from '../../src/shared/rate-limits.ts'
-import { due, FLOOR_MS, NO_READS, periodMs, readOf, statusOf, step, type Answered, type Failed, type Reads } from './status.ts'
+import { PROBE_STATE_NAME, probedLine, probeLine } from './client/quota.ts'
+import { due, FLOOR_MS, NO_READS, periodMs, readOf, statusOf, step, type Answered, type Failed, type Read, type Reads } from './status.ts'
 
 /**
  * Asks Claude for `/usage`'s data: the request is its only input, and it exits as its stdin closes. Run as the config
@@ -83,6 +83,13 @@ const start: Start = (ctx) => {
         const all: StreamFact[] = []
         for await (const fact of ctx.streams.read('reads', {})) all.push(fact)
         return { reads: all.flatMap((fact) => readOf(fact) ?? []).slice(-Number(query.last ?? 20)).reverse() }
+      },
+      said: async () => {
+        const s = { name: 'quota', ...status() }
+        let last: Read | undefined
+        for await (const fact of ctx.streams.read('reads', {})) last = readOf(fact) ?? last
+        const line = [probeLine(s, Date.now()), ...(s.state === 'new' ? [] : [PROBE_STATE_NAME[s.state]]), ...(s.error === undefined ? [] : [s.error])].join(' · ')
+        return { line, ...(last && { last: probedLine('quota', last) }) }
       },
       status: () => {
         const now = Date.now()

@@ -23,7 +23,7 @@ import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, PROBE_STATE_NAME, probedLine, probeLine, quotaOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -230,9 +230,13 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
   ]
 }
 
-/** A probe in one line: its short line, then its state and why its last read failed, when either adds to it. */
-const probeCliLine = (p: NonNullable<ReturnType<typeof quotaOf>>, now: number): string =>
-  [probeLine(p, now), ...(p.state === 'new' ? [] : [PROBE_STATE_NAME[p.state]]), ...(p.error === undefined ? [] : [p.error])].join(' · ')
+/** What the quota extension says for `tower probes`; `undefined` while no running extension provides quota. */
+const quotaSaid = async (): Promise<{ line: string; last?: string } | undefined> => {
+  const res = await towerGet('/quota/said')
+  if (res.status === 404 || res.status === 502) return undefined
+  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the quota probe: ${await res.text()}`)
+  return res.json()
+}
 
 /** An extension: its line, where it is off, whom it exempted, and each problem at its path. */
 const extensionCliLines = (e: Reads['extensions']['extensions'][number]): string[] => [
@@ -593,12 +597,14 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   probes: async ([sub, name]) => {
     if (!sub) {
-      const quota = quotaOf(await readBoard())
-      console.log(quota ? probeCliLine(quota, now) : 'quota probe · not running: tower extensions says why')
+      console.log((await quotaSaid())?.line ?? 'quota probe · not running: tower extensions says why')
       return
     }
     if (sub !== 'run' || name !== 'quota') throw new CliError(usageLine('probes'))
-    console.log(probedLine(name, await command<Pick<Replies['probe/run'], 'ms' | 'ok' | 'error'>>('quota/read-now', {})))
+    await command('quota/read-now', {})
+    const said = await quotaSaid()
+    if (!said?.last) throw new CliError('The quota probe read, then stopped answering before it said what the read came to', '`tower extensions` says why')
+    console.log(said.last)
   },
   extensions: async ([sub, arg, ...rest]) => {
     if (!sub) {
