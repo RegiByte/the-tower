@@ -45,7 +45,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
 
   /**
    * `inner` called through the chain around `target`, for `caller`. Without links, `inner` gets the input as given;
-   * with them, the input is parsed first, and a link off on the input's floor is passed over.
+   * with them, the input is parsed first, and a link off on the input's floor is passed over, running or not: only a link that takes part and isn't up refuses.
    */
   const wrap = async (target: string, schemas: TargetSchemas, input: unknown, caller: Caller, inner: (input: unknown) => Promise<unknown>): Promise<Wrapped> => {
     const caps = holder.registry().chains[target] ?? []
@@ -56,12 +56,12 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
     const step = async (i: number, value: unknown): Promise<unknown> => {
       if (i === caps.length) return inner(value)
       const cap = caps[i]
+      if (!takesPart(holder.registry().stores.find((s) => s.provides === cap)!.chain, value)) return step(i + 1, value)
       const live = holder.live(cap)
       if (live.t !== 'up') {
         refusedBy = cap
         return apiError('unavailable', `${target} runs inside ${cap}'s link, and ${cap} ${live.t === 'moving' ? `is ${live.why}` : "doesn't run"}: try again in a moment`)
       }
-      if (!takesPart(live.a.chain, value)) return step(i + 1, value)
       const failed = (code: 'invalid' | 'threw' | 'shape', message: string): ApiError => {
         holder.problem(live.a.id, { lane: 'around', level: 'error', code, message, at: Date.now(), path: `around.${target}` })
         refusedBy = cap
