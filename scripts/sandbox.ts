@@ -16,7 +16,9 @@
  *   npm run -s sandbox -- run <cmd…>     run a command against the sandbox: TOWER_CONFIG names its config, so `tower`
  *                                        reads it; TOWER_URL is its URL; this checkout's `tower` is first on PATH; and
  *                                        TOWER_SESSION_ID and TOWER_HOOKS_SOCKET are unset, so a worker's own session
- *                                        doesn't reach the real tower. When the sandbox can't be named, nothing runs
+ *                                        doesn't reach the real tower. When the sandbox can't be named, nothing runs;
+ *                                        nor when this checkout has no node_modules of its own (`npm ci`), which its
+ *                                        `tower` runs from
  *   npm run -s sandbox -- env            the same environment as `export` lines, for a shell of your own to `eval`
  *
  * Outside `run`, `tower` reads the real system: the sandbox's root names it only to these scripts and to `tool:frames`
@@ -62,10 +64,11 @@ import { freePort } from './drive.ts'
 import { SANDBOX_CONFIG as CONFIG, SANDBOX_ROOT as ROOT, SHARED_SANDBOX, sandboxUrl } from './sandbox-root.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
+const BIN = path.join(REPO, 'src', 'mod', 'bin')
 
 process.env.TOWER_CONFIG = CONFIG
 /** Claude appends the mod's bin to PATH, behind any global `tower`: a sandbox's sessions run this checkout's first. */
-process.env.PATH = `${path.join(REPO, 'src', 'mod', 'bin')}${path.delimiter}${process.env.PATH}`
+process.env.PATH = `${BIN}${path.delimiter}${process.env.PATH}`
 
 /**
  * A session that prints a line, reports the newest tested Claude release and one saved conversation with a prompt and an answer as Claude's hooks and mod
@@ -148,6 +151,8 @@ const OWN_SANDBOX = `Run one of your own beside it: TOWER_SANDBOX=/tmp/tower-<yo
  * `tower` first, the sandbox's URL as TOWER_URL, and no worker's session, so nothing it runs reaches the real tower.
  */
 const sandboxEnv = (): NodeJS.ProcessEnv => {
+  /** `bin/tower` runs the checkout's own tsx, which node's lookup up the tree doesn't stand in for. */
+  if (!existsSync(path.join(REPO, 'node_modules', '.bin', 'tsx'))) throw new Error(`${REPO} has no node_modules of its own, which its tower runs from: npm ci there first`)
   const { TOWER_SESSION_ID, TOWER_HOOKS_SOCKET, ...env } = process.env
   return { ...env, TOWER_SANDBOX: ROOT, TOWER_CONFIG: CONFIG, TOWER_URL: sandboxUrl() }
 }
@@ -165,7 +170,8 @@ if (command === 'run') {
 } else if (command === 'env') {
   const env = sandboxEnv()
   const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`
-  for (const key of ['TOWER_SANDBOX', 'TOWER_CONFIG', 'TOWER_URL', 'PATH']) console.log(`export ${key}=${quote(env[key]!)}`)
+  for (const key of ['TOWER_SANDBOX', 'TOWER_CONFIG', 'TOWER_URL']) console.log(`export ${key}=${quote(env[key]!)}`)
+  console.log(`export PATH=${quote(BIN)}:"$PATH"`)
   console.log('unset TOWER_SESSION_ID TOWER_HOOKS_SOCKET')
 } else if (command === 'up') {
   const { values } = parseArgs({ args: rest, options: { port: { type: 'string' } } })
