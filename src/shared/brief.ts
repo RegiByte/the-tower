@@ -87,6 +87,8 @@ export type BriefView = {
   expanded?: ReadonlySet<string>
   markdown?: BriefMarkdown
   working?: boolean
+  /** What a renderer draws on a conversation's heading, by the conversation's id: html, empty for none. */
+  adds?: (conversation: string) => string
 }
 
 /** The earlier sessions unfolded in a drawn brief, by id. */
@@ -108,7 +110,7 @@ export const saidText = (briefs: Brief[], key: string): string | undefined => {
 }
 
 /** `latest`: the brief's latest turn, whose answer never folds; `working` whether Claude works on it now. */
-type Drawing = { said: BriefView['said']; expanded: ReadonlySet<string>; raw: boolean; latest?: Turn; working: boolean }
+type Drawing = { said: BriefView['said']; expanded: ReadonlySet<string>; raw: boolean; latest?: Turn; working: boolean; adds?: BriefView['adds'] }
 
 /** Who a bubble is: the user's prompt, another worker's message, or Claude's answer. */
 type Speaker = 'you' | 'peer' | 'claude'
@@ -142,21 +144,27 @@ const refName = (ref: SessionRef, parts: BriefPart[]) => {
   return part ? `session ${part.n}` : ref.callsign
 }
 
+/** What a renderer drew for a conversation, on its heading. */
+const addsHtml = (conversation: string, d: Drawing) => {
+  const adds = d.adds?.(conversation)
+  return adds ? ` <span class="brief-adds">${adds}</span>` : ''
+}
+
 /** A session's conversations in order, each with its last turns, oldest first; `promptBy` names the latest prompt the user's side gave. */
 const conversationsHtml = (part: BriefPart, parts: BriefPart[], promptBy: BriefView['promptBy'], d: Drawing) =>
   part.threads.map((t, i) => `<section class="brief-conv">
-    <h4 class="eyebrow">conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}</h4>
+    <h4 class="eyebrow">conversation ${i + 1} of ${part.threads.length} · ${esc(sessionWhen(part.session.startedAt + t.at * 1000))}${t.resumes ? ` · resumes ${esc(refName(t.resumes, parts))}` : ''}${t.resumedBy ? ` · resumed by ${esc(refName(t.resumedBy, parts))}` : ''}${addsHtml(t.id, d)}</h4>
     ${t.turns.length ? t.turns.map((turn, j) => turnHtml(t, turn, j === t.turns.findLastIndex((u) => !u.from) ? promptBy(t.id) : undefined, d)).join('') : '<p class="none">nothing asked yet</p>'}</section>`).join('')
 
 const markdownBar = (markdown: BriefMarkdown) =>
   `<div class="brief-bar"><div class="seg" role="group" aria-label="prompts and answers">${BRIEF_MARKDOWNS.map((m) =>
     `<button type="button" class="${m === markdown ? 'on' : ''}" data-brief-markdown="${m}" aria-pressed="${m === markdown}" data-tip="${esc(BRIEF_MARKDOWN_MEANS[m])}">${BRIEF_MARKDOWN_LABEL[m]}</button>`).join('')}</div></div>`
 
-export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false }: BriefView) {
+export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false, adds }: BriefView) {
   const parts = briefParts(briefs)
   const [current, ...earlier] = parts
   if (!current) return '<div class="brief-view"><p class="none">no conversation yet</p></div>'
-  const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working }
+  const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working, adds }
   const label = (p: BriefPart) => esc(sessionLabel(p.n, p.of, p.session.startedAt))
   const idle = (p: BriefPart) => resumedIdle(briefs, p.session, p.n) ? ` · <span class="idle" data-tip="${esc(RESUMED_IDLE.means)}">${RESUMED_IDLE.mark}</span>` : ''
   return `<div class="brief-view">${markdownBar(markdown)}
@@ -177,6 +185,7 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .brief-session-head { margin-top: 1.4em; padding-top: 1em; border-top: 1px solid var(--line); }
 .brief-view h4 { margin: 1.2em 0 .5em; line-height: 1.4; }
 .brief-view .brief-conv + .brief-conv { margin-top: 1em; border-top: 1px solid var(--line); }
+.brief-view .brief-adds { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2xs); margin-left: var(--sp-m); letter-spacing: 0; text-transform: none; vertical-align: middle; }
 .brief-view .none { margin: .4em 0; color: var(--faint); font-style: italic; }
 .brief-view .turn { display: grid; gap: var(--sp-m); margin-bottom: var(--sp-xl); }
 .brief-view .bubble { min-width: 0; padding: var(--sp-m) var(--sp-xl) var(--sp-l); border-radius: 12px; border: 1px solid var(--line); }

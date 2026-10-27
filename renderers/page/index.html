@@ -130,6 +130,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
 .sess .st.stuck { color: var(--needs-text); }
 .pill.stuck { --c: var(--needs); --on: var(--on-needs); }
+.sess .adds-line { color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .sess .line { margin-top: var(--sp-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
 .subs { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
@@ -272,6 +273,7 @@ dialog.confirm .actions { flex: none; }
 #bar-info .call { flex: none; font: 800 var(--fs-2xl)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
 #bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
 #bar-info .where { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#bar-info .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 #bar-info .stats { flex: none; margin-left: auto; display: flex; align-items: center; gap: var(--sp-l); }
 .untested { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
 #bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }

@@ -291,7 +291,7 @@ const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, drafting, draftHead
 const { showLanding, showKeys, ask } = dialogs({ board })
 const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view, ask })
 
-const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings() })
+const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings(), board })
 
 const { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert } = alerting({ callsign, select, showPane: (pane) => showPane(pane), floorOf, board, openPolicies, goToSubject: (key) => goToSubject(key) })
 

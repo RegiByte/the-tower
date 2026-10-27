@@ -11,7 +11,7 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { actionWords, addedActions, badgesOf, cardSubject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { actionWords, addedActions, badgesOf, cardSubject, conversationSubject, linesOf, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle, quotaOf } from '../../../extensions/quota/client/quota.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
@@ -281,6 +281,9 @@ const closeButton = `<button class="icon-btn x" data-act="close" aria-label="clo
 const cardBadgesHtml = (board: Board, c: Card) =>
   badgesOf(board, cardSubject(c)).map((b) => `<span class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}>${esc(b.label)}</span>`).join('')
 
+/** The lines extensions add under a card, one under another. */
+const cardLinesHtml = (board: Board, c: Card) => linesOf(board, c.id).map((l) => `<span class="adds-line" data-tip="${esc(l)}">${esc(l)}</span>`).join('')
+
 /** The key a destructive extension verb on a card is armed under: its card and its place among the card's added actions. */
 export const addedKey = (c: Card, n: number) => `added ${c.id} ${n}`
 
@@ -319,7 +322,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
     can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c))),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
-  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, reviewerOf(c)))}</span>
+  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, reviewerOf(c)))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
 }
 
@@ -432,8 +435,18 @@ export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolea
 export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown'>
 
 /** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel. */
-const briefHtml = (c: Card, threads: Brief[], look: BriefLook) =>
-  lineageBriefHtml({ briefs: threads, said: markdownHtml, promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy, working: c.status === 'working', ...look })
+const briefHtml = (board: Board, c: Card, threads: Brief[], look: BriefLook) =>
+  lineageBriefHtml({
+    briefs: threads,
+    said: markdownHtml,
+    promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy,
+    working: c.status === 'working',
+    adds: (id) => {
+      const conv = c.conversations.find((v) => v.id === id)
+      return conv ? badgesOf(board, conversationSubject(c, conv)).map((b) => `<span class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}>${esc(b.label)}</span>`).join('') : ''
+    },
+    ...look,
+  })
 
 /**
  * A worker's sessions, oldest first, each a button that shows its screen (`data-replay`, its id); a running worker's
@@ -450,12 +463,12 @@ export const sessionsHtml = (c: Card, on: string | undefined, threads: Brief[] |
   }).join('')}</div>`
 
 /** A worker's conversations by session; `threads` undefined while they are read. */
-export const logbookBriefHtml = (c: Card, threads: Brief[] | undefined, look: BriefLook) =>
-  threads ? briefHtml(c, threads, look) : '<p><i>reading the logbook…</i></p>'
+export const logbookBriefHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook) =>
+  threads ? briefHtml(board, c, threads, look) : '<p><i>reading the logbook…</i></p>'
 
 /** The logbook: the worker's sessions to replay, over its conversations by session. */
-export const logbookHtml = (c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined) =>
-  sessionsHtml(c, on, threads) + logbookBriefHtml(c, threads, look)
+export const logbookHtml = (board: Board, c: Card, threads: Brief[] | undefined, look: BriefLook, on: string | undefined) =>
+  sessionsHtml(c, on, threads) + logbookBriefHtml(board, c, threads, look)
 
 /** "REPLAY · Oct 6, 21:40": a past session's screen, with the way back to the live one when there is one. */
 export const stampHtml = (startedAt: number, back: boolean) =>

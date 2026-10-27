@@ -2,9 +2,11 @@ import { drawPanel } from '/panels.js'
 import { $, copyText } from './kit.js'
 import { briefHtml, expandedSaid, openFolds, saidText } from '/brief.js'
 import { markdownHtml } from '/markdown.js'
+import { conversationSubject } from '/cards.js'
+import { addsHtml } from './added.js'
 
 /**
- * @import { Card } from '../../src/bridge/board.ts'
+ * @import { Board, Card } from '../../src/bridge/board.ts'
  * @import { Brief } from '../../src/bridge/turns.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
@@ -16,6 +18,7 @@ import { markdownHtml } from '/markdown.js'
  *   viewer: () => Viewer,
  *   keepViewer: <K extends keyof Viewer>(field: K, value: Viewer[K]) => void,
  *   drawSettings: () => false | void,
+ *   board: () => Board,
  * }} BriefPaneDeps
  */
 
@@ -25,7 +28,7 @@ import { markdownHtml } from '/markdown.js'
  * @param {BriefPaneDeps} deps
  */
 export function briefPane(deps) {
-  const { findCard, viewer, keepViewer, drawSettings } = deps
+  const { findCard, viewer, keepViewer, drawSettings, board } = deps
   /** The brief drawn last, the worker's and its conversations as read: what a copy reads its text from. @type {{ id: string, threads: Brief[] } | undefined} */
   let briefShown
 
@@ -51,9 +54,14 @@ export function briefPane(deps) {
     const c = findCard(shown.id)
     /** @param {string} id */
     const promptBy = (id) => c?.conversations.find((conv) => conv.id === id)?.promptBy
+    /** What extensions add to a conversation, on its heading. @param {string} id */
+    const adds = (id) => {
+      const conv = c?.conversations.find((v) => v.id === id)
+      return c && conv ? addsHtml(board(), conversationSubject(c, conv)) : ''
+    }
     const open = same ? openFolds(el) : new Set()
     const expanded = same ? expandedSaid(el) : new Set()
-    drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: viewer().briefMarkdown, working: c?.status === 'working' }), {})
+    drawPanel(el, briefHtml({ briefs: shown.threads, said: markdownHtml, promptBy, open, expanded, markdown: viewer().briefMarkdown, working: c?.status === 'working', adds }), {})
   }
 
   /** Draws the brief again, while one is shown. */

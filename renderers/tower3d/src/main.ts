@@ -495,7 +495,7 @@ function renderPanel() {
     show('logbook-shot', panel.tab === 'screen')
     show('logbook-text', panel.tab === 'brief')
     $('logbook-sessions').innerHTML = sessionsHtml(c, panel.on, panel.threads)
-    $('logbook-text').innerHTML = logbookBriefHtml(c, panel.threads, briefLook($('logbook-text')))
+    $('logbook-text').innerHTML = logbookBriefHtml(board, c, panel.threads, briefLook($('logbook-text')))
   }
   if (panel.kind === 'draft') {
     const d = s.draft!
@@ -2040,7 +2040,7 @@ const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expande
 function drawDeskBrief(same: boolean) {
   const c = findCard(s.board!, deskBrief!.id)!
   const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), markdown: s.viewer.briefMarkdown }
-  $('desk-brief').innerHTML = logbookHtml(c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
+  $('desk-brief').innerHTML = logbookHtml(s.board!, c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
 }
 
 /** The logbook again, if the desk shows it, in your `viewer.briefMarkdown`. */
