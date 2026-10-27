@@ -225,11 +225,11 @@ export async function worker(deps) {
     shownDrawn = key
     if (!s) return ($('shown').innerHTML = '')
     if (s.kind === 'url') return ($('shown').innerHTML = `<iframe src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`)
-    if (s.kind === 'link') return ($('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`, showLink(c, s))
+    if (s.kind === 'link') return ($('shown').innerHTML = `<iframe class="doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`, showLink(c, s))
     if (/\.(png|jpe?g|gif|webp|svg)$/i.test(s.target)) return ($('shown').innerHTML = `<img src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`)
     if (/\.(mp4|webm)$/i.test(s.target)) return ($('shown').innerHTML = `<video controls autoplay src="${esc(shownHref(s))}"></video>`)
     if (!s.target.endsWith('.md')) return ($('shown').innerHTML = `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`)
-    $('shown').innerHTML = `<iframe class="doc" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`
+    $('shown').innerHTML = `<iframe class="doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
     told(tower.text(shownHref(s).slice(1))).then((md) => {
       if (md === undefined || shownDrawn !== key) return
       const frame = /** @type {HTMLIFrameElement} */ ($('shown').firstChild)

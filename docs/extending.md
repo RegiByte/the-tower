@@ -194,6 +194,13 @@ scripts, stylesheets and images: shelf files are served without CORS, which woul
 `tower.prefs.on` read it, and `tower.prefs.set(patch)` asks the framing page to change it, for every page of the
 viewer's. A `url` entry's frame gets the colour scheme alone, as `{t: 'scheme', scheme}`.
 
+Every page the tower frames forwards the tower's global keys (⌘K, Escape, the pane chords), with nothing to add:
+`/tower.js` sends them, and the tower appends `/frame-keys.js`, which sends keys and nothing else, to every html file
+it serves sandboxed. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
+handles a key (Escape closing its own dialog) calls `preventDefault` to keep it. A renderer that frames pages hears
+them as `{ t: 'key' }` messages and runs a global command (`frameCommandOf`, `/keymap.js`) only for one from the frame
+holding focus; a remote `url` page forwards nothing.
+
 Relaying is `tower.relay`'s work, over the protocol in `src/shared/shelf-page.ts`. A renderer frames a page in an
 iframe sandboxed without `allow-same-origin` and hands it to the relay with what is its own: the entry the page is, its
 `select`, `home` and `shelf`, and what to do when the page sets a key in `tower.store`:
@@ -291,7 +298,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/x/reviews/panel.js` | the Reviews panel over the extension's part (`x.reviews` on a card and a floor): a card's thread and note call (`cardReviews`, `noteCallOf`), a floor's threads (`floorThreadsOf`), and the panel as a pure view. `/panels.js` keeps its 1.92 copy over the old fields, deprecated, until 2.0 |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
-| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults); chord labels, `aria-keyshortcuts` and the `?` sheet |
+| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
 | `/terminal.js` | a browser terminal's face and size from the viewer's appearance, and the size a watched one fits its PTY at |
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |

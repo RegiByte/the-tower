@@ -50,9 +50,13 @@ export function bundledFile(file: string) {
 /** A shared module as the tower serves it. */
 export const bundled = (url: string) => bundledFile(MODULES[url])
 
+/** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
+export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')
+
 /**
  * `/tower.js` speaks the API version this tower serves, starts a viewer from the default appearance and knows the shipped
- * faces: the script names each constant and it is filled in here, from api.ts, prefs.ts and design.ts.
+ * faces: the script names each constant and it is filled in here, from api.ts, prefs.ts and design.ts. It sends a
+ * framed page's keys as `/frame-keys.js` does, which runs first.
  */
 export function towerClient() {
   const filled: Record<string, unknown> = { API_VERSION, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, GENERIC_FACES, FACES: type }
@@ -60,5 +64,5 @@ export function towerClient() {
     const declaration = new RegExp(`^(\\s*const \\w+ = )${name}$`, 'm')
     if (!declaration.test(script)) throw new Error(`tower.js no longer declares a constant as "${name}"`)
     return script.replace(declaration, (_, head) => head + JSON.stringify(value))
-  }, readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8'))
+  }, readFileSync(FRAME_KEYS, 'utf8') + readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8'))
 }

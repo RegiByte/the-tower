@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-26",
-  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
+  "reviewed": "2026-10-27",
+  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md"]
 }
 ---
 **Problem.** The keys lived in several places (shared constants, the page's shortcuts and hand-written `?` sheet,
@@ -46,6 +46,21 @@ every other key, and reach every renderer the way `user.name` does.
   ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃⇧1–4) show the selected worker's
   panes, from inside the terminal too. Neither is Claude's: ⌥Esc reaches it as Esc twice and Claude binds no ⌃⇧ digit. macOS takes ⌃ digits for its desktops, which is why the panes carry ⇧.
   A default must not eat a printable character on any common layout, which rules out ⌥ with a digit.
+- Keys pressed in a frame the renderer drew reach its keymap, so ⌘K, Escape and the pane chords work from a shown file,
+  a shelf page or a kept item. A document frame (a srcdoc the renderer wrote, `allow-same-origin` and never scripts:
+  [[markdown-safe]]) is the renderer's own, and it listens on the frame's document at each load. A script frame (an
+  html file the tower serves sandboxed, a framed renderer) runs [`/frame-keys.js`](ref:hub/src/tower/frame-keys.js),
+  which the tower appends to every html page it serves sandboxed
+  ([`serveSandboxed`](ref:hub/src/tower/http.ts#serveSandboxed)) and `/tower.js` runs first: a key none of the page's
+  handlers took (`preventDefault`), typing in a field excepted, is posted to the parent as `{ t: 'key' }`
+  ([`FromPage`](ref:hub/src/shared/shelf-page.ts#FromPage)), with no token. The page hears it only from the frame
+  drawn with scripts that holds focus (`e.source` is `document.activeElement`'s window), never a `url` frame's, and
+  neither kind behind a modal ([`frameKey`](ref:hub/renderers/page/page.js#frameKey)). A frame's key runs a global
+  command alone ([`frameCommandOf`](ref:hub/src/shared/keymap.ts#frameCommandOf)), resolved as a field's when its
+  target took typing, so no frame starts a session or types into a terminal. A script frame's message is a claim any
+  page can make, so it can time a chord into the user's typing: the first Enter typed into a field or a terminal
+  after a forwarded key ran something is held back, with a toast, until a click. Tower 3D takes the keys it answers,
+  so framed it doesn't also step the tower page.
 - Tower 3D runs the moves, the panes and `leave-terminal` from `board.keys` in the world, at a desk and in its
   terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and lists them on its pause card with
   `keymapSheetHtml`.
@@ -57,5 +72,10 @@ every other key, and reach every renderer the way `user.name` does.
 - Plain letters inside a terminal: they are Claude's typing. F6 to cycle panes: Chrome keeps it.
 - A rebinding UI in the sheet: the config is where intent lives.
 
+- Forwarding keys over a channel each frame sets up with a token: source identity and focus decide what is heard,
+  and the relay's pairing stays as it was. Serving framed html at the tower's origin to hear its keys: it would call
+  the API as the tower.
+
 **Impact.** `/keymap.js` and `board.keys` are part of the renderer API, and the `?` sheet can't drift from the
-bindings. `MOVE_KEYS` and `moveOfKey` in `/cards.js` are deprecated in their favour until the API's next major.
+bindings. Every page the tower frames forwards its global keys with nothing to add; a page that handles a key calls
+`preventDefault` to keep it. A remote `url` frame is the gap: nothing is injected there, and it is not heard. `MOVE_KEYS` and `moveOfKey` in `/cards.js` are deprecated in their favour until the API's next major.

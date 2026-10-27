@@ -28,7 +28,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, commandOf } from '/keymap.js'
+import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, commandOf, frameCommandOf } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -46,7 +46,8 @@ import { asksHtml } from './added.js'
  * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
- * @import { BoardError } from '../../src/shared/shelf-page.ts'
+ * @import { BoardError, FromPage } from '../../src/shared/shelf-page.ts'
+ * @import { KeyPress } from '../../src/shared/keymap.ts'
  * @import { Action, Added } from '../../src/shared/extensions.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
@@ -330,7 +331,7 @@ function goToFloor(project) {
  * @param {Pick} does @param {HTMLElement} row
  */
 function doPick(does, row) {
-  if (does.t === 'command') return void run(does.id, new KeyboardEvent('keydown'))
+  if (does.t === 'command') return void run(does.id, { repeat: false })
   if (does.t === 'patterns') return void showPatterns()
   if (does.t === 'learn') return learnPick(does.id)
   if (does.t === 'added') return void runAddedAt(row, does)
@@ -582,7 +583,7 @@ document.addEventListener('click', async (e) => {
   const dismissTip = target.closest('[data-tip-dismiss]')?.dataset.tipDismiss
   if (dismissTip) return (keepViewer('tipsDismissed', [...viewer().tipsDismissed, dismissTip]), render())
   const tipRun = target.closest('[data-tip-run]')?.dataset.tipRun
-  if (tipRun) return run(tipRun, new KeyboardEvent('keydown')) || toast(`Not from here: ${COMMANDS.find((c) => c.id === tipRun)?.does}`)
+  if (tipRun) return run(tipRun, { repeat: false }) || toast(`Not from here: ${COMMANDS.find((c) => c.id === tipRun)?.does}`)
   const draftAct = target.closest('[data-draft-act]')?.dataset.draftAct
   if (draftAct === 'send') return sendDraft()
   if (draftAct === 'transfer') return openTransfer()
@@ -776,7 +777,7 @@ function shellHere() {
   return true
 }
 
-/** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. @param {string} id @param {KeyboardEvent} e */
+/** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. @param {string} id @param {{ repeat: boolean }} e */
 function run(id, e) {
   const pane = PANE_COMMAND[id]
   if (pane) return toPane(pane)
@@ -800,6 +801,64 @@ document.addEventListener('keydown', (e) => {
   const id = commandOf(board().keys, e, isTyping() ? 'field' : 'page')
   if (id && run(id, e)) e.preventDefault()
 })
+
+/**
+ * A key pressed in a frame the page drew runs the keymap's global commands (`frameCommandOf`), as a field's when its
+ * target took typing, and none while a modal is open. Returns whether it ran one.
+ * @param {KeyPress & { repeat: boolean }} press @param {boolean} editable
+ */
+function frameKey(press, editable) {
+  if (document.querySelector(':modal')) return false
+  const id = frameCommandOf(board().keys, press, editable ? 'field' : 'page')
+  return Boolean(id && run(id, press))
+}
+
+/** @param {EventTarget | null} target an element of a framed document, of the frame's realm */
+const editableIn = (target) => {
+  const el = /** @type {HTMLElement | null} */ (target)
+  return Boolean(el?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el?.tagName ?? ''))
+}
+
+/**
+ * A document frame (a srcdoc the page wrote, where nothing runs) is the page's own: its keys are the browser's, heard on
+ * its document at each load. A frame that navigated away from the srcdoc holds a document the page didn't write.
+ */
+document.addEventListener('load', (e) => {
+  const frame = e.target
+  if (!(frame instanceof HTMLIFrameElement) || frame.sandbox.contains('allow-scripts') || frame.contentDocument?.URL !== 'about:srcdoc') return
+  frame.contentDocument.addEventListener('keydown', (k) => {
+    if (!k.defaultPrevented && frameKey(k, editableIn(k.target))) k.preventDefault()
+  })
+}, true)
+
+/**
+ * A script frame's keys come from `/frame-keys.js` as a message anyone can send, so one counts only from the frame the
+ * page drew with scripts that holds focus: never a url frame's, never a frame the user isn't in.
+ */
+addEventListener('message', (e) => {
+  /** @type {FromPage | undefined} */
+  const msg = e.data
+  if (msg?.t !== 'key') return
+  const frame = document.activeElement
+  if (!(frame instanceof HTMLIFrameElement) || e.source !== frame.contentWindow || !frame.sandbox.contains('allow-scripts') || !document.hasFocus()) return
+  const mods = new Set(msg.mods)
+  const press = { key: msg.key, code: msg.code, altKey: mods.has('Alt'), ctrlKey: mods.has('Ctrl'), metaKey: mods.has('Meta'), shiftKey: mods.has('Shift'), repeat: false }
+  if (frameKey(press, msg.editable)) enterGuarded = true
+})
+
+/**
+ * Set while what a framed page's key ran may have opened a field or a terminal: the page could time its key so the
+ * user's next keystrokes land there, so the first Enter typed into one is held back. A click is the user's own.
+ */
+let enterGuarded = false
+addEventListener('keydown', (e) => {
+  if (!enterGuarded || e.key !== 'Enter' || !isTyping()) return
+  enterGuarded = false
+  e.preventDefault()
+  e.stopImmediatePropagation()
+  toast('Opened by a key in a framed page: press Enter again to go on')
+}, true)
+addEventListener('pointerdown', () => (enterGuarded = false), true)
 
 /** xterm measures its cells when it opens: the terminal face must be loaded by then. */
 await loadTerminalFont(termFont())
