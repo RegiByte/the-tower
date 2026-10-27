@@ -92,7 +92,8 @@ The design system's `/design.css` and faces, `/tower.js` and the shared modules
 
 Shelf entries are served only when declared in the config, with a CSP `sandbox` header
 ([`sandboxed`](ref:hub/src/tower/http.ts#sandboxed)); a video (`.mp4`, `.webm`) gets `nosniff` instead: it runs no
-script, and Chrome plays no video document under a sandbox. So are collection items
+script, and Chrome plays no video document under a sandbox. An html one gets `<script src="/frame-keys.js">` appended,
+which sends its keys, and nothing else, to the tower framing it ([[keymap]]). So are collection items
 (`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
