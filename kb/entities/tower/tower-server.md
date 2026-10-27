@@ -4,7 +4,7 @@
   "name": "Tower server",
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/http.ts#sandboxed", "hub/src/tower/http.ts#handle", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#describeReads", "hub/src/tower/http.ts#describeStreams", "hub/src/tower/http.ts#route", "hub/src/tower/http.ts#readBody", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/tower/dispatch.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/http.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/http.ts#openMux", "hub/src/tower/publisher.ts#sendBoard", "hub/src/tower/http.ts#sse", "hub/src/tower/http.ts#run", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#clientFile", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/http.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
@@ -71,7 +71,9 @@ the verb's reply schema, all through the dispatch's [`call`](ref:hub/src/tower/d
 extension's `POST /<cap>/<verb>` is answered too; a path no entry of `READS` matches is an extension's read when its
 first segment is a running capability ([[extensions]]). Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused` (`not_found` when the terms daemon
-holds no such shell), one that doesn't answer `unavailable`. Every GET but the served files (`/tower.js`, the
+holds no such shell), one that doesn't answer `unavailable`. A spawn, a resume or a fork answers once the system tracks the new session's log
+([`host`](ref:hub/src/tower/dispatch.ts#host), at most `TRACK_TIMEOUT_MS`): a renderer that reads the id it was given finds
+the session. Every GET but the served files (`/tower.js`, the
 design, the modules, the vendored scripts) is an entry of [`READS`](ref:hub/src/tower/http.ts#READS): a pattern
 matched against the pathname, whose named groups are its params, and what serves it. An entry is either an API read
 that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema taken from `QUERIES[name]`) or says its

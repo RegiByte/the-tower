@@ -56,7 +56,7 @@ import { UnsettledError, type ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
-/** How long a resume waits for the host to write its session's header; the host opens the log as it answers. */
+/** How long a spawn waits for the host to write its session's header; the host opens the log as it answers. */
 const TRACK_TIMEOUT_MS = 5000
 
 /** The verbs a dispatch handles: all but the mux's, which hold HTTP connections. */
@@ -100,12 +100,16 @@ export const dispatch = defineResource({
       }
     }
 
-    /** A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the session would start without them. */
+    /**
+     * A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the session would start without them. A
+     * spawn answers once the system tracks its session, so whoever it answers reads the session by its id.
+     */
     async function host(msg: ToHost): Promise<Answer> {
       const refused = msg.t === 'spawn' && msg.facts?.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined
       if (refused) return refused
       const answer = await daemon(() => hostRequest(paths, msg))
       void system.refreshLive()
+      if (msg.t === 'spawn' && answer.t === 'spawned') await system.tracked(msg.id, TRACK_TIMEOUT_MS)
       return answer
     }
 
@@ -349,7 +353,6 @@ export const dispatch = defineResource({
             prompt,
           }),
         )
-        if (answer.t === 'spawned') await system.tracked(heir, TRACK_TIMEOUT_MS)
         return answer
       })
 
