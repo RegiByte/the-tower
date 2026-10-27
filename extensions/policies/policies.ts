@@ -4,7 +4,7 @@
  * `policies` items: each policy's view, the open offers, and the run a card is. Nothing about a policy is stored
  * beside these facts (decision `policies`).
  */
-import type { Verbs } from '../../src/shared/api.ts'
+import type { Replies, Verbs } from '../../src/shared/api.ts'
 import { nextSlot, ruleWords } from '../../src/shared/slots.ts'
 import { tagOf } from '../../src/shared/tags.ts'
 import type { Card } from '../../src/bridge/board.ts'
@@ -72,6 +72,9 @@ type Action<V extends string, C> = { [K in V]: K extends keyof C ? { verb: K; ca
 export type PolicyVerb = 'run' | 'approve'
 export type PolicyCalls = { run?: ['policies/run', Partial<Verbs['policy/run']>]; approve?: ['policies/approve', Partial<Verbs['policy/approve']>] }
 export type PolicyAction = Action<PolicyVerb, PolicyCalls>
+
+/** What the extension's verbs `policies/run` and `policies/approve` answer. */
+export type PolicyReplies = { 'policies/run': Replies['policy/run']; 'policies/approve': Replies['policy/approve'] }
 
 /** `accept` starts the run an open offer's slot offers. */
 export type OfferVerb = 'accept'

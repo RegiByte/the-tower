@@ -3,8 +3,7 @@
  * Accept. Bundled into `/panels.js`.
  */
 import type { Board, Floor } from '../../../src/bridge/board.ts'
-import { shortHash, type Offer, type PolicyView, type ValidPolicyView } from '../policies.ts'
-import type { Replies } from '../../../src/shared/api.ts'
+import { shortHash, type Offer, type PolicyReplies, type PolicyView, type ValidPolicyView } from '../policies.ts'
 import { DISMISS_OFFER_TITLE, callOf, esc } from '../../../src/shared/cards.ts'
 import { floorPolicies, heldWords, offerAskKey, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from '../../../src/shared/icons.ts'
@@ -113,5 +112,5 @@ export function policiesHtml(v: PoliciesView) {
 }
 
 /** What a press of `data-policy-call` did, as a toast says it. */
-export const policyDoneLine = (call: PolicyCall, title: string, reply: Replies['policy/run'] | Replies['policy/approve']) =>
-  call[0].endsWith('/approve') ? `Approved ${title}` : `Started run ${(reply as Replies['policy/run']).n} of ${title}`
+export const policyDoneLine = (call: PolicyCall, title: string, reply: PolicyReplies[keyof PolicyReplies]) =>
+  call[0].endsWith('/approve') ? `Approved ${title}` : `Started run ${(reply as PolicyReplies['policies/run']).n} of ${title}`

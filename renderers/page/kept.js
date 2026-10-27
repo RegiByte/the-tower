@@ -13,7 +13,7 @@ import { addsHtml } from './added.js'
 
 /**
  * @import { Board, Floor, FloorCollection, FloorItem } from '../../src/bridge/board.ts'
- * @import { Replies } from '../../src/shared/api.ts'
+ * @import { PolicyReplies } from '../../extensions/policies/policies.ts'
  * @import { PolicyCall } from '../../extensions/policies/client/panel.ts'
  * @import { Loop } from '../../src/shared/loop.ts'
  * @import { MainView } from './view.js'
@@ -82,10 +82,10 @@ export function keptViews(deps) {
   async function policyCall(button, call) {
     const { project, policy } = /** @type {{ project: string; policy: string }} */ (call[1])
     const title = floorPolicies(floorOf(project)).policies.find((p) => p.id === policy)?.title ?? policy
-    const reply = await told(pressing(button, () => /** @type {Promise<Replies['policy/run'] | Replies['policy/approve']>} */ (tower.call(/** @type {never} */ (call[0]), /** @type {never} */ (call[1])))))
+    const reply = await told(pressing(button, () => /** @type {Promise<PolicyReplies[keyof PolicyReplies]>} */ (tower.call(/** @type {never} */ (call[0]), /** @type {never} */ (call[1])))))
     if (!reply) return
     toast(policyDoneLine(call, title, reply))
-    if (call[0] === 'policies/run') selectArriving(/** @type {Replies['policy/run']} */ (reply).id)
+    if (call[0] === 'policies/run') selectArriving(/** @type {PolicyReplies['policies/run']} */ (reply).id)
   }
 
   /** The version of the kept item open that its body was drawn from. @type {number | undefined} */
