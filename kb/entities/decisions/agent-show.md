@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": ["hub/src/directory.ts#shownOf", "hub/src/directory.ts#postToHost", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
@@ -50,7 +50,9 @@ worker that made it.
 - The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
   worker and notifying when you are not; markdown renders, an image fits the pane, any other file is framed as
   served, and a `link` is one Open ↗, since a browser opens no tab by itself. × closes a showing for this viewer
-  (kept in the browser); a new showing of it comes back.
+  (kept in the browser); a new showing of it comes back. Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
+  a file's carrying its read path and media type ([[extensions]]): what extensions add to it is drawn beside the tabs
+  while it is open.
 - Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk
   panel ([[tower3d]]); each floor's gallery hangs its latest showings, off-duty workers' included ([[shared-wall]]).
 

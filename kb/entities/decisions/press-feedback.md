@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-27",
   "refs": [
     "hub/src/shared/press.ts#pressing",
     "hub/renderers/page/dialogs.js#dialogs",
