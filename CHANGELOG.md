@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.66.1
+
+Faster reads of a floor's archive and of every board. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), no config change, no API change.
+
+- **The archive read is about 4× faster** on a floor with hundreds of archived workers. The extensions' folds redid
+  floor-wide work on every archived card: the floor's collections listed again, the config read from disk, every
+  review thread matched again. They now do it once per read (#244).
+- **Every board is built faster:** crews and message receipts are indexed once, where each card searched every
+  other (#244).
+- A slow archive read logs a line of its own naming the read. It no longer reads as the board's (#244).
+
 ## v1.66.0
 
 Extensions can address what a worker showed, renderers declare the regions they draw, and the tower stops losing file
