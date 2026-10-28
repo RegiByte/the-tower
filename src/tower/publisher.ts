@@ -6,7 +6,7 @@
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
 import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
-import { foldBoard } from '../bridge/folds.ts'
+import { foldBoard, SLOW_MS } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
@@ -88,7 +88,8 @@ export const publisher = defineResource({
      * A floor's archived cards (`archiveOf`) as the board's own cards are: each running extension's card folds on them
      * and each moved part copied back to its old field. They are folded beside their floor's cards on the core's board,
      * every floor kept, by the card folds alone: what a fold contributes beside its part (badges, actions, lines) stays
-     * the board's, and a fold's problem on an archived card goes to the tower's log, the board's problems being the board's.
+     * the board's, and a fold's problem on an archived card goes to the tower's log, the board's problems being the board's,
+     * an extension whose card folds take over `SLOW_MS` of the read logged as slowing the read.
      */
     const archivedCards = (project: string, now: number): Card[] => {
       if (folding) throw new Error('an archive was read inside a fold: a fold reads the board as its ctx.board')
@@ -101,7 +102,8 @@ export const publisher = defineResource({
       folding = true
       try {
         const folded = foldBoard({ board: { ...core, floors }, callsignOf: callsignLookup(view), folders, subjects: extensions.subjects(), now, clock: () => performance.now() })
-        for (const { id, problem } of folded.problems) console.error(`${id}: ${problem.message} (${problem.path}${problem.subject ? `, ${problem.subject}` : ''}), folding ${project}'s archive`)
+        for (const { id, problem } of folded.problems.filter((p) => p.problem.code !== 'slow')) console.error(`${id}: ${problem.message} (${problem.path}${problem.subject ? `, ${problem.subject}` : ''}), folding ${project}'s archive`)
+        for (const [id, ms] of folded.spent) if (ms > SLOW_MS) console.error(`${id}: its card folds took ${Math.round(ms)} ms of one read of ${project}'s archive, over ${SLOW_MS} ms: the read waits on them`)
         const ids = new Set(archived.map((c) => c.id))
         return projectLegacy(folded.board).floors.find((f) => f.id === project)!.cards.filter((c) => ids.has(c.id))
       } finally {

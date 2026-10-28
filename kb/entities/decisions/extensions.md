@@ -155,7 +155,8 @@ and versioned without running anything, and a runtime where an extension's failu
   its own); its `x` lands at `subject.x[cap]`, its contributions at `board.adds[key]`, tagged with `cap`, its asks in
   `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject. A throw or a bad shape drops its part on that subject, and its
   required dependents' there, as a `threw` or `shape` problem (lane `fold`, with the subject); over 50 ms of one board
-  is a `slow` warning; a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the
+  is a `slow` warning (over 50 ms of one archive read, a line in the tower's log naming that read,
+  [`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards)); a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the
   latest board's, derived on each build ([`extensions`](ref:hub/src/tower/extensions.ts#extensions)'s `folded`, each
   dated by the first build that found it), never stored, so a failing fold can't make the board change on its own.
   `FoldCtx.own` is read from what `StartCtx.own` reads ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)'s

@@ -131,7 +131,7 @@ test('x is checked against its schema; tidy and asks land on the board, an ask p
 
 test("a fold's input is frozen, and a build's folds of one extension over the bound are slow", () => {
   let t = 0
-  const { problems } = foldBoard({
+  const { problems, spent } = foldBoard({
     board: core(),
     callsignOf: () => undefined,
     folders: [folder('pulse', { card: (card) => ((t += SLOW_MS + 1), (card.status = 'done'), {}) })],
@@ -140,6 +140,7 @@ test("a fold's input is frozen, and a build's folds of one extension over the bo
     clock: () => t,
   })
   assert.deepEqual(problems.map((p) => [p.problem.code, p.problem.level]), [['threw', 'error'], ['slow', 'warn']])
+  assert.equal(spent.get('pulse'), SLOW_MS + 1)
 })
 
 test("what a worker showed and a floor's shelf entries are folded; an action's own words are its; a command is offered by its accepts", () => {

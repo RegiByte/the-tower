@@ -123,11 +123,11 @@ const kindOrder = (kinds: string[]): string[] => {
 }
 
 /**
- * The board with every running extension's folds on it, and the problems they found. With no folder, the core's board
- * as it was built.
+ * The board with every running extension's folds on it, the problems they found, and the ms each extension's folds
+ * took (`spent`, by id). With no folder, the core's board as it was built.
  */
-export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, clock }: FoldInput): { board: Board; problems: FoldProblem[] } => {
-  if (!folders.length) return { board: built, problems: [] }
+export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, clock }: FoldInput): { board: Board; problems: FoldProblem[]; spent: Map<string, number> } => {
+  if (!folders.length) return { board: built, problems: [], spent: new Map() }
   const core = frozen(structuredClone(built))
   /** Each subject's parts, by key, then capability. */
   const parts = new Map<string, Map<string, unknown>>()
@@ -136,6 +136,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
   const adds: Record<string, Adds> = {}
   const asks: BoardAsk[] = []
   const problems: FoldProblem[] = []
+  const spentBy = new Map<string, number>()
 
   /** `value` with the parts of `allowed` (every capability's when none) at `x`, as `key`'s subject holds them. */
   const withX = <T extends object>(value: T, key: string, allowed?: ReadonlySet<string>): T => {
@@ -247,6 +248,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
         for (const entry of entriesOf(parts.get('board')?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, boardSubject(core)), entry, {}, ownLegacyKey(kind, entry))
       }
     }
+    spentBy.set(folder.id, spent)
     if (spent > SLOW_MS) problems.push({ id: folder.id, problem: { lane: 'fold', level: 'warn', code: 'slow', message: `its folds took ${Math.round(spent)} ms of one board, over ${SLOW_MS} ms: the tower can't stop a fold, so every board waits on it`, path: 'folds' } })
   }
 
@@ -255,7 +257,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     const tidy = adds[floorSubject(f).key]?.tidy
     return tidy ? withAddedTidy(f, tidy) : f
   })
-  return { board: { ...all, floors, adds, asks: asks.sort((a, b) => a.since - b.since) }, problems }
+  return { board: { ...all, floors, adds, asks: asks.sort((a, b) => a.since - b.since) }, problems, spent: spentBy }
 }
 
 /** The keyed entries at `list` of an owner's part, where its own kind's subjects sit. */
