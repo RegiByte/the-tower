@@ -9,6 +9,8 @@ import { bundledClient, clientSource } from '../src/extensions.ts'
 import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, legacyOf, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
 import { bundled, bundledFile, MODULES, towerClient } from '../src/tower/served.ts'
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
+import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
+import { declaredAt } from '../src/renderers.ts'
 
 /**
  * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
@@ -18,6 +20,7 @@ import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 /** What renderers may build on, by URL, as of the API major it was written at. */
 type Served = { major: number; served: Record<string, string[]> }
 
+const REPO = path.join(import.meta.dirname, '..')
 const LIST = path.join(import.meta.dirname, 'served-exports.json')
 const UPDATE = 'npm run served:update'
 
@@ -107,4 +110,40 @@ test('the served modules keep every export renderers may import, until the API m
   const written = `${JSON.stringify({ major, served: now } satisfies Served, null, 2)}\n`
   if (process.env.UPDATE_SERVED) return writeFileSync(LIST, written)
   assert.equal(readFileSync(LIST, 'utf8'), written, `${path.relative(process.cwd(), LIST)} is stale: what the tower serves changed. Run \`${UPDATE}\` and commit it.`)
+})
+
+/** The subject kinds the renderers table has a row for, in its order. */
+const TABLE_KINDS = ['card', 'conversation', 'floor', 'shown', 'item.*', 'collection', 'shelf', 'board']
+
+/** Who the renderers table names, by column: the built-in renderers' declarations from their sources, and the `tower` command's. */
+const TABLE_DRAWERS: [string, Region[]][] = [
+  ['The tower page (`page`)', declaredAt(path.join(REPO, 'renderers/page'), 'index.html')!.regions],
+  ['Tower 3D (`tower3d`)', declaredAt(path.join(REPO, 'renderers/tower3d'), 'index.html')!.regions],
+  ['The Week (`week`)', declaredAt(path.join(REPO, 'renderers/week'), 'index.html')!.regions],
+  ['The `tower` command (`cli`)', CLI_REGIONS],
+]
+
+const DOCS = path.join(REPO, 'docs/extending.md')
+const TABLE = /(<!-- regions: [^\n]*-->\n)[\s\S]*?(<!-- \/regions -->)/
+
+/** docs/extending.md's table of where each renderer draws each subject kind, as their declarations say. */
+const regionsTable = (): string => {
+  const cell = (regions: Region[], kind: string) =>
+    regions
+      .filter((r) => r.subject === kind)
+      .map((r) => `\`${r.id}\`${r.description ? `, ${r.description}` : ''}: ${r.holds.join(', ')}`)
+      .join('<br>') || 'not drawn'
+  return [
+    `| Subject | ${TABLE_DRAWERS.map(([name]) => name).join(' | ')} |`,
+    `|---|${TABLE_DRAWERS.map(() => '---|').join('')}`,
+    ...TABLE_KINDS.map((kind) => `| \`${kind}\` | ${TABLE_DRAWERS.map(([, regions]) => cell(regions, kind)).join(' | ')} |`),
+  ].join('\n')
+}
+
+test("docs/extending.md's renderers table is the renderers' declarations", () => {
+  const docs = readFileSync(DOCS, 'utf8')
+  assert.match(docs, TABLE, 'docs/extending.md has no <!-- regions: … --> … <!-- /regions --> block')
+  const written = docs.replace(TABLE, (_, open: string, close: string) => `${open}${regionsTable()}\n${close}`)
+  if (process.env.UPDATE_SERVED) return writeFileSync(DOCS, written)
+  assert.equal(docs, written, `docs/extending.md's renderers table is stale: a renderer.json or cli.regions changed. Run \`${UPDATE}\` and commit it.`)
 })
