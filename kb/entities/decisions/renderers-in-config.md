@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Renderers are declared in the config, served at /r/<name>/",
-  "summary": "A renderer is a directory of built files the tower serves at /r/<name>/ at its origin. The core declares page (the tower page), week (The Week) and tower3d; the config's renderers add to them or override their fields, renderer picks what / opens, and each renderer's settings pass through unread. Available is derived: the entry exists. A shelf entry { renderer: <name> } frames a declared renderer in the tower page, settings and all.",
+  "summary": "A renderer is a directory of built files the tower serves at /r/<name>/ at its origin. The core declares page (the tower page), week (The Week) and tower3d; the config's renderers add to them or override their fields, renderer picks what / opens, and each renderer's settings pass through unread. Available is derived: the entry exists. Each renderer declares in a renderer.json at its root the regions it draws contributions in, its kit, the chords it keeps and its default layout, served with it, and landing says where an extension's contributions land. A shelf entry { renderer: <name> } frames a declared renderer in the tower page, settings and all.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-27",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/tower/http.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName"]
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/tower/http.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName", "hub/src/renderers.ts#declaredAt", "hub/src/shared/regions.ts#Region", "hub/src/shared/regions.ts#landing", "hub/src/shared/regions.ts#CLI_REGIONS", "hub/renderers/page/renderer.json", "hub/renderers/tower3d/renderer.json", "hub/renderers/week/renderer.json"]
 }
 ---
 **Problem.** A renderer living only on a project's shelf reaches the user only if their config puts a path into
@@ -38,6 +38,17 @@ update of the core never touches it.
 - *Discovery.* `GET /renderers` ([`renderersRead`](ref:hub/src/tower/http.ts#renderersRead)), computed per request:
   the default and each renderer with its root, entry, `available` and `settings`. The tower page and Tower 3D list
   them with [`renderersHtml`](ref:hub/src/shared/shelf-words.ts#renderersHtml).
+- *Declared regions.* A renderer's `renderer.json` at its root ([`declaredAt`](ref:hub/src/renderers.ts#declaredAt))
+  holds its `regions` ([`Region`](ref:hub/src/shared/regions.ts#Region): an id `<kind>.<place>`, the subject kind,
+  what it holds, for views their scale and arity, and words for where it is), its `kit`, the chords it `keeps` and its
+  default `layout`, all served in `GET /renderers` beside its fields; a renderer with no file declares nothing. The
+  file declares for its `entry` (`index.html` unless set), so a second renderer on one root (Tower 3D's Lab) declares
+  nothing from it. Tower 3D's build copies its file into `out/`. The `tower` command's regions are `cli.regions` in
+  `/schema` ([`CLI_REGIONS`](ref:hub/src/shared/regions.ts#CLI_REGIONS)). [`landing`](ref:hub/src/shared/regions.ts#landing)
+  (`/cards.js`) answers which regions of each draw an extension's commands and fold contributions; `tower extensions
+  check` prints it, and `docs/extending.md`'s table is generated from the shipped declarations by `npm run
+  served:update`, its staleness failing `npm test`. A file that doesn't parse is a config error naming it. Kit, keeps
+  and layout are served and not yet read.
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with
   `await tower.renderer()` ([`tower.js`](ref:hub/src/tower/tower.js)), which takes its name from its `/r/<name>/` path,
   framed or not; null for any other page. Tower 3D reads `settings.cats`, its cats' names
