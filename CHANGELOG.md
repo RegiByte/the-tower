@@ -12,6 +12,14 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.66.2
+
+A fix for the Mac app. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
+change, no API change. **`npm run tower3d`** rebuilds Tower 3D, which draws its panels the same way.
+
+- **Changes keeps its scroll in the Mac app** while the file tree is drawn. Each read that landed jumped the diffs
+  back to the top in WebKit; Chrome already kept it (#246, thanks Carlos Bonetti).
+
 ## v1.66.1
 
 Faster reads of a floor's archive and of every board. No restart beyond the tower's own (`tower down tower`, then
