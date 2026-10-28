@@ -2,7 +2,7 @@
  * Every project dir's git, read when it changes. While watched, each dir's tree is watched (`subscribe.ts`), and its
  * git's common dir when that lies outside it; a change is mapped to the parts of the repo's read it makes stale
  * (`staleOf`), settled (`settleHandlers`), and only those parts are read again. File events can be dropped or merged
- * without a word (FSEvents' "must rescan" never reaches Node), so safety rounds read every repo's own facts every
+ * (inotify drops on overflow without a word), so safety rounds read every repo's own facts every
  * `SAFETY_REPO_MS` and every worktree's status every `SAFETY_TREES_MS`, a few at each tick. A dir whose watch fails
  * is read by the rounds alone, its watch tried again at each tick. Reads run one at a time, on the reader the caller
  * gives.
