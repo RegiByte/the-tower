@@ -59,7 +59,7 @@ the tower's origin, so it calls the API directly. `renderer` names the one `/` o
 - A name the core declares (`page`, `week`, `tower3d`) overrides that renderer's fields: `{ "tower3d": { "settings": … } }`
   keeps its root.
 
-A renderer says where it draws in `renderer.json` at its root (API 1.100), and `GET /renderers` serves what it
+A renderer says where it draws in `renderer.json` at its root (API 1.101), and `GET /renderers` serves what it
 declares beside its fields; a renderer with no file declares nothing. The tower page's is
 `renderers/page/renderer.json`:
 

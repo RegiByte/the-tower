@@ -25,7 +25,7 @@ export type KitMember = (typeof KIT_MEMBERS)[number]
  */
 export type Region = { id: string; subject: string; holds: Hold[]; scale?: Scale; arity?: 'one' | 'tabs'; description?: string }
 
-/** A renderer's default arrangement of the views in its regions, by region id: read from API 1.102. */
+/** A renderer's default arrangement of the views in its regions, by region id: served, and not yet read. */
 export type Layout = Record<
   string,
   { order?: string[]; hidden?: string[]; open?: { view: string; subject?: string }; options?: Record<string, Record<string, unknown>> }

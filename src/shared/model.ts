@@ -328,7 +328,7 @@ export type RendererConfig = { root?: string; entry?: string; settings?: Record<
 
 /**
  * A renderer as the tower serves it: `available` while its entry exists, which for a built renderer means it was built;
- * what its `renderer.json` declares (`Declared`, since 1.100) when it has one for its entry, or `problem`, why that
+ * what its `renderer.json` declares (`Declared`, since 1.101) when it has one for its entry, or `problem`, why that
  * file declares nothing.
  */
 export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown>; problem?: string } & Partial<Declared>
