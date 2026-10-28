@@ -128,6 +128,11 @@ export const CLI_VERBS = {
     help: "take a stranded worker (stopped, killed or lost) off duty, still resumable (its card's `let-go`)",
   },
   api: { of: 'worker', usage: 'api [name]', help: "the API's verbs and reads, one line each, or one in full as JSON Schema" },
+  flows: {
+    of: 'worker',
+    usage: 'flows [verb] [--floor <project>]',
+    help: "where extensions take part in each core verb: one line each, or one verb's every stage, open, wrapped or sealed, with who takes part (on --floor, those on there)",
+  },
   x: {
     of: 'worker',
     usage: 'x [<capability> <verb> [input]]',

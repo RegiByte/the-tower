@@ -19,6 +19,7 @@ import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/bo
 import type { Brief } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import { callerHeaders, type Replies } from './shared/api.ts'
+import type { Flow, OpenStage, Stage } from './shared/flows.ts'
 import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields, type PolicyFields, type ValidPolicy } from './shared/policies-legacy.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import type { ExtensionView } from './shared/extensions.ts'
@@ -491,7 +492,7 @@ const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: S
 }
 
 type JsonSchema = { description?: string }
-type ApiSchema = { v: string; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { path: string; kind: 'json' | 'stream' | 'page' | 'schema'; query?: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
+type ApiSchema = { v: string; flows: Flow[]; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { path: string; kind: 'json' | 'stream' | 'page' | 'schema'; query?: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
 
 const apiLines = (schema: ApiSchema): string[] => {
   const width = Math.max(...[...Object.keys(schema.verbs), ...Object.keys(schema.reads), ...Object.keys(schema.streams)].map((name) => name.length))
@@ -507,6 +508,51 @@ const apiLines = (schema: ApiSchema): string[] => {
     '',
     'Streams: GET, server-sent events. `tower api board` prints how to read the board and its message schema.',
     ...Object.entries(schema.streams).map(([name, { description }]) => line(name, { description })),
+  ]
+}
+
+/** Who takes part where, as `GET /extensions` reads it, with the capabilities off on the floor asked about left out. */
+type Takers = Pick<Reads['extensions'], 'chains' | 'answers' | 'launchers'> & { on: (cap: string) => boolean }
+
+const takersOf = (read: Reads['extensions'], floor: string | undefined): Takers => {
+  const off = new Set(read.extensions.filter((e) => floor !== undefined && e.off?.includes(floor)).map((e) => e.provides))
+  return { chains: read.chains, answers: read.answers, launchers: read.launchers, on: (cap) => !off.has(cap) }
+}
+
+const ruleOf = (stage: OpenStage) => `${stage.combine}${stage.required ? ', required' : ''}`
+
+/** Who answers an open stage: the core first when it answers there, then the extensions that do. */
+const answerersOf = (stage: OpenStage, takers: Takers): string[] => {
+  const extensions = stage.planned ? [] : stage.hook ? (takers.answers[stage.hook] ?? []) : takers.launchers
+  return [...(stage.core ? [`tower (${stage.core})`] : []), ...extensions.filter(takers.on)]
+}
+
+/** A flow in one line: its verb, its words and its open stages. */
+const flowLine = (flow: Flow, width: number): string => {
+  const open = flow.stages.filter((s): s is OpenStage => s.kind === 'open').map((s) => `${s.name} ${ruleOf(s)}${s.planned ? ' (planned)' : ''}`)
+  return `  ${flow.verb.padEnd(width)}  ${flow.words.label}${flow.planned ? ' (planned)' : ''}${open.length ? ` · ${open.join(' · ')}` : ''}`
+}
+
+/** Every stage of a flow, as `tower flows <verb>` prints it: ⟳ wrapped, ◆ open, · sealed. */
+const flowLines = (flow: Flow, takers: Takers): string[] => {
+  const width = Math.max(...flow.stages.map((s) => s.name.length))
+  const links = (takers.chains[`tower/${flow.verb}`] ?? []).filter(takers.on)
+  const stageLine = (stage: Stage): string[] => {
+    const name = stage.name.padEnd(width)
+    if (stage.kind === 'sealed') return [`  · ${name}  sealed: ${stage.why}`]
+    if (stage.kind === 'wrapped') return [`  ⟳ ${name}  ${links.length ? `${links.join(', ')}${stage.name === 'around' ? ' (outermost first)' : ''}` : 'no links'}`]
+    const answerers = answerersOf(stage, takers)
+    const who = answerers.length ? answerers.join(', ') : (stage.absent ?? 'nobody answers')
+    return [
+      `  ◆ ${name}  ${ruleOf(stage)}${stage.planned ? ', planned: not raised yet' : ''} · ${who}`,
+      ...(stage.hook ? [`    ${' '.repeat(width)}  ${stage.planned ? 'will be raised as' : 'answered as'} ${stage.hook}${stage.field ? `, named in the reply's ${stage.field}` : ''}`] : []),
+      ...(stage.how ? [`    ${' '.repeat(width)}  ${stage.how}`] : []),
+    ]
+  }
+  return [
+    `${flow.verb} · ${flow.words.label}${flow.planned ? ' (planned: no such verb yet)' : ''}`,
+    ...flow.stages.flatMap(stageLine),
+    ...(flow.composes ? [`  calls ${flow.composes.join(', ')} through the dispatch, each wrapped on its own`] : []),
   ]
 }
 
@@ -576,6 +622,29 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const one = schema.verbs[name] ?? schema.streams[name] ?? schema.reads[name]
     if (!one) throw new CliError(`The API has no verb, read or stream "${name}"`, '`tower api` lists them')
     console.log(JSON.stringify(one, null, 2))
+  },
+  flows: async (args) => {
+    const at = args.indexOf('--floor')
+    const floor = at === -1 ? undefined : args[at + 1]
+    const rest = at === -1 ? args : [...args.slice(0, at), ...args.slice(at + 2)]
+    if ((at !== -1 && !floor) || rest.length > 1) throw new CliError(usageLine('flows'))
+    if (floor && !Object.hasOwn(readConfig(configPath()).projects, floor)) throw new CliError(`No project "${floor}" in the config`)
+    const [schema, read]: [ApiSchema, Reads['extensions']] = await Promise.all([(await towerGet('/schema')).json(), (await towerGet('/extensions')).json()])
+    const takers = takersOf(read, floor)
+    const [verb] = rest
+    if (verb) {
+      const flow = schema.flows.find((f) => f.verb === verb)
+      if (!flow) throw new CliError(`The tower has no flow "${verb}"`, '`tower flows` lists them')
+      console.log(flowLines(flow, takers).join('\n'))
+      return
+    }
+    const width = Math.max(...schema.flows.map((f) => f.verb.length))
+    console.log(
+      [
+        `Where extensions take part in each core verb${floor ? ` on ${floor}` : ''}: \`tower flows <verb>\` prints every stage and who takes part. Every verb is wrapped at both edges.`,
+        ...schema.flows.map((f) => flowLine(f, width)),
+      ].join('\n'),
+    )
   },
   whoami: async () => {
     console.log(whoami(await readBoard(), me).join('\n'))
