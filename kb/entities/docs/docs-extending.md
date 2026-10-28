@@ -16,5 +16,9 @@ from [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES), errors from
 [`STATIC`](ref:hub/src/tower/http.ts#STATIC)) and their exports, `tower.js`'s members, collections, plugins, the
 `tower` command and the logs.
 
+Its table of which renderer draws which subject kind is generated from the shipped renderers' `renderer.json` and
+the CLI's regions ([`landing`](ref:hub/src/shared/regions.ts#landing)'s inputs), between `<!-- regions -->` markers,
+by `npm run served:update`; `test/served.test.ts` fails while it is stale.
+
 It lists modules and exports by name, so a served module added or renamed (`npm run served:update`) re-checks it,
 as does a read or an error code.

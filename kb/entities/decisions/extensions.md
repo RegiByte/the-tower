@@ -239,7 +239,8 @@ and versioned without running anything, and a runtime where an extension's failu
 - **The author's loop and the contract file.** `tower extensions check <dir>`
   ([`checkFolder`](ref:hub/src/extension-check.ts#checkFolder)) reads a folder as the tower would, resolves it
   against the running tower's registry, and starts it in a throwaway process with a ctx that reaches nothing to report
-  `mismatch`. `tower extensions freeze <dir>` ([`freezeFolder`](ref:hub/src/extension-check.ts#freezeFolder)) writes
+  `mismatch`; a manifest that loads gets a `lands` line per command and fold contribution, where each renderer the
+  config declares and the CLI draw it ([`landing`](ref:hub/src/shared/regions.ts#landing), [[renderers-in-config]]). `tower extensions freeze <dir>` ([`freezeFolder`](ref:hub/src/extension-check.ts#freezeFolder)) writes
   `contract.json`, the names dependents build on at its major
   ([`contractOf`](ref:hub/src/bridge/extensions.ts#contractOf): verbs, reads, facts, stream codes, collections, and
   each client module's exports as `client.<module>#<export>`, read without running them as the folder is found,
