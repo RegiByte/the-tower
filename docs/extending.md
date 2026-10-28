@@ -199,7 +199,9 @@ Every page the tower frames forwards the tower's global keys (⌘K, Escape, the 
 it serves sandboxed. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
 handles a key (Escape closing its own dialog) calls `preventDefault` to keep it. A renderer that frames pages hears
 them as `{ t: 'key' }` messages and runs a global command (`frameCommandOf`, `/keymap.js`) only for one from the frame
-holding focus; a remote `url` page forwards nothing.
+holding focus; a remote `url` page forwards nothing. What a forwarded key opens (the palette, a dialog) takes focus
+from the frame, and Chrome keeps a frame's pointer lock through that: a page that locks the pointer lets go of it on
+its window's `blur` (Tower 3D does), so the mouse is free and the next Escape reaches what opened.
 
 Relaying is `tower.relay`'s work, over the protocol in `src/shared/shelf-page.ts`. A renderer frames a page in an
 iframe sandboxed without `allow-same-origin` and hands it to the relay with what is its own: the entry the page is, its

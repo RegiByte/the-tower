@@ -560,6 +560,13 @@ function captureChanged() {
   showPaused()
 }
 document.addEventListener('pointerlockchange', captureChanged)
+/**
+ * Focus leaving the window takes the keys with it, to another app or to what the page framing this one opened over it
+ * (its palette, a dialog), and Chrome keeps a frame's pointer lock through that: the mouse is let go of, as on Esc, so
+ * the pause card stands and the next Esc reaches where focus went. Focus moving into one of this page's own frames
+ * leaves the document focused.
+ */
+addEventListener('blur', () => setTimeout(() => captured() && !document.hasFocus() && unlock()))
 
 function lock() {
   startMusic()
