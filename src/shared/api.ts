@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import { AUTHOR, WORKTREE_NAME } from './model.ts'
 import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
+import type { Words } from './extensions.ts'
 
 /**
  * `<major>.<minor>`. The minor moves when the API adds something an older renderer reads past: a board field, a verb,
@@ -514,7 +515,7 @@ export type Combine = 'gate' | 'merge' | 'place' | 'report'
  * combine. `required`: a failed answer, or none on the floor, refuses the verb; otherwise a failure is reported. `absent`:
  * what it means on a floor nobody answers on. `field`: the reply field its answers and failures are named in.
  */
-export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: string; field?: string; description: string; since: string }
+export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: Words; field?: string; description: string; since: string }
 
 const hooks = {
   'tidy.apply': {
@@ -530,7 +531,7 @@ const hooks = {
     answer: discardRecorded,
     combine: 'gate',
     required: true,
-    absent: 'Discard is refused: nothing records what it would throw away.',
+    absent: { label: 'Discards refused', hint: 'Nothing records what a discard would throw away.' },
     field: 'x',
     description: "Raised by worktree/discard once each repo's tip is read, before anything is removed, for the floor's recovery record: an answer that fails refuses the discard, as does no answer at all.",
     since: '1.85',
@@ -539,7 +540,7 @@ const hooks = {
     payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(recordedTip), kept: z.array(z.string()).describe('Each branch kept instead of deleted, with why.') }),
     answer: discardRecorded,
     combine: 'report',
-    absent: 'Nothing is filed once a worktree is discarded.',
+    absent: { label: 'Nothing filed', hint: 'No record or thread is filed once a worktree is discarded.' },
     field: 'done',
     description: "Raised by worktree/discard once its worktrees are removed and its branches deleted: a failed answer is reported in the reply's `done.<cap>`.",
     since: '1.94',

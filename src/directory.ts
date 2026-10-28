@@ -542,7 +542,7 @@ const flowLines = (flow: Flow, takers: Takers): string[] => {
     if (stage.kind === 'sealed') return [`  · ${name}  sealed: ${stage.why}`]
     if (stage.kind === 'wrapped') return [`  ⟳ ${name}  ${links.length ? `${links.join(', ')}${stage.name === 'around' ? ' (outermost first)' : ''}` : 'no links'}`]
     const answerers = answerersOf(stage, takers)
-    const who = answerers.length ? answerers.join(', ') : (stage.absent ?? 'nobody answers')
+    const who = answerers.length ? answerers.join(', ') : stage.absent ? `${stage.absent.label}${stage.absent.hint ? `: ${stage.absent.hint}` : ''}` : 'nobody answers'
     return [
       `  ◆ ${name}  ${ruleOf(stage)}${stage.planned ? ', planned: not raised yet' : ''} · ${who}`,
       ...(stage.hook ? [`    ${' '.repeat(width)}  ${stage.planned ? 'will be raised as' : 'answered as'} ${stage.hook}${stage.field ? `, named in the reply's ${stage.field}` : ''}`] : []),

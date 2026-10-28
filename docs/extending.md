@@ -616,7 +616,7 @@ API 1.94); the reviews extension's landed threads are such entries. The floor's 
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
 `merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
-nobody answers on (`absent`) and the reply field its answers are named in (`field`).
+nobody answers on (`absent`, words: a `label` and a `hint`, as a floor's badge would say it) and the reply field its answers are named in (`field`).
 
 **Flows** (API 1.100). Where can an extension take part in a core verb? `tower flows` lists every core verb with the
 stages open to extensions, and `tower flows <verb> [--floor <project>]` prints each of its stages in order, with who

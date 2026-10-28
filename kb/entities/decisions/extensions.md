@@ -208,7 +208,7 @@ and versioned without running anything, and a runtime where an extension's failu
   its hook's `failure` to the answers it gets back; the core's `refuses` stops the discard and names the answerer.
   Since 1.100 a core hook says how its answers combine (`combine`: `gate`, `merge`, `place` or `report`), whether a
   failed answer or none refuses (`required`, served as `failure: refuses`), what it means where nobody answers
-  (`absent`) and its reply field (`field`).
+  (`absent`, as words) and its reply field (`field`).
 - **Flows (1.100).** Every core verb is listed as a named sequence of stages,
   [`FLOWS`](ref:hub/src/shared/flows.ts#FLOWS), served as `/schema`'s `flows` and printed by `tower flows [verb]
   [--floor p]` with who takes part, from `GET /extensions`' `chains`, `answers` and `launchers`: each stage `open`
