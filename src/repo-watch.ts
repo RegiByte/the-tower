@@ -29,7 +29,7 @@ export type RepoWatch = {
   repos: () => Map<string, RepoRead>
   /** Reads every dir afresh; resolves once read. */
   refresh: () => Promise<void>
-  /** Starts the watches and the safety rounds, and reads every dir afresh; resolves once read. */
+  /** Starts the watches and the safety rounds, and once watching reads every dir afresh; resolves once read. */
   start: () => Promise<void>
   /** Closes every watch, and stops the rounds and every settling change. */
   pause: () => void
@@ -37,8 +37,10 @@ export type RepoWatch = {
   reconcile: () => void
 }
 
-/** A watch, and the directories it was started ignoring. */
-type Watch = { subscription: Subscription; ignore: string[] }
+/** A watch, none once it failed to start, and the directories it was started ignoring. */
+type Watch = { subscription: Promise<Subscription | undefined>; ignore: string[] }
+
+const close = ({ subscription }: Watch) => void subscription.then((s) => s?.close())
 
 const inside = (file: string, dir: string) => file === dir || file.startsWith(`${dir}/`)
 
@@ -169,29 +171,27 @@ export const watchRepos = (
     } catch (err) {
       return notWatched(dir, err)
     }
-    for (const [root, { subscription, ignore }] of current)
-      if (roots.get(root)?.join('\0') !== ignore.join('\0')) {
-        subscription.close()
+    for (const [root, watch] of current)
+      if (roots.get(root)?.join('\0') !== watch.ignore.join('\0')) {
+        close(watch)
         current.delete(root)
       }
     for (const [root, ignore] of [...roots].filter(([r]) => !current.has(r))) {
-      /** Set once the watch started: a watch that fails as it starts reports before `subscribe` returns. */
-      let started: Watch | undefined
-      let failedAtStart = false
-      const subscription = subscribe(root, ignore, changesIn(dir), (err) => {
-        if (!started) failedAtStart = true
-        else if (current.get(root) === started) current.delete(root)
+      const stopped = (err: unknown) => {
+        if (current.get(root) === watch) current.delete(root)
         notWatched(root, err)
-      })
-      if (failedAtStart) continue
-      started = { subscription, ignore }
-      current.set(root, started)
-      unwatched.delete(root)
+        return undefined
+      }
+      const watch: Watch = {
+        ignore,
+        subscription: subscribe(root, ignore, changesIn(dir), stopped).then((s) => (unwatched.delete(root), s), stopped),
+      }
+      current.set(root, watch)
     }
   }
 
   const unwatch = (dir: string) => {
-    for (const { subscription } of watched.get(dir)?.values() ?? []) subscription.close()
+    for (const watch of watched.get(dir)?.values() ?? []) close(watch)
     watched.delete(dir)
     settle.dispatch({ type: 'forget', dir })
   }
@@ -249,11 +249,12 @@ export const watchRepos = (
   return {
     repos: () => repos,
     refresh,
-    start: () => {
+    start: async () => {
       watching = true
       const now = dirs()
       if (now) reconcileNow(now)
       tick = setInterval(logged('safety read', safetyTick), SAFETY_TICK_MS)
+      await Promise.all([...watched.values()].flatMap((watches) => [...watches.values()].map((w) => w.subscription)))
       return refresh()
     },
     pause: () => {

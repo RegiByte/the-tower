@@ -4,7 +4,7 @@
  * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch, type FSWatcher } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
@@ -23,7 +23,8 @@ import type { HostLive } from './shared/protocol.ts'
 import type { Shell } from './shared/terms.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
-import { logged, loggedRead, serially, watchedOrExit } from './logged.ts'
+import { exitUnwatched, logged, loggedRead, serially, watchedOrExit } from './logged.ts'
+import { subscribe, type Subscription } from './subscribe.ts'
 
 const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
@@ -170,6 +171,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     for (const check of waiters.keys()) check()
   }
   const watchers: FSWatcher[] = []
+  const subscriptions: Subscription[] = []
   const sessions = new Map<string, Session>()
   const logs = new Map<string, LogFile>()
   /** Each tailed log's stop, by session id, until its session exits or its log is archived. */
@@ -421,14 +423,16 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     ),
     paths.sessions,
   )
-  mkdirSync(paths.collections, { recursive: true })
+  /** Watches `dir`'s tree, made if missing; resolves once watching. */
+  const subscribed = async (dir: string, changed: () => void) => {
+    mkdirSync(dir, { recursive: true })
+    subscriptions.push(await subscribe(realpathSync(dir), [], changed, exitUnwatched(dir)))
+  }
+  await subscribed(paths.collections, scheduleRescan)
   items = scanCollections(paths)
-  watching(watch(paths.collections, { recursive: true }, scheduleRescan), paths.collections)
-  mkdirSync(systemStreamsPath(paths), { recursive: true })
-  watching(watch(systemStreamsPath(paths), { recursive: true }, scheduleStreams), systemStreamsPath(paths))
-  mkdirSync(projectsStreamsPath(paths), { recursive: true })
+  await subscribed(systemStreamsPath(paths), scheduleStreams)
+  await subscribed(projectsStreamsPath(paths), scheduleProjectStreams)
   rescanMonths()
-  watching(watch(projectsStreamsPath(paths), { recursive: true }, scheduleProjectStreams), projectsStreamsPath(paths))
   watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => {
         if (file !== path.basename(paths.config)) return
         repoWatch.reconcile()
@@ -483,6 +487,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       stopped = true
       repoWatch.pause()
       for (const watcher of watchers) watcher.close()
+      await Promise.all(subscriptions.map((s) => s.close()))
       for (const stopTail of tails.values()) stopTail()
       tails.clear()
       ;[...livePolls, ...machinePolls].forEach(clearInterval)

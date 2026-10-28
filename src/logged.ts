@@ -30,11 +30,14 @@ export const watchedLoudly = (watcher: FSWatcher, what: string): FSWatcher =>
  * A watcher the whole process reads through ends the process when it fails, saying why: carrying on would serve a
  * view that never changes again and looks healthy.
  */
-export const watchedOrExit = (watcher: FSWatcher, what: string): FSWatcher =>
-  watcher.on('error', (err) => {
+export const exitUnwatched =
+  (what: string) =>
+  (err: unknown): never => {
     say(`${what} is no longer watched, so the process exits: start it again`)(err)
     process.exit(1)
-  })
+  }
+
+export const watchedOrExit = (watcher: FSWatcher, what: string): FSWatcher => watcher.on('error', exitUnwatched(what))
 
 /**
  * One run at a time: a call while a run is in flight gets that run, and the read runs once more after it, so a read

@@ -4,8 +4,8 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-26",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo"],
+  "reviewed": "2026-10-27",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
     { "to": "system-root", "verb": "reads", "carries": "streams/*/<folder>/YYYY-MM.jsonl, each stream an extension folds stepped on once a write settles" },
@@ -37,7 +37,8 @@ JSON, is kept for the fold to break on.
 the last by content.
 
 **Collections and streams.** The collections directory, `streams/system/` and `streams/projects/` are each watched
-recursively and read again once changes settle: collections rescanned
+recursively ([`subscribe`](ref:hub/src/subscribe.ts#subscribe)), each watching before its first read, and read again
+once changes settle: collections rescanned
 ([`scanCollections`](ref:hub/src/collections.ts#scanCollections); the board picks the declared ones), each
 stream an extension folds stepped on (its `reduce`, and the core's fold of its `tower/rate-limits` readings, [[probes]]); the policies extension's `runs`
 and `approvals` are kept in the folders `runs/` and `approvals/` by `LEGACY` ([[policies]]).
@@ -78,17 +79,19 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
 - **Partial reads.** [`rereadRepo`](ref:hub/src/worktrees.ts#rereadRepo) asks git only for the stale parts and keeps
   the rest from the repo's last parts, which the live system holds and sends with each read (a branch's reflog is read
   again once its head moved); answers about commits are remembered on the thread. The board's shape is the same.
-- **Safety rounds.** The OS may drop or merge file events without saying so (FSEvents' "must rescan" never reaches
-  Node), so every 10 s a few repos' own facts and main status are read, each once per `SAFETY_REPO_MS` (2 min), and a
+- **Safety rounds.** The OS may drop or merge file events (FSEvents' "must rescan" is read as an unknown path; inotify
+  drops on overflow without a word), so every 10 s a few repos' own facts and main status are read, each once per `SAFETY_REPO_MS` (2 min), and a
   few worktrees' status, each once per `SAFETY_TREES_MS` (10 min): on 6 repos of 40 worktrees, 48 git a minute idle.
   Each tick also starts the watches the config added or that failed, and closes those it removed.
 - **Fresh for verbs.** A worktree verb and `refreshRepos` read every part afresh: every destructive verb decides from
   a read made after its fetch, never from the board's ([[tower-cuts-worktrees]]).
-- **Platforms.** On macOS a recursive watch is one FSEvents stream per tree, however many files. On Linux it is
-  inotify, a watch per directory (a walk at start, bounded by `max_user_watches`), and under WSL2 files on `/mnt/c`
-  edited from Windows raise no events at all, so only the safety rounds see them. The watch sits behind
-  [`subscribe`](ref:hub/src/subscribe.ts#subscribe) so that `@parcel/watcher` (native ignores, events batched in
-  native code) can replace `fs.watch` there.
+- **Platforms.** Every recursive watch is a `@parcel/watcher` subscription behind
+  [`subscribe`](ref:hub/src/subscribe.ts#subscribe), ignores applied natively and events batched in native code. On
+  macOS each is an FSEvents stream of its own, however many files: Node's recursive `fs.watch` shares one stream per
+  process and recreates it whenever a watch opens or closes, so the repo watches coming and going with observers lost
+  the collections' and streams' writes. On Linux it is inotify, a watch per directory but the ignored (a walk at start,
+  bounded by `max_user_watches`), and under WSL2 files on `/mnt/c` edited from Windows raise no events at all, so only
+  the safety rounds see them.
 
 One read runs at a time, a read asked during one running once more after it, with every part asked since
 ([`serially`](ref:hub/src/logged.ts#serially), as the process scan does) ([[tower-cuts-worktrees]]).
@@ -97,7 +100,8 @@ One read runs at a time, a read asked during one running once more after it, wit
 keeps its last read (an unparseable config keeps every repo's) and says why in the tower's log, a repo's read once
 until its reason changes or a read succeeds. A log's tail whose
 watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections,
-the streams or the config's directory ends the tower ([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit)), since
+the streams or the config's directory, or its root removed, ends the tower
+([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit), [`exitUnwatched`](ref:hub/src/logged.ts#exitUnwatched)), since
 every board after it would look current and be stale. A repo's watch that fails, or a dir that doesn't exist, says
 why once in the log and leaves that repo to the safety rounds until its watch starts again.
 
