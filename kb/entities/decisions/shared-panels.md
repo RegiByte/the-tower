@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-28",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#changesHtml",
@@ -66,7 +66,9 @@ are the same view in every renderer; only where they sit, their state and a few 
   policy's presses are calls the board offered (`data-policy-call`). Text boxes are named by attribute, not id, so
   one panel can be drawn in two places.
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panel-kit.ts#drawPanel) replaces the element's
-  html only when it changed, sets each text box from the renderer's text, and gives focus and caret back
+  html only when it changed, keeps the element's scroll and that of each `data-keep-scroll` inside it (WebKit drops
+  the element's when the swap flips a `:has` rule it matches, as the Changes' file tree does), sets each text box from
+  the renderer's text, and gives focus and caret back
   ([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus), which a renderer also wraps around its own redraws).
   A time is an empty `data-since` span each renderer fills on its own clock, so the clock never forces a redraw that
   would drop a text selection.
