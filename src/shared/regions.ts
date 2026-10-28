@@ -37,23 +37,30 @@ export type Declared = { regions: Region[]; kit: KitMember[]; keeps: string[]; l
 /** Where the `tower` command draws contributions, served in `/schema` as `cli.regions`. */
 export const CLI_REGIONS: Region[] = [{ id: 'card.whoami', subject: 'card', holds: ['lines'], description: 'under the worker in `tower whoami`' }]
 
-/** Something that draws contributions, by name: a renderer, or the `tower` command. `regions` is absent when it declares none. */
-export type Drawer = { name: string; regions?: Region[] }
+/** Something that draws contributions, by name: a renderer, or the `tower` command. `regions` is absent when it declares none, `why` saying why when it is known. */
+export type Drawer = { name: string; regions?: Region[]; why?: string }
 
 /**
  * One of an extension's commands or contributions and where it lands: `what` names it, `hold` is what a region must
  * hold to draw it, `on` the subject kinds it is offered on (empty for a command with none, which a palette runs), and
- * `at` each drawer's regions that draw it, `undefined` for a drawer that declares none, and `palette` for a command
- * with no `on` where the drawer runs commands: a renderer whose regions hold commands lists them in its palette.
+ * `at` each drawer's regions that draw it, `undefined` for a drawer that declares none (with its `why`), and `palette`
+ * for a command with no `on` where the drawer runs commands: a renderer whose regions hold commands lists them in its
+ * palette.
  */
-export type Landing = { what: string; hold: Hold; on: string[]; at: { drawer: string; regions: string[] | undefined; palette?: true }[] }
+export type Landing = { what: string; hold: Hold; on: string[]; at: { drawer: string; regions: string[] | undefined; why?: string; palette?: true }[] }
 
 /** Whether a region for subjects of `region` draws one of `kind`: the same kind, or `item.*` against any collection's items. */
 const forKind = (region: string, kind: string) =>
   region === kind || (region === 'item.*' && kind.startsWith('item.')) || (kind === 'item.*' && region.startsWith('item.'))
 
-/** An ask is listed by the floor or the board its subject belongs to, so any region holding asks draws it, whatever the kind it was folded on. */
-const draws = (region: Region, hold: Hold, on: string[]) => region.holds.includes(hold) && (hold === 'asks' || on.some((kind) => forKind(region.subject, kind)))
+/**
+ * An ask is listed by the floor or the board its subject belongs to. One folded on the board may be about anything, so
+ * any region holding asks draws it; one folded on another kind is about that floor's things, so the board's don't.
+ */
+const drawsAsk = (region: Region, on: string[]) => on.includes('board') || region.subject !== 'board'
+
+const draws = (region: Region, hold: Hold, on: string[]) =>
+  region.holds.includes(hold) && (hold === 'asks' ? drawsAsk(region, on) : on.some((kind) => forKind(region.subject, kind)))
 
 const landed = (drawers: Drawer[], what: string, hold: Hold, on: string[]): Landing => ({
   what,
@@ -62,6 +69,7 @@ const landed = (drawers: Drawer[], what: string, hold: Hold, on: string[]): Land
   at: drawers.map((d) => ({
     drawer: d.name,
     regions: d.regions?.filter((r) => draws(r, hold, on)).map((r) => r.id),
+    ...(!d.regions && d.why && { why: d.why }),
     ...(hold === 'commands' && !on.length && d.regions?.some((r) => r.holds.includes('commands')) && { palette: true as const }),
   })),
 })
@@ -86,9 +94,9 @@ export const landing = (drawers: Drawer[], extension: Pick<Manifest, 'folds' | '
 
 /** Where one landing goes, in a line: `narrate/speak on shown: page shown.head; tower3d: no region holds commands`. */
 export const landingLine = (l: Landing): string => {
-  const at = l.at.map(({ drawer, regions, palette }) =>
+  const at = l.at.map(({ drawer, regions, why, palette }) =>
     regions === undefined
-      ? `${drawer}: declares no regions`
+      ? `${drawer}: ${why ?? 'declares no regions'}`
       : palette
         ? `${drawer} its palette`
         : regions.length

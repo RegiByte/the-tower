@@ -27,7 +27,7 @@ import { renderersOf } from './renderers.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
 import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
-import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
+import { callsignsOf, checkoutDirs, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -697,7 +697,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       const { id, problems, manifest } = await checkFolder(path.resolve(arg), config, views)
       for (const p of problems) console.log(`${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`)
       if (manifest) {
-        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions })), { name: 'cli', regions: CLI_REGIONS }]
+        const why = (r: Renderer) => (r.problem ? `its ${r.problem}` : r.available ? undefined : "isn't built: build it for its renderer.json to be read")
+        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions, why: why(r) })), { name: 'cli', regions: CLI_REGIONS }]
         for (const l of landing(drawers, { ...manifest, cap: capabilityOf(manifest) })) console.log(`lands  ${landingLine(l)}`)
       }
       if (!views) console.log(`note   not resolved against a running tower: none answers at ${towerAt()}`)
