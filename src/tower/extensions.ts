@@ -165,6 +165,7 @@ export const extensions = defineResource({
         chains: shown.chains,
         answers: shown.answers,
         composites: compositesByVerb,
+        launchers: shown.launchers,
       }),
       /** The running extensions that fold, as the fold pass reads them, each one's floor settings read once per build. */
       folders: (): Folder[] => {

@@ -137,9 +137,10 @@ export type Outcome = { at: number; error?: { code: 'failed' | 'mismatch'; messa
  * that started: the chain around each verb or hook they wrap, its capabilities outermost first, and each hook's
  * answerers in fold order.
  */
-export type Registry = { extensions: ExtensionView[]; stores: ExtensionStores[]; chains: Record<string, string[]>; answers: Record<string, string[]> }
+/** `launchers`: the capabilities whose launch contributors run, in resolved order. */
+export type Registry = { extensions: ExtensionView[]; stores: ExtensionStores[]; chains: Record<string, string[]>; answers: Record<string, string[]>; launchers: string[] }
 
-export const NO_EXTENSIONS: Registry = { extensions: [], stores: [], chains: {}, answers: {} }
+export const NO_EXTENSIONS: Registry = { extensions: [], stores: [], chains: {}, answers: {}, launchers: [] }
 
 const error = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'error', code, message, ...(at && { path: at }) })
 const warn = (code: LoadProblem['code'], message: string, at?: string): LoadProblem => ({ lane: 'load', level: 'warn', code, message, ...(at && { path: at }) })
@@ -970,7 +971,11 @@ export const registry = (
     now,
   )
   const views = started.map((view) => (wrapping.problems.has(view.id) ? { ...view, problems: [...wrapping.problems.get(view.id)!, ...view.problems].slice(0, PROBLEMS_SHOWN) } : view))
-  return { extensions: [...views, ...held].sort(shownOrder), stores, chains: wrapping.chains, answers: wrapping.answers }
+  const launchers = resolved.order.flatMap((id) => {
+    const { provides, manifest } = resolved.accepted.get(id)!
+    return states.get(id) === 'started' && manifest.spawn?.launch === true ? [provides] : []
+  })
+  return { extensions: [...views, ...held].sort(shownOrder), stores, chains: wrapping.chains, answers: wrapping.answers, launchers }
 }
 
 

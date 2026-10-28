@@ -12,7 +12,7 @@ import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.99'
+export const API_VERSION = '1.100'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -502,30 +502,51 @@ export const COMPOSITES: Record<string, string[]> = {
   'tower/tidy': ['tower/worktree/remove', 'tower/branch/delete', 'tower/reap/process', 'tower/kill'],
 }
 
-/** A point inside a core verb where extensions take part: what it is raised with, what each answer is, and what a failed answer does. */
-export type CoreHook = { payload: z.ZodType; answer: z.ZodType; failure: 'refuses' | 'reported'; description: string; since: string }
+/**
+ * How a stage's answers make the verb's outcome (`FLOWS`, `src/shared/flows.ts`). `gate`: `{}` passes, a refusal
+ * refuses the verb; `merge`: parts merged, a conflict refuses; `place`: one claim, or the core's own placement;
+ * `report`: anything, named in the reply.
+ */
+export type Combine = 'gate' | 'merge' | 'place' | 'report'
 
-/** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
-export const HOOKS: Record<string, CoreHook> = {
+/**
+ * A point inside a core verb where extensions take part: what it is raised with, what each answer is, and how answers
+ * combine. `required`: a failed answer, or none on the floor, refuses the verb; otherwise a failure is reported. `absent`:
+ * what it means on a floor nobody answers on. `field`: the reply field its answers and failures are named in.
+ */
+export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: string; field?: string; description: string; since: string }
+
+const hooks = {
   'tidy.apply': {
     payload: z.object({ project: id, keys: z.array(z.string()) }),
     answer: tidyApplied,
-    failure: 'reported',
+    combine: 'report',
+    field: 'x',
     description: "Raised by tidy after the core's own parts, once per capability in its plan's `x`, to that capability's answerer alone, with its keys: a failed answer is reported in the reply's `x.<cap>`.",
     since: '1.85',
   },
   'discard.record': {
     payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(recordedTip) }),
     answer: discardRecorded,
-    failure: 'refuses',
+    combine: 'gate',
+    required: true,
+    absent: 'Discard is refused: nothing records what it would throw away.',
+    field: 'x',
     description: "Raised by worktree/discard once each repo's tip is read, before anything is removed, for the floor's recovery record: an answer that fails refuses the discard, as does no answer at all.",
     since: '1.85',
   },
   'discard.done': {
     payload: z.object({ project: id, name: worktreeName, author: z.string(), tips: z.array(recordedTip), kept: z.array(z.string()).describe('Each branch kept instead of deleted, with why.') }),
     answer: discardRecorded,
-    failure: 'reported',
+    combine: 'report',
+    absent: 'Nothing is filed once a worktree is discarded.',
+    field: 'done',
     description: "Raised by worktree/discard once its worktrees are removed and its branches deleted: a failed answer is reported in the reply's `done.<cap>`.",
     since: '1.94',
   },
-}
+} satisfies Record<string, CoreHook>
+
+export type HookName = keyof typeof hooks
+
+/** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
+export const HOOKS: Record<HookName, CoreHook> = hooks

@@ -7,7 +7,7 @@
  */
 import { z } from 'zod'
 import { offOn } from '../bridge/stores.ts'
-import { apiError, HOOKS, isApiError, type ApiError } from '../shared/api.ts'
+import { apiError, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
 import { qualifiedOf, tooDeep, type Answered, type Caller } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
 import type { ExtensionsResource } from './extensions.ts'
@@ -129,7 +129,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
   /** A hook's schemas by its qualified name: the core's, or a running extension's. */
   const hookOf = (hook: string): HookSchemas | undefined => {
     const q = qualifiedOf(hook)!
-    if (q.cap === 'tower') return Object.hasOwn(HOOKS, q.name) ? HOOKS[q.name] : undefined
+    if (q.cap === 'tower') return Object.hasOwn(HOOKS, q.name) ? HOOKS[q.name as HookName] : undefined
     const live = holder.live(q.cap)
     return live.t === 'up' ? live.a.hooks.get(q.name) : undefined
   }

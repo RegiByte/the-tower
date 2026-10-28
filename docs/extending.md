@@ -242,7 +242,8 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 
 `GET /schema` serves every verb's input and reply, and the error, as JSON Schema, and every GET route as a read
 (`reads`, keyed by name: its `path` with named params like `/screen/{id}`, its `kind`, `json`, `stream`, `page` or
-`schema`, and its `query` as JSON Schema when it takes one): a renderer or a script in any
+`schema`, and its `query` as JSON Schema when it takes one), and every core verb's stages as `flows`
+([Flows](#extensions)): a renderer or a script in any
 language learns the contract from the tower. `tower api` lists the verbs and the json reads, one line
 each, and `tower api <name>` prints one's schema (a read's reply is typed in the module its route's line names). Every route is listed in the header of `src/tower/server.ts`.
 
@@ -591,7 +592,7 @@ extension: a link may be a guard, so it is never passed over. Links in a cycle o
 each with a `cycle` problem. A link off on the input's floor is passed over. The core's verbs that do what other verbs
 do (Tidy, `worktree/discard`) call those verbs through the same dispatch, for the same caller, so a link
 on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuses, a discard stops where it is refused.
-`GET /extensions` lists each `chains` (outermost first), `answers` and `composites`.
+`GET /extensions` lists each `chains` (outermost first), `answers`, `composites` and `launchers` (API 1.100).
 
 `hooks` are points an extension raises inside its own verbs, each a `payload` and an `answer` schema and a `failure`
 (`refuses` or `reported`): `ctx.raise('<name>', payload)` answers each answerer's answer in fold order, each on its
@@ -613,7 +614,17 @@ says what applying it does in a row's words, `kind` (`{one, many}`) what it is i
 API 1.94); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
 (API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
-hook's schemas are listed at `/schema`, under `hooks`.
+hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
+`merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
+nobody answers on (`absent`) and the reply field its answers are named in (`field`).
+
+**Flows** (API 1.100). Where can an extension take part in a core verb? `tower flows` lists every core verb with the
+stages open to extensions, and `tower flows <verb> [--floor <project>]` prints each of its stages in order, with who
+takes part there now: `open`, answered by extensions (a hook in `answers`, or for `launch` a launch contributor),
+`wrapped`, where the links of `around` run, at both edges of every verb, or `sealed`, the core's alone, each with
+why. `/schema` serves them as `flows` (`Flow` in `src/shared/flows.ts`), and `GET /extensions`' `chains`, `answers`
+and `launchers` say who takes part. A stage marked `planned` is listed where it will be raised: nothing raises it yet,
+so no extension can answer it.
 
 **Slots, triggers and checks** (API 1.86). `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
 at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,

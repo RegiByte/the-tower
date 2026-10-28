@@ -30,7 +30,8 @@
  *   await tower.get('patterns')                     what users found doing with the tower, one story each (`/capabilities.js` has
  *                                                   the capabilities, and the tips a renderer shows of both)
  *   await tower.get('extensions')                   every extension the tower found, as board.extensions shows it, and its
- *                                                   resources as braided orders them: { extensions, topology }, `topology.mermaid` the graph
+ *                                                   resources as braided orders them: { extensions, topology, chains, answers, composites, launchers },
+ *                                                   `topology.mermaid` the graph
  *   await tower.text('collection/<p>/<c>/<item>')   any read of the API as text, whatever its type
  *   await tower.blob('shown/<id>/<path>')           any read of the API as a Blob of its type, such as an image to draw
  *   await tower.call('spawn', { project, cwd })     any command of the API: spawn, resume, submit, resize, kill, reap, open, shell/*, collection/*

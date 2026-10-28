@@ -64,7 +64,8 @@ export type Reads = {
    * extension's as `x:<cap>`: the order, the layers by depth, who depends on whom. `chains`: the capabilities whose
    * links wrap each verb or hook, outermost first; `answers`: each hook's answerers, in the order they answer;
    * `composites`: each core verb the core's composites call through the dispatch, with those composites.
-   * `chains`, `answers` and `composites` @since 1.85
+   * `launchers`: the capabilities whose launch contributors run, in the order they contribute, each on the floors it is on.
+   * `chains`, `answers` and `composites` @since 1.85; `launchers` @since 1.100
    */
   extensions: {
     extensions: (ExtensionView & { exempted: Exempted[] })[]
@@ -72,6 +73,7 @@ export type Reads = {
     chains: Record<string, string[]>
     answers: Record<string, string[]>
     composites: Record<string, string[]>
+    launchers: string[]
   }
 }
 
