@@ -16,6 +16,7 @@ import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
+import type { CollectionItem } from '../shared/model.ts'
 import { KIND_SCHEMAS, type FactKind } from '../shared/rate-limits.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
@@ -81,6 +82,33 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       console.error(`${a.id}: ${key} threw in its collection's parse, and is held unparsed until it changes:`, err)
       return undefined
     }
+  }
+
+  /** A collection's items on a floor, parsed and frozen, listed once per `live.items()`: every fold of a build reads the same list. */
+  let listed = new WeakMap<CollectionItem[], Map<string, ParsedItem[]>>()
+  const parsedItems = (project: string, name: string): ParsedItem[] => {
+    const items = live.items()
+    if (!listed.has(items)) listed.set(items, new Map())
+    const lists = listed.get(items)!
+    const at = `${project}/${name}`
+    if (lists.has(at)) return lists.get(at)!
+    const parseOne = parse?.[name]
+    const list = items
+      .filter((i) => i.project === project && i.collection === name)
+      .flatMap(({ id, size, modifiedAt }) => {
+        const item = { id, tag: tagOf(id), size, modifiedAt }
+        if (!parseOne) return [{ ...item, parsed: undefined }]
+        const key = `${at}/${id}`
+        const held = parsedBy.get(key)
+        if (held?.modifiedAt === modifiedAt) return [{ ...item, parsed: held.parsed }]
+        const text = readItem(paths, project, name, id)
+        if (text === undefined) return []
+        const parsed = parsedOf(parseOne, text, item, key)
+        parsedBy.set(key, { modifiedAt, parsed })
+        return [{ ...item, parsed }]
+      })
+    lists.set(at, Object.freeze(list.map((i) => Object.freeze(i))) as ParsedItem[])
+    return lists.get(at)!
   }
 
   const ctx: StoresCtx = {
@@ -164,22 +192,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       },
       collections: (project, name): ParsedItem[] => {
         collectionOf(project, name)
-        const parseOne = parse?.[name]
-        return live
-          .items()
-          .filter((i) => i.project === project && i.collection === name)
-          .flatMap(({ id, size, modifiedAt }) => {
-            const item = { id, tag: tagOf(id), size, modifiedAt }
-            if (!parseOne) return [{ ...item, parsed: undefined }]
-            const key = `${project}/${name}/${id}`
-            const held = parsedBy.get(key)
-            if (held?.modifiedAt === modifiedAt) return [{ ...item, parsed: held.parsed }]
-            const text = readItem(paths, project, name, id)
-            if (text === undefined) return []
-            const parsed = parsedOf(parseOne, text, item, key)
-            parsedBy.set(key, { modifiedAt, parsed })
-            return [{ ...item, parsed }]
-          })
+        return parsedItems(project, name)
       },
       facts: (session) => {
         const found = live.session(session)
@@ -195,6 +208,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`. */
     attach: (started: Started) => {
       parse = started.parse
+      listed = new WeakMap()
       for (const [name, reduce] of Object.entries(started.reduce ?? {}))
         folds.set(name, live.foldStream({ stream: streamFolder(`${provides}.${name}`), scope: manifest.streams![name].scope, init: reduce.init, step: (state, fact) => reduce.step(state, fact), label: a.id }))
     },
@@ -210,7 +224,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
               .filter(([name]) => project !== undefined || manifest.streams![name].scope === 'system')
               .map(([name, fold]) => [name, fold.state(manifest.streams![name].scope === 'project' ? project : undefined)]),
           ),
-        collections: () => (project === undefined ? {} : Object.fromEntries(Object.keys(manifest.collections ?? {}).map((name) => [name, ctx.own.collections(project, name)]))),
+        collections: () => (project === undefined ? {} : Object.fromEntries(Object.keys(manifest.collections ?? {}).map((name) => [name, parsedItems(project, name)]))),
         ...(lineage && { facts: () => sessionFacts(provides, lineage.flatMap((id) => live.session(id) ?? [])) }),
       }),
     /** Each stream fold stopped before a fact its step threw on, and why. */

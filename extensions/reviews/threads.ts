@@ -56,12 +56,26 @@ export const checkoutsOf = (floor: Floor): CheckoutsRead => ({ worktrees: floor.
  * worktree's name can be cut again for new work once its thread is filed. `files`: the project's thread files by item id.
  */
 export const filedThreadOf = (files: { id: string }[], checkout: string, startedAt: string): FiledThread | undefined =>
-  files
-    .flatMap(({ id }) => {
-      const filed = landedOfId(id)
-      return filed && filed.checkout === checkout && filed.landed >= startedAt ? [{ id, tag: tagOf(id), at: filed.landed }] : []
-    })
-    .sort((a, b) => a.at.localeCompare(b.at))[0]
+  filedByCheckout(files)
+    .get(checkout)
+    ?.find((t) => t.at >= startedAt)
+
+/** Each checkout's filed threads, the first filed first, indexed once per files array. */
+const filedIndex = new WeakMap<{ id: string }[], Map<string, FiledThread[]>>()
+const filedByCheckout = (files: { id: string }[]): Map<string, FiledThread[]> => {
+  const held = filedIndex.get(files)
+  if (held) return held
+  const index = new Map<string, FiledThread[]>()
+  for (const { id } of files) {
+    const filed = landedOfId(id)
+    if (!filed) continue
+    if (!index.has(filed.checkout)) index.set(filed.checkout, [])
+    index.get(filed.checkout)!.push({ id, tag: tagOf(id), at: filed.landed })
+  }
+  for (const threads of index.values()) threads.sort((a, b) => a.at.localeCompare(b.at))
+  filedIndex.set(files, index)
+  return index
+}
 
 /** Where a checkout's work stands for work begun at `since`: landed, with its thread, once Tidy filed one after it began. */
 const stateSince = (checkout: string, read: CheckoutsRead, files: { id: string }[], since: string): CheckoutState => {

@@ -62,9 +62,13 @@ type SaidQuery = { checkout: string; reader: string; sender?: string; hirer?: st
 
 const floorOf = (board: Board, project: string): Floor | undefined => board.floors.find((f) => f.id === project)
 
-/** A floor's thread files in id order, as the collection lists them. */
-const filesOf = (items: { id: string; parsed: unknown }[]): ThreadFile[] =>
-  items.map(({ id, parsed }) => ({ id, thread: parsed as ReviewThread })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+const filesBy = new WeakMap<{ id: string; parsed: unknown }[], ThreadFile[]>()
+
+/** A floor's thread files in id order, as the collection lists them, made once per list: a build's folds share one. */
+const filesOf = (items: { id: string; parsed: unknown }[]): ThreadFile[] => {
+  if (!filesBy.has(items)) filesBy.set(items, items.map(({ id, parsed }) => ({ id, thread: parsed as ReviewThread })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)))
+  return filesBy.get(items)!
+}
 
 const start: Start = (ctx) => {
   /** The appends in flight, by thread: each is read, numbered and written after the one before it. */
