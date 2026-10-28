@@ -27,6 +27,16 @@ import { slotWords } from '../src/shared/slots.ts'
 import { callsignsOf } from '../src/shared/model.ts'
 import { tagOf } from '../src/shared/tags.ts'
 
+/**
+ * A zone of whole hours where now is about noon. The board keeps a finished card only while it started that local day
+ * (`onBoard`), and sessions are seeded minutes before now: in this zone, they always started today.
+ */
+const noonZone = (now: number) => {
+  const behind = new Date(now).getUTCHours() - 12
+  return behind === 0 ? 'Etc/GMT' : `Etc/GMT${behind > 0 ? '+' : '-'}${Math.abs(behind)}`
+}
+process.env.TZ = noonZone(Date.now())
+
 const REPO = path.join(import.meta.dirname, '..')
 const ROOT = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'tower-api-')))
 const HUB = path.join(ROOT, 'lab')
@@ -248,7 +258,7 @@ const freePort = (): Promise<number> =>
     })
   })
 
-const ENV = { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json') }
+const ENV = { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json'), TZ: process.env.TZ }
 
 /** The host, once its control socket answers: it owns the spawns' PTYs and writes their logs. */
 const bootHost = (): Promise<ChildProcess> =>
