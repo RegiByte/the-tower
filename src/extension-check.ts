@@ -58,9 +58,9 @@ const startProblems = async (dir: string, settings: unknown): Promise<LoadProble
 /**
  * Every problem the tower would find in the folder: its manifest and settings (the config's, when it names the
  * extension), its contract and, replacing a bundled capability, the bundled one's; against the running tower's
- * registry when `views` are given; then its start. A manifest that doesn't load isn't started.
+ * registry when `views` are given; then its start. A manifest that doesn't load isn't started; one that does is answered with them.
  */
-export const checkFolder = async (dir: string, config: Config, views: ExtensionView[] | undefined): Promise<{ id: string; problems: LoadProblem[] }> => {
+export const checkFolder = async (dir: string, config: Config, views: ExtensionView[] | undefined): Promise<{ id: string; problems: LoadProblem[]; manifest?: Manifest }> => {
   const raw = JSON.parse(readFileSync(path.join(dir, MANIFEST_FILE), 'utf8')) as { id?: unknown }
   const id = typeof raw.id === 'string' ? raw.id : path.basename(dir)
   const bundled = (BUNDLED as readonly string[]).includes(id) && path.resolve(dir) === path.join(BUNDLED_DIR, id)
@@ -70,7 +70,7 @@ export const checkFolder = async (dir: string, config: Config, views: ExtensionV
   const cap = capabilityOf(read.manifest)
   const replaced = (BUNDLED as readonly string[]).includes(cap) ? replacementProblem(read.manifest, found, foundIn(cap, true, path.join(BUNDLED_DIR, cap))) : undefined
   const problems = [...read.problems, ...(replaced ? [replaced] : []), ...(views ? runningProblems(read.manifest, id, views) : [])]
-  return { id, problems: [...problems, ...(await startProblems(dir, read.settings))] }
+  return { id, problems: [...problems, ...(await startProblems(dir, read.settings))], manifest: read.manifest }
 }
 
 /**

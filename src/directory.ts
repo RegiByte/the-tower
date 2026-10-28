@@ -22,10 +22,11 @@ import { callerHeaders, type Replies } from './shared/api.ts'
 import type { Flow, OpenStage, Stage } from './shared/flows.ts'
 import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields, type PolicyFields, type ValidPolicy } from './shared/policies-legacy.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
-import type { ExtensionView } from './shared/extensions.ts'
+import { capabilityOf, type ExtensionView } from './shared/extensions.ts'
+import { renderersOf } from './renderers.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
-import { ago, exemptionWords, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type ShelfEntry } from './shared/model.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -692,8 +693,13 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
         async (res): Promise<Reads['extensions']['extensions']> => ((await res.json()) as Reads['extensions']).extensions,
         () => undefined,
       )
-      const { id, problems } = await checkFolder(path.resolve(arg), readConfig(configPath()), views)
+      const config = readConfig(configPath())
+      const { id, problems, manifest } = await checkFolder(path.resolve(arg), config, views)
       for (const p of problems) console.log(`${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`)
+      if (manifest) {
+        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions })), { name: 'cli', regions: CLI_REGIONS }]
+        for (const l of landing(drawers, { ...manifest, cap: capabilityOf(manifest) })) console.log(`lands  ${landingLine(l)}`)
+      }
       if (!views) console.log(`note   not resolved against a running tower: none answers at ${towerAt()}`)
       const errors = problems.filter((p) => p.level === 'error').length
       if (errors) throw new CliError(`${id} would not load: ${plural(errors, 'error')}`)
