@@ -1,0 +1,18 @@
+{
+  "regions": [
+    { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
+    { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor" },
+    { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "commands", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette" },
+    { "id": "floor.trays", "subject": "floor", "holds": ["views"], "scale": "row", "description": "the floor's trays of kept items in the sidebar" },
+    { "id": "card.row", "subject": "card", "holds": ["badges", "lines"], "description": "the worker's row in the sidebar" },
+    { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette" },
+    { "id": "card.panes", "subject": "card", "holds": ["views"], "scale": "pane", "arity": "tabs", "description": "the worker's tabs (terminal, brief, changes, reviews, shown files)" },
+    { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief" },
+    { "id": "shown.head", "subject": "shown", "holds": ["badges", "verbs", "commands"], "description": "beside the worker's tabs while the showing is open" },
+    { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette" },
+    { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays" }
+  ],
+  "kit": [],
+  "keeps": [],
+  "layout": { "floor.section": { "hidden": ["policies/policies"] } }
+}

@@ -6,12 +6,14 @@
  *                       tower's origin; an HTML page saying why when it isn't declared or built or the config can't be read
  *   GET  /x/<cap>/<file>   a file of the client folder of the extension providing <cap> (the bundled one's while none runs),
  *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's
- *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings and whether it is built (src/renderers.ts)
+ *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings, whether it is built, and what its
+ *                       renderer.json declares: regions, kit, keeps and layout (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
  *   GET  /schema        every verb's input and reply and every hook's payload and answer, the core's and each running extension's,
  *                       every read, the error and an extension's manifest, as JSON Schema (src/shared/api.ts, src/shared/extensions.ts),
- *                       and every core verb's flow, its stages open, wrapped or sealed (src/shared/flows.ts)
+ *                       and every core verb's flow, its stages open, wrapped or sealed (src/shared/flows.ts), and where the `tower` command
+ *                       draws contributions (`cli.regions`, src/shared/regions.ts)
  *   GET  /extensions    {extensions, topology, chains, answers, composites, launchers}: every extension the tower found, as the board shows them, the tower's
  *                       resources as braided orders them, with their graph as Mermaid text, the chain around each verb or hook, each hook's
  *                       answerers, what the core's composites call and the launch contributors (src/tower/extensions.ts)
@@ -94,6 +96,7 @@ import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
+import { CLI_REGIONS } from '../shared/regions.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
@@ -858,6 +861,7 @@ export const httpServer = defineResource({
         streams,
         error,
         extension: MANIFEST_SCHEMA,
+        cli: { regions: CLI_REGIONS },
       })
     }
 

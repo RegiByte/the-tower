@@ -98,6 +98,12 @@ const parse = (text: unknown): Chord | string => {
   return { mods, char: key }
 }
 
+/** What is wrong with `text` as a chord, `undefined` when it is one. */
+export const chordProblem = (text: unknown): string | undefined => {
+  const parsed = parse(text)
+  return typeof parsed === 'string' ? parsed : undefined
+}
+
 /** A chord's text in its one form: modifiers in ⌃⌥⇧⌘ order, a letter or digit by itself. */
 const textOf = (c: Chord): string =>
   [...MODIFIERS.filter((m) => c.mods.has(m)), c.char ?? c.code!.replace(/^(Key|Digit)/, '')].join('+')

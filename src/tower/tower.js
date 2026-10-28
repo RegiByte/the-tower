@@ -25,7 +25,8 @@
  *                                                   `git range-diff` between them
  *   await tower.renderer()                          this page's renderer, when it is served as one at `/r/<name>/`, on its own or framed
  *                                                   on a shelf: { name, root, entry, available, settings }, `settings` what the
- *                                                   config keeps for it; null for any other page
+ *                                                   config keeps for it, and what its renderer.json declares (regions, kit,
+ *                                                   keeps, layout); null for any other page
  *   await tower.get('origins')                      any read of the API: JSON as data, a shelf file as text
  *   await tower.get('patterns')                     what users found doing with the tower, one story each (`/capabilities.js` has
  *                                                   the capabilities, and the tips a renderer shows of both)
