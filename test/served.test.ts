@@ -115,11 +115,18 @@ test('the served modules keep every export renderers may import, until the API m
 /** The subject kinds the renderers table has a row for, in its order. */
 const TABLE_KINDS = ['card', 'conversation', 'floor', 'shown', 'item.*', 'collection', 'shelf', 'board']
 
+/** A shipped renderer's regions, from its source's `renderer.json`. */
+function regionsAt(dir: string): Region[] {
+  const declared = declaredAt(path.join(REPO, dir), 'index.html')
+  assert.ok(declared && 'regions' in declared, `${dir}/renderer.json declares nothing: ${declared && 'problem' in declared ? declared.problem : 'no file'}`)
+  return declared.regions
+}
+
 /** Who the renderers table names, by column: the built-in renderers' declarations from their sources, and the `tower` command's. */
 const TABLE_DRAWERS: [string, Region[]][] = [
-  ['The tower page (`page`)', declaredAt(path.join(REPO, 'renderers/page'), 'index.html')!.regions],
-  ['Tower 3D (`tower3d`)', declaredAt(path.join(REPO, 'renderers/tower3d'), 'index.html')!.regions],
-  ['The Week (`week`)', declaredAt(path.join(REPO, 'renderers/week'), 'index.html')!.regions],
+  ['The tower page (`page`)', regionsAt('renderers/page')],
+  ['Tower 3D (`tower3d`)', regionsAt('renderers/tower3d')],
+  ['The Week (`week`)', regionsAt('renderers/week')],
   ['The `tower` command (`cli`)', CLI_REGIONS],
 ]
 

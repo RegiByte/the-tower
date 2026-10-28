@@ -276,6 +276,7 @@ export const configProblems = (read: Config): ConfigProblem[] => {
     ...checked('port', () => towerPort(config)),
     ...checked('renderers', () => renderersOf(config)),
     ...unknownKeysEach('renderers', config.renderers, RENDERER_KEYS),
+    ...(renderers ?? []).flatMap((r): ConfigProblem[] => (r.problem ? [{ level: 'warn', key: `renderers.${r.name}`, problem: `${r.root}/${r.problem}: it declares no regions` }] : [])),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),
     ...unknownKeysAt('editor', config.editor, EDITOR_KEYS),
     ...(config.editor === undefined ? [] : (Object.keys(EDITOR_VALUES) as EditorAction[]).flatMap((action) => checked(`editor.${action}`, () => editorArgv(config, action, EDITOR_VALUES[action])))),

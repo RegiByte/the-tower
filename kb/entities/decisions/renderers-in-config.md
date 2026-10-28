@@ -44,10 +44,11 @@ update of the core never touches it.
   default `layout`, all served in `GET /renderers` beside its fields; a renderer with no file declares nothing. The
   file declares for its `entry` (`index.html` unless set), so a second renderer on one root (Tower 3D's Lab) declares
   nothing from it. Tower 3D's build copies its file into `out/`. The `tower` command's regions are `cli.regions` in
-  `/schema` ([`CLI_REGIONS`](ref:hub/src/shared/regions.ts#CLI_REGIONS)). [`landing`](ref:hub/src/shared/regions.ts#landing)
+  `/schema` ([`CLI_REGIONS`](ref:hub/src/shared/regions.ts#CLI_REGIONS)). An ask lands in the board's regions only
+  when folded on the board, since one folded on another kind is about a floor's things. [`landing`](ref:hub/src/shared/regions.ts#landing)
   (`/cards.js`) answers which regions of each draw an extension's commands and fold contributions; `tower extensions
   check` prints it, and `docs/extending.md`'s table is generated from the shipped declarations by `npm run
-  served:update`, its staleness failing `npm test`. A file that doesn't parse is a config error naming it. Kit, keeps
+  served:update`, its staleness failing `npm test`. A file that doesn't parse declares nothing and carries its `problem`, which `tower config check` warns of; the renderer, and every other, serves all the same. Kit, keeps
   and layout are served and not yet read.
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with
   `await tower.renderer()` ([`tower.js`](ref:hub/src/tower/tower.js)), which takes its name from its `/r/<name>/` path,

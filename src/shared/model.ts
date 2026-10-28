@@ -328,9 +328,10 @@ export type RendererConfig = { root?: string; entry?: string; settings?: Record<
 
 /**
  * A renderer as the tower serves it: `available` while its entry exists, which for a built renderer means it was built;
- * what its `renderer.json` declares (`Declared`, since 1.100) when it has one for its entry.
+ * what its `renderer.json` declares (`Declared`, since 1.100) when it has one for its entry, or `problem`, why that
+ * file declares nothing.
  */
-export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown> } & Partial<Declared>
+export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown>; problem?: string } & Partial<Declared>
 
 /** A project's collections: every project's, then its own. A collection declared in both is a config error. */
 export const projectCollections = (config: Config, projectId: string): Record<string, CollectionType> => {

@@ -82,7 +82,9 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
-`kit`, `keeps` and `layout` are declared and served, and not yet read by the tower.
+A file that doesn't parse declares nothing, and the renderer serves all the same: `GET /renderers` says why as its
+`problem`, and `tower config check` warns. `kit`, `keeps` and `layout` are declared and served, and not yet read by
+the tower.
 
 ### A new one
 

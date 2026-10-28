@@ -71,19 +71,19 @@ const DeclaredFile = z.strictObject({
 /**
  * What `root`'s `renderer.json` declares for the renderer whose page is `entry`: nothing when there is no file, or when
  * the file declares another entry, as for a second renderer served from one root (Tower 3D's Lab beside it). A file
- * that doesn't parse is a config error naming it.
+ * that doesn't parse declares nothing and says why, as `problem`: the renderer serves all the same, and so do the rest.
  */
-export const declaredAt = (root: string, entry: string): Declared | undefined => {
+export const declaredAt = (root: string, entry: string): Declared | { problem: string } | undefined => {
   const file = path.join(root, DECLARED_FILE)
   if (!existsSync(file)) return undefined
   let raw: unknown
   try {
     raw = JSON.parse(readFileSync(file, 'utf8'))
   } catch (e) {
-    throw new ConfigError(`${file} is no JSON: ${(e as Error).message}`)
+    return { problem: `${DECLARED_FILE} is no JSON: ${(e as Error).message}` }
   }
   const parsed = DeclaredFile.safeParse(raw)
-  if (!parsed.success) throw new ConfigError(`${file} doesn't parse: ${parsed.error.issues.map((i) => `${i.path.join('.') || '(top)'}: ${i.message}`).join('; ')}`)
+  if (!parsed.success) return { problem: `${DECLARED_FILE} doesn't parse: ${parsed.error.issues.map((i) => `${i.path.join('.') || '(top)'}: ${i.message}`).join('; ')}` }
   const { entry: declaredFor, ...declared } = parsed.data
   return declaredFor === entry ? declared : undefined
 }
