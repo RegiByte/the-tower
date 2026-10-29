@@ -6,7 +6,7 @@ import type { RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import type { Resource } from '../src/bridge/resources.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
-import { eachEntry, fresh, GOING_MS, goingHome, leftBoard, listedBefore, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
+import { byKind, fresh, GOING_MS, goingHome, leftBoard, listedBefore, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
 import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
 
@@ -150,15 +150,15 @@ test('a worktree the last board did not list is never asked for, though its work
   assert.deepEqual(listedBefore(recut, asked).worktrees, [TREE])
 })
 
-test('a plan is asked for an entry a call, so a stale one is refused alone', () => {
-  const plan = { worktrees: [TREE], branches: [BRANCH], prune: [{ t: 'reap' as const, id: 's', pid: 1 }, { t: 'reap' as const, id: 's', pid: 2 }], x: { reviews: [TREE] } }
+test('a plan is asked for a call per kind, each extension a kind, so a stale entry takes down only its kind', () => {
+  const plan = { worktrees: [TREE, 'b'], branches: [BRANCH], prune: [{ t: 'reap' as const, id: 's', pid: 1 }, { t: 'reap' as const, id: 's', pid: 2 }], x: { reviews: [TREE, 'b'], other: ['k'] } }
   const none = { worktrees: [], branches: [], prune: [], x: {} }
-  assert.deepEqual(eachEntry(plan), [
-    { ...none, worktrees: [TREE] },
+  assert.deepEqual(byKind(plan), [
+    { ...none, worktrees: [TREE, 'b'] },
     { ...none, branches: [BRANCH] },
-    { ...none, prune: [{ t: 'reap', id: 's', pid: 1 }] },
-    { ...none, prune: [{ t: 'reap', id: 's', pid: 2 }] },
-    { ...none, x: { reviews: [TREE] } },
+    { ...none, prune: [{ t: 'reap', id: 's', pid: 1 }, { t: 'reap', id: 's', pid: 2 }] },
+    { ...none, x: { reviews: [TREE, 'b'] } },
+    { ...none, x: { other: ['k'] } },
   ])
-  assert.deepEqual(eachEntry(none), [])
+  assert.deepEqual(byKind(none), [])
 })

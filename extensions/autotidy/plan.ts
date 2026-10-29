@@ -109,15 +109,16 @@ export const fresh = (prev: Plan, next: Plan): Plan => {
 export const listedBefore = (prev: Floor, p: Plan): Plan => ({ ...p, worktrees: p.worktrees.filter((name) => prev.worktrees.some((w) => w.name === name)) })
 
 /**
- * A plan cut into one plan per entry: Tidy refuses a whole call when any of it no longer qualifies (a process that
- * exited between the board and the call), and each entry is asked for once, so one stale entry mustn't take the rest
- * down with it.
+ * A plan cut into one plan per kind, each extension's entries a kind: Tidy refuses a whole call when any of it no longer
+ * qualifies (a process that exited between the board and the call), and each entry is asked for once, so a stale entry
+ * takes down only the entries of its kind, left for Tidy's press. A floor's board asks at most one call per kind, however
+ * many workers go home at once, which keeps a crew within the board trigger's calls a minute.
  */
-export const eachEntry = (p: Plan): Plan[] => [
-  ...p.worktrees.map((name) => ({ ...NOTHING, worktrees: [name] })),
-  ...p.branches.map((name) => ({ ...NOTHING, branches: [name] })),
-  ...p.prune.map((entry) => ({ ...NOTHING, prune: [entry] })),
-  ...Object.entries(p.x).flatMap(([cap, keys]) => keys.map((key) => ({ ...NOTHING, x: { [cap]: [key] } }))),
+export const byKind = (p: Plan): Plan[] => [
+  ...(p.worktrees.length ? [{ ...NOTHING, worktrees: p.worktrees }] : []),
+  ...(p.branches.length ? [{ ...NOTHING, branches: p.branches }] : []),
+  ...(p.prune.length ? [{ ...NOTHING, prune: p.prune }] : []),
+  ...Object.entries(p.x).map(([cap, keys]) => ({ ...NOTHING, x: { [cap]: keys } })),
 ]
 
 /** Tidy's input for a plan: the core's parts, the extensions' entries as `x`. */

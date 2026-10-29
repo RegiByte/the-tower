@@ -17,7 +17,7 @@
     "hub/src/bridge/checkouts.ts#checkoutLanded",
     "hub/extensions/autotidy/plan.ts#fresh",
     "hub/extensions/autotidy/plan.ts#listedBefore",
-    "hub/extensions/autotidy/plan.ts#eachEntry",
+    "hub/extensions/autotidy/plan.ts#byKind",
     "hub/extensions/autotidy/plan.ts#partOf",
     "hub/extensions/autotidy/plan.ts#GOING_MS",
     "hub/src/shared/extensions.ts#TidyEntry",
@@ -73,10 +73,12 @@ theirs; the core reads nothing in it.
   flight is not asked for again as its own removals change the board. A worktree the last board did not list is never
   asked for ([`listedBefore`](ref:hub/extensions/autotidy/plan.ts#listedBefore)): the going worker's own was listed
   while it worked there, so one that comes onto the board within the two minutes was just made, a recut of the one
-  autotidy removed, by a user about to resume its worker. Each entry is its own call
-  ([`eachEntry`](ref:hub/extensions/autotidy/plan.ts#eachEntry)): Tidy refuses a whole call when any of it no longer
-  qualifies, so a process exiting on its own between the board and the call is refused alone, not with the worktree
-  and the thread beside it. Tidy runs one floor's calls one at a time; a trigger past 30 calls a minute is paused. Nothing is retried, and nothing is tidied after
+  autotidy removed, by a user about to resume its worker. Each kind is its own call,
+  each extension's entries a kind ([`byKind`](ref:hub/extensions/autotidy/plan.ts#byKind)): Tidy refuses a whole call
+  when any of it no longer qualifies, so a process exiting on its own between the board and the call takes down the
+  reaps, not the worktree and the thread beside them, and a floor's board asks at most one call per kind however many
+  workers go home at once, within the 30 calls a minute past which a board trigger is paused. Tidy runs one floor's
+  calls one at a time. Nothing is retried, and nothing is tidied after
   the going: what wasn't safe to remove as the worker went (a branch not yet merged, a process a worker on duty in its
   checkout may use) is the user's to Tidy by hand, and a refused call is too.
 - Tidy's own checks hold for every call: a plan that moved on is refused, an entry no longer listed is not applied.
