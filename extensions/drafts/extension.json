@@ -3,8 +3,19 @@
   "version": "1.0",
   "title": "Drafts",
   "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
-  "requires": { "tower": "1.89" },
+  "requires": { "tower": "1.108" },
   "client": "client",
+  "views": {
+    "editor": {
+      "module": "editor.js",
+      "export": "mount",
+      "on": ["item.drafts", "collection.drafts"],
+      "accepts": ["text/markdown"],
+      "scales": ["pane"],
+      "needs": ["region", "display", "run", "toast"],
+      "words": { "label": "Draft", "hint": "a prompt kept for later, open to edit, start a worker on or send to one" }
+    }
+  },
   "collections": {
     "drafts": {
       "label": "Drafts",
