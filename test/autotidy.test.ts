@@ -56,6 +56,16 @@ test('a worker that stopped is going home for two minutes after its end, with th
   assert.deepEqual(goingHome(floorAt([until(log, 15)], at(log, 15), [log]), at(log, 15)), [])
 })
 
+test('a worker that exited by itself, or crashed, is not going home: the tower did not end it', () => {
+  const log = inTree(fixture('tool-turn'))
+  const itself: SessionLog = { ...log, events: log.events.map((e) => (e[1] === 'x' ? [e[0], 'x', { exitCode: 1 }] : e)) as SessionLog['events'] }
+  const end = endOf(itself)
+  const f = floorAt([itself], end + 1000, [])
+  assert.deepEqual([f.cards[0].killed, f.cards[0].stranded], [false, false])
+  assert.deepEqual(goingHome(f, end + 1000), [])
+  assert.equal(floorAt([log], end + 1000, []).cards[0].killed, true)
+})
+
 test('a running worker the board stops carrying as it ends went home, and what it left is planned on that board; one resumed did not', () => {
   const log = inTree(fixture('tool-turn'))
   const running = floorAt([until(log, 15)], at(log, 15), [log])

@@ -29,21 +29,23 @@ const goingOf = (c: Card): Going => ({ sessions: c.lineage.map((l) => l.id), che
 export type Part = Settings & { going: Going[] }
 
 /**
- * The floor's workers going home at `now`: off duty for less than `GOING_MS`, continued by no session, and either
- * stopped (sent home, killed, exited) or let go. A stranded worker (the host stopped or lost it, or a signal from outside
- * ended it) is on duty until resumed or let go; once its conversation is found unresumable it goes off duty without
- * going home now, so it never counts.
+ * The floor's workers going home at `now`: off duty for less than `GOING_MS`, continued by no session, and either ended
+ * by the tower's kill (sent home, gone home by itself, a hire Tidy ended) or let go. A worker that exited by itself or
+ * crashed is one the user may resume, and never counts. A stranded worker (the host stopped or lost it, or a signal
+ * from outside ended it) is on duty until resumed or let go; once its conversation is found unresumable it goes off
+ * duty without going home now, so it never counts.
  */
 export const goingHome = (f: Floor, now: number): Going[] =>
   f.cards
-    .filter((c) => !c.onDuty && !c.continuedBy && (c.letGoAt !== undefined || !c.stranded) && now - offDutyAt(c) < GOING_MS)
+    .filter((c) => !c.onDuty && !c.continuedBy && (c.letGoAt !== undefined || c.killed) && now - offDutyAt(c) < GOING_MS)
     .map(goingOf)
 
 /**
  * The workers running on `prev` that `next` no longer carries, resumed by none of its cards: gone home on the board they
  * left it on. The board keeps an off-duty card while it is waiting, leaves processes or started today, so one that
  * leaves as it goes left no processes, and what it leaves that Tidy can take (its worktree, its checkout's entries) is
- * read on that same board: nobody on duty is in it any more, and git's read doesn't move as a worker ends.
+ * read on that same board: nobody on duty is in it any more, and git's read doesn't move as a worker ends. Its card is
+ * gone, so how it ended isn't read: one that exited by itself counts too.
  */
 export const leftBoard = (prev: Floor, next: Floor): Going[] =>
   prev.cards.filter((c) => c.live && !next.cards.some((n) => n.id === c.id || n.lineage.some((l) => l.id === c.id))).map(goingOf)

@@ -59,7 +59,7 @@
           },
           "going": {
             "type": "array",
-            "description": "The workers going home now: off duty within the last two minutes, stopped or let go, continued by no session, while the tower's reads of processes and git catch up with their going.",
+            "description": "The workers going home now: off duty within the last two minutes, ended by the tower's kill (card.killed) or let go, continued by no session, while the tower's reads of processes and git catch up with their going.",
             "items": {
               "type": "object",
               "required": [

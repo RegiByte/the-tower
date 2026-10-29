@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Autotidy: what a worker leaves applied by itself once it goes home, by a bundled extension, opted into by kind",
-  "summary": "The bundled extension autotidy reads who is going home from the floor's cards (off duty for less than two minutes, continued by none, stopped or let go, never stranded) and from the running cards a board stops carrying as they end, and its board trigger asks the core's tidy once for the part of the floor's Tidy that is theirs, as its settings say (reap, worktrees, branches, extensions, each off unless set): their worktrees and kept branches as Tidy lists them, their processes and the extensions' entries naming their checkout unless someone on duty works there. It keeps nothing; what isn't safe to remove as a worker goes is left for Tidy's press. The core keeps Tidy a press and learns only whose an extension's entry is (TidyEntry.checkout).",
+  "summary": "The bundled extension autotidy reads who is going home from the floor's cards (off duty for less than two minutes, continued by none, ended by the tower's kill (card.killed) or let go, never stranded nor exited by itself) and from the running cards a board stops carrying as they end, and its board trigger asks the core's tidy once for the part of the floor's Tidy that is theirs, as its settings say (reap, worktrees, branches, extensions, each off unless set): their worktrees and kept branches as Tidy lists them, their processes and the extensions' entries naming their checkout unless someone on duty works there. It keeps nothing; what isn't safe to remove as a worker goes is left for Tidy's press. The core keeps Tidy a press and learns only whose an extension's entry is (TidyEntry.checkout).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-29",
@@ -48,7 +48,9 @@ theirs; the core reads nothing in it.
   card carries when it went off duty (`letGoAt`, else `enteredAt`). The floor fold, which is given the time, says who is
   going home now ([`goingHome`](ref:hub/extensions/autotidy/plan.ts#goingHome)): off duty for less than `GOING_MS` (two
   minutes: processes and git are read on their own beat, so a worker's leftovers and its worktree's state reach the
-  board a little after its going), continued by none, and stopped or let go. A stranded worker stays on duty until
+  board a little after its going), continued by none, and ended by the tower's kill (`card.killed`: sent home, gone
+  home by itself, a hire Tidy ended) or let go. A worker that exited by itself or crashed is one the user may resume,
+  and never counts. A stranded worker stays on duty until
   resumed or let go; after a restart its conversation may be found unresumable only once the tower's reads settle,
   long after it went, and it never counts. It lands on the board as `floor.x.autotidy.going` with the settings
   ([`partOf`](ref:hub/extensions/autotidy/plan.ts#partOf)), so the trigger stays pure over two boards.
@@ -58,6 +60,8 @@ theirs; the core reads nothing in it.
   no card of the new one, its lineage in none ([`leftBoard`](ref:hub/extensions/autotidy/plan.ts#leftBoard)), and plans
   for it on that board alone. Nothing of it needs waiting for: it left no processes (or its card would stay), and its
   worktree and checkout's entries are read on that board, where nobody on duty is in it and git's read is unmoved.
+  Its card is gone from that board, so how it ended isn't read there: one started before today that exits by itself,
+  leaving nothing running and nothing waiting, counts too.
 - *Theirs, as Tidy lists it.* [`planOf`](ref:hub/extensions/autotidy/plan.ts#planOf) cuts the floor's Tidy plan down to
   what the workers going home left: worktrees by name that Tidy lists (nobody in them, clean, nothing only local) and
   whose checkout has landed ([`checkoutLanded`](ref:hub/src/bridge/checkouts.ts#checkoutLanded)), since Tidy also lists

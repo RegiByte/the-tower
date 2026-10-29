@@ -118,8 +118,8 @@ is honoured until 2.0, and `tower config check` warns with the line to write ins
 
 ### Autotidy
 
-The bundled extension `autotidy` tidies what a worker leaves as it goes home (sent home, exited or let go; a stranded
-worker waiting to be resumed has not), without a press of Tidy. It does nothing until a setting turns a kind on, and
+The bundled extension `autotidy` tidies what a worker leaves as it goes home (sent home, gone home by itself with `tower home`, or let go; a
+worker that exited by itself or crashed has not, nor a stranded worker waiting to be resumed), without a press of Tidy. It does nothing until a setting turns a kind on, and
 keeps nothing of its own: a worker's going home is read from the board, from its card or from its card leaving the
 board as it goes. It acts only as a worker goes: on what the floor's Tidy lists of theirs in the two minutes after,
 while the tower's reads of processes and git catch up with their going. Tidy's own conditions hold, and a worktree
