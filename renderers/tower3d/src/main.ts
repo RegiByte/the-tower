@@ -1955,7 +1955,8 @@ function onKey(code: string, repeat: boolean): boolean {
     if (!repeat) HELD.has(offer.verb) ? startHold(s.aimed, offer, code) : run(s.aimed, offer.verb)
     return true
   }
-  if (code === 'Escape' && s.doorHeld) return (unlock(), true)
+  // WebKit dispatches the Esc that ends a pointer lock while the lock still holds: framed, the tower would run it too.
+  if (code === 'Escape' && captured()) return (unlock(), true)
   if (code === 'KeyP' && captured()) return (letGo(), true)
   if (code === 'KeyN') return (nextWaiting(), true)
   if (code === 'KeyV') return (lookAtNew(), true)
