@@ -53,7 +53,9 @@ worker that made it.
 - The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
   worker and notifying when you are not; markdown renders, an image fits the pane, any other file is framed as
   served, and a `link` is one Open ↗, since a browser opens no tab by itself. × closes a showing for this viewer
-  (kept in the browser); a new showing of it comes back. Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
+  (kept in the browser); a new showing of it comes back. A showing left for another tab stays drawn, hidden, so it
+  is as it was left when its tab is picked again: its scroll, a video's place, a page's own state (the eight shown
+  last, in this browser tab). Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
   a file's carrying its read path and media type ([[extensions]]): what extensions add to it is drawn beside the tabs
   while it is open.
 - Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk

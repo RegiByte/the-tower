@@ -211,35 +211,82 @@ export async function worker(deps) {
     told(tower.conversations(c.id)).then((threads) => threads && briefKey === key && showBrief(c, threads))
   }
 
-  /** The showing the shown pane last drew: a new showing of the same target draws it again. @type {string | undefined} */
-  let shownDrawn
+  /** How many showings stay drawn at once, the least recently shown dropped first. */
+  const SHOWN_KEPT = 8
 
-  /** The shown pane is drawn again on the next render. */
-  const forgetShown = () => (shownDrawn = undefined)
+  /**
+   * Each showing drawn, by key, from the least recently shown: one is hidden while another pane is up, not dropped, so
+   * it is as it was left when shown again (its scroll, a video's place, a page's own state). It is hidden by visibility,
+   * staying laid out, since a frame taken out of the layout may lose its scroll. A new showing of the same target has a
+   * key of its own and is drawn afresh.
+   * @type {Map<string, HTMLElement>}
+   */
+  const shownDrawn = new Map()
+
+  /** Every showing is drawn again on the next render. */
+  function forgetShown() {
+    for (const el of shownDrawn.values()) el.remove()
+    shownDrawn.clear()
+  }
 
   /** @param {Card} c @param {CardShown | undefined} s */
   function renderShown(c, s) {
     $('main').classList.toggle('on-shown', Boolean(s))
-    const key = s && shownKey(s)
-    if (key === shownDrawn) return
-    shownDrawn = key
-    if (!s) return ($('shown').innerHTML = '')
-    if (s.kind === 'url') return ($('shown').innerHTML = `<iframe src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>`)
-    if (s.kind === 'link') return ($('shown').innerHTML = `<iframe class="doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`, showLink(c, s))
-    if (/\.(png|jpe?g|gif|webp|svg)$/i.test(s.target)) return ($('shown').innerHTML = `<img src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`)
-    if (/\.(mp4|webm)$/i.test(s.target)) return ($('shown').innerHTML = `<video controls autoplay src="${esc(shownHref(s))}"></video>`)
-    if (!s.target.endsWith('.md')) return ($('shown').innerHTML = `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`)
-    $('shown').innerHTML = `<iframe class="doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
+    const key = s && keepShown(c, s)
+    dropStaleShown()
+    for (const [k, el] of shownDrawn) {
+      el.classList.toggle('on', k === key)
+      if (k !== key && el instanceof HTMLVideoElement) el.pause()
+    }
+  }
+
+  /** The showing's element, drawn the first time it is shown, made the most recently shown. @param {Card} c @param {CardShown} s */
+  function keepShown(c, s) {
+    const key = shownKey(s)
+    const el = shownDrawn.get(key) ?? drawShown(c, s)
+    shownDrawn.delete(key)
+    shownDrawn.set(key, el)
+    return key
+  }
+
+  /** Showings closed or gone from the board are dropped, and the least recently shown beyond `SHOWN_KEPT`. */
+  function dropStaleShown() {
+    const live = new Set(cards().flatMap(visibleShown).map(shownKey))
+    const kept = [...shownDrawn.keys()].filter((k) => live.has(k))
+    const stale = [...[...shownDrawn.keys()].filter((k) => !live.has(k)), ...kept.slice(0, -SHOWN_KEPT)]
+    for (const k of stale) {
+      shownDrawn.get(k)?.remove()
+      shownDrawn.delete(k)
+    }
+  }
+
+  /** A showing drawn into the shown pane, hidden until it is made the one on. @param {Card} c @param {CardShown} s */
+  function drawShown(c, s) {
+    $('shown').insertAdjacentHTML('beforeend', shownHtml(s))
+    const el = /** @type {HTMLElement} */ ($('shown').lastElementChild)
+    if (s.kind === 'link') showLink(/** @type {HTMLIFrameElement} */ (el), c, s)
+    else if (s.kind !== 'url' && s.target.endsWith('.md')) showMarkdown(/** @type {HTMLIFrameElement} */ (el), s)
+    return el
+  }
+
+  /** @param {CardShown} s */
+  const shownHtml = (s) =>
+    s.kind === 'url' ? `<iframe src="${esc(s.target)}" allow="clipboard-read; clipboard-write"></iframe>` :
+    s.kind === 'link' || s.target.endsWith('.md') ? `<iframe class="doc" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>` :
+    /\.(png|jpe?g|gif|webp|svg)$/i.test(s.target) ? `<img src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">` :
+    /\.(mp4|webm)$/i.test(s.target) ? `<video controls autoplay src="${esc(shownHref(s))}"></video>` :
+    `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`
+
+  /** A markdown file read and drawn as a document, unless its frame was dropped meanwhile. @param {HTMLIFrameElement} frame @param {CardShown} s */
+  function showMarkdown(frame, s) {
     told(tower.text(shownHref(s).slice(1))).then((md) => {
-      if (md === undefined || shownDrawn !== key) return
-      const frame = /** @type {HTMLIFrameElement} */ ($('shown').firstChild)
+      if (md === undefined || !frame.isConnected) return
       frame.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style><article>${documentHtml(md, shownHref(s))}</article>`
     })
   }
 
-  /** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. @param {Card} c @param {CardShown} s */
-  function showLink(c, s) {
-    const frame = /** @type {HTMLIFrameElement} */ ($('shown').firstChild)
+  /** A page that can't be shown in place: one click opens it, since a browser opens no tab by itself. @param {HTMLIFrameElement} frame @param {Card} c @param {CardShown} s */
+  function showLink(frame, c, s) {
     frame.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${DOC_CSS}</style>
     <article><h4>${esc(callsign(c.id))} asks you to open</h4><h2>${esc(shownTitle(s))}</h2><p><code>${esc(s.target)}</code></p>
     <p><a href="${esc(s.target)}" rel="noreferrer"><b>Open ↗</b></a></p></article>`

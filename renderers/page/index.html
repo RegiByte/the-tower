@@ -311,11 +311,12 @@ dialog.confirm .actions { flex: none; }
 .brief { display: none; position: absolute; inset: 0; z-index: 1; overflow: auto; padding: 0 var(--sp-xl) 40px; background: var(--panel); color: var(--ink); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .main.on-brief .brief { display: block; }
 .brief .brief-view { max-width: 980px; margin: 0 auto; }
-.shown { display: none; position: absolute; inset: 0; z-index: 1; }
-.main.on-shown .shown { display: flex; }
-.shown iframe { flex: 1; min-width: 0; border: 0; background: #fff; }
+.shown { visibility: hidden; position: absolute; inset: 0; z-index: 1; }
+.shown > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+.main.on-shown .shown > .on { visibility: visible; }
+.shown iframe { border: 0; background: #fff; }
 .shown iframe.doc { background: var(--panel); }
-.shown img, .shown video { flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; object-fit: contain; background: var(--enamel); }
+.shown img, .shown video { object-fit: contain; background: var(--enamel); }
 .pane-tab .icon-btn, .tab .icon-btn { margin-block: -1px; }
 .pane-tab .icon-btn .icon, .tab .icon-btn .icon { width: var(--icon-s); height: var(--icon-s); }
 .pane-tab:has(> .icon-btn:last-child), .tab { padding-right: 0; }
