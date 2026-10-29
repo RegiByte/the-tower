@@ -38,8 +38,8 @@ export type OpenPick = { t: 'open'; subject: string; view: string }
 
 export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | OpenPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
 
-/** A view a renderer offers to open on a subject, as "Open <label>", about the floor `project` when it has one. @since 1.104 */
-export type Openable = { subject: string; view: string; words: Words; project?: string }
+/** A view a renderer offers to open on a subject, as "Open <label>" in `group` (where it opens), about the floor `project` when it has one. @since 1.104 */
+export type Openable = { subject: string; view: string; words: Words; group: string; project?: string }
 
 /**
  * One line of the palette. `chords`: the keymap's chords that do the same, as `board.keys` writes them. `card` and
@@ -178,7 +178,7 @@ const addedEntries = (board: Board, subject: Subject, actions: Added<Action>[], 
 const openEntries = (board: Board, opens: readonly Openable[]): Entry[] =>
   opens.map((o) => ({
     id: `open:${o.subject}:${o.view}`,
-    group: 'Views',
+    group: o.group,
     label: `Open ${o.words.label}`,
     hint: o.words.hint,
     keywords: [o.view, o.subject],

@@ -504,14 +504,21 @@ const hostedView = hosted({ board, views: () => viewsOf(board()), layout, termFo
 /** The views this page offers to open where the viewer stands: on the subject in focus, and on each floor and the board. @returns {Openable[]} */
 function opensHere() {
   const p = placing()
-  const beside = [viewing('view')?.location.view ?? '']
   const subjects = [...new Map([focusedSubject(), boardSubject(board()), ...board().floors.map((f) => /** @type {Subject} */ (subjectAt(board(), `floor:${f.id}`)))].map((s) => [s.key, s])).values()]
-  return subjects.flatMap((s) => openable(p, s, beside).map((v) => ({ subject: s.key, view: v.id, words: v.words, ...(s.project !== undefined && { project: s.project }) })))
+  const groupOf = (/** @type {Subject} */ s) =>
+    s.kind === 'board' ? 'Every floor' : s.kind === 'floor' ? /** @type {Floor} */ (s.value).name : s.kind === 'card' ? /** @type {Card} */ (s.value).callsign : s.key
+  return subjects.flatMap((s) => openable(p, s, besideOn(s)).map((v) => ({ subject: s.key, view: v.id, words: v.words, group: groupOf(s), ...(s.project !== undefined && { project: s.project }) })))
+}
+
+/** The view on screen for `subject`: the one the main pane holds, when it is on that subject. @param {Subject} subject */
+const besideOn = (subject) => {
+  const at = viewing('view')?.location
+  return at && (at.subject ?? 'board') === subject.key ? [at.view] : []
 }
 
 /** "Open <label>" for each view a floor's section offers. @param {Subject} subject */
 const opensHtml = (subject) =>
-  openable(placing(), subject, [viewing('view')?.location.view ?? ''])
+  openable(placing(), subject, besideOn(subject))
     .map((v) => `<button class="added" data-open-view="${esc(JSON.stringify({ subject: subject.key, view: v.id }))}"${v.words.hint ? ` data-tip="${esc(v.words.hint)}"` : ''}>Open ${esc(v.words.label)}</button>`)
     .join('')
 

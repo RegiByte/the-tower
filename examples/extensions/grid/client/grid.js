@@ -18,7 +18,7 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-cell:focus-within { border-color: var(--ink); }
 :where([data-view="grid/grid"]) .grid-head { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-s); border-bottom: 1px solid var(--line); font-size: var(--fs-xs); }
 :where([data-view="grid/grid"]) .grid-head .mode { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:where([data-view="grid/grid"]) .grid-head button { margin-left: auto; }
+:where([data-view="grid/grid"]) .grid-head .acts { margin-left: auto; display: flex; gap: var(--sp-2xs); }
 :where([data-view="grid/grid"]) .grid-term { flex: 1; min-height: 0; padding: var(--sp-2xs); }
 :where([data-view="grid/grid"]) .grid-note { margin: auto; color: var(--muted); font-size: var(--fs-s); }
 `
@@ -49,11 +49,17 @@ export async function mount(host, { board, subject, kit, state }) {
   const bar = host.querySelector('.grid-bar')
   const grid = host.querySelector('.grid-cells')
 
+  /** How the cell's terminal holds its worker's PTY, in words. */
+  const modeOf = (id) => {
+    const view = cells.get(id)?.term?.state()
+    if (!view) return cardOf(id) ? 'not running' : 'no longer on the board'
+    return view.t === 'opening' ? 'opening' : modeText(view.t === 'owning' ? { t: 'owning', ...view.pty } : { t: view.t })
+  }
+
   const headHtml = (id) => {
     const c = cardOf(id)
-    const mode = cells.get(id)?.term?.state()
-    return `<span class="lamp ${esc(c?.attention ?? 'quiet')}"></span><b>${esc(c?.callsign ?? id)}</b><span class="mode">${esc(mode ? modeText(mode) : c ? 'not running' : 'no longer on the board')}</span>
-      <button class="icon-btn" data-grid-open="${esc(id)}" title="Open this worker">Open</button><button class="icon-btn" data-grid-drop="${esc(id)}" title="Take it out of the grid">✕</button>`
+    return `<span class="lamp ${esc(c?.attention ?? 'quiet')}"></span><b>${esc(c?.callsign ?? id)}</b><span class="mode">${esc(modeOf(id))}</span>
+      <span class="acts"><button class="icon-btn" data-grid-open="${esc(id)}" title="Open this worker">Open</button><button class="icon-btn" data-grid-drop="${esc(id)}" title="Take it out of the grid">✕</button></span>`
   }
 
   function draw() {
@@ -89,6 +95,12 @@ export async function mount(host, { board, subject, kit, state }) {
   })
 
   draw()
+  const modes = setInterval(() => {
+    for (const id of ids) {
+      const el = cells.get(id)?.el.querySelector('.grid-head .mode')
+      if (el) el.textContent = modeOf(id)
+    }
+  }, 1000)
   return {
     update(next) {
       now = next
@@ -101,6 +113,7 @@ export async function mount(host, { board, subject, kit, state }) {
       return true
     },
     close() {
+      clearInterval(modes)
       for (const cell of cells.values()) cell.term?.close()
       cells.clear()
     },
