@@ -477,10 +477,21 @@ function display(target, opts = {}) {
   if (next.t === 'view' && subject.key !== (at.subject ?? 'board') && !hostedView.show(subject)) toast(`${subject.key} isn't there any more`)
 }
 
-/** A worker the board doesn't carry: one of an archive, read first, else one just started, opened once the board carries it. @param {string} id */
+/** How long after a worker's start, by its session id, the page waits for the board to carry it. */
+const ARRIVING_MS = 60_000
+
+/** When the session `id` started, read from the id itself (`20260930-141203-a1b2`, UTC). @param {string} id */
+const startedAt = (id) => Date.parse(id.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2}).*$/, '$1-$2-$3T$4:$5:$6Z'))
+
+/**
+ * A worker the board doesn't carry: one of an archive, read first; else one started within `ARRIVING_MS`, opened
+ * once the board carries it; else it is gone.
+ * @param {string} id
+ */
 async function awaitCard(id) {
-  const found = await lookUp(id)
-  go(found ? { t: 'worker', id, pane: undefined } : { t: 'arriving', id })
+  if (await lookUp(id)) return go({ t: 'worker', id, pane: undefined })
+  if (Date.now() - startedAt(id) < ARRIVING_MS) return go({ t: 'arriving', id })
+  toast(`card:${id} is no longer on the board`)
 }
 
 /**
