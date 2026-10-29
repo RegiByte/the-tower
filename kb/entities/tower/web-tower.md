@@ -49,14 +49,20 @@ clipboard. Keys pressed in any frame but a `url` one reach the page's keymap, it
 
 What the main pane shows is one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js), beside the page):
 the skyline, a worker on one of its panes, a worker the page started until the board carries it, a shelf entry and its
-file, a floor's archive, policies or collection, a draft or a kept item. Its hash (a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded) is
-[`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
-[`viewOf`](ref:hub/renderers/page/view.js#viewOf); every way into a view goes through
+file, a floor's archive, policies or collection, a draft or a kept item, or a view an extension declares, mounted at a
+location ([[ui-model]]). Its hash (a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded; a view's
+`#v/<cap>/<name>/<key>`) is [`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
+[`viewOf`](ref:hub/renderers/page/view.js#viewOf), which reads a `#v/` hash naming a core view as that view's route
+([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf)); every way into a view goes through
 [`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, relay, draft) unless the next is
 the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record and the attention state
 ([[machines]]), and every handler that sets the view tells attention through
 [`viewed`](ref:hub/renderers/page/page.js#viewed), so the worker whose waits ring for nobody is the one on screen while
-the window has the viewer's eye.
+the window has the viewer's eye. An extension's view is mounted in `#view-host` by
+[`hosted`](ref:hub/renderers/page/hosted.js#hosted) with the page's kit (its terminal, keymap runner, display, toasts
+and confirm), updated on each board and closed as the location leaves; [`display`](ref:hub/renderers/page/page.js#display)
+places a subject through `/views.js` onto a view or one of the page's routes, a floor's section and the palette offer
+"Open <label>" for the views offered there, and extensions' chords run on the subject in focus.
 
 The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is a link to
 `#<id>`, opened at load and on `hashchange`, the selected one `aria-current`. The pane tabs are an ARIA tablist, the

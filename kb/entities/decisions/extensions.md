@@ -27,7 +27,7 @@ and versioned without running anything, and a runtime where an extension's failu
   [`mismatchOf`](ref:hub/src/bridge/extensions.ts#mismatchOf)): a handler for each of its verbs, reads and slots, a
   board trigger exactly when it declares one, a `parse` or `reduce` only for a collection or stream it declares, a
   link per `around` entry, an answer per `answers` entry, and `halt`. The manifest is strict: an unknown key refuses the extension, `$schema` and `meta`
-  are free, and `views` and `regions` are validated against their reserved shapes and not read (`not-yet`). Every key
+  are free. `views` and `regions` are read since 1.104 in the shapes [[ui-model]] gives them, one written to the reserved shapes before refused naming the new one, and `commands` take default `keys`. Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
 - **One capability per extension.** `provides` defaults to `id`; everything an extension shows others is named by its

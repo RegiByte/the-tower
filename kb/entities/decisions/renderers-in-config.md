@@ -48,8 +48,11 @@ update of the core never touches it.
   when folded on the board, since one folded on another kind is about a floor's things. [`landing`](ref:hub/src/shared/regions.ts#landing)
   (`/cards.js`) answers which regions of each draw an extension's commands and fold contributions; `tower extensions
   check` prints it, and `docs/extending.md`'s table is generated from the shipped declarations by `npm run
-  served:update`, its staleness failing `npm test`. A file that doesn't parse declares nothing and carries its `problem`, which `tower config check` warns of; the renderer, and every other, serves all the same. Kit, keeps
-  and layout are served and not yet read.
+  served:update`, its staleness failing `npm test`. A file that doesn't parse declares nothing and carries its `problem`, which `tower config check` warns of; the renderer, and every other, serves all the same. The tower reads
+  `keeps` for extensions' chords; a renderer hosting views reads its `kit` and `layout`, the config's
+  `renderers.<name>.layout` over its own and the viewer's over both ([[ui-model]]); `GET /renderers` serves the
+  config's as `configLayout`. `landing` places a view in the regions holding views of its kinds at its scales, where
+  the renderer's kit lends what it needs.
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with
   `await tower.renderer()` ([`tower.js`](ref:hub/src/tower/tower.js)), which takes its name from its `/r/<name>/` path,
   framed or not; null for any other page. Tower 3D reads `settings.cats`, its cats' names

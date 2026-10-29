@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
 }
 ---
@@ -24,7 +24,9 @@ same palette, and only the drawing is a renderer's.
   `label` with their chords; what the selected worker, its earlier conversations and its processes offer; every
   floor's verbs; what extensions add to the selected worker, the floors, the board and each floor's items, verbs and
   client commands alike, each in its words from `board.extensions` ([`addedEntries`](ref:hub/src/shared/palette.ts#addedEntries)),
-  and the commands offered on no subject ([`unboundCommands`](ref:hub/src/shared/adds.ts#unboundCommands), [[extensions]]))
+  and the commands offered on no subject ([`unboundCommands`](ref:hub/src/shared/adds.ts#unboundCommands), [[extensions]]),
+  each with its chords; and "Open <label>" for the views the renderer offers where the viewer stands, its `opens`,
+  grouped by where each opens ([[ui-model]]))
   and **learn** (capabilities that name no command; one entry for the patterns users are discovering).
   Each entry's `does` is a tagged message the renderer runs; an extension's is `added`, its subject's key and the
   action, which a renderer that can't import modules leaves out when it is a command.

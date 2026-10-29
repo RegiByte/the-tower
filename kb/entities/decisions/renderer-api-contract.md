@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json", "hub/src/shared/views.ts"]
 }
 ---
 **Problem.** The [[renderer-api]] is the contract the next renderer reads, and that renderer may not be written in
@@ -71,8 +71,9 @@ went wrong, and know which changes can break it.
   by `npm run typecheck`), and Tower 3D, The Week and the tower page ([`tsconfig.page.json`](ref:hub/tsconfig.page.json)) are
   checked against the same type. Extensions build on the same contract and three lists beside it: the manifest's key
   paths, each lane's ctx members, and the core's problem codes and names, held by the same test ([[extensions]]).
-  There is no plugin API into a renderer's code: customizing one is a copy of it with the user's own layer on top
-  ([`docs/extending.md`](ref:hub/docs/extending.md)).
+  No extension reaches into a renderer's code: what a renderer offers extensions is the same contract, its declared
+  regions and kit, the views it hosts and the layout over them ([[ui-model]]), and customizing the renderer itself is a
+  copy of it with the user's own layer on top ([`docs/extending.md`](ref:hub/docs/extending.md)).
 
 **Alternatives considered.**
 - Hand-written parsers beside the types: a second copy of every shape, which drifts.
@@ -84,7 +85,8 @@ went wrong, and know which changes can break it.
   they collect dead names and stop moving with the renderers that need them.
 - A plugin API into a renderer (hooks into the tower page's code): a second contract over one renderer's internals,
   while the config, the logs and the collections hold the whole state and the API does every act. What a renderer
-  can't hold extends the core instead, through extensions, versioned with this API.
+  can't hold extends the core instead, through extensions, versioned with this API; a place on screen is a view any
+  renderer that hosts views mounts by the same contract ([[ui-model]]).
 
 **Impact.** A renderer in any language can read `/schema`, build requests from the board's `actions`, and act on `code`.
 Old pages break once on a major, by design, and never on a minor; `npm test` stops a removal of a served name that

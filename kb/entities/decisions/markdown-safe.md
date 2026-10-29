@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": [
     "hub/src/shared/markdown.ts",
     "hub/src/shared/markdown.ts#markdownHtml",
