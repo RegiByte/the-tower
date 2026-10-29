@@ -45,7 +45,7 @@ kept items as views, and two Tower 3D key fixes. No restart beyond the tower's o
   page (#261).
 - **A tab left keeps its scroll**: the tower page keeps each shown file drawn, hidden when its tab is left, so a
   markdown file keeps its place, a video its time and an html page its state, in WebKit too. Past the eight shown
-  last, or once closed, one is dropped (#259, by @vitor-aderant).
+  last, or once closed, one is dropped (#259, by @vitoraderaldo).
 - **Tower 3D claims the keys it acts on**: the movement keys while walking, so Tower.app no longer beeps on each, and
   the Escape that lets go of the mouse, so a framed Tower 3D pauses instead of the tower going home. An Escape on the
   pause card still goes home (#262).
