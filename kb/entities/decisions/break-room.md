@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": [
     "hub/renderers/tower3d/src/breaks.ts#breaksOf",
     "hub/renderers/tower3d/src/breaks.ts#GRACE",
