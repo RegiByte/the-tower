@@ -44,7 +44,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `editor` | How the tower opens things in the user's editor, three argv templates: `window` opens `{dir}` in a new window, `open` opens `{path}` (a file or folder), `goto` opens `{path}` at `{line}`. Set all three or none. | VS Code's `code` |
 | `callsigns` | The names workers are called by, the same on every floor: each an upper case letter, then upper case letters and digits, none twice. Read when a worker starts: a change names new workers only. | the tower's list |
 | `plugins` | Absolute plugin directories every session loads, each passed to Claude as `--plugin-dir`. | none |
-| `renderers` | Renderers served at `/r/<name>/`, by name: `root`, the absolute directory of its built files; `entry`, its page in it (`index.html` unless set); `settings`, its own configuration, passed through unread. A new name adds a renderer; `page`, `week` or `tower3d` overrides that built-in's fields. | the built-ins |
+| `renderers` | Renderers served at `/r/<name>/`, by name: `root`, the absolute directory of its built files; `entry`, its page in it (`index.html` unless set); `settings`, its own configuration, passed through unread; `layout`, the default arrangement of the views in its regions, by region id (`order`, `hidden`, `open`, `options`), over its own `renderer.json`'s and under the viewer's, each view's `options` checked against its manifest's (see [docs/extending.md](extending.md#your-own-renderer)). A new name adds a renderer; `page`, `week` or `tower3d` overrides that built-in's fields. | the built-ins |
 | `renderer` | The renderer `/` opens, by name. | `page` |
 | `worktrees` | How the tower cuts worktrees: see [Worktrees](#worktrees). A project's own win per key. | |
 | `hiring` | How far `tower hire` goes: see [Hiring](#hiring). A project's own win per key. | |
@@ -218,7 +218,9 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 `tower config check` fails a value that is no chord, at `keys.<id>` or `keys.<id>[n]`, and a chord bound to two
 commands that can fire in the same place (a global chord with a modifier reaches terminals and fields too), at the
 override, naming the other command: rebind that one too, or set it to `null`. An id no command has is a warning, and
-ignored. A character chord and a key chord that are the same key on a US layout (`?` and `Shift+Slash`) are a warning:
+ignored. An extension's commands and views take chords by `<cap>/<name>` (`"grid/grid": "Meta+Shift+G"`), replacing
+the defaults their manifest gives; an id no running extension declares is a warning, and its chords collide with the
+keymap's as a global command's would. A character chord and a key chord that are the same key on a US layout (`?` and `Shift+Slash`) are a warning:
 the check can't know your layout, and on that key only the command listed first runs. A global chord with a modifier is kept from the terminal: `Ctrl` chords there are Claude's and the shell's
 own keys, and the browser keeps some `Meta` chords (⌘W, ⌘T, ⌘Q) for itself. A default that fires in a terminal or a field types nothing worth keeping: ⌥ with a digit types `#` or `€`
 on some layouts, so the panes are on ⌃⇧1–4, which a terminal gets no bytes for. macOS takes ⌃1, ⌃2… (one per desktop) for

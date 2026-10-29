@@ -66,7 +66,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 ```json
 {
   "regions": [{ "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header" }],
-  "kit": [],
+  "kit": ["terminal", "run", "display", "toast", "confirm"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] } }
 }
@@ -76,15 +76,22 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
   `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
-- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `bus`, `toast`, `confirm`).
-- `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys).
-- `layout`: its own default arrangement of the views in its regions, by region id.
+- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `bus`, `toast`, `confirm`): a
+  view is offered only where the kit holds every member it `needs` ([Views](#views)).
+- `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
+  extension's default chord takes one.
+- `layout`: its own default arrangement of the views in its regions, by region id: `order` (view ids first, in this
+  order; the rest after), `hidden` (not offered there), `open` (the tab a tabs region opens on) and `options` (each
+  view's own settings there). The config's `renderers.<name>.layout` lies over it, and the viewer's, kept in
+  `tower.store` under `layout.<name>`, over both: `layoutOf(declared, configured, stored)` in `/views.js` takes each
+  field from the highest layer that sets it, and `hidden` from all of them, less a view a higher layer names in its
+  `order`. `GET /renderers` serves the config's as `configLayout` (API 1.104).
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
 A file that doesn't parse declares nothing, and the renderer serves all the same: `GET /renderers` says why as its
-`problem`, and `tower config check` warns. `kit`, `keeps` and `layout` are declared and served, and not yet read by
-the tower.
+`problem`, and `tower config check` warns. The tower reads `keeps` for extensions' chords; `kit` and `layout` are read
+by the renderer that hosts views, through `/views.js`.
 
 ### A new one
 
@@ -213,7 +220,9 @@ the board and drive the API:
 
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
-`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view. An `html` or
+`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view, and (API
+1.104) `('go', { location })` takes it to a location ([Views](#views)), `('display', { subject, view? })` shows a
+subject, or its key, where its layout puts it. A renderer that hosts no views ignores those two. An `html` or
 `item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin.
 Framed, a `renderer` still reads every file below its root but the hidden ones (a path with a part starting with `.`, never served): the tower serves them with CORS, so it may `fetch` them
 and import them as modules at its opaque origin. An `html` page framed reads the files beside it only as classic
@@ -346,6 +355,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/loop.js` | a machine as data: `loop` runs a map of handlers, `(state, event) -> effects`, the next state among them, through your executors of the rest; `timers()` executes timer effects, each carrying the event it fires |
 | `/reads.js` | reads a viewer holds (`Held`): the last read held until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held; the steps, and `heldHandlers` and `reading` to run them on `loop`. `/panels.js` runs them for review threads (`threadWant`, `heldThread`, `readThread`) and a worker's Changes (`changesHandlers`, `readChanges`) |
 | `/term-view.js` | a terminal a viewer has open on a PTY, as a machine on `loop`: `termHandlers` its steps (opening, watching, owning, exited), and `mountTermView(host, { Terminal, FitAddon }, io)` running it in xterm.js on a `terminal/<id>`, `screen/<id>` or `shell/<id>` stream. The PTY has one size: a terminal opened while nobody else views it takes the size (a shell's always), a resize from anyone else hands it back and the view follows at a font that fits, typing takes it again, and a pane or font change fits the PTY only while this viewer holds it |
+| `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)`, `offeredIn` and `pickView` (which view a region draws a subject with), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf` and `locationOf` (the location grammar), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
 | `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews and the Stats range, read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
 | `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started |
 | `/attend.js` | what a viewer is told about the waits and offers asking for them, as a machine on `loop`: `attendHandlers` over the state `attending(eye)`, or `attendNext(state, event)` to run one event by hand. What the viewer looks at reaches it as events: the window's `focus` and `visible`, and `watch` with the worker their view is on (`watchedIn(state)` is the one they watch: the view's, while the window has their eye): what begins is said (`announce`), notified (`notify`, `unnotify` once over or dismissed) and rung (`sound`, a score of `SOUNDS` in `/cards.js`), a `remind` ring re-armed as a timer, dismissals and the ring setting kept (`keep`, a field of the viewer's record of `/viewer.js`, fed back as `stored` when read again); your executors play, notify and keep, or drop what you don't do |
@@ -563,8 +573,11 @@ subject (`cardSubject(card)`, `floorSubject(floor)`, `shownSubject(card, shown)`
 item)`, `collectionSubject(project, collection)`, `shelfSubject(project, entry, n)`, `boardSubject(board)`), then
 `actionsOf(board, subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded`
 to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
-`{ tower, board, target, subject, args }` (`runCommand`). A renderer that can't import modules leaves commands out
-(`isCommand`).
+`{ tower, board, target, subject, args, kit }` (`runCommandWith`, API 1.104): `kit` is what the renderer running it
+lends, `display`, `toast`, `confirm` and `run` (`CommandKit` in `/views.js`), so "Add to grid" is
+`kit.display(target, { view: 'grid/grid' })`. `runCommand` runs one with `NO_KIT`, whose every member throws naming
+itself, for a renderer that lends none. A renderer that can't import modules leaves commands out (`isCommand`).
+A command's `keys` (API 1.104) are its default chords: see [Views](#views), keys.
 
 `target` (API 1.98) is the subject, `{ kind, key, project?, value }`. `subject` on a command is the subject's value
 until 2.0; use `target`. The value is the card itself on a card (`id` its session), the floor on a floor, the board on
@@ -579,7 +592,8 @@ neither, so a command that reads text declares `accepts`.
 
 Not every renderer draws every subject or every contribution. Each declares where it draws in its `renderer.json`
 ([Your own renderer](#your-own-renderer)): its regions, each for one subject kind, holding some of `verbs` (actions
-that call a verb), `commands` (actions that run a client command), `badges`, `lines`, `tidy`, `asks` and `views` (declared now: no renderer hosts an extension's view yet).
+that call a verb), `commands` (actions that run a client command), `badges`, `lines`, `tidy`, `asks` and `views`
+(the tower page's main pane hosts them, [Views](#views)).
 `tower extensions check <folder>` says where each of your commands and contributions lands in every renderer the
 config declares; this table says it for the ones that ship, generated from their declarations:
 
@@ -604,7 +618,7 @@ An ask (`board.asks`) is listed with the waits by the tower page, under its floo
 and said, notified and rung there and in Tower 3D. The Week draws no contributions. A renderer of your own draws
 whatever it reads.
 
-A command is an action: no renderer gives an extension a place of its own on screen yet. Its module is imported once
+A command is an action: a place of its own on screen is a view ([Views](#views)). Its module is imported once
 per page and stays loaded between presses until the page reloads (`tower extensions restart` doesn't reach a page
 already open), so it may keep state in the module. It runs in the renderer's document at the tower's origin: it may
 add elements of its own, such as a dialog or an overlay, which the renderer doesn't know of, so it removes them when
@@ -618,6 +632,65 @@ FitAddon.FitAddon }`. Elsewhere, load `/xterm.js`, `/addon-fit.js` and `/xterm.c
 is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`
 and `run` are a renderer's keymap: a command that is not the renderer passes `keymap: () => board.keys` and `run: ()
 => false`, which sends every key to the PTY.
+
+### Views
+
+A view (API 1.104) is a module that draws one subject into an element a renderer gives it, the core's and an
+extension's alike: the tower page mounts one in its main pane at a location, so a reload, a link and Back keep it.
+[`examples/extensions/grid`](../examples/extensions/grid/) is one to copy. The manifest declares each by name, served
+as `<cap>/<name>`:
+
+```json
+"views": {
+  "grid": {
+    "module": "grid.js", "export": "mount",
+    "on": ["floor", "board"], "shows": ["card"], "scales": ["pane"], "needs": ["terminal", "display"],
+    "words": { "label": "Grid", "hint": "Workers side by side" }, "keys": ["Meta+Shift+G"]
+  }
+},
+"regions": { "card.cell": { "subject": "card", "holds": ["views"], "scale": "cell", "arity": "one" } }
+```
+
+- `on`: the kinds it mounts on; a region offers it on those, and only at a `scale` in its `scales`. `shows`: the kinds
+  it is handed through `show` while mounted on one above them (a card, to the grid on its floor), never mounted on.
+- `accepts`: for a subject bearing a type (a shown file, an item), the media types it draws.
+- `needs`: the kit members it can't draw without. `options`: the JSON Schema of its options in a region's layout,
+  which `tower config check` holds the config's layout to.
+- `regions`: those it declares inside it, each in the manifest's `regions` by id. One id has one meaning: two
+  extensions declaring it with other fields are both refused.
+- `keys`: default chords that display the subject in focus with it.
+
+Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
+visible?(on), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options }`: `state`
+is `tower.store` under `view.<id>.<key>`, the view's own; `kit` is what the renderer lends, `terminal(host, path)` (a
+terminal on `terminal/<id>` or `shell/<id>` with the renderer's xterm, font, scheme and keymap), `run(command, on?)`,
+`display(subject, { view? })`, `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
+board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
+subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
+`:where([data-view="<id>"])` over `/design.css`'s tokens; it never imports another view; it keeps its state in
+`ctx.state`; and it calls verbs only on a press inside it. A view whose module doesn't load, lacks its export, throws
+or hasn't mounted in 10 s is one line where it would draw, and the page goes on.
+
+**Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
+`#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, each key and arg one `encodeURIComponent` segment:
+`#v/grid/grid/floor%3Alab`. `hashOf` and `locationOf(hash, board)` in `/views.js` write and read it, and read the
+tower page's older hashes (`#<id>/changes`, `#shelf/<p>/<n>`, …) as the core views they name.
+
+**Display** is the one navigation: `kit.display(subject, { view? })`, or `tower.ui('display', …)` from a framed page.
+`displayed` in `/views.js` walks the subject's chain (`parentOf`) outward to the nearest level whose main view shows
+it as a tab, else the first with a main view of its own, picked by the layout's `order`, then the owner of a
+collection's view, then the core's views first (`CORE_VIEWS`: the worker view on a card, the archive on a floor), then
+extensions' in order; with `view`, the deepest level that offers that view. The tower page draws the core views by its
+routes until each ships as a module. `openable` lists the views a region holding commands draws as "Open <label>"
+beside what is on screen; the tower page draws them in a floor's section and its palette.
+
+**Keys.** `views.<v>.keys` and `commands.<c>.keys` give default chords, global, acting on the subject in focus (the
+innermost region holding the document's focus, else the main pane's): a view's displays it with that view, a command's
+runs it on the nearest subject of a kind it is on. `board.keys` holds them by `<cap>/<name>`, beside the keymap's ids
+(`addedCommandOf` in `/keymap.js` matches one). The config's `keys."<cap>/<name>"` replaces a default. A default that
+would fire with a keymap chord, a chord a renderer keeps, one the config set for another extension, or another
+extension's default is dropped (both, in the last case), each with a problem on its extension. From a framed page
+with scripts only a view's chord runs: a command's is code, and any script can claim a key.
 
 **Middleware and hooks** (API 1.85). `around` wraps verbs and hooks, by qualified name (`"tower/spawn": {}`,
 `"chime/ring": { "after": ["audit"] }`), each one the core's, its own, or of a capability it `requires` or `wants`; its
