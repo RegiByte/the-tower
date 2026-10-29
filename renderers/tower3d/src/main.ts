@@ -55,7 +55,7 @@ import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { addedKey, activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
-import { move, releaseKeys, takeTurn, type Turn } from './input.ts'
+import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
@@ -1977,7 +1977,8 @@ document.addEventListener('keydown', (e) => {
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
   if (e.code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (e.preventDefault(), replay(s.replay.id, undefined))
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
-  if (e.code === 'Space' && captured()) e.preventDefault()
+  // A key the page leaves alone goes back to the app around it: Tower.app's WKWebView beeps on each one.
+  if (MOVE_KEYS.has(e.code) && s.view === 'walk' && (captured() || document.activeElement === document.body)) e.preventDefault()
   // A verb may focus a field (the spawn dialog's prompt): its key must not be typed into it.
   if (offerOnKey(e.code)) e.preventDefault()
   if (onKey(e.code, e.repeat)) e.preventDefault()

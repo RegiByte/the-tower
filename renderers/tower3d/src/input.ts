@@ -23,6 +23,9 @@ export function listen(canvas: HTMLCanvasElement) {
   document.addEventListener('mousemove', (e) => document.pointerLockElement === canvas && turn(e.movementX, e.movementY))
 }
 
+/** Every key `move` reads, by `KeyboardEvent.code`. */
+export const MOVE_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'])
+
 const axis = (plus: boolean, minus: boolean) => Number(plus) - Number(minus)
 
 const fromKeys = (): Move => ({

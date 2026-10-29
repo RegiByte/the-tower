@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-24",
+  "reviewed": "2026-10-29",
   "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
@@ -35,7 +35,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   ask again in its name after each rebuild. Started from a terminal, they stay the terminal's.
 - **Keys** ([`TowerWebView`](ref:hub/apps/macos/Sources/App.swift#TowerWebView)): ⌘Q, ⌘W, ⌘H and ⌘M are the app's;
   every other key goes to the page first, so the keymap ([[keymap]]) works as in a tab and a key it doesn't take
-  reaches the menus (⌘R reloads, ⌘0/⌘+/⌘− zoom, ⌥⌘I the Web Inspector). The View menu's Renderer lists the renderers
+  reaches the menus (⌘R reloads, ⌘0/⌘+/⌘− zoom, ⌥⌘I the Web Inspector). A key nothing takes beeps, as in any AppKit
+  window, so a renderer takes every key it acts on (`preventDefault`). The View menu's Renderer lists the renderers
   `GET /renderers` says are built ([[renderers-in-config]]).
 - **Who waits on you, outside the window** ([`Attention`](ref:hub/apps/macos/Sources/Attention.swift#Attention)): a
   page of the app's own that never shows, loaded at the tower's origin, reads the board through `/tower.js` and words
