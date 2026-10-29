@@ -2,7 +2,7 @@
 import { usageAnswer } from '../src/shared/rate-limits.ts'
 import type { SessionLog } from '../src/shared/model.ts'
 import {
-  changelogOf, comparedForm, FULLSCREEN_MODES, heldBack, modesEnabled, shapeChanges, shapesOf, statusesOf, usageChanges, versionPosted,
+  changelogOf, comparedForm, FULLSCREEN_MODES, heldBack, modesEnabled, SEC_DEFAULT_KEEPS, shapeChanges, shapesOf, statusesOf, unseatedBecause, usageChanges, versionPosted, withoutKept,
   type Baseline, type ShapeChange,
 } from './claude-check.read.ts'
 import { SCENARIOS, UNRECORDED, type Scenario } from './claude-check.scenarios.ts'
@@ -120,10 +120,16 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
     ...(chains.length ? [{ surface: 'resume chain', ok: chains.every((s) => s.chain), says: chains.every((s) => s.chain) ? '`GET /conversations/<id>` names the session it resumes' : 'a resumed session does not name the one it resumes' }] : []),
   ]
 
+  const dependsOnKept = Object.entries(recordings)
+    .filter(([name]) => !failedRecordings.has(name))
+    .map(([name, log]) => ({ name, is: statusesOf(withoutKept(log)), was: statusesOf(log) }))
+    .filter((r) => r.is.join() !== r.was.join())
+
   const retried = run.scenarios.filter((s) => s.retried?.length)
-  const clean = failed.length === 0 && unbased.length === 0 && changes.length === 0 && replays.every((r) => r.same) && checks.every((c) => c.ok)
+  const clean = failed.length === 0 && unbased.length === 0 && changes.length === 0 && replays.every((r) => r.same) && checks.every((c) => c.ok) && dependsOnKept.length === 0
   const entries = changelog && changelogOf(changelog, run.claude)
   const held = debugLog ? heldBack(debugLog) : new Map()
+  const unseated = debugLog && unseatedBecause(debugLog)
   const fixtures = new Set(SCENARIOS.flatMap((s) => Object.values(s.recordings).flatMap((r) => (r.fixture ? [r.fixture] : []))))
 
   const markdown = [
@@ -159,7 +165,12 @@ export const renderReport = ({ run, recordings, baseline, fixture, usageFixture,
     checks.map((c) => `- ${c.ok ? 'ok' : '**no**'} ${c.surface}: ${c.says}`).join('\n'),
     '',
     '## Held back by Claude',
-    held.size ? [...held].map(([what, n]) => `- \`${what}\`: ${n} times (\`--debug-file\`)`).join('\n') : 'The debug log names no event a built-in mod kept from the tower\'s.',
+    unseated
+      ? `\`sec-default\` was not seated (${unseated}): recorded outside a Team or Enterprise organization, where nothing is kept from the tower's mod.`
+      : held.size ? [...held].map(([what, n]) => `- \`${what}\`: ${n} times (\`--debug-file\`)`).join('\n') : 'The debug log names no event a built-in mod kept from the tower\'s.',
+    '',
+    `Each recording replayed without what \`sec-default\` keeps inside an organization (${SEC_DEFAULT_KEEPS.map((e) => `\`${e}\``).join(', ')}): ${dependsOnKept.length ? 'differs.' : 'every one folds to the same statuses.'}`,
+    ...dependsOnKept.map((r) => `- **${r.name}** depends on it:\n  - with:    ${r.was.join(' ')}\n  - without: ${r.is.join(' ')}`),
     '',
     `## Changelog ${run.claude}`,
     entries

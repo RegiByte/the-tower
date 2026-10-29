@@ -189,3 +189,19 @@ export const heldBack = (debugLog: string): Map<string, number> => {
   for (const [, event, by] of debugLog.matchAll(/^.*?tower: (\S+) bypassed by (\S+)/gm)) held.set(`${event} by ${by}`, (held.get(`${event} by ${by}`) ?? 0) + 1)
   return held
 }
+
+/** Why Claude's built-in `sec-default` mod was not seated, as `--debug-file` says: absent when it was, or the log says nothing. */
+export const unseatedBecause = (debugLog: string): string | undefined =>
+  debugLog.match(/sec-default\S* not seated: (.+)$/m)?.[1]
+
+/**
+ * The mod events the tower registers that `sec-default` keeps from user mods inside a Team or Enterprise organization:
+ * what a session there never logs. The tower's statuses must not depend on them.
+ */
+export const SEC_DEFAULT_KEEPS = ['session.compact']
+
+/** A log as a session inside an organization would have logged it: without what `sec-default` keeps. */
+export const withoutKept = (log: SessionLog): SessionLog => ({
+  ...log,
+  events: log.events.filter((e) => !(e[1] === 'h' && SEC_DEFAULT_KEEPS.includes(e[2].hook_event_name))),
+})
