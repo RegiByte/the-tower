@@ -255,7 +255,7 @@ export async function worker(deps) {
     const kept = [...shownDrawn.keys()].filter((k) => live.has(k))
     const stale = [...[...shownDrawn.keys()].filter((k) => !live.has(k)), ...kept.slice(0, -SHOWN_KEPT)]
     for (const k of stale) {
-      shownDrawn.get(k)?.remove()
+      /** @type {HTMLElement} */ (shownDrawn.get(k)).remove()
       shownDrawn.delete(k)
     }
   }
