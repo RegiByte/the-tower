@@ -12,6 +12,35 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.68.0
+
+Views in the tower page's main pane, the grid as an example of one, and autotidy, the first extension contributed from
+outside. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.101 → 1.105
+(additive, no major). **config**: two new optional keys, `renderers.<r>.layout` and autotidy's settings.
+
+- **Views in the main pane** (API 1.104). An extension's manifest declares `views` (a module's `mount(host, ctx)`, the
+  subjects it is `on` and `shows`, its scales, `options`, `words` and `keys`) and the `regions` inside them; the old
+  reserved shapes give a problem naming the new. `/views.js` serves `viewsOf`, `layoutOf`, `hashOf`, `locationOf`,
+  `pickView` and `displayed`. The page opens a view at a location written in its URL (`#v/<cap>/<view>/<subject>`),
+  so a reload, a link and Back keep it, and `display` falls back to today's routes wherever no view takes the
+  subject: every existing route is unchanged. A view is lent a kit (`terminal`, `run`, `display`, `toast`,
+  `confirm`); commands get theirs through `runCommandWith`, while `runCommand` keeps its signature. Commands and views
+  may carry default chords (`keys`), the config's `keys` overriding them and a collision refused with a problem on
+  each. `renderers.<r>.layout` sets a renderer's default layout under the viewer's, served as `configLayout` by
+  `GET /renderers`. Framed pages call `tower.ui('go')` and `tower.ui('display')` (#254).
+- **The grid**, in `examples/extensions/grid/`: up to four of a floor's workers' terminals side by side, opened with
+  ⌘⇧G or **Open Grid** on a floor; **Add to grid** on a worker puts it in. It is a view and a command, client code
+  only. A grid cell's Claude terminal holds still like the worker pane's, with no scrollbar (#254, #255).
+- **Autotidy** (API 1.105), contributed by Carlos Bonetti: a bundled extension, off until its settings turn a kind
+  on, that tidies what a worker leaves as it goes home (its processes, its landed worktrees and absorbed branches, and
+  extensions' entries such as its filed review thread) through the core's Tidy, without a press. A worktree goes only
+  once its work has landed; one whose branch is pushed but unmerged stays. `docs/config.md`'s Autotidy says what
+  counts as going home and the two edge cases. `card.killed` says whether the tower's kill ended a worker, and an
+  extension's tidy entry may name its `checkout`. A bundled extension that is off until its settings turn it on now
+  arrives at an API minor (#253).
+- **`crewsOf`** in `/crews.js` (API 1.103): everyone under each worker, indexed once per floor, so the sidebar and
+  `tower agents --all` walk crews in linear time (#252).
+
 ## v1.67.0
 
 Name the tower something other than `localhost`. No restart beyond the tower's own (`tower down tower`, then
