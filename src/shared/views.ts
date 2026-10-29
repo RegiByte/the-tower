@@ -2,7 +2,7 @@ import type { Board } from '../bridge/board.ts'
 import type { ExtensionViewEntry, Words } from './extensions.ts'
 import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
-import { accepted } from './media.ts'
+import { accepted, mediaTypeOf } from './media.ts'
 import type { KitMember, Layout, Region, Scale } from './regions.ts'
 import { onKind, parentOf, subjectAt, type Subject, type Text } from './subjects.ts'
 
@@ -77,10 +77,13 @@ const core = (id: string, on: string[], scales: Scale[], words: Words): View => 
 /** A core view whose module the tower serves at `/x/tower/<name>.js`, its export `mount`, lent the kit members it `needs`. */
 const served = (view: View, needs: KitMember[]): View => ({ ...view, module: `${view.id.slice('tower/'.length)}.js`, export: 'mount', needs })
 
+/** A core view on every collection's item that draws the media types it `accepts`. */
+const byType = (name: string, accepts: string[], words: Words): View => served({ ...core(`tower/${name}`, ['item.*'], ['pane'], words), accepts }, ['region', 'display', 'toast', 'confirm'])
+
 /**
  * The core's views, in the order that picks among them: the worker view first among those on a card, the archive first
- * among those on a floor. One with no module is drawn by its renderer's own route until its module ships; `tower/item`
- * is the item views by type stand in for.
+ * among those on a floor. One with no module is drawn by its renderer's own route until its module ships. The views by
+ * type follow, `tower/file` the fallback, accepting none.
  */
 export const CORE_VIEWS: readonly View[] = [
   served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
@@ -88,8 +91,19 @@ export const CORE_VIEWS: readonly View[] = [
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
-  core('tower/item', ['item.*'], ['pane'], { label: 'Item', hint: 'a kept item, drawn by its type' }),
+  byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }),
+  byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),
+  byType('image', ['image/*'], { label: 'Image', hint: 'the image' }),
+  byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),
+  byType('text', ['text/*', 'application/json', 'application/x-ndjson'], { label: 'Text', hint: 'its text as written' }),
+  byType('file', [], { label: 'File', hint: 'the file, left to Finder and the editor' }),
 ]
+
+/** The core's view by type for an item of type `type`: the most specific `accepts`, else the fallback. */
+export const coreViewOf = (type: string): View => {
+  const items = CORE_VIEWS.filter((v) => v.on.includes('item.*'))
+  return bestFit(items.filter((v) => fit(v.accepts, type)), type) ?? (items.find((v) => !v.accepts?.length) as View)
+}
 
 /** Every view: the core's, then each started extension's, in the board's order. */
 export const viewsOf = (board: Board): View[] => [
@@ -156,10 +170,13 @@ const ownerOf = (board: Board, subject: Subject): string | undefined => {
 /** A media type's specificity in `accepts`: 2 exact, 1 by its top-level type's wildcard, 0 none. */
 const fit = (accepts: string[] | undefined, type: string) => (accepts?.includes(type) ? 2 : accepted(accepts ?? [], type) ? 1 : 0)
 
+/** The view among `views` whose `accepts` fits `type` most specifically, the first in order among equals. */
+const bestFit = (views: View[], type: string) => [...views].sort((a, b) => fit(b.accepts, type) - fit(a.accepts, type))[0]
+
 /**
  * The view that draws `subject` among those a region offers (`offered`, in `viewsOf` order), by `order`, the region's
  * layout order. A subject bearing a type: the first in order that accepts it; else the view of the extension declaring
- * the subject's collection, on that exact kind; else a core view accepting it; else the most specific `accepts`; else
+ * the subject's collection, on that exact kind; else the core view accepting it most specifically; else the most specific `accepts`; else
  * a fallback, a view accepting nothing. One bearing none: the first in order; the owner's on that exact kind; the first.
  */
 export const pickView = (board: Board, offered: View[], order: string[] | undefined, subject: Subject): View | undefined => {
@@ -172,8 +189,8 @@ export const pickView = (board: Board, offered: View[], order: string[] | undefi
   return (
     firstIn(accepting) ??
     (owned && fit(owned.accepts, type) ? owned : undefined) ??
-    accepting.find((v) => v.cap === 'tower') ??
-    [...accepting].sort((a, b) => fit(b.accepts, type) - fit(a.accepts, type))[0] ??
+    bestFit(accepting.filter((v) => v.cap === 'tower'), type) ??
+    bestFit(accepting, type) ??
     offered.find((v) => !v.accepts?.length)
   )
 }
@@ -288,7 +305,9 @@ const shortForm = (body: string, board: Board): Location | undefined => {
   if (kind === 'policies') return { view: 'policies/policies', subject: `floor:${project}` }
   if (kind === 'kept') {
     const [collection, id] = rest
-    return id === undefined ? { view: 'tower/collection', subject: `collection:${project}/${collection}` } : { view: 'tower/item', subject: `item.${collection}:${project}/${decoded(id)}` }
+    if (id === undefined) return { view: 'tower/collection', subject: `collection:${project}/${collection}` }
+    const name = decoded(id)!
+    return { view: coreViewOf(mediaTypeOf(name)).id, subject: `item.${collection}:${project}/${name}` }
   }
   const pane = decoded(project)
   const card = { view: 'tower/card', subject: `card:${kind}` }
@@ -307,7 +326,8 @@ const inFloor = (key: string) => {
 
 /**
  * The short form of a location the tower page wrote before the grammar, which it keeps writing: `''` for the skyline,
- * `#archive/<p>`, `#policies/<p>`, `#kept/<p>/<c>`, `#shelf/<p>/<n>[/<file>]`, `#draft/<p>[/<id>]`; `undefined` for a
+ * `#archive/<p>`, `#policies/<p>`, `#kept/<p>/<c>`, `#kept/<p>/<c>/<id>` for an item in the core's view for its type,
+ * `#shelf/<p>/<n>[/<file>]`, `#draft/<p>[/<id>]`; `undefined` for a
  * location that has none. `locationOf` reads each back.
  */
 export const shortHashOf = (location: Location): string | undefined => {
@@ -329,7 +349,7 @@ export const shortHashOf = (location: Location): string | undefined => {
     case 'drafts/editor':
       return kind === 'collection' ? `#draft/${project}` : kind === 'item.drafts' ? `#draft/${project}/${segment(name)}` : undefined
     default:
-      return undefined
+      return kind.startsWith('item.') && location.view === coreViewOf(mediaTypeOf(name)).id ? `#kept/${project}/${kind.slice('item.'.length)}/${segment(name)}` : undefined
   }
 }
 

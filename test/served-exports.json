@@ -1049,6 +1049,7 @@
     ],
     "/views.js": [
       "CORE_VIEWS",
+      "coreViewOf",
       "displayed",
       "hashOf",
       "layoutOf",
