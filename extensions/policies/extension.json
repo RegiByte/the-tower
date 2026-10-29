@@ -4,10 +4,30 @@
   "title": "Policies",
   "description": "Standing work the tower starts at its slots: a markdown file with a json header and the prose a run starts on.",
   "requires": {
-    "tower": "1.86"
+    "tower": "1.108"
   },
   "server": "server.ts",
   "client": "client",
+  "views": {
+    "policies": {
+      "module": "view.js",
+      "export": "mount",
+      "on": [
+        "floor"
+      ],
+      "scales": [
+        "pane"
+      ],
+      "needs": [
+        "display",
+        "toast"
+      ],
+      "words": {
+        "label": "Policies",
+        "hint": "standing work the tower runs at its slots: rules, standing, Run now and Approve"
+      }
+    }
+  },
   "collections": {
     "policies": {
       "label": "Policies",
