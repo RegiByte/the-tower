@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLineOf", "hub/src/shared/worker-details.ts#hirerName"]
+  "refs": ["hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLineOf", "hub/src/shared/worker-details.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -35,7 +35,7 @@ the easy path stops them, as long as it is named for what it is.
   at most `depth` deep. At most `live` of a worker's hires run at once, the exempt aside
   ([`liveHires`](ref:hub/src/shared/crews.ts#liveHires), [`exemptFromHiring`](ref:hub/src/shared/crews.ts#exemptFromHiring)). [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal)
   says why a worker may not hire, as a sentence; the tower answers a hire past the spawn's floor's limits with it,
-  as error `limited`, and `tower hire` tells the worker to ask the user. A hire on another floor (`tower hire floor
+  as error `limited`, as the core's own answer to `tower/spawn.gate`, first ([`gate`](ref:hub/src/tower/dispatch.ts#gate), API 1.107), and `tower hire` tells the worker to ask the user. A hire on another floor (`tower hire floor
   <id>`) meets that floor's limits, the floor it would crowd, with the hirer's depth and live hires counted on every
   floor: a chain can't escape its limits by crossing floors.
 - *One at a time.* Claude runs a worker's Bash calls in parallel, so hires that each read the board first would all
@@ -50,7 +50,7 @@ the easy path stops them, as long as it is named for what it is.
   through `LEGACY` ([`legacyReviewer`](ref:hub/src/bridge/legacy.ts#legacyReviewer)) as the board reads such a worker:
   exempt by reviews.
 - *Exempt by an extension.* A launch contributor may return `exempt: ['hiring']` on a spawn ([[extensions]]). A hire is
-  weighed after its contributors have run and before anything is made: on a cut, they run on the path the worktree
+  weighed at the gate, after its contributors have run and before anything is made: on a cut, they run on the path the worktree
   will have, so a refused hire cuts nothing, as before. One they exempt is not weighed. Each exemption is logged in the new worker's log as `tower.exempt
   {from, by}` before it starts, so `card.exempt` shows it on the card as a badge in every renderer, `tower whoami` says
   "exempt from hiring limits by <cap>", `GET /extensions` lists whom each extension exempted, and `liveHires` leaves
@@ -61,6 +61,13 @@ the easy path stops them, as long as it is named for what it is.
 - *Whose prompt.* A conversation's `promptBy` is the hirer while its latest prompt is still the one the worker was
   hired on (the first session's launch prompt); `tower agent` and both renderers' Brief
   name it in place of the user. A prompt typed later is the user's again.
+
+- *Extensions gate beside it.* The gate is an open stage raised on every spawn, resume and fork: an extension answers
+  it with a refusal of its own (a budget, say), weighed after the core's, its words naming its gate ([[extensions]]).
+  The limits stay the core's answer, with no link around `spawn` and no bundled id, so no hire depends on an
+  extension being up; [`hired`](ref:hub/src/tower/dispatch.ts#hired) keeps the hirer's turn, the `tower.hire` fact and
+  the wait until the hire is counted. Moving the limits into a bundled extension, `hiring` its settings, is a new
+  bundled id and so an API major: it waits for 2.0.
 
 **Alternatives considered.**
 - *Trust the skill's rule of when to hire.* No worker sees the chain it is part of.

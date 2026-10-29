@@ -127,7 +127,7 @@ test('x is checked against its schema; tidy and asks land on the board, an ask p
   assert.equal(CARD(b).x, undefined)
   assert.deepEqual(problems.map((p) => p.problem.code), ['shape'])
   assert.deepEqual(b.adds['floor:tower'].tidy, [{ key: 'old', label: 'file old beats', cap: 'pulse' }])
-  assert.equal(b.adds['floor:lab'], undefined)
+  assert.equal(b.adds['floor:lab'].tidy, undefined, "the core's badges alone: nothing answers its discard hooks there")
   assert.deepEqual(b.asks, [{ key: 'pulse:beat-tower', subject: 'floor:tower', title: 'Beat now?', since: 900, sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/ping', call: { project: 'tower' }, cap: 'pulse' }] }])
 })
 

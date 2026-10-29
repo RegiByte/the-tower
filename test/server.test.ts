@@ -1211,3 +1211,56 @@ test("server: reviews/hire starts a reviewer in a fork of its author's checkout,
   assert.equal(errorCode(again), 'refused')
   assert.match(JSON.parse(again.body).message, /'s work can't be reviewed: it has no conversation yet$/)
 })
+
+test("server: tower/spawn.gate is answered by the core's hiring limits first, then by its answerers on spawn and resume, the first refusal naming its gate; a failed answer is a problem and the worker starts; a hook nobody answers on a floor is the core's badge there", async () => {
+  const badges = (b: Board, id: string) => (b.adds[`floor:${id}`]?.badges ?? []).filter((x) => x.cap === 'tower')
+  const before = await boardWhere(() => true)
+  assert.deepEqual(badges(before, 'bare'), [
+    { label: 'Discards refused', hint: 'Nothing records what a discard would throw away.', cap: 'tower' },
+    { label: 'Nothing filed', hint: 'No record or thread is filed once a worktree is discarded.', cap: 'tower' },
+  ])
+  assert.deepEqual([badges(before, 'lab'), badges(before, 'desk')], [[], []], 'the core answers the gate, and reviews the discard hooks')
+
+  const manifest = readFileSync(path.join(TALLY, 'extension.json'), 'utf8')
+  const server = readFileSync(path.join(TALLY, 'server.ts'), 'utf8')
+  const gated = JSON.parse(manifest)
+  writeFileSync(path.join(TALLY, 'extension.json'), JSON.stringify({ ...gated, requires: { ...gated.requires, tower: '1.107' }, answers: { ...gated.answers, 'tower/spawn.gate': {} } }))
+  writeFileSync(
+    path.join(TALLY, 'server.ts'),
+    server.replace(
+      'answers: {',
+      `answers: {
+    'tower/spawn.gate': ({ project, kind, fields }: { project: string; kind: string; fields: Record<string, Record<string, unknown>> }, ctx: { cards(): unknown[] }) => {
+      if (kind === 'resume') return { code: 'refused', message: \`tally counts \${ctx.cards().length} cards and lets none resume\` }
+      if (project === 'desk') throw new Error('no desks')
+      return fields.roles?.role === 'builder.md' ? { code: 'refused', message: 'builders wait' } : { t: 'error', code: 'refused', message: 'not counted' }
+    },`,
+    ),
+  )
+  assert.deepEqual(await command('extension/restart', { id: 'tally' }), { t: 'restarted', state: 'started' })
+  try {
+    const refused = await post('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
+    assert.deepEqual(JSON.parse(refused.body), { t: 'error', code: 'refused', message: "builders wait (tally's gate)" })
+    const limited = JSON.parse((await post('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } }, by: SESSION, hire: true })).body)
+    assert.equal(limited.code, 'limited', 'the core answers first')
+    assert.match(limited.message, /lets a worker run 0 at once \(the limits are `hiring` in the tower's config\)$/)
+
+    const resumed = JSON.parse((await post('resume', { id: LAB_AUTHOR, conversation: 'c-author' })).body)
+    assert.equal(resumed.code, 'refused')
+    assert.match(resumed.message, /^tally counts [1-9]\d* cards and lets none resume \(tally's gate\)$/)
+
+    assert.equal((await command('spawn', { project: 'lab' })).t, 'spawned', "an ApiError is a failed answer, never a refusal")
+    assert.equal((await command('spawn', { project: 'desk' })).t, 'spawned', 'a throw is a failed answer')
+    const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
+    assert.deepEqual(read.answers['tower/spawn.gate'], ['tally'])
+    const problems = read.extensions.find((e) => e.id === 'tally')!.problems.filter((p) => p.path === 'answers.tower/spawn.gate')
+    assert.deepEqual(problems.map((p) => [p.lane, p.code, p.message]).sort(), [
+      ['hook', 'hook', 'on a spawn on lab, not counted: the worker started'],
+      ['hook', 'hook', 'threw: no desks'],
+    ])
+  } finally {
+    writeFileSync(path.join(TALLY, 'extension.json'), manifest)
+    writeFileSync(path.join(TALLY, 'server.ts'), server)
+    await command('extension/restart', { id: 'tally' })
+  }
+})

@@ -733,7 +733,27 @@ and the autotidy extension reads to apply an entry once that checkout's workers 
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
 `merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
-nobody answers on (`absent`, words: a `label` and a `hint`, as a floor's badge would say it) and the reply field its answers are named in (`field`).
+nobody answers on (`absent`, words: a `label` and a `hint`) and the reply field its answers are named in (`field`).
+On a floor where no running extension that takes part answers a core hook with `absent` words, the core puts them
+there as a badge, `board.adds['floor:<project>'].badges` with `cap: 'tower'` (API 1.107): a floor where reviews is off
+reads "Discards refused" and "Nothing filed". A hook the core answers itself (`core`, its words) is never flagged.
+
+**The gate** (API 1.107). The core raises `tower/spawn.gate` on every spawn, resume and fork, once the launch
+contributors merged and before the crew edge, the worktree cut and the host, with `{project, kind: 'spawn' | 'resume'
+| 'fork', runtime, by?, hire, exempt, fields}` (`exempt`: what the contributors exempted it from; `fields`: its spawn
+fields by capability). An answer is `{}` to pass, or `{code: 'limited' | 'refused', message}` to refuse. The core
+answers first, with the floor's `hiring` limits on a hire nothing exempted, in today's words; then each answerer in
+fold order. The first refusal refuses the verb with its code, its message followed by whose gate it was:
+`the week is 95% spent (budget-gate's gate)`. A failed answer is never a refusal: an answerer that is down, throws,
+answers off the schema or answers an `ApiError` gets a `hook` problem, and the worker starts; so does a link around
+`tower/spawn.gate` that refuses or fails. An answer is waited for with no time limit, so an answerer that never
+settles holds the spawn. A gate that counts workers reads `ctx.cards()`:
+
+```ts
+export default (ctx) => ({
+  answers: { 'tower/spawn.gate': () => ((ctx.board().today.budget?.percentUsed ?? 0) > 95 ? { code: 'refused', message: 'the week is 95% spent' } : {}) },
+})
+```
 
 **Flows** (API 1.100). Where can an extension take part in a core verb? `tower flows` lists every core verb with the
 stages open to extensions, and `tower flows <verb> [--floor <project>]` prints each of its stages in order, with who

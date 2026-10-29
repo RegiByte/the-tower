@@ -46,6 +46,7 @@ import {
   type ResourceCalls,
   type ResourceVerb,
 } from './verbs.ts'
+import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
@@ -402,7 +403,8 @@ export type Board = {
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
   extensions: ExtensionView[]
   /**
-   * What extensions' folds added to each subject, by its key (`card:<id>`, `floor:<project>`, `board`,
+   * What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no
+   * answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`,
    * `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability:
    * `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's. @since 1.84
    */
@@ -701,6 +703,20 @@ export const archiveAtOf = (cards: Card[], archived: Card[]) => {
 const recordsDiscards = (config: Config, projectId: string, stores: ExtensionStores[]) => answeredOn(config, projectId, stores, 'tower/discard.record')
 
 /**
+ * The core's own adds: on each floor, a badge for each of its hooks with `absent` words it doesn't answer itself, where
+ * no running extension that takes part there answers it, saying what the stage means on that floor.
+ */
+const absentAdds = (config: Config, stores: ExtensionStores[]): Record<string, Adds> =>
+  Object.fromEntries(
+    Object.keys(config.projects).flatMap((id) => {
+      const badges = Object.entries(HOOKS).flatMap(([name, { absent, core }]) =>
+        absent && !core && !answeredOn(config, id, stores, `tower/${name}`) ? [{ ...absent, cap: 'tower' }] : [],
+      )
+      return badges.length ? [[`floor:${id}`, { badges }]] : []
+    }),
+  )
+
+/**
  * Each card with where its checkout's work stands (`checkoutState`), `review` offered only while it goes on. Who is in a
  * worktree is folded from the cards on duty and the shells, as the board's floors fold it.
  */
@@ -897,7 +913,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     ...extraUsageOf(readings),
     probes: [],
     extensions,
-    adds: {},
+    adds: absentAdds(config, stores),
     asks: [],
     today: today(sessions, readings, now),
     hostUp: host !== undefined,

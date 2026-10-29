@@ -19,12 +19,12 @@ import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
-import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput } from '../shared/api.ts'
+import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
-import { LEGACY_VERBS, legacyNamed, legacyReviewer, type Launched } from '../bridge/legacy.ts'
-import { nestedIn, qualifiedOf, tooDeep, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
+import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
+import { nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
   ConfigError,
@@ -76,11 +76,11 @@ type Deps = {
 
 const isVerb = (name: string): name is Verb => Object.hasOwn(VERBS, name)
 
-/** What a spawn's launch must pass just before it starts, given what its contributors exempted it from: a hire's limits. */
-type Gate = (launched: Launched) => Promise<ApiError | undefined>
-
-/** A spawn's extension fields by capability, the facts they are logged as, and its gate. */
-type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; gate: Gate }
+/**
+ * A spawn's extension fields by capability and the facts they are logged as; who asked for it, whether it is their hire
+ * and its prompt, as its gate weighs it; and `within`, the caller its hooks are raised for.
+ */
+type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; by?: string; hire: boolean; prompt?: string; within: Caller }
 
 export const dispatch = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:extensions'],
@@ -266,26 +266,17 @@ export const dispatch = defineResource({
       system.session(id) !== undefined && (system.session(by)?.facts.hired.includes(id) ?? false) && (system.live()?.ids.has(id) ?? false)
 
     /**
-     * A session `by` hires: refused past its floor's `hiring` limits unless a launch contributor exempts it, which its
-     * contributors decide just before it starts (or its prompt starts a reviewer the way they started before reviews
-     * logged its facts, `legacyReviewer`), then logged in the hirer's log. A hire that can't
-     * be logged is killed, so every hire that runs is counted.
+     * A session `by` hires, in its hirer's turn, weighed by its gate (`gate`), then logged in the hirer's log. A hire that
+     * can't be logged is killed, so every hire that runs is counted.
      */
-    const hired = (projectId: string, by: string, prompt: string | undefined, spawning: (gate: Gate) => Answer | Promise<Answer>) =>
+    const hired = (projectId: string, by: string, spawning: () => Answer | Promise<Answer>) =>
       fromWorker(by, () =>
         withProject(projectId, () => {
           const hirer = everyCard(Date.now()).find((c) => c.id === by)!
           return inTurn(hirer.callsign, async () => {
             const refused = factRefused(HIRE_FACT)
             if (refused) return refused
-            const answer = await spawning(async (launched) => {
-              const exempt = legacyReviewer(launched, prompt)?.exempt ?? launched.exempt
-              if (exempt.some((e) => e.from === 'hiring')) return undefined
-              await system.refreshLive()
-              const cards = everyCard(Date.now())
-              const limit = hireRefusal(cards, boardOf().floors.find((f) => f.id === projectId)!, cards.find((c) => c.id === by)!)
-              return limit ? apiError('limited', `${limit} (the limits are \`hiring\` in the tower's config)`) : undefined
-            })
+            const answer = await spawning()
             if (answer.t !== 'spawned') return answer
             const { id } = answer as Replies['spawn']
             const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
@@ -300,6 +291,29 @@ export const dispatch = defineResource({
         }),
       )
 
+    /**
+     * A new worker as `tower/spawn.gate` weighs it, just before it starts: the core answers first, refusing a hire past its
+     * floor's `hiring` limits unless a launch contributor exempted it, then each answerer in fold order, the first refusal
+     * refusing it in its words and naming its gate. A failed answer is a `hook` problem on its answerer, and the worker
+     * starts: one that threw or answered off the schema got its problem as it was delivered (`internal`).
+     */
+    const gate = async (payload: SpawnGate, within: Caller): Promise<ApiError | undefined> => {
+      await system.refreshLive()
+      if (payload.hire && !payload.exempt.some((e) => e.from === 'hiring')) {
+        const cards = everyCard(Date.now())
+        const limit = hireRefusal(cards, boardOf().floors.find((f) => f.id === payload.project)!, cards.find((c) => c.id === payload.by)!)
+        if (limit) return apiError('limited', `${limit} (the limits are \`hiring\` in the tower's config)`)
+      }
+      const answers = await chains.raise('tower/spawn.gate', payload, within)
+      for (const a of answers) {
+        if (a.ok || a.code === 'internal') continue
+        const id = holder.registry().extensions.find((e) => e.provides === a.cap)!.id
+        holder.problem(id, { lane: 'hook', level: 'error', code: 'hook', message: `on a ${payload.kind} on ${payload.project}, ${a.message}: the worker started`, at: Date.now(), path: 'answers.tower/spawn.gate' })
+      }
+      const refusal = answers.find((a): a is Answered & { ok: true; answer: { code: 'limited' | 'refused'; message: string } } => a.ok && 'code' in (a.answer as object))
+      return refusal && apiError(refusal.answer.code, `${refusal.answer.message} (${refusal.cap}'s gate)`)
+    }
+
     /** A worktree with a folder gone, in any repo, can't be worked in until it is recut. */
     const lostWorktree = (project: Project, cwd: string): ApiError | undefined => {
       const name = worktreeName(project, cwd)
@@ -313,13 +327,13 @@ export const dispatch = defineResource({
      * the next one reads it.
      */
     let resuming: Promise<unknown> = Promise.resolve()
-    const resume = (id: string, conversation: string, prompt: string | undefined): Promise<Answer> => {
-      const run = resuming.then(() => resumeOnce(id, conversation, prompt))
+    const resume = (id: string, conversation: string, prompt: string | undefined, within: Caller): Promise<Answer> => {
+      const run = resuming.then(() => resumeOnce(id, conversation, prompt, within))
       resuming = run.catch(() => undefined)
       return run
     }
 
-    const resumeOnce = (id: string, conversation: string, prompt: string | undefined) =>
+    const resumeOnce = (id: string, conversation: string, prompt: string | undefined, within: Caller) =>
       withSession(id, async () => {
         const source = system.session(id)!
         const held = source.facts.conversations.find((c) => c.id === conversation)
@@ -341,6 +355,8 @@ export const dispatch = defineResource({
         const worker = lineage(source, (s) => continues(s, system.sessions()))
         const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker))
         if (merged.t === 'error') return merged
+        const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)
+        if (gated) return gated
         const answer = await host(
           resumeRequest({
             kind,
@@ -457,7 +473,8 @@ export const dispatch = defineResource({
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
       const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf)
       if (merged.t === 'error') return merged
-      const gated = await spawn.gate(merged)
+      const exempt = legacyReviewer(merged, spawn.prompt)?.exempt ?? merged.exempt
+      const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt, fields: Object.fromEntries(spawn.fields) }, spawn.within)
       if (gated) return gated
       const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
       if (merged.reportsTo && !lead) return apiError('not_found', `${merged.reportsTo.by} has the worker report to ${merged.reportsTo.callsign}, and no worker is called that`)
@@ -791,15 +808,15 @@ export const dispatch = defineResource({
       }
 
     const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
-      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, x, by, hire }) => {
+      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, x, by, hire }, caller) => {
         const fields = spawnFields(project, x ?? {})
         if ('t' in fields) return fields
         const launch = { model, effort, prompt }
-        const spawning = (gate: Gate) =>
-          spawnedBy(() => (cut ? spawnCut(project, cut, callsign, launch, { ...fields, gate }) : spawnIn(project, cwd, callsign, launch, { ...fields, gate })), prompt, by)
-        return hire ? hired(project, by!, prompt, spawning) : spawning(async () => undefined)
+        const spawn: Spawn = { ...fields, by, hire: hire ?? false, prompt, within: nestedIn(caller, 'tower/spawn') }
+        const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, launch, spawn) : spawnIn(project, cwd, callsign, launch, spawn)), prompt, by)
+        return hire ? hired(project, by!, spawning) : spawning()
       },
-      resume: ({ id, conversation, prompt }) => resume(id, conversation, prompt),
+      resume: ({ id, conversation, prompt }, caller) => resume(id, conversation, prompt, nestedIn(caller, 'tower/resume')),
       keys: ({ id, data, by }) => keys(id, data, by),
       submit: ({ id, text, by }) => submit(id, text, by),
       resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
