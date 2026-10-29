@@ -4,6 +4,7 @@ import { launchPrompt } from '../shared/launch.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current, workerNamed } from '../shared/cards.ts'
+import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
 import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/paths.ts'
@@ -622,14 +623,6 @@ export const withReports = (cards: Card[]): Card[] => {
     if (author) return { ...c, crew: legacyCrew(c.reviews!, author.id), reportsTo: author.id, ...answerWait(c, hirer) }
     return { ...c, ...(hirer && { reportsTo: hirer.id }), ...answerWait(c, hirer) }
   })
-}
-
-/** Everyone under any worker of `cards` (`crewOf`), each worker's hires indexed once. */
-const crewsOf = (cards: Card[]): ((c: Card) => Card[]) => {
-  const hires = Map.groupBy(cards, (h) => h.reportsTo)
-  for (const list of hires.values()) list.sort((a, b) => a.startedAt - b.startedAt)
-  const crew = (c: Card): Card[] => (hires.get(c.id) ?? []).flatMap((h) => [h, ...crew(h)])
-  return crew
 }
 
 /** Each worker's current card with whom it reports to and whom its answer waits on, and the floor's `send-home` on it. */

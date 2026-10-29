@@ -1,7 +1,7 @@
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import type { Card } from './api.ts'
-import { crewOf } from './cards.ts'
+import { crewsOf } from './cards.ts'
 import type { Room } from './floorplan.ts'
 import type { Box } from './layout.ts'
 import { stateKey, turnBox, type Prefabs } from './zones.ts'
@@ -198,9 +198,10 @@ function meetingIn(room: Room, { crew, since }: { crew: Crew; since: number }, k
 export function meetingsOf(cards: Card[], rooms: Room[], kit: MeetingKit): Meeting[] {
   const current = cards.filter((c) => !c.continuedBy)
   const ids = new Set(current.map((c) => c.id))
+  const crewOf = crewsOf(current)
   const crews = current
     .filter((c) => !(c.reportsTo && ids.has(c.reportsTo)))
-    .map((lead) => [lead, ...crewOf(current, lead)].map(lifeOf))
+    .map((lead) => [lead, ...crewOf(lead)].map(lifeOf))
     .filter((lives) => lives.length >= GATHER)
     .flatMap((lives) => gathered(lives) ?? [])
   return [...roomsHeld(crews, rooms)].map(([room, held]) => meetingIn(room, held, kit))

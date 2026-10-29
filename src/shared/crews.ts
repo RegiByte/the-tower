@@ -12,6 +12,20 @@ export const findCard = (board: Board, id: string) => cardsOf(board).find((c) =>
 /** The workers that report to a worker: its hires and its reviewers, by start. */
 export const hiresOf = (cards: Card[], c: Card) => cards.filter((h) => h.reportsTo === c.id).sort((a, b) => a.startedAt - b.startedAt)
 
+/** Each worker's hires by start, `cards` indexed once: the lookup `hiresOf` makes per worker, linear over a floor's workers. */
+export const hiresBy = (cards: Card[]): ((c: Card) => Card[]) => {
+  const hires = Map.groupBy(cards, (h) => h.reportsTo)
+  for (const list of hires.values()) list.sort((a, b) => a.startedAt - b.startedAt)
+  return (c) => hires.get(c.id) ?? []
+}
+
+/** Everyone under any worker of `cards` (`crewOf`), each worker's hires indexed once. */
+export const crewsOf = (cards: Card[]): ((c: Card) => Card[]) => {
+  const hires = hiresBy(cards)
+  const crew = (c: Card): Card[] => hires(c).flatMap((h) => [h, ...crew(h)])
+  return crew
+}
+
 /** A worker's hires on other floors than its own, by start: each is drawn in full on its floor and linked under its hirer. */
 export const awayHiresOf = (cards: Card[], c: Card) => hiresOf(cards, c).filter((h) => h.project !== c.project)
 
@@ -29,20 +43,27 @@ export const goneHome = (cards: Card[], c: Card) => !c.onDuty && !crewOf(cards, 
  * A worker's hires as a crew draws them: `drawn`, the ones not gone home, each with its own crew under it; `home`, the
  * ones gone home, folded to one line; and `folded`, everyone that line holds, those under them included.
  */
-export const crewFold = (cards: Card[], c: Card) => {
-  const hires = hiresOf(cards, c)
-  const home = hires.filter((h) => goneHome(cards, h))
-  return { drawn: hires.filter((h) => !goneHome(cards, h)), home, folded: home.length + home.flatMap((h) => crewOf(cards, h)).length }
+export const crewFoldsOf = (cards: Card[]) => {
+  const hiresIn = hiresBy(cards)
+  const crew = crewsOf(cards)
+  const gone = (c: Card) => !c.onDuty && !crew(c).some((h) => h.onDuty)
+  return (c: Card) => {
+    const hires = hiresIn(c)
+    const home = hires.filter(gone)
+    return { drawn: hires.filter((h) => !gone(h)), home, folded: home.length + home.flatMap(crew).length }
+  }
 }
+
+export const crewFold = (cards: Card[], c: Card) => crewFoldsOf(cards)(c)
 
 export const goneHomeLine = (folded: number) => `${folded} gone home`
 
 /** The hirers whose gone-home crew a viewer unfolded, by card id, kept in `tower.store` for every renderer of theirs. */
 export const CREWS_UNFOLDED_KEY = VIEWER_KEYS.crewsUnfolded
 
-const reportsUpToDuty = (cards: Card[], c: Card): boolean => {
-  const up = c.reportsTo === undefined ? undefined : cards.find((h) => h.id === c.reportsTo)
-  return up !== undefined && (up.onDuty || reportsUpToDuty(cards, up))
+const reportsUpToDuty = (byId: Map<string, Card>, c: Card): boolean => {
+  const up = c.reportsTo === undefined ? undefined : byId.get(c.reportsTo)
+  return up !== undefined && (up.onDuty || reportsUpToDuty(byId, up))
 }
 
 /**
@@ -50,9 +71,11 @@ const reportsUpToDuty = (cards: Card[], c: Card): boolean => {
  * heads one, and everyone under it follows at its depth, on duty or not.
  */
 export const crewTree = (cards: Card[]): { card: Card; depth: number }[] => {
-  const under = (c: Card, depth: number): { card: Card; depth: number }[] => [{ card: c, depth }, ...hiresOf(cards, c).flatMap((h) => under(h, depth + 1))]
+  const hires = hiresBy(cards)
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const under = (c: Card, depth: number): { card: Card; depth: number }[] => [{ card: c, depth }, ...hires(c).flatMap((h) => under(h, depth + 1))]
   return cards
-    .filter((c) => c.onDuty && !reportsUpToDuty(cards, c))
+    .filter((c) => c.onDuty && !reportsUpToDuty(byId, c))
     .sort((a, b) => a.startedAt - b.startedAt)
     .flatMap((c) => under(c, 0))
 }

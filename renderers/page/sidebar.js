@@ -1,4 +1,4 @@
-import { badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, awayHiresOf, crewFold, crewTree, goneHome, goneHomeLine, hiresOf, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { REVIEWS, landedThreads, reviewerOf } from '/x/reviews/reviews.js'
@@ -26,6 +26,8 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Titled } from '../../src/shared/titles.ts'
  */
+
+/** @typedef {{ hires: (c: Card) => Card[], fold: ReturnType<typeof crewFoldsOf>, hiresEverywhere: (c: Card) => Card[], everyone: Card[] }} Crews A floor's crews, indexed once. */
 
 /**
  * @typedef {{
@@ -112,10 +114,10 @@ export async function sidebar(deps) {
     <span class="mark">${run.type === 'fork' ? ICON.branch : ''}</span><span class="what">${esc(run.description)}</span>${left === undefined ? `<span class="since" translate="no" data-since="${run.startedAt}"></span>` : ''}</div>`).join('')}</div>`
   }
 
-  /** A worker and everyone under it. @param {Card[]} cards @param {Card} c @param {Card} [over] @returns {string} */
-  const wholeCrewHtml = (cards, c, over) => {
-    const hires = hiresOf(cards, c)
-    return sessionHtml(c, over) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(cards, h, c)).join('')}</div>` : '')
+  /** A worker and everyone under it. @param {Crews} crews @param {Card} c @param {Card} [over] @returns {string} */
+  const wholeCrewHtml = (crews, c, over) => {
+    const hires = crews.hires(c)
+    return sessionHtml(c, over) + (hires.length ? `<div class="crew">${hires.map((h) => wholeCrewHtml(crews, h, c)).join('')}</div>` : '')
   }
 
   /** A hire working on another floor, as a link to its card there. @param {Card} h */
@@ -127,17 +129,16 @@ export async function sidebar(deps) {
   /**
    * A worker, the crew under it not gone home, those gone home on one line that unfolds them (`crewFold`), and its hires
    * on other floors still on duty there, linked.
-   * @param {Card[]} cards @param {Card} c @param {Card} [over] @returns {string}
+   * @param {Crews} crews @param {Card} c @param {Card} [over] @returns {string}
    */
-  const crewHtml = (cards, c, over) => {
-    const { drawn, home, folded } = crewFold(cards, c)
+  const crewHtml = (crews, c, over) => {
+    const { drawn, home, folded } = crews.fold(c)
     const open = viewer().crewsUnfolded.includes(c.id)
     const fold = home.length
-      ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(cards, h, c)).join('') : ''}`
+      ? `<button class="gone-home" data-crew-fold="${c.id}" data-hold="fold:${c.id}" aria-expanded="${open}">${ICON.caret} ${goneHomeLine(folded)}</button>${open ? home.map((h) => wholeCrewHtml(crews, h, c)).join('') : ''}`
       : ''
-    const everyone = board().floors.flatMap((f) => f.cards)
-    const away = awayHiresOf(everyone, c).filter((h) => !goneHome(everyone, h))
-    const under = drawn.map((h) => crewHtml(cards, h, c)).join('') + away.map(awayHtml).join('') + fold
+    const away = crews.hiresEverywhere(c).filter((h) => h.project !== c.project && !goneHome(crews.everyone, h))
+    const under = drawn.map((h) => crewHtml(crews, h, c)).join('') + away.map(awayHtml).join('') + fold
     return sessionHtml(c, over) + (under ? `<div class="crew">${under}</div>` : '')
   }
 
@@ -368,6 +369,8 @@ export async function sidebar(deps) {
 
   /** @param {Floor} f @param {number} i @param {Floor[]} all */
   const floorHtml = (f, i, all) => {
+    const everyone = board().floors.flatMap((f) => f.cards)
+    const crews = { hires: hiresBy(f.cards), fold: crewFoldsOf(f.cards), hiresEverywhere: hiresBy(everyone), everyone }
     const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
     const open = isOpen(f)
     const n = String(all.length - i).padStart(2, '0')
@@ -375,7 +378,7 @@ export async function sidebar(deps) {
     const draft = draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : ''
     return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
     <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? draft : floorSummaryHtml(f)}${spawn}</div>
-    ${open ? floorBodyHtml(f, heads) : ''}
+    ${open ? floorBodyHtml(f, heads, crews) : ''}
   </section>`
   }
 
@@ -385,14 +388,14 @@ export async function sidebar(deps) {
     return adds ? `<div class="adds">${adds}</div>` : ''
   }
 
-  /** @param {Floor} f @param {Card[]} heads */
-  const floorBodyHtml = (f, heads) => `
+  /** @param {Floor} f @param {Card[]} heads @param {Crews} crews */
+  const floorBodyHtml = (f, heads, crews) => `
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     ${floorAddsHtml(f)}
     ${asksHtml(board(), floorAsks(f).filter((a) => a.cap !== POLICIES), pageNow())}
     ${offersHtml(f)}
-    <div class="sessions">${heads.length ? heads.map((c) => crewHtml(f.cards, c)).join('') : '<div class="empty">lights off</div>'}</div>
+    <div class="sessions">${heads.length ? heads.map((c) => crewHtml(crews, c)).join('') : '<div class="empty">lights off</div>'}</div>
     ${traysHtml(f)}`
 
   /** A limit's meter, with a tick where an even pace through the week would be. @param {RateLimit} r @param {number} now */
