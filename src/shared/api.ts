@@ -4,7 +4,7 @@
  * `/schema`; the types renderers use are inferred from them. Only the tower runs zod: renderers import types alone.
  */
 import { z } from 'zod'
-import { AUTHOR, WORKTREE_NAME } from './model.ts'
+import { AUTHOR, RUNTIMES, WORKTREE_NAME } from './model.ts'
 import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
 import type { Words } from './extensions.ts'
 
@@ -532,11 +532,36 @@ export type Combine = 'gate' | 'merge' | 'place' | 'report'
 /**
  * A point inside a core verb where extensions take part: what it is raised with, what each answer is, and how answers
  * combine. `required`: a failed answer, or none on the floor, refuses the verb; otherwise a failure is reported. `absent`:
- * what it means on a floor nobody answers on. `field`: the reply field its answers and failures are named in.
+ * what it means on a floor nobody answers on. `field`: the reply field its answers and failures are named in. `core`:
+ * what the core answers there itself, first, so the hook is answered on every floor.
  */
-export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: Words; field?: string; description: string; since: string }
+export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: Words; field?: string; core?: string; description: string; since: string }
+
+/** What a gate answers: `{}` passes; a refusal refuses the verb with its code. */
+const gated = z.union([
+  z.object({ code: z.enum(['limited', 'refused']), message: z.string().min(1).describe('Why, for people: the refusal says it with whose gate refused.') }),
+  z.object({}).strict(),
+])
 
 const hooks = {
+  'spawn.gate': {
+    payload: z.object({
+      project: id,
+      kind: z.enum(['spawn', 'resume', 'fork']).describe('A new worker, a resume carrying a conversation on, or a fork of one.'),
+      runtime: z.enum(RUNTIMES),
+      by: id.optional().describe('The session that asked for it, when a worker did.'),
+      hire: z.boolean().describe('Whether it is a hire, weighed against the floor\'s `hiring` limits.'),
+      exempt: z.array(z.object({ from: z.literal('hiring'), by: z.string() })).describe('What its launch contributors exempted it from.'),
+      fields: z.record(z.string(), z.record(z.string(), z.unknown())).describe('Its spawn fields by capability, as parsed.'),
+    }),
+    answer: gated,
+    combine: 'gate',
+    absent: { label: 'No limits', hint: 'Nothing weighs a new worker before it starts.' },
+    core: 'hiring limits, on hires',
+    description:
+      "Raised by spawn, resume and fork once the launch contributors merged, before the crew edge, the cut and the host: the core answers first with the floor's hiring limits, then each answerer in fold order, and the first refusal refuses the verb. A failed answer (down, a throw, an `ApiError`, off the schema) is a problem on its answerer, and the verb goes on.",
+    since: '1.107',
+  },
   'tidy.apply': {
     payload: z.object({ project: id, keys: z.array(z.string()) }),
     answer: tidyApplied,
@@ -567,6 +592,9 @@ const hooks = {
 } satisfies Record<string, CoreHook>
 
 export type HookName = keyof typeof hooks
+
+/** What `tower/spawn.gate` is raised with. */
+export type SpawnGate = z.infer<(typeof hooks)['spawn.gate']['payload']>
 
 /** The core's hooks by name, each answered as `tower/<name>` by the extensions whose manifests list it in `answers`. */
 export const HOOKS: Record<HookName, CoreHook> = hooks

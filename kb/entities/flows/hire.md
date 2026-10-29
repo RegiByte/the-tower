@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-10-29",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/dispatch.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/dispatch.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
 }
 ---
 ```mermaid
@@ -20,7 +20,7 @@ sequenceDiagram
   W->>M: tower hire [tag|id] [floor|model|effort|name|base ...] (prompt on stdin or a kept item)
   M->>T: GET /board
   M->>T: POST /spawn (spawnCall of the defaults and the given fields, by: hirer, hire: true)
-  T->>T: in the hirer's turn, once the floor's launch contributors ran: hireRefusal(every card, the spawn's floor, hirer's card), unless one exempted it
+  T->>T: in the hirer's turn, once the floor's launch contributors ran: tower/spawn.gate, the core first (hireRefusal of every card, the spawn's floor, the hirer's card, unless one exempted it), then extensions
   T->>H: spawn a new session on the prompt
   T->>H: fact tower.hire {id: new session} in the hirer's log
   H->>R: h event in the hirer's log
@@ -29,9 +29,11 @@ sequenceDiagram
 ```
 
 - **Limits and order live in the tower** ([[hiring-limits]]). A `spawn` with `hire` and `by` is `by`'s hire, whoever
-  sends it: [`hired`](ref:hub/src/tower/dispatch.ts#hired) weighs it with
-  [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal) against the floor's `hiring`, and past it answers `limited`
-  (409), the command telling the worker to ask the user. A hirer's hires queue by its callsign
+  sends it: [`hired`](ref:hub/src/tower/dispatch.ts#hired) takes it in the hirer's turn, and its gate
+  ([`gate`](ref:hub/src/tower/dispatch.ts#gate), `tower/spawn.gate`) weighs it with
+  [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal) against the floor's `hiring`, the core's answer before any
+  extension's, and past it answers `limited` (409), the command telling the worker to ask the user. An extension's
+  gate may refuse it after, as `refused` or `limited` naming its gate; one that never answers holds the hire (open). A hirer's hires queue by its callsign
   ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system
   [`counted`](ref:hub/src/tower/dispatch.ts#counted) it, so the next is weighed against it.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default

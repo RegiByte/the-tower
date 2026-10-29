@@ -221,7 +221,7 @@
           "additionalProperties": {
             "$ref": "#/definitions/Adds"
           },
-          "description": "What extensions' folds added to each subject, by its key (`card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability: `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's."
+          "description": "What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability: `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's."
         },
         "asks": {
           "type": "array",

@@ -35,8 +35,8 @@ const sealed = (name: string, why: string): Stage => ({ name, kind: 'sealed', wh
 
 /** The open stage a core hook is, its combine rule read from `HOOKS`. */
 const hooked = (name: string, hook: HookName): OpenStage => {
-  const { combine, required, absent, field } = HOOKS[hook]
-  return { name, kind: 'open', hook: `tower/${hook}`, combine, ...(required && { required }), ...(absent && { absent }), ...(field && { field }) }
+  const { combine, required, absent, field, core } = HOOKS[hook]
+  return { name, kind: 'open', hook: `tower/${hook}`, combine, ...(required && { required }), ...(absent && { absent }), ...(field && { field }), ...(core && { core }) }
 }
 
 /** A verb's flow: its stages between the links around it, then what is observed of it once it answered. */
@@ -73,9 +73,6 @@ const launch = (failed: string): OpenStage => ({
   how: `the extension's \`launch\` export, with \`spawn.launch: true\` in its manifest; ${failed}`,
 })
 
-/** The gate every new worker passes, planned. */
-const gate: OpenStage = { name: 'gate', kind: 'open', combine: 'gate', hook: 'tower/spawn.gate', absent: { label: 'No limits', hint: 'Nothing weighs a new worker before it starts.' }, planned: true }
-
 const VERB_FLOWS: Record<Verb, FlowOf> = {
   spawn: flow('Start a worker', 'A new session on a floor, in its hub or a worktree cut for it.', [
     sealed('input parsed', 'the schema is the contract'),
@@ -87,7 +84,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
     sealed('who', 'a callsign is unique among workers on duty'),
     { name: 'where', kind: 'open', combine: 'place', hook: 'tower/spawn.where', core: "the hub, or its cut's path", planned: true },
     launch("a failed contributor's parts are dropped with a problem, and refuse when the request carries its fields"),
-    { ...gate, core: 'hiring limits, on hires' },
+    hooked('gate', 'spawn.gate'),
     sealed('crew edge', 'crews are core facts the board builds from'),
     { name: 'cut', kind: 'open', combine: 'gate', required: true, hook: 'tower/spawn.cut', core: 'the worktree cut, raised to the claimant of where alone', planned: true },
     HOST_SPAWN,
@@ -100,7 +97,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
     sealed('the conversation saved and free', "Claude's own rule"),
     sealed('the worktree is there', 'a worker resumes where it ran'),
     launch("asked with kind resume or fork, which carry no fields: a failed contributor's parts are dropped with a problem"),
-    gate,
+    hooked('gate', 'spawn.gate'),
     sealed('fork facts copied', 'a fork is a new worker'),
     HOST_SPAWN,
   ]),

@@ -133,7 +133,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
   const parts = new Map<string, Map<string, unknown>>()
   /** The capabilities whose part on a subject was dropped this build, by key. */
   const dropped = new Map<string, Set<string>>()
-  const adds: Record<string, Adds> = {}
+  const adds: Record<string, Adds> = Object.fromEntries(Object.entries(core.adds).map(([key, a]) => [key, { ...a }]))
   const asks: BoardAsk[] = []
   const problems: FoldProblem[] = []
   const spentBy = new Map<string, number>()
