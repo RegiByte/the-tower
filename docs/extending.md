@@ -745,8 +745,9 @@ fields by capability). An answer is `{}` to pass, or `{code: 'limited' | 'refuse
 answers first, with the floor's `hiring` limits on a hire nothing exempted, in today's words; then each answerer in
 fold order. The first refusal refuses the verb with its code, its message followed by whose gate it was:
 `the week is 95% spent (budget-gate's gate)`. A failed answer is never a refusal: an answerer that is down, throws,
-answers off the schema or answers an `ApiError` gets a `hook` problem, and the worker starts; so does a link around
-`tower/spawn.gate` that refuses or fails. An answer is waited for with no time limit, so an answerer that never
+answers off the schema or answers an `ApiError` gets a `hook` problem, and the worker starts. So does a link around
+`tower/spawn.gate` that refuses or fails, and then no answerer is asked: while an extension holding such a link is down
+or restarting, every spawn passes every extension's gate (the core's limits still hold). An answer is waited for with no time limit, so an answerer that never
 settles holds the spawn. A gate that counts workers reads `ctx.cards()`:
 
 ```ts
