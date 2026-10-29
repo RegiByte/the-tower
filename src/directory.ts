@@ -778,9 +778,10 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const args = keepArgs(rest)
     const { ext, content, name } = await keepContent(args.file)
     const { id } = await command<{ id: string }>('collection/create', { project: floor.id, collection: collection.id, name: args.name ?? name, ext, content })
-    await command('fact', { name: 'keep', value: { project: floor.id, collection: collection.id, id } })
+    const announced = await ask('fact', { name: 'keep', value: { project: floor.id, collection: collection.id, id } })
     const title = titleIn(id, content)
     console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} on ${floorTitle(floor)} as ${tagOf(id)}: ${collection.dir}/${id}`)
+    if (isFailure(announced)) throw new CliError(`The item is kept, but its card won't name you as its keeper: ${refusedLine('fact', announced)}`, 'it needs no second keep: `tower kept` lists it')
   },
   kept: async ([collectionName]) => {
     const floor = ownFloor(await readBoard(), me)
