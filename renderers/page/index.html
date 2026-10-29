@@ -355,6 +355,9 @@ dialog.confirm .actions { flex: none; }
 .shelf-files button.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
 .draft-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-m); }
 .item-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-m); }
+.view-host { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.main:not(.viewing) .view-host, .main.viewing .bar, .main.viewing .screen { display: none; }
+.view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
 .main:not(.kept) .item-view, .main.kept .bar, .main.kept .screen { display: none; }
 .item-image { flex: 1; min-width: 0; display: grid; place-items: center; overflow: auto; padding: var(--sp-xl); }
 .item-image img { max-width: 100%; max-height: 100%; }
@@ -501,6 +504,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
   <div class="draft-view" id="draft-view"><div class="shelf-head" id="draft-head"></div><div class="draft-note" id="draft-note"></div>
     <textarea id="draft-text" spellcheck="false" placeholder="a prompt for later: the first line names it"></textarea></div>
   <div class="item-view" id="item-view"><div class="shelf-head" id="item-head"></div><div class="shelf-body" id="item-body"></div></div>
+  <div class="view-host" id="view-host" data-region="board.main"></div>
   <div class="sky" id="sky"></div>
   <div class="dock">
     <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-controls="shell-pane" aria-label="shells height" aria-valuemin="120" tabindex="0" data-tip="drag, or ↑ and ↓, to resize the shells"></div>

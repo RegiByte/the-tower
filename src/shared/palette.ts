@@ -8,7 +8,7 @@ import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
 import type { Capability } from './capabilities.ts'
 import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
-import type { Action, Added } from './extensions.ts'
+import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
 import { COMMANDS, type CommandId } from './keymap.ts'
 import { VERB_WORDS, verbId, type VerbId } from './verb-words.ts'
@@ -33,7 +33,13 @@ export type AddedPick = { t: 'added'; subject: string; action: Added<Action> }
  * somewhere, the patterns sheet, or a capability shown. A renderer that can't import modules leaves out the entries
  * whose action is a command (`isCommand`).
  */
-export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
+/** A view displaying the subject `subject` names, by its id (`/views.js`). @since 1.104 */
+export type OpenPick = { t: 'open'; subject: string; view: string }
+
+export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | OpenPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
+
+/** A view a renderer offers to open on a subject, as "Open <label>", about the floor `project` when it has one. @since 1.104 */
+export type Openable = { subject: string; view: string; words: Words; project?: string }
 
 /**
  * One line of the palette. `chords`: the keymap's chords that do the same, as `board.keys` writes them. `card` and
@@ -67,6 +73,8 @@ export type PaletteContext = {
   heed: { dismissed: Heed['dismissed'] }
   draftsOf?: (f: Floor) => { items: FloorItem[] } | undefined
   draftTitle: (project: string, item: FloorItem) => string
+  /** The views the renderer offers to open where the viewer stands (`openable` in `/views.js`); none without it. @since 1.104 */
+  opens?: readonly Openable[]
 }
 
 /** What ranking favours: the worker selected and its floor, the ids picked lately, and who waits on the viewer, in the order to go to them. */
@@ -162,8 +170,22 @@ const addedEntries = (board: Board, subject: Subject, actions: Added<Action>[], 
   actions.map((action, n) => {
     const words = actionWords(board, action)
     const name = 'verb' in action ? action.verb : `${action.cap}/${action.command}`
-    return { id: `added:${subject.key}:${name}#${n}`, group, label: words.label, hint: words.hint, keywords: [action.cap, name, group], destructive: words.destructive, ...about, does: { t: 'added', subject: subject.key, action } }
+    const chords = 'command' in action ? board.keys[name] : undefined
+    return { id: `added:${subject.key}:${name}#${n}`, group, label: words.label, hint: words.hint, keywords: [action.cap, name, group], destructive: words.destructive, ...(chords?.length && { chords }), ...about, does: { t: 'added', subject: subject.key, action } }
   })
+
+/** "Open <label>" for each view the renderer offers to open. */
+const openEntries = (board: Board, opens: readonly Openable[]): Entry[] =>
+  opens.map((o) => ({
+    id: `open:${o.subject}:${o.view}`,
+    group: 'Views',
+    label: `Open ${o.words.label}`,
+    hint: o.words.hint,
+    keywords: [o.view, o.subject],
+    ...(board.keys[o.view]?.length && { chords: board.keys[o.view] }),
+    ...(o.project !== undefined && { project: o.project }),
+    does: { t: 'open', subject: o.subject, view: o.view },
+  }))
 
 const floorEntries = (f: Floor): Entry[] =>
   f.actions.filter((a) => !UNLISTED.has(verbId('floor', a.verb))).map((a) => {
@@ -231,6 +253,7 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     ...actions,
     ...board.floors.flatMap(floorEntries),
     ...extensions,
+    ...openEntries(board, ctx.opens ?? []),
     ...commands,
     ...board.floors.flatMap((f) => f.cards.filter((w) => w.onDuty).map((w) => workerEntry(f, w))),
     ...board.floors.flatMap((f) => placeEntries(f, ctx)),
@@ -301,7 +324,7 @@ export type PaletteGroup = { group: string; entries: Entry[] }
  * extensions offer, then the places (floors, shelf entries, drafts), and Learn last. Going to a worker is what the palette is opened for most;
  * commands are the same on every floor; places come after what can be done.
  */
-const SECTIONS = ['go:worker', 'command', 'action', 'added', 'go:floor', 'go:shelf', 'go:draft', 'learn']
+const SECTIONS = ['go:worker', 'command', 'action', 'added', 'open', 'go:floor', 'go:shelf', 'go:draft', 'learn']
 
 const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
 

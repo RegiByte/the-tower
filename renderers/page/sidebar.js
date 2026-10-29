@@ -25,6 +25,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Titled } from '../../src/shared/titles.ts'
+ * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
 /** @typedef {{ hires: (c: Card) => Card[], fold: ReturnType<typeof crewFoldsOf>, hiresEverywhere: (c: Card) => Card[], everyone: Card[] }} Crews A floor's crews, indexed once. */
@@ -53,6 +54,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  *   keptTitle: (project: string, collection: string, item: FloorItem) => string,
  *   heed: () => Heed,
  *   withKeys: (what: string, id: string) => string,
+ *   opensHtml: (subject: Subject) => string,
  * }} SidebarDeps
  */
 
@@ -63,7 +65,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -396,7 +398,7 @@ export async function sidebar(deps) {
 
   /** What extensions add to the floor: its badges and actions in a row. @param {Floor} f */
   const floorAddsHtml = (f) => {
-    const adds = addsHtml(board(), floorSubject(f))
+    const adds = addsHtml(board(), floorSubject(f)) + opensHtml(floorSubject(f))
     return adds ? `<div class="adds">${adds}</div>` : ''
   }
 

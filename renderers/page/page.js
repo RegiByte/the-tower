@@ -1,4 +1,4 @@
-import { actionWords, heededAsks, isAsk, isCommand, projectOfKey, runCommand, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { actionWords, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -7,7 +7,9 @@ import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
-import { HOME, hashOf, mainClass, sameRoom, viewOf } from './view.js'
+import { HOME, hashOf, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
+import { hosted } from './hosted.js'
+import { displayed, layoutOf, openable, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { skyline } from './skyline.js'
@@ -28,7 +30,7 @@ import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { fenceText, markdownCss } from '/markdown.js'
-import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, commandOf, frameCommandOf } from '/keymap.js'
+import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
@@ -63,6 +65,9 @@ import { asksHtml } from './added.js'
  * @import { Capability } from '../../src/shared/capabilities.ts'
  * @import { Offer } from '../../extensions/policies/policies.ts'
  * @import { BoardAsk } from '../../src/shared/extensions.ts'
+ * @import { CommandKit, Placing } from '../../src/shared/views.ts'
+ * @import { Layout, Region, KitMember } from '../../src/shared/regions.ts'
+ * @import { Openable } from '../../src/shared/palette.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
@@ -129,6 +134,7 @@ function render() {
   if (viewing('archive')) drawArchive()
   if (viewing('policies')) drawPolicies()
   if (viewing('collection')) drawCollection()
+  if (viewing('view')) hostedView.update()
   if (!selected()) repaint($('sky'), skylineHtml())
   paintSky()
   renderDock()
@@ -309,11 +315,11 @@ const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggl
 
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
 
-const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board })
+const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board, goTo: (location) => goTo(location), display: (subject, opts) => display(subject, opts) })
 
 const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards, heldWhy, heldHtml })
 
-const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys })
+const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
 
 
 /** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
@@ -335,6 +341,7 @@ function doPick(does, row) {
   if (does.t === 'patterns') return void showPatterns()
   if (does.t === 'learn') return learnPick(does.id)
   if (does.t === 'added') return void runAddedAt(row, does)
+  if (does.t === 'open') return display(does.subject, { view: does.view })
   if (does.t === 'go') {
     const to = does.target
     if (to.t === 'worker') return moveTo(to.id)
@@ -386,7 +393,127 @@ function learnPick(id) {
   toast(capability.text.replace(/`/g, ''), action)
 }
 
-const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick })
+const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick, opens: () => opensHere() })
+
+/** This renderer's name, from the path it is served at: `/r/<name>/`. */
+const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? 'page'
+/** What this renderer declares in its `renderer.json` and the config's layout for it, as `GET /renderers` serves them. */
+const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ ((await tower.get('renderers')).renderers.find((r) => r.name === RENDERER))
+const LAYOUT_KEY = `layout.${RENDERER}`
+/** The viewer's own layout, over the config's and the renderer's. @type {Layout | undefined} */
+let storedLayout = /** @type {Layout | undefined} */ ((await tower.store.get(LAYOUT_KEY)) ?? undefined)
+const layout = () => layoutOf(declared.layout ?? {}, declared.configLayout, storedLayout)
+const KIT = /** @type {readonly KitMember[]} */ (declared.kit ?? [])
+const MAIN = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.main'))
+
+/** What display reads to place a subject: the board, every view, the regions this renderer and the views declare. @returns {Placing} */
+const placing = () => ({
+  board: board(),
+  views: viewsOf(board()),
+  regions: [...(declared.regions ?? []), ...board().extensions.filter((e) => e.state === 'started').flatMap((e) => e.regions)],
+  layout: layout(),
+  kit: KIT,
+  main: MAIN,
+})
+
+/** The subject the main pane is on. @param {MainView} v @returns {string} */
+function subjectKeyOf(v) {
+  switch (v.t) {
+    case 'home':
+    case 'arriving':
+      return 'board'
+    case 'worker':
+      return `card:${v.id}`
+    case 'archive':
+    case 'policies':
+      return `floor:${v.project}`
+    case 'collection':
+      return `collection:${v.project}/${v.collection}`
+    case 'item':
+      return `item.${v.collection}:${v.project}/${v.id}`
+    case 'draft':
+      return v.id ? `item.${DRAFTS}:${v.project}/${v.id}` : `collection:${v.project}/${DRAFTS}`
+    case 'shelf':
+      return `shelf:${v.project}/${v.n}`
+    case 'view':
+      return v.location.subject ?? 'board'
+  }
+}
+
+/**
+ * The subject in focus: that of the innermost region holding the document's focus, else the main pane's; the board
+ * when what either names has left it.
+ */
+function focusedSubject() {
+  const region = /** @type {HTMLElement | null | undefined} */ (document.activeElement?.closest('[data-region]'))
+  const key = region?.dataset.subject ?? subjectKeyOf(view())
+  return subjectAt(board(), key) ?? boardSubject(board())
+}
+
+/**
+ * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/views.js`): a view given stays when
+ * it is the one mounted and takes it; a core view's location opens the page's route for it, a card's showing or
+ * conversation on its tab; a view mounted on a subject above `target` is handed it.
+ * @param {Subject | string} target @param {{ view?: string }} [opts]
+ */
+function display(target, opts = {}) {
+  const subject = typeof target === 'string' ? subjectAt(board(), target) : target
+  if (!subject) return toast(`${target} is no longer on the board`)
+  const { view: given } = opts
+  if (given && viewing('view')?.location.view === given && hostedView.show(subject)) return
+  const at = displayed(placing(), subject, given)
+  if (!at) return toast(given ? `${viewsOf(board()).find((v) => v.id === given)?.words.label ?? given} isn't offered on ${subject.key}` : `Nothing here shows ${subject.key}`)
+  const next = mainViewOf(at, board())
+  if (next.t === 'lookup') return toast(`${subject.key} is no longer on the board`)
+  if (next.t === 'worker' && !next.pane && subject.kind === 'shown') return go({ ...next, pane: /** @type {Pane} */ (`shown:${/** @type {{ target: string }} */ (subject.value).target}`) })
+  if (next.t === 'worker' && !next.pane && subject.kind === 'conversation') return go({ ...next, pane: 'brief' })
+  go(next)
+  if (next.t === 'view' && subject.key !== (at.subject ?? 'board') && !hostedView.show(subject)) toast(`${subject.key} isn't there any more`)
+}
+
+/**
+ * Runs an extension's command or view by its id, `<cap>/<name>`, on `subject`: a view displays it with that view; a
+ * command runs on the nearest subject up its chain of a kind the command is on, the board for one on none. Returns
+ * whether something ran.
+ * @param {string} id @param {Subject} subject
+ */
+function runAddedId(id, subject) {
+  if (viewsOf(board()).some((v) => v.id === id)) return (display(subject, { view: id }), true)
+  const cap = id.slice(0, id.indexOf('/'))
+  const name = id.slice(cap.length + 1)
+  const command = board().extensions.find((e) => e.provides === cap && e.state === 'started')?.commands.find((c) => c.name === name)
+  if (!command) return false
+  /** @type {(s: Subject | undefined) => Subject | undefined} */
+  const on = (s) => (!command.on ? boardSubject(board()) : !s ? undefined : command.on.includes(s.kind) || (s.kind.startsWith('item.') && command.on.includes('item.*')) ? s : on(subjectAt(board(), parentOf(s) ?? '')))
+  const target = on(subject)
+  if (!target) return (toast(`${command.words.label} isn't offered on ${subject.key}`), true)
+  void told(runCommandWith(board(), { command: name, cap }, target, commandKit))
+  return true
+}
+
+/** What the page lends a command it runs, and the rest of what it lends a view. @type {CommandKit} */
+const commandKit = {
+  display: (subject, opts) => display(subject, opts),
+  toast: (text, action) => toast(text, action),
+  confirm: (text, verb) => ask(text, verb),
+  run: async (command, on) => (isAddedId(command) ? runAddedId(command, on ?? focusedSubject()) : run(command, { repeat: false })),
+}
+
+const hostedView = hosted({ board, views: () => viewsOf(board()), layout, termFont, scheme, run, kit: commandKit, gone: () => goHome() })
+
+/** The views this page offers to open where the viewer stands: on the subject in focus, and on each floor and the board. @returns {Openable[]} */
+function opensHere() {
+  const p = placing()
+  const beside = [viewing('view')?.location.view ?? '']
+  const subjects = [...new Map([focusedSubject(), boardSubject(board()), ...board().floors.map((f) => /** @type {Subject} */ (subjectAt(board(), `floor:${f.id}`)))].map((s) => [s.key, s])).values()]
+  return subjects.flatMap((s) => openable(p, s, beside).map((v) => ({ subject: s.key, view: v.id, words: v.words, ...(s.project !== undefined && { project: s.project }) })))
+}
+
+/** "Open <label>" for each view a floor's section offers. @param {Subject} subject */
+const opensHtml = (subject) =>
+  openable(placing(), subject, [viewing('view')?.location.view ?? ''])
+    .map((v) => `<button class="added" data-open-view="${esc(JSON.stringify({ subject: subject.key, view: v.id }))}"${v.words.hint ? ` data-tip="${esc(v.words.hint)}"` : ''}>Open ${esc(v.words.label)}</button>`)
+    .join('')
 
 /** Where each view draws, painted in its floor's colour as it opens. */
 const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
@@ -402,6 +529,7 @@ const ENTER = {
   collection: () => {},
   draft: (v) => void enterDraft(v),
   item: () => {},
+  view: (v) => void hostedView.enter(v.location),
 }
 
 /** What only the view open holds, let go as it closes. @type {{ [T in MainView['t']]: () => void }} */
@@ -418,6 +546,7 @@ const LEAVE = {
   collection: () => {},
   draft: leaveDraft,
   item: leaveItem,
+  view: () => hostedView.leave(),
 }
 
 addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
@@ -456,7 +585,7 @@ async function runAddedAt(el, { subject: key, action }) {
   if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
-  await told(pressing(el, () => (isCommand(action) ? runCommand(board(), action, /** @type {Subject} */ (subject)) : runVerb(action))))
+  await told(pressing(el, () => (isCommand(action) ? runCommandWith(board(), action, /** @type {Subject} */ (subject), commandKit) : runVerb(action))))
 }
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. @param {string} id */
@@ -654,6 +783,11 @@ document.addEventListener('click', async (e) => {
   if (target.closest('[data-keys]')) return showKeys()
   const added = target.closest('[data-added]')
   if (added) return runAddedAt(added, JSON.parse(/** @type {string} */ (added.dataset.added)))
+  const opened = target.closest('[data-open-view]')?.dataset.openView
+  if (opened) {
+    const { subject, view } = JSON.parse(opened)
+    return display(subject, { view })
+  }
   const dismissed = target.closest('[data-dismiss]')?.dataset.dismiss
   if (dismissed) return dismissWait(dismissed)
   const offerDismissed = target.closest('[data-offer-dismiss]')?.dataset.offerDismiss
@@ -747,12 +881,13 @@ function redrawDocs() {
 
 function applyScheme() {
   rescheme()
+  hostedView.rescheme()
   reschemeShell()
   redrawDocs()
 }
 
 tower.onScheme(applyScheme)
-tower.prefs.on(() => (applyTermFont(), redrawDocs(), sendScheme(), drawSettings()))
+tower.prefs.on(() => (applyTermFont(), hostedView.refont(), redrawDocs(), sendScheme(), drawSettings()))
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open
 
@@ -798,20 +933,30 @@ function run(id, e) {
  */
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || $('confirm').open) return
-  const id = commandOf(board().keys, e, isTyping() ? 'field' : 'page')
-  if (id && run(id, e)) (e.preventDefault(), (enterGuard = undefined))
+  const focus = isTyping() ? 'field' : 'page'
+  const id = commandOf(board().keys, e, focus)
+  if (id && run(id, e)) return (e.preventDefault(), (enterGuard = undefined))
+  const added = !e.repeat && addedCommandOf(board().keys, e, focus)
+  if (added && runAddedId(added, focusedSubject())) (e.preventDefault(), (enterGuard = undefined))
 })
 
 /**
  * A key pressed in a frame the page drew runs the keymap's global commands (`frameCommandOf`), as a field's when its
- * target took typing, and none while a modal is open. Returns whether it ran one.
- * @param {KeyPress & { repeat: boolean }} press @param {boolean} editable
+ * target took typing, and none while a modal is open; then an extension's chord that `reaches` lets through, on the
+ * subject in focus. Returns whether it ran one.
+ * @param {KeyPress & { repeat: boolean }} press @param {boolean} editable @param {(id: string) => boolean} reaches
  */
-function frameKey(press, editable) {
+function frameKey(press, editable, reaches) {
   if (document.querySelector(':modal')) return false
-  const id = frameCommandOf(board().keys, press, editable ? 'field' : 'page')
-  return Boolean(id && run(id, press))
+  const focus = editable ? 'field' : 'page'
+  const id = frameCommandOf(board().keys, press, focus)
+  if (id) return run(id, press)
+  const added = !press.repeat && addedCommandOf(board().keys, press, focus)
+  return Boolean(added && reaches(added) && runAddedId(added, focusedSubject()))
 }
+
+/** An extension's chord a script frame forwards runs only if it displays a view: a command's is code, and any script can claim a key. @param {string} id */
+const isViewId = (id) => viewsOf(board()).some((v) => v.id === id)
 
 /** @param {EventTarget | null} target an element of a framed document, of the frame's realm */
 const editableIn = (target) => {
@@ -827,7 +972,7 @@ document.addEventListener('load', (e) => {
   const frame = e.target
   if (!(frame instanceof HTMLIFrameElement) || frame.sandbox.contains('allow-scripts') || frame.contentDocument?.URL !== 'about:srcdoc') return
   frame.contentDocument.addEventListener('keydown', (k) => {
-    if (!k.defaultPrevented && frameKey(k, editableIn(k.target))) k.preventDefault()
+    if (!k.defaultPrevented && frameKey(k, editableIn(k.target), () => true)) k.preventDefault()
   })
 }, true)
 
@@ -843,7 +988,7 @@ addEventListener('message', (e) => {
   if (!(frame instanceof HTMLIFrameElement) || e.source !== frame.contentWindow || !frame.sandbox.contains('allow-scripts') || !document.hasFocus()) return
   const mods = new Set(msg.mods)
   const press = { key: msg.key, code: msg.code, altKey: mods.has('Alt'), ctrlKey: mods.has('Ctrl'), metaKey: mods.has('Meta'), shiftKey: mods.has('Shift'), repeat: false }
-  if (!frameKey(press, msg.editable)) return
+  if (!frameKey(press, msg.editable, isViewId)) return
   const opened = document.activeElement
   enterGuard = opened && typesText(opened) ? opened : 'pending'
 })
@@ -906,6 +1051,13 @@ tower.subscribe(async (next) => {
   if (wanted) return route(wanted)
   render()
 })
+
+/** Opens a location (`/views.js`), as a link to its hash would: a worker of an archive read first. @param {import('../../src/shared/views.ts').Location} location */
+async function goTo(location) {
+  const named = mainViewOf(location, board())
+  if (named.t !== 'lookup') return go(named)
+  go(await lookUp(named.id) ? { t: 'worker', id: named.id, pane: named.pane } : HOME)
+}
 
 /** Opens what a hash (without its `#`) names, a worker of an archive read first; the skyline when it names nothing. @param {string} wanted */
 async function route(wanted) {

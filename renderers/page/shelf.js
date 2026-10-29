@@ -11,6 +11,8 @@ import { documentHtml, safeHref } from '/markdown.js'
  * @import { RelayedUi } from '../../src/shared/shelf-page.ts'
  * @import { MainView } from './view.js'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
+ * @import { Location } from '../../src/shared/views.ts'
+ * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
 /**
@@ -25,6 +27,8 @@ import { documentHtml, safeHref } from '/markdown.js'
  *   goHome: () => void,
  *   view: () => MainView,
  *   board: () => Board,
+ *   goTo: (location: Location) => void,
+ *   display: (subject: Subject | string, opts: { view?: string }) => void,
  * }} ShelfDeps
  */
 
@@ -34,7 +38,7 @@ import { documentHtml, safeHref } from '/markdown.js'
  * @param {ShelfDeps} deps
  */
 export function shelf(deps) {
-  const { viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board } = deps
+  const { viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board, goTo, display } = deps
   /** The files of the `md` shelf entry open, once read. @type {string[]} */
   let shelfFiles = []
 
@@ -92,6 +96,8 @@ export function shelf(deps) {
     select: ({ id }) => select(id),
     home: () => goHome(),
     shelf: ({ project, n }) => openShelf(project, n),
+    go: ({ location }) => goTo(location),
+    display: ({ subject, view }) => display(subject, { view }),
   }
 
   /** A frame of a page nobody serves would show the browser's error: say so instead, with a way to look again. @param {string} url */
