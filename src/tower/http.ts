@@ -7,7 +7,7 @@
  *   GET  /x/<cap>/<file>   a file of the client folder of the extension providing <cap> (the bundled one's while none runs),
  *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings, whether it is built, and what its
- *                       renderer.json declares: regions, kit, keeps and layout (src/renderers.ts)
+ *                       renderer.json declares: regions, kit, keeps and layout, and the config's layout for it, configLayout (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
  *   GET  /schema        every verb's input and reply and every hook's payload and answer, the core's and each running extension's,

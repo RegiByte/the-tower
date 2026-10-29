@@ -1,6 +1,6 @@
 import { CALLSIGN_NAME, CALLSIGNS, callsigns } from './callsign.ts'
 import { keymapOf, keysProblems, type Keys } from './keymap.ts'
-import type { Declared } from './regions.ts'
+import type { Declared, Layout } from './regions.ts'
 
 /** A unit of work spanning one or more repositories. Sessions start in `hub`; `repos` are granted file access only (`additionalDirectories`). */
 export type Project = {
@@ -216,10 +216,13 @@ export const editorArgv = (config: Config, action: EditorAction, values: Record<
   )
 }
 
-/** Every command's chords, the config's `keys` over the keymap's defaults. Keys that can't be bound so are a config error. */
-export const configuredKeys = (config: Config): Keys => {
+/**
+ * Every keymap command's chords, the config's `keys` over the keymap's defaults; `extensionIds`, the commands and views
+ * of the extensions running, whose chords it checks beside them. Keys that can't be bound so are a config error.
+ */
+export const configuredKeys = (config: Config, extensionIds: readonly string[]): Keys => {
   const overrides = config.keys ?? {}
-  const failed = keysProblems(overrides).find((p) => p.level === 'fail')
+  const failed = keysProblems(overrides, extensionIds).find((p) => p.level === 'fail')
   if (failed) throw new ConfigError(`keys${failed.at} in the config: ${failed.problem}`)
   return keymapOf(overrides)
 }
@@ -328,7 +331,7 @@ export const BRIEF_KEYS = keysOf<BriefConfig>()(['pairs'])
 export const RETENTION_KEYS = keysOf<RetentionConfig>()(['days'])
 export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
-export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings'])
+export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout'])
 export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings'])
 export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
 export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
@@ -337,14 +340,15 @@ export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
  * A renderer: `root`, the absolute directory of its built files, all served below `/r/<name>/`; `entry`, its page in
  * it (`index.html` unless set); `settings`, its own configuration, which the core passes through unread.
  */
-export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown> }
+/** A renderer the config declares or overrides; `layout`, the default arrangement of its views, over its own (`renderer.json`). */
+export type RendererConfig = { root?: string; entry?: string; settings?: Record<string, unknown>; layout?: Layout }
 
 /**
  * A renderer as the tower serves it: `available` while its entry exists, which for a built renderer means it was built;
  * what its `renderer.json` declares (`Declared`, since 1.101) when it has one for its entry, or `problem`, why that
- * file declares nothing.
+ * file declares nothing; `configLayout`, the config's `layout` for it (since 1.104), `{}` when it sets none.
  */
-export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown>; problem?: string } & Partial<Declared>
+export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown>; problem?: string; configLayout: Layout } & Partial<Declared>
 
 /** A project's collections: every project's, then its own. A collection declared in both is a config error. */
 export const projectCollections = (config: Config, projectId: string): Record<string, CollectionType> => {

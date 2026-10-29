@@ -214,9 +214,6 @@ const underDeclared = (raw: unknown, required: string): LoadProblem[] =>
     warn('under-declared', `uses ${keys.map((k) => k.path).join(', ')}, since ${since}, but requires tower ${required}: raise it to ${since}`, keys[0].path),
   )
 
-/** The keys a manifest holds that the tower validates and doesn't read yet. */
-const NOT_YET = ['views', 'regions'] as const
-
 /** The core's reads by name, the board among them: what a door may name of the core's. */
 const CORE_READS: string[] = Object.keys({
   board: true,
@@ -520,6 +517,30 @@ const targetProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
     return [error('invalid', `${target} is ${cap}'s: declare requires.${cap} or wants.${cap} to ${lane === 'around' ? 'wrap' : 'answer'} it`, at)]
   })
 
+/**
+ * A manifest written to the reserved shapes of `views` (by renderer, then region) or `regions` (a subject and a
+ * description) before 1.104 read them: each refused with the shape that replaced it.
+ */
+const oldShapeProblems = (raw: unknown): LoadProblem[] => {
+  if (!isObject(raw)) return []
+  const views = isObject(raw.views) ? Object.entries(raw.views).filter(([, v]) => isObject(v) && v.module === undefined && Object.values(v).some((r) => isObject(r) && 'module' in r)) : []
+  const regions = isObject(raw.regions) ? Object.entries(raw.regions).filter(([, r]) => isObject(r) && r.holds === undefined) : []
+  return [
+    ...views.map(([name]) => error('invalid', `views.${name} is keyed by renderer and region, a shape no tower reads: since 1.104 views are { "<name>": { module, export, on, scales, words, … } }, and the layout places them`, `views.${name}`)),
+    ...regions.map(([id]) => error('invalid', `regions.${id} lacks holds: since 1.104 a region is { subject, holds, scale?, arity?, description? }`, `regions.${id}`)),
+  ]
+}
+
+/** A view's regions are among the manifest's own, and a region holding views says the room it gives. */
+const viewProblems = (manifest: Manifest): LoadProblem[] => [
+  ...Object.entries(manifest.views ?? {}).flatMap(([name, view]) =>
+    (view.regions ?? []).filter((id) => !manifest.regions?.[id]).map((id) => error('invalid', `views.${name} declares region ${id}, which regions doesn't hold`, `views.${name}.regions`)),
+  ),
+  ...Object.entries(manifest.regions ?? {}).flatMap(([id, region]) =>
+    region.holds.includes('views') && !region.scale ? [error('invalid', `regions.${id} holds views: give the scale each gets, chip, row, cell or pane`, `regions.${id}.scale`)] : [],
+  ),
+]
+
 /** One extension's config entry, manifest and settings, read in that order; the first that refuses it ends the read. */
 export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
   const at = `extensions.${found.id}`
@@ -536,6 +557,8 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const requiredTower = isObject(raw) && isObject(raw.requires) ? raw.requires.tower : undefined
   const tooFar = typeof requiredTower === 'string' && /^\d+\.\d+$/.test(requiredTower) ? versionProblem(requiredTower, tower) : undefined
   if (tooFar) return { found, claims, problems: [tooFar] }
+  const reshaped = oldShapeProblems(raw)
+  if (reshaped.length) return { found, claims, problems: reshaped }
   const parsed = Manifest.safeParse(raw)
   if (!parsed.success) {
     const unknown = (i: { path: string; message: string }) =>
@@ -559,12 +582,11 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems]
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
     ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
-    ...NOT_YET.filter((key) => manifest[key] !== undefined).map((key) => warn('not-yet', `${key} is reserved for a later tower: validated, and not read yet`, key)),
     ...underDeclared(raw, manifest.requires.tower),
     ...(foldsSlots(manifest) && !meets(manifest.requires.tower, SLOTS_ADD_SINCE) && versionOf(manifest.requires.tower)[0] === versionOf(SLOTS_ADD_SINCE)[0]
       ? [warn('under-declared', `adds slots, since ${SLOTS_ADD_SINCE}, but requires tower ${manifest.requires.tower}: raise it to ${SLOTS_ADD_SINCE}`, 'folds')]
@@ -666,6 +688,17 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
       : `${others.join(' and ')} all provide ${cap}: turn all but one off with extensions.<id>.off`
     if (kept) providers.set(cap, kept)
     for (const r of claimants) if (r !== kept) refuse(r, 'refused', [...r.problems, error('conflict', message)])
+  }
+
+  const declaring = [...providers.values()].filter((r) => !refused.has(r.found.id) && r.manifest!.regions)
+  for (const [id, regions] of Map.groupBy(
+    declaring.flatMap((r) => Object.entries(r.manifest!.regions!).map(([id, region]) => ({ id, region, r }))),
+    (d) => d.id,
+  )) {
+    const shapes = new Set(regions.map((d) => JSON.stringify(regionShape(d.region))))
+    if (shapes.size < 2) continue
+    const message = `${regions.map((d) => d.r.found.id).join(' and ')} declare region ${id} differently: one id has one meaning, so agree on its fields or name one apart`
+    for (const { r } of regions) refuse(r, 'refused', [...r.problems, error('conflict', message, `regions.${id}`)])
   }
 
   for (const [cap, r] of providers) {
@@ -820,8 +853,19 @@ const commandsOf = (manifest: Manifest | undefined): ExtensionView['commands'] =
     words: c.words,
     ...(c.on && { on: c.on }),
     ...(c.accepts && { accepts: c.accepts }),
+    ...(c.keys && { keys: c.keys }),
     ...(c.deprecated && { deprecated: c.deprecated }),
   }))
+/** A region's fields in one order, compared across the manifests that declare it. */
+const regionShape = (r: NonNullable<Manifest['regions']>[string]) => ({ subject: r.subject, holds: [...r.holds].sort(), scale: r.scale, arity: r.arity, description: r.description })
+
+/** A manifest's views as the board shows them, qualified. */
+const viewsOf = (manifest: Manifest | undefined): ExtensionView['views'] =>
+  Object.entries(manifest?.views ?? {}).map(([name, { module, export: exported, ...view }]) => ({ id: `${capabilityOf(manifest!)}/${name}`, module, export: exported, ...view }))
+
+/** The regions a manifest's views declare, by id. */
+const regionsOf = (manifest: Manifest | undefined): ExtensionView['regions'] => Object.entries(manifest?.regions ?? {}).map(([id, region]) => ({ id, ...region }))
+
 /** A manifest's own subject kinds as the board shows them, qualified. */
 const subjectsOf = (manifest: Manifest | undefined): ExtensionView['subjects'] =>
   Object.entries(manifest?.subjects ?? {}).map(([kind, s]) => ({ kind: `${capabilityOf(manifest!)}.${kind}`, in: s.in, list: s.list }))
@@ -944,6 +988,8 @@ export const registry = (
       commands: commandsOf(a.manifest),
       slots: slotsOf(a.manifest),
       subjects: subjectsOf(a.manifest),
+      views: viewsOf(a.manifest),
+      regions: regionsOf(a.manifest),
       ...spawnOf(a.manifest),
     }
   })
@@ -960,6 +1006,8 @@ export const registry = (
       commands: commandsOf(r.manifest),
       slots: slotsOf(r.manifest),
       subjects: subjectsOf(r.manifest),
+      views: viewsOf(r.manifest),
+      regions: regionsOf(r.manifest),
     }),
   )
   const stores = resolved.order.map((id) => {

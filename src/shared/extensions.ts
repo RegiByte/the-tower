@@ -11,6 +11,8 @@ import type { StreamFact } from '../bridge/streams.ts'
 import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 import { RUNTIMES, type Runtime } from './model.ts'
 import { FACT_KINDS } from './rate-limits.ts'
+import { chordProblem } from './keymap.ts'
+import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Region } from './regions.ts'
 
 export type { StreamFact }
 
@@ -51,6 +53,9 @@ const REVIEWERS_MOVED = '1.95'
 
 /** The minor subjects grew in: shown, collection and shelf, an own kind's key by its instance, `accepts`, an action's words. */
 const SUBJECTS = '1.98'
+
+/** The minor views and regions were first read in, their shapes replaced, and commands and views took default chords. */
+export const VIEWS = '1.104'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
@@ -202,6 +207,10 @@ export type ExtensionView = {
   slots: ExtensionSlot[]
   /** Its manifest's own subject kinds. @since 1.98 */
   subjects: ExtensionSubject[]
+  /** Its manifest's views, each `<provides>/<name>`. @since 1.104 */
+  views: ExtensionViewEntry[]
+  /** The regions its views declare inside them. @since 1.104 */
+  regions: Region[]
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
 }
@@ -221,7 +230,27 @@ export type SpawnOption = { value: string; label: string; hint?: string }
  * and `on`, the subject kinds every subject of which is offered it (`item.*`: every collection's items), those whose
  * `value.type` is one of `accepts` (since 1.98) when it has one.
  */
-export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; accepts?: string[]; deprecated?: Deprecated }
+export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; accepts?: string[]; keys?: string[]; deprecated?: Deprecated }
+
+/**
+ * One of an extension's views as the board shows it: `id`, `<provides>/<name>`, the export of a module served at
+ * `/x/<cap>/<module>` that mounts it, on the kinds in `on` at the `scales` it draws in, handed the kinds in `shows`;
+ * `keys`, its default chords, which `board.keys` holds as they stand. @since 1.104
+ */
+export type ExtensionViewEntry = {
+  id: string
+  module: string
+  export: string
+  on: string[]
+  shows?: string[]
+  accepts?: string[]
+  scales: string[]
+  needs?: string[]
+  regions?: string[]
+  options?: Record<string, unknown>
+  words: Words
+  keys?: string[]
+}
 
 /** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the board's, since 1.86. */
 export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots'] as const
@@ -653,6 +682,7 @@ const around = sinceAt(AROUND)
 const triggers = sinceAt(TRIGGERS)
 const launch = sinceAt(LAUNCH)
 const kinds = sinceAt(KINDS)
+const views = sinceAt(VIEWS)
 
 const Name = z
   .string()
@@ -671,6 +701,14 @@ const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
 const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
+const Chords = z.array(
+  z.string().superRefine((chord, ctx) => {
+    const problem = chordProblem(chord)
+    if (problem) ctx.addIssue({ code: 'custom', message: problem })
+  }),
+)
+const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
+const Kinds = z.array(z.union([SubjectKind, z.literal('item.*')])).min(1)
 const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>')
 const Scope = z.enum(['system', 'project'])
 const Deprecated = z.strictObject({
@@ -804,6 +842,7 @@ const Command = z.strictObject({
       .optional()
       .describe("The media types of the subjects it is offered on, matched against a subject's value.type: a subject with no type isn't offered it."),
   ),
+  keys: views(Chords.optional().describe("Default chords that run it on the subject in focus: the config's keys replace them.")),
   deprecated: folds(Deprecated.optional()),
 })
 
@@ -823,7 +862,29 @@ const Spawn = z.strictObject({
   fields: launch(z.record(Word, SpawnField).optional().describe('Its spawn fields: a spawn sets them in `x.<provides>`, each logged as a session fact before the worker starts.')),
 })
 
-const View = z.strictObject({ module: since(Path), export: since(z.string().optional()), subject: since(SubjectKind), words: since(Words.optional()) })
+const View = z.strictObject({
+  module: views(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
+  export: views(z.string().min(1).describe('The export that mounts it: mount(host, ctx) returning { update, show?, visible?, close }.')),
+  on: views(Kinds.describe('The subject kinds it mounts on: a region offers it on these, at a scale it has.')),
+  shows: views(Kinds.optional().describe('The kinds it is handed through show while mounted on an ancestor, never mounted on.')),
+  accepts: views(MediaTypes.optional().describe("The media types of a file-bearing subject it draws, matched against the subject's value.type.")),
+  scales: views(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane.')),
+  needs: views(z.array(z.enum(KIT_MEMBERS)).optional().describe("The kit members it can't draw without: a renderer whose kit lacks one doesn't offer it.")),
+  regions: views(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
+  options: views(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
+  words: views(Words.describe('Its name, as a palette offers "Open <label>".')),
+  keys: views(Chords.optional().describe("Default chords that display the subject in focus with it: the config's keys replace them.")),
+})
+const RegionDecl = z.strictObject({
+  subject: views(SubjectKind),
+  holds: views(z.array(z.enum(HOLDS)).min(1)),
+  scale: views(z.enum(SCALES).optional()),
+  arity: views(z.enum(['one', 'tabs']).optional()),
+  description: views(z.string().min(1).optional()),
+})
+
+/** One of a manifest's views, by its name. */
+export type ViewDecl = z.infer<typeof View>
 
 export const Manifest = z
   .strictObject({
@@ -881,12 +942,12 @@ export const Manifest = z
         .optional()
         .describe("What teaches a session of a runtime the extension, by runtime: for claude, a Claude plugin's folder, passed with --plugin-dir on floors where it is on."),
     ),
-    views: since(z.record(z.string(), z.record(z.string(), View)).optional().describe('Reserved: views by renderer and region, validated and not yet read.')),
+    views: since(z.record(Word, View).optional().describe('Its views by name, `<capability>/<name>`: modules a renderer mounts into a region it gives them.')),
     regions: since(
       z
-        .record(z.string(), z.strictObject({ subject: since(SubjectKind), description: since(z.string().optional()) }))
+        .record(z.string().regex(REGION_ID, 'a subject kind and a place: card.cell, reviews.thread.head'), RegionDecl)
         .optional()
-        .describe('Reserved: its own sub-regions, validated and not yet read.'),
+        .describe('The regions its views declare inside them, by id: two declarations of one id agree field for field.'),
     ),
   })
   .describe('An extension\'s manifest, `extension.json`: unknown keys refuse it.')

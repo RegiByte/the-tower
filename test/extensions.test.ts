@@ -108,12 +108,24 @@ test('settings are parsed by the manifest schema with its defaults, and a config
   assert.match(r.refused.get('none')!.problems[0].message, /takes no settings/)
 })
 
-test('views are validated and not read yet, and a key newer than the declared tower is under-declared: both warnings', () => {
-  const r = resolved([ext('later', { requires: { tower: '1.80' }, views: { page: { 'worker.tabs': { module: 'tab.js', subject: 'card' } } } }), ext('wrong', { views: { page: { tabs: { subject: 'card' } } } })])
-  const later = r.accepted.get('later')!.problems
-  assert.deepEqual(later.filter((p) => p.code === 'not-yet').map((p) => [p.path, p.level]), [['views', 'warn']])
-  assert.deepEqual(later.filter((p) => p.code === 'under-declared').map((p) => [p.path, p.level, p.message]), [['id', 'warn', 'uses id, version, title, requires, views, since 1.81, but requires tower 1.80: raise it to 1.81']])
-  assert.deepEqual(codes(r, 'wrong'), ['invalid'])
+test('views are read in their 1.104 shape: the reserved shapes refused naming it, a view\'s regions its own, one region id one meaning', () => {
+  const grid = { module: 'grid.js', export: 'mount', on: ['floor'], scales: ['pane'], regions: ['card.cell'], words: { label: 'Grid' } }
+  const cell = { subject: 'card', holds: ['views'], scale: 'cell', arity: 'one' }
+  const at = (found: Found[]) => resolve(found, config({ extensions: added(found) }), '1.104')
+  const r = at([
+    ext('grid', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': cell } }),
+    ext('later', { requires: { tower: '1.101' }, views: { grid }, regions: { 'card.cell': cell } }),
+    ext('old', { views: { page: { 'worker.tabs': { module: 'tab.js', subject: 'card' } } } }),
+    ext('stale', { regions: { 'x.place': { subject: 'card' } } }),
+    ext('loose', { requires: { tower: '1.104' }, views: { grid } }),
+  ])
+  assert.deepEqual(r.accepted.get('grid')!.problems, [])
+  assert.deepEqual(r.accepted.get('later')!.problems.filter((p) => p.code === 'under-declared').map((p) => p.path), ['views.grid.module'])
+  assert.match(r.refused.get('old')!.problems[0].message, /since 1\.104 views are \{ "<name>": \{ module, export, on, scales, words/)
+  assert.match(r.refused.get('stale')!.problems[0].message, /regions\.x\.place lacks holds/)
+  assert.match(r.refused.get('loose')!.problems[0].message, /declares region card\.cell, which regions doesn't hold/)
+  const clash = at([ext('one', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': cell } }), ext('two', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': { ...cell, scale: 'row' } } })])
+  assert.deepEqual([codes(clash, 'one'), codes(clash, 'two')], [['conflict'], ['conflict']])
 })
 
 test('a capability off on a floor turns off every extension that requires it there, derived, never restarted', () => {

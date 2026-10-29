@@ -4392,6 +4392,20 @@
           },
           "description": "Its manifest's own subject kinds."
         },
+        "views": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionViewEntry"
+          },
+          "description": "Its manifest's views, each `<provides>/<name>`."
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Region"
+          },
+          "description": "The regions its views declare inside them."
+        },
         "spawn": {
           "type": "object",
           "properties": {
@@ -4420,7 +4434,9 @@
         "verbs",
         "commands",
         "slots",
-        "subjects"
+        "subjects",
+        "views",
+        "regions"
       ],
       "additionalProperties": false,
       "description": "An extension as the board shows it. `id` names the implementation, `provides` the capability every outward name is qualified by. `off`: the floors it is off on, set there or because a capability it requires is. `problems`: newest first."
@@ -4621,6 +4637,12 @@
             "type": "string"
           }
         },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "deprecated": {
           "$ref": "#/definitions/Deprecated"
         }
@@ -4704,6 +4726,138 @@
       ],
       "additionalProperties": false,
       "description": "One of an extension's own subject kinds as the board shows it: `kind`, qualified (`reviews.thread`), its entries the keyed ones at `list` in its own part of each subject of kind `in`."
+    },
+    "ExtensionViewEntry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "export": {
+          "type": "string"
+        },
+        "on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accepts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "words": {
+          "$ref": "#/definitions/Words"
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "module",
+        "export",
+        "on",
+        "scales",
+        "words"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's views as the board shows it: `id`, `<provides>/<name>`, the export of a module served at `/x/<cap>/<module>` that mounts it, on the kinds in `on` at the `scales` it draws in, handed the kinds in `shows`; `keys`, its default chords, which `board.keys` holds as they stand."
+    },
+    "Region": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "holds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Hold"
+          }
+        },
+        "scale": {
+          "$ref": "#/definitions/Scale"
+        },
+        "arity": {
+          "type": "string",
+          "enum": [
+            "one",
+            "tabs"
+          ]
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "holds"
+      ],
+      "additionalProperties": false,
+      "description": "A place a renderer draws for subjects of one kind. `id`: `<subject kind>.<place>`; `subject`: the kind, `item.*` for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time or several as `tabs`; `description`: where it is on screen, in words."
+    },
+    "Hold": {
+      "type": "string",
+      "enum": [
+        "verbs",
+        "commands",
+        "badges",
+        "lines",
+        "marks",
+        "tidy",
+        "asks",
+        "views"
+      ]
+    },
+    "Scale": {
+      "type": "string",
+      "enum": [
+        "chip",
+        "row",
+        "cell",
+        "pane"
+      ]
     },
     "SpawnFieldView": {
       "type": "object",

@@ -119,12 +119,14 @@ export type KeysProblem = { level: 'fail' | 'warn'; at: string; problem: string 
  * them or null (a fail), an id no command has (a warn: it is ignored), a chord bound twice where both may fire (a fail
  * at the override that makes it so).
  */
-export const keysProblems = (overrides: unknown): KeysProblem[] => {
+export const keysProblems = (overrides: unknown, extensionIds: readonly string[]): KeysProblem[] => {
   if (typeof overrides !== 'object' || overrides === null || Array.isArray(overrides))
     return [{ level: 'fail', at: '', problem: 'takes an object of command ids, each a chord, a list of chords or null' }]
   const entries = Object.entries(overrides)
   const shape = entries.flatMap(([id, value]): KeysProblem[] => {
-    if (!COMMAND.has(id)) return [{ level: 'warn', at: `.${id}`, problem: `no command is called "${id}": they are ${COMMANDS.map((c) => c.id).join(', ')}` }]
+    if (isAddedId(id) && !extensionIds.includes(id))
+      return [{ level: 'warn', at: `.${id}`, problem: `no extension the tower runs declares a command or view "${id}"${extensionIds.length ? `: they are ${extensionIds.join(', ')}` : ''}` }]
+    if (!COMMAND.has(id) && !isAddedId(id)) return [{ level: 'warn', at: `.${id}`, problem: `no command is called "${id}": they are ${COMMANDS.map((c) => c.id).join(', ')}, or an extension's <cap>/<name>` }]
     if (value === null || typeof value === 'string') return typeof value === 'string' && typeof parse(value) === 'string' ? [{ level: 'fail', at: `.${id}`, problem: parse(value) as string }] : []
     if (!Array.isArray(value)) return [{ level: 'fail', at: `.${id}`, problem: 'takes a chord, a list of chords or null' }]
     return value.flatMap((chord, n) => {
@@ -134,7 +136,10 @@ export const keysProblems = (overrides: unknown): KeysProblem[] => {
   })
   if (shape.some((p) => p.level === 'fail')) return shape
   const keys = keymapOf(overrides as Record<string, string | string[] | null>)
-  const bound = COMMANDS.flatMap((c) => keys[c.id].map((text) => ({ id: c.id, text, focus: reach(c.scope, parse(text) as Chord) })))
+  const added = entries.filter(([id]) => extensionIds.includes(id)).map(([id, value]) => ({ id, scope: 'global' as const, chords: asList(value as string | string[] | null).map((t) => textOf(parse(t) as Chord)) }))
+  const bound = [...COMMANDS.map((c) => ({ id: c.id, scope: c.scope, chords: keys[c.id] })), ...added].flatMap((c) =>
+    c.chords.map((text) => ({ id: c.id, text, focus: reach(c.scope, parse(text) as Chord) })),
+  )
   const pairs = (same: (a: string, b: string) => boolean) =>
     bound.flatMap((a, i) => bound.slice(i + 1).filter((b) => b.id !== a.id && same(a.text, b.text) && a.focus.some((f) => b.focus.includes(f))).map((b) => [a, b] as const))
   const at = (a: { id: string }, b: { id: string }) => (Object.hasOwn(overrides, a.id) ? [a.id, b.id] : [b.id, a.id])
@@ -174,6 +179,56 @@ const asList = (value: string | string[] | null): string[] => (value === null ? 
 /** Each command's chords: the defaults, those the config's `keys` names replaced. Ids no command has are left out. */
 export const keymapOf = (overrides: Record<string, string | string[] | null>): Keys =>
   Object.fromEntries(COMMANDS.map((c) => [c.id, (Object.hasOwn(overrides, c.id) ? asList(overrides[c.id]) : c.chords).map((t) => textOf(parse(t) as Chord))]))
+
+/** Whether `id` names an extension's command or view, `<cap>/<name>`, beside the keymap's own ids. */
+export const isAddedId = (id: string): boolean => /^[a-z][a-z0-9]*(-[a-z0-9]+)*\/[a-z][a-z0-9.-]*$/.test(id)
+
+/** An extension's command or view with the chords its manifest gives it by default. */
+export type AddedDefaults = { cap: string; id: string; path: string; chords: string[] }
+
+/** A default chord an extension's manifest gave that was dropped: `path` where the manifest gives it. */
+export type DroppedKey = { cap: string; path: string; problem: string }
+
+/**
+ * The chords of extensions' commands and views (D5): each the config's `keys` for its id when set there, which always
+ * wins, else its manifest's defaults. A default is dropped where it would fire with a chord the keymap binds, one a
+ * renderer keeps for itself (`keeps`, its `renderer.json`), one the config set for another extension, or another
+ * extension's default, the two then both dropped, so load order never decides. Every chord of an extension is global.
+ */
+export const addedKeys = (
+  added: AddedDefaults[],
+  overrides: Record<string, string | string[] | null>,
+  core: Keys,
+  keeps: readonly string[],
+): { keys: Keys; dropped: DroppedKey[] } => {
+  const canonical = (t: string) => textOf(parse(t) as Chord)
+  const set = added.filter((a) => Object.hasOwn(overrides, a.id))
+  const fromConfig = Object.fromEntries(set.map((a) => [a.id, asList(overrides[a.id]).map(canonical)]))
+  const taken = [
+    ...COMMANDS.flatMap((c) => (core[c.id] ?? []).map((text) => ({ by: `the keymap's ${c.id}`, text, focus: reach(c.scope, parse(text) as Chord) }))),
+    ...keeps.filter((t) => !chordProblem(t)).map((t) => ({ by: 'a renderer, which keeps it', text: canonical(t), focus: ['page', 'terminal', 'field'] as Focus[] })),
+    ...set.flatMap((a) => fromConfig[a.id].map((text) => ({ by: `${a.id}, as the config's keys set it`, text, focus: reach('global', parse(text) as Chord) }))),
+  ]
+  const defaults = added.filter((a) => !Object.hasOwn(overrides, a.id)).flatMap((a) => a.chords.map((t) => ({ a, text: canonical(t), focus: reach('global', parse(canonical(t)) as Chord) })))
+  const meets = (x: { text: string; focus: Focus[] }, y: { text: string; focus: Focus[] }) => x.text === y.text && x.focus.some((f) => y.focus.includes(f))
+  const dropped: DroppedKey[] = []
+  const kept = defaults.filter((d) => {
+    const core = taken.find((t) => meets(t, d))
+    const other = defaults.find((o) => o.a.cap !== d.a.cap && meets(o, d))
+    const by = core?.by ?? (other && `${other.a.id}'s default`)
+    if (by) dropped.push({ cap: d.a.cap, path: d.a.path, problem: `${d.text}, ${d.a.id}'s default, is dropped: ${by} has it. Set keys."${d.a.id}" in the config to bind it` })
+    return !by
+  })
+  const keys = Object.fromEntries(added.map((a) => [a.id, fromConfig[a.id] ?? kept.filter((d) => d.a === a).map((d) => d.text)]))
+  return { keys, dropped }
+}
+
+/** The command an extension's chord runs, `<cap>/<name>`, for a key press with `focus` where it is, by `keys`. */
+export const addedCommandOf = (keys: Keys, e: KeyPress, focus: Focus): string | undefined =>
+  Object.keys(keys).find((id) => isAddedId(id) && keys[id].some((text) => {
+    const chord = parse(text) as Chord
+    return reach('global', chord).includes(focus) && matches(chord, e)
+  }))
 
 /** Every command at its default chords. */
 export const DEFAULT_KEYS: Keys = keymapOf({})

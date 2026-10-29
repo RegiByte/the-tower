@@ -55,6 +55,8 @@ const started = (provides: string, over: Partial<ExtensionView>): ExtensionView 
   commands: [],
   slots: [],
   subjects: [],
+  views: [],
+  regions: [],
   ...over,
 })
 

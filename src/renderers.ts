@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
 import { ConfigError, type Config, type Renderer, type RendererConfig } from './shared/model.ts'
-import { HOLDS, KIT_MEMBERS, SCALES, type Declared, type Layout, type Region } from './shared/regions.ts'
+import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Declared, type Layout, type Region } from './shared/regions.ts'
 
 /** The default of `renderer` in the config. */
 export const DEFAULT_RENDERER = 'page'
@@ -28,9 +28,11 @@ export const renderersOf = (config: Config): Renderer[] => {
   const names = [...new Set([...Object.keys(BUILT_INS), ...Object.keys(declared)])]
   return names.map((name) => {
     if (!RENDERER_NAME.test(name)) throw new ConfigError(`renderers."${name}" in the config: a renderer's name is letters, digits, "_" and "-"`)
-    const { root, entry = 'index.html', settings = {} } = { ...BUILT_INS[name], ...declared[name] }
+    const { root, entry = 'index.html', settings = {}, layout = {} } = { ...BUILT_INS[name], ...declared[name] }
     if (!root) throw new ConfigError(`renderers.${name} in the config has no "root": the directory its built files are in`)
-    return { name, root, entry, available: existsSync(path.join(root, entry)), settings, ...declaredAt(root, entry) }
+    const configLayout = LayoutSchema.safeParse(layout)
+    if (!configLayout.success) throw new ConfigError(`renderers.${name}.layout in the config: ${layoutIssues(configLayout.error)}`)
+    return { name, root, entry, available: existsSync(path.join(root, entry)), settings, configLayout: configLayout.data, ...declaredAt(root, entry) }
   })
 }
 
@@ -38,7 +40,7 @@ export const renderersOf = (config: Config): Renderer[] => {
 export const DECLARED_FILE = 'renderer.json'
 
 const RegionSchema: z.ZodType<Region> = z.strictObject({
-  id: z.string().regex(/^[a-z][a-z0-9-]*(\.([a-z][a-z0-9-]*|\*))*\.[a-z][a-z0-9-]*$/, 'a subject kind and a place: card.head, item.row, reviews.thread.head'),
+  id: z.string().regex(REGION_ID, 'a subject kind and a place: card.head, item.row, reviews.thread.head'),
   subject: z.string().min(1),
   holds: z.array(z.enum(HOLDS)).min(1),
   scale: z.enum(SCALES).optional(),
@@ -46,7 +48,11 @@ const RegionSchema: z.ZodType<Region> = z.strictObject({
   description: z.string().min(1).optional(),
 })
 
-const LayoutSchema: z.ZodType<Layout> = z.record(
+/** A layout's problems in a line, each at its path. */
+const layoutIssues = (error: z.ZodError) => error.issues.map((i) => `${i.path.join('.') || '(top)'}: ${i.message}`).join('; ')
+
+/** A layout: per region id, the order of its views, those hidden, the tab it opens on, each view's options. */
+export const LayoutSchema: z.ZodType<Layout> = z.record(
   z.string(),
   z.strictObject({
     order: z.array(z.string()).optional(),

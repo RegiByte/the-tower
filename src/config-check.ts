@@ -11,6 +11,8 @@ import { respelled, type Respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
 import { defaultRenderer, renderersOf } from './renderers.ts'
+import type { Layout } from './shared/regions.ts'
+import type { ViewDecl } from './shared/extensions.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
 import {
   BRIEF_KEYS,
@@ -146,6 +148,30 @@ const directories = (at: string, dirs: unknown, what: string): ConfigProblem[] =
 /** The extensions as the tower finds and resolves them, to check their settings against their manifests. */
 type Extensions = { found: Found[]; resolved: Resolved }
 
+/**
+ * The options a renderer's layout in the config gives each view, parsed by the options schema of the view's manifest:
+ * a view no extension that would start declares is a warning, and one that takes no options fails.
+ */
+const layoutOptionProblems = (renderer: string, layout: Layout, resolved: Resolved): ConfigProblem[] => {
+  const views = new Map<string, ViewDecl>([...resolved.accepted.values()].flatMap(({ provides, manifest }) => Object.entries(manifest.views ?? {}).map(([name, v]) => [`${provides}/${name}`, v] as const)))
+  return Object.entries(layout).flatMap(([region, { options = {} }]) =>
+    Object.entries(options).flatMap(([id, given]): ConfigProblem[] => {
+      const at = `renderers.${renderer}.layout.${region}.options.${id}`
+      const view = views.get(id)
+      if (!view) return id.startsWith('tower/') ? [] : [{ level: 'warn', key: at, problem: `no extension that would start declares a view ${id}` }]
+      if (!view.options) return [fail(at, `${id} takes no options`)]
+      const schema = zodOf(view.options)
+      if (typeof schema === 'string') return []
+      const parsed = parseSettings(schema, given, at)
+      return parsed.ok ? [] : parsed.problems.map((p) => fail(p.path, p.message))
+    }),
+  )
+}
+
+/** The commands and views of the extensions that would start, by the ids `keys` binds them by: `<cap>/<name>`. */
+const addedIds = (resolved: Resolved): string[] =>
+  [...resolved.accepted.values()].flatMap(({ provides, manifest }) => [...Object.keys(manifest.commands ?? {}), ...Object.keys(manifest.views ?? {})].map((name) => `${provides}/${name}`))
+
 /** Settings parsed by the settings schema of the manifest `found` holds, each problem at its key path below `at`. */
 const settingsProblems = (at: string, found: Found | undefined, settings: unknown): ConfigProblem[] => {
   const manifest = found && manifestOf(found)
@@ -280,6 +306,7 @@ export const configProblems = (read: Config): ConfigProblem[] => {
     ...unknownKeysEach('renderers', config.renderers, RENDERER_KEYS),
     ...(renderers ?? []).flatMap((r): ConfigProblem[] => (r.problem ? [{ level: 'warn', key: `renderers.${r.name}`, problem: `${r.root}/${r.problem}: it declares no regions` }] : [])),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),
+    ...(renderers ?? []).flatMap((r) => layoutOptionProblems(r.name, r.configLayout, extensions.resolved)),
     ...unknownKeysAt('editor', config.editor, EDITOR_KEYS),
     ...(config.editor === undefined ? [] : (Object.keys(EDITOR_VALUES) as EditorAction[]).flatMap((action) => checked(`editor.${action}`, () => editorArgv(config, action, EDITOR_VALUES[action])))),
     ...collections('collections', config.collections),
@@ -289,7 +316,7 @@ export const configProblems = (read: Config): ConfigProblem[] => {
     ...counts('retention', config.retention, RETENTION_KEYS),
     ...probesProblems(config.probes, spelled),
     ...directories('plugins', config.plugins, 'absolute plugin directories'),
-    ...(config.keys === undefined ? [] : keysProblems(config.keys).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
+    ...(config.keys === undefined ? [] : keysProblems(config.keys, addedIds(extensions.resolved)).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...extensionEntries(config, extensions),
     ...projects.flatMap(([id, project]) => projectProblems(config, id, project, renderers, extensions)),
   ]

@@ -1,4 +1,4 @@
-import type { Keys } from '../shared/keymap.ts'
+import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
 import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
@@ -792,7 +792,35 @@ export type SystemView = {
   /** The stores of the extensions the tower accepted: their collections join the floors they are on. */
   stores: ExtensionStores[]
   paths: Pick<SystemPaths, 'config' | 'collections'>
+  /** The chords the renderers keep for themselves (their `renderer.json`'s `keeps`): no extension's default takes one. */
+  keeps: string[]
   now: number
+}
+
+/** The commands and views of the extensions running, with their manifests' default chords. */
+const addedDefaultsOf = (extensions: ExtensionView[]): AddedDefaults[] =>
+  extensions
+    .filter((e) => e.state === 'started')
+    .flatMap((e) => [
+      ...e.commands.map((c) => ({ cap: e.provides, id: `${e.provides}/${c.name}`, path: `commands.${c.name}.keys`, chords: c.keys ?? [] })),
+      ...e.views.map((v) => ({ cap: e.provides, id: v.id, path: `views.${v.id.slice(e.provides.length + 1)}.keys`, chords: v.keys ?? [] })),
+    ])
+
+/** Each extension with the default chords of its that were dropped, as problems of its own. */
+const withDropped = (extensions: ExtensionView[], dropped: DroppedKey[], now: number): ExtensionView[] =>
+  extensions.map((e) => {
+    const own = dropped.filter((d) => d.cap === e.provides)
+    return own.length
+      ? { ...e, problems: [...own.map((d) => ({ lane: 'load' as const, level: 'warn' as const, code: 'conflict' as const, message: d.problem, at: now, count: 1, path: d.path })), ...e.problems] }
+      : e
+  })
+
+/** The keymap's chords and every running extension's, and the extensions with the defaults of theirs that were dropped. */
+const keysOf = (config: Config, extensions: ExtensionView[], keeps: string[], now: number): { keys: Keys; extensions: ExtensionView[] } => {
+  const added = addedDefaultsOf(extensions)
+  const core = configuredKeys(config, added.map((a) => a.id))
+  const { keys, dropped } = addedKeys(added, config.keys ?? {}, core, keeps)
+  return { keys: { ...core, ...keys }, extensions: withDropped(extensions, dropped, now) }
 }
 
 /** The newest reading any session's turn took. */
@@ -805,7 +833,8 @@ export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
 export const boardOf = (view: SystemView, cards: Card[]): Board => {
-  const { config, sessions, host, shells, items, repos, logFiles, readings, streams, extensions, stores, paths, now } = view
+  const { config, sessions, host, shells, items, repos, logFiles, readings, streams, stores, paths, keeps, now } = view
+  const { keys, extensions } = keysOf(config, view.extensions, keeps, now)
   const continued = continuations(sessions)
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
@@ -814,7 +843,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
   const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
-    keys: configuredKeys(config),
+    keys,
     config: paths.config,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)

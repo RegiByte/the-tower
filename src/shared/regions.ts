@@ -6,6 +6,9 @@ import type { Manifest } from './extensions.ts'
  * `landing` says, for an extension, which renderers' regions draw each of its commands and contributions.
  */
 
+/** A region's id: a subject kind and a place, `card.head`, `item.*.row`, `reviews.thread.head`. */
+export const REGION_ID = /^[a-z][a-z0-9-]*(\.([a-z][a-z0-9-]*|\*))*\.[a-z][a-z0-9-]*$/
+
 /** What a region draws: actions split into those calling a verb and those running a client command, and the other contributions. */
 export const HOLDS = ['verbs', 'commands', 'badges', 'lines', 'marks', 'tidy', 'asks', 'views'] as const
 export type Hold = (typeof HOLDS)[number]
@@ -25,7 +28,11 @@ export type KitMember = (typeof KIT_MEMBERS)[number]
  */
 export type Region = { id: string; subject: string; holds: Hold[]; scale?: Scale; arity?: 'one' | 'tabs'; description?: string }
 
-/** A renderer's default arrangement of the views in its regions, by region id: served, and not yet read. */
+/**
+ * An arrangement of the views in a renderer's regions, by region id: `order` the views first, in this order; `hidden`
+ * those not offered there; `open` the tab a tabs region opens on; `options` each view's own settings there. A
+ * renderer's own (its `renderer.json`), the config's and the viewer's are laid one over the other by `layoutOf`.
+ */
 export type Layout = Record<
   string,
   { order?: string[]; hidden?: string[]; open?: { view: string; subject?: string }; options?: Record<string, Record<string, unknown>> }
