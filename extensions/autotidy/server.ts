@@ -7,7 +7,7 @@
  */
 import type { Floor } from '../../src/bridge/board.ts'
 import type { Start, TriggerCall } from '../../src/shared/extensions.ts'
-import { addedOf, eachEntry, fresh, leftBoard, partOf, planOf, tidyInput, type Settings } from './plan.ts'
+import { addedOf, eachEntry, fresh, leftBoard, listedBefore, partOf, planOf, tidyInput, type Settings } from './plan.ts'
 
 const start: Start = () => ({
   folds: { floor: (f: Floor, { settings, now }) => ({ x: partOf(settings as Settings, f, now) }) },
@@ -15,7 +15,7 @@ const start: Start = () => ({
     next.floors.flatMap((f): TriggerCall[] => {
       const was = prev.floors.find((p) => p.id === f.id)
       if (!was) return []
-      const asked = fresh(planOf(was, addedOf(prev, was)), planOf(f, addedOf(next, f), leftBoard(was, f)))
+      const asked = listedBefore(was, fresh(planOf(was, addedOf(prev, was)), planOf(f, addedOf(next, f), leftBoard(was, f))))
       return eachEntry(asked).map((entry) => ({ verb: 'tower/tidy', input: tidyInput(f.id, entry) }))
     }),
 })

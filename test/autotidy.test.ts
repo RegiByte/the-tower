@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
 import { board, type Floor } from '../src/bridge/board.ts'
-import type { RepoRead } from '../src/bridge/worktrees.ts'
+import type { RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import type { Resource } from '../src/bridge/resources.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
-import { eachEntry, fresh, GOING_MS, goingHome, leftBoard, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
+import { eachEntry, fresh, GOING_MS, goingHome, leftBoard, listedBefore, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
 import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
 
@@ -24,13 +24,12 @@ const left = (log: SessionLog, pid: number): Resource => ({ pid, session: log.he
 /** When `log`'s session ended: its exit event. */
 const endOf = (log: SessionLog) => at(log, log.events.at(-1)![0])
 
-/** Git's read of the hub: worktree odin-42, clean and pushed, its branch `absorbed` into its base or not. */
-const hubRead = (absorbed: boolean) =>
-  new Map<string, RepoRead>([
-    [HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed, risk: [] }], kept: [] }],
-  ])
-const REPOS = hubRead(true)
-const PUSHED = hubRead(false)
+/** Git's read of the hub holding `trees`. */
+const hubRead = (trees: TreeRead[]) => new Map<string, RepoRead>([[HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+/** Worktree odin-42, clean and pushed, its branch `absorbed` into its base or not. */
+const odin = (absorbed: boolean): TreeRead => ({ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed, risk: [] })
+const REPOS = hubRead([odin(true)])
+const PUSHED = hubRead([odin(false)])
 
 /** The tower floor at `now` with `logs`, those in `live` running, `running` the processes left, autotidy's part going `going`, and git reading `repos`. */
 const floorAt = (logs: SessionLog[], now: number, live: SessionLog[], running: Resource[] = [], going?: Going[], settings = ALL, repos = REPOS): Floor => {
@@ -127,6 +126,18 @@ test('a plan is asked for once: only what came to qualify since the last board',
   const after = { worktrees: [TREE, 'b'], branches: [BRANCH], prune: [{ t: 'reap' as const, id: 's', pid: 1 }, { t: 'reap' as const, id: 's', pid: 2 }], x: { reviews: [TREE, 'b'] } }
   assert.deepEqual(fresh(before, after), { worktrees: ['b'], branches: [BRANCH], prune: [{ t: 'reap', id: 's', pid: 2 }], x: { reviews: ['b'] } })
   assert.deepEqual(fresh(after, after), { worktrees: [], branches: [], prune: [], x: {} })
+})
+
+test('a worktree the last board did not list is never asked for, though its worker is still going home: a recut', () => {
+  const log = inTree(fixture('tool-turn'))
+  const later = endOf(log) + DAY
+  const going = [{ ...GOING, sessions: [log.header.id] }]
+  const removed = floorAt([log], later, [], [], going, ALL, hubRead([]))
+  const recut = floorAt([log], later, [], [], going)
+  const asked = fresh(planOf(removed, []), planOf(recut, []))
+  assert.deepEqual(asked.worktrees, [TREE])
+  assert.deepEqual(listedBefore(removed, asked).worktrees, [])
+  assert.deepEqual(listedBefore(recut, asked).worktrees, [TREE])
 })
 
 test('a plan is asked for an entry a call, so a stale one is refused alone', () => {

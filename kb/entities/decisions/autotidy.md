@@ -16,6 +16,7 @@
     "hub/extensions/autotidy/plan.ts#planOf",
     "hub/src/bridge/checkouts.ts#checkoutLanded",
     "hub/extensions/autotidy/plan.ts#fresh",
+    "hub/extensions/autotidy/plan.ts#listedBefore",
     "hub/extensions/autotidy/plan.ts#eachEntry",
     "hub/extensions/autotidy/plan.ts#partOf",
     "hub/extensions/autotidy/plan.ts#GOING_MS",
@@ -65,7 +66,10 @@ theirs; the core reads nothing in it.
   duty works in that checkout, since a process names no checkout and may serve a worker sharing it.
 - *Only as it goes, asked once.* A trigger is pure and keeps nothing between boards, so it asks `tower/tidy` only for
   what the new board lists that the last did not ([`fresh`](ref:hub/extensions/autotidy/plan.ts#fresh)): a Tidy in
-  flight is not asked for again as its own removals change the board. Each entry is its own call
+  flight is not asked for again as its own removals change the board. A worktree the last board did not list is never
+  asked for ([`listedBefore`](ref:hub/extensions/autotidy/plan.ts#listedBefore)): the going worker's own was listed
+  while it worked there, so one that comes onto the board within the two minutes was just made, a recut of the one
+  autotidy removed, by a user about to resume its worker. Each entry is its own call
   ([`eachEntry`](ref:hub/extensions/autotidy/plan.ts#eachEntry)): Tidy refuses a whole call when any of it no longer
   qualifies, so a process exiting on its own between the board and the call is refused alone, not with the worktree
   and the thread beside it. Tidy runs one floor's calls one at a time; a trigger past 30 calls a minute is paused. Nothing is retried, and nothing is tidied after

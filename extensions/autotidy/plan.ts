@@ -101,6 +101,12 @@ export const fresh = (prev: Plan, next: Plan): Plan => {
 }
 
 /**
+ * A plan without the worktrees `prev` didn't list: a going worker's own worktree was listed while it worked there, so
+ * one that comes onto the board meanwhile was just made (recut by the user to resume a worker) and is never autotidy's.
+ */
+export const listedBefore = (prev: Floor, p: Plan): Plan => ({ ...p, worktrees: p.worktrees.filter((name) => prev.worktrees.some((w) => w.name === name)) })
+
+/**
  * A plan cut into one plan per entry: Tidy refuses a whole call when any of it no longer qualifies (a process that
  * exited between the board and the call), and each entry is asked for once, so one stale entry mustn't take the rest
  * down with it.
