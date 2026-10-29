@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
@@ -18,6 +18,7 @@
     "hub/src/bridge/verbs.ts#sendHomeActions",
     "hub/src/shared/crews.ts#hiresOf",
     "hub/src/shared/crews.ts#crewOf",
+    "hub/src/shared/crews.ts#crewsOf",
     "hub/src/shared/crews.ts#crewTree",
     "hub/src/shared/crews.ts#awayHiresOf",
     "hub/src/shared/crews.ts#goneHome",
@@ -70,7 +71,9 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   (everyone under it, each before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads
   a crew, everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,
   walks the same tree. `goneHome` (off duty, nobody on duty under it) and `crewFold` (a worker's hires split into those
-  drawn and those gone home, with how many the fold holds) say what a renderer may fold.
+  drawn and those gone home, with how many the fold holds) say what a renderer may fold. A renderer or the bridge walking a whole floor's crews indexes the cards once, `hiresBy`,
+  `crewsOf` and `crewFoldsOf` returning the lookup each of those makes per worker, linear in the cards where a `crewOf` per
+  worker is quadratic; the board's `send-home` offers use `crewsOf`.
 - *Sent home together.* Every worker offers `send-home` while it or anyone under it runs
   ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions)). Its call is a list of `kill` calls, the deepest
   first, so the API gains no verb and every kill can be resumed. A worker with nobody running under it ends alone: its
