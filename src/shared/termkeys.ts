@@ -21,8 +21,9 @@ const BYTES: Record<string, string> = {
 /** Each natural key at its default chord: its command, the key and the only modifier held, the bytes it sends, and how renderers name it. */
 export const NATURAL_KEYS: { id: string; key: string; chord: Chord; bytes: string; label: string; does: string }[] = Object.entries(BYTES).map(([id, bytes]) => {
   const command = COMMANDS.find((c) => c.id === id)!
-  const [chord, key] = command.chords[0].split('+') as [Chord, string]
-  return { id, key, chord, bytes, label: chordLabel(command.chords[0]), does: command.does }
+  const first = command.chords[0]!
+  const [chord, key] = first.split('+') as [Chord, string]
+  return { id, key, chord, bytes, label: chordLabel(first), does: command.does }
 })
 
 const chordOf = (e: TermKey): string =>
