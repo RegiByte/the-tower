@@ -367,10 +367,22 @@ export async function sidebar(deps) {
     ].filter(Boolean).join('')}</span>`
   }
 
+  /** Every floor's cards indexed once per board, shared by the floors drawn from it. @type {WeakMap<Board, { hiresEverywhere: (c: Card) => Card[], everyone: Card[] }>} */
+  const everywhere = new WeakMap()
+
+  /** A floor's crews, indexed for drawing. @param {Floor} f @returns {Crews} */
+  const floorCrews = (f) => {
+    const b = board()
+    const all = everywhere.get(b) ?? (() => {
+      const everyone = b.floors.flatMap((g) => g.cards)
+      return { hiresEverywhere: hiresBy(everyone), everyone }
+    })()
+    everywhere.set(b, all)
+    return { hires: hiresBy(f.cards), fold: crewFoldsOf(f.cards), ...all }
+  }
+
   /** @param {Floor} f @param {number} i @param {Floor[]} all */
   const floorHtml = (f, i, all) => {
-    const everyone = board().floors.flatMap((f) => f.cards)
-    const crews = { hires: hiresBy(f.cards), fold: crewFoldsOf(f.cards), hiresEverywhere: hiresBy(everyone), everyone }
     const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
     const open = isOpen(f)
     const n = String(all.length - i).padStart(2, '0')
@@ -378,7 +390,7 @@ export async function sidebar(deps) {
     const draft = draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : ''
     return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
     <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? draft : floorSummaryHtml(f)}${spawn}</div>
-    ${open ? floorBodyHtml(f, heads, crews) : ''}
+    ${open ? floorBodyHtml(f, heads, floorCrews(f)) : ''}
   </section>`
   }
 

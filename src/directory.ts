@@ -26,7 +26,7 @@ import { capabilityOf, type ExtensionView } from './shared/extensions.ts'
 import { renderersOf } from './renderers.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, awayHiresOf, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
@@ -106,18 +106,18 @@ const hiredOff = (card: Card) => card.hiredBy !== undefined && card.hiredBy.proj
 const awayLine = (card: Card, depth: number) => `${'    '.repeat(depth)}  └ ${card.callsign}  ·  ${statusName(card)}  ·  on ${card.project}`
 
 /** A floor's crews (`crewTree`), each worker followed by its hires on other floors, linked: each is drawn in full on its own. */
-const crewRows = (floor: Floor, everyone: Card[]): { card: Card; depth: number; away?: true }[] =>
+const crewRows = (floor: Floor, hiresEverywhere: (c: Card) => Card[]): { card: Card; depth: number; away?: true }[] =>
   crewTree(floor.cards).flatMap((row) => [
     row,
-    ...awayHiresOf(everyone, row.card).map((card) => ({ card, depth: row.depth + 1, away: true as const })),
+    ...hiresEverywhere(row.card).filter((h) => h.project !== row.card.project).map((card) => ({ card, depth: row.depth + 1, away: true as const })),
   ])
 
 /** The floor's crews: each worker under the one it reports to, those that went home among them, and its hires on other floors. */
-const floorLines = (floor: Floor, everyone: Card[], me: string | undefined, now: number): string[] => {
+const floorLines = (floor: Floor, hiresEverywhere: (c: Card) => Card[], me: string | undefined, now: number): string[] => {
   const onDuty = floor.cards.filter((c) => c.onDuty)
   return [
     `${floorTitle(floor)}: ${onDuty.length} on duty`,
-    ...crewRows(floor, everyone).flatMap(({ card, depth, away }) => (away ? [awayLine(card, depth)] : cardLines(card, me, now, depth))),
+    ...crewRows(floor, hiresEverywhere).flatMap(({ card, depth, away }) => (away ? [awayLine(card, depth)] : cardLines(card, me, now, depth))),
   ]
 }
 
@@ -653,8 +653,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   agents: async ([all]) => {
     const board = await readBoard()
     const floors = all === '--all' ? board.floors.filter((f) => f.cards.some((c) => c.onDuty)) : [board.floors.find((f) => f.id === ownCard(board, me).project)!]
-    const everyone = board.floors.flatMap((f) => f.cards)
-    console.log(floors.map((f) => floorLines(f, everyone, me, now).join('\n')).join('\n\n'))
+    const hiresEverywhere = hiresBy(board.floors.flatMap((f) => f.cards))
+    console.log(floors.map((f) => floorLines(f, hiresEverywhere, me, now).join('\n')).join('\n\n'))
   },
   agent: async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('agent'))

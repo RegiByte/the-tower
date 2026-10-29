@@ -39,10 +39,7 @@ export const sentHome = (cards: Card[], c: Card): Card[] =>
 /** A worker gone home from a crew: off duty, and nobody under it on duty, so drawing it holds no one up. */
 export const goneHome = (cards: Card[], c: Card) => !c.onDuty && !crewOf(cards, c).some((h) => h.onDuty)
 
-/**
- * A worker's hires as a crew draws them: `drawn`, the ones not gone home, each with its own crew under it; `home`, the
- * ones gone home, folded to one line; and `folded`, everyone that line holds, those under them included.
- */
+/** `crewFold` for every worker of `cards`, indexed once. */
 export const crewFoldsOf = (cards: Card[]) => {
   const hiresIn = hiresBy(cards)
   const crew = crewsOf(cards)
@@ -54,6 +51,10 @@ export const crewFoldsOf = (cards: Card[]) => {
   }
 }
 
+/**
+ * A worker's hires as a crew draws them: `drawn`, the ones not gone home, each with its own crew under it; `home`, the
+ * ones gone home, folded to one line; and `folded`, everyone that line holds, those under them included.
+ */
 export const crewFold = (cards: Card[], c: Card) => crewFoldsOf(cards)(c)
 
 export const goneHomeLine = (folded: number) => `${folded} gone home`
