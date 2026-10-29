@@ -61,6 +61,7 @@
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
+ *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
  *
@@ -108,7 +109,7 @@
    *   setPrefs(patch: Partial<Prefs>): void,
    *   remember(value: unknown): void,
    *   recall(): Promise<unknown>,
-   *   store: Tower['store'],
+   *   store: Omit<Tower['store'], 'on'>,
    * }} Api
    */
   /** A message of `/mux`: the connection's id, then each watched stream's messages by key. @typedef {{ t: 'mux', id: string } | { t?: undefined, key: string, data: StreamMsg }} MuxMsg */
@@ -474,6 +475,18 @@
     return (id, data) => (queue = queue.then(() => api.call(verb, { id, data })).catch((err) => console.error(`tower.js ${verb}:`, err)))
   }
 
+  /** @type {Set<(key: string) => void>} */
+  const storeWatchers = new Set()
+  /** `tower.store`, telling its watchers each key this page sets, a framed page's through `relay` included. @type {import('../shared/shelf-page.ts').Tower['store']} */
+  const store = {
+    set: (key, value) => (api.store.set(key, value), storeWatchers.forEach((fn) => fn(key))),
+    get: api.store.get,
+    on(fn) {
+      storeWatchers.add(fn)
+      return () => storeWatchers.delete(fn)
+    },
+  }
+
   /**
    * A shelf page framed by this page, given the board and the API over `postMessage` (src/shared/shelf-page.ts). The
    * frame loads `url` with a token new to this relay, and the page sends it with every message: a document the frame
@@ -539,7 +552,7 @@
         try { localStorage.setItem(memoryKey, JSON.stringify(msg.value)) } catch {}
         return
       }
-      if (msg.t === 'store') return (api.store.set(msg.key, msg.value), stored(msg.key))
+      if (msg.t === 'store') return (store.set(msg.key, msg.value), stored(msg.key))
       if (msg.t === 'watch') return watches.set(msg.id, watch(msg.path, (data) => toPage({ t: 'event', id: msg.id, data })))
       if (msg.t === 'unwatch') return (watches.get(msg.id)?.(), watches.delete(msg.id))
       /** @param {{ data: unknown } | { error: string, code: import('../shared/api.ts').ErrorCode }} reply */
@@ -598,7 +611,7 @@
     ui: api.ui,
     remember: api.remember,
     recall: api.recall,
-    store: api.store,
+    store,
     prefs: {
       get: () => prefs,
       set: api.setPrefs,

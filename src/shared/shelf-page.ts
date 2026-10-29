@@ -218,7 +218,8 @@ export type Tower = {
   watch(path: string, fn: (msg: StreamMsg) => void): () => void
   remember(value: unknown): void
   recall(): Promise<unknown>
-  store: { set(key: string, value: unknown): void; get(key: string): Promise<unknown> }
+  /** `on` hears each key this page sets, a page it relays included. @since 1.108 */
+  store: { set(key: string, value: unknown): void; get(key: string): Promise<unknown>; on(fn: (key: string) => void): () => void }
   ui<V extends TowerVerb['verb']>(verb: V, fields?: Omit<Extract<TowerVerb, { verb: V }>, 'verb'>): void
   /** A shelf page framed by this page, given the board and the API: `ui` is this page's own view, `stored` hears each key it sets in `store`. */
   relay(frame: HTMLIFrameElement, url: string, opts: { self: ShelfSelf; ui: RelayedUi; stored(key: string): void }): { close(): void }

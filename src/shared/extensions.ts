@@ -705,7 +705,7 @@ const Path = z
   .min(1)
   .regex(/^(?!\/)(?!.*\.\.)/, 'a path inside the folder: relative, without ".."')
 const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12, as /schema serves the API\'s.')
-const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|item\.[a-z][a-z0-9.-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
+const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|item\.[a-z][a-z0-9.-]*|collection\.[a-z][a-z0-9-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
