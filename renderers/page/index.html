@@ -327,8 +327,8 @@ dialog.confirm .actions { flex: none; }
 .main.on-reviews .reviews { display: block; }
 .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; padding: var(--sp-l); background: var(--enamel); border-radius: var(--radius); }
 .screen .term { width: 100%; height: 100%; }
-.screen .xterm-viewport { overflow-y: hidden !important; }
-.screen .xterm-scrollable-element > .scrollbar { display: none; }
+.claude-term .xterm-viewport { overflow-y: hidden !important; }
+.claude-term .xterm-scrollable-element > .scrollbar { display: none; }
 .main.home .bar, .main.home .screen { display: none; }
 .main:not(.home) .sky { display: none; }
 
@@ -492,7 +492,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, #sky, #tabs) { 
   <div id="bar-details" popover></div>
   <div id="bar-left" popover></div>
   <div class="ask" id="ask"></div>
-  <div class="screen" id="screen"><div class="term" id="c-screen" role="tabpanel" aria-label="Terminal"></div><span id="c-mode"></span>
+  <div class="screen" id="screen"><div class="term claude-term" id="c-screen" role="tabpanel" aria-label="Terminal"></div><span id="c-mode"></span>
     <div class="brief" id="brief" role="tabpanel" aria-label="Brief"></div>
     <div class="shown" id="shown" role="tabpanel" aria-label="Shown"></div>
     <div class="changes" id="changes" role="tabpanel" aria-label="Changes"></div>

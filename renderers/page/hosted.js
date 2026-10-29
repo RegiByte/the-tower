@@ -57,6 +57,7 @@ export function hosted(deps) {
   const terminal = (el, path) => {
     const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
     const shell = stream === 'shell'
+    el.classList.toggle('claude-term', !shell)
     const handle = mountTermView(el, { Terminal, FitAddon: FitAddon.FitAddon }, {
       watch: (on) => tower.watch(path, (msg) => on(/** @type {TerminalMsg | ShellStream} */ (msg))),
       resize: (size) => (shell ? tower.call('shell/resize', { id, ...size }) : tower.call('resize', { id, ...size })),
@@ -72,7 +73,7 @@ export function hosted(deps) {
       error: (err) => kit.toast(err.message),
     })
     terminals.add(handle)
-    return { ...handle, close: () => (terminals.delete(handle), handle.close()) }
+    return { ...handle, close: () => (terminals.delete(handle), el.classList.remove('claude-term'), handle.close()) }
   }
 
   /** `tower.store` under `view.<id>.<key>`: the view's own. @param {string} id */
