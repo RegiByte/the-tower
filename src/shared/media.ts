@@ -1,3 +1,6 @@
+/** Code, configuration and logs: served as plain text, so nothing a framed page loads from them runs as a script. */
+const SOURCES = ['.ts', '.tsx', '.py', '.rb', '.go', '.rs', '.sh', '.sql', '.edn', '.clj', '.cljs', '.toml', '.log']
+
 /** The media type of each file extension the tower names: what a served file is sent as, and a subject's `type`. */
 export const MEDIA_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -18,8 +21,16 @@ export const MEDIA_TYPES: Record<string, string> = {
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
+  '.jsonl': 'application/x-ndjson',
+  '.csv': 'text/csv',
+  '.tsv': 'text/tab-separated-values',
+  '.yaml': 'text/yaml',
+  '.yml': 'text/yaml',
+  '.xml': 'text/xml',
+  ...Object.fromEntries(SOURCES.map((ext) => [ext, 'text/plain'])),
 }
 
 /** The type of a file of any other extension. */

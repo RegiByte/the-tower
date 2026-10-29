@@ -464,7 +464,7 @@ export const httpServer = defineResource({
       return OK
     }
 
-    function shelf(res: http.ServerResponse, projectId: string, n: number, file: string | undefined) {
+    function shelf(req: http.IncomingMessage, res: http.ServerResponse, projectId: string, n: number, file: string | undefined) {
       const project = readConfig().projects[projectId]
       const entry = project?.shelf?.[n]
       if (!entry) return fail(res, 'not_found', `"${projectId}" has no shelf entry ${n}`)
@@ -475,7 +475,7 @@ export const httpServer = defineResource({
       if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
       const found = shelfFile(projectId, project, entry, file)
       if ('message' in found) return fail(res, 'not_found', found.message)
-      serveSandboxed(res, found.file)
+      serveSandboxed(req, res, found.file)
     }
 
     /** A file an entry serves, on disk: under the hub, or an `item` entry's in its collection, which must hold it. */
@@ -571,30 +571,36 @@ export const httpServer = defineResource({
       })
 
     /** A collection's file, sandboxed like a shelf's: an html item opened by its URL runs at an origin of its own. */
-    function collectionItem(res: http.ServerResponse, project: string, collection: string, id: string) {
+    function collectionItem(req: http.IncomingMessage, res: http.ServerResponse, project: string, collection: string, id: string) {
       if (!isDeclared(project, collection)) return fail(res, 'not_found', `"${project}" has no collection "${collection}"`)
       if (!ITEM_ID.test(id)) return fail(res, 'invalid', `"${id}" is not an item id`)
       const file = itemPath(paths, project, collection, id)
       if (!existsSync(file)) return fail(res, 'not_found', `${project}/${collection} holds no item "${id}"`)
-      serveSandboxed(res, file)
+      serveSandboxed(req, res, file)
     }
 
     /** A file a worker showed, sandboxed like a shelf's. */
-    function shownFile(res: http.ServerResponse, id: string, file: string) {
+    function shownFile(req: http.IncomingMessage, res: http.ServerResponse, id: string, file: string) {
       const session = system.session(id)
       if (!session) return fail(res, 'not_found', `No session "${id}"`)
       if (!shownServes(session.facts.shown, file)) return fail(res, 'not_found', `${id} showed no "${file}"`)
       if (!existsSync(file)) return fail(res, 'not_found', `"${file}" is gone`)
-      serveSandboxed(res, file)
+      serveSandboxed(req, res, file)
     }
 
     const isDeclared = (project: string, collection: string) => collectionOn(readConfig(), project, collection, extensions.registry().stores) !== undefined
 
     const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => serveBytes(res, file, headers, readFileSync)
 
-    /** A file served sandboxed: an html page with `/frame-keys.js` appended after it, which keeps its doctype first. */
-    const serveSandboxed = (res: http.ServerResponse, file: string) =>
-      path.extname(file) === '.html'
+    /** Whether the browser is loading the response as a page or into a frame, by its `sec-fetch-dest`: a read of it is not. */
+    const loaded = (req: http.IncomingMessage) => ['document', 'iframe', 'frame'].includes(String(req.headers['sec-fetch-dest']))
+
+    /**
+     * A file served sandboxed: an html page loaded as a page or a frame with `/frame-keys.js` appended after it, which
+     * keeps its doctype first; read any other way, the file as written.
+     */
+    const serveSandboxed = (req: http.IncomingMessage, res: http.ServerResponse, file: string) =>
+      path.extname(file) === '.html' && loaded(req)
         ? serveBytes(res, file, sandboxed(file), (f) => readFileSync(f, 'utf8') + FRAME_KEYS_TAG)
         : serveFile(res, file, sandboxed(file))
 
@@ -789,13 +795,13 @@ export const httpServer = defineResource({
       apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
       apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'runs/<project>', params, query) }),
       apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'probe/<name>', params, query) }),
-      apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ res, params }) => collectionItem(res, params.project!, params.collection!, params.item!) }),
-      apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), undefined) }),
-      apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ res, params }) => shelf(res, params.project!, Number(params.n), params.file) }),
+      apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ req, res, params }) => collectionItem(req, res, params.project!, params.collection!, params.item!) }),
+      apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ req, res, params }) => shelf(req, res, params.project!, Number(params.n), undefined) }),
+      apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ req, res, params }) => shelf(req, res, params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
       plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
       plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!, {}) }),
-      apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ res, params }) => shownFile(res, params.id!, params.path!) }),
+      apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ req, res, params }) => shownFile(req, res, params.id!, params.path!) }),
     ] as const satisfies readonly Read[]
 
     /** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
