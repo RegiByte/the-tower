@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.67.0
+
+Name the tower something other than `localhost`. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), no API change. **config**: a new optional key.
+
+- **`hosts`** lists names the tower answers to beside `127.0.0.1` and `localhost`, such as `["mini.localhost"]`.
+  Every browser sends `*.localhost` to the machine itself, so two towers in one browser, one local and one through a
+  tunnel, can be `http://mac.localhost:4317` and `http://mini.localhost:4318`. A POST must carry the Origin of the name
+  it was sent to, so pages at other sites are refused as before. Read on every request: an edit holds at once (#248).
+
 ## v1.66.2
 
 A fix for the Mac app. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
