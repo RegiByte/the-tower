@@ -12,6 +12,44 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.69.0
+
+The UI model's steps F2 to 4: the worker facts and the spawn gate through the dispatch, the main pane's routes and
+kept items as views, and two Tower 3D key fixes. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), the renderer API 1.105 → 1.109 (additive, no major). **`npm run tower3d`** rebuilds Tower 3D.
+
+- **`tower/fact`** (API 1.106): the verb through which a worker's own facts are logged. `tower show`, `open`, `keep`
+  and `home` call it in place of posting to the host's hooks socket, so they are wrapped and listed like every other
+  verb, and `tower flows fact` shows its stages. The log bytes are unchanged. `show` and `home` now need the tower up,
+  as `keep` and `hire` already did (#257).
+- **`tower/spawn.gate`** (API 1.107): a core hook raised on every spawn, resume and fork, answered first by the
+  core's `hiring` limits, word for word, and then by extensions in fold order; the first refusal refuses, naming whose
+  gate it was. An answerer that is down, throws or answers off its schema is a `hook` problem on its extension and the
+  worker starts. `ctx.cards()` gives a handler every card the system holds. A floor where no running extension
+  answers a core hook that has `absent` words carries them as the core's floor badge, drawn through `badgesOf`: today
+  "Discards refused" and "Nothing filed" on a floor with reviews off (#258).
+- **The main pane's routes as views** (API 1.108): the skyline, a floor's archive, a collection and a shelf entry are
+  core views served at `/x/tower/<name>.js`, the drafts editor is the drafts extension's view and the Policies panel
+  the policies extension's, and the tower page hosts them as it hosts any extension's. Addresses are unchanged
+  (`shortHashOf`). Kits gain `region` and `go`, a view's `on` may name `collection.<id>`, `ctx.args` carries a
+  location's args and `tower.store.on` tells a page when a view sets a key. The keymap gains `spawn` (the new-worker
+  form on the floor or draft in focus), with no default chord. The palette offers "Open Policies" on a floor (#260).
+- **Kept items drawn by views by type** (API 1.109): `tower/document`, `html`, `image`, `video`, `text` and `file`,
+  picked by the most specific `accepts` (`coreViewOf` in `/views.js`). The interim view `tower/item` retires; the
+  spec declared it interim, so this is a minor. A layout or renderer that named it names the view for the type
+  instead. A video item plays, a markdown item is drawn as `documentHtml`, and "Open Text" shows the source of a
+  markdown or html item. Code and configuration files (`.py`, `.ts`, `.sh`, `.toml`, `.log`…) are served as
+  `text/plain`, so "new tab" on one shows its text instead of downloading it, and commands that accept `text/plain`
+  reach them. Data and markup have their own types (`text/csv`, `text/yaml`, `text/xml`, `application/x-ndjson`,
+  `image/avif`). An html file read is the file as written; the frame keys are added only when a browser loads it as a
+  page (#261).
+- **A tab left keeps its scroll**: the tower page keeps each shown file drawn, hidden when its tab is left, so a
+  markdown file keeps its place, a video its time and an html page its state, in WebKit too. Past the eight shown
+  last, or once closed, one is dropped (#259, by @vitor-aderant).
+- **Tower 3D claims the keys it acts on**: the movement keys while walking, so Tower.app no longer beeps on each, and
+  the Escape that lets go of the mouse, so a framed Tower 3D pauses instead of the tower going home. An Escape on the
+  pause card still goes home (#262).
+
 ## v1.68.0
 
 Views in the tower page's main pane, the grid as an example of one, and autotidy, the first extension contributed from
