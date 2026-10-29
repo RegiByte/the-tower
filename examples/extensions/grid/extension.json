@@ -1,0 +1,28 @@
+{
+  "id": "grid",
+  "version": "1.0",
+  "title": "Grid",
+  "description": "Up to four workers' live terminals side by side in the main pane, each typed into when focused.",
+  "requires": { "tower": "1.104" },
+  "client": "client",
+  "views": {
+    "grid": {
+      "module": "grid.js",
+      "export": "mount",
+      "on": ["floor", "board"],
+      "shows": ["card"],
+      "scales": ["pane"],
+      "needs": ["terminal", "display"],
+      "words": { "label": "Grid", "hint": "Workers side by side, each one's terminal live" },
+      "keys": ["Meta+Shift+G"]
+    }
+  },
+  "commands": {
+    "add": {
+      "module": "grid.js",
+      "export": "add",
+      "on": ["card"],
+      "words": { "label": "Add to grid", "hint": "Put this worker's terminal in its floor's grid" }
+    }
+  }
+}
