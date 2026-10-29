@@ -221,7 +221,7 @@ and versioned without running anything, and a runtime where an extension's failu
   answers first with the floor's hiring limits on a hire ([[hiring-limits]]), then each answerer in fold order; the
   first refusal (`{code: 'limited' | 'refused', message}`) refuses the verb, its message followed by `(<cap>'s gate)`.
   A failed answer, here an `ApiError` too, and a link around the hook that refuses or fails, is a `hook` problem and
-  the worker starts. Answers have no time limit: one that never settles holds the spawn (open). A handler's ctx has
+  the worker starts; a link's failure stands for every answer, so no answerer is asked. Answers have no time limit: one that never settles holds the spawn (open). A handler's ctx has
   `cards()`, every card the system holds, for an answerer that counts workers.
 - **Flows (1.100).** Every core verb is listed as a named sequence of stages,
   [`FLOWS`](ref:hub/src/shared/flows.ts#FLOWS), served as `/schema`'s `flows` and printed by `tower flows [verb]
