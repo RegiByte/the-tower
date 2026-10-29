@@ -6,7 +6,7 @@
  * key paths, the ctx members and the core's names to `test/served-exports.json`.
  */
 import { z } from 'zod'
-import type { Board } from '../bridge/board.ts'
+import type { Board, Card } from '../bridge/board.ts'
 import type { StreamFact } from '../bridge/streams.ts'
 import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 import { RUNTIMES, type Runtime } from './model.ts'
@@ -56,6 +56,9 @@ const SUBJECTS = '1.98'
 
 /** The minor views and regions were first read in, their shapes replaced, and commands and views took default chords. */
 export const VIEWS = '1.104'
+
+/** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
+const GATE = '1.107'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
@@ -557,6 +560,8 @@ export type Reduce = { init: unknown; step(state: any, fact: StreamFact): unknow
 export type CallCtx = StartCtx & {
   /** Who the call is for. @since 1.82 */
   caller: Caller
+  /** Every card the system holds, the ones the board leaves out included, as the core builds them: no extension's part. @since 1.107 */
+  cards(): Card[]
 }
 
 /** A verb's handler: its input parsed by the manifest's schema, its reply checked against it. */
@@ -638,7 +643,7 @@ type SinceOf<T> = {
 
 export const CTX_SINCE: {
   start: SinceOf<StartCtx>
-  call: SinceOf<Pick<CallCtx, 'caller'>>
+  call: SinceOf<Pick<CallCtx, 'caller' | 'cards'>>
   fold: SinceOf<Omit<FoldCtx, 'board'>> & { board: string }
   launch: SinceOf<LaunchCtx>
 } = {
@@ -666,7 +671,7 @@ export const CTX_SINCE: {
     run: TRIGGERS,
     runtime: KINDS,
   },
-  call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS } },
+  call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS }, cards: GATE },
   fold: { now: FOLDS, settings: FOLDS, board: FOLDS, callsignOf: CALLSIGN_OF, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
   launch: { settings: LAUNCH, read: LAUNCH, collections: { list: LAUNCH, read: LAUNCH } },
 }

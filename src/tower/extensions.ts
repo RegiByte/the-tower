@@ -439,7 +439,8 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     ...stores.ctx,
   }
   /** The ctx a handler of `qualified` gets: its caller, and calls made one step deeper. */
-  const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, ...callsOf(nestedIn(caller, qualified)) })
+  const cards = () => publisher.everyCard(Date.now())
+  const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, cards, ...callsOf(nestedIn(caller, qualified)) })
   /** What a start returned, halted: it started something, and won't run. */
   const haltLate = (started: Started) =>
     void Promise.resolve()
@@ -488,7 +489,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       read: (name, req, caller) => started.reads![name](req, handlerCtx(caller, `${a.provides}/${name}`)),
       link: (target, input, next, caller) => started.around![target](input, next, handlerCtx(caller, target)),
       answer: (hook, payload, caller) => started.answers![hook](payload, handlerCtx(caller, hook)),
-      slot: async (name, slot, caller) => started.slots![name](slot, { ...ctx, caller, ...callsOf(caller) }),
+      slot: async (name, slot, caller) => started.slots![name](slot, { ...ctx, caller, cards, ...callsOf(caller) }),
       halt: async () => {
         instance.halting = true
         try {

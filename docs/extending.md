@@ -491,7 +491,8 @@ anything else is refused until declared. `ctx.deps.<capability>` holds the same 
 `read[<path>]` per read, `undefined` while a wanted one doesn't run. Each answers the reply, or an error as a value.
 A handler's second argument is its `ctx` with the `caller` (`{t, id?, via, within}`: the user, a worker, the tower, or
 the extension itself from its `start` and timers), and the calls it makes carry that caller one step deeper, its verb
-added to `within`; past 8 deep a call is refused.
+added to `within`; past 8 deep a call is refused. `ctx.cards()` is every card the system holds, the ones the board
+leaves out included, as the core builds them (API 1.107).
 
 **Stores** (API 1.83) are declared in the manifest and named by the capability. `collections` join the floors the
 extension is on, each named `<cap>` or `<cap>.<name>`; one marked `owned` declares five `doors` (`list`, `read`,
