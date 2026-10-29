@@ -39,6 +39,7 @@ export const COMMANDS = [
   { id: 'sidebar', label: 'Sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
   { id: 'palette', label: 'Command palette', scope: 'global', group: 'Page', chords: ['Meta+K'], does: 'the command palette: go to a worker, a floor, a shelf entry or a draft, or run a command or what the selected worker offers, by typing' },
   { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
+  { id: 'spawn', label: 'New worker', scope: 'global', group: 'Page', chords: [], does: 'the new-worker form, on the floor in focus, or on the draft in focus to start a worker on it' },
   { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused" },
   { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief" },
   { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes" },
