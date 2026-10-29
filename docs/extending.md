@@ -356,7 +356,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/loop.js` | a machine as data: `loop` runs a map of handlers, `(state, event) -> effects`, the next state among them, through your executors of the rest; `timers()` executes timer effects, each carrying the event it fires |
 | `/reads.js` | reads a viewer holds (`Held`): the last read held until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held; the steps, and `heldHandlers` and `reading` to run them on `loop`. `/panels.js` runs them for review threads (`threadWant`, `heldThread`, `readThread`) and a worker's Changes (`changesHandlers`, `readChanges`) |
 | `/term-view.js` | a terminal a viewer has open on a PTY, as a machine on `loop`: `termHandlers` its steps (opening, watching, owning, exited), and `mountTermView(host, { Terminal, FitAddon }, io)` running it in xterm.js on a `terminal/<id>`, `screen/<id>` or `shell/<id>` stream. The PTY has one size: a terminal opened while nobody else views it takes the size (a shell's always), a resize from anyone else hands it back and the view follows at a font that fits, typing takes it again, and a pane or font change fits the PTY only while this viewer holds it |
-| `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)`, `viewOn`, `offeredIn` and `pickView` (which view a region draws a subject with), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf`, `locationOf` and `shortHashOf` (the location grammar and the tower page's older hashes, 1.108), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
+| `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)`, `viewOn`, `offeredIn` and `pickView` (which view a region draws a subject with) and `coreViewOf` (the core's view for a media type, 1.109), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf`, `locationOf` and `shortHashOf` (the location grammar and the tower page's older hashes, 1.108), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
 | `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews and the Stats range, read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
 | `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started |
 | `/attend.js` | what a viewer is told about the waits and offers asking for them, as a machine on `loop`: `attendHandlers` over the state `attending(eye)`, or `attendNext(state, event)` to run one event by hand. What the viewer looks at reaches it as events: the window's `focus` and `visible`, and `watch` with the worker their view is on (`watchedIn(state)` is the one they watch: the view's, while the window has their eye): what begins is said (`announce`), notified (`notify`, `unnotify` once over or dismissed) and rung (`sound`, a score of `SOUNDS` in `/cards.js`), a `remind` ring re-armed as a timer, dismissals and the ring setting kept (`keep`, a field of the viewer's record of `/viewer.js`, fed back as `stored` when read again); your executors play, notify and keep, or drop what you don't do |
@@ -685,7 +685,27 @@ draw, and the page goes on. A view that keeps something in the viewer's record (
 `tower/archive` on a floor, `tower/collection` on a collection and `tower/shelf` on a shelf entry, beside the drafts
 extension's `drafts/editor` and the policies extension's `policies/policies` on a floor. Each is `CORE_VIEWS`' entry
 with its `module`, `export` and `needs`, and a renderer whose kit lends those hosts it as it hosts any extension's.
-`tower/card` and `tower/item` have no module yet: the tower page draws them by its own routes.
+`tower/card` has no module yet: the tower page draws it by its own route.
+
+**Views by type.** A kept item is drawn by the view that accepts its type (`value.type`, the media type of its file
+name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109): `tower/document` markdown (`documentHtml` in a
+frame where nothing runs: raw HTML kept, images read beside the file), `tower/html` a page framed at an origin of its
+own, `tower/image` `image/*`, `tower/video` `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is
+`text/plain`), and `tower/file`, which accepts nothing, the fallback that leaves a file to Finder and the editor. They
+share one head: the collection, the tag, the file, who kept it, `item.head`'s region, a new tab, Delete and the close,
+with a way back to the view of the floor the collection's extension declares (the policies extension's, for a policy).
+`pickView` decides among the views a region offers: the region's layout `order` among those accepting the type; else
+the view of the extension that declares the item's collection, on that exact kind (`drafts/editor` on `item.drafts`);
+else the core view whose `accepts` fits most specifically (`text/markdown` before `text/*`); else the most specific of
+the rest; else a fallback. So a view of yours for a type the core never planned (`text/csv`, say) draws it by being
+installed, and one for a type the core draws takes it over through the layout:
+
+```json
+"renderers": { "page": { "layout": { "board.main": { "order": ["mydocs/markdown"] } } } }
+```
+
+What the pick passes over is offered as "Open <label>": on a markdown or html item, `tower/text` is Open Text, its
+source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).
 
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
 `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, each key and arg one `encodeURIComponent` segment:
