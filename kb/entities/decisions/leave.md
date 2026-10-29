@@ -20,7 +20,7 @@
   "links": [
     { "to": "crews", "verb": "uses", "carries": "the card's send-home, a kill per running worker under it, then its own" },
     { "to": "worker-prompts", "verb": "uses", "carries": "each kill named by the leaving worker's id (tower.kill)" },
-    { "to": "agent-show", "verb": "extends", "carries": "a fact the worker logs in its own log through the hooks socket" }
+    { "to": "agent-show", "verb": "extends", "carries": "a fact the worker logs in its own log through the tower's fact verb" }
   ]
 }
 ---
@@ -31,8 +31,8 @@ answer, and a next run reading its predecessors would find no handoff note.
 
 **Decision.**
 - *Only the worker's own callsign.* `tower home <CALLSIGN>` naming the caller's own card (`card.id` is
-  `TOWER_SESSION_ID`) posts `{hook_event_name: 'tower.leave'}` to the host's hooks socket under the session's own id,
-  as `tower show` does ([[agent-show]]): no host change. A bare `tower home` stays a usage error, so ending oneself
+  `TOWER_SESSION_ID`) calls the tower's `fact` verb, `{name: 'leave'}`, which logs `{hook_event_name: 'tower.leave'}`
+  in the session's own log, as `tower show` does ([[agent-show]]): no host change. A bare `tower home` stays a usage error, so ending oneself
   takes reading one's callsign (`tower whoami`). Naming anyone else is that worker's `send-home`, unchanged ([[crews]]).
 - *Folded, not stored.* The fold sets `facts.leaveAt`; any later `prompt.submit` clears it, so someone typing to the
   worker keeps it on duty. `card.leaving` is a running card with `leaveAt` set, and a leaving card's outcome

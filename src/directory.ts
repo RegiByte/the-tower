@@ -5,15 +5,14 @@
  * (`src/mod/bin/tower`). The verbs are the workers' of the command's table (`src/cli-verbs.ts`), each run by its
  * handler in `WORKER_RUNS`.
  *
- * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go to the host, which logs them
- * (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board. `hire` and `review` spawn
- * with `hire`: the tower weighs the hire against the limits and logs `tower.hire` in this session's log. An item is
- * called by its tag, as every renderer shows it.
+ * `show`, `open`, `keep` and `home` naming oneself are facts about this session: they go through the tower's `fact`
+ * verb, the host logs them (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board.
+ * `hire` and `review` spawn with `hire`: the tower weighs the hire against the limits and logs `tower.hire` in this
+ * session's log. An item is called by its tag, as every renderer shows it.
  * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
  * written only through `tower note`, which appends.
  */
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
-import http from 'node:http'
 import path from 'node:path'
 import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/board.ts'
 import type { Brief } from './bridge/turns.ts'
@@ -380,18 +379,6 @@ const keepContent = async (file: string | undefined): Promise<{ ext: string; con
   return { ext: 'md', content, name: titleIn('stdin.md', content) }
 }
 
-/** The host appends what it is posted to the session's log, as the mod's events. */
-const postToHost = (me: string, event: Record<string, unknown>) =>
-  new Promise<void>((resolve, reject) => {
-    const req = http.request({ socketPath: process.env.TOWER_HOOKS_SOCKET, path: `/hooks/${me}`, method: 'POST', headers: { 'content-type': 'application/json' } }, (res) => {
-      res.resume()
-      if (res.statusCode === 204) resolve()
-      else reject(new Error(`The host answered ${res.statusCode} to ${event.hook_event_name}`))
-    })
-    req.on('error', reject)
-    req.end(JSON.stringify(event))
-  })
-
 /**
  * What the reviews extension says of a checkout's thread read as `reader` (its read `said/<project>`): the file's text,
  * `undefined` while nobody wrote on it, the notes new to the reader, the lines `tower thread` prints after it (or in its
@@ -607,9 +594,9 @@ const runsArgs = (args: string[]): { policy?: string; limit: number } => {
 const showOrOpen =
   (verb: 'show' | 'open'): Run =>
   async ([target, ...title]) => {
-    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+    if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const shown = shownOf(verb, target, title.join(' ') || undefined)
-    await postToHost(me, { hook_event_name: 'tower.show', ...shown })
+    await command('fact', { name: 'show', value: shown })
     console.log(verb === 'show' ? `Shown to the user beside this session: ${shown.target}` : `The user is asked to open ${shown.target}`)
   }
 
@@ -781,7 +768,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     console.log(`Opened in the user's editor: ${path.resolve(target)}${line ? `:${line}` : ''}`)
   },
   keep: async ([collectionName, ...rest]) => {
-    if (!me || !process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_SESSION_ID or TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
+    if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const floor = ownFloor(await readBoard(), me)
     if (!collectionName) {
       console.log([`${floorTitle(floor)} keeps ${floor.collections.length ? 'these collections:' : 'no collections.'}`, ...floor.collections.map(collectionLine), KEEP_USAGE].join('\n'))
@@ -791,7 +778,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const args = keepArgs(rest)
     const { ext, content, name } = await keepContent(args.file)
     const { id } = await command<{ id: string }>('collection/create', { project: floor.id, collection: collection.id, name: args.name ?? name, ext, content })
-    await postToHost(me, { hook_event_name: 'tower.keep', project: floor.id, collection: collection.id, id })
+    await command('fact', { name: 'keep', value: { project: floor.id, collection: collection.id, id } })
     const title = titleIn(id, content)
     console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} on ${floorTitle(floor)} as ${tagOf(id)}: ${collection.dir}/${id}`)
   },
@@ -868,8 +855,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const board = await readBoard()
     const card = await cardNamed(board, callsign)
     if (card.id === me) {
-      if (!process.env.TOWER_HOOKS_SOCKET) throw new CliError('TOWER_HOOKS_SOCKET is not set: this Claude was not started by the tower')
-      await postToHost(me, { hook_event_name: 'tower.leave' })
+      await command('fact', { name: 'leave' })
       const crew = crewOf(board.floors.flatMap((f) => f.cards), card).filter((c) => c.live)
       console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
       return

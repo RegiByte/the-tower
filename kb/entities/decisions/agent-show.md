@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/directory.ts#shownOf", "hub/src/directory.ts#postToHost", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
+  "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
 **Problem.** A worker that wrote a report, a plan or a page had no way to put it in front of the user except
@@ -17,9 +17,12 @@ worker that made it.
 **Decision.**
 - Two commands on the mod's `tower` ([[agent-directory]]): `tower show <file|url> [title]` and
   `tower open <url> [title]`. A file must exist and is resolved to its real path, links followed, so a file a worker saves through a link in its worktree (a notes folder shared with the main checkout) outlives the worktree; `open` takes only http(s).
-- The command posts `{hook_event_name: 'tower.show', kind, target, title?}` to the host's hooks socket under the
-  session's own id, as the [[tower-mod]]'s events go ([[hook-events]]). The host logs it like any event: no host
-  change, and the tower page need not be open.
+- The command calls the tower's `fact` verb, `{name: 'show', value: {kind, target, title?}}`, as the session
+  (`tower-session`); the tower appends `{hook_event_name: 'tower.show', kind, target, title?}` to the session's own
+  log through the host's `fact` ([[let-go]]), the event a [[tower-mod]] event would be ([[hook-events]]). Through the
+  dispatch since API 1.106, it is wrapped and listed like every verb ([[extensions]]): an `around` link on
+  `tower/fact` sees every showing. The tower must be up; the tower page need not be open. Only a running worker logs
+  a fact, and only about itself.
 - `kind` takes the shelf's words: `file` (drawn in place), `url` (framed in place), `link` (opened in a browser
   tab: one that refuses framing, such as a claude.ai artifact).
 - The tower brief (`launch.ts`) says that the user watches from the tower and that every file or page written for
