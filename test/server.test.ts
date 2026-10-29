@@ -427,6 +427,16 @@ test('server: every read answers', async () => {
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
 })
 
+test('server: a sandboxed html file read by a script is the file as written; loaded any other way, its frame keys follow it', async () => {
+  const page = '/shelf/lab/0/report/index.html'
+  const read = await request(page, { headers: { 'sec-fetch-dest': 'empty' } })
+  assert.equal(read.body, '<!doctype html><title>report</title>')
+  for (const dest of ['iframe', 'document', undefined]) {
+    const loaded = await request(page, { headers: dest ? { 'sec-fetch-dest': dest } : {} })
+    assert.ok(loaded.body.endsWith('<script src="/frame-keys.js"></script>\n'), `${dest}: ${loaded.body}`)
+  }
+})
+
 /** The `tower` command as a worker runs it: its output, or its failure's. */
 const cli = (session: string, ...args: string[]) =>
   execFileSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), ...args], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: session }, encoding: 'utf8' })

@@ -111,7 +111,7 @@ import { bundledClient, clientSource } from '../extensions.ts'
 import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
-import { MEDIA_TYPES, UNKNOWN_TYPE } from '../shared/media.ts'
+import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
@@ -197,9 +197,12 @@ export const httpServer = defineResource({
     /** What a sandboxed html page gets appended: its keys sent to the tower framing it, with no API and at its own origin. */
     const FRAME_KEYS_TAG = '\n<script src="/frame-keys.js"></script>\n'
 
+    /** The tower's own modules and styles, sent as their bare type. */
+    const SCRIPTS = ['text/javascript', 'text/css']
+
     /** What a served file is sent as: its media type, with the charset of the text a worker writes. */
     const FILE_TYPES: Record<string, string> = Object.fromEntries(
-      Object.entries(MEDIA_TYPES).map(([ext, type]) => [ext, ['text/html', 'text/markdown', 'text/plain'].includes(type) ? `${type}; charset=utf-8` : type]),
+      Object.entries(MEDIA_TYPES).map(([ext, type]) => [ext, type.startsWith('text/') && !SCRIPTS.includes(type) ? `${type}; charset=utf-8` : type]),
     )
 
     /**
@@ -592,15 +595,15 @@ export const httpServer = defineResource({
 
     const serveFile = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders) => serveBytes(res, file, headers, readFileSync)
 
-    /** Whether the browser is loading the response as a page or into a frame, by its `sec-fetch-dest`: a read of it is not. */
-    const loaded = (req: http.IncomingMessage) => ['document', 'iframe', 'frame'].includes(String(req.headers['sec-fetch-dest']))
+    /** Whether a script is reading the response (`sec-fetch-dest: empty`), not loading it as a page or a frame. */
+    const scriptRead = (req: http.IncomingMessage) => req.headers['sec-fetch-dest'] === 'empty'
 
     /**
-     * A file served sandboxed: an html page loaded as a page or a frame with `/frame-keys.js` appended after it, which
-     * keeps its doctype first; read any other way, the file as written.
+     * A file served sandboxed: an html page with `/frame-keys.js` appended after it, which keeps its doctype first;
+     * read by a script, the file as written.
      */
     const serveSandboxed = (req: http.IncomingMessage, res: http.ServerResponse, file: string) =>
-      path.extname(file) === '.html' && loaded(req)
+      mediaTypeOf(file) === 'text/html' && !scriptRead(req)
         ? serveBytes(res, file, sandboxed(file), (f) => readFileSync(f, 'utf8') + FRAME_KEYS_TAG)
         : serveFile(res, file, sandboxed(file))
 
