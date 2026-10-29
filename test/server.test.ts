@@ -259,7 +259,10 @@ const freePort = (): Promise<number> =>
     })
   })
 
-const ENV = { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json'), TZ: process.env.TZ }
+/** Git's identity for the commits the tower writes (a discard's record): HOME is the throwaway root, which has none. */
+const GIT_IDENTITY = { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' }
+
+const ENV = { PATH: process.env.PATH, HOME: ROOT, TOWER_CONFIG: path.join(ROOT, 'config.json'), TZ: process.env.TZ, ...GIT_IDENTITY }
 
 /** The host, once its control socket answers: it owns the spawns' PTYs and writes their logs. */
 const bootHost = (): Promise<ChildProcess> =>
