@@ -698,7 +698,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       for (const p of problems) console.log(`${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`)
       if (manifest) {
         const why = (r: Renderer) => (r.problem ? `its ${r.problem}` : r.available ? undefined : "isn't built: build it for its renderer.json to be read")
-        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions, why: why(r) })), { name: 'cli', regions: CLI_REGIONS }]
+        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions, why: why(r), kit: r.kit })), { name: 'cli', regions: CLI_REGIONS }]
         for (const l of landing(drawers, { ...manifest, cap: capabilityOf(manifest) })) console.log(`lands  ${landingLine(l)}`)
       }
       if (!views) console.log(`note   not resolved against a running tower: none answers at ${towerAt()}`)
