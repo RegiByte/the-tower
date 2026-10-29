@@ -18,7 +18,7 @@ export const SCALES = ['chip', 'row', 'cell', 'pane'] as const
 export type Scale = (typeof SCALES)[number]
 
 /** What a renderer lends the views it hosts. */
-export const KIT_MEMBERS = ['terminal', 'region', 'run', 'display', 'bus', 'toast', 'confirm'] as const
+export const KIT_MEMBERS = ['terminal', 'region', 'run', 'display', 'go', 'bus', 'toast', 'confirm'] as const
 export type KitMember = (typeof KIT_MEMBERS)[number]
 
 /**

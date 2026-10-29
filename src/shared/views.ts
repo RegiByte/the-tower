@@ -25,7 +25,10 @@ export type View = Omit<ExtensionViewEntry, 'module' | 'export'> & { cap: string
  */
 export type Location = { view: string; subject?: string; pane?: { view: string; subject?: string }; args?: string[] }
 
-/** What a view is handed as it mounts. `state` is `tower.store` under `view.<id>.<key>`, the view's own. */
+/**
+ * What a view is handed as it mounts. `state` is `tower.store` under `view.<id>.<key>`, the view's own; `args`, its
+ * location's (a shelf entry's file).
+ */
 export type ViewCtx = {
   tower: Tower
   board: Board
@@ -33,6 +36,7 @@ export type ViewCtx = {
   kit: Kit
   state: { get(key: string): Promise<unknown>; set(key: string, value: unknown): void }
   options: Record<string, unknown>
+  args?: string[]
 }
 
 /**
@@ -50,14 +54,17 @@ export type Mounted = {
 export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mounted>
 
 /**
- * What a renderer lends a view: a terminal mounted with its xterm, font, scheme and keymap; `run` a keymap command or
- * an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; a toast; a confirm
- * whose button says `verb`. A renderer lends what its `renderer.json` kit names.
+ * What a renderer lends a view: a terminal mounted with its xterm, font, scheme and keymap; `region`, one of the
+ * renderer's regions inside the view, on `subject`, filled the renderer's way and run by its presses; `run` a keymap
+ * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
+ * a location; a toast; a confirm whose button says `verb`. A renderer lends what its `renderer.json` kit names.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
+  region(host: HTMLElement, id: string, subject: Subject, options?: Record<string, Record<string, unknown>>): { update(subject: Subject): void; close(): void }
   run(command: string, on?: Subject): Promise<boolean>
   display(subject: Subject | string, opts?: { view?: string }): void
+  go(location: Location): void
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
 }
@@ -67,17 +74,20 @@ export type CommandKit = Pick<Kit, 'display' | 'toast' | 'confirm' | 'run'>
 
 const core = (id: string, on: string[], scales: Scale[], words: Words): View => ({ id, cap: 'tower', on, scales, words })
 
+/** A core view whose module the tower serves at `/x/tower/<name>.js`, its export `mount`, lent the kit members it `needs`. */
+const served = (view: View, needs: KitMember[]): View => ({ ...view, module: `${view.id.slice('tower/'.length)}.js`, export: 'mount', needs })
+
 /**
  * The core's views, in the order that picks among them: the worker view first among those on a card, the archive first
- * among those on a floor. Each is drawn by its renderer's own route until its module ships; `tower/item` is the item
- * views by type stand in for.
+ * among those on a floor. One with no module is drawn by its renderer's own route until its module ships; `tower/item`
+ * is the item views by type stand in for.
  */
 export const CORE_VIEWS: readonly View[] = [
-  core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }),
+  served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
   core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }),
-  core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }),
-  core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }),
-  core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }),
+  served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
+  served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
+  served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
   core('tower/item', ['item.*'], ['pane'], { label: 'Item', hint: 'a kept item, drawn by its type' }),
 ]
 
@@ -116,14 +126,18 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
   )
 }
 
+/** Whether a view's `on` holds `subject`: its kind, `item.*` for any collection's item, `collection.<id>` for that one collection. */
+export const viewOn = (on: readonly string[], subject: Pick<Subject, 'kind' | 'value'>) =>
+  onKind(on, subject.kind) || (subject.kind === 'collection' && on.includes(`collection.${(subject.value as { id: string }).id}`))
+
 /**
- * The views `region` offers on `subject`: those on its kind, at the region's scale, needing only what `kit` lends,
- * not hidden there, on a floor their extension is on.
+ * The views `region` offers on `subject`: those on it (`viewOn`), at the region's scale, needing only what `kit`
+ * lends, not hidden there, on a floor their extension is on.
  */
 export const offeredIn = (views: View[], region: Region, layout: Layout, kit: readonly KitMember[], subject: Subject): View[] =>
   views.filter(
     (v) =>
-      onKind(v.on, subject.kind) &&
+      viewOn(v.on, subject) &&
       (!region.scale || v.scales.includes(region.scale)) &&
       (v.needs ?? []).every((m) => (kit as readonly string[]).includes(m)) &&
       !layout[region.id]?.hidden?.includes(v.id) &&
@@ -189,10 +203,10 @@ const tabFor = (p: Placing, host: View, level: Subject, below: Subject, pick: (o
     .flatMap((region) => {
       if (!region) return []
       const offered = p.views.filter(
-        (v) => (onKind(v.on, below.kind) || onKind(v.shows ?? [], below.kind)) && (!region.scale || v.scales.includes(region.scale)) && !p.layout[region.id]?.hidden?.includes(v.id),
+        (v) => (viewOn(v.on, below) || onKind(v.shows ?? [], below.kind)) && (!region.scale || v.scales.includes(region.scale)) && !p.layout[region.id]?.hidden?.includes(v.id),
       )
       const view = pick(ordered(offered, p.layout[region.id]?.order))
-      return view ? [{ view: view.id, subject: onKind(view.on, level.kind) ? level.key : below.key }] : []
+      return view ? [{ view: view.id, subject: viewOn(view.on, level) ? level.key : below.key }] : []
     })[0]
 
 /**
@@ -283,6 +297,40 @@ const shortForm = (body: string, board: Board): Location | undefined => {
   if (!pane.startsWith('shown:')) return card
   const shown = latestShown(board, kind, pane.slice('shown:'.length))
   return shown ? { ...card, pane: { view: 'tower/shown', subject: `shown:${kind}/${shown.at}` } } : card
+}
+
+/** A subject key's floor and what follows it: `collection:p/notes` is `p` and `notes`. */
+const inFloor = (key: string) => {
+  const rest = key.slice(key.indexOf(':') + 1)
+  return { project: rest.slice(0, rest.indexOf('/')), name: rest.slice(rest.indexOf('/') + 1) }
+}
+
+/**
+ * The short form of a location the tower page wrote before the grammar, which it keeps writing: `''` for the skyline,
+ * `#archive/<p>`, `#policies/<p>`, `#kept/<p>/<c>`, `#shelf/<p>/<n>[/<file>]`, `#draft/<p>[/<id>]`; `undefined` for a
+ * location that has none. `locationOf` reads each back.
+ */
+export const shortHashOf = (location: Location): string | undefined => {
+  const key = location.subject ?? 'board'
+  const kind = key.slice(0, key.indexOf(':'))
+  const floor = key.slice(key.indexOf(':') + 1)
+  const { project, name } = inFloor(key)
+  switch (location.view) {
+    case 'tower/skyline':
+      return key === 'board' ? '' : undefined
+    case 'tower/archive':
+      return kind === 'floor' ? `#archive/${floor}` : undefined
+    case 'policies/policies':
+      return kind === 'floor' ? `#policies/${floor}` : undefined
+    case 'tower/collection':
+      return kind === 'collection' ? `#kept/${project}/${name}` : undefined
+    case 'tower/shelf':
+      return kind === 'shelf' ? `#shelf/${project}/${name}${location.args?.[0] === undefined ? '' : `/${segment(location.args[0])}`}` : undefined
+    case 'drafts/editor':
+      return kind === 'collection' ? `#draft/${project}` : kind === 'item.drafts' ? `#draft/${project}/${segment(name)}` : undefined
+    default:
+      return undefined
+  }
 }
 
 /**

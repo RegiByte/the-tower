@@ -304,9 +304,9 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
 /** The subject kinds the core folds: an extension's own are `<capability>.<kind>`. */
 const CORE_KINDS = ['card', 'conversation', 'shown', 'collection', 'shelf', 'floor', 'board']
 
-/** An extension's own subject kind split, `reviews.thread` into its capability and kind; `undefined` for the core's and items. */
+/** An extension's own subject kind split, `reviews.thread` into its capability and kind; `undefined` for the core's, items and one collection's. */
 export const ownKindOf = (kind: string): { cap: string; kind: string } | undefined => {
-  if (CORE_KINDS.includes(kind) || kind.startsWith('item.')) return undefined
+  if (CORE_KINDS.includes(kind) || kind.startsWith('item.') || kind.startsWith('collection.')) return undefined
   const at = kind.indexOf('.')
   return { cap: kind.slice(0, at), kind: kind.slice(at + 1) }
 }

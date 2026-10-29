@@ -5,7 +5,8 @@
  *   GET  /r/<name>/[<file>]   a renderer the core or the config declares: its entry, or any file below its root but hidden ones, at the
  *                       tower's origin; an HTML page saying why when it isn't declared or built or the config can't be read
  *   GET  /x/<cap>/<file>   a file of the client folder of the extension providing <cap> (the bundled one's while none runs),
- *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's
+ *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's; `/x/tower/`
+ *                          the core's view modules (`CORE_VIEWS`), bundled from src/views/
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings, whether it is built, and what its
  *                       renderer.json declares: regions, kit, keeps and layout, and the config's layout for it, configLayout (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
@@ -120,7 +121,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { bundled, bundledFile, FRAME_KEYS, MODULES, towerClient } from './served.ts'
+import { bundled, bundledFile, CORE_VIEWS_DIR, FRAME_KEYS, MODULES, towerClient } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -525,6 +526,7 @@ export const httpServer = defineResource({
      * renderer built on a bundled client keeps loading while that extension is off. A `.ts` source is served bundled.
      */
     function clientFile(res: http.ServerResponse, cap: string, file: string, headers: http.OutgoingHttpHeaders) {
+      if (cap === 'tower') return coreViewFile(res, file)
       const live = extensions.live(cap)
       const dir = live.t === 'up' ? live.a.manifest.client && path.join(live.a.dir, live.a.manifest.client) : bundledClient(cap)
       if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
@@ -532,6 +534,13 @@ export const httpServer = defineResource({
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
       if (path.extname(source) === '.ts') return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN, ...headers }).end(bundledFile(source).text)
       serveFile(res, source, { ...ANY_ORIGIN, ...headers })
+    }
+
+    /** A module of the core's views (`CORE_VIEWS`, `/views.js`), bundled from `src/views/`. */
+    function coreViewFile(res: http.ServerResponse, file: string) {
+      const source = clientSource(CORE_VIEWS_DIR, file)
+      if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(bundledFile(source).text)
     }
 
     /** A served module from before it moved into its bundled extension: what it is now, said deprecated (RFC 9745), with a `Link` to it. */

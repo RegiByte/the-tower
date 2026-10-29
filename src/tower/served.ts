@@ -42,6 +42,9 @@ export const MODULES: Record<string, string> = {
   '/views.js': path.join(SHARED, 'views.ts'),
 }
 
+/** The core's view modules (`CORE_VIEWS`), served at `/x/tower/<name>.js`, the core being the capability `tower`. */
+export const CORE_VIEWS_DIR = path.join(import.meta.dirname, '..', 'views')
+
 /** A TypeScript or JavaScript source as the tower serves it: one ES module, with the names it exports. */
 export function bundledFile(file: string) {
   const { outputFiles, metafile } = buildSync({ entryPoints: [file], bundle: true, format: 'esm', write: false, metafile: true })

@@ -28,6 +28,7 @@
       "shellKeys",
       "stats",
       "store.get",
+      "store.on",
       "store.set",
       "subscribe",
       "text",
@@ -1055,6 +1056,8 @@
       "offeredIn",
       "openable",
       "pickView",
+      "shortHashOf",
+      "viewOn",
       "viewsOf"
     ],
     "/drafts.js": [

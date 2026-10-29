@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board } from '../src/bridge/board.ts'
-import { hashOf, layoutOf, locationOf, type Location } from '../src/shared/views.ts'
+import { hashOf, layoutOf, locationOf, shortHashOf, viewOn, type Location } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ at: 100, target: 'a.md' }, { at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -39,6 +39,17 @@ test("views: the tower page's short forms name their core views, a showing by it
     ['#policies/p', { view: 'policies/policies', subject: 'floor:p' }],
   ]
   for (const [hash, location] of cases) assert.deepEqual(locationOf(hash, board), location, hash)
+  for (const [hash, location] of cases.filter(([, l]) => l.view !== 'tower/card' && l.view !== 'tower/item')) assert.equal(shortHashOf(location), hash, hash)
+  assert.equal(shortHashOf({ view: 'tower/skyline' }), '')
+  assert.equal(shortHashOf({ view: 'grid/grid', subject: 'floor:p' }), undefined)
+})
+
+test('views: a view on collection.<id> is on that one collection, as one on item.* is on every item', () => {
+  const drafts = { kind: 'collection', value: { id: 'drafts' } }
+  assert.ok(viewOn(['collection.drafts'], drafts))
+  assert.ok(!viewOn(['collection.drafts'], { kind: 'collection', value: { id: 'games' } }))
+  assert.ok(viewOn(['collection'], drafts))
+  assert.ok(viewOn(['item.*'], { kind: 'item.games', value: {} }))
 })
 
 test("views: the layout takes each field from the highest layer that sets it; hidden is the union less what a higher layer orders", () => {
