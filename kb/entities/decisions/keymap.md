@@ -69,7 +69,8 @@ every other key, and reach every renderer the way `user.name` does.
   target took typing, so no frame starts a session or types into a terminal. A script frame's message is a claim any
   page can make, so it can time a chord into the user's typing: the first Enter typed into a field or a terminal
   after a forwarded key ran something is held back, with a toast, until a click. Tower 3D takes the keys it answers,
-  so framed it doesn't also step the tower page, and lets go of the mouse when its window loses focus: Chrome keeps a
+  so framed it doesn't also step the tower page: the moves while walking, and Escape while it holds the mouse (WebKit
+  dispatches the Escape that ends a pointer lock, which framed would also go home). It lets go of the mouse when its window loses focus: Chrome keeps a
   frame's pointer lock while the palette a forwarded ⌘K opened takes focus, and Escape would go to the lock.
 - Tower 3D runs the moves, the panes and `leave-terminal` from `board.keys` in the world, at a desk and in its
   terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and lists them on its pause card with
