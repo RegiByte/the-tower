@@ -4,6 +4,7 @@ const SOURCES = ['.ts', '.tsx', '.py', '.rb', '.go', '.rs', '.sh', '.sql', '.edn
 /** The media type of each file extension the tower names: what a served file is sent as, and a subject's `type`. */
 export const MEDIA_TYPES: Record<string, string> = {
   '.html': 'text/html',
+  '.htm': 'text/html',
   '.md': 'text/markdown',
   '.markdown': 'text/markdown',
   '.txt': 'text/plain',

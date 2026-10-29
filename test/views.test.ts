@@ -64,6 +64,7 @@ test('views: an item is drawn by the view accepting its type most specifically, 
   assert.equal(pick('notes', 'a.py'), 'tower/text')
   assert.equal(pick('notes', 'a.jsonl'), 'tower/text')
   assert.equal(pick('notes', 'a.png'), 'tower/image')
+  assert.equal(pick('notes', 'a.htm'), 'tower/html')
   assert.equal(pick('notes', 'a.bin'), 'tower/file')
   assert.equal(pick('drafts', 'a.md'), 'drafts/editor')
   assert.equal(pick('notes', 'a.md', ['x/any']), 'x/any')
