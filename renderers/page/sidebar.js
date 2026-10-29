@@ -22,7 +22,6 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { MainView } from './view.js'
- * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Titled } from '../../src/shared/titles.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
@@ -47,9 +46,9 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  *   keepViewer: <K extends keyof Viewer>(field: K, value: Viewer[K]) => void,
  *   findCard: (id: string | undefined) => Card | undefined,
  *   isOpenItem: (project: string, collection: string, id: string) => boolean,
+ *   at: (id: string) => { kind: string, project: string, name: string } | undefined,
  *   viewing: <T extends MainView['t']>(t: T) => Extract<MainView, { t: T }> | undefined,
  *   draftTitle: (project: string, item: Titled) => string,
- *   drafting: () => Draft | undefined,
  *   newDraftHtml: (f: Floor) => string,
  *   keptTitle: (project: string, collection: string, item: FloorItem) => string,
  *   heed: () => Heed,
@@ -65,7 +64,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, at, viewing, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -247,7 +246,7 @@ export async function sidebar(deps) {
   /** @param {Floor} f @param {ShelfEntry} entry @param {number} n */
   const shelfEntryHtml = (f, entry, n) => shelfKind(entry) === 'link'
     ? `<a href="${esc(/** @type {{ link: string }} */ (entry).link)}" target="_blank" rel="noreferrer" data-tip="${esc(`${entry.label}\n${/** @type {{ link: string }} */ (entry).link}`)}">${SHELF_ICON.link} ${esc(entry.label)}</a>`
-    : `<button class="${viewing('shelf')?.project === f.id && viewing('shelf')?.n === n ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" data-tip="${esc(`${entry.label}\n${shelfSource(entry)}`)}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
+    : `<button class="${at('tower/shelf')?.project === f.id && at('tower/shelf')?.name === String(n) ? 'sel' : ''}" data-shelf="${f.id}" data-n="${n}" data-tip="${esc(`${entry.label}\n${shelfSource(entry)}`)}">${SHELF_ICON[shelfKind(entry)]} ${esc(entry.label)}</button>`
 
   /** @param {Floor} f */
   const shelfHtml = (f) => !f.shelf?.length ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
@@ -259,7 +258,7 @@ export async function sidebar(deps) {
   /** @param {Floor} f */
   const draftsHtml = (f) => {
     const drafts = /** @type {FloorCollection} */ (draftsOf(f))
-    return collectionPeekHtml(f.id, drafts, (item) => draftTitle(f.id, item), drafting()?.project === f.id ? drafting()?.id : undefined, Date.now(), moreHtml(f, drafts), newDraftHtml(f))
+    return collectionPeekHtml(f.id, drafts, (item) => draftTitle(f.id, item), at('drafts/editor')?.kind === 'item.drafts' && at('drafts/editor')?.project === f.id ? at('drafts/editor')?.name : undefined, Date.now(), moreHtml(f, drafts), newDraftHtml(f))
   }
 
   /** @param {Floor} f @param {FloorCollection} c */
@@ -275,7 +274,7 @@ export async function sidebar(deps) {
     const offered = offers.length
     const needs = policies.filter((p) => p.needs).length
     const invalid = policies.filter((p) => !p.header && !p.needs).length
-    const on = viewing('policies')?.project === f.id
+    const on = at('policies/policies')?.project === f.id
     return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${policies.length}</b> ${policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
   }
 
@@ -312,7 +311,7 @@ export async function sidebar(deps) {
       policiesTrayHtml(f),
       ...kept.map((c) => tray(`kept-${c.id}`, `${ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(`${c.label}: ${c.description ?? 'items kept for later'}`))),
       stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${ICON.resume} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker stopped, killed or lost before it was sent home: asked first, listing them">${ICON.resume} resume all <b>${stranded}</b> stranded</button>`),
-      past && `<button class="tray ${viewing('archive')?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${viewing('archive')?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${ICON.archive} <b>${past}</b> archived</button>`,
+      past && `<button class="tray ${at('tower/archive')?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${at('tower/archive')?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${ICON.archive} <b>${past}</b> archived</button>`,
       tidy && tray('tidy', `${ICON.tidy} ${esc(can(f, 'tidy') ? tidyLine(f.tidy, addedTidyOf(board(), f)) : 'Tidy')}${edited ? `, ${edited} landed edited` : ''}`, 'what Tidy would do: unfold it to see the list before you press'),
     ].filter(Boolean)
     if (!trays.length) return ''

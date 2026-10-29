@@ -7,13 +7,11 @@ import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
-import { HOME, hashOf, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
+import { HOME, SKYLINE, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { hosted } from './hosted.js'
-import { displayed, layoutOf, openable, viewsOf } from '/views.js'
+import { displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
-import { skyline } from './skyline.js'
-import { shelf } from './shelf.js'
 import { worker } from './worker.js'
 import { review } from './review.js'
 import { shells } from './shells.js'
@@ -37,11 +35,11 @@ import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
 import { pressing } from '/press.js'
 import { toastsCss } from '/toasts.js'
-import { AUTOSAVE_MS, DRAFTS, draftItem, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
+import { DRAFTS, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
-import { asksHtml } from './added.js'
+import { addedActionsHtml, asksHtml, badgesHtml } from './added.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -78,6 +76,8 @@ const offerOf = (a) => (a.cap === POLICIES ? board().floors.flatMap((f) => floor
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, rateLimits: [], probes: [], extensions: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
+/** The floor a worker on the board is on. @param {string} id @returns {string | undefined} */
+const projectOfCard = (id) => board().floors.find((f) => f.cards.some((c) => c.id === id))?.id
 /** The board drawn, as the page's machine holds it. */
 const board = () => page.state().board ?? BLANK
 /** Whether a board has arrived. */
@@ -97,6 +97,8 @@ const viewing = (t) => {
   const v = view()
   return v.t === t ? /** @type {Extract<MainView, { t: T }>} */ (v) : undefined
 }
+/** Where the view `id` stands while the main pane mounts it (`located`). @param {string} id */
+const at = (id) => located(view(), id)
 /** What this viewer keeps in `tower.store` for every renderer of theirs, as the page's machine holds it. */
 const viewer = () => page.state().viewer
 
@@ -129,14 +131,8 @@ function render() {
   const c = selected() && findCard(selected())
   followChanges(c || undefined)
   if (c) barHtml(c)
-  if (drafting()) draftHeadHtml()
   if (viewing('item')) drawItem()
-  if (viewing('archive')) drawArchive()
-  if (viewing('policies')) drawPolicies()
-  if (viewing('collection')) drawCollection()
-  if (viewing('view')) hostedView.update()
-  if (!selected()) repaint($('sky'), skylineHtml())
-  paintSky()
+  if (viewing('view') || viewing('arriving')) hostedView.update()
   renderDock()
   drawSettings()
   tick()
@@ -144,7 +140,6 @@ function render() {
 
 function tick() {
   paintTip()
-  if (mainClass(view()) === 'home') paintSky()
   paintLimits()
   for (const el of document.querySelectorAll('[data-since]')) el.textContent = ago(pageNow() - Number(el.dataset.since))
 }
@@ -158,11 +153,10 @@ function tick() {
  * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
  * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
- *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'saved', id: string | undefined }
- *   | { type: 'typed' } | { type: 'autosave' } | { type: 'hold-draft' }} PageEvent
+ *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'followed', location: import('../../src/shared/views.ts').Location }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
- *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string } | { type: 'save-draft' }} PageEffect
+ *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string }} PageEffect
  */
 
 /** @param {PageState} s @returns {Heed} */
@@ -210,12 +204,9 @@ const pageHandlers = {
   keep: (s, e) => [into({ ...s, viewer: { ...s.viewer, [e.field]: e.value } }), e],
   'next-waiting': (s) => {
     const attended = attentionOrder(s.board ?? BLANK, heedOf(s))
-    const step = nextAttended(attended, s.visited, { id: s.view.t === 'worker' ? s.view.id : undefined, policies: s.view.t === 'policies' ? s.view.project : undefined })
+    const step = nextAttended(attended, s.visited, { id: s.view.t === 'worker' ? s.view.id : undefined, policies: located(s.view, POLICIES_VIEW)?.project })
     return [into({ ...s, visited: step.visited }), step.to ? { type: 'attend-to', to: step.to } : { type: 'toast', message: attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you' }]
   },
-  typed: () => [{ type: 'timer/start', id: 'autosave', ms: AUTOSAVE_MS, fire: { type: 'autosave' } }],
-  autosave: () => [{ type: 'save-draft' }],
-  'hold-draft': () => [{ type: 'timer/cancel', id: 'autosave' }],
   dismiss: attend,
   ring: attend,
   remind: attend,
@@ -224,9 +215,9 @@ const pageHandlers = {
   watch: attend,
   go: (s, { view }) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }]) : moved(s, view)),
   reopen: (s, { view }) => moved(s, view),
-  saved: (s, { id }) => {
-    if (s.view.t !== 'draft') return []
-    const view = { ...s.view, id }
+  followed: (s, { location }) => {
+    if (s.view.t !== 'view') return []
+    const view = /** @type {MainView} */ ({ t: 'view', location })
     return viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }])
   },
 }
@@ -246,7 +237,6 @@ const page = loop({
     keep: ({ field, value }) => tower.store.set(VIEWER_KEYS[field], value),
     'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : isAsk(to) ? (offerOf(to) ? openPolicies(/** @type {Offer} */ (offerOf(to)).project) : goToSubject(to.subject)) : moveTo(to.id)),
     toast: ({ message }) => toast(message),
-    'save-draft': () => void saveNow(),
     leave: ({ view: v }) => {
       $('main').classList.remove(mainClass(v))
       LEAVE[v.t]()
@@ -254,9 +244,8 @@ const page = loop({
     enter: ({ view: v }) => {
       closeDrawer()
       $('main').classList.add(mainClass(v))
-      if ('project' in v) {
-        const colour = paint(v.project)
-        $(VIEW_ELEMENT[v.t]).style.cssText = colour
+      if (v.t === 'item' || v.t === 'view') {
+        $(v.t === 'item' ? 'item-view' : 'view-host').style.cssText = floorPaint(v)
       }
       /** @type {(v: MainView) => void} */ (ENTER[v.t])(v)
     },
@@ -291,12 +280,34 @@ page.dispatch({ type: 'stored', viewer: viewer() })
 
 const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumableHtml, heldWhy, heldHtml, withKeys, floorOf } = boardKit({ findCard: (id) => findCard(id), board, heed, lostAt })
 
-const { findCard, readArchive, freshArchives, lookUp, openArchive, enterArchive, drawArchive } = archive({ cards, board, floorOf, render, heldWhy, heldHtml, selected, callsign, unresumableHtml, go, paint, viewing })
+/** The colour of the floor `v` is on, for the element it draws in. @param {MainView} v @returns {string} */
+const floorPaint = (v) => paint(floorOfView(v, projectOfCard))
 
-const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, drafting, draftHeadHtml, openDraft, enterDraft, leaveDraft, saveNow, followDraft, settleConflict, deleteSent, sendDraft, openTransfer, deleteDraft } = draft({ render, cards, floorOf, board, heldWhy, heldHtml, go, goHome, page, openSpawn: (project, sent) => openSpawn(project, sent), floorsTopDown, paint, callsign, findCard, select })
+const { findCard, freshArchives, lookUp } = archive({ cards, board, floorOf, render })
+
+/** The views the page opens by name: a floor's archive and policies, a collection, a shelf entry. */
+const ARCHIVE_VIEW = 'tower/archive'
+const POLICIES_VIEW = 'policies/policies'
+const COLLECTION_VIEW = 'tower/collection'
+const SHELF_VIEW = 'tower/shelf'
+
+/** A floor's past workers in the main pane. @param {string} project */
+const openArchive = (project) => goTo({ view: ARCHIVE_VIEW, subject: `floor:${project}` })
+/** A floor's policies in the main pane. @param {string} project */
+const openPolicies = (project) => goTo({ view: POLICIES_VIEW, subject: `floor:${project}` })
+/** A floor's collection listed whole in the main pane, newest first: its tray in the sidebar lists only the newest. @param {string} project @param {string} collection */
+const openCollection = (project, collection) => goTo({ view: COLLECTION_VIEW, subject: `collection:${project}/${collection}` })
+/** A floor's shelf entry in the main pane, on the file of it shown last while it stays open. @param {string} project @param {number} n */
+const openShelf = (project, n) => {
+  const open = at(SHELF_VIEW)
+  const args = open && open.project === project && open.name === String(n) ? /** @type {Extract<MainView, { t: 'view' }>} */ (view()).location.args : undefined
+  goTo({ view: SHELF_VIEW, subject: `shelf:${project}/${n}`, ...(args && { args }) })
+}
+
+const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, openDraft, spawnOn, deleteSent } = draft({ render, board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
 const { showLanding, showKeys, ask } = dialogs({ board })
-const { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view, ask })
+const { keptTitle, pruneKeptTitles, isOpenItem, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, board, selectArriving, view, ask })
 
 const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings(), board })
 
@@ -315,11 +326,7 @@ const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggl
 
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
 
-const { openShelf, enterShelf, leaveShelf, sendScheme, showDoc } = shelf({ viewing, go, floorOf, paint, rereadViewer, render, select, goHome, view, board, goTo: (location) => goTo(location), display: (subject, opts) => display(subject, opts) })
-
-const { paintSky, skylineHtml } = skyline({ callsign, paint, board, heed, cards, heldWhy, heldHtml })
-
-const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, viewing, draftTitle, drafting, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
+const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, at, viewing, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
 
 
 /** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
@@ -421,22 +428,12 @@ const placing = () => ({
 /** The subject the main pane is on. @param {MainView} v @returns {string} */
 function subjectKeyOf(v) {
   switch (v.t) {
-    case 'home':
     case 'arriving':
       return 'board'
     case 'worker':
       return `card:${v.id}`
-    case 'archive':
-    case 'policies':
-      return `floor:${v.project}`
-    case 'collection':
-      return `collection:${v.project}/${v.collection}`
     case 'item':
       return `item.${v.collection}:${v.project}/${v.id}`
-    case 'draft':
-      return v.id ? `item.${DRAFTS}:${v.project}/${v.id}` : `collection:${v.project}/${DRAFTS}`
-    case 'shelf':
-      return `shelf:${v.project}/${v.n}`
     case 'view':
       return v.location.subject ?? 'board'
   }
@@ -454,24 +451,36 @@ function focusedSubject() {
 
 /**
  * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/views.js`): a view given stays when
- * it is the one mounted and takes it; a core view's location opens the page's route for it, a card's showing or
- * conversation on its tab, a draft in the editor; a view mounted on a subject above `target` is handed it.
+ * it is the one mounted and takes it, on that subject when it is on its kind; a worker or a kept item opens the page's
+ * route for it, a card's showing or conversation on its tab; a view mounted on a subject above `target` is handed it.
+ * A worker the board doesn't carry is looked up in the floors' archives, and else awaited, as one the page started.
  * @param {Subject | string} target @param {{ view?: string }} [opts]
  */
 function display(target, opts = {}) {
   const subject = typeof target === 'string' ? subjectAt(board(), target) : target
+  if (!subject && typeof target === 'string' && target.startsWith('card:')) return void awaitCard(target.slice('card:'.length))
   if (!subject) return toast(`${target} is no longer on the board`)
   const { view: given } = opts
-  if (given && viewing('view')?.location.view === given && hostedView.show(subject)) return
+  const mounted = viewing('view')?.location
+  if (given && mounted?.view === given && hostedView.show(subject)) {
+    const view = /** @type {import('../../src/shared/views.ts').View} */ (viewsOf(board()).find((v) => v.id === given))
+    if (subject.key !== (mounted.subject ?? 'board') && viewOn(view.on, subject)) (hostedView.follow(subject.key), page.dispatch({ type: 'followed', location: { view: given, subject: subject.key } }))
+    return
+  }
   const at = displayed(placing(), subject, given)
   if (!at) return toast(given ? `${viewsOf(board()).find((v) => v.id === given)?.words.label ?? given} isn't offered on ${subject.key}` : `Nothing here shows ${subject.key}`)
   const next = mainViewOf(at, board())
   if (next.t === 'lookup') return toast(`${subject.key} is no longer on the board`)
   if (next.t === 'worker' && !next.pane && subject.kind === 'shown') return go({ ...next, pane: /** @type {Pane} */ (`shown:${/** @type {{ target: string }} */ (subject.value).target}`) })
   if (next.t === 'worker' && !next.pane && subject.kind === 'conversation') return go({ ...next, pane: 'brief' })
-  if (next.t === 'item' && next.collection === DRAFTS && draftItem(board().floors, next.project, next.id)) return openDraft(next.project, next.id)
   go(next)
   if (next.t === 'view' && subject.key !== (at.subject ?? 'board') && !hostedView.show(subject)) toast(`${subject.key} isn't there any more`)
+}
+
+/** A worker the board doesn't carry: one of an archive, read first, else one just started, opened once the board carries it. @param {string} id */
+async function awaitCard(id) {
+  const found = await lookUp(id)
+  go(found ? { t: 'worker', id, pane: undefined } : { t: 'arriving', id })
 }
 
 /**
@@ -499,10 +508,38 @@ const commandKit = {
   display: (subject, opts) => display(subject, opts),
   toast: (text, action) => toast(text, action),
   confirm: (text, verb) => ask(text, verb),
-  run: async (command, on) => (isAddedId(command) ? runAddedId(command, on ?? focusedSubject()) : run(command, { repeat: false })),
+  run: async (command, on) => (isAddedId(command) ? runAddedId(command, on ?? focusedSubject()) : command === 'spawn' ? spawnIn(on ?? focusedSubject()) : run(command, { repeat: false })),
 }
 
-const hostedView = hosted({ board, views: () => viewsOf(board()), layout, termFont, scheme, run, kit: commandKit, gone: () => goHome() })
+/**
+ * One of the page's regions inside a view, on `subject`: what extensions add to it drawn the page's way, its badges and
+ * actions as its holds say, their presses run by the page's own clicks. Contributions only: no view is mounted in one.
+ * @param {HTMLElement} el @param {string} id @param {Subject} subject
+ */
+function kitRegion(el, id, subject) {
+  const holds = (declared.regions ?? []).find((r) => r.id === id)?.holds ?? []
+  const draw = (/** @type {Subject} */ s) => {
+    el.dataset.region = id
+    el.dataset.subject = s.key
+    paintOnce(el, `${holds.includes('badges') ? badgesHtml(board(), s) : ''}${holds.includes('verbs') || holds.includes('commands') ? addedActionsHtml(board(), s) : ''}`)
+  }
+  draw(subject)
+  return { update: draw, close: () => (el.replaceChildren(), delete el.dataset.region, delete el.dataset.subject) }
+}
+
+const hostedView = hosted({ board, views: () => viewsOf(board()), layout, termFont, scheme, run, kit: { ...commandKit, region: kitRegion, go: (location) => void goTo(location) }, gone: () => goHome() })
+
+/**
+ * The new-worker form, on the floor `on` is or is of; on a draft, on that draft, deleted once a worker starts on it.
+ * Answers whether it opened.
+ * @param {Subject} on
+ */
+function spawnIn(on) {
+  const project = on.project
+  if (project === undefined) return false
+  if (on.kind === `item.${DRAFTS}`) return (void spawnOn(project, /** @type {{ id: string }} */ (on.value).id), true)
+  return (openSpawn(project), true)
+}
 
 /** The views this page offers to open where the viewer stands: on the subject in focus, and on each floor and the board. @returns {Openable[]} */
 function opensHere() {
@@ -519,42 +556,28 @@ const besideOn = (subject) => {
   return at && (at.subject ?? 'board') === subject.key ? [at.view] : []
 }
 
-/** "Open <label>" for each view a floor's section offers. @param {Subject} subject */
+/** "Open <label>" for each view a floor's section offers, less those its layout hides there. @param {Subject} subject */
 const opensHtml = (subject) =>
   openable(placing(), subject, besideOn(subject))
+    .filter((v) => !layout()['floor.section']?.hidden?.includes(v.id))
     .map((v) => `<button class="added" data-open-view="${esc(JSON.stringify({ subject: subject.key, view: v.id }))}"${v.words.hint ? ` data-tip="${esc(v.words.hint)}"` : ''}>Open ${esc(v.words.label)}</button>`)
     .join('')
 
-/** Where each view draws, painted in its floor's colour as it opens. */
-const VIEW_ELEMENT = /** @type {const} */ ({ shelf: 'shelf-view', archive: 'archive-view', policies: 'policies-view', collection: 'collection-view', draft: 'draft-view', item: 'item-view' })
-
-/** What a view sets up as it opens, beside its class on the main pane and its colour. @type {{ [T in MainView['t']]: (v: Extract<MainView, { t: T }>) => void }} */
+/** What a view sets up as it opens, beside its class on the main pane and its colour; a worker awaited is drawn as the skyline. @type {{ [T in MainView['t']]: (v: Extract<MainView, { t: T }>) => void }} */
 const ENTER = {
-  home: () => {},
-  arriving: () => {},
+  arriving: () => void hostedView.enter(SKYLINE),
   worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
-  shelf: enterShelf,
-  archive: (v) => enterArchive(v.project),
-  policies: () => {},
-  collection: () => {},
-  draft: (v) => void enterDraft(v),
   item: () => {},
   view: (v) => void hostedView.enter(v.location),
 }
 
 /** What only the view open holds, let go as it closes. @type {{ [T in MainView['t']]: () => void }} */
 const LEAVE = {
-  home: () => {},
-  arriving: () => {},
+  arriving: () => hostedView.leave(),
   worker: () => {
     closeTerminal()
     $('main').classList.remove('asking', 'on-brief', 'on-changes', 'on-reviews', 'on-shown')
   },
-  shelf: leaveShelf,
-  archive: () => {},
-  policies: () => {},
-  collection: () => {},
-  draft: leaveDraft,
   item: leaveItem,
   view: () => hostedView.leave(),
 }
@@ -628,11 +651,11 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
   drafts: { draftsOf, keepUnsent, titleOf },
   draftIo,
   held: async (d) => d,
-  kept: (d) => void (drafting() === d && ($('draft-text').value = d.text)),
+  kept: () => {},
   shown: () => {},
   started: async (id, d) => {
-    if (d) await deleteSent(d)
     selectArriving(id)
+    if (d) await deleteSent(d)
   },
   toast,
 })
@@ -674,11 +697,14 @@ async function letGo(button, c) {
   if (await told(pressing(button, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) toast(letGoneLine(c))
 }
 
-/** A file's Finder and editor buttons, wherever they are drawn, before any other click handling sees the click. */
+/** Whether `el` is a view's own, drawn inside one and in no region the page fills there. @param {Element} el */
+const inView = (el) => Boolean(el.closest('[data-view]')) && !el.closest('[data-view] [data-region]')
+
+/** A file's Finder and editor buttons, wherever the page draws them, before any other click handling sees the click. */
 document.addEventListener(
   'click',
   (e) => {
-    const file = fileCall(/** @type {Element} */ (e.target))
+    const file = !inView(/** @type {Element} */ (e.target)) && fileCall(/** @type {Element} */ (e.target))
     if (!file) return
     e.stopPropagation()
     told(tower.run(file))
@@ -686,10 +712,13 @@ document.addEventListener(
   true,
 )
 
-/** A link goes where its href says: a worker's `#<id>` reaches `route` as the hash changes. */
+/**
+ * A link goes where its href says: a worker's `#<id>` reaches `route` as the hash changes. A view wires its own
+ * presses: the page's are only those in a region it fills inside one (`kit.region`).
+ */
 document.addEventListener('click', async (e) => {
   const target = /** @type {Element} */ (e.target)
-  if (target.closest('a[href]')) return
+  if (target.closest('a[href]') || inView(target)) return
   const spawn = target.closest('[data-spawn]')
   if (spawn) return openSpawn(/** @type {string} */ (spawn.dataset.spawn))
   const newDraft = target.closest('[data-new-draft]')
@@ -702,7 +731,7 @@ document.addEventListener('click', async (e) => {
   }
   if (kept) {
     const { project, collection, id } = keptOf(kept)
-    return collection === DRAFTS && draftItem(board().floors, project, id) ? openDraft(project, id) : openItem(project, collection, id)
+    return collection === DRAFTS ? openDraft(project, id) : openItem(project, collection, id)
   }
   if (target.closest('[data-item-act=delete]')) return deleteKept()
   if (target.closest('[data-item-read]')) return (forgetItem(), render())
@@ -723,11 +752,6 @@ document.addEventListener('click', async (e) => {
   if (dismissTip) return (keepViewer('tipsDismissed', [...viewer().tipsDismissed, dismissTip]), render())
   const tipRun = target.closest('[data-tip-run]')?.dataset.tipRun
   if (tipRun) return run(tipRun, { repeat: false }) || toast(`Not from here: ${COMMANDS.find((c) => c.id === tipRun)?.does}`)
-  const draftAct = target.closest('[data-draft-act]')?.dataset.draftAct
-  if (draftAct === 'send') return sendDraft()
-  if (draftAct === 'transfer') return openTransfer()
-  if (draftAct === 'delete') return deleteDraft()
-  if (draftAct === 'reload' || draftAct === 'keep') return settleConflict(draftAct === 'reload')
   const landingOf = target.closest('[data-landing-of]')
   if (landingOf) return told(pressing(landingOf, () => tower.landing({ project: /** @type {Card} */ (findCard(selected())).project, branch: /** @type {string} */ (landingOf.dataset.landingOf) }))).then((l) => l && showLanding(l))
   const landing = target.closest('[data-landing]')
@@ -806,8 +830,6 @@ document.addEventListener('click', async (e) => {
   if (policies) return openPolicies(policies)
   const policyButton = target.closest('[data-policy-call]')
   if (policyButton) return policyCall(policyButton, JSON.parse(/** @type {string} */ (policyButton.dataset.policyCall)))
-  const policyFile = target.closest('[data-policy-open]')?.dataset.policyOpen
-  if (policyFile) return openItem(/** @type {Extract<MainView, { t: 'policies' }>} */ (viewing('policies')).project, POLICIES, policyFile)
   const worker = target.closest('[data-worker]')?.dataset.worker
   if (worker) return select(worker)
   const unshowKey = target.closest('[data-unshow]')?.dataset.unshow
@@ -832,15 +854,8 @@ document.addEventListener('click', async (e) => {
   if (open) return openInEditor(open, /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
-  const doc = target.closest('[data-doc]')
-  if (doc) return showDoc(/** @type {string} */ (doc.dataset.doc))
-  if (target.closest('[data-archive-read]')) return (readArchive(/** @type {Extract<MainView, { t: 'archive' }>} */ (viewing('archive')).project), render())
   const reread = target.closest('[data-thread-read]') && threadWant(board().floors, cardThread(/** @type {Card} */ (findCard(selected()))))
   if (reread) return (threadReads.dispatch({ ...reread, type: 'refresh' }), render())
-  if (target.closest('[data-shelf-retry]')) {
-    const { project, n } = /** @type {Extract<MainView, { t: 'shelf' }>} */ (viewing('shelf'))
-    return reopen({ t: 'shelf', project, n, file: undefined })
-  }
   const newShell = target.closest('[data-shell-dir]')
   if (newShell) {
     if ($('shell-pick').matches(':popover-open')) $('shell-pick').hidePopover()
@@ -854,7 +869,7 @@ document.addEventListener('click', async (e) => {
   const tab = target.closest('[data-shell]')?.dataset.shell
   if (tab) return toggleShell(tab)
   const archive = target.closest('[data-archive]')?.dataset.archive
-  if (archive) return viewing('archive')?.project === archive ? goHome() : openArchive(archive)
+  if (archive) return at(ARCHIVE_VIEW)?.project === archive ? goHome() : openArchive(archive)
   const section = target.closest('[data-section]')?.dataset.section
   if (section) return toggleSection(section)
   const floorFold = target.closest('[data-floor-fold]')?.dataset.floorFold
@@ -882,8 +897,6 @@ $('home').onclick = goHome
 
 function redrawDocs() {
   forgetShown()
-  const file = viewing('shelf')?.file
-  if (file) showDoc(file)
   const item = viewing('item')
   if (item && readsText(itemKind(item.id))) forgetItem()
   render()
@@ -897,9 +910,11 @@ function applyScheme() {
 }
 
 tower.onScheme(applyScheme)
-tower.prefs.on(() => (applyTermFont(), hostedView.refont(), redrawDocs(), sendScheme(), drawSettings()))
+tower.prefs.on(() => (applyTermFont(), hostedView.refont(), redrawDocs(), drawSettings()))
+// A view or a framed page set a key the viewer's record keeps, such as a dismissal.
+tower.store.on(() => void rereadViewer().then(render))
 
-const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('transfer').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open || Boolean(document.querySelector('[data-view] dialog[open]'))
 
 /** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
 /** @param {Pane} pane */
@@ -933,7 +948,8 @@ function run(id, e) {
   if (id === 'palette') return (openPalette(), true)
   if (id === 'leave-terminal') return (leaveTerminal(), true)
   if (id === 'shell-here') return e.repeat || shellHere()
-  if (id === 'home' && view().t !== 'home') return (goHome(), true)
+  if (id === 'home' && !isHome(view())) return (goHome(), true)
+  if (id === 'spawn') return spawnIn(focusedSubject())
   return false
 }
 
@@ -1054,10 +1070,10 @@ tower.subscribe(async (next) => {
   freshArchives()
   pruneDraftTitles(board().floors)
   pruneKeptTitles(board().floors)
-  void followDraft()
   const arriving = viewing('arriving')
   if (arriving && findCard(arriving.id)) return select(arriving.id)
   const wanted = first && location.hash.slice(1)
+  if (first) reopen(HOME)
   if (wanted) return route(wanted)
   render()
 })
