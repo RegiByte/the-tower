@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Markdown is drawn through one shared module, safe by construction for unvetted words",
-  "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown or shelved file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML, and the tower page opens a shelf link only when safeHref allows it.",
+  "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown, shelved or kept file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML, and the tower page opens a shelf link only when safeHref allows it.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
@@ -57,12 +57,14 @@ would reach for a markdown library's `parse` and draw it inline.
   resolves to `http:`. The href written is the string checked, escaped, so an entity (`&#106;avascript:`) reaches the
   browser as the text it was checked as.
 - No document frame runs scripts. Each frame the tower page writes a document into (a shown file and the page asking
-  to open a link, [`renderShown`](ref:hub/renderers/page/worker.js#renderShown); a shelf file; a kept text item) is
+  to open a link, [`renderShown`](ref:hub/renderers/page/worker.js#renderShown); a shelf file; a kept markdown or text
+  item, [`framedText`](ref:hub/src/views/item.ts#framedText)) is
   `allow-same-origin` without `allow-scripts`, so the renderer reaches its keys and geometry ([[keymap]]): beside
   `allow-same-origin`, a script there would run as the tower. A `javascript:` link it carries runs nowhere, in the
   frame or in the tab `allow-popups-to-escape-sandbox` opens (checked in Chrome).
-- Briefs and review notes in every renderer use `markdownHtml` as their `said` ([[brief-turns]]); shown and shelf
-  docs use `documentHtml`. `/marked.js` is still served, outside the contract; Tower 3D keeps marked's lexer to
+- Briefs and review notes in every renderer use `markdownHtml` as their `said` ([[brief-turns]]); shown, shelf and
+  kept docs use `documentHtml` in the tower page (`tower/document`, [[ui-model]]); Tower 3D draws a kept item's
+  markdown with `markdownHtml`. `/marked.js` is still served, outside the contract; Tower 3D keeps marked's lexer to
   typeset pages on canvas. The shelf's view (`tower/shelf`) opens a link outside the shelf only when `safeHref`
   allows it ([`followLink`](ref:hub/src/views/shelf.ts#followLink)), and says so otherwise.
 - [`markdown.test.ts`](ref:hub/test/markdown.test.ts) runs the payloads of the brief's audit and the usual ways around

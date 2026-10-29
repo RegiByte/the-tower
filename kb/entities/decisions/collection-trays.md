@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js", "hub/src/views/item.ts#itemView"]
 }
 ---
 **Problem.** A renderer that draws trays only for the collections it gives a meaning to hides the rest: what a worker
@@ -24,19 +24,21 @@ and reads items alike ([[renderer-is-disposable]]).
   ([`collectionTrayHtml`](ref:hub/src/shared/items.ts#collectionTrayHtml)), titled where their type names itself
   ([`keptTitles`](ref:hub/src/shared/items.ts#keptTitles), else the tag), with the keeper
   ([[workers-edit-kept-items]]) and age. [`itemKind`](ref:hub/src/shared/items.ts#itemKind) reads an item by its
-  extension: markdown through `markdownHtml` ([[markdown-safe]]: anything a worker kept is unvetted words), html
+  extension (Tower 3D draws by it; the tower page by its views by type, [[ui-model]]): markdown as a document in a
+  frame where nothing runs (`documentHtml` in the tower page, [[markdown-safe]]), html
   framed at the opaque origin `/collection/…` serves it at, scripts on and no API relay, an image shown, text as
-  written, anything else left to Finder and the editor. [`deleteAsk`](ref:hub/src/shared/items.ts#deleteAsk) is what a
+  written, a video played (the tower page), anything else left to Finder and the editor. [`deleteAsk`](ref:hub/src/shared/items.ts#deleteAsk) is what a
   renderer asks first: deleting is the user's.
-- What opening a row means stays the renderer's. The tower page opens a draft in the drafts extension's editor and any
-  other item in an item view in the main pane ([`kept.js`](ref:hub/renderers/page/kept.js)), which follows the board: a
-  changed item is read again, a deleted one closes.
+- What opening a row means stays the renderer's. The tower page displays the item
+  ([`kept.js`](ref:hub/renderers/page/kept.js)): a draft opens in the drafts extension's editor, its owner's view, and
+  any other item in the core's view for its type ([`itemView`](ref:hub/src/views/item.ts#itemView)), which follows the
+  board: a changed item is read again, a deleted one closes.
 - A sidebar tray is bounded ([`collectionPeekHtml`](ref:hub/src/shared/items.ts#collectionPeekHtml)) and lists the
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
 - Drafts keep their own tray on the shared rows, with a way to make one, where the floor's `drafts` collection is the
   drafts extension's (`draftsOf`; a plain one of that name is drawn as any kept collection); review threads keep theirs, with the threads
   Tidy filed in a fold below ([`landedThreads`](ref:hub/extensions/reviews/client/reviews.ts#landedThreads), read off the board's
-  `reviews` items), each opened in the item view; policies have their own panel.
+  `reviews` items), each opened in its view by type; policies have their own panel.
 - A prompt in the new-worker form that closes without starting is kept
   ([`keepUnsent`](ref:hub/extensions/drafts/client/drafts.ts#keepUnsent), run by the shared new-worker dialog's machine,
   [`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)): a new draft, or the draft the form was opened on, with
