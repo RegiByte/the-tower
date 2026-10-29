@@ -12,7 +12,7 @@
  *     --down <b>      press a mouse button where the pointer is: left or right, with any of Meta+, Ctrl+, Alt+, Shift+
  *                     before it (Shift+left); a --hover while it is held drags
  *     --up <b>        let it go: a --down and an --up on the same spot click
- *     --key <chord>   press a key on the focused element as a real keyboard would: a key name with any of Meta+, Ctrl+,
+ *     --key <chord>   press a key on the focused element as a real keyboard would: a key name (a space for Space) with any of Meta+, Ctrl+,
  *                     Alt+, Shift+ before it (Meta+Backspace, Shift+Enter, Alt+ArrowLeft, Ctrl+c)
  *     --type <text>   type text into the focused element
  *
@@ -98,7 +98,7 @@ const MODIFIERS: Record<string, number> = { Alt: 1, Ctrl: 2, Meta: 4, Shift: 8 }
 const KEYS: Record<string, [string, number, string?]> = {
   Enter: ['Enter', 13, '\r'], Backspace: ['Backspace', 8], Delete: ['Delete', 46], Tab: ['Tab', 9], Escape: ['Escape', 27],
   ArrowLeft: ['ArrowLeft', 37], ArrowRight: ['ArrowRight', 39], ArrowUp: ['ArrowUp', 38], ArrowDown: ['ArrowDown', 40],
-  '?': ['Slash', 191, '?'], '/': ['Slash', 191, '/'], '`': ['Backquote', 192, '`'],
+  ' ': ['Space', 32, ' '], '?': ['Slash', 191, '?'], '/': ['Slash', 191, '/'], '`': ['Backquote', 192, '`'],
   ...Object.fromEntries([...'0123456789'].map((d) => [d, [`Digit${d}`, 48 + Number(d), d] as [string, number, string]])),
 }
 
