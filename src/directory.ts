@@ -531,7 +531,7 @@ const answerersOf = (stage: OpenStage, takers: Takers): string[] => {
 /** A flow in one line: its verb, its words and its open stages. */
 const flowLine = (flow: Flow, width: number): string => {
   const open = flow.stages.filter((s): s is OpenStage => s.kind === 'open').map((s) => `${s.name} ${ruleOf(s)}${s.planned ? ' (planned)' : ''}`)
-  return `  ${flow.verb.padEnd(width)}  ${flow.words.label}${flow.planned ? ' (planned)' : ''}${open.length ? ` · ${open.join(' · ')}` : ''}`
+  return `  ${flow.verb.padEnd(width)}  ${flow.words.label}${open.length ? ` · ${open.join(' · ')}` : ''}`
 }
 
 /** Every stage of a flow, as `tower flows <verb>` prints it: ⟳ wrapped, ◆ open, · sealed. */
@@ -551,7 +551,7 @@ const flowLines = (flow: Flow, takers: Takers): string[] => {
     ]
   }
   return [
-    `${flow.verb} · ${flow.words.label}${flow.planned ? ' (planned: no such verb yet)' : ''}`,
+    `${flow.verb} · ${flow.words.label}`,
     ...flow.stages.flatMap(stageLine),
     ...(flow.composes ? [`  calls ${flow.composes.join(', ')} through the dispatch, each wrapped on its own`] : []),
   ]

@@ -28,8 +28,8 @@ export type OpenStage = {
 
 export type Stage = OpenStage | { name: string; kind: 'wrapped' } | { name: string; kind: 'sealed'; why: string }
 
-/** `composes`: the core verbs it calls through the dispatch, each wrapped on its own (`COMPOSITES`). `planned`: no such verb yet. */
-export type Flow = { verb: string; words: Words; stages: Stage[]; composes?: string[]; planned?: true }
+/** `composes`: the core verbs it calls through the dispatch, each wrapped on its own (`COMPOSITES`). */
+export type Flow = { verb: string; words: Words; stages: Stage[]; composes?: string[] }
 
 const sealed = (name: string, why: string): Stage => ({ name, kind: 'sealed', why })
 
@@ -106,6 +106,11 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   ]),
   kill: flow('End a worker', 'Kill its PTY: it can be resumed.', [sealed('named, then killed', 'the log says who ended it')]),
   'let-go': flow('Let go', 'Take a worker stranded by the host off duty, still resumable.', [sealed('only a stranded card', "the board's rule")]),
+  fact: flow('Log a fact', "A fact about the caller's own session: show, keep or leave.", [
+    sealed('a running worker, about itself', 'a worker names only its own session'),
+    sealed("the fact's schema", 'the board reads it'),
+    sealed('host appends', 'one writer per log: the host'),
+  ]),
   'worktree/discard': flow('Discard', 'Throw away a worktree whose work never landed, recorded first.', [
     sealed('tips read', 'what is thrown away is read before anyone answers'),
     hooked('record', 'discard.record'),
@@ -147,8 +152,5 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'policy/approve': moved('Approve', 'policies/approve'),
 }
 
-/** Verbs listed where they will arrive, not answered yet. */
-const PLANNED_FLOWS: Flow[] = [{ ...flow('Log a fact', "A fact about the caller's own session: show, keep or leave.", [sealed("the fact's schema", 'the board reads it')])('fact'), planned: true }]
-
-/** Every core verb's flow, and the planned ones after. */
-export const FLOWS: Flow[] = [...Object.entries(VERB_FLOWS).map(([verb, of]) => of(verb)), ...PLANNED_FLOWS]
+/** Every core verb's flow. */
+export const FLOWS: Flow[] = Object.entries(VERB_FLOWS).map(([verb, of]) => of(verb))

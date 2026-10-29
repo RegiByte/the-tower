@@ -704,6 +704,9 @@ extension: a link may be a guard, so it is never passed over. Links in a cycle o
 each with a `cycle` problem. A link off on the input's floor is passed over. The core's verbs that do what other verbs
 do (Tidy, `worktree/discard`) call those verbs through the same dispatch, for the same caller, so a link
 on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuses, a discard stops where it is refused.
+What a worker's `tower show`, `open`, `keep` and `home` of itself log goes through `tower/fact` (API 1.106), so a link
+there sees each showing, kept item and leave, and may redact, copy or hold it; `keep` creates its item first through
+`tower/collection/create`, so a link that refuses the fact leaves the item kept and unannounced.
 `GET /extensions` lists each `chains` (outermost first), `answers`, `composites` and `launchers` (API 1.100).
 
 `hooks` are points an extension raises inside its own verbs, each a `payload` and an `answer` schema and a `failure`

@@ -63,6 +63,7 @@
  *   POST /shell/spawn {project, cwd} | /shell/keys {id, data} | /shell/resize {id, cols, rows} | /shell/kill {id}
  *        relayed to the terms daemon
  *   POST /submit {id, text, by?}   type a prompt into a session's composer and submit it
+ *   POST /fact {name: show | keep | leave, value?}   a fact a running worker logs about its own session, through the host
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
