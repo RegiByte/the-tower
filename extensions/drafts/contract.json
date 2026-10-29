@@ -26,6 +26,7 @@
     "client.drafts.js#save",
     "client.drafts.js#sendable",
     "client.drafts.js#settle",
-    "client.drafts.js#titleOf"
+    "client.drafts.js#titleOf",
+    "client.editor.js#mount"
   ]
 }
