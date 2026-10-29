@@ -129,7 +129,7 @@ use, stays for you to Tidy by hand.
 
 | Setting | Takes | Unset |
 |---|---|---|
-| `reap` | End the processes the worker left, unless someone on duty works in its checkout, main's included: a process names no checkout, and may serve a worker sharing it (a dev server). | `false` |
+| `reap` | End the processes the worker left, unless someone on duty works in its checkout, main's included: a process names no checkout, and may serve a worker sharing it (a dev server). A server the worker started for you ends too, though you may still have it open: leave `reap` off where workers start servers you keep using. | `false` |
 | `worktrees` | Remove its worktree, if nobody is in it, it is clean and its branch is absorbed into its base (landed, not only pushed). | `false` |
 | `branches` | Delete the kept branch its worktree held, if absorbed. | `false` |
 | `extensions` | Apply the extensions' Tidy entries that name its checkout, unless someone on duty works in it: the reviews extension's landed thread, filed. | `false` |

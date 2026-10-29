@@ -14,7 +14,7 @@
       "reap": {
         "type": "boolean",
         "default": false,
-        "description": "End the processes a worker left, once nobody on duty works in its checkout (they may serve a worker sharing it)."
+        "description": "End the processes a worker left, once nobody on duty works in its checkout (they may serve a worker sharing it). A server it started for the user ends too, though the user may still have it open."
       },
       "worktrees": {
         "type": "boolean",
