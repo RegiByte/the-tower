@@ -1,13 +1,12 @@
-import type { Board, Floor } from '../../../src/bridge/board.ts'
+import type { Floor } from '../../../src/bridge/board.ts'
 import { dismissing, esc } from '../../../src/shared/cards.ts'
 import { fileCall } from '../../../src/shared/file-acts.ts'
-import { ICON } from '../../../src/shared/icons.ts'
-import { keysHint, keyshortcuts } from '../../../src/shared/keymap.ts'
 import { drawPanel } from '../../../src/shared/panel-kit.ts'
 import { panelsCss } from '../../../src/shared/panels-css.ts'
 import { itemSubject } from '../../../src/shared/subjects.ts'
 import { readViewer, VIEWER_KEYS } from '../../../src/shared/viewer.ts'
 import type { Mount } from '../../../src/shared/views.ts'
+import { closeHtml, viewCss } from '../../../src/views/parts.ts'
 import type { PolicyReplies } from '../policies.ts'
 import { policiesHtml, policyDoneLine, type PolicyCall } from './panel.ts'
 import { floorPolicies, POLICIES } from './policies.ts'
@@ -21,24 +20,11 @@ import { pressing } from '../../../src/shared/press.ts'
 const ID = 'policies/policies'
 
 const STYLE = `${panelsCss}
-:where([data-view="${ID}"]) {
-  gap: var(--sp-m);
-  & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); box-shadow: var(--shadow); white-space: nowrap; }
-  & .shelf-head .label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
-    color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
-  & .shelf-head .dim { color: var(--faint); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; }
-  & .shelf-head .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }
-  & .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
-    scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
-}`
-
-const closeHtml = (keys: Board['keys']) => {
-  const what = 'back to the skyline'
-  const hint = keysHint(keys, 'home')
-  const tip = hint ? `data-tip="${esc(`${what} (${hint})`)}" aria-keyshortcuts="${keyshortcuts(keys, 'home')}"` : `data-tip="${esc(what)}"`
-  return `<button class="icon-btn" data-home aria-label="${what}" ${tip}>${ICON.close}</button>`
-}
+${viewCss(
+  ID,
+  `& .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }`,
+)}`
 
 export const mount: Mount = async (host, { tower, board: first, subject, kit }) => {
   let board = first
