@@ -14,7 +14,7 @@ import { continuations, lineage, namer, threads, type SessionRef, type Thread } 
 import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
 import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
 import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
-import { killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
+import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { withLiveness, type Status } from './status.ts'
@@ -200,6 +200,11 @@ export type Card = {
   sent: CardSent[]
   /** Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it. */
   stranded: boolean
+  /**
+   * Ended by the tower's `kill`: sent home by the user or a worker, gone home by its own `tower home`, or a hire Tidy
+   * ended. A worker that exited by itself or crashed was not, nor one the host stopped. @since 1.105
+   */
+  killed: boolean
   /**
    * Stranded mid-turn: it stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold
    * doesn't know where the turn stood. Its `carry-on`
@@ -499,6 +504,7 @@ const card = (
       endedFrom: facts.exitedFrom ?? facts.state.status,
       hostStopped: facts.hostStopped === true,
       killedOutside: killedOutside(facts.exitCode, facts.signal),
+      killedByHost: killedByHost(facts.exitCode, facts.signal),
       broken: facts.broken !== undefined,
       typedAt,
       heardAt,

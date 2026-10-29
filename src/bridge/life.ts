@@ -27,6 +27,7 @@ export type LifeFacts = {
   endedFrom: Status
   hostStopped: boolean
   killedOutside: boolean
+  killedByHost: boolean
   broken: boolean
   typedAt?: number
   heardAt?: number
@@ -43,7 +44,7 @@ export type LifeFacts = {
  */
 export type WorkerLife = Pick<
   Card,
-  'status' | 'blocked' | 'live' | 'leaving' | 'waiting' | 'attention' | 'stuck' | 'compacting' | 'stranded' | 'cutOff' | 'letGoAt' | 'unresumable' | 'onDuty'
+  'status' | 'blocked' | 'live' | 'leaving' | 'waiting' | 'attention' | 'stuck' | 'compacting' | 'stranded' | 'killed' | 'cutOff' | 'letGoAt' | 'unresumable' | 'onDuty'
 >
 
 /** A stranded worker is on duty while its latest conversation waits to be resumed and can be, unless let go. */
@@ -65,6 +66,7 @@ export const lifeOf = (f: LifeFacts, now: number): WorkerLife => {
     stuck: !f.broken && isStuck(status, f.heardAt, now),
     compacting: status === 'working' && f.state.compaction !== undefined,
     stranded,
+    killed: !f.hostStopped && f.killedByHost,
     cutOff: stranded && !f.broken && isMidTurn(f.endedFrom),
     letGoAt: f.letGoAt,
     unresumable,

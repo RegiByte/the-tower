@@ -222,6 +222,9 @@ const SIGHUP = 1
 export const killedOutside = (exitCode: number | undefined, signal: number | undefined) =>
   signal !== undefined ? signal !== SIGHUP : exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP
 
+/** Whether a session ended by the host's own kill, SIGHUP, read as 129 or signal 1: the tower's `kill`, of a worker sent home or one ending itself. */
+export const killedByHost = (exitCode: number | undefined, signal: number | undefined) => (signal !== undefined ? signal === SIGHUP : exitCode === 128 + SIGHUP)
+
 /** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
 export const HIRED = 'tower.hire'
 

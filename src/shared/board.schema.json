@@ -776,6 +776,10 @@
           "type": "boolean",
           "description": "Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it."
         },
+        "killed": {
+          "type": "boolean",
+          "description": "Ended by the tower's `kill`: sent home by the user or a worker, gone home by its own `tower home`, or a hire Tidy ended. A worker that exited by itself or crashed was not, nor one the host stopped."
+        },
         "cutOff": {
           "type": "boolean",
           "description": "Stranded mid-turn: it stopped or was lost while the main loop's turn ran (`isMidTurn`); a broken fold doesn't know where the turn stood. Its `carry-on` resumes it on a prompt telling Claude so (`CARRY_ON`)."
@@ -863,6 +867,7 @@
         "pages",
         "sent",
         "stranded",
+        "killed",
         "cutOff",
         "conversations",
         "onDuty",

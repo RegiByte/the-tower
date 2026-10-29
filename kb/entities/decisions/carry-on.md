@@ -10,6 +10,7 @@
   "refs": [
     "hub/src/bridge/facts.ts#stepAfter",
     "hub/src/bridge/facts.ts#killedOutside",
+    "hub/src/bridge/facts.ts#killedByHost",
     "hub/src/bridge/life.ts#lifeOf",
     "hub/src/bridge/status.ts#isMidTurn",
     "hub/src/bridge/board.ts#Card",
@@ -47,7 +48,9 @@ storing, and the capability belongs in the core, where every renderer and worker
   is SIGHUP, 129, so any other code above 128 is a signal nobody in the tower sent. node-pty reports a signal the
   process didn't catch (SIGKILL) as code 0 with that signal, which the host logs as the `x`'s `signal`: any but
   SIGHUP (the host's kill, uncaught) strands it too. An older host's `x` holds no `signal`, and such a kill there
-  reads as an end.
+  reads as an end. The other side of the same read is `card.killed`
+  ([`killedByHost`](ref:hub/src/bridge/facts.ts#killedByHost)): SIGHUP, the tower's `kill` (sent home, gone home by
+  itself, a hire Tidy ended), with the host not stopping; a worker that exited by itself or crashed is neither.
 - **Derived.** The fold keeps `exitedFrom`, the status a session was in when its `x` arrived
   ([`stepAfter`](ref:hub/src/bridge/facts.ts#stepAfter)); no hook lands between the host's kill and the `x`, as
   real logs show. A lost session (no `x`) keeps its last status in its facts. The card's `cutOff` is stranded, not
