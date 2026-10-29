@@ -26,8 +26,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   const { project, id } = subject.value as FloorCollection & { project: string }
   const floor = () => board.floors.find((f) => f.id === project) as Floor
   const collection = () => floor().collections.find((c) => c.id === id) as FloorCollection
-  /** The view that makes a new item of this collection: one on it alone, `collection.<id>`. */
-  const maker = () => viewsOf(board).find((v) => v.on.includes(`collection.${id}`))
+  /** The view that makes a new item of this collection: one on it alone, `collection.<id>`, on this floor. */
+  const maker = () => viewsOf(board).find((v) => v.on.includes(`collection.${id}`) && !v.off?.includes(project))
 
   host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="collection-list"></div>`
   const [head, list] = [host.querySelector('.shelf-head')!, host.querySelector('.collection-list')!]
