@@ -41,9 +41,10 @@ versions of one idea with nothing saying which was current.
   keep` alone lists the floor's collections with what each is for), `tower kept [collection]` (alone, each
   collection's item count and its latest few; with a collection, every item: tag, title, age, size, keeper and file,
   [[item-tags]]) and `tower read <tag|id>`.
-- `keep` creates the item with the renderer API's `collection/create` ([[collections]]), then posts
-  `{hook_event_name: 'tower.keep', project, collection, id}` to the host's hooks socket, as `tower.show` goes
-  ([[agent-show]]). The bridge folds it into `facts.kept` with the conversation the worker was in, and the board joins
+- `keep` creates the item with the renderer API's `collection/create` ([[collections]]), then calls the
+  tower's `fact` verb, `{name: 'keep', value: {project, collection, id}}`, which logs `{hook_event_name: 'tower.keep',
+  project, collection, id}` in the worker's own log, as `tower.show` goes ([[agent-show]]). Two acts: a link that
+  guards what is kept wraps `collection/create`; one that refuses the fact leaves the item kept and unannounced. The bridge folds it into `facts.kept` with the conversation the worker was in, and the board joins
   every session's `kept` onto the floor's items: an item carries `keptBy {session, callsign, conversation?}`. An item
   made any other way (the tower, an editor, a shell) has none. Both renderers name the keeper.
 - Titles are derived where they are shown: a markdown or text item's first line, an html item's `<title>`. Nothing
