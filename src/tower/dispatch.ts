@@ -154,7 +154,7 @@ export const dispatch = defineResource({
     /** A fact a running worker logs about its own session, as `tower.<name>`: what it put in front of the user, kept, or that it leaves. */
     const logFact = (fact: RouteInput['fact'], caller: Caller) => {
       const id = caller.t === 'worker' ? caller.id : undefined
-      if (!id || !system.live()?.ids.has(id)) return apiError('refused', 'A fact is about the caller\'s own session: only a running worker logs one')
+      if (!id || system.live()?.ids.has(id) === false) return apiError('refused', 'A fact is about the caller\'s own session: only a running worker logs one')
       return factRefused('log a fact') ?? host({ t: 'fact', id, fact: { hook_event_name: `tower.${fact.name}`, ...('value' in fact && fact.value) } })
     }
 
