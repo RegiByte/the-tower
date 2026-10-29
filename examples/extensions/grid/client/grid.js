@@ -17,6 +17,7 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 :where([data-view="grid/grid"]) .grid-cell:focus-within { border-color: var(--ink); }
 :where([data-view="grid/grid"]) .grid-head { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-s); border-bottom: 1px solid var(--line); font-size: var(--fs-xs); }
+:where([data-view="grid/grid"]) .grid-head[hidden] { display: none; }
 :where([data-view="grid/grid"]) .grid-head .mode { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :where([data-view="grid/grid"]) .grid-head .acts { margin-left: auto; display: flex; gap: var(--sp-2xs); }
 :where([data-view="grid/grid"]) .grid-term { flex: 1; min-height: 0; padding: var(--sp-2xs); }
