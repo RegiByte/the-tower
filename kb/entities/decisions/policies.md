@@ -114,7 +114,9 @@ user may replace it by providing `policies`.
 - *Where it shows.* [`standingWords`](ref:hub/extensions/policies/client/policies.ts#standingWords) is the one sentence
   of where a policy stands; the client (`/x/policies/policies.js`, and the panel
   [`policiesHtml`](ref:hub/extensions/policies/client/panel.ts#policiesHtml), `/x/policies/panel.js`) is what the tower
-  page draws with. `tower policies`, `tower policies approve|run <tag>`, `tower runs` and `tower whoami`'s run lines;
+  page draws with, the panel as the extension's view `policies/policies` on a floor since 1.108
+  ([`mount`](ref:hub/extensions/policies/client/view.ts#mount)), an offer dismissed there kept in the viewer's
+  `tower.store` as a wait's is. `tower policies`, `tower policies approve|run <tag>`, `tower runs` and `tower whoami`'s run lines;
   the handbook's "Policies and runs".
 - *What stays for renderers kept outside the checkout, until 2.0.* `LEGACY` maps `policy/run`, `policy/pass`,
   `policy/approve` and `GET /runs/<project>` to the extension's, deprecated, and copies its part back to

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/renderers/page/kept.js"]
 }
 ---
@@ -28,9 +28,9 @@ and reads items alike ([[renderer-is-disposable]]).
   framed at the opaque origin `/collection/…` serves it at, scripts on and no API relay, an image shown, text as
   written, anything else left to Finder and the editor. [`deleteAsk`](ref:hub/src/shared/items.ts#deleteAsk) is what a
   renderer asks first: deleting is the user's.
-- What opening a row means stays the renderer's. The tower page opens a draft in its editor and any other item in an
-  item view in the main pane ([`kept.js`](ref:hub/renderers/page/kept.js)), which follows the board: a changed item
-  is read again, a deleted one closes.
+- What opening a row means stays the renderer's. The tower page opens a draft in the drafts extension's editor and any
+  other item in an item view in the main pane ([`kept.js`](ref:hub/renderers/page/kept.js)), which follows the board: a
+  changed item is read again, a deleted one closes.
 - A sidebar tray is bounded ([`collectionPeekHtml`](ref:hub/src/shared/items.ts#collectionPeekHtml)) and lists the
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
 - Drafts keep their own tray on the shared rows, with a way to make one, where the floor's `drafts` collection is the
