@@ -150,13 +150,15 @@ test('a worktree the last board did not list is never asked for, though its work
   assert.deepEqual(listedBefore(recut, asked).worktrees, [TREE])
 })
 
-test('a plan is asked for a call per kind, each extension a kind, so a stale entry takes down only its kind', () => {
-  const plan = { worktrees: [TREE, 'b'], branches: [BRANCH], prune: [{ t: 'reap' as const, id: 's', pid: 1 }, { t: 'reap' as const, id: 's', pid: 2 }], x: { reviews: [TREE, 'b'], other: ['k'] } }
+test("a plan is asked for a call per kind, each extension and each worker's reaps a kind, so a stale entry takes down only its kind", () => {
+  const reap = (id: string, pid: number) => ({ t: 'reap' as const, id, pid })
+  const plan = { worktrees: [TREE, 'b'], branches: [BRANCH], prune: [reap('s', 1), reap('t', 3), reap('s', 2)], x: { reviews: [TREE, 'b'], other: ['k'] } }
   const none = { worktrees: [], branches: [], prune: [], x: {} }
   assert.deepEqual(byKind(plan), [
     { ...none, worktrees: [TREE, 'b'] },
     { ...none, branches: [BRANCH] },
-    { ...none, prune: [{ t: 'reap', id: 's', pid: 1 }, { t: 'reap', id: 's', pid: 2 }] },
+    { ...none, prune: [reap('s', 1), reap('s', 2)] },
+    { ...none, prune: [reap('t', 3)] },
     { ...none, x: { reviews: [TREE, 'b'] } },
     { ...none, x: { other: ['k'] } },
   ])

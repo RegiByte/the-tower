@@ -74,10 +74,11 @@ theirs; the core reads nothing in it.
   asked for ([`listedBefore`](ref:hub/extensions/autotidy/plan.ts#listedBefore)): the going worker's own was listed
   while it worked there, so one that comes onto the board within the two minutes was just made, a recut of the one
   autotidy removed, by a user about to resume its worker. Each kind is its own call,
-  each extension's entries a kind ([`byKind`](ref:hub/extensions/autotidy/plan.ts#byKind)): Tidy refuses a whole call
-  when any of it no longer qualifies, so a process exiting on its own between the board and the call takes down the
-  reaps, not the worktree and the thread beside them, and a floor's board asks at most one call per kind however many
-  workers go home at once, within the 30 calls a minute past which a board trigger is paused. Tidy runs one floor's
+  each extension's entries a kind and each worker's reaps a kind ([`byKind`](ref:hub/extensions/autotidy/plan.ts#byKind)):
+  Tidy refuses a whole call when any of it no longer qualifies, so a process exiting on its own between the board and
+  the call takes down that worker's reaps, not another's, nor the worktree and the thread beside them, and a crew going
+  home on one board asks a call per worker and a few more, within the 30 calls a minute past which a board trigger is
+  paused. Tidy runs one floor's
   calls one at a time. Nothing is retried, and nothing is tidied after
   the going: what wasn't safe to remove as the worker went (a branch not yet merged, a process a worker on duty in its
   checkout may use) is the user's to Tidy by hand, and a refused call is too.
