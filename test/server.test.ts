@@ -840,11 +840,12 @@ test("reviews: a discard notes each repo's branch and tip on the checkout's thre
   )
 })
 
-test("reviews: a landed thread is the reviews extension's tidy entry, in Tidy's words, and its key under plan.x files it", async () => {
+test("reviews: a landed thread is the reviews extension's tidy entry, belonging to its checkout, in Tidy's words, and its key under plan.x files it", async () => {
   writeFileSync(path.join(threadsIn('lab'), 'shipped.md'), threadText('shipped'))
   const board = await boardWhere((b) => (b.adds['floor:lab']?.tidy ?? []).some((e) => e.key === 'shipped'))
   assert.deepEqual(board.adds['floor:lab'].tidy!.find((e) => e.key === 'shipped'), {
     key: 'shipped',
+    checkout: 'shipped',
     label: '◇ shipped',
     does: 'file landed thread',
     hint: 'its work has landed: filed as shipped@<time>.md',

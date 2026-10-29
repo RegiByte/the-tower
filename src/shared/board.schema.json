@@ -5031,6 +5031,9 @@
             "many"
           ],
           "additionalProperties": false
+        },
+        "checkout": {
+          "type": "string"
         }
       },
       "required": [

@@ -6,12 +6,13 @@ import type { FloorThread } from './threads.ts'
 import type { Tip } from '../../src/bridge/worktrees.ts'
 import type { TidyEntry } from '../../src/shared/extensions.ts'
 
-/** A floor's Tidy entry per thread whose work has landed, keyed by its checkout. */
+/** A floor's Tidy entry per thread whose work has landed, keyed by its checkout and belonging to it. */
 export const tidyEntries = (threads: FloorThread[]): TidyEntry[] =>
   threads
     .filter((t) => t.landed)
     .map((t) => ({
       key: t.checkout,
+      checkout: t.checkout,
       label: `◇ ${t.checkout}`,
       does: 'file landed thread',
       hint: `its work has landed: filed as ${t.checkout}@<time>.md`,
