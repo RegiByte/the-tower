@@ -396,9 +396,11 @@ function learnPick(id) {
 const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick, opens: () => opensHere() })
 
 /** This renderer's name, from the path it is served at: `/r/<name>/`. */
-const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? 'page'
+const renderers = await tower.get('renderers')
+/** This renderer's name: from the path it is served at, `/r/<name>/`, else the config's default, which `/` serves. */
+const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? renderers.default
 /** What this renderer declares in its `renderer.json` and the config's layout for it, as `GET /renderers` serves them. */
-const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ ((await tower.get('renderers')).renderers.find((r) => r.name === RENDERER))
+const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (renderers.renderers.find((r) => r.name === RENDERER))
 const LAYOUT_KEY = `layout.${RENDERER}`
 /** The viewer's own layout, over the config's and the renderer's. @type {Layout | undefined} */
 let storedLayout = /** @type {Layout | undefined} */ ((await tower.store.get(LAYOUT_KEY)) ?? undefined)
@@ -453,7 +455,7 @@ function focusedSubject() {
 /**
  * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/views.js`): a view given stays when
  * it is the one mounted and takes it; a core view's location opens the page's route for it, a card's showing or
- * conversation on its tab; a view mounted on a subject above `target` is handed it.
+ * conversation on its tab, a draft in the editor; a view mounted on a subject above `target` is handed it.
  * @param {Subject | string} target @param {{ view?: string }} [opts]
  */
 function display(target, opts = {}) {
@@ -467,6 +469,7 @@ function display(target, opts = {}) {
   if (next.t === 'lookup') return toast(`${subject.key} is no longer on the board`)
   if (next.t === 'worker' && !next.pane && subject.kind === 'shown') return go({ ...next, pane: /** @type {Pane} */ (`shown:${/** @type {{ target: string }} */ (subject.value).target}`) })
   if (next.t === 'worker' && !next.pane && subject.kind === 'conversation') return go({ ...next, pane: 'brief' })
+  if (next.t === 'item' && next.collection === DRAFTS && draftItem(board().floors, next.project, next.id)) return openDraft(next.project, next.id)
   go(next)
   if (next.t === 'view' && subject.key !== (at.subject ?? 'board') && !hostedView.show(subject)) toast(`${subject.key} isn't there any more`)
 }

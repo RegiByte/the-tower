@@ -45,6 +45,14 @@ export const publisher = defineResource({
 
     const currentBoard = (): string => built().text
 
+    /** The chords the renderers keep, read again only when the config's renderers change: their files are the checkout's and the config's roots'. */
+    let kept: { renderers: string; keeps: string[] } | undefined
+    const keepsOf = (config: Config): string[] => {
+      const renderers = JSON.stringify(config.renderers ?? {})
+      if (kept?.renderers !== renderers) kept = { renderers, keeps: renderersOf(config).flatMap((r) => r.keeps ?? []) }
+      return kept.keeps
+    }
+
     const viewOf = (): SystemView => viewAt(readConfig())
     const viewAt = (config: Config): SystemView => ({
       config,
@@ -61,7 +69,7 @@ export const publisher = defineResource({
       extensions: extensions.registry().extensions,
       stores: extensions.registry().stores,
       paths,
-      keeps: renderersOf(config).flatMap((r) => r.keeps ?? []),
+      keeps: keepsOf(config),
       now: Date.now(),
     })
 

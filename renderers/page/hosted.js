@@ -42,15 +42,15 @@ const MOUNT_MS = 10_000
  */
 export function hosted(deps) {
   const { board, views, layout, termFont, scheme, run, kit, gone } = deps
-  const host = $('view-host')
-  /** The view mounted, while one is: what it is, its subject's key, and its mount once it settles. @type {{ view: View, key: string, mounted: Mounted | undefined, pending: Subject[] } | undefined} */
+  const region = $('view-host')
+  /** The view mounted, while one is: what it is, its subject's key, its own element, and its mount once it settles. @type {{ view: View, key: string, el: HTMLElement, mounted: Mounted | undefined, pending: Subject[] } | undefined} */
   let open
   /** The terminals the kit opened for the view mounted, which the viewer's face and scheme reach. @type {Set<TermViewHandle>} */
   const terminals = new Set()
 
-  /** @param {string} id @param {string} why */
-  const failed = (id, why) => {
-    host.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: ${esc(why)}</p>`
+  /** @param {HTMLElement} el @param {string} id @param {string} why */
+  const failed = (el, id, why) => {
+    el.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: ${esc(why)}</p>`
   }
 
   /** @param {HTMLElement} el @param {`terminal/${string}` | `shell/${string}`} path @returns {TermViewHandle} */
@@ -95,12 +95,13 @@ export function hosted(deps) {
     const view = views().find((v) => v.id === location.view)
     const key = location.subject ?? 'board'
     const subject = subjectAt(board(), key)
-    host.dataset.view = location.view
-    host.dataset.subject = key
-    host.innerHTML = ''
-    if (!view?.module || !view.export) return failed(location.view, 'no running extension declares it')
+    const el = Object.assign(document.createElement('div'), { className: 'view-root' })
+    el.dataset.view = location.view
+    region.dataset.subject = key
+    region.replaceChildren(el)
+    if (!view?.module || !view.export) return failed(el, location.view, 'no running extension declares it')
     if (!subject) return gone()
-    const entry = { view, key, mounted: /** @type {Mounted | undefined} */ (undefined), pending: /** @type {Subject[]} */ ([]) }
+    const entry = { view, key, el, mounted: /** @type {Mounted | undefined} */ (undefined), pending: /** @type {Subject[]} */ ([]) }
     open = entry
     try {
       const module = await import(commandUrl(view.cap, view.module))
@@ -108,14 +109,14 @@ export function hosted(deps) {
       if (typeof mount !== 'function') throw new Error(`${commandUrl(view.cap, view.module)} exports no function ${view.export}`)
       const ctx = { tower, board: board(), subject, kit: { ...kit, terminal }, state: stateOf(view.id), options: layout()['board.main']?.options?.[view.id] ?? {} }
       const mounted = await Promise.race([
-        Promise.resolve(mount(host, ctx)),
+        Promise.resolve(mount(el, ctx)),
         new Promise((_, reject) => setTimeout(() => reject(new Error(`its mount hadn't settled in ${MOUNT_MS / 1000} s`)), MOUNT_MS)),
       ])
       if (open !== entry) return /** @type {Mounted} */ (mounted).close()
       entry.mounted = /** @type {Mounted} */ (mounted)
       for (const s of entry.pending.splice(0)) if (!entry.mounted.show?.(s)) kit.toast(`${s.key} isn't there any more`)
     } catch (err) {
-      if (open === entry) (open = undefined, failed(view.id, /** @type {Error} */ (err).message))
+      if (open === entry) (open = undefined, failed(el, view.id, /** @type {Error} */ (err).message))
     }
   }
 
@@ -127,9 +128,8 @@ export function hosted(deps) {
     } finally {
       for (const t of terminals) t.close()
       terminals.clear()
-      host.innerHTML = ''
-      delete host.dataset.view
-      delete host.dataset.subject
+      region.replaceChildren()
+      delete region.dataset.subject
     }
   }
 
@@ -141,9 +141,10 @@ export function hosted(deps) {
     try {
       open.mounted.update(board(), subject)
     } catch (err) {
-      const { view } = open
+      const { view, el } = open
       leave()
-      failed(view.id, /** @type {Error} */ (err).message)
+      region.replaceChildren(el)
+      failed(el, view.id, /** @type {Error} */ (err).message)
     }
   }
 
