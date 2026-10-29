@@ -127,8 +127,9 @@ export const RESERVED = [
 
 /**
  * The capabilities the bundled extensions take, each by an extension of the same id: no other extension has that id,
- * and a user's replaces one by providing it on purpose. A new one may arrive at an API minor: a user's extension of
- * that id is then refused until it is renamed or provides the capability on purpose, said in the changelog.
+ * and a user's replaces one by providing it on purpose. A new one that does nothing until its settings turn it on is an
+ * addition, so it arrives at an API minor: a user's extension of that id is then refused until it is renamed or
+ * provides the capability on purpose, said in the changelog. One that acts once it ships arrives at an API major.
  */
 export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts', 'autotidy'] as const
 

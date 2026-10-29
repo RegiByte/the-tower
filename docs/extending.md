@@ -764,6 +764,11 @@ stream codes, collections and client modules' exports (`client.<module>#<export>
 is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
 every name of the bundled one's `contract.json` at the major it claims, or it is refused.
 
+A bundled extension's id is its capability's: no other extension takes it. A new bundled extension that does nothing
+until its settings turn it on arrives at an API minor, and the changelog names it: a user's extension of that id is
+refused from then on, until it is renamed or sets `provides` to replace the bundled one on purpose. One that acts once
+it ships arrives at a major.
+
 `tower` reads the system whose config `TOWER_CONFIG` names, `~/.tower/config.json` unless set. To try an extension
 away from your own system, a checkout of the tower starts a throwaway one with `npm run sandbox -- up`, which prints
 where it is: add the extension to the config there, and run `tower` against it with `npm run -s sandbox -- run tower
