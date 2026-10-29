@@ -237,6 +237,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `sidebar` | global | `Meta+B` |
 | `palette` (the command palette) | global | `Meta+K` |
 | `help` (the `?` sheet) | global | `?` |
+| `spawn` (the new-worker form on the floor in focus, or on the draft in focus) | global | none |
 | `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+Shift+1` … `Ctrl+Shift+4` |
 | `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Ctrl+Backquote` |
 | `leave-terminal` | terminal | `Alt+Escape` |
