@@ -15,7 +15,7 @@
     "hub/src/shared/markdown.ts#imagePath",
     "hub/src/tower/served.ts#MODULES",
     "hub/test/markdown.test.ts",
-    "hub/renderers/page/shelf.js#followLink",
+    "hub/src/views/shelf.ts#followLink",
     "hub/renderers/page/worker.js#renderShown",
     "hub/renderers/page/brief-pane.js",
     "hub/renderers/tower3d/src/ui.ts#docHtml",
@@ -63,8 +63,8 @@ would reach for a markdown library's `parse` and draw it inline.
   frame or in the tab `allow-popups-to-escape-sandbox` opens (checked in Chrome).
 - Briefs and review notes in every renderer use `markdownHtml` as their `said` ([[brief-turns]]); shown and shelf
   docs use `documentHtml`. `/marked.js` is still served, outside the contract; Tower 3D keeps marked's lexer to
-  typeset pages on canvas. The page's shelf opens a link outside the shelf only when `safeHref` allows it
-  ([`followLink`](ref:hub/renderers/page/shelf.js#followLink)), and says so otherwise.
+  typeset pages on canvas. The shelf's view (`tower/shelf`) opens a link outside the shelf only when `safeHref`
+  allows it ([`followLink`](ref:hub/src/views/shelf.ts#followLink)), and says so otherwise.
 - [`markdown.test.ts`](ref:hub/test/markdown.test.ts) runs the payloads of the brief's audit and the usual ways around
   a scheme check through `markdownHtml` and holds every tag and attribute of its output to an allowlist, every href to
   http(s) or mailto and every image to the tower's origin, as a browser would read them.

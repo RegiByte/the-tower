@@ -16,15 +16,17 @@ drawn as a floor and the skyline, a click unfolding the floor, with no page erro
 `page.js` composes them: its machine ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)) with the
 executors, the draw, and the clicks, keys and board wired to them. Each pane is a module exporting a factory that
 takes what it reads and calls as plain functions and returns what the page composes, its own state closed inside it:
-the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), the skyline, the selected
+the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), the selected
 [`worker`](ref:hub/renderers/page/worker.js#worker) (its header, pane tabs and showings), its terminal (`screen.js`, a view of `/term-view.js`, as each docked shell is),
 brief (`brief-pane.js`) and Changes and Reviews ([`review`](ref:hub/renderers/page/review.js#review)), the
-[`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the shelf, the archive, a draft, what a
-floor keeps and the dialogs. What they draw with alike is `kit.js`, what they read off the board alike
-[`boardKit`](ref:hub/renderers/page/board.js#boardKit). The skyline home shows projects as buildings and sessions as lit
-windows, one row of buildings narrowing to fit any number of floors. Until any worker has run (no card on any floor,
-none archived) it welcomes the user instead: a floor and a worker in a line each, a button per floor to start the
-first worker, and the tour to ask it for ([`skyline`](ref:hub/renderers/page/skyline.js#skyline)).
+[`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the archives read for a worker the
+board left out, the drafts' titles and new-worker form, a kept item and the dialogs. What they draw with alike is
+`kit.js`, what they read off the board alike [`boardKit`](ref:hub/renderers/page/board.js#boardKit). The rest of the
+main pane is views the page hosts ([[ui-model]]): the skyline home ([`tower/skyline`](ref:hub/src/views/skyline.ts#mount))
+shows projects as buildings and sessions as lit windows, one row of buildings narrowing to fit any number of floors,
+and until any worker has run (no card on any floor, none archived) welcomes the user instead: a floor and a worker in
+a line each, a button per floor to start the first worker, and the tour to ask it for. A floor's archive, a
+collection and a shelf entry are the core's views too, the drafts editor and the Policies panel their extensions'.
 
 The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, and a worker's running subagents as
@@ -35,9 +37,10 @@ then carries its waits on you, its offers and its workers on duty lamped by thei
 `tower.store`, and a floor never chosen is open while a worker on it needs you.
 
 Every collection a floor declares has a tray under its workers ([[collection-trays]]), an item opened in the main
-pane read as its type. Drafts are the page's own feature over the `drafts` collection ([[collections]]): an editor in
-the main pane that saves as you type, shared with Tower 3D as `/x/drafts/drafts.js` ([[corkboard]]); a draft starts a worker
-through the new-worker dialog or is submitted to a running one, then is deleted. A floor that keeps policies has a
+pane read as its type. Drafts are the drafts extension's over the `drafts` collection ([[collections]]): its editor, a
+view in the main pane that saves as you type, built on `/x/drafts/drafts.js` as Tower 3D's is ([[corkboard]]); a draft
+starts a worker through the page's new-worker dialog (the keymap's `spawn` on the draft) or is submitted to a running
+one, then is deleted. A floor that keeps policies has a
 tray that opens the policies extension's panel at `#policies/<floor>` ([[policies]]); its open offers sit above its
 workers and N goes to them after the waits ([[attention-list]]); a worker a run started says so under its callsign,
 from the policies extension's `card.x.policies.run` ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
@@ -48,14 +51,15 @@ an opaque origin and granted `clipboard-write`, so a copy button inside works fr
 clipboard. Keys pressed in any frame but a `url` one reach the page's keymap, its global commands alone ([[keymap]]).
 
 What the main pane shows is one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js), beside the page):
-the skyline, a worker on one of its panes, a worker the page started until the board carries it, a shelf entry and its
-file, a floor's archive, policies or collection, a draft or a kept item, or a view an extension declares, mounted at a
-location ([[ui-model]]). Its hash (a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded; a view's
-`#v/<cap>/<name>/<key>`) is [`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
-[`viewOf`](ref:hub/renderers/page/view.js#viewOf), which reads a `#v/` hash naming a core view as that view's route
+a worker on one of its panes, a worker the page started until the board carries it (drawn as the skyline), a kept
+item, or a view mounted at a location, the core's or an extension's, the skyline among them ([[ui-model]]). Its hash
+(a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded; a view's short form where
+it has one, `#archive/<p>`, `#shelf/<p>/<n>`, `#draft/<p>`…, else `#v/<cap>/<name>/<key>`) is
+[`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
+[`viewOf`](ref:hub/renderers/page/view.js#viewOf), which reads a `#v/` hash naming the worker or an item as its route
 ([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf)); every way into a view goes through
-[`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, relay, draft) unless the next is
-the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record and the attention state
+[`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, its mounted view) unless the next
+is the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record and the attention state
 ([[machines]]), and every handler that sets the view tells attention through
 [`viewed`](ref:hub/renderers/page/page.js#viewed), so the worker whose waits ring for nobody is the one on screen while
 the window has the viewer's eye. An extension's view is mounted in `#view-host` by

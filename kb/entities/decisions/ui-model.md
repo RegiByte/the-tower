@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-26",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/hosted.js#hosted", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#focusedSubject", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
+  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/hosted.js#hosted", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
 }
 ---
 **Problem.** An extension could add actions and badges to the board's subjects, and run code in a renderer as a
@@ -30,12 +30,25 @@ and a framed document's section are the same thing.
   export `mount(host, ctx)` returning `{ update, show?, visible?, close }`, on the kinds in `on`, handed those in
   `shows`, drawing those types it `accepts` at its `scales`, needing kit members. `ctx` is the tower, the board, the
   subject, the kit, its own `state` in `tower.store` and its options. A view never imports another and calls verbs only
-  on a press inside it. The core's are [`CORE_VIEWS`](ref:hub/src/shared/views.ts#CORE_VIEWS), first in
-  [`viewsOf`](ref:hub/src/shared/views.ts#viewsOf), in the order that picks among them; each is drawn by its
-  renderer's own route until its module ships, so the tower page maps their locations onto its routes
-  ([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf)).
-- *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `run`, `display`, `toast`,
-  `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it needs. A command is
+  on a press inside it, wiring its own presses and bringing its styles in a `<style>` inside its host. A view's `on`
+  may name `collection.<id>`, one collection alone ([`viewOn`](ref:hub/src/shared/views.ts#viewOn), since 1.108).
+  The core's are [`CORE_VIEWS`](ref:hub/src/shared/views.ts#CORE_VIEWS), first in
+  [`viewsOf`](ref:hub/src/shared/views.ts#viewsOf), in the order that picks among them, their modules served at
+  `/x/tower/<name>.js` from `src/views/` ([`CORE_VIEWS_DIR`](ref:hub/src/tower/served.ts#CORE_VIEWS_DIR)) since
+  1.108: [`tower/skyline`](ref:hub/src/views/skyline.ts#mount), [`tower/archive`](ref:hub/src/views/archive.ts#mount),
+  [`tower/collection`](ref:hub/src/views/collection.ts#mount) and [`tower/shelf`](ref:hub/src/views/shelf.ts#mount).
+  The drafts editor and the Policies panel are their extensions' views,
+  [`drafts/editor`](ref:hub/extensions/drafts/client/editor.ts#mount) (on `item.drafts` and `collection.drafts`) and
+  [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). `tower/card` and the interim
+  `tower/item` have no module yet: the tower page draws them by its routes
+  ([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf)), `tower/card` until step 5a and `tower/item` until the
+  views by type replace it.
+- *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
+  `display`, `go`, `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
+  needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
+  with what extensions add to a subject, drawn and run the renderer's way
+  ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)); views mount in one from step 5a. `run('spawn', subject)`
+  opens the renderer's new-worker form on a floor, or on a draft, which is deleted once a worker starts on it. A command is
   lent the part with no host ([`CommandKit`](ref:hub/src/shared/views.ts#CommandKit)) through
   [`runCommandWith`](ref:hub/src/shared/adds.ts#runCommandWith); `runCommand` keeps its signature with
   [`NO_KIT`](ref:hub/src/shared/adds.ts#NO_KIT).
@@ -47,21 +60,25 @@ and a framed document's section are the same thing.
 - *Locations* ([`hashOf`](ref:hub/src/shared/views.ts#hashOf), [`locationOf`](ref:hub/src/shared/views.ts#locationOf)):
   `{ view, subject?, pane?, args? }` in the URL as `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, each key
   and arg one encoded segment, so `;` only starts the pane. The tower page's older hashes are short forms read as the
-  core views they name, and the page keeps writing them for its routes.
+  core views they name, and the page keeps writing them ([`shortHashOf`](ref:hub/src/shared/views.ts#shortHashOf)).
 - *Display* ([`displayed`](ref:hub/src/shared/views.ts#displayed)): the one navigation, `kit.display(subject, { view?
   })` or `tower.ui('display')` from a framed page. It walks the subject's chain outward to the nearest level whose
   main view hosts the one below as a tab, else the first level with a main view; a view given narrows the walk, as a
   tab before the main view. The renderer mounts the location and hands the view `show(subject)` when it is on a
-  subject above; a view given that is mounted and takes it stays. The tower page's
-  [`display`](ref:hub/renderers/page/page.js#display) lands a card's showing or conversation on its tab.
+  subject above; a view given that is mounted and takes it stays, and when it is on that subject's kind the location
+  follows it there with no remount (a new draft, on its item once its first save is on the board). The tower page's
+  [`display`](ref:hub/renderers/page/page.js#display) lands a card's showing or conversation on its tab, and a worker
+  the board doesn't carry after reading the floors' archives, else once the board carries it (a run just started).
 - *Focus* ([`focusedSubject`](ref:hub/renderers/page/page.js#focusedSubject)): the subject of the innermost region
   holding the document's focus, else the main pane's; chords and `kit.run` resolve there.
 - *Keys* (D5): `commands.<c>.keys` and `views.<v>.keys` give default chords, global, by `<cap>/<name>` in
   `board.keys` ([`addedKeys`](ref:hub/src/shared/keymap.ts#addedKeys), [[keymap]]). The config's choice wins; a
   default colliding with the keymap's, a renderer's `keeps`, a configured chord or another extension's default is
   dropped, both in the last case, each a problem on its extension. From a script frame only a view's chord resolves.
-- *The page* ([[web-tower]]) hosts views in its main pane through one new `MainView` case,
-  [`hosted`](ref:hub/renderers/page/hosted.js#hosted); every other route is drawn and hashed as before. The grid of
+- *The page* ([[web-tower]]) hosts views in its main pane through one `MainView` case,
+  [`hosted`](ref:hub/renderers/page/hosted.js#hosted): the skyline, a floor's archive and policies, a collection, a
+  shelf entry and a draft among them since 1.108, drawn and hashed as before; its click switchboard leaves a view's
+  presses to the view, but for the regions it fills there. A worker and a kept item stay its routes. The grid of
   terminals ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
   location, its cells and head toggle kept in its state.
 
@@ -83,7 +100,7 @@ flowchart TD
   N["Location: the main view and its subject, in the URL"] -- names --> V
 ```
 
-The tower page as regions, the main pane's views drawn by its routes until they ship as modules:
+The tower page as regions, the worker and a kept item drawn by its routes until their views ship:
 
 ```mermaid
 flowchart LR
@@ -178,7 +195,12 @@ flowchart LR
 - A second list order instead of `shows` (the first kind mounts, the rest are shown): it doesn't fit views that mount
   on two kinds.
 - Core views as modules from the start: every main-pane route rewritten at once on the surface used all day. They
-  stay the page's routes, mapped from their locations, and ship as modules one by one.
+  stayed the page's routes, mapped from their locations, and ship as modules one step at a time: the main pane's in
+  step 4, the worker's in 5a.
+- A `styles` field naming a served stylesheet per view: a view brings its styles in a `<style>` inside its host, as
+  the grid does, so it still draws only inside its host and nothing new is served.
+- A draft's new-worker form as a kit member: it is the keymap's `spawn` command, run on the draft, so a command or a
+  chord reaches it the same way.
 
 **Impact.** An extension's view is a place on screen any renderer hosting views mounts, reachable by location,
 display, the palette and a chord, with no renderer code of its own. The tower page's main pane hosts them; the worker
