@@ -14,6 +14,7 @@
     "hub/extensions/autotidy/plan.ts#leftBoard",
     "hub/src/bridge/board.ts#onBoard",
     "hub/extensions/autotidy/plan.ts#planOf",
+    "hub/src/bridge/checkouts.ts#checkoutLanded",
     "hub/extensions/autotidy/plan.ts#fresh",
     "hub/extensions/autotidy/plan.ts#eachEntry",
     "hub/extensions/autotidy/plan.ts#partOf",
@@ -57,8 +58,10 @@ theirs; the core reads nothing in it.
   for it on that board alone. Nothing of it needs waiting for: it left no processes (or its card would stay), and its
   worktree and checkout's entries are read on that board, where nobody on duty is in it and git's read is unmoved.
 - *Theirs, as Tidy lists it.* [`planOf`](ref:hub/extensions/autotidy/plan.ts#planOf) cuts the floor's Tidy plan down to
-  what the workers going home left: worktrees and kept branches by name, which Tidy lists only once nobody is in them and
-  their work landed; reaps of their sessions and the extensions' entries naming their checkout only while nobody on
+  what the workers going home left: worktrees by name that Tidy lists (nobody in them, clean, nothing only local) and
+  whose checkout has landed ([`checkoutLanded`](ref:hub/src/bridge/checkouts.ts#checkoutLanded)), since Tidy also lists
+  a worktree whose branch is pushed and unmerged, for the user to confirm; kept branches by name, which Tidy lists once
+  absorbed; reaps of their sessions and the extensions' entries naming their checkout only while nobody on
   duty works in that checkout, since a process names no checkout and may serve a worker sharing it.
 - *Only as it goes, asked once.* A trigger is pure and keeps nothing between boards, so it asks `tower/tidy` only for
   what the new board lists that the last did not ([`fresh`](ref:hub/extensions/autotidy/plan.ts#fresh)): a Tidy in

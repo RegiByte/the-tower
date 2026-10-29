@@ -24,18 +24,21 @@ const left = (log: SessionLog, pid: number): Resource => ({ pid, session: log.he
 /** When `log`'s session ended: its exit event. */
 const endOf = (log: SessionLog) => at(log, log.events.at(-1)![0])
 
-/** Git's read of the hub: worktree odin-42, clean and landed. */
-const REPOS = new Map<string, RepoRead>([
-  [HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed: true, risk: [] }], kept: [] }],
-])
+/** Git's read of the hub: worktree odin-42, clean and pushed, its branch `absorbed` into its base or not. */
+const hubRead = (absorbed: boolean) =>
+  new Map<string, RepoRead>([
+    [HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed, risk: [] }], kept: [] }],
+  ])
+const REPOS = hubRead(true)
+const PUSHED = hubRead(false)
 
-/** The tower floor at `now` with `logs`, those in `live` running, `running` the processes left, and autotidy's part going `going`. */
-const floorAt = (logs: SessionLog[], now: number, live: SessionLog[], running: Resource[] = [], going?: Going[], settings = ALL): Floor => {
+/** The tower floor at `now` with `logs`, those in `live` running, `running` the processes left, autotidy's part going `going`, and git reading `repos`. */
+const floorAt = (logs: SessionLog[], now: number, live: SessionLog[], running: Resource[] = [], going?: Going[], settings = ALL, repos = REPOS): Floor => {
   const f = board(
     viewOf(CONFIG, {
       sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })),
       host: { ids: new Set(live.map((log) => log.header.id)), protocol: HOST_PROTOCOL },
-      repos: REPOS,
+      repos,
       processes: running,
       now,
     }),
@@ -89,6 +92,15 @@ test('what is planned is the going workers\' part of Tidy, as the settings say: 
   assert.deepEqual(planOf(floorAt([log], later, [], [left(log, 41)], []), []), { worktrees: [], branches: [], prune: [], x: {} })
   const reapOnly = planOf(floorAt([log], later, [], [left(log, 41)], going, { ...ALL, worktrees: false }), [])
   assert.deepEqual([reapOnly.worktrees, reapOnly.prune.length], [[], 1])
+})
+
+test('a worktree Tidy lists whose branch is pushed and not merged is not planned: its checkout has not landed', () => {
+  const log = inTree(fixture('tool-turn'))
+  const later = endOf(log) + DAY
+  const going = [{ ...GOING, sessions: [log.header.id] }]
+  const f = floorAt([log], later, [], [], going, ALL, PUSHED)
+  assert.deepEqual(f.tidy.worktrees, [TREE])
+  assert.deepEqual(planOf(f, []).worktrees, [])
 })
 
 test("an extension's entry naming the checkout is planned; one naming none, another checkout, or autotidy's own, never", () => {

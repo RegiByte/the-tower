@@ -3,6 +3,7 @@
  * theirs. Tidy's own conditions hold (a worktree only once nobody is in it and its work landed); autotidy only picks.
  */
 import type { Board, Card, Floor, TidyPlan } from '../../src/bridge/board.ts'
+import { checkoutLanded, checkoutsOn } from '../../src/bridge/checkouts.ts'
 import type { AddedTidy } from '../../src/shared/extensions.ts'
 
 export const CAP = 'autotidy'
@@ -57,8 +58,9 @@ const NOTHING: Plan = { worktrees: [], branches: [], prune: [], x: {} }
 
 /**
  * The part of a floor's Tidy that belongs to the workers going home (the fold's, and `gone`, those that left the board
- * as they went), as its settings say: their worktrees and kept
- * branches as Tidy lists them, and their processes and the extensions' entries for their checkouts unless someone on
+ * as they went), as its settings say: their worktrees as Tidy lists them once their checkout has landed (Tidy lists a
+ * worktree whose branch is pushed and unmerged too, the user confirming the list), their kept branches as Tidy lists
+ * them, and their processes and the extensions' entries for their checkouts unless someone on
  * duty works there (a process names no checkout, and may serve a worker sharing its starter's).
  */
 export const planOf = (f: Floor, added: AddedTidy[], gone: Going[] = []): Plan => {
@@ -74,7 +76,7 @@ export const planOf = (f: Floor, added: AddedTidy[], gone: Going[] = []): Plan =
   const x: Record<string, string[]> = {}
   if (part.extensions) for (const { cap, key, checkout } of added) if (cap !== CAP && checkout !== undefined && free.has(checkout)) (x[cap] ??= []).push(key)
   return {
-    worktrees: part.worktrees ? f.tidy.worktrees.filter((name) => checkouts.has(name)) : [],
+    worktrees: part.worktrees ? f.tidy.worktrees.filter((name) => checkouts.has(name) && checkoutLanded(name, checkoutsOn(f))) : [],
     branches: part.branches ? f.tidy.branches.filter((name) => branches.has(name)) : [],
     prune: part.reap ? f.tidy.prune.filter((p) => p.t === 'reap' && sessions.has(p.id)) : [],
     x,

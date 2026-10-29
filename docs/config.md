@@ -122,14 +122,15 @@ The bundled extension `autotidy` tidies what a worker leaves as it goes home (se
 worker waiting to be resumed has not), without a press of Tidy. It does nothing until a setting turns a kind on, and
 keeps nothing of its own: a worker's going home is read from the board, from its card or from its card leaving the
 board as it goes. It acts only as a worker goes: on what the floor's Tidy lists of theirs in the two minutes after,
-while the tower's reads of processes and git catch up with their going. Tidy's own conditions hold, so
-only what is safe goes: a worktree nobody is in, clean and landed. Anything else, such as a branch not merged yet or a
-process a worker still on duty in the same checkout may use, stays for you to Tidy by hand.
+while the tower's reads of processes and git catch up with their going. Tidy's own conditions hold, and a worktree
+goes only once its work has landed: one whose branch is pushed but not merged (an open pull request) stays, though Tidy
+lists it. Anything else, such as a branch not merged yet or a process a worker still on duty in the same checkout may
+use, stays for you to Tidy by hand.
 
 | Setting | Takes | Unset |
 |---|---|---|
 | `reap` | End the processes the worker left, unless someone on duty works in its checkout, main's included: a process names no checkout, and may serve a worker sharing it (a dev server). | `false` |
-| `worktrees` | Remove its worktree, if nobody is in it and its work landed. | `false` |
+| `worktrees` | Remove its worktree, if nobody is in it, it is clean and its branch is absorbed into its base (landed, not only pushed). | `false` |
 | `branches` | Delete the kept branch its worktree held, if absorbed. | `false` |
 | `extensions` | Apply the extensions' Tidy entries that name its checkout, unless someone on duty works in it: the reviews extension's landed thread, filed. | `false` |
 
