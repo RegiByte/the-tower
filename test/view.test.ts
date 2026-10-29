@@ -10,7 +10,7 @@ const board = {
       id: 'p',
       shelf: [{ label: 'Docs', md: 'docs/*.md' }],
       cards: [{ id: 'w1', shown: [{ at: 100, target: 'https://example.com/a b?x=1#y' }, { at: 200, target: 'docs/a b.md' }] }],
-      collections: [{ id: 'drafts', items: [{ id: 'd 1.md' }] }, { id: 'notes', items: [{ id: 'n/1.md' }] }],
+      collections: [{ id: 'drafts', items: [{ id: 'd 1.md' }] }, { id: 'notes', items: [{ id: 'n/1.md' }, { id: 'run.py' }, { id: 'clip.webm' }, { id: 'blob.bin' }] }],
     },
   ],
 } as unknown as Board
@@ -30,7 +30,12 @@ const views: MainView[] = [
   { t: 'view', location: { view: 'tower/collection', subject: 'collection:p/notes' } },
   { t: 'view', location: { view: 'drafts/editor', subject: 'collection:p/drafts' } },
   { t: 'view', location: { view: 'drafts/editor', subject: 'item.drafts:p/d 1.md' } },
-  { t: 'item', project: 'p', collection: 'notes', id: 'n/1.md' },
+  { t: 'view', location: { view: 'tower/document', subject: 'item.notes:p/n/1.md' } },
+  { t: 'view', location: { view: 'tower/text', subject: 'item.notes:p/n/1.md' } },
+  { t: 'view', location: { view: 'tower/text', subject: 'item.notes:p/run.py' } },
+  { t: 'view', location: { view: 'tower/video', subject: 'item.notes:p/clip.webm' } },
+  { t: 'view', location: { view: 'tower/file', subject: 'item.notes:p/blob.bin' } },
+  { t: 'view', location: { view: 'tower/document', subject: 'item.drafts:p/d 1.md' } },
   { t: 'view', location: { view: 'grid/grid', subject: 'floor:p' } },
   { t: 'view', location: { view: 'grid/grid', subject: 'board' } },
 ]

@@ -1,6 +1,6 @@
 import { actionWords, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
-import { itemKind, itemsCss, keptOf, readsText } from '/items.js'
+import { itemsCss, keptOf } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
 import { cardThread, threadWant } from '/x/reviews/panel.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
@@ -131,7 +131,6 @@ function render() {
   const c = selected() && findCard(selected())
   followChanges(c || undefined)
   if (c) barHtml(c)
-  if (viewing('item')) drawItem()
   if (viewing('view') || viewing('arriving')) hostedView.update()
   renderDock()
   drawSettings()
@@ -244,8 +243,8 @@ const page = loop({
     enter: ({ view: v }) => {
       closeDrawer()
       $('main').classList.add(mainClass(v))
-      if (v.t === 'item' || v.t === 'view') {
-        $(v.t === 'item' ? 'item-view' : 'view-host').style.cssText = floorPaint(v)
+      if (v.t === 'view') {
+        $('view-host').style.cssText = floorPaint(v)
       }
       /** @type {(v: MainView) => void} */ (ENTER[v.t])(v)
     },
@@ -307,7 +306,7 @@ const openShelf = (project, n) => {
 const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, openDraft, spawnOn, deleteSent } = draft({ render, board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
 const { showLanding, showKeys, ask } = dialogs({ board })
-const { keptTitle, pruneKeptTitles, isOpenItem, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept } = keptViews({ render, viewing, go, floorOf, goHome, board, selectArriving, view, ask })
+const { keptTitle, pruneKeptTitles, openItemIn, policyCall, openItem } = keptViews({ render, viewing, display: (key) => display(key), floorOf, board, selectArriving })
 
 const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings(), board })
 
@@ -326,7 +325,7 @@ const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggl
 
 const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
 
-const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, at, viewing, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
+const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, openItemIn, at, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
 
 
 /** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
@@ -432,8 +431,6 @@ function subjectKeyOf(v) {
       return 'board'
     case 'worker':
       return `card:${v.id}`
-    case 'item':
-      return `item.${v.collection}:${v.project}/${v.id}`
     case 'view':
       return v.location.subject ?? 'board'
   }
@@ -578,7 +575,6 @@ const opensHtml = (subject) =>
 const ENTER = {
   arriving: () => void hostedView.enter(SKYLINE),
   worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
-  item: () => {},
   view: (v) => void hostedView.enter(v.location),
 }
 
@@ -589,7 +585,6 @@ const LEAVE = {
     closeTerminal()
     $('main').classList.remove('asking', 'on-brief', 'on-changes', 'on-reviews', 'on-shown')
   },
-  item: leaveItem,
   view: () => hostedView.leave(),
 }
 
@@ -742,10 +737,8 @@ document.addEventListener('click', async (e) => {
   }
   if (kept) {
     const { project, collection, id } = keptOf(kept)
-    return collection === DRAFTS ? openDraft(project, id) : openItem(project, collection, id)
+    return openItem(project, collection, id)
   }
-  if (target.closest('[data-item-act=delete]')) return deleteKept()
-  if (target.closest('[data-item-read]')) return (forgetItem(), render())
   const copy = target.closest('[data-copy]')?.dataset.copy
   if (copy) return copyText(copy, copy)
   const said = target.closest('[data-copy-said]')?.dataset.copySaid
@@ -908,8 +901,6 @@ $('home').onclick = goHome
 
 function redrawDocs() {
   forgetShown()
-  const item = viewing('item')
-  if (item && readsText(itemKind(item.id))) forgetItem()
   render()
 }
 

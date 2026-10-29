@@ -21,7 +21,6 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { MainView } from './view.js'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Titled } from '../../src/shared/titles.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
@@ -45,9 +44,8 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  *   viewer: () => Viewer,
  *   keepViewer: <K extends keyof Viewer>(field: K, value: Viewer[K]) => void,
  *   findCard: (id: string | undefined) => Card | undefined,
- *   isOpenItem: (project: string, collection: string, id: string) => boolean,
+ *   openItemIn: (project: string, collection: string) => string | undefined,
  *   at: (id: string) => { kind: string, project: string, name: string } | undefined,
- *   viewing: <T extends MainView['t']>(t: T) => Extract<MainView, { t: T }> | undefined,
  *   draftTitle: (project: string, item: Titled) => string,
  *   newDraftHtml: (f: Floor) => string,
  *   keptTitle: (project: string, collection: string, item: FloorItem) => string,
@@ -64,7 +62,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, isOpenItem, at, viewing, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, openItemIn, at, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -217,7 +215,7 @@ export async function sidebar(deps) {
     const landed = landedOf(f)
     const fold = `landed:${f.id}`
     const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" data-tip="threads Tidy filed once their work landed: read them here">${ICON.caret} ${landed.length} landed</button>
-    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${isOpenItem(f.id, REVIEWS, t.id) ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
+    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${openItemIn(f.id, REVIEWS) === t.id ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
     return `<div class="drafts"><div class="drafts-head eyebrow">Review threads</div>${rows.join('') || '<div class="empty">none open</div>'}${filed}</div>`
   }
 
@@ -262,7 +260,7 @@ export async function sidebar(deps) {
   }
 
   /** @param {Floor} f @param {FloorCollection} c */
-  const keptHtml = (f, c) => collectionPeekHtml(f.id, c, (item) => keptTitle(f.id, c.id, item), viewing('item')?.project === f.id && viewing('item')?.collection === c.id ? viewing('item')?.id : undefined, Date.now(), moreHtml(f, c))
+  const keptHtml = (f, c) => collectionPeekHtml(f.id, c, (item) => keptTitle(f.id, c.id, item), openItemIn(f.id, c.id), Date.now(), moreHtml(f, c))
 
   /** The collections a floor shows as trays of their own: drafts and review threads have theirs. @param {Floor} f */
   const keptCollections = (f) => f.collections.filter((c) => c !== draftsOf(f) && c.id !== REVIEWS && c.id !== POLICIES && c.items.length)

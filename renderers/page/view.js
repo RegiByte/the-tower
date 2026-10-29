@@ -15,11 +15,10 @@ import { subjectAt } from '/cards.js'
 
 /**
  * A worker, on the pane the viewer picked since selecting it (none: its default); a worker the page started, until
- * the board carries it (`arriving`, drawn as the skyline); a kept item; a view mounted in the main pane at a location
- * (`/views.js`), the skyline among them.
+ * the board carries it (`arriving`, drawn as the skyline); a view mounted in the main pane at a location
+ * (`/views.js`), the skyline and kept items among them.
  * @typedef {{ t: 'worker', id: string, pane: Pane | undefined }
  *   | { t: 'arriving', id: string }
- *   | { t: 'item', project: string, collection: string, id: string }
  *   | { t: 'view', location: Location }} MainView
  */
 
@@ -42,8 +41,6 @@ export function hashOf(v) {
       return ''
     case 'worker':
       return `#${v.id}${v.pane ? '/' + encoded(v.pane) : ''}`
-    case 'item':
-      return `#kept/${v.project}/${v.collection}/${encoded(v.id)}`
     case 'view':
       return shortHashOf(v.location) ?? locationHash(v.location)
   }
@@ -97,8 +94,8 @@ function paneOfLocation(pane, board) {
 }
 
 /**
- * What a location opens: a worker or a kept item by the route the page draws them with until they are views, any
- * other view mounted at it; the skyline when what it names isn't on the board; `lookup` for a worker the board has no
+ * What a location opens: a worker by the route the page draws it with until it is a view (its card, a showing as its
+ * pane), any other view mounted at it; the skyline when what it names isn't on the board; `lookup` for a worker the board has no
  * card for.
  * @param {Location | undefined} location @param {Board} board @returns {MainView | { t: 'lookup', id: string, pane: Pane | undefined }}
  */
@@ -110,12 +107,6 @@ export function mainViewOf(location, board) {
       if (kind !== 'card') return HOME
       const pane = paneOfLocation(location.pane, board)
       return board.floors.some((f) => f.cards.some((c) => c.id === rest)) ? { t: 'worker', id: rest, pane } : { t: 'lookup', id: rest, pane }
-    }
-    case 'tower/item': {
-      const { project, name } = inFloor(rest)
-      const collection = kind.slice('item.'.length)
-      const c = kind.startsWith('item.') ? board.floors.find((f) => f.id === project)?.collections.find((c) => c.id === collection) : undefined
-      return c?.items.some((i) => i.id === name) ? { t: 'item', project, collection, id: name } : HOME
     }
     default:
       return subjectAt(board, location.subject ?? 'board') ? { t: 'view', location } : HOME
@@ -137,15 +128,13 @@ export function sameRoom(a, b) {
       const [x, y] = [a.location, /** @type {typeof a} */ (b).location]
       return x.view === y.view && (x.subject ?? 'board') === (y.subject ?? 'board')
     }
-    default:
-      return hashOf(a) === hashOf(b)
   }
 }
 
 /** The main pane's class for `v`, which shows its part of the page. @param {MainView} v */
 export function mainClass(v) {
   return /** @type {Record<MainView['t'], string>} */ ({
-    arriving: 'viewing', worker: 'worker-view', item: 'kept', view: 'viewing',
+    arriving: 'viewing', worker: 'worker-view', view: 'viewing',
   })[v.t]
 }
 
@@ -160,8 +149,6 @@ export function floorOfView(v, projectOfCard) {
       const { kind, rest } = keyParts(v.location.subject ?? 'board')
       return kind === 'board' ? undefined : kind === 'card' ? projectOfCard(rest) : kind === 'floor' ? rest : inFloor(rest).project
     }
-    case 'item':
-      return v.project
   }
 }
 
