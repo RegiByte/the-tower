@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
+  "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/worker.js#renderShown", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
 **Problem.** A worker that wrote a report, a plan or a page had no way to put it in front of the user except
@@ -55,7 +55,8 @@ worker that made it.
   served, and a `link` is one Open ↗, since a browser opens no tab by itself. × closes a showing for this viewer
   (kept in the browser); a new showing of it comes back. A showing left for another tab stays drawn, hidden, so it
   is as it was left when its tab is picked again: its scroll, a video's place, a page's own state (the eight shown
-  last, in this browser tab). Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
+  last, in this browser tab). A hidden video is paused; a hidden page keeps running, its timers, requests and sound
+  included, since a sandboxed frame can only be dropped, not paused. Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
   a file's carrying its read path and media type ([[extensions]]): what extensions add to it is drawn beside the tabs
   while it is open.
 - Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk
