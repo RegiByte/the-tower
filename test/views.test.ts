@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board } from '../src/bridge/board.ts'
-import { hashOf, layoutOf, locationOf, shortHashOf, viewOn, type Location } from '../src/shared/views.ts'
+import { mediaTypeOf } from '../src/shared/media.ts'
+import type { Subject } from '../src/shared/subjects.ts'
+import { CORE_VIEWS, coreViewOf, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ at: 100, target: 'a.md' }, { at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -34,14 +36,39 @@ test("views: the tower page's short forms name their core views, a showing by it
     ['#draft/p', { view: 'drafts/editor', subject: 'collection:p/drafts' }],
     ['#draft/p/d%201.md', { view: 'drafts/editor', subject: 'item.drafts:p/d 1.md' }],
     ['#kept/p/notes', { view: 'tower/collection', subject: 'collection:p/notes' }],
-    ['#kept/p/notes/n%2F1.md', { view: 'tower/item', subject: 'item.notes:p/n/1.md' }],
+    ['#kept/p/notes/n%2F1.md', { view: 'tower/document', subject: 'item.notes:p/n/1.md' }],
+    ['#kept/p/notes/a.html', { view: 'tower/html', subject: 'item.notes:p/a.html' }],
+    ['#kept/p/notes/a.avif', { view: 'tower/image', subject: 'item.notes:p/a.avif' }],
+    ['#kept/p/notes/a.mp4', { view: 'tower/video', subject: 'item.notes:p/a.mp4' }],
+    ['#kept/p/notes/a.edn', { view: 'tower/text', subject: 'item.notes:p/a.edn' }],
+    ['#kept/p/notes/a.bin', { view: 'tower/file', subject: 'item.notes:p/a.bin' }],
+    ['#kept/p/drafts/d.md', { view: 'tower/document', subject: 'item.drafts:p/d.md' }],
     ['#archive/p', { view: 'tower/archive', subject: 'floor:p' }],
     ['#policies/p', { view: 'policies/policies', subject: 'floor:p' }],
   ]
   for (const [hash, location] of cases) assert.deepEqual(locationOf(hash, board), location, hash)
-  for (const [hash, location] of cases.filter(([, l]) => l.view !== 'tower/card' && l.view !== 'tower/item')) assert.equal(shortHashOf(location), hash, hash)
+  for (const [hash, location] of cases.filter(([, l]) => l.view !== 'tower/card')) assert.equal(shortHashOf(location), hash, hash)
   assert.equal(shortHashOf({ view: 'tower/skyline' }), '')
   assert.equal(shortHashOf({ view: 'grid/grid', subject: 'floor:p' }), undefined)
+  assert.equal(shortHashOf({ view: 'tower/text', subject: 'item.notes:p/a.md' }), undefined)
+})
+
+test('views: an item is drawn by the view accepting its type most specifically, the owner first, the fallback last', () => {
+  const board = { floors: [{ id: 'p', collections: [{ id: 'drafts', by: 'drafts' }, { id: 'notes' }] }] } as unknown as Board
+  const editor: View = { id: 'drafts/editor', cap: 'drafts', on: ['item.drafts'], accepts: ['text/markdown'], scales: ['pane'], words: { label: 'Draft' } }
+  const wide: View = { id: 'x/any', cap: 'x', on: ['item.*'], accepts: ['text/*'], scales: ['pane'], words: { label: 'Any' } }
+  const offered = [...CORE_VIEWS, editor, wide]
+  const item = (collection: string, id: string) => ({ kind: `item.${collection}`, key: `item.${collection}:p/${id}`, project: 'p', value: { collection, project: 'p', id, type: mediaTypeOf(id) } }) as Subject
+  const pick = (collection: string, id: string, order?: string[]) => pickView(board, offered.filter((v) => viewOn(v.on, item(collection, id))), order, item(collection, id))?.id
+  assert.equal(pick('notes', 'a.md'), 'tower/document')
+  assert.equal(pick('notes', 'a.py'), 'tower/text')
+  assert.equal(pick('notes', 'a.jsonl'), 'tower/text')
+  assert.equal(pick('notes', 'a.png'), 'tower/image')
+  assert.equal(pick('notes', 'a.bin'), 'tower/file')
+  assert.equal(pick('drafts', 'a.md'), 'drafts/editor')
+  assert.equal(pick('notes', 'a.md', ['x/any']), 'x/any')
+  assert.equal(coreViewOf('text/markdown').id, 'tower/document')
+  assert.equal(coreViewOf('application/octet-stream').id, 'tower/file')
 })
 
 test('views: a view on collection.<id> is on that one collection, as one on item.* is on every item', () => {
