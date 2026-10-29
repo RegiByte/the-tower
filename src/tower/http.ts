@@ -50,6 +50,7 @@
  *   GET  /policies.js   what renderers say and decide about policies: rules and slots in words, standing (src/shared/policies.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
+ *   GET  /views.js      views, the layout, locations and display: what a renderer hosting views reads (src/shared/views.ts)
  *   GET  /capabilities.js   what the tower lets a user do, and the tips renderers show of it and of the patterns (src/shared/capabilities.ts)
  *   GET  /palette.js        the command palette's entries and their ranking for what the viewer typed (src/shared/palette.ts)
  *   GET  /verb-words.js     each verb the board offers in words: label, hint, whether it asks first, its API verb (src/shared/verb-words.ts)

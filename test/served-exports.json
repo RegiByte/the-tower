@@ -1041,6 +1041,17 @@
       "termHandlers",
       "termOpening"
     ],
+    "/views.js": [
+      "CORE_VIEWS",
+      "displayed",
+      "hashOf",
+      "layoutOf",
+      "locationOf",
+      "offeredIn",
+      "openable",
+      "pickView",
+      "viewsOf"
+    ],
     "/drafts.js": [
       "AUTOSAVE_MS",
       "DRAFTS",
