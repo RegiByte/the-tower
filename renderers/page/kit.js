@@ -16,8 +16,7 @@ import { keysHint, keyshortcuts } from '/keymap.js'
  * The elements `$` finds whose type is not a plain `HTMLElement`, or that exist only while their view is drawn.
  * @typedef {{
  *   spawn: HTMLDialogElement, transfer: HTMLDialogElement, landing: HTMLDialogElement, keys: HTMLDialogElement, confirm: HTMLDialogElement, palette: HTMLDialogElement, patterns: HTMLDialogElement,
- *   'draft-text': HTMLTextAreaElement, 'archive-filter': HTMLInputElement,
- *   'shelf-page': HTMLIFrameElement, 'shelf-doc': HTMLIFrameElement, 'item-doc': HTMLIFrameElement, 'shelf-url': HTMLIFrameElement | null,
+ *   'item-doc': HTMLIFrameElement,
  *   orb: HTMLElement | null, clock: HTMLElement | null,
  * }} PageElements
  */

@@ -43,8 +43,8 @@ const FOLD = `(() => { const r = document.querySelector('#floors .floor [data-fl
 const DRAWN = `({
   floors: document.querySelectorAll('#floors .floor').length,
   floor: document.querySelector('#floors .floor .sign .name')?.textContent ?? null,
-  buildings: document.querySelectorAll('#sky .city .building').length,
-  welcome: !!document.querySelector('#sky .welcome'),
+  buildings: document.querySelectorAll('[data-view="tower/skyline"] .city .building').length,
+  welcome: !!document.querySelector('[data-view="tower/skyline"] .welcome'),
 })`
 
 type Drawn = { floors: number; floor: string | null; buildings: number; welcome: boolean }
@@ -65,7 +65,7 @@ async function main() {
   await withTower('page-boot', seed, async (url) => {
     const started = Date.now()
     const { drawn, drafts, errors } = await withPage(`${url}/`, {}, async (page) => {
-      await page.eval(until('#floors .floor .sign', '#sky .city .building'))
+      await page.eval(until('#floors .floor .sign', '[data-view="tower/skyline"] .city .building'))
       const drawn = (await page.eval(DRAWN)) as Drawn
       if (drawn.floors) {
         await page.mouse(...((await page.eval(FOLD)) as [number, number]))

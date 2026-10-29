@@ -12,7 +12,7 @@
     { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette" },
     { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays" }
   ],
-  "kit": ["terminal", "run", "display", "toast", "confirm"],
+  "kit": ["terminal", "region", "run", "display", "go", "toast", "confirm"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] } }
 }

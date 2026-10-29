@@ -34,8 +34,8 @@ const SHELL_SCROLLBACK = 2000
 const MOUNT_MS = 10_000
 
 /**
- * The view an extension declares, mounted in the main pane at a location (decision `ui-model`): its module imported
- * from `/x/<cap>/`, mounted on the location's subject with the page's kit, updated on each board, closed as the
+ * A view the core or an extension declares, mounted in the main pane at a location (decision `ui-model`): its module
+ * imported from `/x/<cap>/`, mounted on the location's subject with the page's kit, updated on each board, closed as the
  * location leaves; its subject gone from the board takes the page home (`gone`). A view that fails says so in one
  * line where it would draw, and the page goes on.
  * @param {HostedDeps} deps
@@ -100,7 +100,7 @@ export function hosted(deps) {
     el.dataset.view = location.view
     region.dataset.subject = key
     region.replaceChildren(el)
-    if (!view?.module || !view.export) return failed(el, location.view, 'no running extension declares it')
+    if (!view?.module || !view.export) return failed(el, location.view, 'nothing running declares it with a module')
     if (!subject) return gone()
     const entry = { view, key, el, mounted: /** @type {Mounted | undefined} */ (undefined), pending: /** @type {Subject[]} */ ([]) }
     open = entry
@@ -108,7 +108,7 @@ export function hosted(deps) {
       const module = await import(commandUrl(view.cap, view.module))
       const mount = /** @type {Mount | undefined} */ (module[view.export])
       if (typeof mount !== 'function') throw new Error(`${commandUrl(view.cap, view.module)} exports no function ${view.export}`)
-      const ctx = { tower, board: board(), subject, kit: { ...kit, terminal }, state: stateOf(view.id), options: layout()['board.main']?.options?.[view.id] ?? {} }
+      const ctx = { tower, board: board(), subject, kit: { ...kit, terminal }, state: stateOf(view.id), options: layout()['board.main']?.options?.[view.id] ?? {}, ...(location.args && { args: location.args }) }
       const mounted = await Promise.race([
         Promise.resolve(mount(el, ctx)),
         new Promise((_, reject) => setTimeout(() => reject(new Error(`its mount hadn't settled in ${MOUNT_MS / 1000} s`)), MOUNT_MS)),
@@ -149,8 +149,15 @@ export function hosted(deps) {
     }
   }
 
+  /** The mounted view took `key`, a subject it is on, through `show`: it stays mounted, now on that subject. @param {string} key */
+  function follow(key) {
+    if (!open) return
+    open.key = key
+    region.dataset.subject = key
+  }
+
   const refont = () => terminals.forEach((t) => void t.refont())
   const rescheme = () => terminals.forEach((t) => t.rescheme())
 
-  return { enter, leave, update, show, refont, rescheme, mountedView: () => open?.view.id }
+  return { enter, leave, update, show, follow, refont, rescheme, mountedView: () => open?.view.id }
 }

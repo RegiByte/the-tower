@@ -1,24 +1,19 @@
 import { documentCss } from '/design.js'
-import { esc, itemSubject, span, plural } from '/cards.js'
+import { esc, itemSubject, span } from '/cards.js'
 import { ICON } from '/icons.js'
-import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptTitles, readsText } from '/items.js'
-import { drawPanel, failedHtml, fileButtonsHtml } from '/panels.js'
-import { policiesHtml, policyDoneLine } from '/x/policies/panel.js'
+import { deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, keptTitles, readsText } from '/items.js'
+import { failedHtml, fileButtonsHtml } from '/panels.js'
+import { policyDoneLine } from '/x/policies/panel.js'
 import { floorPolicies, POLICIES } from '/x/policies/policies.js'
-import { HOME } from './view.js'
 import { $, closeHomeHtml, repaint, toast, told } from './kit.js'
 import { pressing } from '/press.js'
-import { draftsOf } from '/x/drafts/drafts.js'
 import { addsHtml } from './added.js'
 
 /**
  * @import { Board, Floor, FloorCollection, FloorItem } from '../../src/bridge/board.ts'
  * @import { PolicyReplies } from '../../extensions/policies/policies.ts'
  * @import { PolicyCall } from '../../extensions/policies/client/panel.ts'
- * @import { Loop } from '../../src/shared/loop.ts'
  * @import { MainView } from './view.js'
- * @import { PageState, PageEvent } from './page.js'
- * @import { Titled } from '../../src/shared/titles.ts'
  */
 
 /**
@@ -28,10 +23,7 @@ import { addsHtml } from './added.js'
  *   go: (view: MainView) => void,
  *   floorOf: (project: string) => Floor | undefined,
  *   goHome: () => void,
- *   draftTitle: (project: string, item: Titled) => string,
- *   newDraftHtml: (f: Floor) => string,
  *   board: () => Board,
- *   page: Loop<PageState, PageEvent>,
  *   selectArriving: (id: string) => void,
  *   view: () => MainView,
  *   ask: (text: string, verb: string) => Promise<boolean>,
@@ -39,40 +31,17 @@ import { addsHtml } from './added.js'
  */
 
 /**
- * What a floor keeps, in the main pane: a collection listed whole, a kept item drawn by its kind, and the floor's
- * policies with their Run now, Approve and Accept.
+ * A kept item in the main pane, drawn by its kind; every collection's titles; and a policy's Run now, Approve and
+ * Accept where the page draws them.
  * @param {KeptViewsDeps} deps
  */
 export function keptViews(deps) {
-  const { render, viewing, go, floorOf, goHome, draftTitle, newDraftHtml, board, page, selectArriving, view, ask } = deps
+  const { render, viewing, go, floorOf, goHome, board, selectArriving, view, ask } = deps
   /** Every other collection's items, titled from their text where their type names itself; a row opens the item in the main pane. */
   const { title: keptTitle, prune: pruneKeptTitles } = keptTitles((project, collection, id) => tower.text(itemPath(project, collection, id)), () => render())
 
   /** @param {string} project @param {string} collection @param {string} id */
   const isOpenItem = (project, collection, id) => viewing('item')?.project === project && viewing('item')?.collection === collection && viewing('item')?.id === id
-
-  /** A floor's policies in the main pane (`policiesHtml`, /panels.js). @param {string} project */
-  const openPolicies = (project) => go(floorOf(project) ? { t: 'policies', project } : HOME)
-
-  /** A floor's collection listed whole in the main pane, newest first: its tray in the sidebar lists only the newest. @param {string} project @param {string} collection */
-  const openCollection = (project, collection) => go(floorOf(project)?.collections.some((c) => c.id === collection) ? { t: 'collection', project, collection } : HOME)
-
-  function drawCollection() {
-    const open = /** @type {Extract<MainView, { t: 'collection' }>} */ (viewing('collection'))
-    const f = floorOf(open.project)
-    const c = f?.collections.find((c) => c.id === open.collection)
-    if (!f || !c) return goHome()
-    const drafts = c === draftsOf(f)
-    repaint($('collection-head'), `<span class="label">${esc(c.label)}</span><span class="dim">${esc(f.name)}</span><span class="actions"><small class="dim">${plural(c.items.length, 'item')}</small>${closeHomeHtml(board().keys)}</span>`)
-    repaint($('collection-list'), collectionTrayHtml(f.id, c, (item) => (drafts ? draftTitle(f.id, item) : keptTitle(f.id, c.id, item)), undefined, Date.now(), drafts ? newDraftHtml(f) : ''))
-  }
-
-  function drawPolicies() {
-    const f = floorOf(/** @type {Extract<MainView, { t: 'policies' }>} */ (viewing('policies')).project)
-    if (!f) return goHome()
-    repaint($('policies-head'), `<span class="label">Policies</span><span class="dim">${esc(f.name)}</span><span class="actions">${closeHomeHtml(board().keys)}</span>`)
-    drawPanel($('policies-body'), policiesHtml({ board: board(), floor: f, now: Date.now(), dismissed: page.state().attending.dismissed }), {})
-  }
 
   /**
    * A policy's Run now or Approve, or an offer's Accept: a run started opens its worker once the board carries it.
@@ -160,5 +129,5 @@ export function keptViews(deps) {
     if (await told(tower.call('collection/delete', { project, collection, id }))) toast(`Deleted ${item.tag} from ${c.label}`)
   }
 
-  return { keptTitle, pruneKeptTitles, isOpenItem, openPolicies, openCollection, drawCollection, drawPolicies, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept }
+  return { keptTitle, pruneKeptTitles, isOpenItem, policyCall, leaveItem, forgetItem, openItem, drawItem, deleteKept }
 }
