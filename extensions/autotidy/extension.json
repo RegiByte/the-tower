@@ -4,7 +4,7 @@
   "title": "Autotidy",
   "description": "Tidies by itself what a worker leaves as it goes home: its processes, its worktree, its kept branch and the extensions' entries for its checkout, each as Tidy lists them then. What is not safe to remove as it goes is left for Tidy's press.",
   "requires": {
-    "tower": "1.104"
+    "tower": "1.105"
   },
   "server": "server.ts",
   "settings": {

@@ -279,7 +279,7 @@ export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: str
  * Something a floor's Tidy would do for an extension, by `key`: listed with the core's, applied by its owner. `does`:
  * what applying it does, in a few words; `kind`: what it is, counted, in Tidy's line (`1 landed thread`). `checkout`:
  * the checkout it belongs to (a worktree's name, or `main`), so what acts for that checkout's workers (the autotidy
- * extension) knows it is theirs; the core reads nothing in it (since 1.104). @since 1.94
+ * extension) knows it is theirs; the core reads nothing in it (since 1.105). @since 1.94
  */
 export type TidyEntry = { key: string; label: string; hint?: string; does?: string; kind?: { one: string; many: string }; checkout?: string }
 

@@ -724,7 +724,7 @@ each capability in the plan's `x` alone, with the keys of the floor's tidy entri
 each answer, or why there is none, is the reply's `x.<cap>`. An entry is `{key, label, hint?, does?, kind?, checkout?}`: `does`
 says what applying it does in a row's words, `kind` (`{one, many}`) what it is in Tidy's line (`1 landed thread`;
 API 1.94), `checkout` the checkout it belongs to (a worktree's name, or `main`), which the core passes through unread
-and the autotidy extension reads to apply an entry once that checkout's workers went home (API 1.104); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
+and the autotidy extension reads to apply an entry once that checkout's workers went home (API 1.105); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
 (API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
