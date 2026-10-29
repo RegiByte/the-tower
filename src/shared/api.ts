@@ -13,7 +13,7 @@ import type { Words } from './extensions.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.105'
+export const API_VERSION = '1.106'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -168,6 +168,25 @@ export const VERBS = {
   kill: { input: z.object({ id, by: actor("named in the session's log as `tower.kill` before it ends.") }).describe('End the session.'), reply: ok },
   'let-go': {
     input: z.object({ id }).describe("Take a stranded worker (stopped, killed or lost, waiting to be resumed) off duty: a fact in its log, appended by the host. Its conversation stays resumable from the floor's archive."),
+    reply: ok,
+  },
+  fact: {
+    input: z
+      .discriminatedUnion('name', [
+        z.object({
+          name: z.literal('show'),
+          value: z.object({
+            kind: z.enum(['file', 'url', 'link']).describe('`file`: a real path, put beside the worker; `url`: a page put beside it; `link`: a URL the user is asked to open.'),
+            target: z.string().min(1),
+            title: z.string().optional(),
+          }),
+        }),
+        z.object({ name: z.literal('keep'), value: z.object({ ...item, id: z.string().regex(ITEM_ID) }).describe('An item the worker kept: `collection/create` made it.') }),
+        z.object({ name: z.literal('leave') }),
+      ])
+      .describe(
+        "Log a fact about the caller's own session, as `tower.<name>` in its log, appended by the host: `show`, something put in front of the user beside it; `keep`, an item it kept; `leave`, it goes home once its turn ends. Refused unless the caller is a running worker.",
+      ),
     reply: ok,
   },
   'probe/run': {

@@ -151,6 +151,13 @@ export const dispatch = defineResource({
           : apiError('refused', `Session "${id}" is not stranded on duty: only a stranded worker (stopped, killed or lost), waiting to be resumed, is let go`)
       })
 
+    /** A fact a running worker logs about its own session, as `tower.<name>`: what it put in front of the user, kept, or that it leaves. */
+    const logFact = (fact: RouteInput['fact'], caller: Caller) => {
+      const id = caller.t === 'worker' ? caller.id : undefined
+      if (!id || !system.live()?.ids.has(id)) return apiError('refused', 'A fact is about the caller\'s own session: only a running worker logs one')
+      return factRefused('log a fact') ?? host({ t: 'fact', id, fact: { hook_event_name: `tower.${fact.name}`, ...('value' in fact && fact.value) } })
+    }
+
     /** A worker's act on a session is named in the session's log before it lands: the user's acts are the rest. */
     const actedBy = (id: string, act: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: act, by } })
 
@@ -798,6 +805,7 @@ export const dispatch = defineResource({
       resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
       kill: ({ id, by }) => kill(id, by),
       'let-go': ({ id }) => letGo(id),
+      fact: logFact,
       'probe/run': legacy('probe/run'),
       'extension/restart': async ({ id }) => {
         const view = await holder.restart(id)

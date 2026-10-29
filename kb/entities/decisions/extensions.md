@@ -217,8 +217,9 @@ and versioned without running anything, and a runtime where an extension's failu
   [--floor p]` with who takes part, from `GET /extensions`' `chains`, `answers` and `launchers`: each stage `open`
   (a core hook, or the launch contributors), `wrapped` (the links at both edges of every verb) or `sealed` (the core's
   alone, with why). It describes the dispatch and changes nothing in it; an open stage a later minor will raise
-  (spawn's `where`, `gate`, `cut` and `unplace`, and the verb `fact`) is listed `planned`, and no extension can
-  answer it. A field of `/schema`, not a route, so the core takes no name outside `RESERVED`.
+  (spawn's `where`, `gate`, `cut` and `unplace`) is listed `planned`, and no extension can answer it. `tower/fact`
+  (1.106) is the verb the worker facts the CLI logs go through (`show`, `open`, `keep`'s announcement, `home` of
+  oneself: [[agent-show]], [[leave]]), so they are wrapped and listed like every act. A field of `/schema`, not a route, so the core takes no name outside `RESERVED`.
 - **Triggers and checks (1.86).** A manifest's `slots` name a rule each, `When` in
   [`slots.ts`](ref:hub/src/shared/slots.ts), the core's time trigger moved out of policies: crons the tower says in
   words, or `every`, a period aligned to the UTC clock so restarts never shift it. The policies' 30 s loop became the
