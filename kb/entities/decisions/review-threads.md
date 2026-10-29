@@ -121,7 +121,8 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   card's `note` verb, calling `review/append`.
 - *Lifecycle: the thread is live as long as the work is unlanded.* Tidy files a worktree's thread once its work
   has landed and `main`'s once every main checkout is level with its upstream and no worker runs there: the reviews
-  extension's floor fold lists one tidy entry per landed thread
+  extension's floor fold lists one tidy entry per landed thread, naming its checkout so the autotidy extension files it
+  once that checkout's workers went home, where its settings say so
   ([`tidyEntries`](ref:hub/extensions/reviews/filing.ts#tidyEntries)) and its answer to `tower/tidy.apply` files each
   ([`start`](ref:hub/extensions/reviews/server.ts#start), [[tidy]]); a [[discard]]ed worktree's gets the note naming its
   tips in its answer to `tower/discard.record`, and is filed in its answer to `tower/discard.done`, once the worktree

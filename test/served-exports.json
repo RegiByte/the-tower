@@ -367,6 +367,7 @@
       "adds.lines",
       "adds.slots",
       "adds.tidy",
+      "bundled.autotidy",
       "bundled.drafts",
       "bundled.policies",
       "bundled.quota",

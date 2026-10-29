@@ -116,6 +116,31 @@ renderers, in `tower probes` and in `tower doctor` (its check, `quota/reading`);
 `POST /quota/read-now` reads at once, at most once a minute. The old spelling, `"probes": { "quota": { "off": true } }`,
 is honoured until 2.0, and `tower config check` warns with the line to write instead.
 
+### Autotidy
+
+The bundled extension `autotidy` tidies what a worker leaves as it goes home (sent home, exited or let go; a stranded
+worker waiting to be resumed has not), without a press of Tidy. It does nothing until a setting turns a kind on, and
+keeps nothing of its own: a worker's going home is read from the board, from its card or from its card leaving the
+board as it goes. It acts only as a worker goes: on what the floor's Tidy lists of theirs in the two minutes after,
+while the tower's reads of processes and git catch up with their going. Tidy's own conditions hold, so
+only what is safe goes: a worktree nobody is in, clean and landed. Anything else, such as a branch not merged yet or a
+process a worker still on duty in the same checkout may use, stays for you to Tidy by hand.
+
+| Setting | Takes | Unset |
+|---|---|---|
+| `reap` | End the processes the worker left, unless someone on duty works in its checkout, main's included: a process names no checkout, and may serve a worker sharing it (a dev server). | `false` |
+| `worktrees` | Remove its worktree, if nobody is in it and its work landed. | `false` |
+| `branches` | Delete the kept branch its worktree held, if absorbed. | `false` |
+| `extensions` | Apply the extensions' Tidy entries that name its checkout, unless someone on duty works in it: the reviews extension's landed thread, filed. | `false` |
+
+```json
+"extensions": { "autotidy": { "settings": { "reap": true, "worktrees": true, "branches": true, "extensions": true } } }
+```
+
+A floor's own settings win per key (`projects.<id>.extensions.autotidy.settings`), and
+`"capabilities": { "autotidy": { "off": true } }` turns it off on one floor. The workers going home now are the
+floor's `x.autotidy.going` on the board.
+
 ## Shelf
 
 A project's shelf is a list of pages the user reads beside the floor's sessions, in the tower's sidebar and on Tower

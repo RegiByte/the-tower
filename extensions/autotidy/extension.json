@@ -1,0 +1,94 @@
+{
+  "id": "autotidy",
+  "version": "1.0",
+  "title": "Autotidy",
+  "description": "Tidies by itself what a worker leaves as it goes home: its processes, its worktree, its kept branch and the extensions' entries for its checkout, each as Tidy lists them then. What is not safe to remove as it goes is left for Tidy's press.",
+  "requires": {
+    "tower": "1.104"
+  },
+  "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "reap": {
+        "type": "boolean",
+        "default": false,
+        "description": "End the processes a worker left, once nobody on duty works in its checkout (they may serve a worker sharing it)."
+      },
+      "worktrees": {
+        "type": "boolean",
+        "default": false,
+        "description": "Remove its worktree once Tidy lists it: nobody in it, clean, its work landed."
+      },
+      "branches": {
+        "type": "boolean",
+        "default": false,
+        "description": "Delete the kept branch its worktree held once Tidy lists it: absorbed."
+      },
+      "extensions": {
+        "type": "boolean",
+        "default": false,
+        "description": "Apply the extensions' Tidy entries that name its checkout, once nobody on duty works in it (the reviews extension's landed thread, filed)."
+      }
+    }
+  },
+  "folds": {
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": [
+          "reap",
+          "worktrees",
+          "branches",
+          "extensions",
+          "going"
+        ],
+        "properties": {
+          "reap": {
+            "type": "boolean"
+          },
+          "worktrees": {
+            "type": "boolean"
+          },
+          "branches": {
+            "type": "boolean"
+          },
+          "extensions": {
+            "type": "boolean"
+          },
+          "going": {
+            "type": "array",
+            "description": "The workers going home now: off duty within the last two minutes, stopped or let go, continued by no session, while the tower's reads of processes and git catch up with their going.",
+            "items": {
+              "type": "object",
+              "required": [
+                "sessions",
+                "checkout"
+              ],
+              "properties": {
+                "sessions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The sessions it ran as, oldest first: each may have left processes."
+                },
+                "checkout": {
+                  "type": "string"
+                },
+                "branch": {
+                  "type": "string",
+                  "description": "The branch its worktree held."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "triggers": {
+    "board": {}
+  }
+}

@@ -133,4 +133,7 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   own, so a row does exactly what the whole would do to it. Tidy checks its conditions first, then calls those verbs
   for each entry, so their own checks and whatever wraps them run as well.
 
+- *By itself*: the bundled [[autotidy]] extension applies, opted into by kind, the part of the plan that workers it
+  saw go home left, through the same `tidy`; Tidy itself stays a press.
+
 **Impact.** The board carries `floor.tidy` and `Card.stuck`. Shells from the terms daemon are never listed.

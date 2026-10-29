@@ -78,7 +78,8 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions)). Its call is a list of `kill` calls, the deepest
   first, so the API gains no verb and every kill can be resumed. A worker with nobody running under it ends alone: its
   call is its own `kill`. `sentHome` (shared, `/cards.js`) names the cards those calls end, the worker first, then its
-  crew; both renderers read it over every floor's cards.
+  crew; both renderers read it over every floor's cards. Sending home removes nothing: what the crew left is
+  Tidy's, applied by itself where the [[autotidy]] extension's settings say so.
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
 - *Drawn.* The tower page nests each crew in the sidebar under a rail; members gone home fold into one line under
