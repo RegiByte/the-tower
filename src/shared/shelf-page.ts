@@ -20,6 +20,8 @@ import type { Pattern } from './capabilities.ts'
 import type { Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
+import type { Subject } from './subjects.ts'
+import type { Location } from './views.ts'
 
 /** A scheme of `/design.css`, or `''` for whichever the system's appearance picks. */
 export type SchemeChoice = '' | 'light' | 'dark'
@@ -131,6 +133,10 @@ export type TowerVerb =
   | { verb: 'select'; id: string }
   | { verb: 'home' }
   | { verb: 'shelf'; project: string; n: number }
+  /** The framing page at a location (`/views.js`), as a link to its hash would take it. @since 1.104 */
+  | { verb: 'go'; location: Location }
+  /** A subject, or its key, shown where the framing page's layout puts it, by `view` when one is given. @since 1.104 */
+  | { verb: 'display'; subject: Subject | string; view?: string }
   /** Some of the viewer's appearance, kept by the tower page for every page of theirs and sent back as `prefs`. */
   | { verb: 'prefs'; prefs: Partial<Prefs> }
   /** @deprecated `{ verb: 'prefs', prefs: { scheme } }` */
@@ -178,8 +184,10 @@ export type ToPage =
   /** The viewer's whole appearance (`tower.prefs`): sent after `hello`, then whenever it changes. */
   | { t: 'prefs'; prefs: Prefs }
 
-/** The verbs a framed page moves its framing page's own view with. */
-export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<TowerVerb, { verb: V }>) => void }
+/** The verbs a framed page moves its framing page's own view with; `go` and `display` (since 1.104) where the framing renderer hosts views. */
+export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<TowerVerb, { verb: V }>) => void } & {
+  [V in 'go' | 'display']?: (fields: Extract<TowerVerb, { verb: V }>) => void
+}
 
 /** What a watch hands its callback: a stream's messages, or the error that ended it. */
 export type StreamMsg = ScreenMsg | TerminalMsg | ShellStream

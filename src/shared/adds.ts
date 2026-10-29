@@ -4,6 +4,7 @@ import type { Action, Added, Badge, CommandAction, ExtensionCommand, VerbAction,
 import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
+import type { CommandKit } from './views.ts'
 
 /**
  * What extensions add to the board's subjects, as every renderer draws it (decision `extensions`): a subject's actions
@@ -68,17 +69,27 @@ export const actionWords = (board: Board, action: Added<Action>): Words => {
 export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
 
 /**
- * Runs a client command on `subject`: imports its module from `/x/<cap>/` and calls its export with the tower, the board,
- * `target`, the subject, `subject`, its value until 2.0, and the action's `args`. Only a renderer that imports modules
- * runs one: the CLI and Tower 3D leave commands out.
+ * Runs a client command on `subject` with what the renderer running it lends (`kit`, since 1.104): imports its module
+ * from `/x/<cap>/` and calls its export with the tower, the board, `target`, the subject, `subject`, its value until
+ * 2.0, the action's `args` and the kit. Only a renderer that imports modules runs one: the CLI leaves commands out.
  */
-export const runCommand = async (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => {
+export const runCommandWith = async (board: Board, action: Added<CommandAction>, subject: Subject, kit: CommandKit): Promise<unknown> => {
   const command = commandOf(board, action)
   if (!command) throw new Error(`${action.cap} offers no command ${action.command} now`)
   const module = await import(commandUrl(action.cap, command.module))
   if (typeof module[command.export] !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
-  return module[command.export]({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args })
+  return module[command.export]({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args, kit })
 }
+
+const unlent = (member: string) => () => {
+  throw new Error(`this renderer lends no ${member}: a command that uses kit.${member} runs where a renderer's kit holds it`)
+}
+
+/** The kit of a renderer that lends a command nothing: every member fails, naming itself. */
+export const NO_KIT: CommandKit = { display: unlent('display'), toast: unlent('toast'), confirm: unlent('confirm'), run: unlent('run') }
+
+/** Runs a client command on `subject` in a renderer that lends it no kit (`runCommandWith`). */
+export const runCommand = (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => runCommandWith(board, action, subject, NO_KIT)
 
 /** Calls a verb an extension offers, with its call: no subject needed, the call holds what it acts on. */
 export const runVerb = (action: VerbAction): Promise<unknown> => towerOf().call(action.verb as never, action.call as never)

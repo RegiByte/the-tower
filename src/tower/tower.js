@@ -43,9 +43,11 @@
  *   tower.keys(id, data) / tower.shellKeys(id, data)  keystrokes, delivered in order
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
+ *   tower.ui('go', { location }) / ('display', { subject, view? })      a location (/views.js), or a subject or its key shown
+ *                                                   where the framing page's layout puts it
  *   tower.relay(frame, url, { self, ui, stored })   a shelf page framed by this page, given the board and the API: `frame` an
  *                                                   iframe sandboxed without allow-same-origin, loaded with `url`; `self` the
- *                                                   entry it is ({ project, n }); `ui` this page's `select`, `home` and `shelf`;
+ *                                                   entry it is ({ project, n }); `ui` this page's `select`, `home`, `shelf`, `go`, `display`;
  *                                                   `stored(key)` called on each key it sets in tower.store; returns { close }
  *   tower.prefs.get()                               the viewer's appearance (src/shared/prefs.ts): scheme, ui, display and mono
  *                                                   faces, termSize, motion, contrast, scale; on this page's root before it paints
@@ -532,7 +534,7 @@
       if (msg?.token !== token) return
       if (msg.t === 'hello') return ((paired = true), (helloSinceLoad = true), closeWatches(), sendPrefs(), sendBoard())
       if (!paired || msg.t === 'key') return
-      if (msg.t === 'tower') return towerVerbs[msg.verb](msg)
+      if (msg.t === 'tower') return towerVerbs[msg.verb]?.(msg)
       if (msg.t === 'remember') {
         try { localStorage.setItem(memoryKey, JSON.stringify(msg.value)) } catch {}
         return
