@@ -4,7 +4,7 @@
   "name": "Bring-up",
   "summary": "tower up starts the host, the terms daemon and the tower detached, each only if this system's own does not already answer where it serves, and records their pids; tower down stops what it started. Either takes daemons by name.",
   "in": "tower",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "involves": ["operator", "tower-cli", "host-daemon", "terms-daemon", "tower-server"],
   "refs": ["hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#bringDown", "hub/src/machine.ts#bringAllDown", "hub/src/machine.ts#daemons", "hub/src/machine.ts#daemonsNamed", "hub/src/machine.ts#startedPid", "hub/src/shared/socket.ts#claimSocket", "hub/src/shared/model.ts#towerPort"]
 }

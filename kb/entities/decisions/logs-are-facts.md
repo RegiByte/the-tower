@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-30",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": ["hub/src/shared/model.ts#LogEvent", "hub/src/bridge/facts.ts#factsOf", "hub/src/bridge/chains.ts#resumes", "hub/src/host/session.ts#hookFact", "hub/src/bridge/status.ts#HOOK_STATUS"]
 }
 ---

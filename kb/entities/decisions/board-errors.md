@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-27",
+  "reviewed": "2026-10-29",
   "refs": [
     "hub/src/tower/publisher.ts#currentBoard",
     "hub/src/tower/answers.ts#errorOf",

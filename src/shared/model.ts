@@ -244,6 +244,17 @@ export const towerPort = (config: Config): number => {
 
 export const towerUrl = (config: Config): string => `http://127.0.0.1:${towerPort(config)}`
 
+const HOST_NAME = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/
+
+/** The names the tower answers to beside 127.0.0.1 and localhost: the config's `hosts`, none when it names none. A name that isn't a lower case host name is a config error. */
+export const towerHosts = (config: Config): string[] => {
+  const hosts = config.hosts ?? []
+  if (!Array.isArray(hosts)) throw new ConfigError(`hosts in the config must be a list of host names, not ${JSON.stringify(hosts)}`)
+  const bad = hosts.find((host) => typeof host !== 'string' || !HOST_NAME.test(host))
+  if (bad !== undefined) throw new ConfigError(`hosts in the config can't hold ${JSON.stringify(bad)}: a host name is lower case letters, digits, hyphens and dots, with no port or scheme`)
+  return hosts
+}
+
 /** Each session's callsign by its id, from the config's names (`configuredCallsigns`). */
 export const callsignsOf = (config: Config): ((id: string) => string) => callsigns(configuredCallsigns(config))
 
@@ -280,6 +291,8 @@ export type Config = {
   callsigns?: string[]
   /** The loopback port the tower serves on, 4317 when left out (`towerPort`). */
   port?: number
+  /** Names the tower answers to beside 127.0.0.1 and localhost, such as `mini.localhost` (`towerHosts`). */
+  hosts?: string[]
   /**
    * Absolute plugin directories every session loads, each passed to Claude as `--plugin-dir`: Claude reads a path as
    * written: no `~` expanded, a relative path against the session's cwd.
@@ -302,7 +315,7 @@ const keysOf =
     keys as readonly string[]
 
 /** The keys the tower reads at the config's top level. */
-export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'keys', 'extensions'])
+export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
 
 /** The keys the tower reads in a project. */
 export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities'])

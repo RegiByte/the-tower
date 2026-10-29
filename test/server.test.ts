@@ -231,6 +231,7 @@ function writeConfig(port: number) {
   const config = {
     argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
     port,
+    hosts: ['lab.localhost'],
     probes: { quota: { every: '1h' } },
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
@@ -985,6 +986,19 @@ test('server: what comes from outside the tower is refused', async () => {
   assert.equal((await request('/schema', { headers: { host: 'evil.example' } })).status, 403)
   assert.equal(errorCode(await get('/nothing/here')), 'not_found')
   assert.equal(errorCode(await post('no/verb', {})), 'not_found')
+})
+
+test("server: a name in the config's hosts reaches the tower, and its POSTs carry its own Origin", async () => {
+  const named = `lab.localhost:${new URL(base).port}`
+  const draft = JSON.stringify({ project: 'lab', collection: 'drafts', ext: 'md', content: '' })
+  const json = { 'content-type': 'application/json', host: named }
+  assert.equal((await request('/schema', { headers: { host: named } })).status, 200)
+  assert.equal((await request('/schema', { headers: { host: 'lab.localhost' } })).status, 200, 'a proxy at the default port sends the bare name')
+  assert.equal((await request('/schema', { headers: { host: `other.localhost:${new URL(base).port}` } })).status, 403)
+  assert.equal((await request('/collection/create', { method: 'POST', headers: { ...json, origin: base } }, draft)).status, 403)
+  const created = await request('/collection/create', { method: 'POST', headers: { ...json, origin: `http://${named}` } }, draft)
+  assert.equal(created.status, 200)
+  await post('collection/delete', { project: 'lab', collection: 'drafts', id: JSON.parse(created.body).id })
 })
 
 /** Only the length is sent: the tower refuses on it and closes, and a body sent after would race that close. */

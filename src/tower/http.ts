@@ -105,7 +105,7 @@ import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
 import { legacyOf, MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated, type LegacyEntry } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
-import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, UNKNOWN_TYPE } from '../shared/media.ts'
@@ -678,15 +678,25 @@ export const httpServer = defineResource({
       send(res, await dispatch.call(core ? `tower/${route}` : route, body.json, callerOf(req)))
     }
 
-    const TOWER_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
+    const LOOPBACK_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`])
+
+    /**
+     * A name from the config's `hosts`, reached at the tower's port or, through a proxy, at the scheme's default port,
+     * where the page may be served over https. Read on each request, so an edit to `hosts` holds at once.
+     */
+    const namedHostOrigins = (host: string): string[] =>
+      towerHosts(readConfig()).some((name) => host === name || host === `${name}:${PORT}`) ? [`http://${host}`, `https://${host}`] : []
 
     /**
      * Any page open in the browser can reach the tower: through DNS rebinding, under a foreign Host, or with a
      * cross-site POST, which browsers send without a preflight but always mark with its Origin. A GET passes on its Host
      * alone: no read changes the system (what it writes is `cache/`), and a page at another origin can't read the answer.
      */
-    const isFromTower = (req: http.IncomingMessage): boolean =>
-      TOWER_HOSTS.has(req.headers.host ?? '') && (req.method !== 'POST' || req.headers.origin === `http://${req.headers.host}`)
+    const isFromTower = (req: http.IncomingMessage): boolean => {
+      const host = req.headers.host ?? ''
+      const origins = LOOPBACK_HOSTS.has(host) ? [`http://${host}`] : namedHostOrigins(host)
+      return origins.length > 0 && (req.method !== 'POST' || origins.includes(req.headers.origin ?? ''))
+    }
 
     type Served<Q extends z.ZodType> = {
       req: http.IncomingMessage
