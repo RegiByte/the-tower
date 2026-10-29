@@ -51,12 +51,12 @@ an opaque origin and granted `clipboard-write`, so a copy button inside works fr
 clipboard. Keys pressed in any frame but a `url` one reach the page's keymap, its global commands alone ([[keymap]]).
 
 What the main pane shows is one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js), beside the page):
-a worker on one of its panes, a worker the page started until the board carries it (drawn as the skyline), a kept
-item, or a view mounted at a location, the core's or an extension's, the skyline among them ([[ui-model]]). Its hash
+a worker on one of its panes, a worker the page started until the board carries it (drawn as the skyline), or a view
+mounted at a location, the core's or an extension's, the skyline and kept items among them ([[ui-model]]). Its hash
 (a worker's `#<id>`, or `#<id>/<pane>` once the viewer picks one, `shown:<target>` encoded; a view's short form where
 it has one, `#archive/<p>`, `#shelf/<p>/<n>`, `#draft/<p>`…, else `#v/<cap>/<name>/<key>`) is
 [`hashOf`](ref:hub/renderers/page/view.js#hashOf) and the hash is read back by
-[`viewOf`](ref:hub/renderers/page/view.js#viewOf), which reads a `#v/` hash naming the worker or an item as its route
+[`viewOf`](ref:hub/renderers/page/view.js#viewOf), which reads a `#v/` hash naming the worker as its route
 ([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf)); every way into a view goes through
 [`go`](ref:hub/renderers/page/page.js#go), which leaves the view open (its terminal, its mounted view) unless the next
 is the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record and the attention state
