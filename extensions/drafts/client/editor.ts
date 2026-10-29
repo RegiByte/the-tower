@@ -1,11 +1,11 @@
-import type { Board, Card, Floor, FloorCollection } from '../../../src/bridge/board.ts'
+import type { Card, Floor, FloorCollection } from '../../../src/bridge/board.ts'
 import { can, esc, gistOf, HOST_MEANS, offeredCall, statusName, whyNot } from '../../../src/shared/cards.ts'
 import { fileButtonsHtml, fileCall } from '../../../src/shared/file-acts.ts'
 import { GIST_ICON } from '../../../src/shared/icons.ts'
-import { commandOf, keysHint, keyshortcuts } from '../../../src/shared/keymap.ts'
+import { commandOf } from '../../../src/shared/keymap.ts'
 import { itemSubject } from '../../../src/shared/subjects.ts'
 import type { Mount } from '../../../src/shared/views.ts'
-import { ICON } from '../../../src/shared/icons.ts'
+import { closeHtml, viewCss } from '../../../src/views/parts.ts'
 import {
   AUTOSAVE_MS, DRAFT_STATE, DRAFTS, discard, draftItem, draftPath, draftsOf, draftState, edit, follow, keepsApart, leave, newDraft, openDraft, restore, save, sendable, settle, titleOf,
   type Draft, type DraftIo,
@@ -20,16 +20,9 @@ import {
 
 const ID = 'drafts/editor'
 
-const STYLE = `:where([data-view="${ID}"]) {
-  gap: var(--sp-m);
-  & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); box-shadow: var(--shadow); white-space: nowrap; }
-  & .shelf-head .label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
-    color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
-  & .shelf-head .dim { color: var(--faint); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; }
-  & .shelf-head .tag { flex: none; padding: var(--sp-2xs) var(--sp-m); border: none; border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-s)/1.3 var(--mono); cursor: copy; }
-  & .shelf-head .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }
-  & .shelf-head .by { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
+const STYLE = viewCss(
+  ID,
+  `& .shelf-head .by { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
   & .draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius);
     background: color-mix(in oklab, var(--broken) 11%, var(--panel)); border: 1px solid var(--broken); }
   & .draft-note:empty { display: none; }
@@ -42,8 +35,8 @@ const STYLE = `:where([data-view="${ID}"]) {
   & .targets .call { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; }
   & .targets .where { color: var(--muted); font-size: var(--fs-s); white-space: nowrap; }
   & .targets .line { flex: 1; min-width: 0; color: var(--muted); font-size: var(--fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  & .targets .said { color: var(--faint); }
-}`
+  & .targets .said { color: var(--faint); }`,
+)
 
 /** A worker's gist as html: a tool's name in bold, said words after their mark. */
 const lineOf = (c: Card) => {
@@ -54,13 +47,6 @@ const lineOf = (c: Card) => {
     return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
   }
   return `<span class="said">${GIST_ICON[gist.kind]}</span> ${esc(gist.text)}`
-}
-
-const closeHtml = (keys: Board['keys']) => {
-  const what = 'back to the skyline'
-  const hint = keysHint(keys, 'home')
-  const tip = hint ? `data-tip="${esc(`${what} (${hint})`)}" aria-keyshortcuts="${keyshortcuts(keys, 'home')}"` : `data-tip="${esc(what)}"`
-  return `<button class="icon-btn" data-home aria-label="${what}" ${tip}>${ICON.close}</button>`
 }
 
 export const mount: Mount = async (host, { tower, board: first, subject, kit }) => {
