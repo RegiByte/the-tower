@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
 }
 ---
@@ -28,7 +28,7 @@ name belongs to which callsign, floor or task.
 - The tower mod ships `bin/tower` (`src/directory.ts`), which Claude Code puts on the Bash tool's PATH. Its verbs are
   the workers' entries of the command's one table, [`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS) ([[tower-cli]]:
   `tower --help`, `tower <verb> --help`, and listed when a verb is unknown), each run by its handler in
-  [`WORKER_RUNS`](ref:hub/src/directory.ts#WORKER_RUNS); AGENTS.md and [[tower-mod]] name them, and each verb's decision says what it does
+  [`WORKER_RUNS`](ref:hub/src/directory.ts#WORKER_RUNS); [[tower-mod]] names them, and each verb's decision says what it does
   ([[review-threads]], [[reviewer]], [[crews]], [[leave]], [[let-go]], [[hiring-limits]], [[policies]], [[probes]], [[extensions]],
   [[open-files]], [[agent-show]], [[workers-edit-kept-items]]). `tower whoami` says who the worker is, its floor, its
   shelf and collections and the config's path; `tower agents [--all]` and `tower agent <CALLSIGN>` read the running
