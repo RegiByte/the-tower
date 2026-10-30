@@ -71,7 +71,9 @@ On the sandbox, never on the real system and never by stubbing browser input (re
 - Stop only what you started: `down`, or a PID you saved. Never `pkill`, `killall` or `tower reap`.
 - curl: every `POST` needs `-H "origin: $TOWER_URL"`; `/board` and `/screen/<id>` are SSE, so read one event
   (`curl -sN -m 2 … | grep -m1 '^data:'`).
-- `npm run drive -- <url> --eval … --shot …` drives headless Chrome; look at every shot. The tower page opens a
+- `npm run drive -- <url> --eval … --shot …` drives headless Chrome; look at every shot.
+- A page change touching frames, focus or events also gets a WebKit run: `npm run tool:webkit -- <url> --click x,y …`
+  (Safari and Tower.app call no listener inside a frame where nothing runs; Chrome does). The tower page opens a
   session at `/#<id>`; Tower 3D has a door for agents (`window.tower3d`, `renderers/tower3d/src/door.ts`).
 - Around any Tower 3D change: `npm run tool:frames -- record before`, change, `record after`, `compare before after`.
   Expect identical on a refactor; look at the PNGs on a visual change.

@@ -638,7 +638,7 @@ const mainRegion = regions({
   termFont,
   scheme,
   run,
-  commandKit: { ...commandKit, go: (location) => void goTo(location) },
+  commandKit: { ...commandKit, go: (location) => void goTo(location), href: (to) => ('view' in to ? hashOf({ t: 'view', location: to }, board()) || '#' : linkHash(to)) },
   tower: viewTower,
   contributions: kitRegion,
   subjectOf,
@@ -1070,6 +1070,8 @@ const editableIn = (target) => {
 /**
  * A document frame (a srcdoc the page wrote, where nothing runs) is the page's own: its keys are the browser's, heard on
  * its document at each load. A frame that navigated away from the srcdoc holds a document the page didn't write.
+ * WebKit calls no listener in a document that can't run scripts, so there the keys pressed while focus is in a
+ * document frame stay the frame's, and a click outside it gives the page its keys back (decision `markdown-safe`).
  */
 document.addEventListener('load', (e) => {
   const frame = e.target
@@ -1158,8 +1160,49 @@ tower.subscribe(async (next) => {
 /** Opens a location (`/views.js`), as a link to its hash would: a worker of an archive read first. @param {import('../../src/shared/views.ts').Location} location */
 const goTo = (location) => opening(mainViewOf(location, has))
 
-/** Opens what a hash (without its `#`) names, a worker of an archive read first; the skyline when it names nothing. @param {string} wanted */
-const route = (wanted) => opening(viewOf(wanted, board(), has))
+/**
+ * Opens what a hash (without its `#`) names, a worker of an archive read first; the skyline when it names nothing. A
+ * view reads its location's args once, so one named with other args (a shelf entry's other file) is opened afresh.
+ * @param {string} wanted
+ */
+function route(wanted) {
+  if (wanted.startsWith('to/')) return followLinked(wanted)
+  const named = viewOf(wanted, board(), has)
+  const at = view()
+  if (named.t === 'view' && at.t === 'view' && sameRoom(at, named) && String(named.location.args) !== String(at.location.args)) return reopen(named)
+  void opening(named)
+}
+
+/**
+ * What links in document frames named that no location holds (a file of a worker's checkout), each by its number in
+ * the hash `#to/<n>` that displays it. They last as long as the page: a `#to/<n>` read after a reload names nothing.
+ * @type {Subject[]}
+ */
+const linked = []
+
+/**
+ * The hash a link to `subject` takes the page to (the kit's `href`): the location `display` puts it at when the board
+ * holds it there, which a reload or another tab reads again; else `#to/<n>`. @param {Subject} subject
+ */
+function linkHash(subject) {
+  const at = subjectAt(board(), subject.key) && displayed(placing(), subject)
+  if (at && (at.subject ?? 'board') === subject.key) return hashOf({ t: 'view', location: at }, board()) || '#'
+  const same = JSON.stringify(subject)
+  const n = linked.findIndex((s) => JSON.stringify(s) === same)
+  return `#to/${n < 0 ? linked.push(subject) - 1 : n}`
+}
+
+/**
+ * Displays what `#to/<n>` names, then writes the hash of where the page is, so the address never keeps the number.
+ * @param {string} wanted
+ */
+function followLinked(wanted) {
+  const subject = linked[Number(wanted.slice('to/'.length))]
+  if (subject) display(subject)
+  else toast('That link was followed in a document this page no longer holds: open the document again and follow it there')
+  const hash = hashOf(view(), board())
+  if (location.hash !== hash) history.replaceState(null, '', hash || location.pathname)
+}
 
 /** Goes to `named`, a worker it names that the page doesn't hold looked up first. @param {MainView | import('./view.js').Lookup} named */
 async function opening(named) {
