@@ -1058,6 +1058,7 @@
     ],
     "/views.js": [
       "CORE_VIEWS",
+      "VIEW_ALIASES",
       "coreViewOf",
       "declaredLayout",
       "displayed",
