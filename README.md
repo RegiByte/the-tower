@@ -115,9 +115,34 @@ collections (files kept for later). This is the principle the rest follows: *obs
 
 The tower is meant to be shaped to your work, not to prescribe a workflow.
 
-- **The config.** Floors, shelves, collections, callsigns, hiring limits, how worktrees are cut, your editor and how
-  sessions start, all in `~/.tower/config.json`. Every key is in [docs/config.md](docs/config.md); `tower config
-  check` checks an edit.
+**The config.** Floors, shelves, collections, callsigns, hiring limits, how worktrees are cut, your editor and how
+sessions start, all in `~/.tower/config.json`, read again on every save. A floor with two repos, its notes on the
+shelf, a collection of its own, tighter hiring limits, and an example extension run straight from the checkout:
+
+```json
+{
+  "projects": {
+    "my-app": {
+      "name": "my-app",
+      "hub": "/abs/path/to/my-app",
+      "repos": ["/abs/path/to/my-app-api", "/abs/path/to/my-app-web"],
+      "color": "#7fb069",
+      "shelf": [{ "label": "Notes", "md": "notes/*.md" }],
+      "collections": {
+        "games": { "label": "Games", "description": "Games played in Tower 3D's arcade, one .html file each." }
+      },
+      "hiring": { "depth": 1, "live": 2 }
+    }
+  },
+  "extensions": {
+    "grid": { "path": "/abs/path/to/the-tower/examples/extensions/grid" }
+  }
+}
+```
+
+[docs/config.md](docs/config.md) documents every key, and `tower config check` checks an edit, each problem at its
+key.
+
 - **Extensions.** A folder with an `extension.json` manifest and optionally a server module, started beside the
   tower's own pieces. An extension can add verbs and reads to the API, collections, streams of facts, scheduled slots,
   views in the tower page and parts of every card on the board. Much of the tower is built this way: drafts, review
