@@ -759,6 +759,12 @@ installed, and one for a type the core draws takes it over through the layout:
 "renderers": { "page": { "layout": { "board.main": { "order": ["mydocs/markdown"] } } } }
 ```
 
+A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
+`fileSubject({ card, project, repo, path, text, type })` in `/cards.js`, a child of its card: `repo` named as a
+review anchor names it (`repoName`), `text` the read path its content is served at (an extension's read that serves
+a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
+declares, and the layout picks the view that draws it.
+
 What the pick passes over is offered as "Open <label>": on a markdown or html item, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).
 
