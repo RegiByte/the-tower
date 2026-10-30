@@ -12,6 +12,30 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.75.0
+
+Document frames work in WebKit: links, the gutter and the nested-frame guard no longer depend on listeners WebKit
+never calls. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API
+1.120 → 1.121 (additive, no major), no config change.
+
+- **Document frames in WebKit** (API 1.121): WebKit calls no listener the page registers inside a frame that runs no
+  scripts, so in Safari and Tower.app a relative link navigated the frame, the gutter stayed put and keys did nothing.
+  - Links are data: while drawing a document, the view writes where each link goes. A fragment stays in the frame, a
+    file of a shelf entry or a checkout goes to a page hash (`target="_top"`, still needing a click), a web link opens
+    in a new tab, and a refused link loses its href and says why in its title. The shelf's markdown frames had the
+    same bug.
+  - `kit.href(subject or location)` gives the hash that displays a subject, the board's location when it holds one
+    and `#to/<n>` otherwise. It is optional: a renderer written against 1.120 keeps the Document and shelf views, and
+    the links they would place to another file draw as refused.
+  - A hash naming the view in place with other args (a shelf entry's other file) now mounts it afresh; before, shelf
+    links and Back between shelf files changed only the address.
+  - Nested `iframe`/`frame` in a document lose `src` and `srcdoc`, `object` loses `data`, `embed` loses `src`, and
+    `<base>` and `<meta http-equiv>` are removed.
+  - The gutter follows the frame's scroll from the page, each animation frame while seen.
+  - Known: with focus in a document, WebKit hears no chords until a click outside it; a checkout file link's
+    `#to/<n>` doesn't survive a reload.
+  - New `npm run tool:webkit` drives the WKWebView Tower.app runs with real clicks and keys (#290).
+
 ## v1.74.0
 
 The page's boot race fixed, every card's Changes tally from the board, and relative links in a checkout's markdown
