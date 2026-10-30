@@ -4,7 +4,7 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
@@ -27,7 +27,8 @@ and until any worker has run (no card on any floor, none archived) welcomes the 
 a line each, a button per floor to start the first worker, and the tour to ask it for. A floor's archive, a
 collection and a shelf entry are the core's views too, the drafts editor and the Policies panel their extensions'.
 
-The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
+Each project directory in the sidebar links the web page of its origin remote, read once from `GET /origins`
+([`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar)). The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, and a worker's running subagents as
 satellites under it ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The rate limits fold into one chip
 naming the tightest limit, whose popover holds the meters and the probes ([[probes]]). A floor folds to its sign, which

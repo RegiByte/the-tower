@@ -68,7 +68,8 @@ went wrong, and know which changes can break it.
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
   diff. `window.tower` is typed once, as [`Tower`](ref:hub/src/shared/shelf-page.ts#Tower) beside the protocol it
   speaks: `tower.js` is checked against it through JSDoc ([`tsconfig.client.json`](ref:hub/tsconfig.client.json), run
-  by `npm run typecheck`), and Tower 3D, The Week and the tower page ([`tsconfig.page.json`](ref:hub/tsconfig.page.json)) are
+  by `npm run typecheck`, which checks the other JavaScript served as written the same way: The Week's `week.js` and
+  the mod's `register.js`), and Tower 3D, The Week and the tower page ([`tsconfig.page.json`](ref:hub/tsconfig.page.json)) are
   checked against the same type. Extensions build on the same contract and three lists beside it: the manifest's key
   paths, each lane's ctx members, and the core's problem codes and names, held by the same test ([[extensions]]).
   No extension reaches into a renderer's code: what a renderer offers extensions is the same contract, its declared

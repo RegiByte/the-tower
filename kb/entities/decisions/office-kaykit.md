@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/kaykit/src/scene.ts#layTheme",
@@ -60,7 +60,8 @@ them. The office then decides only where each scene stands. The taste rules hold
 stay the loudest thing on a floor, big planes muted, colour spent on small countable things, one hero per floor.
 
 **How.**
-- The playground (`renderers/kaykit`, a sibling renderer). Its build measures every glTF of the bundle, and every GLB
+- The playground (`renderers/kaykit`, a sibling renderer, [`README`](ref:hub/renderers/kaykit/README.md)). Its build
+  measures every glTF of the bundle (all 628 models, downloaded apart and passed as `--source`), and every GLB
   of the forge's props vendored beside the office's ([[forge-kit]]), into `out/catalog.json` and packs the meshes into
   one buffer, each primitive bound to the surface it is drawn in (its pack's atlas, glass, decals); the source folders
   are read only and `out/` is derived. The catalog holds

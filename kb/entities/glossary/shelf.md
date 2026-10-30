@@ -4,7 +4,7 @@
   "name": "Shelf",
   "summary": "A project's pages kept beside its sessions in the config: a built html page, a markdown glob, a url shown in place by the tower page, a link opened in a new tab, a declared renderer, or an item of one of its collections.",
   "in": "tower",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/shelf.ts#shelfProblem", "hub/docs/config.md"]
 }
 ---
@@ -15,4 +15,5 @@ kept in one of the project's collections, so a page a worker made lives in no ch
 
 The shelf is not a [[collection]]. Workers learn it from the handbook (the user's word "shelf" means this), see the
 floor's entries in `tower whoami`, and check an edit with `tower config check`, which names an entry that can't show
-([`shelfProblem`](ref:hub/src/shelf.ts#shelfProblem)).
+([`shelfProblem`](ref:hub/src/shelf.ts#shelfProblem)). Sessions may edit their floor's shelf in the config: renderers
+re-read the config, so an edit shows without a restart ([[system-root]]).

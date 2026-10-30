@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
@@ -56,7 +56,7 @@ terminal that is a block of the ink colour.
 - **Contrast**: every pair the renderers draw reaches WCAG AA in both schemes (4.5:1 for text, 3:1 for a field's edge
   and a focus ring). The attention colours are fills, each with a text tone of its hue and a text on it; `deco` is
   for what is never read. Every pair is data in [`contrast.ts`](ref:hub/scripts/contrast.ts): `npm run tool:contrast`
-  fails on one under AA, so a token change is re-measured before it lands. Shifts are made in oklab, which keeps
+  fails on one under AA, so a token change, or a new use of a token as text, is re-measured before it lands. Shifts are made in oklab, which keeps
   each hue.
 - **Type, space and corners**: a type scale in rem ([`size`](ref:hub/src/shared/design.ts#size), `--fs-*`), so every
   panel follows the browser's text size times the viewer's Text size (terminals and Tower 3D's canvas keep their
