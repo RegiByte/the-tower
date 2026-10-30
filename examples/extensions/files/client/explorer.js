@@ -213,7 +213,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     if (file) file.stale = false
     if (!file?.stat) return void (openEl.innerHTML = `<p class="empty">${esc(file?.path ?? '')} is gone from disk.</p>`)
     const text = `files/raw/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}/${encodeURIComponent(file.repo)}/${urlPath(file.path)}`
-    const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, text, type: file.stat.type })
+    const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, file: file.stat.file, text, type: file.stat.type })
     file.region = kit.region(openEl, 'file.open', at)
   }
 

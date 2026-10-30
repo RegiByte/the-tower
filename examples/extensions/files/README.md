@@ -7,8 +7,7 @@ added, `D` deleted, `R` renamed, `U` untracked, `C` in conflict, and a dot on a 
 is how many files the worker changed. A file opens read-only beside the tree, with buttons that reveal it in Finder
 and open it in your editor. Code is highlighted as VS Code draws it, by [Shiki](https://shiki.style) with VS Code's
 TextMate grammars and its Light+ and Dark+ themes, following your scheme. Markdown, images, video and html pages go
-to the tower's own views by type, or to any view of yours that takes their type over, once the views by type are on
-`file` (step 5b of the UI model); until then the explorer says nothing draws them, and you open them in your editor.
+to the tower's own views by type, or to any view of yours that takes their type over.
 
 ## Add it
 
@@ -40,7 +39,7 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
   later version. Files over 50 MB are not served.
 - **A file opened is a `file` subject**, `file:<card>/<repo>/<path>`, handed to `file.open`, a region the explorer
   declares. The view its type picks draws it. The region's default layout (`regions.file.open.layout`) puts
-  `files/code` first for code (the views by type join it on `file` with step 5b); a config line takes it back, or
+  `files/code` first for code (the tower's views by type, on `file`, draw the rest); a config line takes it back, or
   puts a view of yours there:
 
   ```json

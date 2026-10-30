@@ -6,7 +6,7 @@ import { documentCss } from '../shared/design.ts'
 import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from '../shared/items.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { Tower } from '../shared/shelf-page.ts'
-import type { Subject } from '../shared/subjects.ts'
+import type { CheckoutFile, Subject } from '../shared/subjects.ts'
 import { viewsOf, type Kit, type Mount } from '../shared/views.ts'
 import { closeHtml, paintOnce, viewCss } from './parts.ts'
 
@@ -179,6 +179,11 @@ const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'stale'> => {
     case 'shown': {
       const s = subject.value as CardShown
       return { url: shownHref(s), ...(s.kind !== 'file' && { body: s.target }), title: shownTitle(s), name: s.target, file: s.target, docCss: SHOWN_DOC_CSS }
+    }
+    case 'file': {
+      const f = subject.value as CheckoutFile
+      const name = f.path.split('/').pop()!
+      return { url: `/${f.text}`, title: name, name, file: f.file, docCss: SHOWN_DOC_CSS }
     }
     default:
       throw new Error(`A view by type draws no ${subject.kind} alone: give bodyOf in src/views/item.ts a case for it`)

@@ -42,7 +42,7 @@ and a framed document's section are the same thing.
   The drafts editor and the Policies panel are their extensions' views,
   [`drafts/editor`](ref:hub/extensions/drafts/client/editor.ts#mount) (on `item.drafts` and `collection.drafts`) and
   [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). A kept item and a thing a
-  worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115), each accepting media
+  worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115, on `file` since 1.116), each accepting media
   types: `tower/document` markdown ([`documentHtml`](ref:hub/src/views/document.ts#mount) in a frame where nothing
   runs), `tower/html`, `tower/image`, [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON,
   NDJSON) and `tower/file`, the fallback accepting none; and, on `shown` alone,
@@ -101,8 +101,8 @@ and a framed document's section are the same thing.
 - *A file in a checkout* (1.114) is a viewer subject, `file:<card>/<repo>/<path>`
   ([`fileSubject`](ref:hub/src/shared/subjects.ts#fileSubject)), a child of its card like `lines`, carrying `text`, the
   read path its content is served at, and `type`. It is how a view that browses a worker's files (the files example)
-  hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` for now;
-  the core's views by type join on `file` once they draw a subject without the item head).
+  hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` first for code,
+  the core's views by type for the rest).
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
 - *The layout* ([`layoutOf`](ref:hub/src/shared/views.ts#layoutOf)): three layers, the renderer's own, the config's
@@ -161,7 +161,7 @@ and a framed document's section are the same thing.
   model's test from a real ask: a tab on every worker built on the extension contract alone. Its reads are confined
   to the worker's checkout by the extension (a read that serves a file, [[extensions]]); a file opened is a `file`
   subject handed to `file.open`, a region it declares whose default layout puts its own `files/code` (Shiki, VS Code's
-  grammars and themes) first, the views by type to draw the rest once they are on `file`. It is live while seen by a poll, as Changes is:
+  grammars and themes) first, the core's views by type to draw the rest. It is live while seen by a poll, as Changes is:
   one `git status` per repo of the checkout and one `stat` of the open file every 2 s, one round at a time, stretched
   to four times a slow round's length (30 s at most), nothing while hidden; a file over 1 MB that changes waits for
   Reload, since each draw has the tower read and send the whole file. Where the contract fell short, it grew by
