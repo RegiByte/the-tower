@@ -1,4 +1,4 @@
-import { safeHref } from '../shared/markdown.ts'
+import { relativeHref, safeHref } from '../shared/markdown.ts'
 
 /**
  * What every document frame a core view draws does alike: a frame where nothing runs, which the view reaches into
@@ -26,8 +26,9 @@ export const scrollToFragment = (doc: Document, fragment: string) => {
 
 /**
  * The one listener a document frame delegates (decision `markdown-safe`): a link pressed in it. A `#fragment` scrolls
- * this document to what it names; `here` takes a link the view opens in place (another file of a shelf entry), when it
- * answers true; a link `safeHref` allows opens in a tab of its own; any other is refused, said in a toast.
+ * this document to what it names; `here` takes a link the view opens in place (another file of a shelf entry or of a
+ * worker's checkout), when it answers true; a link `safeHref` allows opens in a tab of its own, unless it is relative
+ * to the document, which only `here` can place; any other is refused, said in a toast.
  */
 export const followLink =
   (doc: Document, { here, toast }: { here: (href: string) => boolean; toast: (text: string) => void }) =>
@@ -41,6 +42,7 @@ export const followLink =
       return void (scrollToFragment(doc, fragment) || toast(`#${fragment} names no heading in this document`))
     }
     if (here(href)) return
+    if (relativeHref(href)) return toast(`${href} isn't opened: a relative link is followed only in a file of a worker's checkout or of a shelf entry`)
     if (safeHref(href)) return void window.open(a.href, '_blank', 'noopener,noreferrer')
     toast(`${href} isn't opened: the tower follows web and mail links, its own paths, and #links to this document's headings`)
   }
