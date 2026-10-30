@@ -14,7 +14,7 @@ import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
 
 const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
   & .doc-split > iframe { flex: 1; min-width: 0; border: 0; background: var(--panel); }
-  & .doc-gutter { position: relative; flex: none; width: 168px; overflow: hidden; border-left: 1px solid var(--line); background: var(--panel); }
+  & .doc-gutter { position: relative; flex: none; width: min(168px, 30%); overflow: hidden; border-left: 1px solid var(--line); background: var(--panel); }
   & .doc-row { position: absolute; top: 0; left: 0; right: 0; display: grid; gap: var(--sp-2xs); padding: var(--sp-xs) var(--sp-m); background: var(--panel); }
   & .doc-row > .doc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: var(--fs-xs); }`
 
