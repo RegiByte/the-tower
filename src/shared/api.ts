@@ -13,7 +13,7 @@ import type { Words } from './extensions.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.109'
+export const API_VERSION = '1.110'
 
 const id = z.string().min(1)
 const absolute = z.string().regex(/^\//, 'an absolute path')
@@ -533,9 +533,13 @@ export type Combine = 'gate' | 'merge' | 'place' | 'report'
  * A point inside a core verb where extensions take part: what it is raised with, what each answer is, and how answers
  * combine. `required`: a failed answer, or none on the floor, refuses the verb; otherwise a failure is reported. `absent`:
  * what it means on a floor nobody answers on. `field`: the reply field its answers and failures are named in. `core`:
- * what the core answers there itself, first, so the hook is answered on every floor.
+ * what the core answers there itself, first, so the hook is answered on every floor. `deadline`: the seconds each answer
+ * is waited for, `HOOK_DEADLINE` when unset; an answer past it is a failed answer.
  */
-export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: Words; field?: string; core?: string; description: string; since: string }
+export type CoreHook = { payload: z.ZodType; answer: z.ZodType; combine: Combine; required?: true; absent?: Words; field?: string; core?: string; deadline?: number; description: string; since: string }
+
+/** The seconds a hook waits on each answer when it names no deadline of its own: every extension's hook among them. */
+export const HOOK_DEADLINE = 30
 
 /** What a gate answers: `{}` passes; a refusal refuses the verb with its code. */
 const gated = z.union([
@@ -558,8 +562,9 @@ const hooks = {
     combine: 'gate',
     absent: { label: 'No limits', hint: 'Nothing weighs a new worker before it starts.' },
     core: 'hiring limits, on hires',
+    deadline: 10,
     description:
-      "Raised by spawn, resume and fork once the launch contributors merged, before the crew edge, the cut and the host: the core answers first with the floor's hiring limits, then each answerer in fold order, and the first refusal refuses the verb. A failed answer (down, a throw, an `ApiError`, off the schema) is a problem on its answerer, and the verb goes on.",
+      "Raised by spawn, resume and fork once the launch contributors merged, before the crew edge, the cut and the host: the core answers first with the floor's hiring limits, then each answerer in fold order, and the first refusal refuses the verb. A failed answer (down, a throw, an `ApiError`, off the schema, none within 10 s) is a problem on its answerer, and the verb goes on.",
     since: '1.107',
   },
   'tidy.apply': {

@@ -5,13 +5,14 @@
  * hook on a floor is `GET /extensions`' `chains`, `answers` and `launchers`. Describes what the dispatch does; changes
  * nothing it does.
  */
-import { COMPOSITES, HOOKS, type Combine, type HookName, type Verb } from './api.ts'
+import { COMPOSITES, HOOK_DEADLINE, HOOKS, type Combine, type HookName, type Verb } from './api.ts'
 import type { Words } from './extensions.ts'
 
 /**
  * A stage extensions answer. `hook`: what an answerer lists in its manifest's `answers`; `how`: how it takes part where
- * there is no hook to list. `core`: what the core answers there itself, first. `planned`: listed where it will be raised,
- * and nothing raises it yet, so no extension can answer it.
+ * there is no hook to list. `core`: what the core answers there itself, first. `deadline`: the seconds each answer to a
+ * raised hook is waited for, a failed answer past them. `planned`: listed where it will be raised, and nothing raises it
+ * yet, so no extension can answer it.
  */
 export type OpenStage = {
   name: string
@@ -23,6 +24,7 @@ export type OpenStage = {
   hook?: string
   how?: string
   core?: string
+  deadline?: number
   planned?: true
 }
 
@@ -35,8 +37,8 @@ const sealed = (name: string, why: string): Stage => ({ name, kind: 'sealed', wh
 
 /** The open stage a core hook is, its combine rule read from `HOOKS`. */
 const hooked = (name: string, hook: HookName): OpenStage => {
-  const { combine, required, absent, field, core } = HOOKS[hook]
-  return { name, kind: 'open', hook: `tower/${hook}`, combine, ...(required && { required }), ...(absent && { absent }), ...(field && { field }), ...(core && { core }) }
+  const { combine, required, absent, field, core, deadline } = HOOKS[hook]
+  return { name, kind: 'open', hook: `tower/${hook}`, combine, ...(required && { required }), ...(absent && { absent }), ...(field && { field }), ...(core && { core }), deadline: deadline ?? HOOK_DEADLINE }
 }
 
 /** A verb's flow: its stages between the links around it, then what is observed of it once it answered. */

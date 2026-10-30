@@ -771,7 +771,11 @@ and the autotidy extension reads to apply an entry once that checkout's workers 
 `/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
 `merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
-nobody answers on (`absent`, words: a `label` and a `hint`) and the reply field its answers are named in (`field`).
+nobody answers on (`absent`, words: a `label` and a `hint`), the reply field its answers are named in (`field`) and
+the seconds each answer is waited for (`deadline`, API 1.110). Every hook has one: `tower/spawn.gate`'s is 10 s, every
+other hook's, an extension's own included, 30 s. An answer still unsettled past it is a failed answer, as a throw is:
+a `hook` problem on its answerer, `{ok: false, code: 'internal'}` among the answers, and what it answers later is
+ignored.
 On a floor where no running extension that takes part answers a core hook with `absent` words, the core puts them
 there as a badge, `board.adds['floor:<project>'].badges` with `cap: 'tower'` (API 1.107): a floor where reviews is off
 reads "Discards refused" and "Nothing filed". A hook the core answers itself (`core`, its words) is never flagged.
@@ -785,8 +789,9 @@ fold order. The first refusal refuses the verb with its code, its message follow
 `the week is 95% spent (budget-gate's gate)`. A failed answer is never a refusal: an answerer that is down, throws,
 answers off the schema or answers an `ApiError` gets a `hook` problem, and the worker starts. So does a link around
 `tower/spawn.gate` that refuses or fails, and then no answerer is asked: while an extension holding such a link is down
-or restarting, every spawn passes every extension's gate (the core's limits still hold). An answer is waited for with no time limit, so an answerer that never
-settles holds the spawn. A gate that counts workers reads `ctx.cards()`:
+or restarting, every spawn passes every extension's gate (the core's limits still hold). An answer is waited for 10 s:
+an answerer that hasn't settled by then has failed, and the worker starts. A gate that counts workers reads
+`ctx.cards()`:
 
 ```ts
 export default (ctx) => ({

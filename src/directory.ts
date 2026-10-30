@@ -533,7 +533,7 @@ const flowLines = (flow: Flow, takers: Takers): string[] => {
     const who = answerers.length ? answerers.join(', ') : stage.absent ? `${stage.absent.label}${stage.absent.hint ? `: ${stage.absent.hint}` : ''}` : 'nobody answers'
     return [
       `  ◆ ${name}  ${ruleOf(stage)}${stage.planned ? ', planned: not raised yet' : ''} · ${who}`,
-      ...(stage.hook ? [`    ${' '.repeat(width)}  ${stage.planned ? 'will be raised as' : 'answered as'} ${stage.hook}${stage.field ? `, named in the reply's ${stage.field}` : ''}`] : []),
+      ...(stage.hook ? [`    ${' '.repeat(width)}  ${stage.planned ? 'will be raised as' : 'answered as'} ${stage.hook}${stage.deadline ? ` within ${stage.deadline} s` : ''}${stage.field ? `, named in the reply's ${stage.field}` : ''}`] : []),
       ...(stage.how ? [`    ${' '.repeat(width)}  ${stage.how}`] : []),
     ]
   }
