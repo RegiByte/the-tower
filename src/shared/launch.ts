@@ -232,7 +232,7 @@ export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...st
 export const flagName = (arg: string): string => arg.split('=')[0]
 
 /** A launch with every part the core composes, so the flags it passes can be read from it. */
-const EVERY_PART: Start = {
+export const EVERY_PART: Start = {
   runtime: 'claude', id: 'id', name: 'name', project: 'project', cwd: 'cwd', dirs: ['dir', 'other'], user: 'user', kept: 'kept',
   worktree: { name: 'name', branch: 'branch', dirs: ['dir'], mains: ['main'], links: ['link'] }, plugins: ['plugin'], contributed: NOTHING_CONTRIBUTED, facts: [],
 }

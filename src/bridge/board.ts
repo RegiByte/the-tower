@@ -1,5 +1,5 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
-import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchPrompt } from '../shared/launch.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
@@ -289,8 +289,10 @@ export type FloorCollection = {
  * order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default
  * branches differ and share no other (a cut unnamed still starts each repo from its own).
  */
-export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities'> & {
+export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'command'> & {
   id: string
+  /** The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`). */
+  command?: string
   /** The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`. */
   cards: Card[]
   /** How many cards its archive holds. */
@@ -434,6 +436,8 @@ export type Board = {
   hostOutdated: boolean
   /** The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them. */
   claudeDefaults: ClaudeDefaults
+  /** Every `argv` command name, in write order; absent in single-command mode (`commandNames`). */
+  commands?: string[]
   /** The releases outside the tested range that live workers run, each once. */
   claudeUntested: string[]
   shells: (Shell & { activity: string })[]
@@ -887,7 +891,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     keys,
     config: paths.config,
     viewers,
-    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, ...project }]) => {
+    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, command: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
       const { read, worktrees, branches, main } = git
       const bases = commonBases(read ?? [])
@@ -922,6 +926,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         cutByDefault: worktreesConfig(config, id).cutByDefault,
         hiring: hiringConfig(config, id),
         tidy,
+        ...(projectPreferredCommand(config, id) !== undefined && { command: projectPreferredCommand(config, id) }),
         ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(read ?? []), tidy),
       }
     }),
@@ -939,6 +944,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
     claudeDefaults: claudeDefaults(sessions),
+    ...(commandNames(config) !== undefined && { commands: commandNames(config) }),
     claudeUntested: [...new Set(cards.filter((c) => c.live && c.claudeUntested).map((c) => c.claude!))],
     shells: (shells ?? []).map((shell) => ({ ...shell, activity: shellActivity(shell) })),
     termsUp: shells !== undefined,
