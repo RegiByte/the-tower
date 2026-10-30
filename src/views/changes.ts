@@ -25,9 +25,13 @@ const ID = 'tower/changes'
 /** Lines of a worker's changes, any: what is offered on lines is offered on these. */
 const anyLines = (c: Card) => linesSubject({ card: c.id, project: c.project, repo: '', path: '', from: 1, to: 1 })
 
-/** Whether anything acts on lines a worker's Changes pick: a view on them, on a floor its extension is on, or a command offered on them. */
+/**
+ * Whether anything acts on lines a worker's Changes pick: a view on them at `row` scale, `lines.acts`', on a floor its
+ * extension is on, or a command offered on them. The renderer's layout and kit are its own, so a view they leave out
+ * still counts here, and the region under the pick is then drawn hidden.
+ */
 const actsOnLines = (board: Board, c: Card) =>
-  viewsOf(board).some((v) => v.on.includes('lines') && !v.off?.includes(c.project)) || addedActions(board, anyLines(c)).length > 0
+  viewsOf(board).some((v) => v.on.includes('lines') && v.scales.includes('row') && !v.off?.includes(c.project)) || addedActions(board, anyLines(c)).length > 0
 
 const CSS = `:where([data-view="${ID}"]) {
   position: absolute; inset: 0;
