@@ -84,7 +84,7 @@ and a framed document's section are the same thing.
   renderer: the thread subject it would name is of the floor, where no view lands, so the reviews extension leaves it
   out. Tower 3D keeps its desk's glue over `/panels.js`' deprecated copies until it hosts `card.panes`.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
-  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
+  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, `href` (since 1.121), named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
   ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it
@@ -169,6 +169,14 @@ and a framed document's section are the same thing.
   [`display`](ref:hub/renderers/page/page.js#display) opens a worker the board doesn't carry as a read subject when a
   view hands it the card (the archive's), else after reading the floors' archives, else once the board carries it when
   the page started it: its own spawns and resumes, and any its views started through the `tower` it lends them.
+  A link in a frame where nothing runs can't call `display`, only navigate, so `kit.href(subject)` (since 1.121) is
+  the hash of the renderer's page that displays it: in the tower page
+  ([`linkHash`](ref:hub/renderers/page/page.js#linkHash)) the location `display` puts it at when the board holds it
+  there, which a reload or another tab reads again; else `#to/<n>`, a subject the page holds while it is open, which
+  it displays and then writes the hash of where it is (a reload on it says the link is gone). A file of a checkout
+  takes the second: the location grammar carries `args` for the main view only, and the files example keeps its open
+  file in its own state, so no location names one. A hash naming the view in place with other `args` (a shelf
+  entry's other file) mounts it afresh, since a view reads its `args` once.
 - *Focus* ([`focusedSubject`](ref:hub/renderers/page/page.js#focusedSubject)): the subject of the innermost region
   holding the document's focus, else the main pane's, a viewer subject read from the bus (since 1.118); chords and
   `kit.run` resolve there.

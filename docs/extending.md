@@ -76,7 +76,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
   `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
-- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`): a
+- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -692,7 +692,10 @@ stand now, drawn in place, and a view without it is mounted afresh when they cha
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
 where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
-`shell/<id>` with the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the
+`shell/<id>` with the renderer's xterm, font, scheme and keymap), `href(subject)` (the hash of the renderer's page
+that displays `subject` when a link takes the page there, for a link drawn in a frame where nothing runs, which can
+only navigate: the location the subject is displayed at when the board holds it there, which a reload reads again,
+else a hash the page holds while it is open, API 1.121), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
