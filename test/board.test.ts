@@ -474,7 +474,7 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   assert.ok(lab.verbs.includes('tidy'))
   const [dirtyTower, unmergedLab] = floors(1, false)
   assert.deepEqual([threadsOn(dirtyTower)[0].landed, threadsOn(unmergedLab)[0].landed], [false, false])
-  assert.deepEqual([tower.threads, tower.main], [[], { dirty: 0, ahead: 0, inUse: false }], "the core keeps no threads: the floor says where its main checkouts stand")
+  assert.deepEqual([tower.threads, tower.main], [[], { dirty: 0, ahead: 0, changed: 0, inUse: false }], "the core keeps no threads: the floor says where its main checkouts stand")
   const items = (project: string, id: string) => ({ project, collection: 'reviews', id, size: 1, modifiedAt: 1 })
   const reviews = { provides: 'reviews', chain: ['reviews'], answers: [], collections: { reviews: { label: 'Reviews', description: 'd', owned: true, doors: { list: 'reviews/history/<project>', read: 'tower/collection/<project>/<collection>/<item>', create: 'reviews/append', edit: { none: 'x' }, delete: { none: 'x' } } } } }
   const tidying = (config: Config, stores: SystemView['stores']) =>

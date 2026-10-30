@@ -2377,6 +2377,10 @@
         },
         "present": {
           "type": "boolean"
+        },
+        "changed": {
+          "type": "number",
+          "description": "Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope `all`. Absent when it has no commit, or shares no history with that ref."
         }
       },
       "required": [
@@ -2952,6 +2956,10 @@
         "ahead": {
           "type": "number"
         },
+        "changed": {
+          "type": "number",
+          "description": "Their files changed, summed: each main checkout's `changed` (`MainRead`), what a worker's Changes there count."
+        },
         "inUse": {
           "type": "boolean"
         }
@@ -2959,6 +2967,7 @@
       "required": [
         "dirty",
         "ahead",
+        "changed",
         "inUse"
       ],
       "additionalProperties": false,

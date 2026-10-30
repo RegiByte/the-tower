@@ -1134,7 +1134,7 @@ test("server: the reviews extension holds the threads under its own names, and t
   const cardPart = (id: string) => desk.cards.find((c) => c.id === id)!.x?.reviews
   assert.deepEqual(cardPart(DESK_SESSIONS.reviewer), { thread: 'odin-1', threadState: { is: 'live' }, unseen: 1, of: AUTHOR, note: ['reviews/append', { project: 'desk', checkout: 'odin-1' }] })
   assert.deepEqual(cardPart(DESK_SESSIONS.lark), { thread: 'lark-3', threadState: { is: 'landed', on: 'main', empty: true, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } }, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } })
-  assert.deepEqual(desk.main, { dirty: 0, ahead: 0, inUse: false })
+  assert.deepEqual(desk.main, { dirty: 0, ahead: 0, changed: 0, inUse: false })
 
   const history = await get('/reviews/history/desk')
   const old = await get('/reviews/desk')

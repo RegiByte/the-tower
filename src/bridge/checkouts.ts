@@ -38,14 +38,24 @@ export type LandedState = Extract<CheckoutState, { is: 'landed' }>
  * The main checkouts as git reads them across a floor's repos: unlanded files (`dirty`, tracked or not) and commits
  * `ahead` of their upstreams, summed, and whether a worker on duty runs there.
  */
-export type MainCheckouts = { dirty: number; ahead: number; inUse: boolean }
+export type MainCheckouts = {
+  dirty: number
+  ahead: number
+  /** Their files changed, summed: each main checkout's `changed` (`MainRead`), what a worker's Changes there count. @since 1.119 */
+  changed: number
+  inUse: boolean
+}
 
 /** What a checkout's state is read from: a floor's worktrees and kept branches, and its main checkouts once every dir is read. */
 export type CheckoutsRead = { worktrees: FloorWorktree[]; branches: FloorBranch[]; main?: MainCheckouts }
 
 /** The main checkouts of a floor's `reads` (`undefined` until each dir was read once). */
 export const mainCheckouts = (reads: RepoRead[] | undefined, inUse: boolean): MainCheckouts | undefined =>
-  reads && reads.reduce((sum, r) => (r.git ? { ...sum, dirty: sum.dirty + r.main.dirty, ahead: sum.ahead + r.main.ahead } : sum), { dirty: 0, ahead: 0, inUse })
+  reads &&
+  reads.reduce(
+    (sum, r) => (r.git ? { ...sum, dirty: sum.dirty + r.main.dirty, ahead: sum.ahead + r.main.ahead, changed: sum.changed + (r.main.changed ?? 0) } : sum),
+    { dirty: 0, ahead: 0, changed: 0, inUse },
+  )
 
 /** No worktree of the name is in use or holds work, and every branch cut under it is absorbed into its base. */
 const worktreeLanded = (tree: FloorWorktree | undefined, cutUnder: FloorBranch['repos']) =>
