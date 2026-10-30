@@ -7,8 +7,8 @@ import { documentHtml } from '../shared/markdown.ts'
 import type { ShelfEntry } from '../shared/model.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { RelayedUi } from '../shared/shelf-page.ts'
-import type { Mount } from '../shared/views.ts'
-import { followLink } from './frame.ts'
+import { shortHashOf, type Mount } from '../shared/views.ts'
+import { contain, decoded, DOCUMENT_SANDBOX, writeLinks, type LinkTo } from './frame.ts'
 import { closeHtml, viewCss } from './parts.ts'
 
 /**
@@ -87,7 +87,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     body.querySelector('iframe')?.addEventListener('load', sendScheme)
   }
 
-  /** The document renders in a frame where its scripts can't run; the view still reads its clicks. */
+  /** The document renders in a frame where its scripts can't run, its links written where they go. */
   const showDoc = async (file: string) => {
     shown = file
     kit.go({ view: ID, subject: subject.key, args: [file] })
@@ -101,19 +101,23 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     if (md === undefined || closed || shown !== file || !doc) return
     doc.onload = () => {
       const at = doc.contentDocument!
-      at.addEventListener('click', followLink(at, { here: openHere, toast: kit.toast }))
+      const article = at.createElement('article')
+      article.innerHTML = documentHtml(md, `/${path(file)}`)
+      contain(article)
+      at.body.append(article)
+      writeLinks(at, placed(file))
     }
-    doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${documentHtml(md, `/${path(file)}`)}</article>`
+    doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style>`
   }
 
-  /** A link to another file of the collection opens it here; one to a file it doesn't hold is refused, said in a toast. */
-  const openHere = (href: string) => {
-    const target = new URL(href, `http://shelf/${shown}`)
-    if (target.host !== 'shelf') return false
-    const file = decodeURIComponent(target.pathname.slice(1))
-    if (files.includes(file)) void showDoc(file)
-    else kit.toast(`${file} is not in this collection`)
-    return true
+  /** A link from `from` to another file of the collection opens it here, by the shelf's location; one to a file it doesn't hold is refused. */
+  const placed = (from: string) => (href: string): LinkTo | undefined => {
+    const target = new URL(href, `http://shelf/${from}`)
+    if (target.host !== 'shelf' || target.protocol !== 'http:') return undefined
+    const file = decoded(target.pathname.slice(1))
+    if (file === undefined) return { t: 'refused', why: 'it holds a % that starts no escape' }
+    if (!files.includes(file)) return { t: 'refused', why: `${file} is not in this collection` }
+    return { t: 'page', hash: shortHashOf({ view: ID, subject: subject.key, args: [file] })! }
   }
 
   /** The files of an `md` entry, the one the location names shown, else the first. */
@@ -125,7 +129,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     if (!read.length) return void (body.innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
     files = read
     body.innerHTML = `<div class="shelf-files">${files.map((file) => `<div class="shelf-file"><button data-doc="${esc(file)}" data-tip="${esc(file)}">${esc(fileName(entry, file))}</button>${fileButtonsHtml(onDisk(f.hub, file))}</div>`).join('')}</div>
-    <iframe class="doc" sandbox="allow-same-origin"></iframe>`
+    <iframe class="doc" sandbox="${DOCUMENT_SANDBOX}"></iframe>`
     void showDoc(shown !== undefined && files.includes(shown) ? shown : files[0])
   }
 

@@ -2,7 +2,7 @@ import { esc } from '../shared/cards.ts'
 import { relativeHref, sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
 import { fileSubject, linkedFile, sectionSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
-import { followLink, scrollToFragment } from './frame.ts'
+import { contain, decoded, DOCUMENT_SANDBOX, linkTo, scrollToFragment, writeLinks, type LinkTo } from './frame.ts'
 import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
 
 /**
@@ -10,7 +10,7 @@ import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
  * raw HTML kept and images read beside it, split into its sections (`sectionsOf`). Each section is a viewer subject
  * on the page's bus, and takes the commands offered on it in a gutter beside the frame (`section.acts`), one row per
  * section kept level with it; the gutter is hidden while no row holds any. A file of a worker's checkout opens at its
- * `fragment`, and follows its relative links (`openLinked`).
+ * `fragment`, and its relative links go to what they name (`linkedFrom`).
  */
 
 const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
@@ -19,33 +19,18 @@ const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
   & .doc-row { position: absolute; top: 0; left: 0; right: 0; display: grid; gap: var(--sp-2xs); padding: var(--sp-xs) var(--sp-m); background: var(--panel); }
   & .doc-row > .doc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: var(--fs-xs); }`
 
-/** Scrolls `doc` to `fragment`, a link's, or says it names nothing there. */
-const scrollOrSay = (doc: Document, fragment: string, kit: Kit) =>
-  void (scrollToFragment(doc, fragment) || kit.toast(`#${fragment} names no heading in this document`))
-
-/** `linkedFile`, or `'malformed'` when `href` holds a % that starts no escape, which decoding it throws on. */
-const linkedOf = (from: CheckoutFile, href: string) => {
-  try {
-    return linkedFile(from, href)
-  } catch (err) {
-    if (err instanceof URIError) return 'malformed'
-    throw err
-  }
-}
-
 /**
- * A link relative to `from`, a file of a worker's checkout: another file or folder of its repo displayed, where the
- * page puts a file of a card (a view that `shows` it, such as a Files tab), at the link's fragment; a fragment of
- * `from` itself scrolled to; a path climbing out of the repo refused, said in a toast.
+ * Where a link relative to `from`, a file of a worker's checkout, goes: another file or folder of its repo, displayed
+ * where the page puts a file of a card (a view that `shows` it, such as a Files tab) at the link's fragment, by the
+ * hash `kit.href` gives it; a fragment of `from` itself, in the frame; a path climbing out of the repo, refused.
  */
-const openLinked = (doc: Document, from: CheckoutFile, kit: Kit) => (href: string) => {
-  if (!relativeHref(href)) return false
-  const to = linkedOf(from, href)
-  if (to === 'malformed') kit.toast(`${href} isn't opened: it holds a % that starts no escape`)
-  else if (!to) kit.toast(`${href} leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds`)
-  else if (to.path !== from.path) kit.display(fileSubject(to))
-  else if (to.fragment) scrollOrSay(doc, to.fragment, kit)
-  return true
+const linkedFrom = (doc: Document, from: CheckoutFile, kit: Kit) => (href: string): LinkTo | undefined => {
+  if (!relativeHref(href)) return undefined
+  if (decoded(href) === undefined) return { t: 'refused', why: 'it holds a % that starts no escape' }
+  const to = linkedFile(from, href)
+  if (!to) return { t: 'refused', why: `it leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds` }
+  if (to.path === from.path) return linkTo(doc, `#${href.split(/#(.*)/s)[1] ?? ''}`, () => undefined)
+  return { t: 'page', hash: kit.href(fileSubject(to)) }
 }
 
 /** A section's row in the gutter: its label, and the element its region fills. */
@@ -59,47 +44,48 @@ const rowTops = (anchors: number[], heights: number[]) =>
   anchors.reduce<number[]>((tops, top, i) => [...tops, i ? Math.max(top, tops[i - 1] + heights[i - 1]) : top], [])
 
 /**
- * Keeps the gutter's rows level with their sections' anchors in the frame (decision `markdown-safe`): on the frame's
- * load, a resize of its body, and a scroll anywhere in its document (heard in the capture phase, so a scrolling body
- * or inner scroller is heard too), at most one animation frame, which reads every anchor and row, then writes every
- * row. `visible(false)` stops hearing until `visible(true)`, which reads once; `close` ends it.
+ * Keeps the gutter's rows level with their sections' anchors in the frame (decision `markdown-safe`). Nothing is heard
+ * inside a frame where nothing runs, so each animation frame while seen reads the frame's scroll position, and when it
+ * or the size of the frame's body changed, reads every anchor and row, then writes every row. `visible(false)` stops
+ * until `visible(true)`, which places the rows again; `close` ends it.
  */
 function followSections(frame: HTMLIFrameElement, anchors: HTMLElement[], rows: HTMLElement[]) {
+  const win = frame.contentWindow!
   const doc = frame.contentDocument!
-  let pending = 0
+  let tick = 0
   let seen = true
+  let moved = true
+  let scrolled = win.scrollY
   const place = () => {
-    pending = 0
     const tops = rowTops(anchors.map((a) => a.getBoundingClientRect().top), rows.map((r) => r.offsetHeight))
     rows.forEach((row, i) => void (row.style.transform = `translateY(${tops[i]}px)`))
   }
-  const schedule = () => {
-    if (seen && !pending) pending = requestAnimationFrame(place)
+  const look = () => {
+    tick = requestAnimationFrame(look)
+    if (win.scrollY !== scrolled) (scrolled = win.scrollY), (moved = true)
+    if (moved) (moved = false), place()
   }
-  const resized = new ResizeObserver(schedule)
-  const hear = () => resized.observe(doc.body)
+  const resized = new ResizeObserver(() => void (moved = true))
+  const start = () => {
+    resized.observe(doc.body)
+    moved = true
+    tick = requestAnimationFrame(look)
+  }
   const stop = () => {
     resized.disconnect()
-    cancelAnimationFrame(pending)
-    pending = 0
+    cancelAnimationFrame(tick)
   }
-  doc.addEventListener('scroll', schedule, { capture: true, passive: true })
-  hear()
-  schedule()
+  start()
   return {
     visible(on: boolean) {
       if (on === seen) return
       seen = on
-      if (!on) return stop()
-      hear()
-      schedule()
+      if (on) start()
+      else stop()
     },
     /** The rows' sizes changed: what they hold. */
-    replace: schedule,
-    close() {
-      stop()
-      doc.removeEventListener('scroll', schedule, { capture: true })
-    },
+    replace: () => void (moved = true),
+    close: stop,
   }
 }
 
@@ -116,7 +102,7 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
   const sections = sectionsOf(text)
   const subjects = sections.map((s) => sectionSubject(subject, s))
   const labels = sectionLabels(sections)
-  el.innerHTML = `<div class="doc-split"><iframe title="${esc(title)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe><div class="doc-gutter" role="group" aria-label="on each section" hidden></div></div>`
+  el.innerHTML = `<div class="doc-split"><iframe title="${esc(title)}" sandbox="${DOCUMENT_SANDBOX}"></iframe><div class="doc-gutter" role="group" aria-label="on each section" hidden></div></div>`
   const frame = el.querySelector('iframe')!
   const gutter = el.querySelector<HTMLElement>('.doc-gutter')!
 
@@ -135,7 +121,6 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
   let anchors: HTMLElement[] = []
   let follow: ReturnType<typeof followSections> | undefined
   let wanted: Subject | undefined
-  let unlisten = () => {}
   let closed = false
   let seen = true
 
@@ -155,18 +140,17 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
     anchors = sectionsHtml(text, url).map((html) => {
       const section = doc.createElement('div')
       section.innerHTML = html
+      contain(section)
       article.append(section)
       return section
     })
     doc.body.append(article)
     const file = subject.kind === 'file' ? (subject.value as CheckoutFile) : undefined
-    const onLink = followLink(doc, { here: file ? openLinked(doc, file, kit) : () => false, toast: kit.toast })
-    doc.addEventListener('click', onLink)
-    unlisten = () => doc.removeEventListener('click', onLink)
+    writeLinks(doc, file ? linkedFrom(doc, file, kit) : () => undefined)
     follow = followSections(frame, anchors, rows.map((r) => r.el))
     if (!seen) follow.visible(false)
     if (wanted) scrollTo(wanted)
-    else if (file?.fragment) scrollOrSay(doc, file.fragment, kit)
+    else if (file?.fragment && !scrollToFragment(doc, file.fragment)) kit.toast(`#${file.fragment} names no heading in ${file.path}`)
   })
   frame.srcdoc = frameDoc(tower, docCss, '')
 
@@ -184,7 +168,6 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
     close() {
       closed = true
       follow?.close()
-      unlisten()
       regions.forEach((r) => r.close())
       for (const s of subjects) kit.bus.clear(s.key)
     },

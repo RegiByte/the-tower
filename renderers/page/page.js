@@ -1070,6 +1070,8 @@ const editableIn = (target) => {
 /**
  * A document frame (a srcdoc the page wrote, where nothing runs) is the page's own: its keys are the browser's, heard on
  * its document at each load. A frame that navigated away from the srcdoc holds a document the page didn't write.
+ * WebKit calls no listener in a document that can't run scripts, so there the keys pressed while focus is in a
+ * document frame stay the frame's, and a click outside it gives the page its keys back (decision `markdown-safe`).
  */
 document.addEventListener('load', (e) => {
   const frame = e.target
