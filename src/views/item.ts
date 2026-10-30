@@ -14,8 +14,8 @@ import { closeHtml, paintOnce, viewCss } from './parts.ts'
  * A view by type: one body per media type, drawn in a frame by the kind of its subject. A kept item's frame is a head
  * naming it (its collection, tag, file, who kept it, what extensions add to `item.head`, a new tab, Delete and the
  * close) over its body, drawn again when the item changes; an item whose collection an extension declares leads back
- * to that extension's view of the floor, when it has one. A showing's frame is its body alone, filling its tab, whose
- * head is the tab strip's.
+ * to that extension's view of the floor, when it has one. Any other subject's, a showing's, is its body alone, filling
+ * its tab, whose head is the tab strip's.
  */
 
 /**
@@ -161,7 +161,7 @@ const itemFrame = (spec: TypeViewSpec): Mount => (host, { tower, board: first, s
 /** A showing's document frame: its article as wide as the tab, from its left edge. */
 const SHOWN_DOC_CSS = `${itemsCss}article { max-width: 980px; margin: 0; padding: var(--sp-xl) var(--sp-3xl) 48px; }`
 
-/** A showing's body fills its tab: a frame edge to edge, an image or a video whole within it, over the enamel. */
+/** A body drawn alone fills its tab: a frame edge to edge, an image or a video whole within it, over the enamel. */
 const SHOWN_RULES = `& > .shown-body { flex: 1; min-height: 0; position: relative; display: flex; }
   & > .shown-body > :not(.shelf-empty) { flex: 1; min-width: 0; }
   & > .shown-body iframe { border: 0; background: var(--panel); }
@@ -169,14 +169,22 @@ const SHOWN_RULES = `& > .shown-body { flex: 1; min-height: 0; position: relativ
   & > .shown-body :is(.item-image, .item-video) { position: relative; padding: 0; background: var(--enamel); }
   & > .shown-body :is(.item-image img, .item-video video) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }`
 
-/** A showing's frame: its body alone, the tab strip its head. A video it shows plays as it opens and pauses while hidden. */
-const shownFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit }) => {
+/** What a body is drawn from, for a subject drawn alone: a showing's, from its file or address. */
+const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'stale'> => {
   const s = subject.value as CardShown
+  return { url: shownHref(s), title: shownTitle(s), name: s.target, file: s.target, docCss: SHOWN_DOC_CSS }
+}
+
+/**
+ * The frame of a subject drawn alone, a showing among them: its body alone, filling its tab, whose head is the tab
+ * strip's. A video it shows plays as it opens and pauses while hidden.
+ */
+const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit }) => {
   host.innerHTML = `<style>${viewCss(spec.id, `${spec.rules}\n${SHOWN_RULES}`)}</style><div class="shown-body"></div>`
   const body = host.querySelector<HTMLElement>('.shown-body')!
   const bodies = draws(spec, body)
   const drawBody = () => {
-    bodies.draw({ tower, kit, url: shownHref(s), title: shownTitle(s), name: s.target, file: s.target, docCss: SHOWN_DOC_CSS })
+    bodies.draw({ tower, kit, ...bodyOf(subject) })
     for (const video of body.querySelectorAll('video')) video.autoplay = true
   }
 
@@ -202,8 +210,8 @@ const shownFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit }
   }
 }
 
-/** A view by type, drawn in its subject's frame: a showing's, else a kept item's. */
+/** A view by type, drawn in its subject's frame: a kept item's under its head, any other alone. */
 export const typeView = (spec: TypeViewSpec): Mount => {
-  const [item, shown] = [itemFrame(spec), shownFrame(spec)]
-  return (host, ctx) => (ctx.subject.kind === 'shown' ? shown : item)(host, ctx)
+  const [item, bare] = [itemFrame(spec), bareFrame(spec)]
+  return (host, ctx) => (ctx.subject.kind.startsWith('item.') ? item : bare)(host, ctx)
 }
