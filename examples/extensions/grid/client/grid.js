@@ -1,4 +1,5 @@
 import { cardSubject, esc } from '/cards.js'
+import { ICON } from '/icons.js'
 
 /**
  * The grid: a view on a floor (or the board) drawing up to four workers side by side, each cell the tower's `card.cell`
@@ -92,7 +93,7 @@ export async function mount(host, { board, subject, kit, state }) {
       const c = cardOf(id)
       const options = optionsOf(id)
       const given = JSON.stringify(options)
-      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${esc(id)} is no longer on the board</p>`))
+      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${esc(id)} is no longer on the board <button class="icon-btn" data-grid-drop aria-label="Take it out of the grid">${ICON.close}</button></p>`))
       else if (!cell.region) cell.region = kit.region(cell.el, 'card.cell', cardSubject(c), options)
       else {
         cell.region.update(cardSubject(c))
@@ -102,6 +103,9 @@ export async function mount(host, { board, subject, kit, state }) {
       if (grid.children[n] !== cell.el) grid.insertBefore(cell.el, grid.children[n] ?? null)
     })
   }
+
+  /** @param {string} id */
+  const drop = (id) => ((ids = ids.filter((d) => d !== id)), keep(), draw())
 
   /** The worker `to` takes the cell of `from`: one already in a cell swaps places with it. */
   function swap(from, to) {
@@ -113,6 +117,7 @@ export async function mount(host, { board, subject, kit, state }) {
   }
 
   host.addEventListener('click', (e) => {
+    if (e.target.closest('[data-grid-drop]')) return drop(e.target.closest('[data-cell]').dataset.cell)
     if (!e.target.closest('[data-grid-heads]')) return
     head = !head
     state.set('head', head)
@@ -122,7 +127,7 @@ export async function mount(host, { board, subject, kit, state }) {
     const id = e.target.closest('[data-cell]')?.dataset.cell
     if (!id) return
     if (e.detail.id === 'open') return kit.display(`card:${id}`)
-    if (e.detail.id === 'drop') return (ids = ids.filter((d) => d !== id), keep(), draw())
+    if (e.detail.id === 'drop') return drop(id)
   })
   host.addEventListener('pick', (e) => {
     const id = e.target.closest('[data-cell]')?.dataset.cell
