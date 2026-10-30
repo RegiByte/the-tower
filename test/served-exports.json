@@ -983,6 +983,7 @@
       "imagePath",
       "markdownCss",
       "markdownHtml",
+      "relativeHref",
       "safeHref",
       "sectionLabels",
       "sectionsHtml",
