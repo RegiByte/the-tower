@@ -68,6 +68,9 @@ export const FILES = '1.114'
 /** The minor views and commands were first offered on a viewer subject in: `lines`, picked in a worker's Changes. */
 const VIEWER = '1.116'
 
+/** The minor a brief's prompts and answers (`said`) and a document's sections (`section`) became viewer subjects in. */
+const SECTIONS = '1.117'
+
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
 
@@ -737,6 +740,7 @@ const views = sinceAt(VIEWS)
 const files = sinceAt(FILES)
 const tabs = sinceAt(TABS)
 const viewer = sinceAt(VIEWER)
+const sections = sinceAt(SECTIONS)
 
 const Name = z
   .string()
@@ -764,9 +768,10 @@ const Chords = z.array(
 const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
 /**
  * A viewer subject's kind, which only a renderer page holds (a file of a worker's checkout, lines picked in its
- * Changes): views, commands and regions are on one, and no fold is, since the board never carries one.
+ * Changes, a brief's prompt or answer, a document's section): views, commands and regions are on one, and no fold is,
+ * since the board never carries one.
  */
-const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines'))])
+const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines')), sections(z.enum(['said', 'section']))])
 /** A kind a view or a command is on: a board subject's or a viewer subject's. */
 const OnKind = z.union([SubjectKind, z.literal('item.*'), ViewerKind])
 const Kinds = z.array(OnKind).min(1)
@@ -901,7 +906,7 @@ const Command = z.strictObject({
   module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
   export: folds(z.string().min(1)),
   words: folds(Words),
-  on: folds(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes.')),
+  on: folds(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes, said a brief\'s prompts and answers, section a document\'s sections.')),
   accepts: sinceAt(SUBJECTS)(
     z
       .array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*'))

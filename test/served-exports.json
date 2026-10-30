@@ -719,7 +719,9 @@
       "runCommand",
       "runCommandWith",
       "runVerb",
+      "saidSubject",
       "satellitesOf",
+      "sectionSubject",
       "sendHomeAsk",
       "sendTarget",
       "sendTargets",
@@ -876,6 +878,7 @@
       "expandedSaid",
       "openFolds",
       "resumedIdle",
+      "saidOf",
       "saidText",
       "sessionLabel",
       "sessionWhen",
@@ -980,7 +983,10 @@
       "imagePath",
       "markdownCss",
       "markdownHtml",
-      "safeHref"
+      "safeHref",
+      "sectionLabels",
+      "sectionsHtml",
+      "sectionsOf"
     ],
     "/press.js": [
       "identityOf",
@@ -1065,6 +1071,7 @@
     "/views.js": [
       "CORE_VIEWS",
       "VIEW_ALIASES",
+      "busOf",
       "coreViewOf",
       "declaredLayout",
       "displayed",
