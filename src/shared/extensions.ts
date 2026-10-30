@@ -65,6 +65,9 @@ export const TABS = '1.111'
 /** The minor reads that serve a file, a read path's trailing rest param and a region's default layout arrived in. */
 export const FILES = '1.114'
 
+/** The minor views and commands were first offered on a viewer subject in: `lines`, picked in a worker's Changes. */
+const VIEWER = '1.116'
+
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
 
@@ -733,6 +736,7 @@ const kinds = sinceAt(KINDS)
 const views = sinceAt(VIEWS)
 const files = sinceAt(FILES)
 const tabs = sinceAt(TABS)
+const viewer = sinceAt(VIEWER)
 
 const Name = z
   .string()
@@ -758,7 +762,9 @@ const Chords = z.array(
   }),
 )
 const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
-const Kinds = z.array(z.union([SubjectKind, z.literal('item.*')])).min(1)
+/** A kind a view or a command is on: a board subject's, or a viewer subject's, which only a renderer page holds. */
+const OnKind = z.union([SubjectKind, z.literal('item.*'), viewer(z.literal('lines'))])
+const Kinds = z.array(OnKind).min(1)
 const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>, the last maybe a rest param, raw/<file...>')
 const Scope = z.enum(['system', 'project'])
 const Deprecated = z.strictObject({
@@ -890,7 +896,7 @@ const Command = z.strictObject({
   module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
   export: folds(z.string().min(1)),
   words: folds(Words),
-  on: folds(z.array(z.union([SubjectKind, z.literal('item.*')])).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items.')),
+  on: folds(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes.')),
   accepts: sinceAt(SUBJECTS)(
     z
       .array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*'))
