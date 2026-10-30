@@ -6,7 +6,7 @@ import { documentCss } from '../shared/design.ts'
 import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from '../shared/items.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { Tower } from '../shared/shelf-page.ts'
-import type { CheckoutFile, Subject } from '../shared/subjects.ts'
+import { itemSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
 import { viewsOf, type Kit, type Mount } from '../shared/views.ts'
 import { closeHtml, paintOnce, viewCss } from './parts.ts'
 
@@ -19,18 +19,25 @@ import { closeHtml, paintOnce, viewCss } from './parts.ts'
  */
 
 /**
- * What a body is drawn from: `url`, where its content is served; `body`, its text itself, where its subject carries it
+ * What a body is drawn from: `subject`, the subject drawn; `url`, where its content is served; `body`, its text itself, where its subject carries it
  * (an address); `title`, what it is called; `name`, its file's name; `file`, its path on disk; `version`, its
  * content's, where it has one; `docCss`, a document frame's styles beside the design's; `stale`, whether a newer draw
  * has begun since.
  */
-export type Body = { tower: Tower; kit: Kit; url: string; body?: string; title: string; name: string; file?: string; version?: number; docCss: string; stale: () => boolean }
+export type Body = { tower: Tower; kit: Kit; subject: Subject; url: string; body?: string; title: string; name: string; file?: string; version?: number; docCss: string; stale: () => boolean }
 
 /**
- * A view by type: `rules`, its own look; `draw`, its body into `el`; `restyled`, drawn again as the viewer's scheme or
- * appearance changes (a document drawn from the design's tokens).
+ * A body drawn, where it keeps more than its element: handed each board while it is drawn (`update`), a subject below
+ * the one drawn (`show`, true when it took it), whether it is seen (`visible`), and closed as it is drawn again or its
+ * view closes.
  */
-export type TypeViewSpec = { id: string; rules: string; draw: (el: HTMLElement, at: Body) => void | Promise<void>; restyled: boolean }
+export type Drawn = { update?(): void; show?(subject: Subject): boolean; visible?(on: boolean): void; close(): void }
+
+/**
+ * A view by type: `rules`, its own look; `draw`, its body into `el`, what it keeps returned; `restyled`, drawn again
+ * as the viewer's scheme or appearance changes (a document drawn from the design's tokens).
+ */
+export type TypeViewSpec = { id: string; rules: string; draw: (el: HTMLElement, at: Body) => void | Drawn | Promise<void | Drawn>; restyled: boolean }
 
 const HEAD_RULES = `& .shelf-head .by { min-height: 0; padding: 0; border: 0; background: none; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
   & .shelf-head :is(.lead, .adds, .own) { display: contents; }`
@@ -42,35 +49,68 @@ const backOf = (board: Board, project: string, c: FloorCollection) =>
 export const unshownHtml = ({ name, file }: Body) =>
   `<div class="shelf-empty">the tower shows no ${esc(name.split('.').pop()!)} file<br><br>${file ? `reveal it in Finder or open it in your editor ${fileButtonsHtml(file)}` : ''}</div>`
 
+/** A body's text, its own where it carries it, else read where it is served; a read that fails is said in `el`. */
+export const bodyText = async (el: HTMLElement, { tower, title, url, body, stale }: Body) =>
+  body ?? await tower.text(url.slice(1)).catch((err: Error) => {
+    if (!stale()) el.innerHTML = failedHtml(title, err.message, 'data-read-again')
+    return undefined
+  })
+
+/** A document frame's document, from the design's tokens and `docCss`, holding `html`. */
+export const frameDoc = (tower: Tower, docCss: string, html: string) =>
+  `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}${docCss}</style>${html}`
+
 /**
- * A body's text, its own where it carries it, else read where it is served, drawn by `article` in a document frame
- * where nothing runs, from the design's tokens; links open a tab of their own.
+ * A body's text drawn by `article` in a document frame where nothing runs, from the design's tokens; links open a tab
+ * of their own.
  */
 export const framedText =
   (article: (text: string, url: string) => string) =>
-  async (el: HTMLElement, { tower, title, url, body, docCss, stale }: Body) => {
-    const text = body ?? await tower.text(url.slice(1)).catch((err: Error) => {
-      if (!stale()) el.innerHTML = failedHtml(title, err.message, 'data-read-again')
-    })
-    if (text === undefined || stale()) return
-    el.innerHTML = `<iframe title="${esc(title)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
-    el.querySelector('iframe')!.srcdoc =
-      `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css"><style>${documentCss}${docCss}</style><article>${article(text, url)}</article>`
+  async (el: HTMLElement, at: Body) => {
+    const text = await bodyText(el, at)
+    if (text === undefined || at.stale()) return
+    el.innerHTML = `<iframe title="${esc(at.title)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
+    el.querySelector('iframe')!.srcdoc = frameDoc(at.tower, at.docCss, `<base target="_blank"><article>${article(text, at.url)}</article>`)
   }
 
 /** A body's file as served, as of its version when it has one: a frame or an element loading it gets the newest. */
 export const versioned = ({ url, version }: Body) => (version === undefined ? esc(url) : `${esc(url)}?v=${version}`)
 
-/** A frame's draws of its body: each `draw` begins a newer one, so an older read lands nowhere; `close` ends them all. */
+/**
+ * A frame's draws of its body: each `draw` begins a newer one, so an older read lands nowhere and what an older one
+ * kept is closed; the one drawn is handed the board, a subject below, and whether it is seen; `close` ends them all.
+ */
 const draws = (spec: TypeViewSpec, el: HTMLElement) => {
   let n = 0
   let closed = false
+  let seen = true
+  let drawn: Drawn | undefined
+  const end = () => {
+    drawn?.close()
+    drawn = undefined
+  }
   return {
     draw: (at: Omit<Body, 'stale'>) => {
       const mine = ++n
-      void spec.draw(el, { ...at, stale: () => closed || mine !== n })
+      end()
+      const stale = () => closed || mine !== n
+      void Promise.resolve(spec.draw(el, { ...at, stale })).then((kept) => {
+        if (!kept) return
+        if (stale()) return kept.close()
+        drawn = kept
+        if (!seen) kept.visible?.(false)
+      })
     },
-    close: () => void (closed = true),
+    update: () => drawn?.update?.(),
+    show: (subject: Subject) => drawn?.show?.(subject) ?? false,
+    visible: (on: boolean) => {
+      seen = on
+      drawn?.visible?.(on)
+    },
+    close: () => {
+      closed = true
+      end()
+    },
   }
 }
 
@@ -114,7 +154,7 @@ const itemFrame = (spec: TypeViewSpec): Mount => (host, { tower, board: first, s
   const drawBody = () => {
     const it = item()
     drawn = it.modifiedAt
-    bodies.draw({ tower, kit, url: `/${itemPath(project, collection, it.id)}`, title: it.tag, name: it.id, file: itemFile(c(), it.id), version: it.modifiedAt, docCss: itemsCss })
+    bodies.draw({ tower, kit, subject: itemSubject(project, collection, it), url: `/${itemPath(project, collection, it.id)}`, title: it.tag, name: it.id, file: itemFile(c(), it.id), version: it.modifiedAt, docCss: itemsCss })
   }
 
   /** Deleting is the user's: asked first, and the view closes before the file goes. */
@@ -153,7 +193,10 @@ const itemFrame = (spec: TypeViewSpec): Mount => (host, { tower, board: first, s
       adds.update(now)
       drawHead()
       if (drawn !== item().modifiedAt) drawBody()
+      else bodies.update()
     },
+    show: (s) => bodies.show(s),
+    visible: (on) => bodies.visible(on),
     close() {
       bodies.close()
       adds.close()
@@ -174,7 +217,7 @@ const SHOWN_RULES = `& > .shown-body { flex: 1; min-height: 0; position: relativ
   & > .shown-body :is(.item-image img, .item-video video) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }`
 
 /** What a body is drawn from, for a subject drawn alone, by its kind: a showing's, a file served or an address its own text. */
-const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'stale'> => {
+const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'subject' | 'stale'> => {
   switch (subject.kind) {
     case 'shown': {
       const s = subject.value as CardShown
@@ -199,7 +242,7 @@ const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit })
   const body = host.querySelector<HTMLElement>('.shown-body')!
   const bodies = draws(spec, body)
   const drawBody = () => {
-    bodies.draw({ tower, kit, ...bodyOf(subject) })
+    bodies.draw({ tower, kit, subject, ...bodyOf(subject) })
     for (const video of body.querySelectorAll('video')) video.autoplay = true
   }
 
@@ -214,8 +257,10 @@ const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit })
   drawBody()
 
   return {
-    update() {},
+    update: () => bodies.update(),
+    show: (s) => bodies.show(s),
     visible(on) {
+      bodies.visible(on)
       if (!on) for (const video of body.querySelectorAll('video')) video.pause()
     },
     close() {
