@@ -939,3 +939,6 @@ Only the host writes them. Everything the tower shows is computed from them, the
 Going fully custom against the API is supported: a renderer in any stack, a script, a daemon of your own. The tower
 keeps its contract (the API, `/tower.js` and the served modules, versioned as above); it takes no responsibility for
 keeping every copy working across changes beyond it.
+
+Changing the core itself, rather than building on it: the rules a change to this repository keeps are in
+[PRINCIPLES.md](../PRINCIPLES.md).
