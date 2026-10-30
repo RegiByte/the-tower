@@ -106,8 +106,9 @@
       "export": "mount",
       "tab": "tab",
       "on": ["card"],
+      "shows": ["file"],
       "scales": ["pane", "cell"],
-      "needs": ["region"],
+      "needs": ["region", "toast"],
       "regions": ["file.open"],
       "words": { "label": "Files", "hint": "the worker's checkout as a tree, and a file opened beside it" }
     },

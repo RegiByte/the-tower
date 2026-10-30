@@ -14,6 +14,7 @@
     "hub/src/shared/markdown.ts#safeHref",
     "hub/src/shared/markdown.ts#imagePath",
     "hub/src/shared/markdown.ts#relativeHref",
+    "hub/src/shared/subjects.ts#linkedFile",
     "hub/src/tower/served.ts#MODULES",
     "hub/test/markdown.test.ts",
     "hub/src/views/frame.ts#followLink",
@@ -90,11 +91,13 @@ would reach for a markdown library's `parse` and draw it inline.
 - *Links* are the one delegated case, by one rule every document frame shares
   ([`followLink`](ref:hub/src/views/frame.ts#followLink)), matching `a[href]` and `area[href]`: a `#fragment` scrolls
   the frame to the element of that id or the heading whose GitHub slug it is
-  ([`scrollToFragment`](ref:hub/src/views/frame.ts#scrollToFragment)); a file of the shelf entry opens in place; a link
-  `safeHref` allows opens a tab of its own, unless it is relative to the document
-  ([`relativeHref`](ref:hub/src/shared/markdown.ts#relativeHref)), which only a view that places it can follow (a
-  frame's document is the page's, so a relative link would resolve against the page's address, a tower error); any
-  other is refused, the toast naming it and why.
+  ([`scrollToFragment`](ref:hub/src/views/frame.ts#scrollToFragment)); a link the view places itself opens in place: a
+  file of the shelf entry, or, in a file of a worker's checkout, a path relative to it
+  ([`relativeHref`](ref:hub/src/shared/markdown.ts#relativeHref)), resolved in its repo
+  ([`linkedFile`](ref:hub/src/shared/subjects.ts#linkedFile)) and displayed as a `file` at its fragment, refused when
+  it climbs out of the repo; a link `safeHref` allows opens a tab of its own, unless it is relative, which no other
+  document can place (a frame's document is the page's, so a relative link would resolve against the page's address,
+  a tower error); any other is refused, the toast naming it and why.
 - [`markdown.test.ts`](ref:hub/test/markdown.test.ts) runs the payloads of the brief's audit and the usual ways around
   a scheme check through `markdownHtml` and holds every tag and attribute of its output to an allowlist, every href to
   http(s) or mailto and every image to the tower's origin, as a browser would read them.

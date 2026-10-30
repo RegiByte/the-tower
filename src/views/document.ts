@@ -1,15 +1,16 @@
 import { esc } from '../shared/cards.ts'
-import { sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
-import { sectionSubject, type Subject } from '../shared/subjects.ts'
-import type { RegionHandle } from '../shared/views.ts'
-import { followLink } from './frame.ts'
+import { relativeHref, sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
+import { fileSubject, linkedFile, sectionSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
+import type { Kit, RegionHandle } from '../shared/views.ts'
+import { followLink, scrollToFragment } from './frame.ts'
 import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
 
 /**
  * `tower/document`, the markdown view, of a kept item or a showing: the document drawn in a frame where nothing runs,
  * raw HTML kept and images read beside it, split into its sections (`sectionsOf`). Each section is a viewer subject
  * on the page's bus, and takes the commands offered on it in a gutter beside the frame (`section.acts`), one row per
- * section kept level with it; the gutter is hidden while no row holds any.
+ * section kept level with it; the gutter is hidden while no row holds any. A file of a worker's checkout opens at its
+ * `fragment`, and follows its relative links (`openLinked`).
  */
 
 const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
@@ -17,6 +18,24 @@ const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
   & .doc-gutter { position: relative; flex: none; width: min(168px, 30%); overflow: hidden; border-left: 1px solid var(--line); background: var(--panel); }
   & .doc-row { position: absolute; top: 0; left: 0; right: 0; display: grid; gap: var(--sp-2xs); padding: var(--sp-xs) var(--sp-m); background: var(--panel); }
   & .doc-row > .doc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--faint); font-size: var(--fs-xs); }`
+
+/** Scrolls `doc` to `fragment`, a link's, or says it names nothing there. */
+const scrollOrSay = (doc: Document, fragment: string, kit: Kit) =>
+  void (scrollToFragment(doc, fragment) || kit.toast(`#${fragment} names no heading in this document`))
+
+/**
+ * A link relative to `from`, a file of a worker's checkout: another file or folder of its repo displayed, where the
+ * page puts a file of a card (a view that `shows` it, such as a Files tab), at the link's fragment; a fragment of
+ * `from` itself scrolled to; a path climbing out of the repo refused, said in a toast.
+ */
+const openLinked = (doc: Document, from: CheckoutFile, kit: Kit) => (href: string) => {
+  if (!relativeHref(href)) return false
+  const to = linkedFile(from, href)
+  if (!to) kit.toast(`${href} leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds`)
+  else if (to.path !== from.path) kit.display(fileSubject(to))
+  else if (to.fragment) scrollOrSay(doc, to.fragment, kit)
+  return true
+}
 
 /** A section's row in the gutter: its label, and the element its region fills. */
 type Row = { el: HTMLElement; acts: HTMLElement }
@@ -129,12 +148,14 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
       return section
     })
     doc.body.append(article)
-    const onLink = followLink(doc, { here: () => false, toast: kit.toast })
+    const file = subject.kind === 'file' ? (subject.value as CheckoutFile) : undefined
+    const onLink = followLink(doc, { here: file ? openLinked(doc, file, kit) : () => false, toast: kit.toast })
     doc.addEventListener('click', onLink)
     unlisten = () => doc.removeEventListener('click', onLink)
     follow = followSections(frame, anchors, rows.map((r) => r.el))
     if (!seen) follow.visible(false)
     if (wanted) scrollTo(wanted)
+    else if (file?.fragment) scrollOrSay(doc, file.fragment, kit)
   })
   frame.srcdoc = frameDoc(tower, docCss, '')
 
