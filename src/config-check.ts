@@ -52,6 +52,11 @@ export const CONFIG_DOCS = path.join(import.meta.dirname, '..', 'docs', 'config.
 const EDITOR_VALUES: Record<EditorAction, Record<string, string>> = { window: { dir: '.' }, open: { path: '.' }, goto: { path: '.', line: '1' } }
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isCommand = (value: unknown): value is string[] => Array.isArray(value) && value.length > 0 && value.every((arg) => typeof arg === 'string')
+
+/** Either the legacy array shape, or a non-empty object of named, non-empty commands. */
+const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
 const isDirectory = (dir: string): boolean => existsSync(dir) && statSync(dir).isDirectory()
 
 const fail = (key: string, problem: string): ConfigProblem => ({ level: 'fail', key, problem })
@@ -258,6 +263,7 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
     ...(typeof project.name === 'string' && project.name ? [] : [fail(`${at}.name`, 'takes the name the floor is shown by')]),
     ...(typeof project.hub === 'string' && path.isAbsolute(project.hub) && isDirectory(project.hub) ? [] : [fail(`${at}.hub`, `${JSON.stringify(project.hub)} is no absolute path of a directory: sessions start in the hub`)]),
     ...(project.repos === undefined ? [fail(`${at}.repos`, 'takes a list of absolute directories, [] for none')] : directories(`${at}.repos`, project.repos, 'absolute directories')),
+    ...(project.command === undefined || typeof project.command === 'string' ? [] : [fail(`${at}.command`, "takes the name of one of argv's commands")]),
   ]
   if (shape.some((p) => p.key === `${at}.hub`)) return [...unknownKeys(`${at}.`, project, PROJECT_KEYS), ...shape]
   const collectionIds = [config.collections, project.collections].flatMap((c) => (isObject(c) ? Object.keys(c) : []))
@@ -303,7 +309,7 @@ export const configProblems = (read: Config): ConfigProblem[] => {
   const extensions: Extensions = { found, resolved: resolve(found, { ...config, projects: Object.fromEntries(projects) }, API_VERSION) }
   return [
     ...unknownKeys('', config, CONFIG_KEYS),
-    ...(Array.isArray(config.argv) && config.argv.length && config.argv.every((arg) => typeof arg === 'string') ? [] : [fail('argv', 'takes the command sessions start with, such as ["claude"]')]),
+    ...(validArgv(config.argv) ? [] : [fail('argv', 'takes the command sessions start with (["claude"]), or several named ones ({"claude": ["claude"], "mom": ["claude-mom"]})')]),
     ...(config.env === undefined || (isObject(config.env) && Object.values(config.env).every((v) => typeof v === 'string')) ? [] : [fail('env', 'takes an object of strings, {} for none')]),
     ...(projects.length ? [] : [fail('projects', 'names no project: add one, or `tower init` on a fresh system')]),
     ...unknownKeysAt('user', config.user, USER_KEYS),

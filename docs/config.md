@@ -32,11 +32,22 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 }
 ```
 
+A project can prefer a named command when `argv` names more than one:
+
+```json
+{
+  "argv": { "claude": ["claude"], "mom": ["claude-mom"] },
+  "projects": {
+    "momentus": { "name": "momentus", "hub": "/abs/path/to/momentus", "repos": [], "command": "mom" }
+  }
+}
+```
+
 ## Top level
 
 | Key | Takes | Unset |
 |---|---|---|
-| `argv` | The command every session starts with, before the arguments the tower adds: `["claude"]`. | required |
+| `argv` | The command every session starts with, before the arguments the tower adds: `["claude"]`. Several named commands are also allowed: `{"claude": ["claude"], "mom": ["claude-mom"]}`. A project's `command` picks one by name; naming more than one adds a picker to the New Worker form. | required |
 | `env` | Variables added to every session's environment. They are scrubbed with the parent session's: a parent session's markers (`CLAUDECODE`, `CLAUDE_CODE_SESSION*`, `TOWER_SESSION_ID`, …) set here are dropped. | none |
 | `projects` | The floors, by id (letters, digits, `_`, `-`): see [Projects](#projects). | required |
 | `collections` | The collections every project has, by id: see [Collections](#collections). | none |
@@ -100,6 +111,7 @@ Each project is a floor. Its sessions start in the hub; the repos are the other 
 | `worktrees`, `hiring`, `brief` | As at the top level, for this floor. | the top level's |
 | `extensions` | Each extension's `settings` on this floor, by id, shallow-merged over the system's and parsed by its manifest's settings schema. Settings for an id that provides nothing running here are a warning. | none |
 | `capabilities` | Capabilities turned off on this floor, by name: `{ "github": { "off": true } }`. Whichever extension provides one, it is off here, and so is every extension that requires it. `tower`, the core, is never off. | all on |
+| `command` | The `argv` command this floor's workers start with unless told otherwise, by name. Falls back to `argv`'s first when it names none of them, or when `argv` names only one (or is the legacy array). | `argv`'s first |
 
 ## Extensions
 
