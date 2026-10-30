@@ -47,7 +47,7 @@ const checkFact = (fact: ModEvent) => {
  * The session's `facts` are logged after its header, before anything else: written in the same tick as the header,
  * ahead of the first output or hook.
  */
-function spawnSession({ id, project: projectId, cwd, args, facts = [], cols, rows }: Extract<ToHost, { t: 'spawn' }>): string {
+function spawnSession({ id, project: projectId, cwd, args, command, facts = [], cols, rows }: Extract<ToHost, { t: 'spawn' }>): string {
   const config: Config = JSON.parse(readFileSync(paths.config, 'utf8'))
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
@@ -59,8 +59,8 @@ function spawnSession({ id, project: projectId, cwd, args, facts = [], cols, row
   if (live.has(id) || existsSync(sessionLogPath(paths, id))) throw new Error(`Session "${id}" already exists`)
 
   const startedAt = Date.now()
-  const argv = sessionArgv(config, args, MOD_DIR)
-  const header: SessionHeader = { id, project: projectId, runtime: 'claude', cwd, argv, startedAt, cols, rows }
+  const argv = sessionArgv(config, args, MOD_DIR, command)
+  const header: SessionHeader = { id, project: projectId, runtime: 'claude', cwd, argv, command, startedAt, cols, rows }
   const [file, ...rest] = argv
 
   const proc = pty.spawn(file, rest, {

@@ -1,12 +1,13 @@
 import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
-import type { ClaudeHookInput, Config, ModEvent } from '../shared/model.ts'
+import { resolveCommand, type ClaudeHookInput, type Config, type ModEvent } from '../shared/model.ts'
 
 /**
  * `modDir` is the tower mod (`src/mod`), which posts Claude's events to the host, read by each Claude as it starts.
- * `args` come last, so they can end with `-- <prompt>`.
+ * `args` come last, so they can end with `-- <prompt>`. `command` names which of `argv`'s commands to run
+ * (`resolveCommand`); left out, it resolves to the legacy array or the object's first.
  */
-export const sessionArgv = (config: Config, args: string[], modDir: string): string[] => [
-  ...config.argv,
+export const sessionArgv = (config: Config, args: string[], modDir: string, command?: string): string[] => [
+  ...resolveCommand(config, command),
   '--plugin-dir',
   modDir,
   ...args,

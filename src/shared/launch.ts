@@ -2,7 +2,7 @@ import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, t
 import type { ToHost } from './protocol.ts'
 
 /** What a new session is asked for. Whatever is left out is Claude's own default. */
-export type Launch = { model?: string; effort?: string; prompt?: string }
+export type Launch = { model?: string; effort?: string; prompt?: string; command?: string }
 
 /** Sessions are headless until someone watches them; a viewer resizes to its own terminal. */
 const SPAWN_SIZE = { cols: 120, rows: 40 }
@@ -198,7 +198,7 @@ export type SpawnLaunch = Start & { kind: 'spawn'; launch: Launch }
  * A resume continues a session's conversation in the directory it ran in, under the same project: as the same worker,
  * or a new one on a fork (`resumeName`). `prompt`: Claude's first prompt in it, as a spawn's.
  */
-export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined }
+export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined; command?: string }
 
 const startArgs = (s: Start): string[] => [
   ...s.contributed.args,
@@ -212,20 +212,21 @@ const startArgs = (s: Start): string[] => [
 
 type HostSpawn = Extract<ToHost, { t: 'spawn' }>
 
-const hostSpawn = (s: Start, args: string[]): HostSpawn => ({
+const hostSpawn = (s: Start, args: string[], command: string | undefined): HostSpawn => ({
   t: 'spawn',
   id: s.id,
   project: s.project,
   cwd: s.cwd,
   args,
+  ...(command !== undefined && { command }),
   ...(s.facts.length && { facts: s.facts }),
   ...SPAWN_SIZE,
 })
 
 export const spawnRequest = (s: SpawnLaunch): HostSpawn =>
-  hostSpawn(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })])
+  hostSpawn(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })], s.launch.command)
 
-export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)])
+export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)], s.command)
 
 /** A flag's name: `--model` of `--model` and of `--model=opus`. */
 export const flagName = (arg: string): string => arg.split('=')[0]
