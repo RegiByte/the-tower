@@ -24,6 +24,8 @@ export type Project = {
   extensions?: Record<string, FloorExtensionConfig>
   /** Capabilities turned off on this floor, whichever extension provides them; `tower`, the core, never is. */
   capabilities?: Record<string, CapabilityConfig>
+  /** The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is the legacy array. */
+  command?: string
 }
 
 /**
@@ -255,13 +257,35 @@ export const hiringConfig = (config: Config, projectId: string): Required<Hiring
   }
 }
 
+/** Every name `argv` offers, in write order; `undefined` for the legacy array shape (one unnamed command). */
+export const commandNames = (config: Config): string[] | undefined => (Array.isArray(config.argv) ? undefined : Object.keys(config.argv))
+
+/** The argv to actually run: the legacy array as-is, or the named command when valid, else the object's first. */
+export const resolveCommand = (config: Config, name: string | undefined): string[] => {
+  if (Array.isArray(config.argv)) return config.argv
+  const names = Object.keys(config.argv)
+  return config.argv[name && names.includes(name) ? name : names[0]]
+}
+
+/** The project's resolved preferred command name; `undefined` in single-command mode. */
+export const projectPreferredCommand = (config: Config, projectId: string): string | undefined => {
+  const names = commandNames(config)
+  if (names === undefined) return undefined
+  const wanted = config.projects[projectId].command
+  return wanted && names.includes(wanted) ? wanted : names[0]
+}
+
 /**
  * The whole system's configuration. The directory holding this file is the system's root:
  * session logs and the host sockets live next to it.
  */
 export type Config = {
-  /** Command every session starts with, before the arguments the host adds. */
-  argv: string[]
+  /**
+   * Command every session starts with, before the arguments the host adds. A plain array names one unnamed
+   * command. An object names several by key, in write order; a project's `command` picks among them
+   * (`projectPreferredCommand`), and the New Worker form offers a picker when there is more than one.
+   */
+  argv: string[] | Record<string, string[]>
   /** Added to every session's environment after the parent-session scrub. */
   env?: Record<string, string>
   projects: Record<string, Project>
@@ -307,7 +331,7 @@ const keysOf =
 export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
 
 /** The keys the tower reads in a project. */
-export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities'])
+export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities', 'command'])
 
 /** The keys the tower reads in each object below the top level and a project's, by the type it is. */
 export const COLLECTION_KEYS = keysOf<CollectionType>()(['label', 'description'])
@@ -370,6 +394,8 @@ export type SessionHeader = {
   runtime?: Runtime
   cwd: string
   argv: string[]
+  /** The `argv` command this session was started under, by name; absent for the legacy array shape. */
+  command?: string
   startedAt: number
   cols: number
   rows: number
