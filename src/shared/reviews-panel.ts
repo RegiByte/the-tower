@@ -16,7 +16,7 @@ import { markdownHtml } from './markdown.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor, type Message, type Quote, type ReviewThread } from './reviews.ts'
 import { anchorState, parseThread, unseenBy, type AnchorState, type FloorThread } from './reviews-legacy.ts'
 import { failureOf, valueOf, type ReadEvent, type Reads } from './reads.ts'
-import { anchorWhere } from './changes-lines.ts'
+import { anchorWhere } from './anchors-legacy.ts'
 import { fileButtonsHtml } from './file-acts.ts'
 import { failedHtml, settledHtml } from './panel-kit.ts'
 

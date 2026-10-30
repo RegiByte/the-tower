@@ -4,6 +4,7 @@
  * markdown). A renderer keeps the state (what it read, folds, the pick, text being written), passes it in as a view
  * model, puts the html in an element with `drawPanel` and wires the attributes below. The tower serves it as
  * `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and `changes-panel.ts`,
+ * `anchors-legacy.ts` (deprecated since 1.114, review notes' anchors and the note box, now the reviews extension's),
  * `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):
@@ -70,11 +71,13 @@ export {
 } from './changes-reads.ts'
 export {
   fileKey, changedFiles, isViewed, isFolded, viewedCount, marksToggled, fileRows, splitRows, pickRange, picked, spanned, watchPickDrag, livePick,
-  pickAnchor, anchorWhere, notedLines, anchorSpot, spotSelector, anchorOf, type LinePick, type Row, type SplitRow,
+  pickedLines, linesSpot, spotSelector, type LinePick, type NamedLines, type Row, type SplitRow,
 } from './changes-lines.ts'
 export {
-  CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, changesHtml, keepingFileTop, keepingViewedFileTop, type ChangesView, type DiffLayout,
+  CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, markedChangesHtml, markedLines, keepingFileTop, keepingViewedFileTop,
+  type MarkedChangesView, type DiffLayout,
 } from './changes-panel.ts'
+export { pickAnchor, anchorWhere, notedLines, anchorSpot, anchorOf, changesHtml, type ChangesView } from './anchors-legacy.ts'
 export {
   threadItemFiles, threadFiles, cardThread, floorThread, threadSlot, threadWant, heldThread, threadFailure, readThread, threadViewOf, reviewsHtml,
   type ThreadView, type ThreadFiles, type ThreadPlace, type ThreadAt, type ThreadViewer,
