@@ -23,6 +23,8 @@ capability is a primitive in the core, open to every renderer and every worker (
 - [[host]]: the detached process that owns every session PTY and writes the logs, plus the
   [[tower-mod]] loaded into every session.
 - [[terms]]: a second detached process owning plain shells in project directories.
+- [[extensions]]: folders with a manifest and optional server code, each one capability the tower starts beside its
+  own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy) live in `extensions/`.
 - [[bridge]]: pure reductions over the logs and the live store a renderer subscribes to. This is the
   contract a new renderer plugs into.
 - [[tower-core]]: the tower server (the renderer API), the modules renderers share, git for worktrees, and the

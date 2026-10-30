@@ -4,7 +4,7 @@
   "name": "Tower",
   "summary": "The process started beside the host and terms at the config's port: the renderer API every renderer and worker drives, the modules renderers share, git for the floors' worktrees, and the disposable renderers it serves at /r/<name>/.",
   "in": "tower",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/tower/http.ts#run", "hub/src/renderers.ts#renderersOf", "hub/src/tower/served.ts"]
 }
 ---
@@ -14,5 +14,7 @@ The core of the tower beside the [[host]] and [[terms]]: the [[tower-server]] (t
 process.
 
 The renderers it serves are disposable ([[renderer-is-disposable]]): the tower page ([[web-tower]]), [[tower3d]], and
-The Week ([`renderers/week/`](ref:hub/renderers/week/week.js)), a plain page over the same API
+The Week ([`renderers/week/`](ref:hub/renderers/week/week.js)), a plain page over the same API that reads the budget
+week as a yearbook (its totals, every worker by floor, the hours' rhythm, superlatives and a quote), all from the board,
+`/stats` by hour and each floor's archive
 ([[renderers-in-config]]).

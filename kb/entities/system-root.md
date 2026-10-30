@@ -4,7 +4,7 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts", "hub/src/shared/paths.ts#configPath"]
 }
 ---
@@ -20,8 +20,9 @@
   observes that belong to no session, one file per UTC month, written only by the tower
   ([`systemStreamsPath`](ref:hub/src/shared/paths.ts#systemStreamsPath)): the quota probe's reads
   (`probe.quota`, [[probes]]), a project's policies' `runs` and `approvals` ([[policies]]), and an extension's
-  streams, `<cap>.<name>`, appended only through its ctx ([[extensions]]). Logs like the session logs, not a fourth
-  kind of state ([[logs-are-facts]]).
+  streams, `<cap>.<name>`, appended only through its ctx ([[extensions]]). Every stream is appended the same way
+  ([`src/streams.ts`](ref:hub/src/streams.ts)) and read the same way ([`src/bridge/streams.ts`](ref:hub/src/bridge/streams.ts)).
+  Logs like the session logs, not a fourth kind of state ([[logs-are-facts]]).
 - `collections/<project>/<collection>/<item>`: each project's [[collections]], any format, written by the tower
   ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are staging files, never
   items. A `reviews` thread is written only by the tower's `review/append` ([[review-threads]]); a collection an

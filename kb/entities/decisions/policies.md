@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/src/shared/slots.ts#cronFields",
     "hub/src/shared/slots.ts#ruleWords",
@@ -78,7 +78,8 @@ user may replace it by providing `policies`.
 - *One fact per slot seen.* The extension's project streams `runs` (`r`, a run: policy, hash, slot or `null` by hand,
   the worker's id, `start` auto | offer | hand, `by`, the check; `s`, a pass: offered, no-work, held, check-failed,
   with the check) and `approvals` (`a`, a hash approved, `by`), kept in the folders `streams/projects/<project>/runs/`
-  and `approvals/` they had before the move, for good (`LEGACY`'s stream rows,
+  and `approvals/` they had before the move, for good (the streams `policies.runs` and `policies.approvals` are
+  `LEGACY`'s stream rows,
   [`LEGACY`](ref:hub/src/shared/extensions.ts#LEGACY)). The extension is the one writer, through one verb each
   ([`server.ts`](ref:hub/extensions/policies/server.ts)): `policies/run` (parses the file now, spawns on `hire` and the
   prose through `tower/spawn`, appends `r`, kills the worker if the append fails, and is taken once the board holds the
