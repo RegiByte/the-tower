@@ -15,7 +15,7 @@ import { keyedTip, paintOnce } from './parts.ts'
  * A worker: its head (who and where, a glance at its context, cost and leftovers, its details, what extensions add to
  * it in `card.head`, and Resume, Let go, Send home and the close) over its tabs, `card.panes`, which the renderer fills
  * with the views on the card and one per thing it showed. A worker that waits on you says so between them. The
- * `head` option, false, draws its tabs alone.
+ * `head` option, false, draws its tabs alone; at cell scale, inside another view, its head has no close.
  */
 
 const ID = 'tower/card'
@@ -76,7 +76,7 @@ const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var
 /** How many cards were mounted on this page: each one's popovers get ids of their own. */
 let mounts = 0
 
-export const mount: Mount = (host, { tower, board: first, subject, kit, options }) => {
+export const mount: Mount = (host, { tower, board: first, subject, kit, options, scale }) => {
   let board = first
   let card = subject.value as Card
   const head = options.head !== false
@@ -156,7 +156,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options 
       `${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume>${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
     ${letGoHtml(c, verbLabel('card', 'let-go'))}
     ${can(c, 'send-home') ? `<button class="danger" data-send-home data-tip="${esc(sendHomeTitle(c))}">${verbLabel('card', 'send-home')}</button>` : ''}
-    <button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>`,
+    ${scale !== 'cell' ? `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
     paintOnce(details, detailsHtml(c))
     paintOnce(left, leftHtml(c))

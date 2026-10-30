@@ -11,7 +11,7 @@ import { addsHtml } from './added.js'
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { Kit, CommandKit, Location, Mount, Mounted, RegionHandle, TabWords, Tab, View } from '../../src/shared/views.ts'
- * @import { Layout, Region, KitMember } from '../../src/shared/regions.ts'
+ * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
@@ -121,9 +121,9 @@ export function regions(deps) {
   /**
    * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it; `show`
    * handed before the mount settles waits for it.
-   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
+   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
    */
-  function mountView(view, el, subject, options, scope, args) {
+  function mountView(view, el, subject, scale, options, scope, args) {
     el.dataset.view = view.id
     /** @type {Set<TermViewHandle>} */
     const own = new Set()
@@ -177,7 +177,7 @@ export function regions(deps) {
         const module = await moduleOf(view)
         const mount = /** @type {Mount | undefined} */ (module[/** @type {string} */ (view.export)])
         if (typeof mount !== 'function') throw new Error(`${urlOf(view)} exports no function ${view.export}`)
-        const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, ...(args && { args }) }
+        const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
         const done = /** @type {Mounted} */ (await Promise.race([
           Promise.resolve(mount(el, ctx)),
           new Promise((_, reject) => setTimeout(() => reject(new Error(`its mount hadn't settled in ${MOUNT_MS / 1000} s`)), MOUNT_MS)),
@@ -283,7 +283,7 @@ export function regions(deps) {
       failed(el, region.id, `nothing here draws ${subject.key}`)
       return { update: () => {}, close: () => host.replaceChildren() }
     }
-    const hosted = mountView(view, el, subject, { ...layout()[region.id]?.options?.[view.id], ...options[view.id] }, undefined)
+    const hosted = mountView(view, el, subject, /** @type {Scale} */ (region.scale), { ...layout()[region.id]?.options?.[view.id], ...options[view.id] }, undefined)
     return {
       update: (at) => ((host.dataset.subject = at.key), hosted.update(at)),
       show: (s) => hosted.show(s),
@@ -419,7 +419,7 @@ export function regions(deps) {
       root.className = 'view-root'
       panel.append(root)
       panels.append(panel)
-      const hosted = mountView(t.view, root, t.subject, { ...layout()[region.id]?.options?.[t.view.id], ...options[t.view.id] }, scope)
+      const hosted = mountView(t.view, root, t.subject, /** @type {Scale} */ (region.scale), { ...layout()[region.id]?.options?.[t.view.id], ...options[t.view.id] }, scope)
       mounted.set(t.key, { hosted, panel })
       return mounted.get(t.key)
     }
@@ -590,7 +590,7 @@ export function regions(deps) {
     if (!subject) return (el.remove(), gone())
     /** @type {PaneScope | undefined} */
     const scope = view.id === WORKER ? { pane: () => ({ on: open?.key === key, pane: mainPane() }), pick: (pane) => pickMain(key, pane) } : undefined
-    const hosted = mountView(view, el, subject, layout()['board.main']?.options?.[view.id] ?? {}, scope, location.args)
+    const hosted = mountView(view, el, subject, 'pane', layout()['board.main']?.options?.[view.id] ?? {}, scope, location.args)
     open = { key, view: view.id, el, hosted }
   }
 
