@@ -480,7 +480,7 @@ const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: S
 }
 
 type JsonSchema = { description?: string }
-type ApiSchema = { v: string; flows: Flow[]; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { path: string; kind: 'json' | 'stream' | 'page' | 'schema'; query?: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
+type ApiSchema = { v: string; flows: Flow[]; verbs: Record<string, { input: JsonSchema; reply: JsonSchema }>; reads: Record<string, { path: string; kind: 'json' | 'stream' | 'page' | 'schema' | 'file'; query?: JsonSchema }>; streams: Record<string, { description: string; read?: string; message?: object }> }
 
 const apiLines = (schema: ApiSchema): string[] => {
   const width = Math.max(...[...Object.keys(schema.verbs), ...Object.keys(schema.reads), ...Object.keys(schema.streams)].map((name) => name.length))

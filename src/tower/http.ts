@@ -879,7 +879,13 @@ export const httpServer = defineResource({
             accepted.flatMap((a) =>
               Object.entries(a.manifest.reads ?? {}).map(([name, r]) => [
                 `${a.provides}/${name}`,
-                { path: `/${a.provides}/${name.replace(/<(\w+)>/g, '{$1}')}`, kind: 'json', ...(r.query && { query: r.query }), reply: r.reply, ...declared(r) },
+                {
+                  path: `/${a.provides}/${name.replace(/<(\w+)(\.\.\.)?>/g, '{$1$2}')}`,
+                  kind: r.serves ?? 'json',
+                  ...(r.query && { query: r.query }),
+                  ...(r.reply && { reply: r.reply }),
+                  ...declared(r),
+                },
               ]),
             ),
           ),
@@ -904,7 +910,7 @@ export const httpServer = defineResource({
 
     /**
      * The first of `READS` whose path matches the pathname, its params decoded and its query parsed; else the read of the
-     * extension whose capability the path's first segment names.
+     * extension whose capability the path's first segment names: its reply, or the file it answers, served sandboxed.
      */
     async function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
       for (const entry of READS) {
@@ -920,7 +926,9 @@ export const httpServer = defineResource({
       if (!found) return fail(res, 'not_found', `Nothing at "${pathname}"`)
       if ('t' in found) return send(res, found)
       deprecate(res, dispatch.deprecationOf(cap, found.name))
-      send(res, await dispatch.read(cap, found.name, found.params, Object.fromEntries(new URLSearchParams(search)), callerOf(req)))
+      const answer = await dispatch.read(cap, found.name, found.params, Object.fromEntries(new URLSearchParams(search)), callerOf(req))
+      if (found.serves === 'file' && !isApiError(answer)) return serveSandboxed(req, res, (answer as { file: string }).file)
+      send(res, answer)
     }
 
     /**

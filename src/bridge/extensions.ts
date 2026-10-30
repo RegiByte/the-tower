@@ -83,6 +83,9 @@ export type CompiledVerb = { spec: NonNullable<Manifest['verbs']>[string]; input
 /** A read of a manifest, its query and reply schemas as zod. */
 export type CompiledRead = { spec: NonNullable<Manifest['reads']>[string]; query?: z.ZodType; reply: z.ZodType }
 
+/** What a read that serves a file answers: the file, by its absolute path. */
+export const FILE_SERVED = z.strictObject({ file: z.string().refine((file) => path.isAbsolute(file), 'an absolute path') })
+
 /** A fold a manifest declares: the zod of the `x` it makes, and what it adds. */
 export type CompiledFold = { x?: z.ZodType; adds: Add[] }
 /** A hook of a manifest, its payload and answer schemas as zod. */
@@ -463,8 +466,12 @@ const compileCalls = (manifest: Manifest): { verbs: Map<string, CompiledVerb>; r
     if (spec.scope === 'project' && !paramsOf(name).includes('project') && !requiresProject(spec.query)) {
       problems.push(error('invalid', 'a project-scoped read names its floor: a <project> param, or project, a string, required in its query', at))
     }
+    if (spec.serves === 'file' ? spec.reply !== undefined : spec.reply === undefined) {
+      problems.push(error('invalid', spec.serves === 'file' ? 'a read that serves a file declares no reply: its handler answers {file}' : 'a read declares its reply, unless it serves a file', at))
+      continue
+    }
     const query = spec.query && compiled(spec.query, `${at}.query`)
-    const reply = compiled(spec.reply, `${at}.reply`)
+    const reply = spec.reply === undefined ? FILE_SERVED : compiled(spec.reply, `${at}.reply`)
     if (reply && (!spec.query || query)) reads.set(name, { spec, ...(query && { query }), reply })
   }
   const hooks = new Map<string, CompiledHook>()
