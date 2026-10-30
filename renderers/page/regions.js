@@ -1,4 +1,4 @@
-import { ago, can, commandUrl, esc, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
+import { ago, can, commandUrl, esc, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
 import { offeredIn, ordered, pickView } from '/views.js'
 import { shownFrom } from '/brief.js'
@@ -10,7 +10,7 @@ import { addsHtml } from './added.js'
 /**
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
- * @import { Kit, CommandKit, Location, Mount, Mounted, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
+ * @import { Bus, Kit, CommandKit, Location, Mount, Mounted, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
  * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
@@ -47,6 +47,7 @@ import { addsHtml } from './added.js'
  *   unshown: () => ReadonlySet<string>,
  *   mainPane: () => Pane | undefined,
  *   gone: () => void,
+ *   bus: Bus,
  * }} RegionsDeps
  */
 
@@ -129,6 +130,8 @@ export function regions(deps) {
     const own = new Set()
     /** @type {Set<RegionHandle>} */
     const inner = new Set()
+    /** The keys it published on the bus, once per publish: cleared with it. @type {string[]} */
+    const published = []
     let closed = false
     /** @type {Mounted | undefined} */
     let mounted
@@ -169,6 +172,16 @@ export function regions(deps) {
         const handle = regionIn(host, id, at, opts ?? {}, scope)
         inner.add(handle)
         return { ...handle, close: () => (inner.delete(handle), handle.close()) }
+      },
+      bus: {
+        ...deps.bus,
+        publish: (s, of) => (published.push(s.key), deps.bus.publish(s, of)),
+        clear(key) {
+          const at = published.indexOf(key)
+          if (at < 0) return
+          published.splice(at, 1)
+          deps.bus.clear(key)
+        },
       },
     }
 
@@ -211,6 +224,7 @@ export function regions(deps) {
       for (const t of own) t.close()
       for (const r of inner) r.close()
       inner.clear()
+      for (const key of published.splice(0)) deps.bus.clear(key)
     }
 
     const remount = () => {
@@ -574,7 +588,8 @@ export function regions(deps) {
       },
       show(s) {
         const all = tabsOf()
-        const t = all.find((t) => t.subject.key === s.key) ?? all.find((t) => t.view.on.includes(s.kind) || t.view.shows?.includes(s.kind))
+        const handed = all.filter((t) => t.view.on.includes(s.kind) || t.view.shows?.includes(s.kind))
+        const t = all.find((t) => t.subject.key === s.key) ?? handed.find((t) => t.subject.key === parentOf(s)) ?? handed[0]
         if (!t) return false
         if (t.key !== open) pick(t)
         if (t.subject.key === s.key) return true

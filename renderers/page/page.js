@@ -9,7 +9,7 @@ import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
-import { declaredLayout, displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
+import { busOf, declaredLayout, displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { shells } from './shells.js'
@@ -462,13 +462,16 @@ const placing = () => ({
 /** The subject the main pane is on. @param {MainView} v @returns {string} */
 const subjectKeyOf = (v) => (v.t === 'arriving' ? 'board' : v.location.subject ?? 'board')
 
+/** The page's viewer subjects: what its views drew that the board never carries (decision `ui-model`). */
+const bus = busOf()
+
 /**
- * A subject by its key: the board's, else one of a read the page holds, a worker of an archive (decision `ui-model`:
- * read subjects).
+ * A subject by its key: the board's, else one the page's views published on its bus (a brief's prompt, a document's
+ * section), else one of a read the page holds, a worker of an archive (decision `ui-model`: viewer and read subjects).
  * @param {string} key @returns {Subject | undefined}
  */
 function subjectOf(key) {
-  const onBoard = subjectAt(board(), key)
+  const onBoard = subjectAt(board(), key) ?? bus.at(key)
   if (onBoard || !key.startsWith('card:')) return onBoard
   const c = findCard(key.slice('card:'.length))
   return c && cardSubject(c)
@@ -640,6 +643,7 @@ const mainRegion = regions({
   unshown: () => unshown,
   mainPane: () => viewing('view')?.location.pane,
   gone: () => goHome(),
+  bus,
 })
 mainRegion.onPick((key, pane) => {
   const v = viewing('view')
@@ -724,7 +728,7 @@ function goToSubject(key) {
  * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
  */
 async function runAddedAt(el, { subject: key, action }) {
-  const subject = isCommand(action) ? subjectAt(board(), key) ?? viewerSubjectAt(el, key) : undefined
+  const subject = isCommand(action) ? subjectOf(key) ?? viewerSubjectAt(el, key) : undefined
   if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return

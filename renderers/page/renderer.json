@@ -8,12 +8,14 @@
     { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette" },
     { "id": "card.panes", "subject": "card", "holds": ["views"], "scale": "pane", "arity": "tabs", "description": "the worker's tabs (terminal, brief, changes, reviews, shown files)" },
     { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief" },
+    { "id": "said.acts", "subject": "said", "holds": ["commands"], "description": "beside a prompt's or an answer's copy in the Brief" },
+    { "id": "section.acts", "subject": "section", "holds": ["commands"], "description": "in a gutter beside a markdown document, level with each of its sections" },
     { "id": "shown.head", "subject": "shown", "holds": ["badges", "verbs", "commands"], "description": "beside the worker's tabs while the showing is open" },
     { "id": "lines.acts", "subject": "lines", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes: what acts on them, a review's note box among them" },
     { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette" },
     { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays" }
   ],
-  "kit": ["terminal", "region", "run", "display", "go", "toast", "confirm"],
+  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "confirm"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] } }
 }

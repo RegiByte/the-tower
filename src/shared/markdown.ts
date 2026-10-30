@@ -7,9 +7,11 @@
  *   data-copy-code    copy the fence's code as written (`fenceText`)
  *
  * `documentHtml` is for a file a worker showed or a shelf keeps: raw HTML stays, its own links and scripts included,
- * so its html belongs in a frame without scripts; only its markdown links obey `safeHref`.
+ * so its html belongs in a frame without scripts; only its markdown links obey `safeHref`. `sectionsOf` splits a
+ * document into its sections and `sectionsHtml` draws each one, both from one split, so every renderer splits a
+ * document the same way.
  */
-import { Marked, type Tokens } from 'marked'
+import { Marked, type Token, type Tokens, type TokensList } from 'marked'
 import { esc } from './cards.ts'
 import { fenceLang, highlightCss, highlightLines } from './highlight.ts'
 
@@ -75,6 +77,65 @@ export function documentHtml(text: string, url: string) {
   const tokens = documents.lexer(text)
   documents.walkTokens(tokens, (t) => void (t.type === 'image' && (t.href = imagePath(t.href, url) ?? t.href)))
   return documents.parser(tokens)
+}
+
+/**
+ * One section of a document: `n`, its place (0 the text before the first heading it is split at); `heading`, that
+ * heading's words as plain text, none for section 0; `body`, its markdown as written. @since 1.117
+ */
+export type Section = { n: number; heading?: string; body: string }
+
+/** A heading's words as plain text: its inline marks dropped. */
+const plain = (tokens: Token[] | undefined): string =>
+  (tokens ?? []).map((t) => ('tokens' in t && t.tokens?.length ? plain(t.tokens) : 'text' in t ? (t.text as string) : '')).join('')
+
+/**
+ * A document's top-level tokens, lexed once, split before each heading of the shallowest level that occurs more than
+ * once: a document under one `#` title splits at its `##`s. The first chunk is section 0, left out when it holds
+ * nothing but blank lines; a document with no level repeated is one section.
+ */
+const split = (lexed: TokensList): { n: number; heading?: Tokens.Heading; tokens: Token[] }[] => {
+  const headings = lexed.filter((t): t is Tokens.Heading => t.type === 'heading')
+  const counts = new Map<number, number>()
+  for (const h of headings) counts.set(h.depth, (counts.get(h.depth) ?? 0) + 1)
+  const depth = Math.min(...[...counts].filter(([, n]) => n > 1).map(([d]) => d))
+  const chunks: { n: number; heading?: Tokens.Heading; tokens: Token[] }[] = [{ n: 0, tokens: [] }]
+  for (const t of lexed) {
+    if (t.type === 'heading' && (t as Tokens.Heading).depth === depth) chunks.push({ n: chunks.length, heading: t as Tokens.Heading, tokens: [] })
+    chunks.at(-1)!.tokens.push(t)
+  }
+  return chunks[0].tokens.every((t) => t.type === 'space' || t.type === 'def') && chunks.length > 1 ? chunks.slice(1) : chunks
+}
+
+/** A document's sections, as `split` cuts it: each one's place, heading and markdown. @since 1.117 */
+export const sectionsOf = (text: string): Section[] =>
+  split(documents.lexer(text)).map(({ n, heading, tokens }) => ({ n, ...(heading && { heading: plain(heading.tokens) }), body: tokens.map((t) => t.raw).join('') }))
+
+/**
+ * Each section of a markdown file served at `url` as html for a frame without scripts, as `documentHtml` draws the
+ * whole, in `sectionsOf`'s order. Every section reads the document's link definitions, so a reference link resolves
+ * wherever its definition is. An HTML block left open across a section's end is closed there. @since 1.117
+ */
+export function sectionsHtml(text: string, url: string): string[] {
+  const lexed = documents.lexer(text)
+  documents.walkTokens(lexed, (t) => void (t.type === 'image' && (t.href = imagePath(t.href, url) ?? t.href)))
+  return split(lexed).map(({ tokens }) => documents.parser(Object.assign(tokens, { links: lexed.links })))
+}
+
+/**
+ * What each section's row in a gutter reads, naming exactly one section: its heading; section 0's "Before the first
+ * heading", or "The whole document" when it is the only one. In source order, a label an earlier row already reads is
+ * numbered with the smallest ` · n` (from 2) no earlier row reads: "Notes", "Notes · 2". @since 1.117
+ */
+export function sectionLabels(sections: Section[]): string[] {
+  const read = new Set<string>()
+  return sections.map((s) => {
+    const label = s.heading ?? (sections.length === 1 ? 'The whole document' : 'Before the first heading')
+    let unique = label
+    for (let n = 2; read.has(unique); n++) unique = `${label} · ${n}`
+    read.add(unique)
+    return unique
+  })
 }
 
 /** The code of the fence a `data-copy-code` button sits in, as written. */

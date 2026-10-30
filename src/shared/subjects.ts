@@ -68,6 +68,32 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
   value: file,
 })
 
+/**
+ * A prompt or an answer of a worker's conversation, as a renderer drew it in a brief: the session it was drawn in (a
+ * resumed conversation's turns are drawn again in the session that resumed it), its conversation, when its turn
+ * started, its side, and its words as written. @since 1.117
+ */
+export type Said = { session: string; conversation: string; startedAt: number; side: 'prompt' | 'answer'; card: string; project: string; body: string }
+
+/** A prompt or an answer as a renderer draws it, a child of its conversation: a viewer subject, never on the board. @since 1.117 */
+export const saidSubject = (said: Said): Subject => ({
+  kind: 'said',
+  key: `said:${said.session}:${said.conversation}:${said.startedAt}:${said.side}`,
+  project: said.project,
+  value: { ...said, type: 'text/markdown' },
+})
+
+/**
+ * A section of a document a renderer draws (`sectionsOf` of `/markdown.js`), a child of the subject whose document it
+ * is part of (`of`, a showing or an item), with its heading, its markdown and the document's type. @since 1.117
+ */
+export const sectionSubject = (of: Subject, section: { n: number; heading?: string; body: string }): Subject => ({
+  kind: 'section',
+  key: `section:${of.key}#${section.n}`,
+  ...(of.project !== undefined && { project: of.project }),
+  value: { ...section, of: of.key, ...(of.project !== undefined && { project: of.project }), type: (of.value as Text).type },
+})
+
 /** The key of a floor's collection's item. */
 export const itemKey = (project: string, collection: string, id: string) => `item.${collection}:${project}/${id}`
 
@@ -133,16 +159,18 @@ const ownParts = (rest: string): { instance: string; entry: string } => {
 
 /**
  * The key of the subject `subject` belongs to: a floor's the board, a card's, a collection's and a shelf entry's its
- * floor, a conversation's, a showing's and lines' its card, an item's its collection, an own kind's the subject it was found
- * in. The board belongs to none. @since 1.98
+ * floor, a conversation's, a showing's and lines' its card, an item's its collection, a said's its conversation, a
+ * section's the document it is part of, an own kind's the subject it was found in. The board belongs to none. @since 1.98
  */
 export const parentOf = (subject: Subject): string | undefined => {
   const { kind, key, project } = subject
-  const value = subject.value as { card?: string; collection?: string }
+  const value = subject.value as { card?: string; collection?: string; conversation?: string; of?: string }
   if (kind === 'board') return undefined
   if (kind === 'floor') return 'board'
   if (kind === 'card' || kind === 'collection' || kind === 'shelf') return `floor:${project}`
   if (kind === 'conversation' || kind === 'shown' || kind === 'lines' || kind === 'file') return `card:${value.card}`
+  if (kind === 'said') return `conversation:${value.conversation}`
+  if (kind === 'section') return value.of
   if (kind.startsWith('item.')) return `collection:${project}/${value.collection}`
   return ownParts(split(key).rest).instance
 }

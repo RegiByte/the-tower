@@ -69,10 +69,56 @@ export type Tab = (board: Board, subject: Subject) => TabWords | undefined
 export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mounted>
 
 /**
+ * The viewer subjects a renderer page holds (decision `ui-model`): what its views drew that the board never carries, a
+ * brief's prompts and answers, a document's sections, each published under the subject it is of. `publish` a subject
+ * that now stands, of the subject its view is on (a key); `clear` it; `at` a key; `under` a subject, of a kind; `on` a
+ * kind, heard as a subject of it stands or is cleared (`undefined`), until the function it returns is called.
+ * @since 1.117
+ */
+export type Bus = {
+  publish(subject: Subject, of: string): void
+  clear(key: string): void
+  at(key: string): Subject | undefined
+  under(of: string, kind?: string): Subject[]
+  on(kind: string, fn: (subject: Subject | undefined) => void): () => void
+}
+
+/**
+ * A renderer page's one bus: a map of keys to subjects, and listeners. Each `publish` is cleared once: a subject two
+ * views publish (one document in two grid cells) stands until both clear it. @since 1.117
+ */
+export const busOf = (): Bus => {
+  const held = new Map<string, { subject: Subject; of: string; count: number }>()
+  const heard = new Map<string, Set<(subject: Subject | undefined) => void>>()
+  const tell = (kind: string, subject: Subject | undefined) => heard.get(kind)?.forEach((fn) => fn(subject))
+  return {
+    publish(subject, of) {
+      held.set(subject.key, { subject, of, count: (held.get(subject.key)?.count ?? 0) + 1 })
+      tell(subject.kind, subject)
+    },
+    clear(key) {
+      const at = held.get(key)
+      if (!at) return
+      if (at.count > 1) return void held.set(key, { ...at, count: at.count - 1 })
+      held.delete(key)
+      tell(at.subject.kind, undefined)
+    },
+    at: (key) => held.get(key)?.subject,
+    under: (of, kind) => [...held.values()].filter((h) => h.of === of && (kind === undefined || h.subject.kind === kind)).map((h) => h.subject),
+    on(kind, fn) {
+      const fns = heard.get(kind) ?? new Set()
+      heard.set(kind, fns.add(fn))
+      return () => void fns.delete(fn)
+    },
+  }
+}
+
+/**
  * What a renderer lends a view: a terminal mounted with its xterm, font, scheme and keymap; `region`, one of the
  * renderer's regions inside the view, on `subject`, filled the renderer's way and run by its presses; `run` a keymap
  * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
- * a location; a toast; a confirm whose button says `verb`. A renderer lends what its `renderer.json` kit names.
+ * a location; `bus`, the page's viewer subjects (@since 1.117); a toast; a confirm whose button says `verb`. A renderer
+ * lends what its `renderer.json` kit names.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -80,6 +126,7 @@ export type Kit = {
   run(command: string, on?: Subject): Promise<boolean>
   display(subject: Subject | string, opts?: { view?: string }): void
   go(location: Location): void
+  bus: Bus
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
 }
@@ -124,12 +171,12 @@ export const CORE_VIEWS: readonly View[] = [
   served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
   served({ ...core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }), regions: ['card.panes'] }, ['region', 'run', 'display', 'toast', 'confirm']),
   pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
-  { ...pane('brief', ['conversation'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'toast']), tab: 'tab' },
+  { ...pane('brief', ['conversation', 'said'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'bus', 'toast']), tab: 'tab' },
   { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast', 'confirm']), regions: ['lines.acts'] },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
-  byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }),
+  { ...byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }), shows: ['section'], regions: ['section.acts'], needs: ['region', 'bus', 'display', 'toast', 'confirm'] },
   byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),
   byType('image', ['image/*'], { label: 'Image', hint: 'the image' }),
   byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),
