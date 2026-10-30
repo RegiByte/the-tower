@@ -32,12 +32,12 @@ const CSS = `:where([data-view="${ID}"]) {
   & .fx { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
   & .fx-tree { overflow: auto; padding: var(--sp-xs) 0 var(--sp-l); border-right: 1px solid var(--line); font-size: var(--fs-s); }
   & .fx-tree .note { padding: var(--sp-s) var(--sp-m); color: var(--muted); }
-  & .row { display: flex; align-items: center; gap: var(--sp-xs); width: 100%; min-height: 0; padding: 1px var(--sp-m) 1px calc(var(--sp-m) + var(--depth, 0) * 0.9rem); border: 0; border-radius: 0; background: none;
+  & .row { display: flex; align-items: center; gap: var(--sp-2xs); width: 100%; min-height: 0; padding: 1px var(--sp-m) 1px calc(var(--sp-xs) + var(--depth, 0) * 8px); border: 0; border-radius: 0; background: none;
     color: var(--ink); font: inherit; font-weight: 400; text-align: left; white-space: nowrap; cursor: pointer; }
   & .row:hover, & .row:focus-visible { background: var(--panel-2); }
   & .row[aria-current="true"] { background: color-mix(in oklab, var(--accent) 16%, var(--panel)); }
   & .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  & .row .twist { flex: none; width: 1ch; color: var(--faint); }
+  & .row .twist { flex: none; width: 16px; text-align: center; color: var(--faint); }
   & .row.root { margin-top: var(--sp-xs); font-weight: 700; text-transform: none; }
   & .row.ignored .name { color: var(--faint); }
   & .row .mark { flex: none; font: 700 var(--fs-xs)/1 var(--mono); }
