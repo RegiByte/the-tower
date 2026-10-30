@@ -81,7 +81,7 @@ export function documentHtml(text: string, url: string) {
 
 /**
  * One section of a document: `n`, its place (0 the text before the first heading it is split at); `heading`, that
- * heading's words as plain text, none for section 0; `body`, its markdown as written. @since 1.117
+ * heading's words as plain text, none for section 0; `body`, its markdown as written. @since 1.118
  */
 export type Section = { n: number; heading?: string; body: string }
 
@@ -107,14 +107,14 @@ const split = (lexed: TokensList): { n: number; heading?: Tokens.Heading; tokens
   return chunks[0].tokens.every((t) => t.type === 'space' || t.type === 'def') && chunks.length > 1 ? chunks.slice(1) : chunks
 }
 
-/** A document's sections, as `split` cuts it: each one's place, heading and markdown. @since 1.117 */
+/** A document's sections, as `split` cuts it: each one's place, heading and markdown. @since 1.118 */
 export const sectionsOf = (text: string): Section[] =>
   split(documents.lexer(text)).map(({ n, heading, tokens }) => ({ n, ...(heading && { heading: plain(heading.tokens) }), body: tokens.map((t) => t.raw).join('') }))
 
 /**
  * Each section of a markdown file served at `url` as html for a frame without scripts, as `documentHtml` draws the
  * whole, in `sectionsOf`'s order. Every section reads the document's link definitions, so a reference link resolves
- * wherever its definition is. An HTML block left open across a section's end is closed there. @since 1.117
+ * wherever its definition is. An HTML block left open across a section's end is closed there. @since 1.118
  */
 export function sectionsHtml(text: string, url: string): string[] {
   const lexed = documents.lexer(text)
@@ -125,7 +125,7 @@ export function sectionsHtml(text: string, url: string): string[] {
 /**
  * What each section's row in a gutter reads, naming exactly one section: its heading; section 0's "Before the first
  * heading", or "The whole document" when it is the only one. In source order, a label an earlier row already reads is
- * numbered with the smallest ` · n` (from 2) no earlier row reads: "Notes", "Notes · 2". @since 1.117
+ * numbered with the smallest ` · n` (from 2) no earlier row reads: "Notes", "Notes · 2". @since 1.118
  */
 export function sectionLabels(sections: Section[]): string[] {
   const read = new Set<string>()

@@ -84,7 +84,7 @@ and a framed document's section are the same thing.
   renderer: the thread subject it would name is of the floor, where no view lands, so the reviews extension leaves it
   out. Tower 3D keeps its desk's glue over `/panels.js`' deprecated copies until it hosts `card.panes`.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
-  `display`, `go`, `bus` (since 1.117), `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
+  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
   ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it
@@ -106,7 +106,7 @@ and a framed document's section are the same thing.
   the core's views by type for the rest).
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
-- *Viewer subjects and the bus* (step 5c, since 1.117). A prompt or an answer in the Brief
+- *Viewer subjects and the bus* (step 5c, since 1.118). A prompt or an answer in the Brief
   ([`saidSubject`](ref:hub/src/shared/subjects.ts#saidSubject), of its conversation) and a section of a markdown
   document ([`sectionSubject`](ref:hub/src/shared/subjects.ts#sectionSubject), of the showing or item it is part of)
   are viewer subjects, each carrying its own text as `body` and its type. The page holds one bus
@@ -166,7 +166,7 @@ and a framed document's section are the same thing.
   view hands it the card (the archive's), else after reading the floors' archives, else once the board carries it when
   the page started it: its own spawns and resumes, and any its views started through the `tower` it lends them.
 - *Focus* ([`focusedSubject`](ref:hub/renderers/page/page.js#focusedSubject)): the subject of the innermost region
-  holding the document's focus, else the main pane's, a viewer subject read from the bus (since 1.117); chords and
+  holding the document's focus, else the main pane's, a viewer subject read from the bus (since 1.118); chords and
   `kit.run` resolve there.
 - *Keys* (D5): `commands.<c>.keys` and `views.<v>.keys` give default chords, global, by `<cap>/<name>` in
   `board.keys` ([`addedKeys`](ref:hub/src/shared/keymap.ts#addedKeys), [[keymap]]). The config's choice wins; a

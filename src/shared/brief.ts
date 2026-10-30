@@ -89,7 +89,7 @@ export type BriefView = {
   working?: boolean
   /** What a renderer draws on a conversation's heading, by the conversation's id: html, empty for none. */
   adds?: (conversation: string) => string
-  /** What a renderer draws beside a prompt's or an answer's copy, by its key (`saidOf`): html, empty for none. @since 1.117 */
+  /** What a renderer draws beside a prompt's or an answer's copy, by its key (`saidOf`): html, empty for none. @since 1.118 */
   acts?: (said: string) => string
 }
 
@@ -107,7 +107,7 @@ const saidKey = (t: Brief, turn: Turn, side: Side) => `${t.session.id}:${t.id}:$
 
 /**
  * Every prompt and answer of a brief, by the key it is drawn under: the session it is drawn in, its conversation, when
- * its turn started, its side, and its text as written. @since 1.117
+ * its turn started, its side, and its text as written. @since 1.118
  */
 export const saidOf = (briefs: Brief[]): { key: string; session: string; conversation: string; startedAt: number; side: Side; text: string }[] =>
   briefs.flatMap((b) =>

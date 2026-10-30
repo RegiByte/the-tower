@@ -73,7 +73,7 @@ export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mount
  * brief's prompts and answers, a document's sections, each published under the subject it is of. `publish` a subject
  * that now stands, of the subject its view is on (a key); `clear` it; `at` a key; `under` a subject, of a kind; `on` a
  * kind, heard as a subject of it stands or is cleared (`undefined`), until the function it returns is called.
- * @since 1.117
+ * @since 1.118
  */
 export type Bus = {
   publish(subject: Subject, of: string): void
@@ -85,7 +85,7 @@ export type Bus = {
 
 /**
  * A renderer page's one bus: a map of keys to subjects, and listeners. Each `publish` is cleared once: a subject two
- * views publish (one document in two grid cells) stands until both clear it. @since 1.117
+ * views publish (one document in two grid cells) stands until both clear it. @since 1.118
  */
 export const busOf = (): Bus => {
   const held = new Map<string, { subject: Subject; of: string; count: number }>()
@@ -117,7 +117,7 @@ export const busOf = (): Bus => {
  * What a renderer lends a view: a terminal mounted with its xterm, font, scheme and keymap; `region`, one of the
  * renderer's regions inside the view, on `subject`, filled the renderer's way and run by its presses; `run` a keymap
  * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
- * a location; `bus`, the page's viewer subjects (@since 1.117); a toast; a confirm whose button says `verb`. A renderer
+ * a location; `bus`, the page's viewer subjects (@since 1.118); a toast; a confirm whose button says `verb`. A renderer
  * lends what its `renderer.json` kit names.
  */
 export type Kit = {
