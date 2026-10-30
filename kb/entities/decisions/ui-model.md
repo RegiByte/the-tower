@@ -103,6 +103,8 @@ and a framed document's section are the same thing.
   read path its content is served at, and `type`. It is how a view that browses a worker's files (the files example)
   hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` for now;
   the core's views by type join on `file` once they draw a subject without the item head).
+  Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
+  no fold may (since 1.116), since the board never carries a viewer subject to fold.
 - *The layout* ([`layoutOf`](ref:hub/src/shared/views.ts#layoutOf)): three layers, the renderer's own, the config's
   `renderers.<r>.layout` and the viewer's in `tower.store`, each field from the highest that sets it, `hidden` the
   union less what a higher layer orders. Under them, since 1.114, the defaults an extension gives the regions it

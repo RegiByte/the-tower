@@ -736,7 +736,8 @@ command `on: ["lines"]` runs on the lines, and a view `on: ["lines"]` is drawn t
 `reviews/composer` writes a note on them. A view there that is done with the lines (a note added, or cancelled)
 dispatches a bubbling `done` event on its host, and the Changes let the pick go. Lines can be picked while the
 worker's checkout is live and something is offered on lines, a view or a command; nothing else in the Changes knows
-what acts on them.
+what acts on them. A viewer kind, `lines` or `file`, is one a view, a command or a region may be on; a fold on one is
+refused, since the board never carries the subject to fold.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
