@@ -15,7 +15,7 @@ import { repoName } from '../../../src/shared/reviews.ts'
 
 type Refusal = { t: 'error'; code: 'not_found' | 'refused' | 'invalid'; message: string }
 type Repo = { repo: string; dir: string }
-type Entry = { name: string; kind: 'dir' | 'file'; ignored?: true; link?: true }
+type Entry = { name: string; kind: 'dir' | 'file'; ignored?: true; link?: true; outside?: true }
 
 /** The most entries a folder lists: the rest are counted, not sent. */
 const MAX_ENTRIES = 2000
@@ -122,6 +122,8 @@ export default (ctx: StartCtx) => {
         const kinds = await Promise.all(
           shown.map(async (d): Promise<Entry['kind']> => (d.isSymbolicLink() ? ((await stat(path.join(at.full, d.name)).catch(() => undefined))?.isDirectory() ? 'dir' : 'file') : d.isDirectory() ? 'dir' : 'file')),
         )
+        const targets = await Promise.all(shown.map((d) => (d.isSymbolicLink() ? realpath(path.join(at.full, d.name)).catch(() => undefined) : undefined)))
+        const outside = (i: number) => shown[i].isSymbolicLink() && !(targets[i] && inside(targets[i], at.at.dir) && !inGit(path.relative(at.at.dir, targets[i])))
         const pathOf = (i: number) => (rel ? `${rel}/` : '') + shown[i].name + (kinds[i] === 'dir' && !shown[i].isSymbolicLink() ? '/' : '')
         const ignored = await ignoredOf(at.at.dir, shown.map((_, i) => pathOf(i)))
         const entries = shown
@@ -130,6 +132,7 @@ export default (ctx: StartCtx) => {
             kind: kinds[i],
             ...(ignored.has(pathOf(i)) && { ignored: true as const }),
             ...(d.isSymbolicLink() && { link: true as const }),
+            ...(outside(i) && { outside: true as const }),
           }))
           .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'dir' ? -1 : 1))
         return { repo: query.repo, path: rel, entries, more: listed.length - shown.length }
