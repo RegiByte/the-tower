@@ -1,6 +1,6 @@
 {
   "id": "grid",
-  "version": "2.1",
+  "version": "2.2",
   "title": "Grid",
   "description": "Up to four workers side by side in the main pane, each one's worker view: its tabs, and its head when shown.",
   "requires": { "tower": "1.113" },
