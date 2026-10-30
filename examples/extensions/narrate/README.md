@@ -1,7 +1,7 @@
 # Narration
 
-An example extension: **Listen** on every markdown or text item (a draft, say) and every markdown or text file a worker
-shows reads it aloud in the browser, and **Stop listening** in the palette stops it. It is client code only, two
+An example extension: **Listen** on every markdown or text item (a draft, say), every markdown or text file a worker
+shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud in the browser, and **Stop listening** in the palette stops it. It is client code only, two
 commands and no server: copy the folder and make it yours.
 
 ## Add it
@@ -17,7 +17,8 @@ by its absolute path:
 
 The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
 /abs/path/to/narrate` reads it as the tower would. The tower page shows **Listen** on every draft, beside the tab of a
-markdown or text file a worker showed, and in the palette; the CLI and Tower 3D, which don't import client modules,
+markdown or text file a worker showed, in the gutter beside each section of a markdown document, beside the copy of
+each prompt and answer in the Brief, and in the palette; the CLI and Tower 3D, which don't import client modules,
 leave it out.
 
 ## Swap the voice
@@ -28,8 +29,9 @@ text (`textOf` from `/cards.js`) and hands it to `speak`.
 
 ## What it shows
 
-- `extension.json`: `commands` with `on: ["item.*", "shown"]`, which offers a command on every item of any collection
-  and everything a worker showed with no server code, and `accepts`, which narrows that to the subjects whose media
+- `extension.json`: `commands` with `on: ["item.*", "shown", "section", "said"]`, which offers a command on every item
+  of any collection, everything a worker showed, and two viewer subjects a page draws (a document's sections, a
+  brief's prompts and answers, each carrying its own text as `body`) with no server code, and `accepts`, which narrows that to the subjects whose media
   type is markdown or plain text.
 - `client/narrate.js`: a command's export takes `{ tower, board, target, subject, args }`; `target` is the subject
   (`{ kind, key, project, value }`), `tower` the page's `window.tower`, the same API every renderer drives, and
