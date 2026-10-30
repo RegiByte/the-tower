@@ -12,6 +12,29 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.74.0
+
+The page's boot race fixed, every card's Changes tally from the board, and relative links in a checkout's markdown
+files. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.118 → 1.120
+(additive, no major), no config change.
+
+- **The page's boot race**: `render()` waited for nothing, so a read answering during boot (the sidebar's origins)
+  could run it before the page's regions were declared and fail the page with "Cannot access 'mainRegion' before
+  initialization". It now waits for the first board, which draws the page. No API change (#284).
+- **The Changes tally from the board** (API 1.119): each checkout's read on the board carries `changed`, the files
+  Changes counts since the work's base, and a floor's `main` sums it. Every card shows its tally without Changes being
+  opened, and it equals the view's count; once the view has read, its own tally takes over as before. One definition
+  of a checkout's changed files serves both the board and the Changes read. It is counted beside the board's other
+  status reads, so per change and never per poll: a checkout's read about doubles when its own files change, and a
+  refs-only re-read adds a few milliseconds. `/cards.js` gains `changedIn` (#286).
+- **Relative links in a checkout's markdown** (API 1.120): a link to another file in a checkout's markdown file opens
+  that file in the explorer, a `#fragment` scrolls to its heading, and a link out of the checkout or to a file that
+  isn't there is refused with a toast. Before, it opened the tower's own `not_found` page in a tab. A relative link in
+  a shown file or a kept item is refused with a toast that says where links are followed. `tabFor` now prefers a tab
+  whose view `shows` the subject's kind to one merely on it, so a displayed file goes to the Files tab. The explorer's
+  tree indents 8px a level behind a 16px chevron column, as VS Code does. `linkedFile` (`/cards.js`), `relativeHref`
+  (`/markdown.js`) and `CheckoutFile.fragment` are additions (#288).
+
 ## v1.73.0
 
 A file explorer for each worker, and the UI model's steps 5b, 6 and 5c: shown files, files and sections drawn by the
