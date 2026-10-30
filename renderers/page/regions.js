@@ -287,6 +287,7 @@ export function regions(deps) {
     const region = declared().find((r) => r.id === id)
     if (!region?.holds.includes('views')) return contributions(host, id, subject, /** @type {{ omit?: string[] }} */ (options))
     const byView = /** @type {Record<string, Record<string, unknown>>} */ (options)
+    if (region.holds.some((h) => h !== 'views')) return beside(host, region, subject, byView)
     if (region.arity !== 'tabs') return one(host, region, subject, byView)
     const made = tabs(host, region, subject, byView, scope)
     const view = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))
@@ -320,6 +321,30 @@ export function regions(deps) {
       show: (s) => hosted.show(s),
       visible: (on) => hosted.visible(on),
       close: () => (hosted.close(), host.replaceChildren(), delete host.dataset.region, delete host.dataset.subject),
+    }
+  }
+
+  /**
+   * A region holding one view beside contributions (`lines.acts`: what acts on picked lines): the view the layout picks
+   * among those it offers, then what extensions add, the host hidden while it holds neither.
+   * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options
+   * @returns {RegionHandle}
+   */
+  function beside(host, region, subject, options) {
+    const viewEl = document.createElement('div')
+    const acts = document.createElement('div')
+    acts.className = 'region-acts'
+    host.replaceChildren(viewEl, acts)
+    const held = offeredIn(views(), region, layout(), deps.kit, subject).length ? one(viewEl, region, subject, options) : undefined
+    const added = contributions(acts, region.id, subject, {})
+    const fit = () => void (host.hidden = !held && !acts.childElementCount)
+    fit()
+    return {
+      update: (at) => (held?.update(at), added.update(at), fit()),
+      options: (next) => held?.options?.(next),
+      show: (s) => held?.show?.(s) ?? false,
+      visible: (on) => held?.visible?.(on),
+      close: () => (held?.close(), added.close(), host.replaceChildren(), (host.hidden = false)),
     }
   }
 
