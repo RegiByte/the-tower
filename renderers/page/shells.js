@@ -66,7 +66,7 @@ export function shells(deps) {
     closeShell()
     $('shell-pane').style.cssText = paint(board().shells.find((sh) => sh.id === id)?.project)
     $('main').classList.add('shell-open')
-    const view = mountTermView($('s-screen'), { Terminal, FitAddon: FitAddon.FitAddon }, {
+    const view = mountTermView($('s-screen'), { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }, {
       watch: (on) => tower.watch(`shell/${id}`, (msg) => on(/** @type {ShellStream} */ (msg))),
       resize: (size) => tower.call('shell/resize', { id, ...size }),
       send: (data) => tower.shellKeys(id, data),
@@ -79,6 +79,7 @@ export function shells(deps) {
       mode: (mode) => showMode($('s-mode'), mode),
       end: (msg) => (msg.t === 'error' && toast(msg.message), closeShell()),
       error: (err) => toast(err.message),
+      files: { cwd: () => /** @type {string} */ (board().shells.find((sh) => sh.id === id)?.cwd), edit: (path, line) => tower.call('edit', { path, line }) },
     })
     shell = { id, view }
     renderDock()

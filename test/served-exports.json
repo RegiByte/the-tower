@@ -1065,9 +1065,11 @@
     ],
     "/term-view.js": [
       "SETTLE_MS",
+      "fileMentions",
       "modeOf",
       "modeText",
       "mountTermView",
+      "resolvePath",
       "termHandlers",
       "termOpening"
     ],

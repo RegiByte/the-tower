@@ -169,6 +169,7 @@ export const httpServer = defineResource({
       '/xterm.js': [path.join(packageDir('@xterm/xterm'), 'lib', 'xterm.js'), 'text/javascript'],
       '/xterm.css': [path.join(packageDir('@xterm/xterm'), 'css', 'xterm.css'), 'text/css'],
       '/addon-fit.js': [path.join(packageDir('@xterm/addon-fit'), 'lib', 'addon-fit.js'), 'text/javascript'],
+      '/addon-web-links.js': [path.join(packageDir('@xterm/addon-web-links'), 'lib', 'addon-web-links.js'), 'text/javascript'],
       '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
       '/frame-keys.js': [FRAME_KEYS, 'text/javascript'],
     }

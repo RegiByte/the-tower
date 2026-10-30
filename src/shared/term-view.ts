@@ -1,5 +1,6 @@
 import type { FitAddon } from '@xterm/addon-fit'
-import type { Terminal } from '@xterm/xterm'
+import type { WebLinksAddon } from '@xterm/addon-web-links'
+import type { ILink, Terminal } from '@xterm/xterm'
 import { terminalTheme, type Scheme } from './design.ts'
 import type { Keys } from './keymap.ts'
 import { loop, timers, type Handlers, type StateEffect, type TimerEffect } from './loop.ts'
@@ -116,8 +117,65 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
   },
 })
 
-/** xterm.js's constructors, as the renderer loads them: globals on a plain page, bundled in another. */
-export type Xterm = { Terminal: typeof Terminal; FitAddon: typeof FitAddon }
+/** xterm.js's constructors, as the renderer loads them: globals on a plain page, bundled in another. Given `WebLinksAddon`, addresses written in the terminal are links too. */
+export type Xterm = { Terminal: typeof Terminal; FitAddon: typeof FitAddon; WebLinksAddon?: typeof WebLinksAddon }
+
+/** A link clicked in a terminal, written as an address or as a hyperlink (OSC 8), opens in a new tab: only the web's. */
+const openLink = (_: MouseEvent, uri: string) => {
+  if (URL.canParse(uri) && ['http:', 'https:'].includes(new URL(uri).protocol)) window.open(uri, '_blank', 'noreferrer')
+}
+
+/**
+ * A file path written in a terminal, with the line after it (`src/a.ts:12`, `/abs/notes.md`, `report.html`): a word
+ * with a slash, or a name of two letters or more before its extension. A URL's words are its own links, not a file's.
+ */
+const FILE_WORD = /[^\s()[\]{}<>"'`|,;]+/g
+const FILE_PATH = /^(?<path>(?:\.{1,2}\/|\/)?(?:[\w@+-][\w.@+-]*\/)*[\w@+-][\w.@+-]*\.[A-Za-z]\w{0,9})(?::(?<line>\d+)(?::\d+)?)?$/
+
+export type FileMention = { start: number; end: number; path: string; line?: number }
+
+/** The file paths in a line of text, each at its offsets in the text. */
+export function fileMentions(text: string): FileMention[] {
+  return [...text.matchAll(FILE_WORD)].flatMap((m) => {
+    const word = m[0].replace(/[.:]+$/, '')
+    const found = !word.includes('://') && FILE_PATH.exec(word)?.groups
+    if (!found) return []
+    const name = found.path.slice(found.path.lastIndexOf('/') + 1)
+    if (!found.path.includes('/') && name.indexOf('.') < 2) return []
+    return [{ start: m.index, end: m.index + word.length, path: found.path, ...(found.line ? { line: Number(found.line) } : {}) }]
+  })
+}
+
+/** `file` as an absolute path, read from `cwd` if relative: `.` and `..` resolved. */
+export function resolvePath(cwd: string, file: string): string {
+  const parts: string[] = []
+  for (const part of (file.startsWith('/') ? file : `${cwd}/${file}`).split('/')) {
+    if (part === '..') parts.pop()
+    else if (part && part !== '.') parts.push(part)
+  }
+  return `/${parts.join('/')}`
+}
+
+/** The file paths on a buffer line as links, their ranges in cells: a wide character takes two. */
+function fileLinks(term: Terminal, y: number, open: (path: string, line?: number) => void): ILink[] | undefined {
+  const line = term.buffer.active.getLine(y - 1)
+  if (!line) return undefined
+  let text = ''
+  const cellAt: number[] = []
+  for (let x = 0; x < line.length; x++) {
+    const chars = line.getCell(x)?.getChars() ?? ''
+    if (line.getCell(x)?.getWidth() === 0) continue
+    for (const _ of chars || ' ') cellAt.push(x)
+    text += chars || ' '
+  }
+  cellAt.push(line.length)
+  const links = fileMentions(text).map((f): ILink => ({
+    range: { start: { x: cellAt[f.start] + 1, y }, end: { x: cellAt[f.end - 1] + 1, y } },
+    text: text.slice(f.start, f.end),
+    activate: () => open(f.path, f.line),
+  }))
+  return links.length ? links : undefined
+}
 
 /** What a view needs of its renderer. `watch` streams `terminal/<id>`, `screen/<id>` or `shell/<id>`; `end` hears its `x` or `error`. */
 export type TermViewIo = {
@@ -135,6 +193,8 @@ export type TermViewIo = {
   mode(m: TermMode): void
   end(msg: Extract<TerminalMsg | ShellStream, { t: 'x' | 'error' }>): void
   error(err: Error): void
+  /** Given, the file paths written in the terminal are links too, read from `cwd()` and opened through `edit` (the verb). */
+  files?: { cwd(): string; edit(path: string, line?: number): Promise<unknown> }
 }
 
 export type TermViewHandle = {
@@ -162,9 +222,16 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       open: ({ data, cols, rows, exited }) => {
         term?.dispose()
         const font = io.font()
-        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: terminalTheme(io.scheme()) })
+        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: terminalTheme(io.scheme()), linkHandler: { activate: openLink } })
         fit = new xterm.FitAddon()
         term.loadAddon(fit)
+        if (xterm.WebLinksAddon) term.loadAddon(new xterm.WebLinksAddon(openLink))
+        const files = io.files
+        if (files) {
+          const edit = (file: string, line?: number) => void files.edit(resolvePath(files.cwd(), file), line).catch(io.error)
+          const shown = term
+          term.registerLinkProvider({ provideLinks: (y, done) => done(fileLinks(shown, y, edit)) })
+        }
         term.open(host)
         term.write(data)
         if (exited) return term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, () => {}))
