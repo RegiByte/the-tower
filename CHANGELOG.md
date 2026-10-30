@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.72.1
+
+"Add to grid" works again, and the grid can take a worker in from its own bar. No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), no config change, no API change (1.113).
+
+- **"Add to grid" opens the grid.** The card head's button and the palette's action changed the URL and showed
+  nothing: `displayed` offered the grid as a tab of the worker's own card, since a view that `shows` a kind was
+  offered as a tab at that kind's own level. A view offered by `shows` is now a tab only for a subject below the
+  level, so no view showing a kind can become a tab of that kind's own card. The grid opens on the worker's floor
+  with the worker in a cell, and the tabs of a card, a showing's short form and Open Grid are unchanged (#275).
+- **Grid 2.2**: Add worker on the grid's bar, while the grid has fewer than four cells. It opens a menu of the
+  floor's workers on duty that are in no cell (every floor's for the board's grid), each by its lamp, callsign and
+  status; the one picked takes a new cell. The bar is drawn once and updated in place, so a board update doesn't close
+  an open menu, and the empty grid's note names Add worker. A user running the example in place
+  (`extensions.<id>.path`) gets it with `tower update`; a user who copied it copies it again (#276).
+
 ## v1.72.0
 
 The grid's cells as compact heads, and the rules the repository follows written down, with a rewritten README.
