@@ -85,7 +85,8 @@ and a framed document's section are the same thing.
 - *Display* ([`displayed`](ref:hub/src/shared/views.ts#displayed)): the one navigation, `kit.display(subject, { view?
   })` or `tower.ui('display')` from a framed page. It walks the subject's chain outward to the nearest level whose
   main view hosts the one below as a tab, else the first level with a main view; a view given narrows the walk, as a
-  tab before the main view. The renderer mounts the location and hands the view `show(subject)` when it is on a
+  tab before the main view. A tab is a view on the level or the subject below it, or one showing the kind of a subject
+  below the level, never of the level itself: a view showing cards (the grid) is no tab of a card. The renderer mounts the location and hands the view `show(subject)` when it is on a
   subject above; a view given that is mounted and takes it stays, and when it is on that subject's kind the location
   follows it there with no remount (a new draft, on its item once its first save is on the board). The tower page's
   [`display`](ref:hub/renderers/page/page.js#display) opens a worker the board doesn't carry as a read subject when a

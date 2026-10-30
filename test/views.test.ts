@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
-import type { Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, coreViewOf, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type View } from '../src/shared/views.ts'
+import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
+import { subjectAt, type Subject } from '../src/shared/subjects.ts'
+import { CORE_VIEWS, coreViewOf, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ at: 100, target: 'a.md' }, { at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -89,4 +90,19 @@ test("views: the layout takes each field from the highest layer that sets it; hi
   assert.deepEqual(layout['floor.section'], { order: ['grid/grid'], hidden: ['policies/policies'] })
   assert.deepEqual(layout['card.panes'], { order: ['b/b'], options: { 'b/b': { x: 1 }, 'c/c': { y: 2 } } })
   assert.deepEqual(layoutOf({ r: { hidden: ['v/v'] } }, {}, { r: { order: ['v/v'] } }).r, { order: ['v/v'] })
+})
+
+test('views: display places a card on its worker view, its children in its tabs, and a view showing cards on the floor', () => {
+  const card = { id: 'w1', project: 'p', conversations: [{ id: 'c1' }], shown: [{ at: 100, target: 'a.md' }] }
+  const board = { floors: [{ id: 'p', cards: [card], collections: [] }], extensions: [] } as unknown as Board
+  const grid: View = { id: 'grid/grid', cap: 'grid', on: ['floor', 'board'], shows: ['card'], scales: ['pane'], words: { label: 'Grid' } }
+  const main: Region = { id: 'board.main', subject: 'board', holds: ['views'], scale: 'pane', arity: 'one' }
+  const panes: Region = { id: 'card.panes', subject: 'card', holds: ['views'], scale: 'pane', arity: 'tabs' }
+  const p: Placing = { board, views: [...CORE_VIEWS, grid], regions: [main, panes], layout: {}, kit: KIT_MEMBERS, main }
+  const at = (key: string, view?: string) => displayed(p, subjectAt(board, key)!, view)
+  assert.deepEqual(at('card:w1'), { view: 'tower/card', subject: 'card:w1' })
+  assert.deepEqual(at('card:w1', 'tower/changes'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes', subject: 'card:w1' } })
+  assert.deepEqual(at('conversation:c1'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/brief', subject: 'card:w1' } })
+  assert.deepEqual(at('shown:w1/100'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/shown', subject: 'shown:w1/100' } })
+  assert.deepEqual(at('card:w1', 'grid/grid'), { view: 'grid/grid', subject: 'floor:p' })
 })
