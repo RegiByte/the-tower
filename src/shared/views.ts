@@ -175,6 +175,13 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
   )
 }
 
+/**
+ * The layout a renderer declares, `declared` (its `renderer.json`'s), over the defaults that started extensions give the
+ * regions they declare: the bottom layer, under the renderer's own, the config's and the viewer's (`layoutOf`). @since 1.114
+ */
+export const declaredLayout = (board: Board, declared: Layout): Layout =>
+  layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => e.layout ?? {})), declared, undefined)
+
 /** Whether a view's `on` holds `subject`: its kind, `item.*` for any collection's item, `collection.<id>` for that one collection. */
 export const viewOn = (on: readonly string[], subject: Pick<Subject, 'kind' | 'value'>) =>
   onKind(on, subject.kind) || (subject.kind === 'collection' && on.includes(`collection.${(subject.value as { id: string }).id}`))
