@@ -59,6 +59,9 @@ export const VIEWS = '1.104'
 /** A view's tab export, since this minor. */
 export const TABS = '1.111'
 
+/** The minor reads that serve a file, a read path's trailing rest param and a region's default layout arrived in. */
+export const FILES = '1.114'
+
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
 
@@ -422,18 +425,28 @@ export const tooDeep = (caller: Caller, verb: string): string | undefined =>
   caller.within.length >= MAX_DEPTH ? `${verb} would be nested more than ${MAX_DEPTH} calls deep: ${[...caller.within, verb].join(' → ')}` : undefined
 
 /** A read's name as the manifest writes it: words and `<param>`s joined by `/`, `beats/<project>`. */
-export const READ_PATH = /^[a-z][a-z0-9-]*(\/(<[a-z]+>|[a-z][a-z0-9-]*))*$/
+export const READ_PATH = /^[a-z][a-z0-9-]*(\/(<[a-z]+>|[a-z][a-z0-9-]*))*(\/<[a-z]+\.\.\.>)?$/
 
-/** The params a read's name holds, in order: `project` of `beats/<project>`. */
-export const paramsOf = (read: string): string[] => [...read.matchAll(/<([a-z]+)>/g)].map((m) => m[1])
+/** The params a read's name holds, in order: `project` of `beats/<project>`, `file` of `raw/<file...>`. */
+export const paramsOf = (read: string): string[] => [...read.matchAll(/<([a-z]+)(?:\.\.\.)?>/g)].map((m) => m[1])
 
-/** The params of `read` in a request's path below its capability, decoded; `undefined` when the path isn't the read's. */
+/**
+ * The params of `read` in a request's path below its capability, decoded; `undefined` when the path isn't the read's.
+ * A trailing rest param (`<file...>`) takes every segment left, one or more, joined by `/`, each decoded.
+ */
 export const matchRead = (read: string, path: string): Record<string, string> | undefined => {
   const parts = read.split('/')
   const got = path.split('/')
-  if (parts.length !== got.length) return undefined
+  const rest = /^<([a-z]+)\.\.\.>$/.exec(parts.at(-1)!)?.[1]
+  if (rest === undefined ? parts.length !== got.length : got.length < parts.length) return undefined
   const params: Record<string, string> = {}
   for (const [i, part] of parts.entries()) {
+    if (rest !== undefined && i === parts.length - 1) {
+      const tail = got.slice(i)
+      if (tail.some((segment) => !segment)) return undefined
+      params[rest] = tail.map(decodeURIComponent).join('/')
+      continue
+    }
     const param = /^<([a-z]+)>$/.exec(part)?.[1]
     if (param === undefined ? part !== got[i] : !got[i]) return undefined
     if (param !== undefined) params[param] = decodeURIComponent(got[i])
@@ -695,6 +708,7 @@ const triggers = sinceAt(TRIGGERS)
 const launch = sinceAt(LAUNCH)
 const kinds = sinceAt(KINDS)
 const views = sinceAt(VIEWS)
+const files = sinceAt(FILES)
 const tabs = sinceAt(TABS)
 
 const Name = z
@@ -722,7 +736,7 @@ const Chords = z.array(
 )
 const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
 const Kinds = z.array(z.union([SubjectKind, z.literal('item.*')])).min(1)
-const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>')
+const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>, the last maybe a rest param, raw/<file...>')
 const Scope = z.enum(['system', 'project'])
 const Deprecated = z.strictObject({
   since: sinceCalls(Version.describe("The provider's version it was deprecated in.")),
@@ -739,7 +753,13 @@ const Verb = z.strictObject({
 })
 const Read = z.strictObject({
   query: sinceCalls(Schema.optional().describe("The query's JSON Schema; every value arrives as a string.")),
-  reply: sinceCalls(Schema),
+  reply: sinceCalls(Schema.optional().describe('Its reply\'s JSON Schema: required, unless it serves a file.')),
+  serves: files(
+    z
+      .literal('file')
+      .optional()
+      .describe("A file: its handler answers `{file}`, an absolute path, which the tower serves sandboxed as it serves a shown file. Which paths it serves is the handler's to confine."),
+  ),
   scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its `<project>` param, or its query's `project`.")),
   description: sinceCalls(z.string().optional()),
   deprecated: sinceCalls(Deprecated.optional()),

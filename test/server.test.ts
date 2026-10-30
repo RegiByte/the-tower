@@ -707,6 +707,17 @@ test("server: an extension's read answers by its path, and its deprecated verb s
   const schema = JSON.parse((await get('/schema')).body)
   assert.equal(schema.verbs['pulse/ping'].scope, 'project')
   assert.equal(schema.reads['pulse/beats/<project>'].path, '/pulse/beats/{project}')
+  assert.deepEqual(schema.reads['pulse/page/<project>/<file...>'].path, '/pulse/page/{project}/{file...}')
+})
+
+test("server: an extension's read that serves a file serves the path its handler answers, sandboxed as a shown file, and its refusal as an error", async () => {
+  const page = await get('/pulse/page/lab/beat.html')
+  assert.equal(page.status, 200, page.body)
+  assert.deepEqual([page.headers['content-type'], String(page.headers['content-security-policy']).startsWith('sandbox')], ['text/html; charset=utf-8', true])
+  assert.ok(page.body.startsWith('<!doctype html>\n<p>beat</p>') && page.body.includes('/frame-keys.js'), 'an html page carries the frame keys, after its doctype')
+  assert.equal(errorCode(await get('/pulse/page/lab/..%2Fserver.ts')), 'refused')
+  assert.equal(errorCode(await get('/pulse/page/lab/gone.html')), 'not_found')
+  assert.equal(errorCode(await get('/pulse/page/lab')), 'not_found', 'a rest param takes one segment at least')
 })
 
 test("server: the quota probe, moved into its extension, answers its old names through LEGACY, its old folder folded as before", async () => {

@@ -237,6 +237,7 @@
       "reads.*.query",
       "reads.*.reply",
       "reads.*.scope",
+      "reads.*.serves",
       "regions",
       "regions.*.arity",
       "regions.*.description",

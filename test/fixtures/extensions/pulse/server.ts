@@ -1,6 +1,9 @@
 import type { Card, Floor } from '../../../../src/bridge/board.ts'
 import type { Start } from '../../../../src/shared/extensions.ts'
 import { word } from './words.ts'
+import path from 'node:path'
+
+const PAGES = path.join(import.meta.dirname, 'pages')
 
 type Beats = { count: number; items: string[] }
 
@@ -24,6 +27,10 @@ const start: Start = (ctx) => {
       },
     },
     reads: {
+      'page/<project>/<file...>': ({ params }) => {
+        const file = path.resolve(PAGES, params.file)
+        return file.startsWith(`${PAGES}/`) ? { file } : { t: 'error', code: 'refused', message: `${params.file} is outside pulse's pages` }
+      },
       'beats/<project>': ({ params }) => ({ project: params.project, every, word }),
       'kept/<project>': ({ params, query }: { params: Record<string, string>; query: { session?: string } }) => ({
         beats: ctx.own.streams('beats', params.project),

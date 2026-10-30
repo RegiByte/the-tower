@@ -165,6 +165,8 @@ test("a read's path matches its words and takes each param decoded", () => {
   assert.deepEqual(matchRead('beats/<project>', 'beats/my%20lab'), { project: 'my lab' })
   assert.deepEqual(matchRead('history', 'history'), {})
   assert.deepEqual(['beats', 'beats/', 'beats/lab/more', 'beat/lab'].map((path) => matchRead('beats/<project>', path)), [undefined, undefined, undefined, undefined])
+  assert.deepEqual(matchRead('raw/<id>/<file...>', 'raw/w1/src/a%20b.ts'), { id: 'w1', file: 'src/a b.ts' })
+  assert.deepEqual(['raw/w1', 'raw/w1/', 'raw/w1/src//a.ts'].map((path) => matchRead('raw/<id>/<file...>', path)), [undefined, undefined, undefined])
 })
 
 const DOORS = { list: 'tower/board', read: 'tower/collection/<project>/<collection>/<item>', create: 'pulse/keep', edit: { none: 'a beat is never rewritten' }, delete: { none: 'beats are kept' } }

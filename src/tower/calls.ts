@@ -88,16 +88,16 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
   }
 
   /**
-   * The read a request's path below capability `cap` names, with its params, or why it names none now; `undefined` when
-   * no extension declares `cap`, so the path is nobody's.
+   * The read a request's path below capability `cap` names, with its params and whether it serves a file, or why it
+   * names none now; `undefined` when no extension declares `cap`, so the path is nobody's.
    */
-  const readAt = (cap: string, path: string): { name: string; params: Record<string, string> } | ApiError | undefined => {
+  const readAt = (cap: string, path: string): { name: string; params: Record<string, string>; serves?: 'file' } | ApiError | undefined => {
     if (holder.live(cap).t === 'none') return undefined
     const found = reach(holder, cap)
     if ('t' in found) return found
-    for (const name of found.a.reads.keys()) {
+    for (const [name, { spec }] of found.a.reads) {
       const params = matchRead(name, path)
-      if (params) return { name, params }
+      if (params) return { name, params, ...(spec.serves && { serves: spec.serves }) }
     }
     return apiError('not_found', `${cap} has no read at "${path}"`)
   }

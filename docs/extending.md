@@ -486,6 +486,15 @@ verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry
 only: a read is a `GET`, such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's
 `port`, which `tower whoami` names).
 
+**A read that serves a file** (API 1.114) declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
+absolute path, and the tower serves that file as it serves a file a worker showed, through the same path: by its media
+type, under the same sandbox headers, an html page with the frame keys appended, so a page served this way runs at an
+origin of its own and reaches nothing of the tower's. Which paths it serves is the handler's responsibility: resolve
+what the request names, follow its links, and refuse anything outside the scope it means to serve. A read path's last
+segment may be a rest param, `raw/<id>/<file...>`, which takes every segment left (one at least) joined by `/`, so a
+page loads what lies beside it by relative URL; `/schema` lists the read as `/<capability>/raw/{id}/{file...}`, `kind`
+`file`. A view by type draws the file when a subject's `text` names the read's path.
+
 **Calls.** `ctx.call('tower/spawn', input)` and `ctx.read('tower/conversations/<id>', params, query)` take qualified
 names, the core's under `tower/`, and reach the core, the extension itself, and what it `requires` or `wants`;
 anything else is refused until declared. `ctx.deps.<capability>` holds the same calls as functions, one per verb and
