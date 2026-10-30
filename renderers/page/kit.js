@@ -7,8 +7,7 @@ import { keysHint, keyshortcuts } from '/keymap.js'
 /**
  * What the tower page's panes draw with alike: a card's gist, times, the close of a view, a toast, painting only
  * what changed and keeping a scrolled list's row in place, and a showing's key, pane and address.
- * @import { Card, CardShown } from '../../src/bridge/board.ts'
- * @import { Pane } from './view.js'
+ * @import { Card } from '../../src/bridge/board.ts'
  * @import { Keys } from '../../src/shared/keymap.ts'
  */
 
@@ -64,11 +63,6 @@ const keyedTip = (keys, what, id) =>
 
 /** The close of a view in the main pane: back to the skyline. @param {Keys} keys */
 const closeHomeHtml = (keys) => `<button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`
-
-/** @param {CardShown} s @returns {Pane} */
-const shownPane = (s) => `shown:${s.target}`
-
-const DOC_CSS = `article { max-width: 980px; margin: 0; padding: var(--sp-xl) var(--sp-3xl) 48px; }`
 
 /** @param {string} text @param {string} what */
 const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err) => toast(err.message))
@@ -134,4 +128,4 @@ const toast = toaster($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownPane, shownKey, shownHref, DOC_CSS, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told }

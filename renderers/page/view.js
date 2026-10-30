@@ -1,5 +1,4 @@
 import { hashOf as locationHash, locationOf, shortHashOf } from '/views.js'
-import { subjectAt } from '/cards.js'
 
 /**
  * What the tower page's main pane shows, as one value, and the URL hash that names it. Pure: the page goes from one
@@ -9,18 +8,12 @@ import { subjectAt } from '/cards.js'
  */
 
 /**
- * A view of the selected worker: a pane's name, or `shown:<target>` for what it showed.
- * @typedef {'screen' | 'brief' | 'changes' | 'reviews' | `shown:${string}`} Pane
+ * A worker the page started, until the board carries it (`arriving`, drawn as the skyline); a view mounted in the main
+ * pane at a location (`/views.js`): the skyline, a worker (`tower/card`) and kept items among them.
+ * @typedef {{ t: 'arriving', id: string } | { t: 'view', location: Location }} MainView
  */
 
-/**
- * A worker, on the pane the viewer picked since selecting it (none: its default); a worker the page started, until
- * the board carries it (`arriving`, drawn as the skyline); a view mounted in the main pane at a location
- * (`/views.js`), the skyline and kept items among them.
- * @typedef {{ t: 'worker', id: string, pane: Pane | undefined }
- *   | { t: 'arriving', id: string }
- *   | { t: 'view', location: Location }} MainView
- */
+/** A location the page reads a worker from that it may yet look up in the floors' archives. @typedef {{ t: 'lookup', id: string, location: Location }} Lookup */
 
 /** The skyline's location: the view the board opens on. @type {Location} */
 export const SKYLINE = { view: 'tower/skyline' }
@@ -31,48 +24,6 @@ export const HOME = { t: 'view', location: SKYLINE }
 /** Whether `v` is the skyline. @param {MainView} v */
 export const isHome = (v) => v.t === 'view' && v.location.view === SKYLINE.view && (v.location.subject ?? 'board') === 'board'
 
-/** @param {string} part */
-const encoded = (part) => encodeURIComponent(part)
-
-/** The hash naming `v`, `''` for the skyline: a reload opens what it names; a location by its short form when it has one. @param {MainView} v @returns {string} */
-export function hashOf(v) {
-  switch (v.t) {
-    case 'arriving':
-      return ''
-    case 'worker':
-      return `#${v.id}${v.pane ? '/' + encoded(v.pane) : ''}`
-    case 'view':
-      return shortHashOf(v.location) ?? locationHash(v.location)
-  }
-}
-
-const PANES = ['screen', 'brief', 'changes', 'reviews']
-
-/** The first segments of the short forms `/views.js` reads: any other names a worker. */
-const SHORT_FORMS = ['shelf', 'draft', 'archive', 'policies', 'kept']
-
-/** The pane a hash names after a worker's id: `undefined` for none, or one that is no pane. @param {string | undefined} part @returns {Pane | undefined} */
-function paneOfHash(part) {
-  if (part === undefined) return undefined
-  const pane = decodeURIComponent(part)
-  return PANES.includes(pane) || pane.startsWith('shown:') ? /** @type {Pane} */ (pane) : undefined
-}
-
-/**
- * The view a hash (without its `#`) names on `board`, the skyline when it names nothing there; `lookup` for an id the
- * board has no card for, which may be a worker of an archive the page has yet to read, with the pane the hash names.
- * @param {string} hash @param {Board} board @returns {MainView | { t: 'lookup', id: string, pane: Pane | undefined }}
- */
-export function viewOf(hash, board) {
-  if (!hash) return HOME
-  const [kind, pane] = hash.split('/')
-  if (kind === 'v' || SHORT_FORMS.includes(kind)) return mainViewOf(locationOf(hash, board), board)
-  return board.floors.some((f) => f.cards.some((c) => c.id === kind)) ? { t: 'worker', id: kind, pane: paneOfHash(pane) } : { t: 'lookup', id: kind, pane: paneOfHash(pane) }
-}
-
-/** The page's pane each core view of a worker's tabs is, until they are views. */
-const VIEW_PANES = /** @type {Record<string, Pane>} */ ({ 'tower/terminal': 'screen', 'tower/brief': 'brief', 'tower/changes': 'changes', 'reviews/thread': 'reviews' })
-
 /** The kind and the rest of a subject key: `floor:lab` is `floor` and `lab`. @param {string} key */
 const keyParts = (key) => {
   const at = key.indexOf(':')
@@ -82,36 +33,43 @@ const keyParts = (key) => {
 /** `<project>/<name>`, split at its first slash. @param {string} rest */
 const inFloor = (rest) => ({ project: rest.slice(0, rest.indexOf('/')), name: rest.slice(rest.indexOf('/') + 1) })
 
-/** The pane a worker's location names: a core tab's, or the showing its key names, by target. @param {Location['pane']} pane @param {Board} board @returns {Pane | undefined} */
-function paneOfLocation(pane, board) {
-  if (!pane) return undefined
-  if (VIEW_PANES[pane.view]) return VIEW_PANES[pane.view]
-  if (pane.view !== 'tower/shown' || !pane.subject) return undefined
-  const { rest } = keyParts(pane.subject)
-  const [id, at] = [rest.slice(0, rest.lastIndexOf('/')), rest.slice(rest.lastIndexOf('/') + 1)]
-  const s = board.floors.flatMap((f) => f.cards).find((c) => c.id === id)?.shown.find((s) => String(s.at) === at)
-  return s && /** @type {Pane} */ (`shown:${s.target}`)
+/** The worker view's tabs as the page's short forms name them, after a worker's id. */
+const PANE_NAMES = /** @type {Record<string, string>} */ ({ 'tower/terminal': 'screen', 'tower/brief': 'brief', 'tower/changes': 'changes', 'reviews/thread': 'reviews' })
+
+/** The worker the main pane shows, while it shows one. @param {MainView} v */
+export const cardIdOf = (v) => (v.t === 'view' && v.location.view === 'tower/card' && v.location.subject?.startsWith('card:') ? v.location.subject.slice('card:'.length) : undefined)
+
+/**
+ * The hash naming `v`, `''` for the skyline: a reload opens what it names; a location by its short form when it has
+ * one, a worker as `#<id>` with its tab (`/changes`, `/shown:<target>`, the showing read on `board`).
+ * @param {MainView} v @param {Board} board @returns {string}
+ */
+export function hashOf(v, board) {
+  if (v.t === 'arriving') return ''
+  const id = cardIdOf(v)
+  if (id === undefined) return shortHashOf(v.location) ?? locationHash(v.location)
+  const pane = v.location.pane
+  if (!pane) return `#${id}`
+  if (PANE_NAMES[pane.view]) return `#${id}/${PANE_NAMES[pane.view]}`
+  const at = pane.subject?.slice(pane.subject.lastIndexOf('/') + 1)
+  const shown = board.floors.flatMap((f) => f.cards).find((c) => c.id === id)?.shown.find((s) => String(s.at) === at)
+  return shown ? `#${id}/${encodeURIComponent(`shown:${shown.target}`)}` : locationHash(v.location)
 }
 
 /**
- * What a location opens: a worker by the route the page draws it with until it is a view (its card, a showing as its
- * pane), any other view mounted at it; the skyline when what it names isn't on the board; `lookup` for a worker the board has no
- * card for.
- * @param {Location | undefined} location @param {Board} board @returns {MainView | { t: 'lookup', id: string, pane: Pane | undefined }}
+ * What a location opens: a view mounted at it; the skyline when what it names isn't there (`has`, the board or a read
+ * the page holds); `lookup` for a worker it doesn't hold, which may be one of an archive the page has yet to read.
+ * @param {Location | undefined} location @param {(key: string) => boolean} has @returns {MainView | Lookup}
  */
-export function mainViewOf(location, board) {
+export function mainViewOf(location, has) {
   if (!location) return HOME
-  const { kind, rest } = keyParts(location.subject ?? 'board')
-  switch (location.view) {
-    case 'tower/card': {
-      if (kind !== 'card') return HOME
-      const pane = paneOfLocation(location.pane, board)
-      return board.floors.some((f) => f.cards.some((c) => c.id === rest)) ? { t: 'worker', id: rest, pane } : { t: 'lookup', id: rest, pane }
-    }
-    default:
-      return subjectAt(board, location.subject ?? 'board') ? { t: 'view', location } : HOME
-  }
+  const key = location.subject ?? 'board'
+  if (has(key)) return { t: 'view', location }
+  return location.view === 'tower/card' && key.startsWith('card:') ? { t: 'lookup', id: key.slice('card:'.length), location } : HOME
 }
+
+/** The view a hash (without its `#`) names. @param {string} hash @param {Board} board @param {(key: string) => boolean} has */
+export const viewOf = (hash, board, has) => (hash ? mainViewOf(locationOf(hash, board), has) : HOME)
 
 /**
  * Whether `a` and `b` are the same place in the main pane, so going from one to the other leaves nothing: a worker on
@@ -121,7 +79,6 @@ export function mainViewOf(location, board) {
 export function sameRoom(a, b) {
   if (a.t !== b.t) return false
   switch (a.t) {
-    case 'worker':
     case 'arriving':
       return a.id === /** @type {typeof a} */ (b).id
     case 'view': {
@@ -134,7 +91,7 @@ export function sameRoom(a, b) {
 /** The main pane's class for `v`, which shows its part of the page. @param {MainView} v */
 export function mainClass(v) {
   return /** @type {Record<MainView['t'], string>} */ ({
-    arriving: 'viewing', worker: 'worker-view', view: 'viewing',
+    arriving: 'viewing', view: 'viewing',
   })[v.t]
 }
 
@@ -143,8 +100,6 @@ export function floorOfView(v, projectOfCard) {
   switch (v.t) {
     case 'arriving':
       return undefined
-    case 'worker':
-      return projectOfCard(v.id)
     case 'view': {
       const { kind, rest } = keyParts(v.location.subject ?? 'board')
       return kind === 'board' ? undefined : kind === 'card' ? projectOfCard(rest) : kind === 'floor' ? rest : inFloor(rest).project
