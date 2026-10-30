@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/shared/model.ts#towerPort", "hub/src/shared/model.ts#towerUrl", "hub/src/machine.ts#daemons", "hub/src/machine.ts#startedPid", "hub/src/tower/http.ts#PORT", "hub/src/directory.ts#towerAt", "hub/src/doctor.ts#running", "hub/src/init.ts#initialConfig", "hub/scripts/sandbox.ts", "hub/scripts/sandbox-root.ts"]
 }
 ---

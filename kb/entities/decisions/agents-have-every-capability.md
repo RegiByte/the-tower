@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/tower/http.ts#isFromTower", "hub/src/directory.ts#command", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/host/main.ts", "hub/src/git.ts#spawnGit"]
 }
 ---
