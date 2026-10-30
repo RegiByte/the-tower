@@ -59,7 +59,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const open = same ? openFolds(body) : new Set<string>()
     const expanded = same ? expandedSaid(body) : new Set<string>()
     regions.forEach((r) => r.close())
-    for (const key of said.keys()) kit.bus.clear(key)
+    for (const s of said.values()) kit.bus.clear(s.key)
     said = new Map(saidOf(threads).map(({ key, text, ...s }) => [key, saidSubject({ ...s, card: card.id, project: card.project, body: text })]))
     for (const s of said.values()) kit.bus.publish(s, at.key)
     saidActs = actsOn(board)
@@ -140,7 +140,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     close() {
       offStore()
       regions.forEach((r) => r.close())
-      for (const key of said.keys()) kit.bus.clear(key)
+      for (const s of said.values()) kit.bus.clear(s.key)
     },
   }
 }
