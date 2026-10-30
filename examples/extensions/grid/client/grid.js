@@ -80,7 +80,7 @@ export async function mount(host, { board, subject, kit, state }) {
     const rows = cardsOf(now, key)
       .filter((c) => c.onDuty && !ids.includes(c.id))
       .map((c) => `<button data-grid-add="${esc(c.id)}"><span class="lamp ${lampOf(c)}"></span>${esc(c.callsign)}<small>${esc(statusName(c))}</small></button>`)
-    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">every worker on duty is in a cell</div>'}`
+    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">no other worker on duty</div>'}`
   }
 
   /** What the worker in a cell is told: the heads toggle, the grid's controls, the floor's workers on duty to pick from, and no "Add to grid". */
