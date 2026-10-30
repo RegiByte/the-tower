@@ -56,9 +56,10 @@ export const linesSubject = (lines: Lines): Subject => ({
 /**
  * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
  * `/reviews.js`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
- * (`text`, a read path) and its media type. @since 1.114; `file` @since 1.117
+ * (`text`, a read path), its media type, and where in it to show first, a link's `#fragment`. @since 1.114; `file`
+ * @since 1.117; `fragment` @since 1.119
  */
-export type CheckoutFile = { card: string; project: string; repo: string; path: string; file?: string; text: string; type: string }
+export type CheckoutFile = { card: string; project: string; repo: string; path: string; file?: string; text: string; type: string; fragment?: string }
 
 /** A file of a worker's checkout, handed with its card and floor: a viewer subject, never on the board. @since 1.114 */
 export const fileSubject = (file: CheckoutFile): Subject => ({
@@ -67,6 +68,24 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
   project: file.project,
   value: file,
 })
+
+/**
+ * The file of the same checkout that `href`, a link relative to `from` (`relativeHref` of `/markdown.js`), names: its
+ * path resolved against `from`'s folder, read beside it, its type by its name, and its `#fragment`. A folder is named by
+ * its path as a file is. Undefined when the path climbs out of `from`'s repo. @since 1.119
+ */
+export const linkedFile = (from: CheckoutFile, href: string): CheckoutFile | undefined => {
+  const [rest, hash] = href.split(/#(.*)/s)
+  const target = rest.split('?')[0]
+  const path = decodeURIComponent(target)
+    .split('/')
+    .reduce<string[] | undefined>((at, s) => (!at ? at : s === '..' ? (at.length ? at.slice(0, -1) : undefined) : s === '.' || s === '' ? at : [...at, s]), from.path.split('/').slice(0, -1))
+  if (!path) return undefined
+  const text = new URL(target, `http://tower.invalid/${from.text}`).pathname.slice(1)
+  const fragment = hash ? decodeURIComponent(hash) : undefined
+  const { card, project, repo } = from
+  return { card, project, repo, path: path.join('/'), text, type: mediaTypeOf(path.join('/')), ...(fragment && { fragment }) }
+}
 
 /**
  * A prompt or an answer of a worker's conversation, as a renderer drew it in a brief: the session it was drawn in (a

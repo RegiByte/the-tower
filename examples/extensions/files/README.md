@@ -57,6 +57,11 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
   A hidden tab reads nothing, and tells the file's view it is hidden (a video pauses). A file over 1 MB that changes
   is not drawn again on its own: the head says it changed on disk, and Reload draws it, since each draw has the tower
   read and send the whole file.
+- **Links between files.** A relative link in a markdown file opened here (`[the principles](PRINCIPLES.md)`,
+  `../README.md#install`) opens the file it names in the tree, each folder on its way opened, scrolled to the link's
+  fragment; a link to a folder opens it. A link that climbs out of the repo, or names what the repo doesn't hold, is
+  refused in a toast. The explorer `shows` `file` subjects: any file of its worker displayed elsewhere opens here
+  the same way, and a markdown view of yours gets the links by displaying `linkedFile(file, href)` (`/cards.js`).
 - **View state** (the folders open and the file open, per worker) is the view's own (`ctx.state`), so the tab opens
   as it was left.
 
