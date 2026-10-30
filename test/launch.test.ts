@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { coreFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Merged } from '../src/bridge/launch.ts'
-import { CORE_FLAGS } from '../src/shared/launch.ts'
+import { CORE_FLAGS, EVERY_PART, resumeRequest } from '../src/shared/launch.ts'
 import type { LogEvent, SessionHeader } from '../src/shared/model.ts'
 import { UnsettledError, within } from '../src/tower/extensions.ts'
 
@@ -83,4 +83,9 @@ test("a launch contributor is bound as start is: one that hasn't settled in time
   await assert.rejects(within('launch', 5, slow, (value) => (late = value)), (err) => err instanceof UnsettledError && err.message === "launch didn't settle within 0.005 s" && err.ms === 5)
   await slow
   assert.equal(late, 'parts')
+})
+
+test('resumeRequest: carries the command it is given straight through to the host request', () => {
+  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined, command: 'b' }).command, 'b')
+  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined }).command, undefined)
 })

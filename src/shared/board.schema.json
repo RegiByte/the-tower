@@ -254,6 +254,13 @@
           "$ref": "#/definitions/ClaudeDefaults",
           "description": "The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them."
         },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Every `argv` command name, in write order; absent in single-command mode (`commandNames`)."
+        },
         "claudeUntested": {
           "type": "array",
           "items": {
@@ -353,6 +360,10 @@
       "properties": {
         "id": {
           "type": "string"
+        },
+        "command": {
+          "type": "string",
+          "description": "The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`)."
         },
         "cards": {
           "type": "array",
@@ -497,10 +508,6 @@
             "type": "string"
           },
           "description": "Absolute plugin directories this project's sessions load, beside the ones every session loads."
-        },
-        "command": {
-          "type": "string",
-          "description": "The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is the legacy array."
         }
       },
       "required": [

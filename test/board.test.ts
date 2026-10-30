@@ -31,6 +31,16 @@ const homed = (log: SessionLog, cwd = CONFIG.projects[log.header.project].hub): 
 const cardsOf = (logs: SessionLog[], host = hostWith()) =>
   board(viewOf(CONFIG, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host })).floors.flatMap((f) => f.cards)
 
+test("boardOf: commands and each floor's preferred one are absent in single-command mode, present and resolved in multi", () => {
+  const single = board(viewOf(CONFIG))
+  assert.equal(single.commands, undefined)
+  assert.equal(single.floors[0].command, undefined)
+  const multiConfig: Config = { argv: { a: ['claude'], b: ['claude-mom'] }, env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [], command: 'b' } } }
+  const multi = board(viewOf(multiConfig))
+  assert.deepEqual(multi.commands, ['a', 'b'])
+  assert.equal(multi.floors[0].command, 'b')
+})
+
 test('a session card carries its prompt, context and cost', () => {
   const log = fixture('tool-turn')
   const [card] = board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(log) }], host: hostWith() })).floors[0].cards

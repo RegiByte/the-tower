@@ -461,6 +461,7 @@ export const dispatch = defineResource({
               facts: kind === 'fork' ? forkFacts(worker) : [],
               conversation,
               prompt: restored ? restoredPrompt(restored, prompt) : prompt,
+              command: source.header.command,
             }),
           )
           if (answer.t !== 'spawned' || !restored) return answer
