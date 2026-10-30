@@ -74,7 +74,8 @@ and a framed document's section are the same thing.
 - *A file in a checkout* (1.114) is a viewer subject, `file:<card>/<repo>/<path>`
   ([`fileSubject`](ref:hub/src/shared/subjects.ts#fileSubject)), a child of its card like `lines`, carrying `text`, the
   read path its content is served at, and `type`. It is how a view that browses a worker's files (the files example)
-  hands one to a region, so the layout's pick of a view by type draws it as it draws a shown file or a kept item.
+  hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` for now;
+  the core's views by type join on `file` once they draw a subject without the item head).
 - *The layout* ([`layoutOf`](ref:hub/src/shared/views.ts#layoutOf)): three layers, the renderer's own, the config's
   `renderers.<r>.layout` and the viewer's in `tower.store`, each field from the highest that sets it, `hidden` the
   union less what a higher layer orders. Under them, since 1.114, the defaults an extension gives the regions it
@@ -129,9 +130,10 @@ and a framed document's section are the same thing.
   model's test from a real ask: a tab on every worker built on the extension contract alone. Its reads are confined
   to the worker's checkout by the extension (a read that serves a file, [[extensions]]); a file opened is a `file`
   subject handed to `file.open`, a region it declares whose default layout puts its own `files/code` (Shiki, VS Code's
-  grammars and themes) first, so the views by type draw the rest. It is live while seen by a poll, as Changes is:
+  grammars and themes) first, the views by type to draw the rest once they are on `file`. It is live while seen by a poll, as Changes is:
   one `git status` per repo of the checkout and one `stat` of the open file every 2 s, one round at a time, stretched
-  to four times a slow round's length (30 s at most), nothing while hidden. Where the contract fell short, it grew by
+  to four times a slow round's length (30 s at most), nothing while hidden; a file over 1 MB that changes waits for
+  Reload, since each draw has the tower read and send the whole file. Where the contract fell short, it grew by
   addition: a read serving a file, a read path's rest param, a region's default layout, and the `file` kind.
 
 The model in one picture:

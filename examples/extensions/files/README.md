@@ -6,8 +6,9 @@ working there), each repo a root. What git ignores is dimmed and what git sees c
 added, `D` deleted, `R` renamed, `U` untracked, `C` in conflict, and a dot on a folder holding any. The tab's tally
 is how many files the worker changed. A file opens read-only beside the tree, with buttons that reveal it in Finder
 and open it in your editor. Code is highlighted as VS Code draws it, by [Shiki](https://shiki.style) with VS Code's
-TextMate grammars and its Light+ and Dark+ themes, following your scheme. Markdown, images, video and html pages are
-drawn by the tower's own views by type, or by any view of yours that takes their type over.
+TextMate grammars and its Light+ and Dark+ themes, following your scheme. Markdown, images, video and html pages go
+to the tower's own views by type, or to any view of yours that takes their type over, once the views by type are on
+`file` (step 5b of the UI model); until then the explorer says nothing draws them, and you open them in your editor.
 
 ## Add it
 
@@ -39,7 +40,8 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
   later version. Files over 50 MB are not served.
 - **A file opened is a `file` subject**, `file:<card>/<repo>/<path>`, handed to `file.open`, a region the explorer
   declares. The view its type picks draws it. The region's default layout (`regions.file.open.layout`) puts
-  `files/code` first for code; a config line takes it back, or puts a view of yours there:
+  `files/code` first for code (the views by type join it on `file` with step 5b); a config line takes it back, or
+  puts a view of yours there:
 
   ```json
   "renderers": { "page": { "layout": { "file.open": { "order": ["mine/code"] } } } }
@@ -53,7 +55,9 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
 - **Live while seen.** While the tab is visible it reads the status every 2 s, one read at a time, and waits four
   times as long as a read took when git is slow (30 s at most): one `git status` per repo of the checkout and one
   `stat` of the open file per round. A changed status lists the open folders again; a changed file is drawn again.
-  A hidden tab reads nothing.
+  A hidden tab reads nothing, and tells the file's view it is hidden (a video pauses). A file over 1 MB that changes
+  is not drawn again on its own: the head says it changed on disk, and Reload draws it, since each draw has the tower
+  read and send the whole file.
 - **View state** (the folders open and the file open, per worker) is the view's own (`ctx.state`), so the tab opens
   as it was left.
 
