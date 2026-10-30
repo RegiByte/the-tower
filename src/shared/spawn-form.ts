@@ -34,6 +34,8 @@ export type SpawnForm = {
   base: string
   model: string
   effort: string
+  /** The `argv` command to start under, by name; empty is left to the floor's resolved default. */
+  command: string
   prompt: string
   x: Record<string, Record<string, string>>
 }
@@ -84,7 +86,7 @@ export const shellPlaces = (floors: Floor[], first?: string): ShellPlace[] =>
 
 /** The form as it opens, and as a quick hire sends it: everything left to its default. */
 export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
-  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', prompt, x: {},
+  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', command: f.command ?? '', prompt, x: {},
 })
 
 /** The name an extension's field has in the form. */
@@ -105,7 +107,7 @@ export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValu
 export const spawnCall = (f: Floor, v: SpawnForm): [Call<'spawn'>, Partial<Verbs['spawn']>] => {
   const given = (o: Record<string, string>) => Object.fromEntries(Object.entries(o).filter(([, x]) => x.trim()).map(([k, x]) => [k, x.trim()]))
   const x = Object.fromEntries(Object.entries(v.x).flatMap(([cap, fields]) => (Object.keys(given(fields)).length ? [[cap, given(fields)]] : [])))
-  const launch = { ...given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt }), ...(Object.keys(x).length && { x }) }
+  const launch = { ...given({ callsign: v.callsign, model: v.model, effort: v.effort, prompt: v.prompt, command: v.command }), ...(Object.keys(x).length && { x }) }
   if (v.where === 'new') return [offeredCall(f, 'cut', f.name), { ...launch, cut: given({ name: v.name, branch: v.branch, base: v.base }) }]
   return [offeredCall(f, 'spawn', f.name), { ...launch, cwd: v.where === 'worktree' ? v.worktree : v.checkout }]
 }
@@ -145,6 +147,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
   const claude = [
     v.model || observed("Claude's model", modelName(defaults.model)),
     v.effort ? `${v.effort} effort` : observed("Claude's effort", defaults.effort),
+    ...(v.command ? [`with ${v.command}`] : []),
     v.prompt.trim() ? 'starts on the prompt' : 'starts idle',
   ]
   const added = fields.flatMap((field) => {
@@ -188,7 +191,7 @@ const formFieldHtml = ({ cap, name, words, options }: FormField) =>
  * `[data-callsign-why]` and `[name=callsign]`'s validity from `callsignRefusal`. `defaults`: the board's `claudeDefaults`,
  * said beside each of Claude's defaults. `fields`: the extensions' spawn fields on the floor (`formFields`), drawn below Claude's.
  */
-export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [] }: { sign: string; draft?: string; defaults?: ClaudeDefaults; fields?: FormField[] }): string {
+export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [], commands }: { sign: string; draft?: string; defaults?: ClaudeDefaults; fields?: FormField[]; commands?: string[] }): string {
   const v = spawnDefaults(f)
   const worktrees = joinable(f)
   const repos = [f.hub, ...f.repos]
@@ -218,6 +221,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
         <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
         <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, defaultOption(modelName(defaults.model)))}</select></label>
         <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, defaultOption(defaults.effort))}</select></label>
+        ${commands && commands.length > 1 ? `<label>${labelHtml('Claude', true)}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === v.command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>` : ''}
         ${fields.map(formFieldHtml).join('')}
       </div>
     </div>

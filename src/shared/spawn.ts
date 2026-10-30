@@ -147,7 +147,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     execute: {
       show: ({ project, text, on }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f) })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f), commands: io.board().commands })
         prompt().value = text
         sync()
         dialog.showModal()
