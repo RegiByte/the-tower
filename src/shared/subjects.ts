@@ -72,7 +72,8 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
 /**
  * The file of the same checkout that `href`, a link relative to `from` (`relativeHref` of `/markdown.js`), names: its
  * path resolved against `from`'s folder, read beside it, its type by its name, and its `#fragment`. A folder is named by
- * its path as a file is. Undefined when the path climbs out of `from`'s repo. @since 1.119
+ * its path as a file is. Undefined when the path climbs out of `from`'s repo; a `%` that starts no escape throws a
+ * `URIError`, as decoding it does. @since 1.119
  */
 export const linkedFile = (from: CheckoutFile, href: string): CheckoutFile | undefined => {
   const [rest, hash] = href.split(/#(.*)/s)
