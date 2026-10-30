@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-30",
-  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
+  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changed-files.ts#changedSince", "hub/src/changed-files.ts#sinceOf", "hub/src/worktrees.ts#againstChoice", "hub/src/shared/checkouts.ts#changedIn", "hub/src/views/changes.ts#tab", "hub/test/against.test.ts", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -18,7 +18,8 @@ files you have read while the agent keeps working.
 
 **Decision.** [`changesIn`](ref:hub/src/changes.ts#changesIn) reads each of a session's dirs that is a repo, on every
 request, never kept:
-- **Since what** ([`againstFor`](ref:hub/src/worktrees.ts#againstFor)). On a branch the tower cut (it has
+- **Since what** ([`againstFor`](ref:hub/src/worktrees.ts#againstFor), choosing by
+  [`againstChoice`](ref:hub/src/worktrees.ts#againstChoice)). On a branch the tower cut (it has
   `branch.<b>.towerBase`), since the merge-base with that base, or with origin's default once the base is gone (the
   same fallback as [[absorbed]]). On any other branch with an upstream (a main checkout tracking `origin/main`), since
   the merge-base with the upstream, so a commit not yet pushed is still work to review and a note anchored to it stays
@@ -39,6 +40,13 @@ request, never kept:
   is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers),
   a machine on `/loop.js` that a renderer tells, on each draw, whose Changes are open (held reads,
   [[renderer-shared-modules]]).
+- **Tally.** The tab says how many files changed before the view is opened: each checkout's read on the board
+  carries `changed` ([[worktrees]]), counted by [`changedSince`](ref:hub/src/changed-files.ts#changedSince) from the same
+  `since` with the same diff flags and the same cap on untracked files as the read under scope `all`, so the two never
+  disagree; [`changedIn`](ref:hub/src/shared/checkouts.ts#changedIn) sums a checkout's repos, and the view's
+  [`tab`](ref:hub/src/views/changes.ts#tab) export draws it. Once read, the mounted view's tally (files viewed of
+  files changed) takes its place: which files are viewed depends on each file's diff and the viewer's marks, which the
+  board doesn't carry.
 - **Viewed.** Each file carries a hash of its diff. A mark is `(path → hash)` per repo dir, kept with `tower.store`
   ([[renderer-api]]), so every renderer in a browser sees the same marks: when the worker touches the file again its
   hash moves and the file reopens. Marks are per browser.
@@ -75,3 +83,7 @@ Finder or the editor ([[open-files]]).
 - Marks as a collection: they are one viewer's reading state, not files kept for later.
 - Marks in each page's own `localStorage`: a framed page has none (opaque origin), and renderers wouldn't share them.
 - Marking words by a character diff: it marks fragments of code tokens.
+- The tally from `dirty` and `unpushed`: they count uncommitted files and commits, not files changed since the base;
+  a worker with commits and a clean tree reads 0.
+- The tally counted in the renderer by reading `changes/<id>` for every card: a diff per worker per poll, for a
+  number git's board reads can give once per change.

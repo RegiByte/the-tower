@@ -1,4 +1,5 @@
 import type { Card, Floor } from '../bridge/board.ts'
+import { MAIN_CHECKOUT } from './model.ts'
 import { can } from './offered.ts'
 
 /** Who a checkout's review thread is about, who works at it, and who Send reaches. */
@@ -39,4 +40,14 @@ export const sendTargets = (f: Floor, checkout: string) => {
 export const sendTarget = (f: Floor, checkout: string, picked: string | undefined) => {
   const targets = sendTargets(f, checkout)
   return targets.find((t) => t.id === picked) ?? targets.find((t) => t.checkout === checkout)
+}
+
+/**
+ * The files a checkout changed across its repos, as the board counts them (`changed`): what a worker's Changes there
+ * show under scope `all`. `undefined` until git was read. @since 1.119
+ */
+export const changedIn = (f: Floor, checkout: string): number | undefined => {
+  if (checkout === MAIN_CHECKOUT) return f.main?.changed
+  const counts = (f.worktrees.find((w) => w.name === checkout)?.repos ?? []).flatMap((r) => (r.changed === undefined ? [] : [r.changed]))
+  return counts.length ? counts.reduce((n, c) => n + c, 0) : undefined
 }

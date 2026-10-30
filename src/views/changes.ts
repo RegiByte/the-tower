@@ -10,8 +10,9 @@ import {
 } from '../shared/panels.ts'
 import { panelsCss } from '../shared/panels-css.ts'
 import { reading } from '../shared/reads.ts'
+import { changedIn } from '../shared/checkouts.ts'
 import { linesSubject, type Lines } from '../shared/subjects.ts'
-import { viewsOf, type Mount, type RegionHandle } from '../shared/views.ts'
+import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
 
 /**
  * What a worker changed in its repos, as git reads it (`/panels.js`): read while the view is seen, files viewed (marks
@@ -37,6 +38,14 @@ const CSS = `:where([data-view="${ID}"]) {
   position: absolute; inset: 0;
   & > .changes { position: absolute; inset: 0; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); scrollbar-gutter: stable; }
 }`
+
+/** The files a worker's checkout changed, as the board counts them, until its Changes are read and tally files viewed of them. */
+export const tab: Tab = (board, subject) => {
+  const card = subject.value as Card
+  const floor = board.floors.find((f) => f.id === card.project)
+  const changed = floor && changedIn(floor, card.checkout)
+  return changed ? { text: String(changed) } : {}
+}
 
 /** Files the viewer folded or unfolded against what their viewed mark says, and the file tree's folded folders: this page's, every worker's. */
 const folds = new Set<string>()
