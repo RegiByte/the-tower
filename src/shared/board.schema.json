@@ -497,6 +497,10 @@
             "type": "string"
           },
           "description": "Absolute plugin directories this project's sessions load, beside the ones every session loads."
+        },
+        "command": {
+          "type": "string",
+          "description": "The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is the legacy array."
         }
       },
       "required": [

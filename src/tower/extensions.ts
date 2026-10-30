@@ -37,7 +37,7 @@ import {
   type StartCtx,
   type StreamFact,
 } from '../shared/extensions.ts'
-import { ConfigError, type Config, type Runtime } from '../shared/model.ts'
+import { ConfigError, resolveCommand, type Config, type Runtime } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
@@ -440,8 +440,8 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     board: () => publisher.board(),
     run: (argv, { cwd, timeoutMs = RUN_MS, stdin, env }) => runProcess(argv, { cwd, timeoutMs, stdin, env, signal: controller.signal }),
     runtime: () => {
-      const { argv, env = {} } = config.read()
-      return { argv, env }
+      const now = config.read()
+      return { argv: resolveCommand(now, undefined), env: now.env ?? {} }
     },
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
     ...stores.ctx,

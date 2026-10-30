@@ -38,6 +38,7 @@ import {
   projectCollections,
   projectDirs,
   projectPlugins,
+  resolveCommand,
   sessionDirs,
   worktreeName,
   worktreePath,
@@ -548,7 +549,7 @@ export const dispatch = defineResource({
         if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
         holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })
       }
-      const merged = mergeParts(kind, runtime, contributions, { flags: takenFlags(runtime, readConfig().argv), env: takenEnv(readConfig().env) })
+      const merged = mergeParts(kind, runtime, contributions, { flags: takenFlags(runtime, resolveCommand(readConfig(), undefined)), env: takenEnv(readConfig().env) })
       if (merged.t === 'merged') return merged
       for (const cap of merged.caps) holder.problem(launchers.find((l) => l.cap === cap)!.id, { lane: 'launch', level: 'error', code: 'conflict', message: merged.message, at: Date.now() })
       return apiError('refused', merged.message)

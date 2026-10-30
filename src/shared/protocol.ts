@@ -13,7 +13,7 @@ export type ToHost =
    * `cwd` is the project's hub or one of its repos; `args` follow the host's own Claude arguments. `facts`: `tower.*`
    * facts logged right after the header, before any of the session's own events (protocol 3).
    */
-  | { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; facts?: ModEvent[]; cols: number; rows: number }
+  | { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; command?: string; facts?: ModEvent[]; cols: number; rows: number }
   | { t: 'write'; id: string; data: string }
   | { t: 'resize'; id: string; cols: number; rows: number }
   | { t: 'kill'; id: string }

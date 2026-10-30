@@ -55,7 +55,7 @@ const discardRecorded = z.object({
   note: z.string().optional().describe('What the answerer recorded, in words.'),
   item: z.object({ collection: z.string(), id: z.string() }).optional().describe('The collection item the record is in, as it stands after the answer. @since 1.94'),
 })
-const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional() }
+const launch = { model: z.string().optional(), effort: z.string().optional(), prompt: z.string().optional(), command: z.string().optional() }
 const actor = (what: string) =>
   id.optional().describe(`The worker that makes the request, by session id: ${what} Left out, the user makes it.`)
 const by = actor("the prompt it types is counted as that worker's, not the user's.")
