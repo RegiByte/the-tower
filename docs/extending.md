@@ -556,7 +556,7 @@ Every subject but the board belongs to another, `parentOf(subject)` in `/cards.j
 collection and a shelf entry to their floor, a conversation and a showing to their card, an item to its collection, an
 own kind's entry to the subject it was found in; `subjectAt(board, key)` finds any of them on the board now. `folds`
 declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
-on a floor, `lines` on a card, `asks`), both optional: a fold that only contributes declares `adds` alone, with no
+on a floor, `lines` and `marks` on a card, `asks`), both optional: a fold that only contributes declares `adds` alone, with no
 part of its own, and is the common case. `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
 over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board`, `callsignOf(session)` (the callsign of the worker any session the tower has known ran as, archived ones too, `undefined` for an id no log holds) and `own`, its stores as `ctx.own`
 reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
@@ -564,8 +564,12 @@ folds in dependency order (card, conversations, showings, items, collections, sh
 board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
-qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries and lines at `board.adds[<subject key>]`, each tagged
-with its `cap`; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
+qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries, lines and marks at `board.adds[<subject key>]`, each tagged
+with its `cap`; a mark (API 1.114, `marksOf(board, card)` in `/cards.js`) is `{repo, path, line, to?, label, tone?,
+hint?, display?}` on lines the card's worker changed, `repo` named as its Changes name it (the main checkout's folder),
+and the Changes draw it on those lines, saying its `hint` (the reviews extension marks the lines each note of the
+worker's thread is about, `n3`, "noted in n3"); `display`, a subject key a click on the mark would show, is drawn by no
+renderer yet; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
 command's, so one command offered on several things says which; its asks (`{key, subject, title, since, until?, sound:
 'wait' | 'offer', actions}`, `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
 a shelf entry, an item or the board) in `board.asks`,
@@ -576,8 +580,8 @@ has its `ctx.board`.
 
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. Each
 of `commands` is one of its modules' exports, with `words`. Its `on` offers it on every subject of those kinds with
-no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items), whether the extension folds or
-not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
+no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items, or `"lines"`, lines picked in a
+worker's Changes, since API 1.114), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
 `value.type` it lists: media types, `"text/markdown"`, or a top-level type's every subtype, `"image/*"`; a subject
 with no type is offered none of them. A renderer draws a subject's actions and badges with `/cards.js`: name the
 subject (`cardSubject(card)`, `floorSubject(floor)`, `shownSubject(card, shown)`, `itemSubject(project, collection,
@@ -604,7 +608,7 @@ neither, so a command that reads text declares `accepts`.
 
 Not every renderer draws every subject or every contribution. Each declares where it draws in its `renderer.json`
 ([Your own renderer](#your-own-renderer)): its regions, each for one subject kind, holding some of `verbs` (actions
-that call a verb), `commands` (actions that run a client command), `badges`, `lines`, `tidy`, `asks` and `views`
+that call a verb), `commands` (actions that run a client command), `badges`, `lines`, `marks`, `tidy`, `asks` and `views`
 (the tower page's main pane hosts them, [Views](#views)).
 `tower extensions check <folder>` says where each of your commands and contributions lands in every renderer the
 config declares; this table says it for the ones that ship, generated from their declarations:
@@ -616,6 +620,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `conversation` | `conversation.head`, the conversation's heading in the Brief: badges, verbs, commands | `conversation.head`, the conversation's heading in the logbook: badges | not drawn | not drawn |
 | `floor` | `floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, commands, asks, tidy<br>`floor.trays`, the floor's trays of kept items in the sidebar: views | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
 | `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs, commands | not drawn | not drawn | not drawn |
+| `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | not drawn | not drawn | not drawn |
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands<br>`item.row`, the item's row in the floor's trays: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | not drawn | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
@@ -723,6 +728,15 @@ its tab. The tower page fills a region in the elements of the host marked `data-
 badges, lines and actions each where `tower/card` places them, `card.panes`' tab strip (`tabs`) and its views
 (`views`). It keeps the last four workers left drawn and hidden, told `visible(false)`, so one is as it was left when
 gone back to.
+
+**Picked lines** (API 1.114). Lines picked in a worker's Changes are a `lines` subject (`linesSubject` in `/cards.js`:
+the card, the repo, the path, the range and the lines as they read, `quote`), which only the page that picked them
+holds. Under them the Changes ask the kit for `lines.acts`, a region holding commands and one view at `row` scale: a
+command `on: ["lines"]` runs on the lines, and a view `on: ["lines"]` is drawn there, as the reviews extension's
+`reviews/composer` writes a note on them. A view there that is done with the lines (a note added, or cancelled)
+dispatches a bubbling `done` event on its host, and the Changes let the pick go. Lines can be picked while the
+worker's checkout is live and something is offered on lines, a view or a command; nothing else in the Changes knows
+what acts on them.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':

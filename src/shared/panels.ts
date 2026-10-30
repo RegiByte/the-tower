@@ -27,9 +27,11 @@
  *                              long file lands on the next)
  *   data-pick="<key>|<row>"    a line number: pick the line (`picked`, ⇧ to extend), or drag across lines (`watchPickDrag`,
  *                              `spanned`); also where an anchor scrolls to
- *   data-pick-text             the note being written under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
- *   data-pick-add              add the note on the picked lines (`pickAnchor`) through `review/append`
- *   data-pick-cancel           drop the pick
+ *   data-pick-acts             under the picked lines (`markedChangesHtml`): the element the renderer puts what acts on them
+ *                              in, the `lines.acts` region on their `lines` subject (`pickedLines`)
+ *   data-pick-text             the deprecated `changesHtml`'s note under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
+ *   data-pick-add              the deprecated `changesHtml`'s: add the note on the picked lines (`pickAnchor`) through `review/append`
+ *   data-pick-cancel           the deprecated `changesHtml`'s: drop the pick
  *
  *   Reviews
  *   data-thread-read           read the thread again, after a read that failed
