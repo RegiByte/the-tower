@@ -29,7 +29,7 @@ and a framed document's section are the same thing.
 - *Views* ([`Manifest`](ref:hub/src/shared/extensions.ts#Manifest)'s `views`, since 1.104 in this shape): a module's
   export `mount(host, ctx)` returning `{ update, show?, visible?, close }`, on the kinds in `on`, handed those in
   `shows`, drawing those types it `accepts` at its `scales`, needing kit members. `ctx` is the tower, the board, the
-  subject, the kit, its own `state` in `tower.store`, its options and the `scale` it is mounted at (since 1.112). A view never imports another and calls verbs only
+  subject, the kit, its own `state` in `tower.store`, its options and the `scale` its region declares (since 1.112). A view never imports another and calls verbs only
   on a press inside it, wiring its own presses and bringing its styles in a `<style>` inside its host. A view's `on`
   may name `collection.<id>`, one collection alone ([`viewOn`](ref:hub/src/shared/views.ts#viewOn), since 1.108).
   The core's are [`CORE_VIEWS`](ref:hub/src/shared/views.ts#CORE_VIEWS), first in

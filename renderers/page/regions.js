@@ -121,7 +121,7 @@ export function regions(deps) {
   /**
    * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it; `show`
    * handed before the mount settles waits for it.
-   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
+   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale | undefined} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
    */
   function mountView(view, el, subject, scale, options, scope, args) {
     el.dataset.view = view.id
@@ -283,7 +283,7 @@ export function regions(deps) {
       failed(el, region.id, `nothing here draws ${subject.key}`)
       return { update: () => {}, close: () => host.replaceChildren() }
     }
-    const hosted = mountView(view, el, subject, /** @type {Scale} */ (region.scale), { ...layout()[region.id]?.options?.[view.id], ...options[view.id] }, undefined)
+    const hosted = mountView(view, el, subject, region.scale, { ...layout()[region.id]?.options?.[view.id], ...options[view.id] }, undefined)
     return {
       update: (at) => ((host.dataset.subject = at.key), hosted.update(at)),
       show: (s) => hosted.show(s),
@@ -419,7 +419,7 @@ export function regions(deps) {
       root.className = 'view-root'
       panel.append(root)
       panels.append(panel)
-      const hosted = mountView(t.view, root, t.subject, /** @type {Scale} */ (region.scale), { ...layout()[region.id]?.options?.[t.view.id], ...options[t.view.id] }, scope)
+      const hosted = mountView(t.view, root, t.subject, region.scale, { ...layout()[region.id]?.options?.[t.view.id], ...options[t.view.id] }, scope)
       mounted.set(t.key, { hosted, panel })
       return mounted.get(t.key)
     }

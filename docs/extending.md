@@ -665,10 +665,10 @@ as `<cap>/<name>`:
 - `keys`: default chords that display the subject in focus with it.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
-visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, scale, args? }`:
-`state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in
-(`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its location's (a shelf
-entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
+visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
+`state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
+where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
+location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
