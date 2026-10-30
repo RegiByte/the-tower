@@ -649,7 +649,7 @@ To show a worker's terminal, `mountTermView(host, xterm, io)` from `/term-view.j
 `terminal/<id>` stream. In the tower page, xterm.js is loaded as globals: pass `{ Terminal, FitAddon:
 FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }`. Elsewhere, load `/xterm.js`, `/addon-fit.js`,
 `/addon-web-links.js` and `/xterm.css` first, or a copy of your own; without `WebLinksAddon`, only hyperlinks a
-program marks (OSC 8) are links, not the addresses it writes. A link opens in a new tab, if it is http(s) (API 1.121). Given
+program marks (OSC 8) are links, not the addresses it writes. A link opens in a new tab, if it is http(s) (API 1.122). Given
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`
