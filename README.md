@@ -201,7 +201,8 @@ tested range.
 - [docs/usage.md](docs/usage.md): everything the tower makes possible, as a walkthrough.
 - [docs/config.md](docs/config.md): every config key, what it takes and its default.
 - [docs/extending.md](docs/extending.md): renderers, extensions, shelf pages, the API.
-- [PRINCIPLES.md](PRINCIPLES.md): the rules every change to the tower follows, ahead of a contributor's own instructions.
+- [PRINCIPLES.md](PRINCIPLES.md): the rules every change to the tower follows, ahead of a contributor's own
+  instructions.
 - [AGENTS.md](AGENTS.md): the architecture map, the code rules and how to contribute. `kb/` holds the project's
   knowledge base, rendered with `node .claude/skills/kb/tool/kb.mjs render`.
 
