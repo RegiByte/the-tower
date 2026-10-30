@@ -789,8 +789,8 @@ fold order. The first refusal refuses the verb with its code, its message follow
 `the week is 95% spent (budget-gate's gate)`. A failed answer is never a refusal: an answerer that is down, throws,
 answers off the schema or answers an `ApiError` gets a `hook` problem, and the worker starts. So does a link around
 `tower/spawn.gate` that refuses or fails, and then no answerer is asked: while an extension holding such a link is down
-or restarting, every spawn passes every extension's gate (the core's limits still hold). An answer is waited for 10 s:
-an answerer that hasn't settled by then has failed, and the worker starts. A gate that counts workers reads
+or restarting, every spawn passes every extension's gate (the core's limits still hold). Each answer is waited for 10 s,
+one answerer after another: an answerer that hasn't settled by then has failed, and the worker starts. A gate that counts workers reads
 `ctx.cards()`:
 
 ```ts
