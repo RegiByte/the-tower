@@ -12,6 +12,33 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.71.0
+
+The UI model's step 5a, part B: the grid's cells drawn as worker views. No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), the renderer API 1.111 → 1.112 (additive, no major).
+
+- **A view is told its scale** (API 1.112): a region may declare a `scale`, and the page passes it to the views it
+  mounts as `ctx.scale` (`pane` for the main pane and a worker's tabs, `cell` for a grid cell). It is optional: a
+  renderer that passes none, written against 1.111, mounts views as before. `tower/card` leaves out its close at
+  `cell` scale, since the close takes the whole main pane away from a grid, and keeps it everywhere else, a renderer
+  that passes no scale included.
+- **`card.cell`**: the region the grid example declares (`{ subject: card, holds: [views], scale: cell, arity: one }`).
+  Each cell is `kit.region(el, 'card.cell', card, { 'tower/card': { head } })`: the worker's own `tower/card`, with its
+  tabs (Terminal, Brief, Changes, Reviews, shown files) and its head, which the grid's toggle shows or hides. Above it
+  the grid keeps a slim strip of its own: lamp, callsign, status, Open and ✕. Its manifest now `requires` 1.112 and
+  needs `region` and `display`, no longer the terminal (version 2.0). A user who copied the grid example into their
+  extensions folder copies it again to get this (#267).
+- What the grid lost in #267:
+  - The strip's mode text ("in control · 51×51") is gone: the grid no longer holds the cell's terminal handle, so the
+    strip shows the worker's status.
+  - A cell's open tab is the cell's own. It doesn't follow the location and isn't kept across a reload: a reloaded
+    cell opens on its default, the Terminal while the worker drives, else the Brief. Which cells are open and whether
+    heads show are kept.
+  - Toggling heads remounts every cell, since `head` is a mount option: each comes back on its default tab, and a
+    Changes tab loses its scroll, folds and pick.
+  - With heads shown, each cell's head carries the worker's own verbs, `Add to grid` among them (a no-op for a worker
+    already in the grid).
+
 ## v1.70.0
 
 The UI model's step 5a: the worker view drawn by views, and a deadline on every hook answer. No restart beyond the
