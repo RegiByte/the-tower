@@ -71,11 +71,11 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
 /**
  * A prompt or an answer of a worker's conversation, as a renderer drew it in a brief: the session it was drawn in (a
  * resumed conversation's turns are drawn again in the session that resumed it), its conversation, when its turn
- * started, its side, and its words as written. @since 1.117
+ * started, its side, and its words as written. @since 1.118
  */
 export type Said = { session: string; conversation: string; startedAt: number; side: 'prompt' | 'answer'; card: string; project: string; body: string }
 
-/** A prompt or an answer as a renderer draws it, a child of its conversation: a viewer subject, never on the board. @since 1.117 */
+/** A prompt or an answer as a renderer draws it, a child of its conversation: a viewer subject, never on the board. @since 1.118 */
 export const saidSubject = (said: Said): Subject => ({
   kind: 'said',
   key: `said:${said.session}:${said.conversation}:${said.startedAt}:${said.side}`,
@@ -85,7 +85,7 @@ export const saidSubject = (said: Said): Subject => ({
 
 /**
  * A section of a document a renderer draws (`sectionsOf` of `/markdown.js`), a child of the subject whose document it
- * is part of (`of`, a showing or an item), with its heading, its markdown and the document's type. @since 1.117
+ * is part of (`of`, a showing or an item), with its heading, its markdown and the document's type. @since 1.118
  */
 export const sectionSubject = (of: Subject, section: { n: number; heading?: string; body: string }): Subject => ({
   kind: 'section',

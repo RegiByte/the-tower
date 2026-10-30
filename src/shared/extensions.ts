@@ -69,7 +69,7 @@ export const FILES = '1.114'
 const VIEWER = '1.116'
 
 /** The minor a brief's prompts and answers (`said`) and a document's sections (`section`) became viewer subjects in. */
-const SECTIONS = '1.117'
+const SECTIONS = '1.118'
 
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'

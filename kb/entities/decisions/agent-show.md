@@ -53,7 +53,7 @@ worker that made it.
 - The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
   worker and notifying when you are not. Each tab is drawn by the view its type picks, the same views by type as a
   kept item's ([[ui-model]], since API 1.115): markdown renders, its sections taking commands in a gutter beside it
-  (since 1.117), an image fits the pane, text is drawn as written, a
+  (since 1.118), an image fits the pane, text is drawn as written, a
   page is framed as served, a file the tower draws nothing of is left to Finder and the editor, and an address is
   `tower/link`'s: a `url` framed, a `link` one Open ↗, since a browser opens no tab by itself. A user's view for a
   type takes those showings over through the layout. × closes a showing for this viewer

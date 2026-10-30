@@ -699,7 +699,7 @@ tabs region's tabs among them, `options` by view id over the layout's, API 1.111
 `options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
-`go(location)` (API 1.108), `bus` (below, API 1.117), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
+`go(location)` (API 1.108), `bus` (below, API 1.118), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
 `:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host; it never imports
@@ -741,7 +741,7 @@ worker's checkout is live and something is offered on lines, a view or a command
 what acts on them. A viewer kind, `lines`, `file`, `said` or `section`, is one a view, a command or a region may be on; a fold on one is
 refused, since the board never carries the subject to fold.
 
-**The bus** (API 1.117). What a view draws that the board never carries, and that a user can still point at, is a
+**The bus** (API 1.118). What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
 picked in Changes. A view publishes one on `kit.bus`, `{ publish(subject, of), clear(key), at(key), under(of, kind?),
 on(kind, fn) }`, under the key of the subject it is of: the renderer holds one bus per page, so four grid cells each

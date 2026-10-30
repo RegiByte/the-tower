@@ -90,7 +90,7 @@ renderer can draw the brief alike, inline.
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText)),
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
-  conversation's heading, and `acts` (since 1.117) what is offered on a prompt or answer (`said`, [[ui-model]]) beside
+  conversation's heading, and `acts` (since 1.118) what is offered on a prompt or answer (`said`, [[ui-model]]) beside
   its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
   nothing when they are not given.
 - *Rendered or raw* is a viewer's choice in `tower.store`

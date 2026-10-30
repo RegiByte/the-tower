@@ -3,7 +3,7 @@
   "version": "1.2",
   "title": "Narration",
   "description": "Listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document, and each prompt and answer of a brief.",
-  "requires": { "tower": "1.117" },
+  "requires": { "tower": "1.118" },
   "client": "client",
   "commands": {
     "speak": {
