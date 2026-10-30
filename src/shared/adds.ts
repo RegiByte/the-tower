@@ -1,6 +1,6 @@
 import type { Board, Card } from '../bridge/board.ts'
 import { exemptionWords } from './crews.ts'
-import type { Action, Added, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
+import type { Action, Added, AddedMark, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
 import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
@@ -52,6 +52,9 @@ export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [
 
 /** The lines extensions add to what `tower whoami` prints for the worker of `card`. */
 export const linesOf = (board: Board, card: string): string[] => (board.adds[`card:${card}`]?.lines ?? []).map((l) => l.text)
+
+/** The marks extensions put on the lines the worker of `card` changed, in fold order. @since 1.114 */
+export const marksOf = (board: Board, card: string): AddedMark[] => board.adds[`card:${card}`]?.marks ?? []
 
 /** An extension's command as the board shows it, while its extension runs. */
 const commandOf = (board: Board, action: Added<CommandAction>): ExtensionCommand | undefined =>

@@ -270,11 +270,17 @@ export type ExtensionViewEntry = {
   tab?: string
 }
 
-/** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the board's, since 1.86. */
-export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots'] as const
+/**
+ * What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the
+ * board's, since 1.86; `marks`, a card's, since 1.114.
+ */
+export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots', 'marks'] as const
 
 /** The tower version a manifest that adds `slots` requires. */
 export const SLOTS_ADD_SINCE = '1.86'
+
+/** The tower version a manifest that adds `marks` requires. */
+export const MARKS_ADD_SINCE = '1.114'
 export type Add = (typeof ADDS)[number]
 
 /** How a badge reads, as a card's attention does. */
@@ -291,6 +297,14 @@ export type Action = VerbAction | CommandAction
 
 /** A word shown beside a subject: `href` a page it links to. */
 export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: string }
+
+/**
+ * A mark on lines a worker changed, drawn beside them wherever its Changes are: `repo` named as the Changes name it
+ * (the main checkout's folder), `path` from the repo's root, lines `line` to `to` as the file counts them now, `label`
+ * what it reads (`n3`), `hint` what it says on hover. `display`: a subject key a click on it shows, for a renderer that
+ * can show it. A card's only. @since 1.114
+ */
+export type Mark = { repo: string; path: string; line: number; to?: number; label: string; tone?: BadgeTone; hint?: string; display?: string }
 
 /**
  * Something a floor's Tidy would do for an extension, by `key`: listed with the core's, applied by its owner. `does`:
@@ -311,7 +325,7 @@ export type Ask = { key: string; subject: string; title: string; since: number; 
 export type FoldedSlot = { key: string; when: When }
 
 /** What one fold returns for one subject: its own part `x`, and what it adds to the subject and the board. */
-export type Part = { x?: unknown; actions?: Action[]; badges?: Badge[]; tidy?: TidyEntry[]; lines?: string[]; asks?: Ask[]; slots?: FoldedSlot[] }
+export type Part = { x?: unknown; actions?: Action[]; badges?: Badge[]; tidy?: TidyEntry[]; lines?: string[]; asks?: Ask[]; slots?: FoldedSlot[]; marks?: Mark[] }
 
 /** A contribution as the board carries it: tagged with the capability that made it. */
 export type Added<T> = T & { cap: string }
@@ -321,12 +335,14 @@ export type AddedBadge = Badge & { cap: string }
 export type AddedTidy = TidyEntry & { cap: string }
 export type AddedLine = { text: string; cap: string }
 export type AddedSlot = FoldedSlot & { cap: string }
+export type AddedMark = Mark & { cap: string }
 
 /**
  * What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker.
- * `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`.
+ * `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`. `marks`: a
+ * card's, on the lines its worker changed (@since 1.114).
  */
-export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[]; slots?: AddedSlot[] }
+export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[]; slots?: AddedSlot[]; marks?: AddedMark[] }
 
 /** An ask as the board carries it: its `key` qualified by its capability, `<cap>:<key>`, and its actions tagged. */
 export type BoardAsk = Omit<Ask, 'actions'> & { cap: string; actions: AddedAction[] }

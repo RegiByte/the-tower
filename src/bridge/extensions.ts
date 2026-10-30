@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
@@ -328,7 +328,7 @@ const listsKeyed = (schema: Record<string, unknown> | undefined, list: string): 
  * Its folds with their `x` schemas as zod, or each rule they break: an own kind is `<provides>.<kind>` and declared in
  * `subjects`, another's is of a capability it requires or wants; a subject's `list` is an array of keyed entries in the
  * `x` of the fold at its `in`; `x` only on a card, a floor, the board, or an item of a collection it declares; `tidy`
- * only on a floor and `lines` only on a card; a command's `on` names kinds as a fold does, and commands need `client`.
+ * only on a floor, `lines` and `marks` only on a card; a command's `on` names kinds as a fold does, and commands need `client`.
  */
 const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string, CompiledFold>; problems: LoadProblem[] } => {
   const problems: LoadProblem[] = []
@@ -347,6 +347,7 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
     const adds = spec.adds ?? []
     if (adds.includes('tidy') && kind !== 'floor') problems.push(error('invalid', 'tidy entries are a floor\'s', `${at}.adds`))
     if (adds.includes('lines') && kind !== 'card') problems.push(error('invalid', 'lines are a card\'s: tower whoami prints them', `${at}.adds`))
+    if (adds.includes('marks') && kind !== 'card') problems.push(error('invalid', "marks are a card's: they sit on the lines its worker changed", `${at}.adds`))
     if (adds.includes('slots') && kind !== 'floor' && kind !== 'board') problems.push(error('invalid', "slots are a floor's or the board's: the slot loop fires them through slots['*']", `${at}.adds`))
     if (spec.x && !holdsX(kind, manifest.collections)) {
       problems.push(
@@ -595,9 +596,8 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...ownContractProblems(found, manifest),
     ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
     ...underDeclared(raw, manifest.requires.tower),
-    ...(foldsSlots(manifest) && !meets(manifest.requires.tower, SLOTS_ADD_SINCE) && versionOf(manifest.requires.tower)[0] === versionOf(SLOTS_ADD_SINCE)[0]
-      ? [warn('under-declared', `adds slots, since ${SLOTS_ADD_SINCE}, but requires tower ${manifest.requires.tower}: raise it to ${SLOTS_ADD_SINCE}`, 'folds')]
-      : []),
+    ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
+    ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),
   ]
   return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds, fields: fields.fields }
 }
@@ -1055,7 +1055,15 @@ const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers' | 'slots',
 }
 
 /** Whether a manifest's floor or board folds give slots, which `start`'s `slots['*']` fires. */
-export const foldsSlots = (manifest: Manifest): boolean => Object.values(manifest.folds ?? {}).some((fold) => fold.adds?.includes('slots'))
+export const foldsSlots = (manifest: Manifest): boolean => foldsAdd(manifest, 'slots')
+
+const foldsAdd = (manifest: Manifest, add: Add): boolean => Object.values(manifest.folds ?? {}).some((fold) => fold.adds?.includes(add))
+
+/** A warning when a fold adds `add`, which arrived at `since`, under a `requires.tower` of the same major below it. */
+const addsUnderDeclared = (manifest: Manifest, add: Add, since: string) =>
+  foldsAdd(manifest, add) && !meets(manifest.requires.tower, since) && versionOf(manifest.requires.tower)[0] === versionOf(since)[0]
+    ? [warn('under-declared', `adds ${add}, since ${since}, but requires tower ${manifest.requires.tower}: raise it to ${since}`, 'folds')]
+    : []
 
 /** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
 const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
