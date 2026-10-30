@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.76.0
+
+Links in a terminal are clickable, contributed by Vinicius Borges (#287). No restart beyond the tower's own (`tower down
+tower`, then `tower up tower`), then a reload of any open page; the renderer API 1.121 → 1.122 (additive, no major), no
+config change. A checkout run from source needs `npm install` for the new `@xterm/addon-web-links`.
+
+- **Terminal links** (API 1.122): in a worker's or a shell's terminal, on the tower page and in Tower 3D.
+  - A web address written in the terminal, or a hyperlink a program marks (OSC 8), opens in a new tab; only http(s).
+  - A file path written in it (`src/a.ts:12`, `notes/plan.md`, `report.html`) opens in the user's editor at its line,
+    read from the terminal's directory through the `edit` verb; a path outside every floor is refused in a toast.
+  - `mountTermView` takes xterm's `WebLinksAddon` (served at `/addon-web-links.js`) and `io.files` (`cwd`, `edit`),
+    both optional: a renderer that passes neither keeps working, without links.
+  - Known limits: a link wrapped onto the next line is a link on its first line only, `~/` paths and a shell's paths
+    after `cd` aren't followed, and a word like `Node.js` reads as a file.
+
 ## v1.75.0
 
 Document frames work in WebKit: links, the gutter and the nested-frame guard no longer depend on listeners WebKit
