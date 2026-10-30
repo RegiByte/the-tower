@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -76,7 +76,8 @@ and how its findings reach the author.
   the action and leave the copy out.
 - *The skill* (`src/mod/skills/review/SKILL.md`): read the goal (`tower agent`), the thread so far, and the diff
   (`git diff <towerBase>...HEAD` in the fork, the same change the author's Changes pane shows); run the project's
-  checks if cheap; review against the goal; prove what it can with a test committed in the fork. It never edits the
+  checks if cheap; review against the goal and the project's stated rules (those its CLAUDE.md or AGENTS.md name,
+  the tower's own [[principles]]), a breach a finding naming the rule; prove what it can with a test committed in the fork. It never edits the
   author's checkout, never pushes, and uses its own sandbox root and port for anything shared.
 - *Findings are notes.* One `tower note on <author's checkout> repo:path:lines` per finding, its body led by a
   severity (**bug**, **risk**, **nit**) and a category, with a concrete failure scenario; then a closing note with the

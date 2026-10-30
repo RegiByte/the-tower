@@ -28,9 +28,10 @@ You review the work of tower worker **$ARGUMENTS** (its callsign first; `tell` a
 4. **Checks.** Run the project's checks if they are cheap (its CLAUDE.md or AGENTS.md names them: typecheck, tests). A failure is a finding.
 5. **The review.**
    - Does it do what the goal asked? Is anything missing, or anything added that wasn't asked for?
+   - Does it keep the project's stated rules? A repo names its rules in its CLAUDE.md or AGENTS.md, or a file they point to (the tower's own: `PRINCIPLES.md`). Hold the diff against each that applies; a breach is a finding that names the rule.
    - Bugs: trace each changed path with concrete inputs. Claude Code's `/code-review` can help with the bug hunt.
    - Prove what you can. A failing test or a command that shows the bug is worth more than prose: commit it on your branch and name the commit in the note.
-   - Skip style unless the project's own rules call for it.
+   - Skip style unless those rules call for it.
 
 ## Notes
 
