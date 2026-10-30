@@ -54,6 +54,8 @@
     "client.reviews.js#threadCheckoutOf",
     "client.reviews.js#threadId",
     "client.reviews.js#unseenBy",
-    "client.reviews.js#verdictOf"
+    "client.reviews.js#verdictOf",
+    "client.thread.js#mount",
+    "client.thread.js#tab"
   ]
 }

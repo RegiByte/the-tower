@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.95"
+    "tower": "1.111"
   },
   "server": "server.ts",
   "client": "client",
@@ -46,6 +46,20 @@
           "hint": "The worker whose work this one reviews"
         },
         "form": false
+      }
+    }
+  },
+  "views": {
+    "thread": {
+      "module": "thread.js",
+      "export": "mount",
+      "on": ["card"],
+      "scales": ["pane"],
+      "needs": ["display", "toast"],
+      "tab": "tab",
+      "words": {
+        "label": "Reviews",
+        "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
       }
     }
   },
