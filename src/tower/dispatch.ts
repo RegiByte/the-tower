@@ -51,7 +51,7 @@ import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
-import { chainCalls } from './chains.ts'
+import { chainCalls, hookDeadline } from './chains.ts'
 import { UnsettledError, type ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
@@ -877,7 +877,7 @@ export const dispatch = defineResource({
     }
 
     const extension = extensionCalls(holder, readConfig)
-    const chains = chainCalls(holder, readConfig)
+    const chains = chainCalls(holder, readConfig, hookDeadline)
 
     /** A verb by its qualified name, through the chain around it: the core's, or a running extension's. */
     const wrapped = async (name: string, q: { cap: string; name: string }, input: unknown, caller: Caller): Promise<Answer> => {

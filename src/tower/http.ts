@@ -100,7 +100,7 @@ import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, exemptionsBy, shelfKind, shelfPage } from '../shared/cards.ts'
@@ -838,7 +838,7 @@ export const httpServer = defineResource({
     const streams = describeStreams(READS)
     const error = z.toJSONSchema(ApiErrorSchema)
     const coreHooks = Object.fromEntries(
-      Object.entries(HOOKS).map(([name, { payload, answer, combine, required, absent, field, description, since }]) => [
+      Object.entries(HOOKS).map(([name, { payload, answer, combine, required, absent, field, deadline, description, since }]) => [
         `tower/${name}`,
         {
           payload: z.toJSONSchema(payload),
@@ -848,6 +848,7 @@ export const httpServer = defineResource({
           ...(required && { required }),
           ...(absent && { absent }),
           ...(field && { field }),
+          deadline: deadline ?? HOOK_DEADLINE,
           description,
           'x-since': since,
         },

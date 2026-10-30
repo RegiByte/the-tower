@@ -3,11 +3,12 @@
  * registry orders around its target, outermost first, to the handler and back out: what a link passes on is parsed
  * again by the target's schema, and what it answers is checked against the target's reply, so a link that throws,
  * passes on what the target doesn't take or answers off its schema fails the call (a link may be a guard, so it is
- * never bypassed). A hook's answers are each answerer's on its own, in fold order, inside the hook's chain.
+ * never bypassed). A hook's answers are each answerer's on its own, in fold order, inside the hook's chain, each waited
+ * for until the hook's deadline: an answer past it is a failed one, and what it answers later is ignored.
  */
 import { z } from 'zod'
 import { offOn } from '../bridge/stores.ts'
-import { apiError, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
+import { apiError, HOOK_DEADLINE, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
 import { qualifiedOf, tooDeep, type Answered, type Caller } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
 import type { ExtensionsResource } from './extensions.ts'
@@ -36,7 +37,17 @@ const floorOf = (value: unknown): string | undefined => {
   return typeof project === 'string' ? project : undefined
 }
 
-export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config) => {
+/** The seconds each answer to `hook` is waited for: a core hook's own deadline, else `HOOK_DEADLINE`. */
+export const hookDeadline = (hook: string): number => {
+  const q = qualifiedOf(hook)!
+  return (q.cap === 'tower' && Object.hasOwn(HOOKS, q.name) && HOOKS[q.name as HookName].deadline) || HOOK_DEADLINE
+}
+
+/** What an answer still unsettled at its hook's deadline is raced to. */
+const LATE = Symbol('late')
+
+/** `deadlineOf`: the seconds each answer to a hook is waited for, `hookDeadline` but in tests. */
+export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config, deadlineOf: (hook: string) => number) => {
   /** Whether the extension providing `cap` takes part on the floor `value` names: always, when it names none. */
   const takesPart = (chain: string[], value: unknown) => {
     const project = floorOf(value)
@@ -108,13 +119,27 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config)
         holder.problem(live.a.id, { lane: 'hook', level: 'error', code: 'hook', message, at: Date.now(), path: `answers.${hook}` })
         return { cap, ok: false, code: 'internal', message: `${live.a.id} failed to answer ${hook}: ${message}` }
       }
+      const seconds = deadlineOf(hook)
       let given: unknown
+      let timer: NodeJS.Timeout | undefined
       try {
-        given = await live.instance.answer(hook, payload, caller)
+        const answering = Promise.resolve(live.instance.answer(hook, payload, caller))
+        given = await Promise.race([answering, new Promise<typeof LATE>((resolve) => (timer = setTimeout(resolve, seconds * 1000, LATE)))])
+        if (given === LATE) {
+          const id = live.a.id
+          answering.then(
+            () => console.error(`${id}: answered ${hook} past its ${seconds} s deadline: ignored`),
+            (err) => console.error(`${id}: answering ${hook}, past its ${seconds} s deadline:`, err),
+          )
+          answers.push(failed(`didn't answer ${hook} within ${seconds} s`))
+          continue
+        }
       } catch (err) {
         console.error(`${live.a.id}: answering ${hook}:`, err)
         answers.push(failed(`threw: ${(err as Error).message ?? String(err)}`))
         continue
+      } finally {
+        clearTimeout(timer)
       }
       if (isApiError(given)) {
         answers.push({ cap, ok: false, code: given.code, message: given.message })
