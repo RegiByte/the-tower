@@ -8,7 +8,7 @@ import { configProblems } from '../src/config-check.ts'
 import { LEGACY, Manifest, streamFolder } from '../src/shared/extensions.ts'
 import { readingStreams } from '../src/bridge/rate-limits.ts'
 import { VIEW_ALIASES } from '../src/shared/views.ts'
-import { ConfigError, commandNames, resolveCommand, projectPreferredCommand, type Config } from '../src/shared/model.ts'
+import { ConfigError, commandNames, resolveCommand, resolvedCommandName, projectPreferredCommand, type Config } from '../src/shared/model.ts'
 
 const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
 
@@ -51,6 +51,14 @@ test('resolveCommand: the legacy array always, a named key when it exists, the f
   assert.deepEqual(resolveCommand(multi, 'missing'), ['claude'])
   assert.deepEqual(resolveCommand(multi, undefined), ['claude'])
   assert.deepEqual(resolveCommand(multi, ''), ['claude'])
+})
+
+test('resolvedCommandName: undefined in single-command mode, the name itself when valid, the first key when stale or absent', () => {
+  assert.equal(resolvedCommandName(config({ argv: ['claude'] }), 'anything'), undefined)
+  const multi = config({ argv: { a: ['claude'], b: ['claude-mom'] } })
+  assert.equal(resolvedCommandName(multi, 'b'), 'b')
+  assert.equal(resolvedCommandName(multi, 'missing'), 'a')
+  assert.equal(resolvedCommandName(multi, undefined), 'a')
 })
 
 test("projectPreferredCommand: undefined in single-command mode, the project's command when valid, the first key otherwise", () => {
