@@ -791,7 +791,7 @@ layout naming it in `order` leaves showings to their type's pick, and in `hidden
 
 A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
 `fileSubject({ card, project, repo, path, file, text, type })` in `/cards.js`, a child of its card: `repo` named as a
-review anchor names it (`repoName`), `file` its absolute path (API 1.116; the Finder and editor buttons of a file left to them), `text` the read path its content is served at (an extension's read that serves
+review anchor names it (`repoName`), `file` its absolute path, optional (API 1.116; the Finder and editor buttons of a file left to them), `text` the read path its content is served at (an extension's read that serves
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
 declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on `file` too, so
 it is drawn like a showing; a view of an extension's for a type (the files example's `files/code`) takes over where the

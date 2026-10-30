@@ -55,10 +55,10 @@ export const linesSubject = (lines: Lines): Subject => ({
 
 /**
  * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
- * `/reviews.js`), its path in the repo, its absolute path (`file`, for Finder and the editor), where its content is read
+ * `/reviews.js`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
  * (`text`, a read path) and its media type. @since 1.114; `file` @since 1.116
  */
-export type CheckoutFile = { card: string; project: string; repo: string; path: string; file: string; text: string; type: string }
+export type CheckoutFile = { card: string; project: string; repo: string; path: string; file?: string; text: string; type: string }
 
 /** A file of a worker's checkout, handed with its card and floor: a viewer subject, never on the board. @since 1.114 */
 export const fileSubject = (file: CheckoutFile): Subject => ({
