@@ -768,11 +768,17 @@ row per section, level with it as the document scrolls or resizes and never over
 labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
 lands under every section (narrate's Listen reads that section alone) and `show(section)` scrolls the frame to it.
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
-sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs follows
-its links by one rule: a `#fragment` scrolls to the element or heading (by its GitHub slug) it names, a web or mail
-link opens a tab of its own, a file of a shelf entry opens in place, a relative link in a file of a worker's checkout
-displays the file it names (below), and any other link is refused, said in a toast: a relative link in a showing or
-a kept item among them.
+sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs hears
+nothing: WebKit (Safari, Tower.app) calls no listener in a document that can't run scripts, even one the page added.
+So the view writes where each link goes as it draws the document, by one rule: a `#fragment` stays in the frame,
+landing on the element or heading (by its GitHub slug) it names; a web or mail link opens a tab of its own; a file of
+a shelf entry opens in place by the shelf's location; a relative link in a file of a worker's checkout takes the page
+to the hash `kit.href` gives the file it names (below); any other link loses its href, its title saying why: a
+relative link in a showing or a kept item among them. The frame is sandboxed `allow-top-navigation-by-user-activation`
+for the links to the page, and what in a document could hold one of its own (a nested frame, an object, an embed) is
+emptied, and a `<base>` or meta refresh removed, before it is drawn. The gutter follows the frame's scroll position
+from the page, each animation frame while the view is seen. Keys pressed with the focus in a document frame reach
+the page's keymap in Chrome only: in WebKit a click outside the frame gives the page its keys back.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
@@ -833,7 +839,8 @@ it is drawn like a showing; a view of an extension's for a type (the files examp
 layout names it first. `fragment` (API 1.120) is where to open it, a heading's slug or an element's id, which
 `tower/document` scrolls to. A relative link in a markdown file of a checkout names another file of its repo:
 `linkedFile(from, href)` in `/cards.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
-displays it. Display walks up to its card, whose tabs hand it to a view that `shows: ["file"]`, as the files
+links it to the hash `kit.href` gives it. No location names a file, so that hash is the page's while it is open: a
+reload on it says the link is gone. Display walks up to its card, whose tabs hand it to a view that `shows: ["file"]`, as the files
 example's explorer does to open it in its tree.
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
