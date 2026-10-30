@@ -4,7 +4,7 @@ import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
 import { ADDRESS_TYPE, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
+import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -117,6 +117,10 @@ test("views: the layout takes each field from the highest layer that sets it; hi
   const declaring = { extensions: [{ state: 'started', layout: { 'file.open': { order: ['files/code'], hidden: ['tower/text'] } } }, { state: 'failed', layout: { 'x.y': { order: ['x/x'] } } }] } as unknown as Board
   assert.deepEqual(declaredLayout(declaring, { 'card.panes': { order: ['a/a'] } }), { 'file.open': { order: ['files/code'], hidden: ['tower/text'] }, 'card.panes': { order: ['a/a'] } }, "a started extension's region defaults lie under the renderer's own")
   assert.deepEqual(layoutOf(declaredLayout(declaring, {}), { 'file.open': { order: ['tower/text'] } }, undefined)['file.open'], { order: ['tower/text'] }, 'a higher layer orders a view the default hid')
+  const retired = layoutOf({}, { 'card.panes': { order: ['tower/brief', 'tower/shown'], hidden: ['tower/shown'] } }, undefined)['card.panes']
+  assert.deepEqual(retired.order, ['tower/brief'], 'a retired view in an order leaves its subjects to their pick')
+  assert.deepEqual(retired.hidden, VIEW_ALIASES['tower/shown'], 'a retired view hidden hides the views that draw its subjects now')
+  assert.ok(VIEW_ALIASES['tower/shown'].includes('tower/document') && VIEW_ALIASES['tower/shown'].includes('tower/link'))
 })
 
 test('views: display places a card on its worker view, its children in its tabs, and a view showing cards on the floor', () => {

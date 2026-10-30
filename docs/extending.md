@@ -769,6 +769,9 @@ the region's whole list since `order` also places its tabs:
 } } }
 ```
 
+`tower/shown`, the interim view that drew every showing from API 1.111, retired at 1.115 (`LEGACY`, kind `view`): a
+layout naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now.
+
 A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
 `fileSubject({ card, project, repo, path, text, type })` in `/cards.js`, a child of its card: `repo` named as a
 review anchor names it (`repoName`), `text` the read path its content is served at (an extension's read that serves

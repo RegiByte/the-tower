@@ -7,6 +7,7 @@ import type { Board } from '../src/bridge/board.ts'
 import { configProblems } from '../src/config-check.ts'
 import { LEGACY, Manifest, streamFolder } from '../src/shared/extensions.ts'
 import { readingStreams } from '../src/bridge/rate-limits.ts'
+import { VIEW_ALIASES } from '../src/shared/views.ts'
 import { ConfigError, type Config } from '../src/shared/model.ts'
 
 const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
@@ -43,6 +44,7 @@ test('LEGACY names what each applier reads, and every verb, read and board field
     if (e.kind === 'verb') assert.ok(LEGACY_VERBS[e.old], e.old)
     if (e.kind === 'read') assert.ok(LEGACY_READS[e.old], e.old)
     if (e.kind === 'board') assert.ok(LEGACY_FIELDS[e.old], e.old)
+    if (e.kind === 'view') assert.ok(VIEW_ALIASES[e.old], e.old)
   }
   assert.equal(streamFolder('quota.reads'), 'probe.quota', 'a moved stream keeps its old folder')
   assert.equal(streamFolder('pulse.beats'), 'pulse.beats')

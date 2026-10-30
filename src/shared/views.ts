@@ -158,6 +158,23 @@ export const viewsOf = (board: Board): View[] => [
 type LayoutEntry = Layout[string]
 
 /**
+ * The core's retired views (`LEGACY`'s `view` entries) and the views that draw their subjects now: a layout naming one
+ * names those. `tower/shown`'s showings are drawn by the views by type, so an `order` naming it leaves them to their
+ * type's pick, and `hidden` naming it hides each of them.
+ */
+export const VIEW_ALIASES: Record<string, string[]> = { 'tower/shown': CORE_VIEWS.filter((v) => v.on.includes('shown')).map((v) => v.id) }
+
+/** A layer of a layout as the views now are: each retired view in it read as the views that draw its subjects. */
+const unaliased = (entry: LayoutEntry): LayoutEntry => {
+  const retired = (id: string) => VIEW_ALIASES[id] !== undefined
+  return {
+    ...entry,
+    ...(entry.order && { order: entry.order.filter((id) => !retired(id)) }),
+    ...(entry.hidden && { hidden: entry.hidden.flatMap((id) => VIEW_ALIASES[id] ?? [id]) }),
+  }
+}
+
+/**
  * The layout a renderer draws by, three layers each over the one before: its own (`renderer.json`), the config's, the
  * viewer's (`tower.store`'s `layout.<renderer>`). For each region, each field is the highest layer's that sets it,
  * every view's options apart; `hidden` is the layers' union, less each view a higher layer names in its `order`.
@@ -167,7 +184,7 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
   const regions = [...new Set(layers.flatMap((l) => Object.keys(l)))]
   return Object.fromEntries(
     regions.map((id) => {
-      const at = layers.map((l) => l[id] ?? {})
+      const at = layers.map((l) => unaliased(l[id] ?? {}))
       const last = <K extends keyof LayoutEntry>(field: K) => at.findLast((e) => e[field] !== undefined)?.[field]
       const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v))))
       const options = Object.assign({}, ...at.map((e) => e.options ?? {}))
