@@ -1,5 +1,6 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
 import { modeText, mountTermView, type TermViewHandle } from '../../../src/shared/term-view.ts'
 import type { Keys } from '../../../src/shared/keymap.ts'
 import { terminalFont } from '../../../src/shared/terminal.ts'
@@ -22,6 +23,8 @@ type Target = {
   onEnd: (msg: StreamMsg) => void
   onMode: (text: string, owner: boolean) => void
   onError: (err: Error) => void
+  /** The directory the file paths written in the terminal are read from. */
+  cwd: () => string
   /** The board's keys now (`board.keys`). */
   keys: () => Keys
   /** Runs a keymap command from inside the terminal: true keeps its key from the PTY. */
@@ -40,7 +43,7 @@ const termFont = () => terminalFont(tower.prefs.get())
 
 export function mountTerm(host: HTMLElement, t: Target) {
   closeTerm(host)
-  open = mountTermView(host, { Terminal, FitAddon }, {
+  open = mountTermView(host, { Terminal, FitAddon, WebLinksAddon }, {
     watch: (on) => watchStream(t.path, on),
     resize: (size) => tower.call(t.resizeVerb, { id: t.id, ...size }),
     send: (data) => t.sendKeys(t.id, data),
@@ -53,6 +56,7 @@ export function mountTerm(host: HTMLElement, t: Target) {
     mode: (m) => t.onMode(modeText(m), m.t === 'owning'),
     end: t.onEnd,
     error: t.onError,
+    files: { cwd: t.cwd, edit: (path, line) => tower.call('edit', { path, line }) },
   })
 }
 

@@ -1,4 +1,4 @@
-import { ago, can, commandUrl, esc, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
+import { ago, can, commandUrl, esc, findCard, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
 import { offeredIn, ordered, pickView } from '/views.js'
 import { shownFrom } from '/brief.js'
@@ -145,7 +145,7 @@ export function regions(deps) {
       const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
       const shell = stream === 'shell'
       host.classList.toggle('claude-term', !shell)
-      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon }, {
+      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }, {
         watch: (on) => tower.watch(path, (msg) => on(/** @type {TerminalMsg | ShellStream} */ (msg))),
         resize: (size) => (shell ? tower.call('shell/resize', { id, ...size }) : tower.call('resize', { id, ...size })),
         send: (data) => (shell ? tower.shellKeys(id, data) : tower.keys(id, data)),
@@ -158,6 +158,10 @@ export function regions(deps) {
         mode: () => {},
         end: () => {},
         error: (err) => commandKit.toast(err.message),
+        files: {
+          cwd: () => /** @type {string} */ (shell ? board().shells.find((sh) => sh.id === id)?.cwd : findCard(board(), id)?.cwd),
+          edit: (path, line) => tower.call('edit', { path, line }),
+        },
       })
       terminals.add(handle)
       own.add(handle)

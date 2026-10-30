@@ -918,7 +918,7 @@ function mountDeskScreen(c: Card) {
   $('desk-stamp').innerHTML = past ? stampHtml(past.startedAt, true) : ''
   show('desk-stamp', Boolean(past))
   mountTerm($('desk-screen'), {
-    path: past ? `screen/${past.id}` : `terminal/${id}`, id: past?.id ?? id, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, claude: true, onError: (err) => toast(err.message),
+    path: past ? `screen/${past.id}` : `terminal/${id}`, id: past?.id ?? id, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, claude: true, onError: (err) => toast(err.message), cwd: () => c.cwd,
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
     ...terminalKeys,
     onEnd: () => atDesk() === id && unfocus(),
@@ -954,7 +954,7 @@ function focusShell(id: string) {
   show('desk-brief', false)
   renderPanel()
   mountTerm($('desk-screen'), {
-    path: `shell/${id}`, id, sendKeys: tower.shellKeys, resizeVerb: 'shell/resize', scrollback: SHELL_SCROLLBACK, claude: false, onError: (err) => toast(err.message),
+    path: `shell/${id}`, id, sendKeys: tower.shellKeys, resizeVerb: 'shell/resize', scrollback: SHELL_SCROLLBACK, claude: false, onError: (err) => toast(err.message), cwd: () => s.board!.shells.find((sh) => sh.id === id)!.cwd,
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
     ...terminalKeys,
     onEnd: () => panelAs('shell')?.id === id && unfocus(),
@@ -2473,7 +2473,7 @@ function logbookTab(tab: LogbookTab) {
 /** The reader's screen: a session's last screen from its log, read-only, stamped. */
 function showLogbookScreen(c: Card, session: string) {
   mountTerm($('logbook-screen'), {
-    path: `screen/${session}`, id: session, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, claude: true, onError: (err) => toast(err.message),
+    path: `screen/${session}`, id: session, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, claude: true, onError: (err) => toast(err.message), cwd: () => c.cwd,
     onMode: () => {}, ...terminalKeys, onEnd: () => {},
   })
   $('logbook-stamp').innerHTML = stampHtml(c.lineage.find((l) => l.id === session)!.startedAt, false)
