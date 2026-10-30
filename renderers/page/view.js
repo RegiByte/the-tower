@@ -41,7 +41,8 @@ export const cardIdOf = (v) => (v.t === 'view' && v.location.view === 'tower/car
 
 /**
  * The hash naming `v`, `''` for the skyline: a reload opens what it names; a location by its short form when it has
- * one, a worker as `#<id>` with its tab (`/changes`, `/shown:<target>`, the showing read on `board`).
+ * one, a worker as `#<id>` with its tab (`/changes`, `/shown:<target>`, the showing read on `board`, while its view is
+ * the one its type picks).
  * @param {MainView} v @param {Board} board @returns {string}
  */
 export function hashOf(v, board) {
@@ -53,7 +54,8 @@ export function hashOf(v, board) {
   if (PANE_NAMES[pane.view]) return `#${id}/${PANE_NAMES[pane.view]}`
   const at = pane.subject?.slice(pane.subject.lastIndexOf('/') + 1)
   const shown = board.floors.flatMap((f) => f.cards).find((c) => c.id === id)?.shown.find((s) => String(s.at) === at)
-  return shown ? `#${id}/${encodeURIComponent(`shown:${shown.target}`)}` : locationHash(v.location)
+  const short = shown && `#${id}/${encodeURIComponent(`shown:${shown.target}`)}`
+  return short && locationOf(short, board)?.pane?.view === pane.view ? short : locationHash(v.location)
 }
 
 /**

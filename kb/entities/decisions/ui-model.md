@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-26",
   "reviewed": "2026-10-30",
-  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#declaredLayout", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/shown.ts#mount", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#RegionOptions", "hub/src/views/card.ts#CardOptions", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/src/shared/subjects.ts#fileSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#itemView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/examples/extensions/files/extension.json", "hub/examples/extensions/files/client/explorer.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
+  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#declaredLayout", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/page/view.js#hashOf", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#RegionOptions", "hub/src/views/card.ts#CardOptions", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/src/shared/subjects.ts#fileSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#typeView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/examples/extensions/files/extension.json", "hub/examples/extensions/files/client/explorer.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
 }
 ---
 **Problem.** An extension could add actions and badges to the board's subjects, and run code in a renderer as a
@@ -41,20 +41,28 @@ and a framed document's section are the same thing.
   [`tower/collection`](ref:hub/src/views/collection.ts#mount) and [`tower/shelf`](ref:hub/src/views/shelf.ts#mount).
   The drafts editor and the Policies panel are their extensions' views,
   [`drafts/editor`](ref:hub/extensions/drafts/client/editor.ts#mount) (on `item.drafts` and `collection.drafts`) and
-  [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). A kept item is drawn by the
-  views by type (since 1.109), each on `item.*` and accepting media types: `tower/document` markdown
-  ([`documentHtml`](ref:hub/src/views/document.ts#mount) in a frame where nothing runs), `tower/html`, `tower/image`,
-  [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON, NDJSON) and `tower/file`, the
-  fallback accepting none; one head serves them all ([`itemView`](ref:hub/src/views/item.ts#itemView)), with the way
-  back to the floor's view of the extension declaring the item's collection. An item's type is its file name's
+  [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). A kept item and a thing a
+  worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115), each accepting media
+  types: `tower/document` markdown ([`documentHtml`](ref:hub/src/views/document.ts#mount) in a frame where nothing
+  runs), `tower/html`, `tower/image`, [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON,
+  NDJSON) and `tower/file`, the fallback accepting none; and, on `shown` alone,
+  [`tower/link`](ref:hub/src/views/link.ts#mount) for `text/uri-list`, an address a worker showed (a url framed, a
+  link as the page to open it from), whose subject carries the address as its body
+  ([`shownSubject`](ref:hub/src/shared/subjects.ts#shownSubject)): typed, an address is picked by the same rule as a
+  file, so a layout taking markdown never takes it. Each view draws one body per type in its subject's frame
+  ([`typeView`](ref:hub/src/views/item.ts#typeView)): a kept item's under one head, with the way back to the floor's
+  view of the extension declaring the item's collection; a showing's alone, filling its tab, whose head is the tab
+  strip's `shown.head`. An item's type is its file name's
   ([`MEDIA_TYPES`](ref:hub/src/shared/media.ts#MEDIA_TYPES): code as `text/plain`, so nothing a framed page loads
   from it runs as a script). The worker view is views since 1.111: [`tower/card`](ref:hub/src/views/card.ts#mount)
   draws a worker's head and declares `card.panes`, its tabs, where the renderer mounts the views on the card,
   [`tower/terminal`](ref:hub/src/views/terminal.ts#mount), [`tower/brief`](ref:hub/src/views/brief.ts#mount) (shows
   `conversation`), [`tower/changes`](ref:hub/src/views/changes.ts#mount) (shows `lines`) and the reviews extension's
-  [`reviews/thread`](ref:hub/extensions/reviews/client/thread.ts#mount), then one tab per showing, drawn by
-  [`tower/shown`](ref:hub/src/views/shown.ts#mount), today's switch on a showing's kind until shown files are drawn by
-  the views by type. A view's `tab` export says, from the board, whether it has a tab on a subject and its tally; a
+  [`reviews/thread`](ref:hub/extensions/reviews/client/thread.ts#mount), then one tab per showing, drawn by the view
+  its type picks in `card.panes`, or by another view taking its type that the location's tab names (Open Text); the
+  page writes a showing's short hash only while its tab's view is the core's pick
+  ([`hashOf`](ref:hub/renderers/page/view.js#hashOf)). An old hash naming the interim `tower/shown` (1.111 to 1.114)
+  lands on the showing's tab. A view's `tab` export says, from the board, whether it has a tab on a subject and its tally; a
   mounted one's `tab()` says it from what it read, and a `tab` event on its host asks for the tab again
   ([`TabWords`](ref:hub/src/shared/views.ts#TabWords)). Until step 6 each tab reads what it needs itself: Changes
   reads the thread for its notes' marks, Reviews the Changes against the default branch for its quotes, and a note's
@@ -84,7 +92,9 @@ and a framed document's section are the same thing.
   only that extension can give, and the user takes it back with a config line. [`pickView`](ref:hub/src/shared/views.ts#pickView) picks the view a region
   draws a subject with: the layout's order, then the view of the extension declaring the subject's collection, then
   the core view whose `accepts` fits most specifically (`text/markdown` before `text/*`), then the most specific of
-  the rest, then a fallback. [`coreViewOf`](ref:hub/src/shared/views.ts#coreViewOf) is the core's view for a type
+  the rest, then a fallback. So a view of an extension takes a type no core view accepts by being installed, and any
+  other only through the order: `tower/text` accepts `text/*`, JSON and NDJSON, so `text/csv` is the core's until a
+  layout says otherwise. [`coreViewOf`](ref:hub/src/shared/views.ts#coreViewOf) is the core's view for a type
   alone: the tower page's `#kept/<p>/<c>/<id>` names it, and `shortHashOf` writes that hash back for it alone.
 - *Locations* ([`hashOf`](ref:hub/src/shared/views.ts#hashOf), [`locationOf`](ref:hub/src/shared/views.ts#locationOf)):
   `{ view, subject?, pane?, args? }` in the URL as `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, each key

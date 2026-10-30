@@ -328,7 +328,8 @@ export function regions(deps) {
 
   /**
    * A tabs region on a worker: a tab for each view the region offers on its card (in the layout's order, where its
-   * `tab` says it has one), then one for each thing it showed and the viewer hasn't closed, by the view its type picks.
+   * `tab` says it has one), then one for each thing it showed and the viewer hasn't closed, by the view its type picks,
+   * or another view the tab open names for it that takes its type (Open Text on a markdown file).
    * The tab strip is drawn in the element marked `data-holds="tabs"`, the views in `data-holds="views"`. A tab is
    * mounted the first time it shows, then stays under the one shown, hidden by visibility (a hidden terminal would refit
    * the PTY to nothing). The tab open is the location's for the main pane's worker (`scope`), else the region's own;
@@ -345,6 +346,8 @@ export function regions(deps) {
     let card = /** @type {Card} */ (subject.value)
     /** The tab picked here, where no location names one. @type {Pane | undefined} */
     let picked
+    /** The tab the location named while this worker was last on screen. @type {Pane | undefined} */
+    let seenPane
     /** The tab open, by key. @type {string | undefined} */
     let open
     let seen = true
@@ -375,16 +378,28 @@ export function regions(deps) {
         return words === undefined || words === 'waiting' ? [] : [{ key: tabKey(v.id, subject.key), view: v, subject, words }]
       })
       const closedHere = unshown()
+      const at = scope?.pane()
+      if (at?.on) seenPane = at.pane
+      const pane = scope ? seenPane : picked
       const showings = card.shown.filter((s) => !closedHere.has(shownKey(s))).flatMap((s) => {
-        const at = shownSubject(card, s)
-        const v = pickView(board(), offeredIn(views(), region, layout(), deps.kit, at), layout()[region.id]?.order, at)
-        return v ? [{ key: tabKey(v.id, at.key), view: v, subject: at, showing: s }] : []
+        const shown = shownSubject(card, s)
+        const offeredOn = offeredIn(views(), region, layout(), deps.kit, shown)
+        const v = (pane?.subject === shown.key ? openedAs(offeredOn, pane.view, shown) : undefined) ?? pickView(board(), offeredOn, layout()[region.id]?.order, shown)
+        return v ? [{ key: tabKey(v.id, shown.key), view: v, subject: shown, showing: s }] : []
       })
       return [...own, ...showings]
     }
 
-    /** The tab a pane names among `all`. @param {TabOf[]} all @param {Pane | undefined} pane */
-    const named = (all, pane) => pane && all.find((t) => t.view.id === pane.view && (pane.subject === undefined || t.subject.key === pane.subject))
+    /**
+     * The view a pane names for a showing, among those offered on it, where that view takes its type and is not the
+     * core's own pick for it, which is all the page's short form names: Open Text on a markdown file.
+     * @param {View[]} offered @param {string} view @param {Subject} shown
+     */
+    const openedAs = (offered, view, shown) =>
+      view === pickView(board(), offered.filter((v) => v.cap === 'tower'), undefined, shown)?.id ? undefined : offered.find((v) => v.id === view && pickView(board(), [v], undefined, shown) === v)
+
+    /** The tab a pane names among `all`: a showing's by its subject alone, whatever view the pane names. @param {TabOf[]} all @param {Pane | undefined} pane */
+    const named = (all, pane) => pane && all.find((t) => (t.showing ? t.subject.key === pane.subject : t.view.id === pane.view && (pane.subject === undefined || t.subject.key === pane.subject)))
 
     /** The terminal while the worker drives (or has no brief), else its brief. @param {TabOf[]} all */
     const byDefault = (all) => all.find((t) => t.view.id === (can(card, 'drive') || !can(card, 'brief') ? 'tower/terminal' : 'tower/brief')) ?? all[0]

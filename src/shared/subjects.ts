@@ -28,12 +28,18 @@ export const conversationSubject = (c: Card, v: CardConversation): Subject => ({
   value: { ...v, card: c.id, project: c.project },
 })
 
-/** Something a worker showed, by the moment it showed it, handed with its card and floor; a file with its text's read path and type. @since 1.98 */
+/** The media type of an address a worker showed, a url or a link: its body is the address. @since 1.115 */
+export const ADDRESS_TYPE = 'text/uri-list'
+
+/**
+ * Something a worker showed, by the moment it showed it, handed with its card and floor: a file with its text's read
+ * path and its type by its name, an address (a url or a link) with itself as its body and `ADDRESS_TYPE` (@since 1.115). @since 1.98
+ */
 export const shownSubject = (c: Card, s: CardShown): Subject => ({
   kind: 'shown',
   key: `shown:${c.id}/${s.at}`,
   project: c.project,
-  value: { ...s, card: c.id, project: c.project, ...(s.kind === 'file' && { text: shownHref(s).slice(1), type: mediaTypeOf(s.target) }) },
+  value: { ...s, card: c.id, project: c.project, ...(s.kind === 'file' ? { text: shownHref(s).slice(1), type: mediaTypeOf(s.target) } : { body: s.target, type: ADDRESS_TYPE }) },
 })
 
 /** Lines of a file a worker changed, as a renderer holds them: a viewer subject of the card. @since 1.111 */

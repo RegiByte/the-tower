@@ -4,7 +4,7 @@ import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import { accepted, mediaTypeOf } from './media.ts'
 import type { KitMember, Layout, Region, Scale } from './regions.ts'
-import { onKind, parentOf, subjectAt, type Subject, type Text } from './subjects.ts'
+import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
 
 /**
  * Views (decision `ui-model`): modules that draw one subject into an element a region gives them, the core's and
@@ -106,15 +106,19 @@ const core = (id: string, on: string[], scales: Scale[], words: Words): View => 
 /** A core view whose module the tower serves at `/x/tower/<name>.js`, its export `mount`, lent the kit members it `needs`. */
 const served = (view: View, needs: KitMember[]): View => ({ ...view, module: `${view.id.slice('tower/'.length)}.js`, export: 'mount', needs })
 
-/** A core view on every collection's item that draws the media types it `accepts`. */
-const byType = (name: string, accepts: string[], words: Words): View => served({ ...core(`tower/${name}`, ['item.*'], ['pane'], words), accepts }, ['region', 'display', 'toast', 'confirm'])
+/** The kinds the core's views by type draw: what a worker showed, and every collection's item. */
+const BY_TYPE_ON = ['shown', 'item.*']
+
+/** A core view on what a worker showed and every collection's item that draws the media types it `accepts`. */
+const byType = (name: string, accepts: string[], words: Words): View => served({ ...core(`tower/${name}`, BY_TYPE_ON, ['pane'], words), accepts }, ['region', 'display', 'toast', 'confirm'])
 
 /** A core view drawn in a worker's tabs, on its card, handed the kinds in `shows`. */
 const pane = (name: string, shows: string[], words: Words, needs: KitMember[]): View => served({ ...core(`tower/${name}`, ['card'], ['pane'], words), ...(shows.length && { shows }) }, needs)
 
 /**
  * The core's views, in the order that picks among them: the worker view first among those on a card, then its tabs,
- * the archive first among those on a floor. The views by type follow, `tower/file` the fallback, accepting none.
+ * the archive first among those on a floor. The views by type follow, `tower/file` the fallback, accepting none, and
+ * `tower/link` for an address a worker showed.
  */
 export const CORE_VIEWS: readonly View[] = [
   served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
@@ -122,7 +126,6 @@ export const CORE_VIEWS: readonly View[] = [
   pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
   { ...pane('brief', ['conversation'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'toast']), tab: 'tab' },
   pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['toast', 'confirm']),
-  served(core('tower/shown', ['shown'], ['pane'], { label: 'Shown', hint: 'what the worker showed, as the tower draws its kind' }), []),
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
@@ -132,13 +135,17 @@ export const CORE_VIEWS: readonly View[] = [
   byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),
   byType('text', ['text/*', 'application/json', 'application/x-ndjson'], { label: 'Text', hint: 'its text as written' }),
   byType('file', [], { label: 'File', hint: 'the file, left to Finder and the editor' }),
+  served({ ...core('tower/link', ['shown'], ['pane'], { label: 'Link', hint: 'the address the worker showed, framed, or a page to open it from' }), accepts: [ADDRESS_TYPE] }, []),
 ]
 
-/** The core's view by type for an item of type `type`: the most specific `accepts`, else the fallback. */
-export const coreViewOf = (type: string): View => {
-  const items = CORE_VIEWS.filter((v) => v.on.includes('item.*'))
-  return bestFit(items.filter((v) => fit(v.accepts, type)), type) ?? (items.find((v) => !v.accepts?.length) as View)
+/** The core's view by type for a subject of `kind` of type `type`: the most specific `accepts`, else the fallback. */
+const coreViewOn = (kind: string, type: string): View => {
+  const on = CORE_VIEWS.filter((v) => onKind(v.on, kind) && v.accepts !== undefined)
+  return bestFit(on.filter((v) => fit(v.accepts, type)), type) ?? (on.find((v) => !v.accepts?.length) as View)
 }
+
+/** The core's view by type for an item of type `type`: the most specific `accepts`, else the fallback. */
+export const coreViewOf = (type: string): View => coreViewOn('item.*', type)
 
 /** Every view: the core's, then each started extension's, in the board's order. */
 export const viewsOf = (board: Board): View[] => [
@@ -338,12 +345,11 @@ export const hashOf = (location: Location): string => {
 const PANE_VIEWS: Record<string, string> = { screen: 'tower/terminal', brief: 'tower/brief', changes: 'tower/changes', reviews: 'reviews/thread' }
 
 /** The latest showing of `target` on the card `id`, as the board holds it. */
-const latestShown = (board: Board, id: string, target: string) =>
-  board.floors
-    .flatMap((f) => f.cards)
-    .find((c) => c.id === id)
-    ?.shown.filter((s) => s.target === target)
-    .at(-1)
+const latestShown = (board: Board, id: string, target: string) => {
+  const card = board.floors.flatMap((f) => f.cards).find((c) => c.id === id)
+  const shown = card?.shown.filter((s) => s.target === target).at(-1)
+  return card && shown && shownSubject(card, shown)
+}
 
 /** A location the hash's short form names, as the tower page wrote them before the grammar: kept for every link the user has. */
 const shortForm = (body: string, board: Board): Location | undefined => {
@@ -365,7 +371,7 @@ const shortForm = (body: string, board: Board): Location | undefined => {
   if (PANE_VIEWS[pane]) return { ...card, pane: { view: PANE_VIEWS[pane] } }
   if (!pane.startsWith('shown:')) return card
   const shown = latestShown(board, kind, pane.slice('shown:'.length))
-  return shown ? { ...card, pane: { view: 'tower/shown', subject: `shown:${kind}/${shown.at}` } } : card
+  return shown ? { ...card, pane: { view: coreViewOn('shown', (shown.value as Text).type!).id, subject: shown.key } } : card
 }
 
 /** A subject key's floor and what follows it: `collection:p/notes` is `p` and `notes`. */

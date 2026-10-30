@@ -597,7 +597,8 @@ project }` on a collection, `{ ...entry, n, project }` on a shelf entry, `{ ...c
 conversation, and the entry on an own kind. A subject whose content is text or a file says where it is: an item and a
 shown file carry `text`, the path `tower.text` reads it at (`collection/<project>/<collection>/<id>`,
 `shown/<session><target>`), and `type`, its media type by its file's extension (`text/markdown`, `image/png`,
-`application/octet-stream` when the tower doesn't know it). `textOf(tower, target)` in `/cards.js` reads a subject's
+`application/octet-stream` when the tower doesn't know it). An address a worker showed, a url or a link, carries itself
+as its `body` and the type `text/uri-list` (`ADDRESS_TYPE` in `/cards.js`, API 1.115). `textOf(tower, target)` in `/cards.js` reads a subject's
 text: its `body` when a renderer hands the text itself, else what `text` reads; it throws on a subject that bears
 neither, so a command that reads text declares `accepts`.
 
@@ -709,7 +710,8 @@ with its `module`, `export` and `needs`, and a renderer whose kit lends those ho
 **The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
 asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,
 `tower/brief`, `tower/changes`, the reviews extension's `reviews/thread`, then any of yours on `card`, in the layout's
-`order`), then one per thing the worker showed, by the view its type picks (`tower/shown` draws them all for now).
+`order`), then one per thing the worker showed, by the view its type picks (below; API 1.115), or by another view
+that takes its type when the location's tab names one (Open Text on a markdown file).
 A tab mounts the first time it is opened and then stays mounted under the one shown, told `visible(false)`, so a
 view that reads only while seen (Changes' poll) stops there. A view on `card` has a tab where its `tab` export
 (named in its manifest, `"tab": "tab"`) answers, from the board alone, `{ text?, tip?, tone?, hint? }`: `text` the
@@ -742,21 +744,29 @@ view speaks to it through the rest of `tower/card`'s options (API 1.113, `CardOp
 Listen for the events on the element you gave the region, and hand the handle new options with `options(next)` (the
 same shape as `kit.region`'s): the card draws them in place, keeping its tab, scroll and terminal.
 
-**Views by type.** A kept item is drawn by the view that accepts its type (`value.type`, the media type of its file
-name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109): `tower/document` markdown (`documentHtml` in a
-frame where nothing runs: raw HTML kept, images read beside the file), `tower/html` a page framed at an origin of its
-own, `tower/image` `image/*`, `tower/video` `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is
-`text/plain`), and `tower/file`, which accepts nothing, the fallback that leaves a file to Finder and the editor. They
-share one head: the collection, the tag, the file, who kept it, `item.head`'s region, a new tab, Delete and the close,
-with a way back to the view of the floor the collection's extension declares (the policies extension's, for a policy).
-`pickView` decides among the views a region offers: the region's layout `order` among those accepting the type; else
-the view of the extension that declares the item's collection, on that exact kind (`drafts/editor` on `item.drafts`);
-else the core view whose `accepts` fits most specifically (`text/markdown` before `text/*`); else the most specific of
-the rest; else a fallback. So a view of yours for a type the core never planned (`text/csv`, say) draws it by being
-installed, and one for a type the core draws takes it over through the layout:
+**Views by type.** A kept item and a thing a worker showed are drawn by the view that accepts their type
+(`value.type`, the media type of the file's name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109) and
+`shown` (API 1.115): `tower/document` markdown (`documentHtml` in a frame where nothing runs: raw HTML kept, images
+read beside the file), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
+`video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
+nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
+`text/uri-list`, an address a worker showed: a url framed as it is, a link as a page whose one click opens it. Each
+draws its body in its subject's frame: a kept item's under one head (the collection, the tag, the file, who kept it,
+`item.head`'s region, a new tab, Delete and the close, with a way back to the view of the floor the collection's
+extension declares, the policies extension's for a policy); a showing's alone, filling its tab, whose head is the tab
+strip's `shown.head`. `pickView` decides among the views a region offers: the region's layout `order` among those
+accepting the type; else the view of the extension that declares the item's collection, on that exact kind
+(`drafts/editor` on `item.drafts`); else the core view whose `accepts` fits most specifically (`text/markdown` before
+`text/*`); else the most specific of the rest; else a fallback. So a view of yours for a type no core view takes
+(`application/wasm`, say; `text/*`, JSON and NDJSON are `tower/text`'s) draws it by being installed, and one for a
+type the core draws takes it over through the layout: in the main pane for items, in the worker's tabs for showings,
+the region's whole list since `order` also places its tabs:
 
 ```json
-"renderers": { "page": { "layout": { "board.main": { "order": ["mydocs/markdown"] } } } }
+"renderers": { "page": { "layout": {
+  "board.main": { "order": ["mydocs/markdown"] },
+  "card.panes": { "order": ["tower/terminal", "tower/brief", "tower/changes", "reviews/thread", "mydocs/markdown"] }
+} } }
 ```
 
 A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
@@ -764,9 +774,9 @@ A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:
 review anchor names it (`repoName`), `text` the read path its content is served at (an extension's read that serves
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
 declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on
-`item.*` alone for now, so a view on `file` is an extension's (the files example's `files/code`).
+`shown` and `item.*`, not yet `file`, so a view on `file` is an extension's (the files example's `files/code`).
 
-What the pick passes over is offered as "Open <label>": on a markdown or html item, `tower/text` is Open Text, its
+What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).
 
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,

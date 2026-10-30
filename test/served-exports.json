@@ -519,6 +519,7 @@
       "readsText"
     ],
     "/cards.js": [
+      "ADDRESS_TYPE",
       "ATTENTION_MEANS",
       "ATTENTION_NAME",
       "BLOCKED_TEXT",
