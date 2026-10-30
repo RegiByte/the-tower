@@ -93,6 +93,7 @@ test("views: a worker's showing is drawn by the views by type, an address by tow
   assert.equal(pick({ kind: 'link', target: 'https://example.com/' }), 'tower/link')
   assert.equal(pick({ kind: 'file', target: '/r/a.md' }, ['tower/terminal', 'mine/markdown']), 'mine/markdown')
   assert.equal(pick({ kind: 'url', target: 'http://localhost:5173/' }, ['mine/markdown']), 'tower/link', 'an order taking markdown leaves addresses alone')
+  assert.equal(pick({ kind: 'url', target: 'http://localhost:5173/' }, ['tower/text']), 'tower/text', 'an address is text: an order taking text/* draws it as its text')
   assert.equal(pick({ kind: 'file', target: '/r/a.wasm' }), 'mine/wasm', 'a type only the fallback covered is taken by installing a view for it')
   assert.deepEqual(shownSubject(card, { kind: 'url', at: 1, session: 'w1', target: 'http://localhost:5173/' }).value, { kind: 'url', at: 1, session: 'w1', target: 'http://localhost:5173/', card: 'w1', project: 'p', body: 'http://localhost:5173/', type: ADDRESS_TYPE })
 })

@@ -750,7 +750,9 @@ same shape as `kit.region`'s): the card draws them in place, keeping its tab, sc
 read beside the file), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
 `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
 nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
-`text/uri-list`, an address a worker showed: a url framed as it is, a link as a page whose one click opens it. Each
+`text/uri-list`, an address a worker showed: a url framed as it is, a link as a page whose one click opens it. An
+address is text, its body: `tower/text` draws it as written (Open Text on a url), and an `order` taking `text/*` takes
+addresses with the rest. Each
 draws its body in its subject's frame: a kept item's under one head (the collection, the tag, the file, who kept it,
 `item.head`'s region, a new tab, Delete and the close, with a way back to the view of the floor the collection's
 extension declares, the policies extension's for a policy); a showing's alone, filling its tab, whose head is the tab

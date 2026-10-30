@@ -19,11 +19,12 @@ import { closeHtml, paintOnce, viewCss } from './parts.ts'
  */
 
 /**
- * What a body is drawn from: `url`, where its content is served; `title`, what it is called; `name`, its file's name;
- * `file`, its path on disk; `version`, its content's, where it has one; `docCss`, a document frame's styles beside the
- * design's; `stale`, whether a newer draw has begun since.
+ * What a body is drawn from: `url`, where its content is served; `body`, its text itself, where its subject carries it
+ * (an address); `title`, what it is called; `name`, its file's name; `file`, its path on disk; `version`, its
+ * content's, where it has one; `docCss`, a document frame's styles beside the design's; `stale`, whether a newer draw
+ * has begun since.
  */
-export type Body = { tower: Tower; kit: Kit; url: string; title: string; name: string; file: string; version?: number; docCss: string; stale: () => boolean }
+export type Body = { tower: Tower; kit: Kit; url: string; body?: string; title: string; name: string; file: string; version?: number; docCss: string; stale: () => boolean }
 
 /**
  * A view by type: `rules`, its own look; `draw`, its body into `el`; `restyled`, drawn again as the viewer's scheme or
@@ -41,11 +42,14 @@ const backOf = (board: Board, project: string, c: FloorCollection) =>
 export const unshownHtml = ({ name, file }: Body) =>
   `<div class="shelf-empty">the tower shows no ${esc(name.split('.').pop()!)} file<br><br>reveal it in Finder or open it in your editor ${fileButtonsHtml(file)}</div>`
 
-/** A body read as text and drawn by `article` in a document frame where nothing runs, from the design's tokens; links open a tab of their own. */
+/**
+ * A body's text, its own where it carries it, else read where it is served, drawn by `article` in a document frame
+ * where nothing runs, from the design's tokens; links open a tab of their own.
+ */
 export const framedText =
   (article: (text: string, url: string) => string) =>
-  async (el: HTMLElement, { tower, title, url, docCss, stale }: Body) => {
-    const text = await tower.text(url.slice(1)).catch((err: Error) => {
+  async (el: HTMLElement, { tower, title, url, body, docCss, stale }: Body) => {
+    const text = body ?? await tower.text(url.slice(1)).catch((err: Error) => {
       if (!stale()) el.innerHTML = failedHtml(title, err.message, 'data-read-again')
     })
     if (text === undefined || stale()) return
@@ -169,10 +173,16 @@ const SHOWN_RULES = `& > .shown-body { flex: 1; min-height: 0; position: relativ
   & > .shown-body :is(.item-image, .item-video) { position: relative; padding: 0; background: var(--enamel); }
   & > .shown-body :is(.item-image img, .item-video video) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }`
 
-/** What a body is drawn from, for a subject drawn alone: a showing's, from its file or address. */
+/** What a body is drawn from, for a subject drawn alone, by its kind: a showing's, a file served or an address its own text. */
 const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'stale'> => {
-  const s = subject.value as CardShown
-  return { url: shownHref(s), title: shownTitle(s), name: s.target, file: s.target, docCss: SHOWN_DOC_CSS }
+  switch (subject.kind) {
+    case 'shown': {
+      const s = subject.value as CardShown
+      return { url: shownHref(s), ...(s.kind !== 'file' && { body: s.target }), title: shownTitle(s), name: s.target, file: s.target, docCss: SHOWN_DOC_CSS }
+    }
+    default:
+      throw new Error(`A view by type draws no ${subject.kind} alone: give bodyOf in src/views/item.ts a case for it`)
+  }
 }
 
 /**

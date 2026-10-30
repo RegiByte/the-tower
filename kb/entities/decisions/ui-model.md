@@ -49,7 +49,8 @@ and a framed document's section are the same thing.
   [`tower/link`](ref:hub/src/views/link.ts#mount) for `text/uri-list`, an address a worker showed (a url framed, a
   link as the page to open it from), whose subject carries the address as its body
   ([`shownSubject`](ref:hub/src/shared/subjects.ts#shownSubject)): typed, an address is picked by the same rule as a
-  file, so a layout taking markdown never takes it. Each view draws one body per type in its subject's frame
+  file, so a layout taking markdown never takes it, and one taking `text/*` does: an address is text, drawn as its
+  body by `tower/text`. Each view draws one body per type in its subject's frame
   ([`typeView`](ref:hub/src/views/item.ts#typeView)): a kept item's under one head, with the way back to the floor's
   view of the extension declaring the item's collection; a showing's alone, filling its tab, whose head is the tab
   strip's `shown.head`. An item's type is its file name's
