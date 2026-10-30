@@ -33,7 +33,8 @@ sequenceDiagram
   ([`gate`](ref:hub/src/tower/dispatch.ts#gate), `tower/spawn.gate`) weighs it with
   [`hireRefusal`](ref:hub/src/shared/crews.ts#hireRefusal) against the floor's `hiring`, the core's answer before any
   extension's, and past it answers `limited` (409), the command telling the worker to ask the user. An extension's
-  gate may refuse it after, as `refused` or `limited` naming its gate; one that never answers holds the hire (open). A hirer's hires queue by its callsign
+  gate may refuse it after, as `refused` or `limited` naming its gate; one that doesn't answer within the gate's 10 s
+  has failed, and the hire goes on. A hirer's hires queue by its callsign
   ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system
   [`counted`](ref:hub/src/tower/dispatch.ts#counted) it, so the next is weighed against it.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default
