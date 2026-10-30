@@ -2,21 +2,21 @@ import type { Card, Floor } from '../../../src/bridge/board.ts'
 import type { Replies, Verbs } from '../../../src/shared/api.ts'
 import { noLongerOffered, offeredCall, plural, runVerb, sendTarget } from '../../../src/shared/cards.ts'
 import { commandOf } from '../../../src/shared/keymap.ts'
-import { loop, timers } from '../../../src/shared/loop.ts'
-import { changesHandlers, type ChangesEvent, changesOf, changesPath, drawPanel, fileCall, noChanges, readChanges } from '../../../src/shared/panels.ts'
+import { loop } from '../../../src/shared/loop.ts'
+import { CHANGES_POLL_MS, drawPanel, fileCall } from '../../../src/shared/panels.ts'
 import { panelsCss } from '../../../src/shared/panels-css.ts'
 import { pressing } from '../../../src/shared/press.ts'
-import { heldHandlers, noReads, reading } from '../../../src/shared/reads.ts'
+import { heldHandlers, noReads, reading, valueOf } from '../../../src/shared/reads.ts'
 import { linesSubject } from '../../../src/shared/subjects.ts'
 import { anchorOf } from './anchors.ts'
 import type { Mount, Tab } from '../../../src/shared/views.ts'
 import type { NoteCall } from '../threads.ts'
-import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewOf, threadWant } from './panel.ts'
-import { THE_USER, sendText, unseenBy, type ReviewThread } from './reviews.ts'
+import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewAt, threadWant } from './panel.ts'
+import { THE_USER, sendText, unseenBy, type AnchorStates, type ReviewThread } from './reviews.ts'
 
 /**
  * `reviews/thread`: a worker's checkout's review thread in its tabs, read once per version of its file, its notes'
- * quotes marked as the worker's Changes against its default branch find them; a note written, answered and resolved
+ * quotes marked as they stand among the worker's changes against its default branch (`anchors/<project>`); a note written, answered and resolved
  * by the user, the notes sent to a worker, and a note's lines shown (`display` of a `lines` subject).
  */
 
@@ -59,38 +59,37 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     execute: { read: reading(readThread((path) => tower.text(path))), draw: () => draw(), toast: ({ message }) => kit.toast(message) },
   })
 
-  /** The worker's Changes against its default branch, read while the thread is seen: where its notes' quotes stand now. */
-  const changeReads = loop({
-    state: noChanges(),
-    handlers: changesHandlers,
+  /**
+   * Where the thread's anchors stand among the worker's changes, read while the thread is seen: again as its file or
+   * the worker's turn moves on, and every `CHANGES_POLL_MS`, as the worker's Changes are.
+   */
+  const stateReads = loop({
+    state: noReads<AnchorStates>(),
+    handlers: heldHandlers<AnchorStates>(),
     execute: {
-      ...timers<ChangesEvent>(),
-      read: reading(
-        readChanges({
-          repos: (id, scope) => tower.get(changesPath(id, scope) as 'changes/<id>'),
-          viewed: (key) => tower.store.get(key) as Promise<Record<string, string> | undefined>,
-          now: Date.now,
-        }),
-      ),
+      read: reading((slot) => tower.get(`reviews/anchors/${card.project}?card=${encodeURIComponent(slot)}` as never).then((r) => (r as { states: AnchorStates }).states)),
       draw: () => draw(),
       toast: () => {},
-      keep: () => {},
     },
   })
+  const statesKey = () => `${threadWant(board.floors, cardThread(card))?.key ?? ''}|${card.status === 'working' ? 'working' : 'still'}`
+  let poll: ReturnType<typeof setInterval> | undefined
 
   const threadOf = () => heldThread(threadReads.state(), board.floors, cardThread(card))
   const picked = () => sendPicks.get(draftKey(card))
 
   function follow() {
-    changeReads.dispatch({ type: 'follow', card: seen ? card : undefined })
+    if (seen) stateReads.dispatch({ type: 'want', slot: card.id, key: statesKey() })
+    if (seen && !poll) poll = setInterval(() => stateReads.dispatch({ type: 'refresh', slot: card.id, key: statesKey() }), CHANGES_POLL_MS)
+    if (!seen) (clearInterval(poll), (poll = undefined))
     const want = seen && threadWant(board.floors, cardThread(card))
     if (want) threadReads.dispatch(want)
   }
 
   function draw() {
     const thread = threadOf()
-    const view = threadViewOf(board, cardThread(card), {
-      thread, failed: thread ? undefined : threadFailure(threadReads.state(), cardThread(card)), changes: changesOf(changeReads.state(), card.id)?.repos, picked: picked(), re,
+    const view = threadViewAt(board, cardThread(card), {
+      thread, failed: thread ? undefined : threadFailure(threadReads.state(), cardThread(card)), states: valueOf(stateReads.state().held[card.id]), picked: picked(), re,
     })
     drawPanel(el, reviewsHtml(view), { 'note-text': noteDrafts.get(draftKey(card)) ?? '' })
   }
@@ -186,7 +185,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
       follow()
     },
     close() {
-      changeReads.dispatch({ type: 'follow', card: undefined })
+      clearInterval(poll)
     },
   }
 }

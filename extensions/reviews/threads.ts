@@ -106,6 +106,12 @@ export const cardPart = (card: Card, floor: Floor, files: ThreadFile[], of: stri
   }
 }
 
+/** The thread file a card's part names: its work's, or the one Tidy filed once that work landed; none before a note is written. */
+export const threadFileOf = (part: CardPart, files: ThreadFile[]): ThreadFile | undefined => {
+  const filed = part.threadState.is === 'landed' ? (part.threadState as LandedState).filed : undefined
+  return files.find((f) => f.id === (filed?.id ?? threadId(part.thread)))
+}
+
 /** A floor's threads: each live thread file's (`<checkout>.md`), in id order. */
 export const floorThreads = (floor: Floor, files: ThreadFile[]): FloorThread[] => {
   const read = checkoutsOf(floor)

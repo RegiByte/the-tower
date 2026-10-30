@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.111"
+    "tower": "1.114"
   },
   "server": "server.ts",
   "client": "client",
@@ -60,6 +60,17 @@
       "words": {
         "label": "Reviews",
         "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+      }
+    },
+    "composer": {
+      "module": "composer.js",
+      "export": "mount",
+      "on": ["lines"],
+      "scales": ["row"],
+      "needs": ["toast"],
+      "words": {
+        "label": "Note",
+        "hint": "a note on these lines, on the review thread of the worker's checkout"
       }
     }
   },
@@ -149,7 +160,8 @@
         }
       },
       "adds": [
-        "actions"
+        "actions",
+        "marks"
       ]
     },
     "floor": {
@@ -495,6 +507,25 @@
     }
   },
   "reads": {
+    "anchors/<project>": {
+      "scope": "project",
+      "description": "Where each anchor of a worker's thread stands among its changes against its default branch, by `<n>|<i>` (its note's number and its place among the note's anchors): `same` where its quote still reads in the diff, `changed` where the file changed and it doesn't, `gone` where the file has no changes left.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["card"],
+        "properties": {
+          "card": { "type": "string", "description": "The worker's id: its thread's anchors, among its changes." }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["states"],
+        "properties": {
+          "states": { "type": "object", "additionalProperties": { "enum": ["same", "changed", "gone"] } }
+        }
+      }
+    },
     "history/<project>": {
       "scope": "project",
       "reply": {
